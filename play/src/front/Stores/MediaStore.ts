@@ -70,14 +70,19 @@ export type MediaAccessIssue = "permission_denied" | "no_device" | "device_in_us
 type MediaDeviceAnalyticsKind = "camera" | "microphone" | "camera_microphone";
 
 /**
- * Last camera access failure, or no videoinput reported by the browser.
- * Cleared when the user turns the camera off manually, when a video track is obtained, or when a camera appears.
+ * Why the camera was turned off, as classifyMediaAccessError names the error of a failed request. Set when a request
+ * that asks for the camera fails with an error that maps to an issue. Cleared by each run that asks for the camera (a
+ * failure in that run sets it again only if its error maps to an issue), and a "no_device" issue also when a camera
+ * appears in the device list or is in the first list read.
  */
 export const cameraAccessIssueStore = writable<MediaAccessIssue | null>(null);
 
 /**
- * Last microphone access failure, or no audioinput reported by the browser.
- * Cleared when the user turns the microphone off manually, when an audio track is obtained, or when a microphone appears.
+ * Why the microphone was turned off, as classifyMediaAccessError names the error of a failed request. Set when a
+ * request that asks for the microphone, and not for a new camera, fails with an error that maps to an issue (a request
+ * for both records the failure against the camera). Cleared by each run that asks for the microphone (a failure in
+ * that run sets it again only if its error maps to an issue), and a "no_device" issue also when a microphone appears
+ * in the device list or is in the first list read.
  */
 export const microphoneAccessIssueStore = writable<MediaAccessIssue | null>(null);
 
@@ -778,9 +783,10 @@ function emitCurrentStreamOrError(setIfCurrent: SetRawStreamIfCurrent, error: un
 }
 
 /**
- * After a failed getUserMedia: falls back to the default devices when a chosen one cannot be opened, or turns off
- * the device that failed and records its access issue, if the error maps to one. Turning a device off queues a new run
- * without it.
+ * After a failed getUserMedia: falls back to the default devices when a chosen one cannot be opened. Otherwise a request
+ * that asked for a new camera turns the camera off, whichever device failed, and one that asked only for a new
+ * microphone turns the microphone off; either records the access issue the error maps to, if any. Turning a device off
+ * queues a new run without it.
  */
 function handleGetUserMediaFailure(
     e: unknown,
@@ -908,7 +914,7 @@ async function runRawStreamUpdate(
         });
     }
 
-    // Clear a device's access issue only when this run asks for that device. Each failure below that records an issue
+    // A run clears a device's access issue only when it asks for that device. Each failure below that records an issue
     // also turns its device off, which queues a run without that device, and that run must keep the issue.
     if (constraints.video !== false) {
         cameraAccessIssueStore.set(null);
