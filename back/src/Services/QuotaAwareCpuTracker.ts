@@ -1,12 +1,10 @@
 import { readFileSync } from "node:fs";
+import { posix } from "node:path";
 import { asError } from "catch-unknown";
 import { CPU_OVERHEAT_THRESHOLD } from "../Enum/EnvironmentVariable";
 
 const PROC_SELF_CGROUP = "/proc/self/cgroup";
-const CGROUP_ROOT = "/sys/fs/cgroup";
-const CGROUP_V2_CPU_MAX = "cpu.max";
-const CGROUP_V1_CFS_QUOTA_US = "/sys/fs/cgroup/cpu/cpu.cfs_quota_us";
-const CGROUP_V1_CFS_PERIOD_US = "/sys/fs/cgroup/cpu/cpu.cfs_period_us";
+const PROC_SELF_MOUNTINFO = "/proc/self/mountinfo";
 
 /**
  * Returns the content of a file, or undefined when it does not exist or cannot be read.
@@ -60,17 +58,86 @@ export function parseCgroupV1CfsQuota(quotaContent: string, periodContent: strin
     return quotaToCores(quotaContent.trim(), periodContent.trim());
 }
 
+function plainAbsolutePath(path: string | undefined): string | undefined {
+    const trimmed = path?.trim();
+    if (trimmed === undefined || !trimmed.startsWith("/") || trimmed.split("/").includes("..")) {
+        return undefined;
+    }
+    return trimmed;
+}
+
 /**
  * Parses `/proc/self/cgroup` and returns the cgroup v2 path of the process ("0::<path>").
  * Returns undefined when there is no cgroup v2 entry or the path is not a plain absolute path.
  */
 export function parseCgroupV2Path(content: string): string | undefined {
     const line = content.split("\n").find((entry) => entry.startsWith("0::"));
-    const path = line?.slice("0::".length).trim();
-    if (path === undefined || !path.startsWith("/") || path.split("/").includes("..")) {
-        return undefined;
+    return plainAbsolutePath(line?.slice("0::".length));
+}
+
+/**
+ * Parses `/proc/self/cgroup` and returns the cgroup v1 path of the process in the hierarchy that holds the cpu
+ * controller ("<id>:cpu,cpuacct:<path>").
+ * Returns undefined when there is no such entry or the path is not a plain absolute path.
+ */
+export function parseCgroupV1CpuPath(content: string): string | undefined {
+    const entry = content
+        .split("\n")
+        .map((line) => /^\d+:([^:]+):(.*)$/.exec(line))
+        .find((fields) => fields !== null && fields[1].split(",").includes("cpu"));
+    return plainAbsolutePath(entry?.[2]);
+}
+
+export type CgroupVersion = "v1" | "v2";
+
+/**
+ * A mounted cgroup hierarchy: `mountPoint` shows the cgroup `root` of the hierarchy and everything below it.
+ */
+export interface CgroupMount {
+    root: string;
+    mountPoint: string;
+}
+
+function unescapeMountinfo(field: string): string {
+    return field.replace(/\\([0-7]{3})/g, (_, octal: string) => String.fromCharCode(parseInt(octal, 8)));
+}
+
+/**
+ * Parses `/proc/self/mountinfo` and returns the first mount of the hierarchy that holds the cpu controller: the
+ * cgroup2 mount for v2, a cgroup mount with the cpu option for v1.
+ */
+export function parseCgroupMount(content: string, version: CgroupVersion): CgroupMount | undefined {
+    for (const line of content.split("\n")) {
+        const separator = line.indexOf(" - ");
+        if (separator === -1) {
+            continue;
+        }
+        const mountFields = line.slice(0, separator).split(" ");
+        const [fsType, , superOptions] = line.slice(separator + " - ".length).split(" ");
+        const holdsCpu =
+            version === "v2"
+                ? fsType === "cgroup2"
+                : fsType === "cgroup" && (superOptions ?? "").split(",").includes("cpu");
+        if (mountFields.length >= 5 && holdsCpu) {
+            return { root: unescapeMountinfo(mountFields[3]), mountPoint: unescapeMountinfo(mountFields[4]) };
+        }
     }
-    return path;
+    return undefined;
+}
+
+/**
+ * The directories of the process cgroup and its ancestors under the mount point, from the process cgroup up to the
+ * mount point. A cgroup path outside the mounted root leaves only the mount point.
+ */
+function cgroupDirectories(mount: CgroupMount, cgroupPath: string): string[] {
+    const rootParts = mount.root.split("/").filter(Boolean);
+    const pathParts = cgroupPath.split("/").filter(Boolean);
+    const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
+    const directories = [mount.mountPoint];
+    for (const part of isBelowRoot ? pathParts.slice(rootParts.length) : []) {
+        directories.unshift(posix.join(directories[0], part));
+    }
+    return directories;
 }
 
 function isUnlimitedQuota(content: string): boolean {
@@ -81,10 +148,11 @@ function warnMalformed(path: string, content: string): void {
     console.warn(`Ignoring malformed cgroup CPU quota in ${path}: ${JSON.stringify(content)}`);
 }
 
-function readCgroupV2Quota(readFile: ReadOptionalFile, path: string): CpuCapacity | "absent" | undefined {
+function readCgroupV2Quota(readFile: ReadOptionalFile, directory: string): CpuCapacity | undefined {
+    const path = `${directory}/cpu.max`;
     const content = readFile(path);
     if (content === undefined) {
-        return "absent";
+        return undefined;
     }
     const cores = parseCgroupV2CpuMax(content);
     if (cores === undefined && !isUnlimitedQuota(content)) {
@@ -93,34 +161,66 @@ function readCgroupV2Quota(readFile: ReadOptionalFile, path: string): CpuCapacit
     return cores === undefined ? undefined : { cores, source: `cgroup v2 ${path}` };
 }
 
-/**
- * Reads the CPU quota of the current cgroup in cores: cgroup v2 first (the path of the process from
- * `/proc/self/cgroup`, then the root, which is the container view with a private cgroup namespace), then cgroup v1.
- * Returns undefined when no quota applies (no cgroup files, unlimited quota or malformed content).
- */
-export function readCgroupCpuQuota(readFile: ReadOptionalFile): CpuCapacity | undefined {
-    const procCgroup = readFile(PROC_SELF_CGROUP);
-    const ownPath = procCgroup === undefined ? undefined : parseCgroupV2Path(procCgroup);
-    const v2Paths = [`${CGROUP_ROOT}/${CGROUP_V2_CPU_MAX}`];
-    if (ownPath !== undefined && ownPath !== "/") {
-        v2Paths.unshift(`${CGROUP_ROOT}${ownPath}/${CGROUP_V2_CPU_MAX}`);
-    }
-    for (const path of v2Paths) {
-        const quota = readCgroupV2Quota(readFile, path);
-        if (quota !== "absent") {
-            return quota;
-        }
-    }
-    const quota = readFile(CGROUP_V1_CFS_QUOTA_US);
-    const period = readFile(CGROUP_V1_CFS_PERIOD_US);
+function readCgroupV1Quota(readFile: ReadOptionalFile, directory: string): CpuCapacity | undefined {
+    const quotaPath = `${directory}/cpu.cfs_quota_us`;
+    const quota = readFile(quotaPath);
+    const period = readFile(`${directory}/cpu.cfs_period_us`);
     if (quota === undefined || period === undefined) {
         return undefined;
     }
     const cores = parseCgroupV1CfsQuota(quota, period);
     if (cores === undefined && !isUnlimitedQuota(quota)) {
-        warnMalformed(CGROUP_V1_CFS_QUOTA_US, `${quota.trim()} / ${period.trim()}`);
+        warnMalformed(quotaPath, `${quota.trim()} / ${period.trim()}`);
     }
-    return cores === undefined ? undefined : { cores, source: `cgroup v1 ${CGROUP_V1_CFS_QUOTA_US}` };
+    return cores === undefined ? undefined : { cores, source: `cgroup v1 ${quotaPath}` };
+}
+
+interface CgroupHierarchy {
+    version: CgroupVersion;
+    /** Used when `/proc/self/mountinfo` is unreadable or does not list the hierarchy. */
+    defaultMountPoint: string;
+    processPath: (procSelfCgroup: string) => string | undefined;
+    readQuota: (readFile: ReadOptionalFile, directory: string) => CpuCapacity | undefined;
+}
+
+const CGROUP_HIERARCHIES: readonly CgroupHierarchy[] = [
+    {
+        version: "v2",
+        defaultMountPoint: "/sys/fs/cgroup",
+        processPath: parseCgroupV2Path,
+        readQuota: readCgroupV2Quota,
+    },
+    {
+        version: "v1",
+        defaultMountPoint: "/sys/fs/cgroup/cpu",
+        processPath: parseCgroupV1CpuPath,
+        readQuota: readCgroupV1Quota,
+    },
+];
+
+/**
+ * Reads the effective CPU quota of the process in cores: the tightest quota of the process cgroup and its ancestors up
+ * to the mounted root, in the cgroup v2 hierarchy and in the cgroup v1 hierarchy holding the cpu controller. The paths
+ * come from `/proc/self/cgroup` and `/proc/self/mountinfo`.
+ * Returns undefined when no quota applies (no cgroup files, unlimited quotas or malformed content).
+ */
+export function readCgroupCpuQuota(readFile: ReadOptionalFile): CpuCapacity | undefined {
+    const procSelfCgroup = readFile(PROC_SELF_CGROUP) ?? "";
+    const mountinfo = readFile(PROC_SELF_MOUNTINFO) ?? "";
+    const quotas = CGROUP_HIERARCHIES.flatMap((hierarchy) => {
+        const mount = parseCgroupMount(mountinfo, hierarchy.version) ?? {
+            root: "/",
+            mountPoint: hierarchy.defaultMountPoint,
+        };
+        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? mount.root;
+        return cgroupDirectories(mount, cgroupPath).flatMap(
+            (directory) => hierarchy.readQuota(readFile, directory) ?? [],
+        );
+    });
+    return quotas.reduce<CpuCapacity | undefined>(
+        (tightest, quota) => (tightest === undefined || quota.cores < tightest.cores ? quota : tightest),
+        undefined,
+    );
 }
 
 /**
