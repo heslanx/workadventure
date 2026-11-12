@@ -168,6 +168,67 @@ describe("pusher PostHog exception transport", () => {
         ]);
     });
 
+    it.each([
+        {
+            name: "Basic authorization",
+            header: "Authorization: Basic c3ludGhldGljOnNlY3JldA==",
+            secrets: ["c3ludGhldGljOnNlY3JldA=="],
+        },
+        {
+            name: "an arbitrary authorization scheme",
+            header: "Authorization: Custom synthetic-first synthetic-second",
+            secrets: ["synthetic-first", "synthetic-second"],
+        },
+        {
+            name: "Digest authorization",
+            header: 'Authorization: Digest username="synthetic-user", response="synthetic-digest"',
+            secrets: ["synthetic-user", "synthetic-digest"],
+        },
+        {
+            name: "proxy authorization",
+            header: "Proxy-Authorization: Basic synthetic-proxy",
+            secrets: ["synthetic-proxy"],
+        },
+        {
+            name: "multiple cookies",
+            header: "Cookie: session=synthetic-session; other=synthetic-other",
+            secrets: ["synthetic-session", "synthetic-other"],
+        },
+        {
+            name: "set-cookie values",
+            header: "Set-Cookie: session=synthetic-session; other=synthetic-other; Path=/",
+            secrets: ["synthetic-session", "synthetic-other"],
+        },
+        {
+            name: "quoted JSON header values",
+            header: '{"Authorization":"Basic synthetic-json-auth","Cookie":"session=synthetic-json-session; other=synthetic-json-other"}',
+            secrets: ["synthetic-json-auth", "synthetic-json-session", "synthetic-json-other"],
+        },
+        {
+            name: "folded header values",
+            header: "Authorization: Custom synthetic-first\r\n\tsynthetic-continuation",
+            secrets: ["synthetic-first", "synthetic-continuation"],
+        },
+    ])("removes the complete value of $name before SDK delivery", async ({ header, secrets }) => {
+        state.batches.length = 0;
+        const error = new Error(`Request failed\n${header}\nRetryable diagnostic`);
+
+        state.errorHandler?.(error);
+        await state.clients[0].flush();
+
+        const event = state.batches.flatMap((batch) => batch.batch).find((event) => event.event === "$exception");
+        expect(event).toBeDefined();
+        const payload = JSON.stringify(event);
+        expect(secrets.filter((secret) => payload.includes(secret))).toEqual([]);
+        expect(event?.properties.$exception_list).toEqual([
+            expect.objectContaining({
+                type: "Error",
+                value: expect.stringContaining("Request failed"),
+            }),
+        ]);
+        expect(payload).toContain("Retryable diagnostic");
+    });
+
     it("also sanitizes exceptions from the SDK rejection listener", async () => {
         state.batches.length = 0;
         const original = originalListeners.get("unhandledRejection") ?? [];
