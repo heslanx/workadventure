@@ -4280,7 +4280,6 @@ ${escapedMessage}
     }
 
     private handleCurrentPlayerHasMovedEvent(event: HasPlayerMovedInterface): void {
-        //listen event to share position of user
         this.pushPlayerPosition(event);
         this.gameMapFrontWrapper.setPosition(event.x, event.y);
         this.activatablesManager.updateActivatableObjectsDistances([
@@ -4369,25 +4368,20 @@ ${escapedMessage}
             return;
         }
 
-        // If the player is not moving, let's send the info right now.
         if (event.moving === false) {
             this.doPushPlayerPosition(event);
             return;
         }
 
-        // If the player is moving, and if it changed direction, let's send an event
         if (event.direction !== this.lastMoveEventSent.direction) {
             this.doPushPlayerPosition(event);
             return;
         }
 
-        // If more than 200ms happened since last event sent
         if (this.currentTick - this.lastSentTick >= POSITION_DELAY) {
             this.doPushPlayerPosition(event);
             return;
         }
-
-        // Otherwise, do nothing.
     }
 
     private doPushPlayerPosition(event: HasPlayerMovedInterface): void {
