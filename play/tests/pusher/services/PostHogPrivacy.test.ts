@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { gunzipSync } from "node:zlib";
+import { createRequire } from "node:module";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { PostHog, PostHogOptions } from "posthog-node";
 import type * as PostHogSDK from "posthog-node";
@@ -83,7 +84,18 @@ vi.mock("@opentelemetry/sdk-logs", () => ({
 }));
 
 describe("pusher PostHog exception transport", () => {
+    const nativeProcess = createRequire(import.meta.url)("node:process") as typeof process;
+    const processEvents = [
+        "newListener",
+        "removeListener",
+        "unhandledRejection",
+        "uncaughtException",
+        "uncaughtExceptionMonitor",
+    ] as const;
+    const originalListeners = new Map<string, ReturnType<typeof process.listeners>>();
+
     beforeAll(async () => {
+        for (const event of processEvents) originalListeners.set(event, nativeProcess.listeners(event));
         vi.spyOn(console, "error").mockImplementation(() => {});
         vi.spyOn(console, "info").mockImplementation(() => {});
         await import("../../../src/server");
@@ -91,6 +103,13 @@ describe("pusher PostHog exception transport", () => {
 
     afterAll(async () => {
         await Promise.all(state.clients.map((client) => client.shutdown(3000)));
+        for (const event of processEvents) {
+            const original = originalListeners.get(event) ?? [];
+            for (const listener of nativeProcess.listeners(event)) {
+                if (!original.includes(listener)) nativeProcess.removeListener(event, listener);
+            }
+            expect(nativeProcess.listeners(event)).toEqual(original);
+        }
         vi.restoreAllMocks();
     });
 
@@ -145,6 +164,28 @@ describe("pusher PostHog exception transport", () => {
                         }),
                     ]),
                 }),
+            }),
+        ]);
+    });
+
+    it("also sanitizes exceptions from the SDK rejection listener", async () => {
+        state.batches.length = 0;
+        const original = originalListeners.get("unhandledRejection") ?? [];
+        const listener = nativeProcess
+            .listeners("unhandledRejection")
+            .find((candidate) => !original.includes(candidate));
+        expect(listener).toBeDefined();
+
+        listener?.(new Error("Unhandled token=synthetic-autocapture-secret"), Promise.resolve());
+        await state.clients[0].flush();
+
+        const event = state.batches.flatMap((batch) => batch.batch).find((event) => event.event === "$exception");
+        expect(event).toBeDefined();
+        expect(JSON.stringify(event)).not.toContain("synthetic-autocapture-secret");
+        expect(event?.properties.$exception_list).toEqual([
+            expect.objectContaining({
+                type: "Error",
+                mechanism: expect.objectContaining({ type: "onunhandledrejection", handled: false }),
             }),
         ]);
     });

@@ -94,7 +94,7 @@ Environment variables for the Play service (frontend and pusher).
 | `NODE_ENV` | No | Node.js environment: 'development', 'production', or 'test' |
 | `CONTACT_URL` | No | URL for users to contact support or administrators |
 | `POSTHOG_API_KEY` | No | PostHog API key for analytics tracking |
-| `POSTHOG_URL` | Yes | PostHog server URL for analytics. Defaults to PostHog cloud |
+| `POSTHOG_URL` | No | PostHog server URL for analytics. Defaults to PostHog cloud |
 | `FALLBACK_LOCALE` | No | Default locale/language code when user's locale is not available (e.g., 'en', 'fr') |
 | `ENABLE_REPORT_ISSUES_MENU` | No | Enable the 'Report Issues' menu option. Defaults to false |
 | `REPORT_ISSUES_URL` | Yes | URL where users can report issues (e.g., GitHub issues, support portal) |

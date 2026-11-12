@@ -102,6 +102,14 @@ class AnalyticsClient {
         this.flushPendingAdminEvents();
     }
 
+    public capture(eventName: string, properties: Record<string, unknown> = {}): void {
+        try {
+            this.posthog?.capture(eventName, properties);
+        } catch {
+            console.warn("PostHog event capture failed");
+        }
+    }
+
     /**
      * The single choke point every analytics event goes through — both sinks.
      *
@@ -122,11 +130,6 @@ class AnalyticsClient {
      * keyed by event cannot express, so they capture on their own line; keeping them
      * here is what keeps `posthog.capture("wa_…")` out of the call sites.
      */
-    /** Capture a PostHog-only product event that has no matching admin analytics contract. */
-    public capture(eventName: string, properties: Record<string, unknown> = {}): void {
-        this.posthog?.capture(eventName, properties);
-    }
-
     public trackAdminEvent<N extends AnalyticsEventName>(eventName: N, ...args: AnalyticsEventArgs<N>): void {
         const [given = {}] = args;
 
@@ -273,7 +276,11 @@ class AnalyticsClient {
     }
 
     resetUser(): void {
-        this.posthog?.reset();
+        try {
+            this.posthog?.reset();
+        } catch {
+            console.warn("PostHog user reset failed");
+        }
         this.previousRoomId = undefined;
     }
 

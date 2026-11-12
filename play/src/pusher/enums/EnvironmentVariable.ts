@@ -128,7 +128,6 @@ export const SENTRY_ENVIRONMENT: string | undefined = env.SENTRY_ENVIRONMENT;
 export const SENTRY_RELEASE: string | undefined = env.SENTRY_RELEASE;
 export const SENTRY_TRACES_SAMPLE_RATE: number | undefined = env.SENTRY_TRACES_SAMPLE_RATE;
 
-// PostHog integration
 export const POSTHOG_API_KEY: string | undefined = env.POSTHOG_API_KEY;
 export const POSTHOG_URL: string | undefined = env.POSTHOG_URL;
 

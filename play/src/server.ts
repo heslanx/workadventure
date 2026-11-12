@@ -27,6 +27,7 @@ import {
 } from "./pusher/enums/EnvironmentVariable";
 import RoomApiServer from "./room-api/RoomApiServer";
 import { analyticsTimedEventTracker } from "./pusher/services/AnalyticsTimedEventTracker";
+import { sanitizePostHogException } from "./pusher/services/PostHogPrivacy";
 
 // In production, the current working directory is "dist".
 if (fs.existsSync("dist") && !fs.existsSync("src")) {
@@ -42,11 +43,10 @@ const posthog =
         ? new PostHog(POSTHOG_API_KEY as string, {
               host: POSTHOG_URL,
               enableExceptionAutocapture: true,
+              before_send: sanitizePostHogException,
           })
         : undefined;
 
-// This provider is intentionally not registered globally: only the lifecycle logs
-// emitted below are exported, leaving the application's existing console logs alone.
 const posthogLogProvider =
     missingPostHogVariables.length === 0
         ? new LoggerProvider({
