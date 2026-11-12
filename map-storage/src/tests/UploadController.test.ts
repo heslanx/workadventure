@@ -235,16 +235,6 @@ async function until(condition: () => boolean): Promise<void> {
     }
 }
 
-/** Lets real I/O progress for this many turns of the event loop. */
-async function ioTurns(count: number): Promise<void> {
-    for (let turn = 0; turn < count; turn++) {
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise((resolve) => {
-            setImmediate(resolve);
-        });
-    }
-}
-
 describe("UploadController", () => {
     beforeAll(async () => {
         const app = express();
@@ -450,7 +440,7 @@ describe("UploadController", () => {
             await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
         }
 
-        it("(known defect) should be kept when the zip upload answers 503", async () => {
+        it("should be deleted when the zip upload answers 503", async () => {
             await holdAWriteOfA();
             const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
 
@@ -458,13 +448,12 @@ describe("UploadController", () => {
             await until(() => replacing.mock.calls.length > 0);
             await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
             const response = await uploading;
-            await ioTurns(100);
+            await until(() => readdirSync(uploads).length === 0);
 
             expect(response.status).toBe(503);
-            expect(readdirSync(uploads)).toHaveLength(1);
         });
 
-        it("(known defect) should be kept when the PUT of a map answers 503", async () => {
+        it("should be deleted when the PUT of a map answers 503", async () => {
             await holdAWriteOfA();
             const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
             const form = new FormData();
@@ -474,34 +463,38 @@ describe("UploadController", () => {
             await until(() => replacing.mock.calls.length > 0);
             await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
             const response = await uploading;
-            await ioTurns(100);
+            await until(() => readdirSync(uploads).length === 0);
 
             expect(response.status).toBe(503);
-            expect(readdirSync(uploads)).toHaveLength(1);
         });
 
-        it("(known defect) should be kept when the zip upload is rejected", async () => {
+        it("should be deleted when the zip upload succeeds", async () => {
+            const response = await uploadZip({ "a.wam": wam("a") });
+            await until(() => readdirSync(uploads).length === 0);
+
+            expect(response.status).toBe(200);
+        });
+
+        it("should be deleted when the zip upload is rejected", async () => {
             const form = new FormData();
             form.append("directory", "../elsewhere");
             form.append("file", await zipOf({ "a.wam": wam("a") }), "maps.zip");
 
             const response = await request("POST", "/upload", form);
-            await ioTurns(100);
+            await until(() => readdirSync(uploads).length === 0);
 
             expect(response.status).toBe(400);
-            expect(readdirSync(uploads)).toHaveLength(1);
         });
 
-        it("(known defect) should be kept when the zip upload fails", async () => {
+        it("should be deleted when the zip upload fails", async () => {
             const form = new FormData();
             form.append("directory", directory);
             form.append("file", new Blob(["not a zip"]), "maps.zip");
 
             const response = await request("POST", "/upload", form);
-            await ioTurns(100);
+            await until(() => readdirSync(uploads).length === 0);
 
             expect(response.status).toBe(500);
-            expect(readdirSync(uploads)).toHaveLength(1);
         });
     });
 });

@@ -44,6 +44,19 @@ function rejectWhileMapIsSaving(res: Response): void {
         .send("A map of this request is still being saved. Nothing was changed, retry later.");
 }
 
+/** Deletes the temporary file Multer stored the upload in. */
+function removeUploadedFile(file: Request["file"]): void {
+    if (file === undefined) {
+        return;
+    }
+    fs.unlink(file.path, (err) => {
+        if (err) {
+            console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
+            Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
+        }
+    });
+}
+
 const upload = multer({
     storage: multer.diskStorage({}),
     limits: {
@@ -273,13 +286,6 @@ export class UploadController {
                     }
 
                     // No need to close the directory with unzipper
-                    // Delete the uploaded ZIP file from the disk
-                    fs.unlink(zipFile.path, (err) => {
-                        if (err) {
-                            console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
-                            Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
-                        }
-                    });
                     for (const wamUrl of wamToPurge) {
                         uploadDetector.refresh(wamUrl).catch((err) => {
                             console.error(`[${new Date().toISOString()}]`, err);
@@ -294,7 +300,10 @@ export class UploadController {
                 if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
                     this.uploadLimiter.delete(virtualDirectory);
                 }
-            })().catch((e) => next(e));
+            })()
+                // Every exit, the rejected and failed ones included.
+                .finally(() => removeUploadedFile(req.file))
+                .catch((e) => next(e));
         });
     }
 
@@ -435,16 +444,6 @@ export class UploadController {
                             await this.fileSystem.writeStringAsFile(virtualPath, content);
                         }
 
-                        // Delete the uploaded file from the disk
-                        if (file) {
-                            fs.unlink(file.path, (err) => {
-                                if (err) {
-                                    console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
-                                    Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
-                                }
-                            });
-                        }
-
                         if (extension === ".wam" && wamFile) {
                             uploadDetector.refresh(this.getFullUrlFromRequest(req)).catch((err) => {
                                 console.error(`[${new Date().toISOString()}]`, err);
@@ -459,11 +458,14 @@ export class UploadController {
                     if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
                         this.uploadLimiter.delete(virtualPath);
                     }
-                })().catch((e) => {
-                    console.error(`[${new Date().toISOString()}]`, e);
-                    Sentry.captureException(e);
-                    next(e);
-                });
+                })()
+                    // Every exit, the rejected and failed ones included.
+                    .finally(() => removeUploadedFile(req.file))
+                    .catch((e) => {
+                        console.error(`[${new Date().toISOString()}]`, e);
+                        Sentry.captureException(e);
+                        next(e);
+                    });
             },
         );
     }
