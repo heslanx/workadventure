@@ -4,6 +4,8 @@ import type { CowebsiteOpenedAnalyticsContext } from "../Administration/Cowebsit
 import { buildCowebsiteOpenedProperties } from "../Administration/CowebsiteAnalyticsProperties";
 import { analyticsClient } from "../Administration/AnalyticsClient";
 import { TimedEventsByKey } from "../Administration/TimedAnalyticsEvent";
+import { koncluiViewportStore } from "./KoncluiViewportStore";
+import { splitGameViewport } from "./KoncluiLayout";
 
 export function createCoWebsiteStore() {
     const { subscribe, update } = writable<Array<CoWebsite>>([]);
@@ -141,51 +143,20 @@ export const windowSize = readable({ width: window.innerWidth, height: window.in
 
 export const coWebsiteRatio = writable(0.5);
 
-export const canvasSize = derived(
-    [coWebsites, windowSize, coWebsiteRatio, fullScreenCowebsite],
-    ([$coWebsites, $windowSize, $coWebsiteRatio, $fullScreenCowebsite]) => {
-        if ($coWebsites.length === 0) {
-            return { width: window.innerWidth, height: window.innerHeight };
-        }
-        if ($fullScreenCowebsite) {
-            return {
-                width: 0,
-                height: 0,
-            };
-        }
-        if ($windowSize.width <= $windowSize.height) {
-            return {
-                width: $windowSize.width,
-                height: $windowSize.height * (1 - $coWebsiteRatio),
-            };
-        } else {
-            return {
-                width: $windowSize.width * (1 - $coWebsiteRatio),
-                height: $windowSize.height,
-            };
-        }
-    },
+const viewportLayout = derived(
+    [coWebsites, windowSize, coWebsiteRatio, fullScreenCowebsite, koncluiViewportStore],
+    ([$coWebsites, $windowSize, $coWebsiteRatio, $fullScreenCowebsite, $koncluiViewportStore]) =>
+        splitGameViewport($koncluiViewportStore ?? $windowSize, {
+            visible: $coWebsites.length > 0,
+            fullscreen: $fullScreenCowebsite,
+            ratio: $coWebsiteRatio,
+            vertical: $windowSize.width <= $windowSize.height,
+        }),
 );
 
-export const coWebsitesSize = derived(
-    [coWebsites, windowSize, coWebsiteRatio],
-    ([$coWebsites, $windowSize, $coWebsiteRatio]) => {
-        if ($coWebsites.length === 0) {
-            return { width: 0, height: 0 };
-        }
-        if ($windowSize.width <= $windowSize.height) {
-            return {
-                width: $windowSize.width,
-                height: $windowSize.height * $coWebsiteRatio,
-            };
-        } else {
-            return {
-                width: $windowSize.width * $coWebsiteRatio,
-                height: $windowSize.height,
-            };
-        }
-    },
-);
+export const canvasSize = derived(viewportLayout, ($viewportLayout) => $viewportLayout.game);
+
+export const coWebsitesSize = derived(viewportLayout, ($viewportLayout) => $viewportLayout.website);
 
 export class CoWebsiteManager {
     get verticalMode(): boolean {

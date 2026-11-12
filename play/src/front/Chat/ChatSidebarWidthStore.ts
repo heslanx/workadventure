@@ -5,6 +5,7 @@ import { localUserStore } from "../Connection/LocalUserStore";
 import { mapEditorSideBarWidthStore } from "../Components/MapEditor/MapEditorSideBarWidthStore";
 import { mapEditorModeStore } from "../Stores/MapEditorStore";
 import { sidePanelWidthStore } from "../Stores/SidePanelStore";
+import { koncluiViewportStore } from "../Stores/KoncluiViewportStore";
 
 export const chatSidebarWidthStore = writable(localUserStore.getChatSideBarWidth());
 
@@ -24,6 +25,7 @@ export const hideActionBarStoreBecauseOfChatBar = derived(
         mapEditorSideBarWidthStore,
         mapEditorModeStore,
         sidePanelWidthStore,
+        koncluiViewportStore,
     ],
     ([
         $chatVisibilityStore,
@@ -32,13 +34,14 @@ export const hideActionBarStoreBecauseOfChatBar = derived(
         $mapEditorWidthStore,
         $mapEditorModeStore,
         $sidePanelWidthStore,
+        $koncluiViewportStore,
     ]) => {
         if (!$chatVisibilityStore && !$mapEditorModeStore) {
             return false;
         }
         return (
-            $windowSize.width -
-                ($chatVisibilityStore ? $chatSidebarWidthStore : 0) -
+            ($koncluiViewportStore?.width ?? $windowSize.width) -
+                ($chatVisibilityStore && !$koncluiViewportStore ? $chatSidebarWidthStore : 0) -
                 ($mapEditorModeStore ? $mapEditorWidthStore : 0) -
                 $sidePanelWidthStore <
             285

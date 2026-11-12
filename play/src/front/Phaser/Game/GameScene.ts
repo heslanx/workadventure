@@ -75,6 +75,9 @@ import { PropertyUtils } from "../Map/PropertyUtils";
 import { analyticsClient } from "../../Administration/AnalyticsClient";
 import { stripUrlSensitiveParts } from "../../Administration/CowebsiteAnalyticsProperties";
 import { PathfindingManager, PathTileType } from "../../Utils/PathfindingManager";
+import { SeatedPoseController } from "./SeatedPoseController";
+import { ThinWallsController } from "./ThinWallsController";
+import { TileAnimationRefreshTracker } from "./TileAnimationRefreshTracker";
 import type {
     GroupCreatedUpdatedMessageInterface,
     MessageUserMovedInterface,
@@ -355,6 +358,9 @@ export class GameScene extends DirtyScene {
     private iframeSubscriptionList: Array<Subscription> = [];
     private gameMapChangedSubscription!: Subscription;
     private tileAnimationRefreshEvent: Phaser.Time.TimerEvent | undefined;
+    private readonly tileAnimationRefreshTracker = new TileAnimationRefreshTracker();
+    private readonly thinWallsController = new ThinWallsController();
+    private readonly seatedPoseController = new SeatedPoseController();
     private messageSubscription: Subscription | null = null;
     private rxJsSubscriptions: Array<Subscription> = [];
     // Player ids of remote players whose raised hand is currently shown above their woka (to diff on store updates).
@@ -1235,6 +1241,10 @@ export class GameScene extends DirtyScene {
         this.outlineManager?.clear();
         this.tileAnimationRefreshEvent?.remove(false);
         this.tileAnimationRefreshEvent = undefined;
+        this.seatedPoseController.reset(this);
+        if (this.pathfindingManager) {
+            this.thinWallsController.destroy(this.pathfindingManager);
+        }
         this.userInputManager?.destroy();
         this.isLiveStreamingUnsubscriber?.();
         this.shouldPublishScreenShareUnsubscriber?.();
@@ -1434,6 +1444,17 @@ export class GameScene extends DirtyScene {
         }
 
         this.remotePlayersRepository.reset();
+
+        if (this.CurrentPlayer && this.playerVariablesManager) {
+            this.seatedPoseController.update({
+                scene: this,
+                baseUrl: window.location.href,
+                currentPlayer: this.CurrentPlayer,
+                currentSeat: this.playerVariablesManager.variables.get("officeSeat"),
+                remoteCharacters: this.MapPlayersByKey,
+                remotePlayers: this.remotePlayersRepository.getPlayers(),
+            });
+        }
 
         // Let's handle all events
         while (this.pendingEvents.length !== 0) {
@@ -3356,6 +3377,8 @@ ${escapedMessage}
         this.iframeSubscriptionList.push(
             iframeListener.showLayerStream.subscribe((layerEvent) => {
                 this.gameMapFrontWrapper.setLayerVisibility(layerEvent.name, true);
+                this.tileAnimationRefreshTracker.reset();
+                this.rebuildThinWalls();
                 this.markDirty();
             }),
         );
@@ -3363,6 +3386,8 @@ ${escapedMessage}
         this.iframeSubscriptionList.push(
             iframeListener.hideLayerStream.subscribe((layerEvent) => {
                 this.gameMapFrontWrapper.setLayerVisibility(layerEvent.name, false);
+                this.tileAnimationRefreshTracker.reset();
+                this.rebuildThinWalls();
                 this.markDirty();
             }),
         );
@@ -3508,9 +3533,18 @@ ${escapedMessage}
         });
         this.iframeSubscriptionList.push(
             iframeListener.setTilesStream.subscribe((eventTiles) => {
+                this.tileAnimationRefreshTracker.reset();
+                let wallEdgesChanged = false;
                 for (const eventTile of eventTiles) {
-                    this.gameMapFrontWrapper.putTile(eventTile.tile, eventTile.x, eventTile.y, eventTile.layer);
+                    const changed = this.gameMapFrontWrapper.putTile(
+                        eventTile.tile,
+                        eventTile.x,
+                        eventTile.y,
+                        eventTile.layer,
+                    );
+                    wallEdgesChanged = changed || wallEdgesChanged;
                 }
+                if (wallEdgesChanged) this.rebuildThinWalls();
                 // Tiles changed by a script must repaint even when nothing else moves (the render loop
                 // skips frames until a scene is dirty; without this, script-driven tile changes only
                 // became visible on the next local player input).
@@ -3608,6 +3642,7 @@ ${escapedMessage}
                                 console.warn(`Failed to add TilesetImage ${jsonTileset.name}: ${imageUrl}`);
                             }
                             //destroy the tilemaplayer because they are unique and we need to reuse their key and layerData
+                            this.thinWallsController.destroy(this.pathfindingManager);
                             for (const layer of this.Map.layers) {
                                 layer.tilemapLayer.destroy(false);
                             }
@@ -3888,6 +3923,7 @@ ${escapedMessage}
     private configureTileAnimations(): void {
         this.tileAnimationRefreshEvent?.remove(false);
         this.tileAnimationRefreshEvent = undefined;
+        this.tileAnimationRefreshTracker.reset();
 
         this.setTileAnimationsPaused(localUserStore.getDisableAnimations());
 
@@ -3900,7 +3936,16 @@ ${escapedMessage}
             delay: refreshDelay,
             loop: true,
             callback: () => {
-                if (!localUserStore.getDisableAnimations()) {
+                if (
+                    !localUserStore.getDisableAnimations() &&
+                    this.tileAnimationRefreshTracker.shouldRedraw(
+                        this.gameMapFrontWrapper.phaserLayers,
+                        this.gameMapFrontWrapper.phaserMap.tileWidth,
+                        this.gameMapFrontWrapper.phaserMap.tileHeight,
+                        this.cameras?.main?.worldView,
+                        () => performance.now(),
+                    )
+                ) {
                     this.markDirty();
                 }
             },
@@ -4312,6 +4357,19 @@ ${escapedMessage}
             }
             //});
         }
+        this.rebuildThinWalls();
+    }
+
+    private rebuildThinWalls(): void {
+        this.thinWallsController.rebuild({
+            layers: this.gameMapFrontWrapper.phaserLayers,
+            width: this.gameMapFrontWrapper.phaserMap.width,
+            height: this.gameMapFrontWrapper.phaserMap.height,
+            tileIndex: this.gameMapFrontWrapper.getCollisionTileIndex(),
+            createLayer: (name) => this.gameMapFrontWrapper.phaserMap.createBlankLayer(name, this.Terrains),
+            addCollider: (layer) => this.physics.add.collider(this.CurrentPlayer, layer),
+            pathfinding: this.pathfindingManager,
+        });
     }
 
     private createCurrentPlayer(startPosition: PositionInterface) {

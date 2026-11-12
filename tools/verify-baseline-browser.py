@@ -1,7 +1,8 @@
-"""Observe sprite reuse and movement on the isolated local baseline."""
+"""Observe sprite reuse and movement on an isolated local production build."""
 
 import argparse
 import asyncio
+import hashlib
 import json
 import subprocess
 import time
@@ -49,6 +50,10 @@ async def run(args):
     output.mkdir(parents=True, exist_ok=True)
     report = {
         "url": args.url,
+        "probeSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "visitorTextures": args.visitor_textures,
+        "visitorCompanion": args.visitor_companion,
+        "texturePrefix": args.texture_prefix,
         "sourceHead": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
         "claim": "Functional sprite request reuse and remote movement, not a performance comparison",
         "runCount": 1,
@@ -58,7 +63,7 @@ async def run(args):
         "errors": [],
         "phases": {},
     }
-    manifest = root / ".audit/konclui-runtime/frontend-manifest.json"
+    manifest = root / args.manifest
     if manifest.exists():
         built = json.loads(manifest.read_text())
         report["builtSource"] = {key: value for key, value in built.items() if key != "files"}
@@ -67,7 +72,7 @@ async def run(args):
         browser = await playwright.chromium.launch(args=["--use-fake-device-for-media-stream"])
         contexts = []
         try:
-            async def open_player(name, textures):
+            async def open_player(name, textures, companion=None):
                 context = await browser.new_context(permissions=[], viewport={"width": 1000, "height": 840})
                 contexts.append(context)
                 page = await context.new_page()
@@ -83,6 +88,7 @@ async def run(args):
                 await page.add_init_script(
                     "localStorage.setItem('playerName', " + json.dumps(name) + ");"
                     "localStorage.setItem('characterTextures', JSON.stringify(" + json.dumps(textures) + "));"
+                    "localStorage.setItem('companion', " + json.dumps(json.dumps(companion)) + ");"
                     "localStorage.setItem('requestedCameraStateKey','false');"
                     "localStorage.setItem('requestedMicrophoneStateKey','false');"
                     "localStorage.setItem('cameraPrivacySettings','true');"
@@ -99,6 +105,8 @@ async def run(args):
             await cdp.send("Network.enable")
             await cdp.send("Network.setCacheDisabled", {"cacheDisabled": False})
             cached_requests = set()
+            revalidated_requests = set()
+            cdp.on("Network.responseReceivedExtraInfo", lambda event: revalidated_requests.add(event["requestId"]) if event["statusCode"] == 304 else None)
             cdp.on("Network.requestServedFromCache", lambda event: cached_requests.add(event["requestId"]))
 
             def response(event):
@@ -107,7 +115,7 @@ async def run(args):
                 if "/resources/" in path and path.endswith(".png"):
                     headers = {key.lower(): val for key, val in value["headers"].items()}
                     requests.append({
-                        "path": path, "status": value["status"],
+                        "path": path, "status": value["status"], "requestId": event["requestId"],
                         "diskCache": value.get("fromDiskCache", False),
                         "memoryCache": event["requestId"] in cached_requests,
                         "serviceWorker": value.get("fromServiceWorker", False),
@@ -118,8 +126,9 @@ async def run(args):
             await observer.goto(args.url, wait_until="domcontentloaded", timeout=90000)
             frame = await script_frame(observer)
             offset = len(requests)
-            textures = ["body1", "eyes1", "hair1", "clothes1", "hat1", "accessory1"]
-            visitor_context, visitor = await open_player("CacheB", textures)
+            textures = args.visitor_textures
+            expected_count = len(textures) + int(args.visitor_companion is not None)
+            visitor_context, visitor = await open_player("CacheB", textures, args.visitor_companion)
             sent_frames = []
             visitor.on("websocket", lambda socket: socket.on("framesent", lambda data: sent_frames.append({
                 "time": time.monotonic(), "bytes": len(data), "binary": isinstance(data, bytes),
@@ -129,9 +138,9 @@ async def run(args):
             before = await member(frame, "CacheB")
             await observer.screenshot(path=str(output / "two-players.png"))
             initial = list(requests[offset:])
-            custom = [item for item in initial if "/customisation/" in item["path"]]
-            assert len({item["path"] for item in custom}) == 6, f"Expected six new visitor texture layers, got {custom}"
-            assert len(custom) == 6, "Each missing layer must be fetched only once"
+            custom = [item for item in initial if item["path"].startswith(args.texture_prefix)]
+            assert len({item["path"] for item in custom}) == expected_count, f"Expected {expected_count} new visitor textures, got {custom}"
+            assert len(custom) == expected_count, "Each missing layer must be fetched only once"
             assert all(item["status"] == 200 for item in custom), "Initial sprite requests must succeed"
             report["phases"]["firstAppearance"] = {"member": before, "requests": custom}
 
@@ -154,12 +163,12 @@ async def run(args):
             contexts.remove(visitor_context)
             await member(frame, "CacheB", False)
             offset = len(requests)
-            visitor_context, visitor = await open_player("CacheB", textures)
+            visitor_context, visitor = await open_player("CacheB", textures, args.visitor_companion)
             await visitor.goto(args.url, wait_until="domcontentloaded", timeout=90000)
             await script_frame(visitor)
             returned = await member(frame, "CacheB")
             assert returned[0]["id"] != before[0]["id"], "Reappearance must be a new player session"
-            repeated = [item for item in requests[offset:] if "/customisation/" in item["path"]]
+            repeated = [item for item in requests[offset:] if item["path"].startswith(args.texture_prefix)]
             assert not repeated, f"Reappearance requested loaded texture layers: {repeated}"
             report["phases"]["reappearance"] = {"member": returned, "requests": repeated}
 
@@ -167,9 +176,11 @@ async def run(args):
             await observer.reload(wait_until="domcontentloaded", timeout=90000)
             frame = await script_frame(observer)
             await member(frame, "CacheB")
-            reloads = [item for item in requests[offset:] if "/customisation/" in item["path"]]
-            assert len(reloads) == 6, f"Expected six cached layer responses on reload, got {reloads}"
-            assert all(item["diskCache"] or item["memoryCache"] or item["serviceWorker"] for item in reloads), "Reload did not use browser cache for every sprite layer"
+            reloads = [item for item in requests[offset:] if item["path"].startswith(args.texture_prefix)]
+            assert len(reloads) == expected_count, f"Expected {expected_count} cached texture responses on reload, got {reloads}"
+            for item in reloads:
+                item["revalidated"] = item["requestId"] in revalidated_requests
+            assert all(item["diskCache"] or item["memoryCache"] or item["serviceWorker"] or item["revalidated"] for item in reloads), "Reload did not reuse or revalidate every sprite texture"
             assert all(item["cacheControl"] and "max-age=" in item["cacheControl"] for item in custom), "Missing sprite cache headers"
             report["phases"]["reload"] = {"requests": reloads}
             assert not report["errors"], f"Browser errors: {report['errors']}"
@@ -201,4 +212,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://localhost:8093/~/baseline/office.wam")
     parser.add_argument("--out", default=".audit/konclui-baseline-browser")
+    parser.add_argument("--manifest", default=".audit/konclui-runtime/frontend-manifest.json")
+    parser.add_argument("--visitor-textures", nargs="+", default=["body1", "eyes1", "hair1", "clothes1", "hat1", "accessory1"])
+    parser.add_argument("--visitor-companion")
+    parser.add_argument("--texture-prefix", default="/resources/customisation/")
     asyncio.run(run(parser.parse_args()))

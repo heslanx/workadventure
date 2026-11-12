@@ -4,7 +4,7 @@ This workflow prepares the native Konclui candidate beside the immutable upstrea
 
 ## Artifact boundary
 
-After the coordinator retrieves verified offloaded builds, retain these exact target-relative artifacts:
+After a local or offloaded production build passes verification, retain these exact target-relative artifacts:
 
 - `.local/konclui/builds/<label>/public/`: production frontend, including the iframe API and normal upstream sprite resources.
 - `.audit/konclui-runtime/<label>/{source-manifest,frontend-manifest}.json`: source fingerprint, native `KoncluiFrame.svelte` input, generated protocol hash, and complete frontend SHA-256 inventory. Preparation accepts the existing `build-snapshot.py` format or the original offload source manifest. For offload it reconstructs baseline + overlay - deletions and recomputes the recorded NUL/newline candidate fingerprint; preserve the original receipt without inventing identities.
@@ -86,6 +86,6 @@ The Compose project/network belong to `konclui-native-candidate`. The named map 
 
 ## Current verification state
 
-Preparation code and configuration are ready for review. Python AST parsing and `node --check deployment/konclui/seed-candidate.mjs` passed. These syntax checks are separate from artifact verification, Compose merge validation, volume seeding, and browser evidence. Those execution gates remain open until remote artifacts arrive and the coordinator resumes services. Local builds and service activation were deliberately not run while the Mac was under memory pressure.
+Preparation code and configuration are ready for review. Python AST parsing and `node --check deployment/konclui/seed-candidate.mjs` passed. These syntax checks are separate from artifact verification, Compose merge validation, volume seeding, and browser evidence. The clean baseline now has local production-build and browser proof. Candidate activation remains open while the reviewed source fixes are rebuilt. Earlier overnight builds were stopped during severe memory pressure; the current bounded local run is recorded in runtime.md.
 
 Preparation creates empty `resources/konclui` and `resources/konclui-pets` mountpoints in the verified frontend before mounting it read-only. This changes no frontend file bytes and allows the two custom-resource child mounts to initialize. Artifact labels accept the full offload job identifier plus its variant suffix. Independent source review identified both preparation fixes; container startup is still a separate gate.

@@ -2,6 +2,8 @@
     import { onDestroy, onMount } from "svelte";
     import type { Unsubscriber } from "svelte/store";
     import { coWebsiteRatio, coWebsites, fullScreenCowebsite } from "../../Stores/CoWebsiteStore";
+    import { koncluiViewportStore } from "../../Stores/KoncluiViewportStore";
+    import { coWebsiteRatioAtPointer } from "../../Stores/KoncluiLayout";
     import JitsiCowebsiteComponent from "../Cowebsites/JistiCowebsiteComponent.svelte";
     import SimpleCowebsiteComponent from "../Cowebsites/SimpleCowebsiteComponent.svelte";
     import ImageCowebsiteComponent from "../Cowebsites/ImageCowebsiteComponent.svelte";
@@ -43,38 +45,20 @@
     };
 
     const handleMove = (clientX: number, clientY: number) => {
-        if ($screenOrientationStore === "landscape") {
-            if (document.documentElement.dir === "rtl") {
-                // 8 is the number of pixels of the resize bar
-                if (clientX < 8) {
-                    clientX = 8;
-                }
-                if (clientX > window.innerWidth) {
-                    clientX = window.innerWidth;
-                }
-
-                coWebsiteRatio.set(clientX / window.innerWidth);
-            } else {
-                if (clientX < 0) {
-                    clientX = 0;
-                }
-                // 8 is the number of pixels of the resize bar
-                if (clientX > window.innerWidth - 8) {
-                    clientX = window.innerWidth - 8;
-                }
-                coWebsiteRatio.set((window.innerWidth - clientX) / window.innerWidth);
-            }
-        } else {
-            // 8 is the number of pixels of the resize bar
-            if (clientY < 8) {
-                clientY = 8;
-            }
-            if (clientY > window.innerHeight) {
-                clientY = window.innerHeight;
-            }
-
-            coWebsiteRatio.set(clientY / window.innerHeight);
-        }
+        const bounds = $koncluiViewportStore ?? {
+            left: 0,
+            top: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+        };
+        coWebsiteRatio.set(
+            coWebsiteRatioAtPointer(
+                bounds,
+                { x: clientX, y: clientY },
+                $screenOrientationStore === "portrait",
+                document.documentElement.dir === "rtl",
+            ),
+        );
     };
 
     const handleMouseMove = (e: MouseEvent) => {

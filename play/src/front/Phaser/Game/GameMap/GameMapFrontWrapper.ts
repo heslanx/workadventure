@@ -21,6 +21,7 @@ import type { Observable } from "rxjs";
 import { Subject } from "rxjs";
 import { Deferred } from "@workadventure/shared-utils";
 import { get } from "svelte/store";
+import { isEditorPlacementTileAvailable } from "../MapEditor/EditorPlacement";
 import { PathTileType } from "../../../Utils/PathfindingManager";
 import { getAreaMapEditors, hasMeetingProperty } from "../../../Rules/MeetingRules";
 import { extensionModuleStore } from "../../../Stores/GameSceneStore";
@@ -31,6 +32,7 @@ import type { GameScene } from "../GameScene";
 import { EntitiesManager } from "./EntitiesManager";
 import { AreasManager } from "./AreasManager";
 import { getTileLayerStats, isWorthRenderingOnGpu } from "./TilemapGpuLayerEligibility";
+import { updateScriptedTileWallEdges } from "./ScriptedTileWallEdges";
 
 import TilemapLayer = Phaser.Tilemaps.TilemapLayer;
 import TilemapGPULayer = Phaser.Tilemaps.TilemapGPULayer;
@@ -868,6 +870,10 @@ export class GameMapFrontWrapper {
         return this.phaserLayers.filter((l) => l.layer.name.includes(groupName));
     }
 
+    public getCollisionTileIndex(): number {
+        return this.existingTileIndex;
+    }
+
     public addTerrain(terrain: Tileset): void {
         for (const phaserLayer of this.phaserLayers) {
             if (this.isGpuTilemapLayer(phaserLayer)) {
@@ -877,27 +883,35 @@ export class GameMapFrontWrapper {
         }
     }
 
-    public putTile(tile: string | number | null, x: number, y: number, layer: string): void {
+    public putTile(tile: string | number | null, x: number, y: number, layer: string): boolean {
         const phaserLayer = this.findPhaserLayer(layer);
         if (phaserLayer) {
+            const previous = phaserLayer.layer.data[y]?.[x];
+            const previousEdges = previous && previous.index !== -1 ? previous.properties.wallEdges : undefined;
+            let wallEdgesChanged = false;
             if (tile === null) {
-                phaserLayer.putTileAt(-1, x, y);
+                const phaserTile = phaserLayer.putTileAt(-1, x, y);
+                if (phaserTile !== null) {
+                    wallEdgesChanged = updateScriptedTileWallEdges(phaserTile, [], previousEdges);
+                }
             } else {
                 const tileIndex = this.gameMap.getIndexForTileType(tile);
                 if (tileIndex === undefined) {
                     console.error("The tile '" + tile + "' that you want to place doesn't exist.");
-                    return;
+                    return false;
                 }
                 if (this.isGpuTilemapLayer(phaserLayer) && !phaserLayer.tileset.containsTileIndex(tileIndex)) {
                     console.warn(
                         `Cannot place tile ${tileIndex} on GPU tile layer "${layer}" because it belongs to another tileset.`,
                     );
-                    return;
+                    return false;
                 }
                 this.gameMap.putTileInFlatLayer(tileIndex, x, y, layer);
                 const phaserTile = phaserLayer.putTileAt(tileIndex, x, y);
                 if (phaserTile !== null) {
-                    for (const property of this.gameMap.getTileProperty(tileIndex)) {
+                    const properties = this.gameMap.getTileProperty(tileIndex);
+                    wallEdgesChanged = updateScriptedTileWallEdges(phaserTile, properties, previousEdges);
+                    for (const property of properties) {
                         if (property.name === GameMapProperties.COLLIDES && property.value) {
                             phaserTile.setCollision(true);
                         }
@@ -908,8 +922,10 @@ export class GameMapFrontWrapper {
                 phaserLayer.generateLayerDataTexture();
             }
             this.invalidateCollisionGrid({ modifiedLayer: phaserLayer });
+            return wallEdgesChanged;
         } else {
             console.error("The layer '" + layer + "' does not exist (or is not a tilelaye).");
+            return false;
         }
     }
 
@@ -1048,7 +1064,7 @@ export class GameMapFrontWrapper {
         if (yIndex >= height || yIndex < 0 || xIndex >= width || xIndex < 0) {
             return false;
         }
-        if (this.collisionGrid[yIndex][xIndex] !== 0) {
+        if (!isEditorPlacementTileAvailable(this.collisionGrid[yIndex][xIndex])) {
             return false;
         }
         return true;

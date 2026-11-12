@@ -17,6 +17,7 @@
     import { showModalGlobalComminucationVisibilityStore } from "../Stores/ModalStore";
     import { draggingFile } from "../Stores/FileUploadStore";
     import ChatSidebar from "../Chat/ChatSidebar.svelte";
+    import { koncluiShellActiveStore } from "../Stores/KoncluiShellStore";
     import LoginScene from "./Login/LoginScene.svelte";
     import MainLayout from "./MainLayout.svelte";
     import SelectCompanionScene from "./SelectCompanion/SelectCompanionScene.svelte";
@@ -91,7 +92,9 @@
         <RefreshPrompt />
     {/if}
     {#key $forceRefreshChatStore}
-        <ChatSidebar />
+        {#if !$koncluiShellActiveStore}
+            <ChatSidebar />
+        {/if}
         {#if $mapEditorModeStore}
             <MapEditor />
         {/if}

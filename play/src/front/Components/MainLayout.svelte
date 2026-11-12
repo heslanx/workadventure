@@ -45,9 +45,11 @@
     import type { WorkAdventureComponent } from "../../types/component";
     import { LL } from "../../i18n/i18n-svelte";
     import { sidePanelWidthStore } from "../Stores/SidePanelStore";
+    import { koncluiShellActiveStore } from "../Stores/KoncluiShellStore";
     import { mapEditorSideBarWidthStore } from "./MapEditor/MapEditorSideBarWidthStore";
     import { calendarRemindersStore, startCalendarReminders } from "./Calendar/CalendarReminder";
     import ActionBar from "./ActionBar/ActionBar.svelte";
+    import KoncluiDock from "./Konclui/KoncluiDock.svelte";
     import ActionBarButton from "./ActionBar/ActionBarButton.svelte";
 
     import HelpWebRtcSettingsPopup from "./HelpSettings/HelpWebRtcSettingsPopup.svelte";
@@ -190,7 +192,7 @@
         stopCalendarReminders?.();
     });
 
-    let marginLeft = $derived($chatVisibilityStore ? $chatSidebarWidthStore : 0);
+    let marginLeft = $derived($chatVisibilityStore && !$koncluiShellActiveStore ? $chatSidebarWidthStore : 0);
     let mapEditorPanelVisible = $derived(
         $mapEditorVisibilityStore && $mapEditorSelectedToolStore !== EditorToolName.WAMSettingsEditor,
     );
@@ -347,7 +349,7 @@
 
     <AudioPlayer />
 
-    <div class="flex min-h-full flex-col-reverse mobile:flex-col">
+    <div class="flex min-h-full flex-col-reverse mobile:flex-col" class:konclui-layout={$koncluiShellActiveStore}>
         <section id="main-layout-main" class="pb-0 flex-1 pointer-events-none h-full w-full relative">
             <div class="fixed z-[1000] bottom-0 start-0 right-0 m-auto w-max mobile:w-[98vw] md:max-w-[80%]">
                 <div class="popups flex items-end relative w-full justify-center mobile:mb-24 mb-4 h-[calc(100%-96px)]">
@@ -486,11 +488,20 @@
         <div class="">
             <!--<ActionBar />-->
         </div>
-        <ActionBar />
+        {#if $koncluiShellActiveStore}
+            <KoncluiDock />
+        {:else}
+            <ActionBar />
+        {/if}
     </div>
 </div>
 
 <style>
+    .konclui-layout {
+        position: relative;
+        height: 100%;
+    }
+
     .popups {
         z-index: 1000;
         .popupwrapper {

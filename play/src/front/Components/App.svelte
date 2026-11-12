@@ -35,6 +35,7 @@
     import { isStructuredCloneSupported } from "../Utils/BrowserCompatibility";
     import { gameSceneIsLoadedStore } from "../Stores/GameSceneStore";
     import GameOverlay from "./GameOverlay.svelte";
+    import KoncluiFrame from "./Konclui/KoncluiFrame.svelte";
     import CoWebsitesContainer from "./EmbedScreens/CoWebsitesContainer.svelte";
     import BrowserNotSupported from "./BrowserNotSupported/BrowserNotSupported.svelte";
 
@@ -279,36 +280,38 @@
 {#if browserNotSupported}
     <BrowserNotSupported />
 {:else}
-    <div
-        class="h-dvh w-dvw flex landscape:flex-row portrait:flex-col-reverse"
-        id="main-container"
-        bind:this={gameContainer}
-    >
+    <KoncluiFrame>
         <div
-            id="game"
-            class="relative {$fullScreenCowebsite ? 'hidden' : ''}"
-            class:game-scene-loaded={$gameSceneIsLoadedStore}
-            bind:this={gameDiv}
+            class="h-full w-full flex landscape:flex-row portrait:flex-col-reverse"
+            id="main-container"
+            bind:this={gameContainer}
         >
-            {#if game}
-                <GameOverlay {game} />
+            <div
+                id="game"
+                class="relative {$fullScreenCowebsite ? 'hidden' : ''}"
+                class:game-scene-loaded={$gameSceneIsLoadedStore}
+                bind:this={gameDiv}
+            >
+                {#if game}
+                    <GameOverlay {game} />
+                {/if}
+            </div>
+            {#if $coWebsites.length > 0}
+                <div class="flex-1">
+                    <!-- Transitions are breaking the onDestroy lifecycle of cowebsites -->
+                    <!--            transition:fly={{-->
+                    <!--            duration: 200,-->
+                    <!--            x:-->
+                    <!--                $screenOrientationStore === "portrait"-->
+                    <!--                    ? 0-->
+                    <!--                    : document.documentElement.dir === "rtl"-->
+                    <!--                        ? -$coWebsitesSize.width-->
+                    <!--                        : $coWebsitesSize.width,-->
+                    <!--            y: $screenOrientationStore === "portrait" ? -$coWebsitesSize.height : 0,-->
+                    <!--        }}-->
+                    <CoWebsitesContainer />
+                </div>
             {/if}
         </div>
-        {#if $coWebsites.length > 0}
-            <div class="flex-1">
-                <!-- Transitions are breaking the onDestroy lifecycle of cowebsites -->
-                <!--            transition:fly={{-->
-                <!--            duration: 200,-->
-                <!--            x:-->
-                <!--                $screenOrientationStore === "portrait"-->
-                <!--                    ? 0-->
-                <!--                    : document.documentElement.dir === "rtl"-->
-                <!--                        ? -$coWebsitesSize.width-->
-                <!--                        : $coWebsitesSize.width,-->
-                <!--            y: $screenOrientationStore === "portrait" ? -$coWebsitesSize.height : 0,-->
-                <!--        }}-->
-                <CoWebsitesContainer />
-            </div>
-        {/if}
-    </div>
+    </KoncluiFrame>
 {/if}

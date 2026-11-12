@@ -8,6 +8,8 @@
     import { chatSidebarWidthStore, hideActionBarStoreBecauseOfChatBar } from "./ChatSidebarWidthStore";
     import { IconX } from "@wa-icons";
 
+    let { embedded = false }: { embedded?: boolean } = $props();
+    let embeddedWidth = $state(290);
     let container: HTMLElement | undefined = $state();
 
     function closeChat() {
@@ -78,11 +80,11 @@
     };
 
     $effect(() => {
-        chatSidebarWidthStore.set(sideBarWidth);
+        if (!embedded) chatSidebarWidthStore.set(sideBarWidth);
     });
 
     const onresize = () => {
-        if (isChatSidebarLargerThanWindow() && container) {
+        if (!embedded && isChatSidebarLargerThanWindow() && container) {
             sideBarWidth = document.documentElement.clientWidth;
             chatSidebarWidthStore.set(sideBarWidth);
         }
@@ -101,18 +103,21 @@
 {#if $chatVisibilityStore}
     <section
         bind:this={container}
+        bind:clientWidth={embeddedWidth}
+        class:embedded
         id="chat"
         data-testid="chat"
-        transition:fly={{ duration: 200, x: isRTL ? sideBarWidth : -sideBarWidth }}
-        style="width: {sideBarWidth}px; max-width: {sideBarWidth}px;"
+        transition:fly={{ duration: embedded ? 0 : 200, x: embedded ? 0 : isRTL ? sideBarWidth : -sideBarWidth }}
+        style={embedded ? undefined : `width: ${sideBarWidth}px; max-width: ${sideBarWidth}px;`}
         {@attach blocker}
         class=" chatWindow !min-w-[150px] max-sm:!min-w-[150px] bg-contrast/50 backdrop-blur-md p-0"
     >
-        {#if $hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion}
+        {#if embedded || ($hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion)}
             <div class="close-window absolute end-2 top-3 rounded-sm p-1 bg-contrast/80 z-50">
                 <button
                     class="hover:bg-white/10 rounded aspect-square w-8 h-8 m-0 flex items-center justify-center !text-white"
                     data-testid="closeChatButton"
+                    aria-label="Fechar conversa"
                     onclick={closeChat}
                 >
                     <IconX font-size="20" />
@@ -120,19 +125,29 @@
             </div>
         {/if}
 
-        <Chat {sideBarWidth} />
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-            class="!absolute !end-1 !top-0 !bottom-0 !m-auto !w-1 !h-32 !bg-white !rounded !cursor-col-resize select-none"
-            id="resize-bar"
-            onmousedown={handleMousedown}
-            ondblclick={handleDbClick}
-            ontouchstart={handleTouchStart}
-        ></div>
+        <Chat sideBarWidth={embedded ? embeddedWidth : sideBarWidth} />
+        {#if !embedded}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+                class="!absolute !end-1 !top-0 !bottom-0 !m-auto !w-1 !h-32 !bg-white !rounded !cursor-col-resize select-none"
+                id="resize-bar"
+                onmousedown={handleMousedown}
+                ondblclick={handleDbClick}
+                ontouchstart={handleTouchStart}
+            ></div>
+        {/if}
     </section>
 {/if}
 
 <style>
+    .chatWindow.embedded {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        background: var(--office-card);
+        backdrop-filter: none;
+    }
     @media only screen and (max-width: 767px) {
         .chatWindow {
             width: 100% !important;

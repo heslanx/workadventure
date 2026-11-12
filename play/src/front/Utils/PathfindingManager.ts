@@ -11,6 +11,34 @@ export enum PathTileType {
     PersonalDesk = 5,
 }
 
+export type DirectionalPathfindingDirection =
+    | "TOP"
+    | "TOP_RIGHT"
+    | "RIGHT"
+    | "BOTTOM_RIGHT"
+    | "BOTTOM"
+    | "BOTTOM_LEFT"
+    | "LEFT"
+    | "TOP_LEFT";
+
+interface DirectionalEasyStar {
+    setDirectionalCondition(x: number, y: number, allowedDirections: DirectionalPathfindingDirection[]): void;
+    removeAllDirectionalConditions(): void;
+}
+
+function isDirectionalEasyStar(value: unknown): value is DirectionalEasyStar {
+    if (typeof value !== "object" || value === null) {
+        return false;
+    }
+
+    return (
+        "setDirectionalCondition" in value &&
+        typeof value.setDirectionalCondition === "function" &&
+        "removeAllDirectionalConditions" in value &&
+        typeof value.removeAllDirectionalConditions === "function"
+    );
+}
+
 export class PathfindingManager {
     private easyStar: EasyStar;
     private grid: number[][];
@@ -38,10 +66,32 @@ export class PathfindingManager {
     }
 
     /**
+     * Restrict entry to a tile by the source tile's direction, without making it unwalkable.
+     */
+    public setDirectionalCondition(x: number, y: number, allowedDirections: DirectionalPathfindingDirection[]): void {
+        this.getDirectionalEasyStar().setDirectionalCondition(x, y, allowedDirections);
+    }
+
+    /**
+     * Remove map-specific edge restrictions before rebuilding them or leaving the scene.
+     */
+    public clearDirectionalConditions(): void {
+        this.getDirectionalEasyStar().removeAllDirectionalConditions();
+    }
+
+    /**
      * Clean up any ongoing pathfinding operations
      */
     public cleanup(): void {
         this.cancelCurrentPathfinding();
+    }
+
+    private getDirectionalEasyStar(): DirectionalEasyStar {
+        const easyStar: unknown = this.easyStar;
+        if (!isDirectionalEasyStar(easyStar)) {
+            throw new Error("EasyStar does not support directional path conditions");
+        }
+        return easyStar;
     }
 
     public async findPathFromGameCoordinates(

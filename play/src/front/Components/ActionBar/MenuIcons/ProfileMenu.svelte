@@ -12,6 +12,8 @@
     import Woka from "../../Woka/WokaFromUserId.svelte";
     import ProfileMenuContent from "./ProfileMenuContent.svelte";
 
+    let { showContextualMenuItems }: { showContextualMenuItems?: boolean } = $props();
+
     const PROFILE_MENU_Z_INDEX = 1100;
 
     let userName = gameManager.getPlayerName() || "";
@@ -36,8 +38,9 @@
             ProfileMenuContent,
             {
                 showContextualMenuItems:
-                    contextualMenuItemsMarker !== undefined &&
-                    getComputedStyle(contextualMenuItemsMarker).display !== "none",
+                    showContextualMenuItems ??
+                    (contextualMenuItemsMarker !== undefined &&
+                        getComputedStyle(contextualMenuItemsMarker).display !== "none"),
             },
             {
                 placement: "bottom-end",
