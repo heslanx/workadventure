@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     CpuTracker,
     type CpuCapacity,
-    parseCgroupMount,
+    parseCgroupMounts,
     parseCgroupV1CfsQuota,
     parseCgroupV1CpuPath,
     parseCgroupV2CpuMax,
@@ -34,8 +34,8 @@ const DOCKER_V1_CPU = "/sys/fs/cgroup/cpu,cpuacct";
 const ONE_CORE_REFERENCE: CpuCapacity = { cores: 1, source: "no cgroup CPU quota, one-core reference" };
 
 const WA_SERVICE = "0::/system.slice/wa.service\n";
-const mountRootedAt = (root: string): string =>
-    `1673 1627 0:28 ${root} /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
+const mountRootedAt = (root: string, mountPoint = "/sys/fs/cgroup"): string =>
+    `1673 1627 0:28 ${root} ${mountPoint} ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
 
 // Probed in Docker containers with --cpus 0.5 on a cgroup v2 host (Linux 6.8). The kernel renders the path in
 // /proc/self/cgroup and the cgroup mount root in /proc/self/mountinfo relative to the reader's cgroup namespace root.
@@ -214,20 +214,37 @@ describe("CpuTracker", () => {
         });
     });
 
-    describe("parseCgroupMount", () => {
+    describe("parseCgroupMounts", () => {
         it("should find the mount of the v1 cpu controller and its root", () => {
-            expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v1")).toEqual({
-                root: "/docker/abc",
-                mountPoint: DOCKER_V1_CPU,
-            });
-            expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v2")).toBeUndefined();
+            expect(parseCgroupMounts(DOCKER_V1_MOUNTINFO, "v1")).toEqual([
+                { root: "/docker/abc", mountPoint: DOCKER_V1_CPU },
+            ]);
+            expect(parseCgroupMounts(DOCKER_V1_MOUNTINFO, "v2")).toEqual([]);
         });
 
         it("should find the cgroup2 mount and decode octal escapes", () => {
             const mountinfo =
                 "30 23 0:26 / /run/my\\040cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 cgroup2 rw\n";
-            expect(parseCgroupMount(mountinfo, "v2")).toEqual({ root: "/", mountPoint: "/run/my cgroup" });
-            expect(parseCgroupMount(mountinfo, "v1")).toBeUndefined();
+            expect(parseCgroupMounts(mountinfo, "v2")).toEqual([{ root: "/", mountPoint: "/run/my cgroup" }]);
+            expect(parseCgroupMounts(mountinfo, "v1")).toEqual([]);
+        });
+
+        it("should return every mount of the hierarchy in the order listed", () => {
+            const v2 = mountRootedAt("/system.slice/other.service") + mountRootedAt("/", "/mnt/cgroup");
+            expect(parseCgroupMounts(v2, "v2")).toEqual([
+                { root: "/system.slice/other.service", mountPoint: "/sys/fs/cgroup" },
+                { root: "/", mountPoint: "/mnt/cgroup" },
+            ]);
+            const v1 = [
+                "1278 1276 0:27 /docker/other /sys/fs/cgroup/cpu,cpuacct ro - cgroup cgroup rw,cpu,cpuacct",
+                "1279 1276 0:28 /docker/abc /sys/fs/cgroup/cpuset ro - cgroup cgroup rw,cpuset",
+                "1280 1276 0:27 /docker/abc /mnt/cpu ro - cgroup cgroup rw,cpu,cpuacct",
+                "",
+            ].join("\n");
+            expect(parseCgroupMounts(v1, "v1")).toEqual([
+                { root: "/docker/other", mountPoint: "/sys/fs/cgroup/cpu,cpuacct" },
+                { root: "/docker/abc", mountPoint: "/mnt/cpu" },
+            ]);
         });
     });
 
@@ -482,6 +499,67 @@ describe("CpuTracker", () => {
             expect(readCpuCapacity(fakeCgroup(files))).toEqual({
                 cores: 0.2,
                 source: `cgroup v1 ${v1Cpu}/x/cpu.cfs_quota_us (quota 0.2 cores)`,
+            });
+        });
+    });
+
+    describe("several mounts of one cgroup hierarchy", () => {
+        const sibling = mountRootedAt("/system.slice/other.service");
+        const wholeHierarchy = mountRootedAt("/", "/mnt/cgroup");
+        const processOnly = mountRootedAt("/system.slice/wa.service", "/mnt/self");
+        const mountOrders = [
+            { order: "the sibling first", mounts: sibling + wholeHierarchy },
+            { order: "the sibling last", mounts: wholeHierarchy + sibling },
+        ];
+
+        it.each(mountOrders)(
+            "should read a valid mount listed after a mount rooted at a sibling ($order)",
+            ({ mounts }) => {
+                const files = {
+                    [PROC_SELF_CGROUP]: WA_SERVICE,
+                    [PROC_SELF_MOUNTINFO]: mounts,
+                    "/mnt/cgroup/system.slice/wa.service/cpu.max": "20000 100000\n",
+                    [V2_CPU_MAX]: "10000 100000\n",
+                };
+                expect(readCpuCapacity(fakeCgroup(files))).toEqual({
+                    cores: 0.2,
+                    source: "cgroup v2 /mnt/cgroup/system.slice/wa.service/cpu.max (quota 0.2 cores)",
+                });
+            },
+        );
+
+        it.each([
+            { order: "the mount of the whole hierarchy first", mounts: wholeHierarchy + processOnly },
+            { order: "the mount of the process cgroup first", mounts: processOnly + wholeHierarchy },
+        ])("should take the tightest quota over two valid mounts ($order)", ({ mounts }) => {
+            const files = {
+                [PROC_SELF_CGROUP]: WA_SERVICE,
+                [PROC_SELF_MOUNTINFO]: mounts,
+                "/mnt/self/cpu.max": "50000 100000\n",
+                "/mnt/cgroup/system.slice/wa.service/cpu.max": "50000 100000\n",
+                "/mnt/cgroup/system.slice/cpu.max": "30000 100000\n",
+            };
+            expect(readCpuCapacity(fakeCgroup(files))).toEqual({
+                cores: 0.3,
+                source: "cgroup v2 /mnt/cgroup/system.slice/cpu.max (quota 0.3 cores)",
+            });
+        });
+
+        it("should read a valid cgroup v1 mount listed after a mount rooted at a sibling", () => {
+            const v1Mount = (root: string, mountPoint: string): string =>
+                `1278 1276 0:27 ${root} ${mountPoint} ro,nosuid,nodev,noexec,relatime - cgroup cgroup rw,cpu,cpuacct\n`;
+            const files = {
+                [PROC_SELF_CGROUP]: "4:cpu,cpuacct:/docker/abc\n",
+                [PROC_SELF_MOUNTINFO]:
+                    v1Mount("/docker/other", "/sys/fs/cgroup/cpu,cpuacct") + v1Mount("/docker/abc", "/mnt/cpu"),
+                "/mnt/cpu/cpu.cfs_quota_us": "20000\n",
+                "/mnt/cpu/cpu.cfs_period_us": "100000\n",
+                "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us": "10000\n",
+                "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us": "100000\n",
+            };
+            expect(readCpuCapacity(fakeCgroup(files))).toEqual({
+                cores: 0.2,
+                source: "cgroup v1 /mnt/cpu/cpu.cfs_quota_us (quota 0.2 cores)",
             });
         });
     });

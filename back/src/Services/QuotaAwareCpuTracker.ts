@@ -95,10 +95,12 @@ function unescapeMountinfo(field: string): string {
 }
 
 /**
- * Parses `/proc/self/mountinfo` and returns the first mount of the hierarchy that holds the cpu controller: the
- * cgroup2 mount for v2, a cgroup mount with the cpu option for v1.
+ * Parses `/proc/self/mountinfo` and returns every mount of the hierarchy that holds the cpu controller, in the order
+ * listed: the cgroup2 mounts for v2, the cgroup mounts with the cpu option for v1. Each mount is a view of the same
+ * hierarchy, rooted at its own cgroup.
  */
-export function parseCgroupMount(content: string, version: CgroupVersion): CgroupMount | undefined {
+export function parseCgroupMounts(content: string, version: CgroupVersion): CgroupMount[] {
+    const mounts: CgroupMount[] = [];
     for (const line of content.split("\n")) {
         const separator = line.indexOf(" - ");
         if (separator === -1) {
@@ -111,10 +113,10 @@ export function parseCgroupMount(content: string, version: CgroupVersion): Cgrou
                 ? fsType === "cgroup2"
                 : fsType === "cgroup" && (superOptions ?? "").split(",").includes("cpu");
         if (mountFields.length >= 5 && holdsCpu) {
-            return { root: unescapeMountinfo(mountFields[3]), mountPoint: unescapeMountinfo(mountFields[4]) };
+            mounts.push({ root: unescapeMountinfo(mountFields[3]), mountPoint: unescapeMountinfo(mountFields[4]) });
         }
     }
-    return undefined;
+    return mounts;
 }
 
 /**
@@ -226,22 +228,25 @@ const CGROUP_HIERARCHIES: readonly CgroupHierarchy[] = [
 
 /**
  * Reads the effective CPU quota of the process in cores: the tightest quota of the process cgroup and its ancestors up
- * to the mounted root, in the cgroup v2 hierarchy and in the cgroup v1 hierarchy holding the cpu controller. The paths
- * come from `/proc/self/cgroup` and `/proc/self/mountinfo`.
+ * to the mounted root, in the cgroup v2 hierarchy and in the cgroup v1 hierarchy holding the cpu controller. Every
+ * listed mount of a hierarchy is read, because each directory a listed mount yields is the process cgroup or one of
+ * its ancestors, so every quota found through it is a real constraint. The paths come from `/proc/self/cgroup` and
+ * `/proc/self/mountinfo`. When mountinfo lists no mount of a hierarchy, the default mount point is assumed to be
+ * rooted at `/`. Any mount at that path would be listed, so this assumption is unproven only when mountinfo is
+ * unreadable, where it keeps the earlier behavior of reading the default mount point.
  * Returns undefined when no quota applies (no cgroup files, unlimited quotas or malformed content).
  */
 export function readCgroupCpuQuota(readFile: ReadOptionalFile): CpuCapacity | undefined {
     const procSelfCgroup = readFile(PROC_SELF_CGROUP) ?? "";
     const mountinfo = readFile(PROC_SELF_MOUNTINFO) ?? "";
     const quotas = CGROUP_HIERARCHIES.flatMap((hierarchy) => {
-        const mount = parseCgroupMount(mountinfo, hierarchy.version) ?? {
-            root: "/",
-            mountPoint: hierarchy.defaultMountPoint,
-        };
+        const listedMounts = parseCgroupMounts(mountinfo, hierarchy.version);
+        const mounts =
+            listedMounts.length > 0 ? listedMounts : [{ root: "/", mountPoint: hierarchy.defaultMountPoint }];
         // Without an entry in /proc/self/cgroup the process is taken to be at the namespace root.
         const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "/";
-        return cgroupDirectories(mount, cgroupPath).flatMap(
-            (directory) => hierarchy.readQuota(readFile, directory) ?? [],
+        return mounts.flatMap((mount) =>
+            cgroupDirectories(mount, cgroupPath).flatMap((directory) => hierarchy.readQuota(readFile, directory) ?? []),
         );
     });
     return quotas.reduce<CpuCapacity | undefined>(
