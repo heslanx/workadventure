@@ -323,7 +323,8 @@ export class GameScene extends DirtyScene {
     wamUrlFile?: string;
     roomUrl: string;
     currentTick!: number;
-    lastSentTick!: number; // The last tick at which a position was sent.
+    // The last tick at which a position was sent. Minus infinity until then, so the first move is always sent.
+    lastSentTick = Number.NEGATIVE_INFINITY;
     lastMoveEventSent: HasPlayerMovedInterface = {
         direction: PositionMessage_Direction.DOWN,
         moving: false,

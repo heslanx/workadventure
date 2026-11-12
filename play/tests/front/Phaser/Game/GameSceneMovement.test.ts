@@ -147,19 +147,25 @@ describe("GameScene position sharing (pushPlayerPosition)", () => {
         expect(hasPlayerMoved).toHaveBeenCalledTimes(5);
     });
 
-    // GS-01 (pinned bug): lastSentTick is undefined until the first send, so "currentTick - lastSentTick" is NaN.
-    // A first walk heading DOWN, the placeholder's direction, is not shared until the player turns or stops.
-    it("GS-01: does not share a first walk heading DOWN until the player turns or stops", () => {
+    // GS-01 (fixed): a first walk heading DOWN, the placeholder's direction, used to stay unshared until the player
+    // turned or stopped, because "currentTick - lastSentTick" was NaN before the first send.
+    it("GS-01: shares a first walk heading DOWN like any other walk", () => {
         const { internals, shared } = createScene();
         for (let tick = 10_000; tick <= 10_600; tick += 100) {
             internals.currentTick = tick;
             internals.pushPlayerPosition(move(tick - 10_000, PositionMessage_Direction.DOWN));
         }
-        expect(shared()).toEqual([]);
+        expect(shared()).toEqual([
+            { x: 0, direction: PositionMessage_Direction.DOWN, moving: true },
+            { x: 200, direction: PositionMessage_Direction.DOWN, moving: true },
+            { x: 400, direction: PositionMessage_Direction.DOWN, moving: true },
+            { x: 600, direction: PositionMessage_Direction.DOWN, moving: true },
+        ]);
 
         internals.currentTick = 10_700;
         internals.pushPlayerPosition(move(700, PositionMessage_Direction.DOWN, false));
-        expect(shared()).toEqual([{ x: 700, direction: PositionMessage_Direction.DOWN, moving: false }]);
+        expect(shared()).toHaveLength(5);
+        expect(shared()[4]).toEqual({ x: 700, direction: PositionMessage_Direction.DOWN, moving: false });
     });
 });
 
