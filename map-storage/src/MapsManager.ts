@@ -58,12 +58,12 @@ class MapsManager {
     private readonly writesInFlight = new Map<string, Set<Promise<void>>>();
 
     /**
-     * Replacements of stored maps that started and have not finished, per map. Loading such a map waits for
-     * them: a copy loaded before the replacement is the old map, and its next write would restore it.
+     * Replacements of stored maps that dropped their maps and have not finished, per map. Loading such a map
+     * waits for them: a copy loaded before the replacement is the old map, and its next write would restore it.
      */
     private readonly replacementsInProgress = new Map<string, Set<Promise<void>>>();
 
-    /** Number of replacements ever started, so a load can tell that one started while it was reading. */
+    /** Number of replacements that ever dropped their maps, so a load can tell that one did while it was reading. */
     private replacementsStarted = 0;
 
     private readonly editionLocks = new LockByKey<string>(
@@ -215,7 +215,8 @@ class MapsManager {
         this.loadedMaps.delete(key);
         this.loadedMapsCommandsQueue.delete(key);
         // The in-memory map is obsolete: no further write of it may start. A write already handed to
-        // the storage cannot be cancelled: its completion is ignored, and replaceStoredMaps waits for it.
+        // the storage cannot be cancelled: its completion is ignored. replaceStoredMaps calls this only once
+        // no write of the map is in flight.
         const saveState = this.mapSaveStates.get(key);
         if (saveState) {
             clearTimeout(saveState.timer);
@@ -225,15 +226,28 @@ class MapsManager {
 
     /**
      * Deletes or replaces the stored files of maps, `replace` doing it. A write already handed to storage
-     * cannot be cancelled, and one landing after `replace` would restore the old map. So this drops the
-     * in-memory maps, holds back their loads, waits until none of their writes is in flight, then runs
-     * `replace`. When a write is still in flight after REPLACEMENT_WAIT_MS, `replace` does not run: storage
-     * is left unchanged and the caller must reject the request.
+     * cannot be cancelled, and one landing after `replace` would restore the old map. So this waits until
+     * none of their writes is in flight, then drops the in-memory maps, holds back their loads and runs
+     * `replace`. When a write is still in flight after REPLACEMENT_WAIT_MS, `replace` does not run and the
+     * maps stay loaded: storage is left unchanged, the next autosave stores their edits, and the caller
+     * must reject the request.
      */
     public async replaceStoredMaps(
         keys: readonly string[],
         replace: () => Promise<void>,
     ): Promise<"replaced" | "writesInFlight"> {
+        if (!(await this.writesSettle(keys, Date.now() + this.REPLACEMENT_WAIT_MS))) {
+            const busyKeys = keys.filter((key) => this.writesInFlight.has(key));
+            const message = `A write of map ${busyKeys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete or upload is rejected, storage is left unchanged`;
+            console.error(`[${new Date().toISOString()}] ${message}`);
+            Sentry.captureException(new Error(message), {
+                tags: { location: "replaceStoredMaps" },
+                extra: { keys: busyKeys },
+            });
+            return "writesInFlight";
+        }
+        // No write of these maps starts before they are dropped: a write starts only from a timer
+        // (scheduleSave), and none runs between the last check of writesSettle and this line.
         let finish = (): void => undefined;
         const replacement = new Promise<void>((resolve) => {
             finish = resolve;
@@ -244,16 +258,6 @@ class MapsManager {
             this.clearAfterUpload(key);
         }
         try {
-            if (!(await this.writesSettle(keys, Date.now() + this.REPLACEMENT_WAIT_MS))) {
-                const busyKeys = keys.filter((key) => this.writesInFlight.has(key));
-                const message = `A write of map ${busyKeys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete or upload is rejected, storage is left unchanged`;
-                console.error(`[${new Date().toISOString()}] ${message}`);
-                Sentry.captureException(new Error(message), {
-                    tags: { location: "replaceStoredMaps" },
-                    extra: { keys: busyKeys },
-                });
-                return "writesInFlight";
-            }
             await replace();
             return "replaced";
         } finally {
@@ -278,7 +282,7 @@ class MapsManager {
         if (!settled) {
             return false;
         }
-        // Checked again rather than trusting the first snapshot: a write may have started meanwhile.
+        // Checked again rather than trusting the first snapshot: an edit made meanwhile can start a write.
         return this.writesSettle(keys, deadline);
     }
 
