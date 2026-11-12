@@ -685,8 +685,6 @@
         beginProgrammaticScroll("resync");
         target.scrollIntoView({ block: "center", behavior: "smooth" });
         target.classList.remove("highlight-message");
-        // // Force the highlight animation to restart when the same poll is clicked again.
-        // target.offsetWidth;
         target.classList.add("highlight-message");
     }
 </script>
