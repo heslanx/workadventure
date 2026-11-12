@@ -51,6 +51,21 @@ class MapsManager {
 
     private mapSaveStates: Map<string, MapSaveState>;
 
+    /**
+     * Writes handed to storage that have not settled, per map. Kept apart from the save states: a write
+     * outlives its state when it times out or when the map is cleared, and can still land.
+     */
+    private readonly writesInFlight = new Map<string, Set<Promise<void>>>();
+
+    /**
+     * Replacements of stored maps that started and have not finished, per map. Loading such a map waits for
+     * them: a copy loaded before the replacement is the old map, and its next write would restore it.
+     */
+    private readonly replacementsInProgress = new Map<string, Set<Promise<void>>>();
+
+    /** Number of replacements ever started, so a load can tell that one started while it was reading. */
+    private replacementsStarted = 0;
+
     private readonly editionLocks = new LockByKey<string>(
         (error, key, timeoutMs) => {
             Sentry.captureException(error, {
@@ -93,6 +108,12 @@ class MapsManager {
      * attempts (every 5 minutes at the autosave interval), not on every attempt of every dirty map.
      */
     private readonly SAVE_FAILURE_LOG_EVERY_ATTEMPTS: number = 20;
+    /**
+     * How long a delete or an upload of a map waits for the writes of that map in flight before it is
+     * rejected. Below the 100 s origin timeout of Cloudflare, which production sits behind, so the client
+     * receives the rejection rather than a proxy timeout while the request still waits.
+     */
+    private readonly REPLACEMENT_WAIT_MS: number = 60 * 1000;
 
     constructor() {
         this.loadedMaps = new Map<string, WamFile>();
@@ -164,7 +185,23 @@ class MapsManager {
     }
 
     public async loadWAMToMemory(key: string): Promise<WamFile> {
+        const replacements = this.replacementsInProgress.get(key);
+        if (replacements !== undefined) {
+            await Promise.allSettled(replacements);
+            return this.loadWAMToMemory(key);
+        }
+        const replacementsStartedBeforeRead = this.replacementsStarted;
         const file = await fileSystem.readFileAsString(key);
+        if (this.replacementsStarted !== replacementsStartedBeforeRead) {
+            // A replacement started during the read, which may have returned the old map.
+            return this.loadWAMToMemory(key);
+        }
+        // A concurrent load, such as one that waited for the same replacement, may have finished first. Its
+        // callers may already have edited that copy, so it stays the loaded one.
+        const loaded = this.loadedMaps.get(key);
+        if (loaded !== undefined) {
+            return loaded;
+        }
         const wam = WAMFileFormat.parse(wamFileMigration.migrate(JSON.parse(file)));
 
         const wamFile = new WamFile(wam);
@@ -178,12 +215,71 @@ class MapsManager {
         this.loadedMaps.delete(key);
         this.loadedMapsCommandsQueue.delete(key);
         // The in-memory map is obsolete: no further write of it may start. A write already handed to
-        // the storage cannot be cancelled, but its completion no longer finds its state and is ignored.
+        // the storage cannot be cancelled: its completion is ignored, and replaceStoredMaps waits for it.
         const saveState = this.mapSaveStates.get(key);
         if (saveState) {
             clearTimeout(saveState.timer);
         }
         this.mapSaveStates.delete(key);
+    }
+
+    /**
+     * Deletes or replaces the stored files of maps, `replace` doing it. A write already handed to storage
+     * cannot be cancelled, and one landing after `replace` would restore the old map. So this drops the
+     * in-memory maps, holds back their loads, waits until none of their writes is in flight, then runs
+     * `replace`. When a write is still in flight after REPLACEMENT_WAIT_MS, `replace` does not run: storage
+     * is left unchanged and the caller must reject the request.
+     */
+    public async replaceStoredMaps(
+        keys: readonly string[],
+        replace: () => Promise<void>,
+    ): Promise<"replaced" | "writesInFlight"> {
+        let finish = (): void => undefined;
+        const replacement = new Promise<void>((resolve) => {
+            finish = resolve;
+        });
+        this.replacementsStarted++;
+        for (const key of keys) {
+            trackUntilSettled(this.replacementsInProgress, key, replacement);
+            this.clearAfterUpload(key);
+        }
+        try {
+            if (!(await this.writesSettle(keys, Date.now() + this.REPLACEMENT_WAIT_MS))) {
+                const busyKeys = keys.filter((key) => this.writesInFlight.has(key));
+                const message = `A write of map ${busyKeys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete or upload is rejected, storage is left unchanged`;
+                console.error(`[${new Date().toISOString()}] ${message}`);
+                Sentry.captureException(new Error(message), {
+                    tags: { location: "replaceStoredMaps" },
+                    extra: { keys: busyKeys },
+                });
+                return "writesInFlight";
+            }
+            await replace();
+            return "replaced";
+        } finally {
+            finish();
+        }
+    }
+
+    /** Resolves true once no write of these maps is in flight, false at the deadline if one still is. */
+    private async writesSettle(keys: readonly string[], deadline: number): Promise<boolean> {
+        const writes = keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]);
+        if (writes.length === 0) {
+            return true;
+        }
+        let timer: NodeJS.Timeout | undefined;
+        const settled = await Promise.race([
+            Promise.allSettled(writes).then(() => true),
+            new Promise<false>((resolve) => {
+                timer = setTimeout(() => resolve(false), deadline - Date.now());
+            }),
+        ]);
+        clearTimeout(timer);
+        if (!settled) {
+            return false;
+        }
+        // Checked again rather than trusting the first snapshot: a write may have started meanwhile.
+        return this.writesSettle(keys, deadline);
     }
 
     public addCommandToQueue(mapKey: string, message: EditMapCommandMessage): void {
@@ -225,8 +321,9 @@ class MapsManager {
     }
 
     /**
-     * Removes the map from memory once it has neither queued commands nor unsaved changes. Storage is
-     * then the only copy, so a map that is not saved yet must stay loaded.
+     * Removes the map from memory once it has no queued commands, no unsaved changes and no write in
+     * flight. Storage is then the only copy, so a map that is not saved yet must stay loaded, and so must
+     * a map whose timed-out write can still land over a newer one (see onSaveSucceeded).
      *
      * We acquire the per-map lock to ensure we don't evict while a command is executing or about to
      * be queued (addCommandToQueue is called synchronously after executeCommand inside the same lock).
@@ -239,7 +336,11 @@ class MapsManager {
                     // Re-check after acquiring the lock: a new command may have been added while we
                     // were waiting.
                     const queue = this.loadedMapsCommandsQueue.get(mapKey);
-                    if ((!queue || queue.length === 0) && !this.mapSaveStates.has(mapKey)) {
+                    if (
+                        (!queue || queue.length === 0) &&
+                        !this.mapSaveStates.has(mapKey) &&
+                        !this.writesInFlight.has(mapKey)
+                    ) {
                         this.loadedMapsCommandsQueue.delete(mapKey);
                         this.loadedMaps.delete(mapKey);
                     }
@@ -306,11 +407,13 @@ class MapsManager {
         };
         this.mapSaveStates.set(mapKey, saving);
         console.info(`[${new Date().toISOString()}] saving map ${mapKey}`);
-        (async () => {
+        const write = (async () => {
             await fileSystem.writeStringAsFile(mapKey, JSON.stringify(wamFile.getWam()));
-        })()
+        })();
+        trackUntilSettled(this.writesInFlight, mapKey, write);
+        write
             .then(
-                () => this.onSaveSucceeded(mapKey, saving),
+                () => this.onSaveSucceeded(mapKey, saving, wamFile),
                 (e: unknown) => this.onSaveFailed(mapKey, saving, e),
             )
             .catch((e: unknown) => {
@@ -319,9 +422,15 @@ class MapsManager {
             });
     }
 
-    private onSaveSucceeded(mapKey: string, saving: MapSaveState & { status: "saving" }): void {
+    private onSaveSucceeded(mapKey: string, saving: MapSaveState & { status: "saving" }, wamFile: WamFile): void {
         if (this.mapSaveStates.get(mapKey) !== saving) {
-            // The map was replaced or deleted, or this write timed out, while it was in flight.
+            // The map was replaced or deleted, or this write timed out, while it was in flight. A write
+            // that timed out may have landed over a newer one: save the map again while it is loaded.
+            if (this.loadedMaps.get(mapKey) === wamFile) {
+                this.markUnsaved(mapKey);
+            } else {
+                this.evictIfIdle(mapKey);
+            }
             return;
         }
         clearTimeout(saving.timer);
@@ -349,7 +458,9 @@ class MapsManager {
 
     private onSaveFailed(mapKey: string, saving: MapSaveState & { status: "saving" }, error: unknown): void {
         if (this.mapSaveStates.get(mapKey) !== saving) {
-            // The map was replaced or deleted, or this write timed out, while it was in flight.
+            // The map was replaced or deleted, or this write timed out, while it was in flight. Nothing
+            // landed, but the map may have stayed loaded for this write.
+            this.evictIfIdle(mapKey);
             return;
         }
         clearTimeout(saving.timer);
@@ -382,6 +493,20 @@ class MapsManager {
             });
         }
     }
+}
+
+/** Keeps `promise` in the set of `key` until it settles, and drops the set once it is empty. */
+function trackUntilSettled(registry: Map<string, Set<Promise<void>>>, key: string, promise: Promise<void>): void {
+    const promises = registry.get(key) ?? new Set<Promise<void>>();
+    registry.set(key, promises);
+    promises.add(promise);
+    const untrack = (): void => {
+        promises.delete(promise);
+        if (promises.size === 0 && registry.get(key) === promises) {
+            registry.delete(key);
+        }
+    };
+    promise.then(untrack, untrack);
 }
 
 export const mapsManager = new MapsManager();
