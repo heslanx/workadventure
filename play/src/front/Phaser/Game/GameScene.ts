@@ -1456,27 +1456,9 @@ export class GameScene extends DirtyScene {
             this.dirty = true;
             const event = this.pendingEvents.dequeue();
             switch (event.type) {
-                /*case "AddPlayerEvent":
-                    this.doAddPlayer(event.event);
-                    break;
-                case "RemovePlayerEvent":
-                    this.doRemovePlayer(event.userId);
-                    break;
-                case "UserMovedEvent": {
-                    this.doUpdatePlayerPosition(event.event);
-                    const remotePlayer = this.MapPlayersByKey.get(event.event.userId);
-                    if (remotePlayer) {
-                        this.activatablesManager.updateDistanceForSingleActivatableObject(remotePlayer);
-                        this.activatablesManager.deduceSelectedActivatableObjectByDistance();
-                    }
-                    break;
-                }*/
                 case "GroupCreatedUpdatedEvent":
                     this.doShareGroupPosition(event.event);
                     break;
-                /*case "PlayerDetailsUpdated":
-                    this.doUpdatePlayerDetails(event.details);
-                    break;*/
                 case "DeleteGroupEvent": {
                     this.doDeleteGroup(event.groupId);
                     if (this.currentPlayerGroupId === event.groupId) {
