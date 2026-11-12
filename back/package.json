@@ -47,6 +47,7 @@
     "@grpc/proto-loader": "0.8.1",
     "@sentry/node": "^10.54.0",
     "@types/express": "^5.0.6",
+    "@workadventure/map-editor": "1.0.0",
     "@workadventure/messages": "1.0.0",
     "@workadventure/shared-utils": "1.0.0",
     "@workadventure/tiled-map-type-guard": "^2.1.2",
@@ -69,6 +70,7 @@
     "rxjs": "^7.8.2",
     "source-map-support": "^0.5.21",
     "tsx": "^4.22.3",
+    "uuid": "^14.0.0",
     "uuidv4": "^6.0.7",
     "zod": "^3.25.76"
   },
