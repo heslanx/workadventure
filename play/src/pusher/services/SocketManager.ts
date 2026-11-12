@@ -69,7 +69,6 @@ import type { SpaceInterface } from "../models/Space";
 import { Space } from "../models/Space";
 import { SpaceConnection } from "../models/SpaceConnection";
 import { ClientNotPartOfSpaceError, SpaceDestroyedError } from "../models/SpaceValidationErrors";
-import type { UpgradeFailedData } from "../controllers/IoSocketController";
 import { eventProcessor } from "../models/eventProcessorInit";
 import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../common/WebSocketCloseCodes";
 import { clientEventsEmitter } from "./ClientEventsEmitter";
@@ -86,7 +85,6 @@ import { isFrameable } from "./EmbeddableHeaders";
 const debug = Debug("socket");
 
 export type AdminSocket = WebSocket<AdminSocketData>;
-export type SocketUpgradeFailed = WebSocket<UpgradeFailedData>;
 
 /**
  * The place an announcement leads to, as an absolute URL, if it stays on the sender's origin; "" otherwise.
