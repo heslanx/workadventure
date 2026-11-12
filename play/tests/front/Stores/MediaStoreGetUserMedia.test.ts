@@ -343,6 +343,7 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
     });
 
     it("a camera the browser cannot find (NotFoundError) turns the camera off, records no_device, and asks again for the microphone alone", async () => {
+        browser.setDevices([["audioinput", "mic-1"]]);
         m = await loadMediaStore();
         browser.failNext(namedError("NotFoundError"));
         await enterRoom(m);
@@ -361,6 +362,122 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
         expect(get(m.microphoneButtonHelpContextStore)).toBe(null);
         expect(current(m)).toEqual([{ kind: "audio", id: "audio-0" }]);
     });
+
+    it("MD-10 (pinned): a camera the browser could not find (NotFoundError) keeps no_device after a camera is plugged in, until the camera is asked for again", async () => {
+        browser.setDevices([["audioinput", "mic-1"]]);
+        m = await loadMediaStore();
+        browser.failNext(namedError("NotFoundError"));
+        await enterRoom(m);
+
+        expect(get(m.cameraAccessIssueStore)).toBe("no_device");
+        expect(get(m.cameraButtonHelpContextStore)).toBe("no_device");
+
+        browser.changeDevices([
+            ["audioinput", "mic-1"],
+            ["audioinput", "mic-2"],
+        ]);
+        await settle();
+        expect(get(m.cameraAccessIssueStore)).toBe("no_device");
+
+        browser.changeDevices([
+            ["videoinput", "cam-1"],
+            ["audioinput", "mic-1"],
+            ["audioinput", "mic-2"],
+        ]);
+        await settle();
+
+        expect(get(m.lastNewMediaDeviceDetectedStore).map((device) => device.deviceId)).toEqual(["cam-1"]);
+        expect(get(m.cameraListStore)?.map((device) => device.deviceId)).toEqual(["cam-1"]);
+        expect(get(m.cameraAccessIssueStore)).toBe("no_device");
+        expect(get(m.cameraButtonHelpContextStore)).toBe("no_device");
+        expect(get(m.requestedCameraState)).toBe(false);
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(2);
+
+        m.requestedCameraState.enableWebcam();
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
+        expect(requested(browser, 2)).toEqual({ video: true, audio: false });
+        expect(get(m.cameraAccessIssueStore)).toBe(null);
+        expect(get(m.cameraButtonHelpContextStore)).toBe(null);
+    });
+
+    it("MD-10 (pinned): a microphone the browser could not find (NotFoundError) keeps no_device after a microphone is plugged in, until the microphone is asked for again", async () => {
+        browser.setDevices([["videoinput", "cam-1"]]);
+        m = await loadMediaStore();
+        browser.failNext(namedError("NotFoundError"));
+        m.myMicrophoneStore.set(true);
+        await settle();
+
+        expect(get(m.requestedMicrophoneState)).toBe(false);
+        expect(get(m.microphoneAccessIssueStore)).toBe("no_device");
+        expect(get(m.microphoneButtonHelpContextStore)).toBe("no_device");
+
+        m.myCameraStore.set(true);
+        await settle();
+        browser.changeDevices([
+            ["videoinput", "cam-1"],
+            ["videoinput", "cam-2"],
+        ]);
+        await settle();
+        expect(get(m.microphoneAccessIssueStore)).toBe("no_device");
+
+        browser.changeDevices([
+            ["videoinput", "cam-1"],
+            ["videoinput", "cam-2"],
+            ["audioinput", "mic-1"],
+        ]);
+        await settle();
+
+        expect(get(m.lastNewMediaDeviceDetectedStore).map((device) => device.deviceId)).toEqual(["mic-1"]);
+        expect(get(m.microphoneListStore)?.map((device) => device.deviceId)).toEqual(["mic-1"]);
+        expect(get(m.microphoneAccessIssueStore)).toBe("no_device");
+        expect(get(m.microphoneButtonHelpContextStore)).toBe("no_device");
+        expect(get(m.requestedMicrophoneState)).toBe(false);
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(2);
+
+        m.requestedMicrophoneState.enableMicrophone();
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
+        expect(requested(browser, 2)).toEqual({ video: false, audio: true });
+        expect(get(m.microphoneAccessIssueStore)).toBe(null);
+        expect(get(m.microphoneButtonHelpContextStore)).toBe(null);
+    });
+
+    it.each([
+        ["camera", "videoinput"],
+        ["microphone", "audioinput"],
+    ] as const)(
+        "MD-10 (pinned): a %s the browser could not find (NotFoundError) before any device list was read keeps no_device when the first list holds one",
+        async (device, kind) => {
+            browser.setDevices([]);
+            m = await loadMediaStore();
+            const [turnOn, issue, helpContext] =
+                device === "camera"
+                    ? ([m.myCameraStore, m.cameraAccessIssueStore, m.cameraButtonHelpContextStore] as const)
+                    : ([
+                          m.myMicrophoneStore,
+                          m.microphoneAccessIssueStore,
+                          m.microphoneButtonHelpContextStore,
+                      ] as const);
+            browser.failNext(namedError("NotFoundError"));
+            turnOn.set(true);
+            await settle();
+
+            expect(get(issue)).toBe("no_device");
+            expect(browser.mediaDevices.enumerateDevices).not.toHaveBeenCalled();
+
+            browser.changeDevices([[kind, `${device}-1`]]);
+            await settle();
+
+            expect(browser.mediaDevices.enumerateDevices).toHaveBeenCalledTimes(1);
+            expect(get(m.lastNewMediaDeviceDetectedStore)).toEqual([]);
+            expect(get(issue)).toBe("no_device");
+            expect(get(helpContext)).toBe("no_device");
+            expect(browser.getUserMedia).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again", async () => {
         m = await loadMediaStore();
