@@ -527,18 +527,18 @@ describe("RoomTimeline characterization", () => {
         render(room);
         await wait(10);
 
-        // RT-03 (pinned): the request pending at open is focused twice.
-        expect(scrolledIntoView).toEqual(["m1", "m1"]);
+        // RT-03 (fixed): the request pending at open is focused once.
+        expect(scrolledIntoView).toEqual(["m1"]);
         expect(scrollCalls).toEqual([]);
         expect(target.querySelector("li[data-event-id='m1']")?.classList.contains("highlight-message")).toBe(true);
 
         roomTimelineFocusStore.set({ roomId: "!other:test", eventId: "m2", sequence: 2 });
         await wait(10);
-        expect(scrolledIntoView).toEqual(["m1", "m1"]);
+        expect(scrolledIntoView).toEqual(["m1"]);
 
         roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "older", sequence: 3 });
         await wait(10);
         expect(room.ensureTimelineEventVisible).toHaveBeenCalledWith("older");
-        expect(scrolledIntoView).toEqual(["m1", "m1", "older"]);
+        expect(scrolledIntoView).toEqual(["m1", "older"]);
     });
 });

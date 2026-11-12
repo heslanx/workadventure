@@ -127,6 +127,7 @@
     let anchorIdleReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     let anchorHardReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     let lastSeenLastItemKey: string | undefined;
+    let focusingSequence: number | undefined;
     let contentResizeObserver: ResizeObserver | undefined;
     const observedItems = new WeakSet<Element>();
 
@@ -738,7 +739,16 @@
         }
     }
 
-    async function focusTimelineEvent(request: RoomTimelineFocusRequest) {
+    // A request pending at open is asked for twice, by the open and by the $roomTimelineFocusStore effect.
+    function focusTimelineEvent(request: RoomTimelineFocusRequest): Promise<void> {
+        if (request.sequence === focusingSequence) return Promise.resolve();
+        focusingSequence = request.sequence;
+        return scrollToTimelineEvent(request).finally(() => {
+            focusingSequence = undefined;
+        });
+    }
+
+    async function scrollToTimelineEvent(request: RoomTimelineFocusRequest) {
         if (!hasPendingTimelineFocusRequest(request)) {
             return;
         }
