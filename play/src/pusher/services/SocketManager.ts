@@ -753,7 +753,7 @@ export class SocketManager implements ZoneEventListener {
         });
     }
 
-    // Useless now, will be useful again if we allow editing details in game
+    // Sends the new details (the status, for instance) to the back and to every space the user is in.
     async handleSetPlayerDetails(
         client: PusherWebSocket,
         playerDetailsMessage: SetPlayerDetailsMessage,
