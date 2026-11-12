@@ -4575,7 +4575,6 @@ ${escapedMessage}
         }
         this.MapPlayersByKey.delete(userId);
         this.remotePlayersSpatialIndex.delete(userId);
-        // console.debug("User removed in MapPlayersByKey in GameScene", userId);
         this.playersPositionInterpolator.removePlayer(userId);
     }
 
@@ -4596,7 +4595,6 @@ ${escapedMessage}
     private doUpdatePlayerPosition(message: MessageUserMovedInterface): void {
         const player: RemotePlayer | undefined = this.MapPlayersByKey.get(message.userId);
         if (player === undefined) {
-            //throw new Error('Cannot find player with ID "' + message.userId +'"');
             console.error('Cannot update position of player with ID "' + message.userId + '": player not found');
             return;
         }
