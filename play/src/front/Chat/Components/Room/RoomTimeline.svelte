@@ -391,9 +391,13 @@
     }
 
     // The read receipt clears the unread count and the "new messages" line: send one for what is on screen.
-    // On opening, on every new message while the room stays open, and on coming back to a hidden tab.
+    // Only at the bottom of a visible list: on opening, on a new message there, and on getting back to the
+    // bottom or to a hidden tab after new messages or while the room counts unread ones it shows no row for
+    // (a thread reply). Not while the user reads history: the jump button counts those as new.
     let pageVisible = $state(document.visibilityState === "visible");
     let lastRenderedKey = $derived(renderItems[renderItems.length - 1]?.key);
+    /** Deliberately not $state: only the receipt effect reads and writes it. */
+    let lastMarkedKey: string | undefined;
 
     let readReceipts = $derived(room.readReceipts);
     let roomType = $derived(room.type);
@@ -407,8 +411,17 @@
         }
         return undefined;
     });
+    // The room's unread state is read, not tracked: this receipt does not clear a thread's count on the server,
+    // whose next sync reports it again, so reacting to it would send a receipt per sync.
     $effect(() => {
-        if ($initializationState === "ready" && pageVisible && lastRenderedKey !== undefined) {
+        if (
+            $initializationState === "ready" &&
+            pageVisible &&
+            autoScroll &&
+            lastRenderedKey !== undefined &&
+            (lastRenderedKey !== lastMarkedKey || untrack(() => get(room.hasUnreadMessages)))
+        ) {
+            lastMarkedKey = lastRenderedKey;
             untrack(() => room.setTimelineAsRead());
         }
     });

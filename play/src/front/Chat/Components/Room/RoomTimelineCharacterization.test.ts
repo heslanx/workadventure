@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { flushSync, mount, tick, unmount } from "svelte";
-import { readable, writable } from "svelte/store";
+import { get, readable, writable } from "svelte/store";
 import type {
     ChatMessage,
     ChatPollItem,
@@ -115,6 +115,7 @@ function fakeRoom(
     const timelineItems = writable<readonly ChatTimelineItem[]>(options.items ?? []);
     const initializationState = writable<"idle" | "loading" | "ready" | "error">("ready");
     const hasPreviousMessage = writable(options.hasPrevious ?? false);
+    const hasUnreadMessages = writable(false);
     const room = {
         id: ROOM_ID,
         name: readable("Pinned room"),
@@ -129,7 +130,7 @@ function fakeRoom(
         threads: undefined,
         readReceipts: options.readReceipts ?? readable(undefined),
         hasPreviousMessage,
-        hasUnreadMessages: readable(false),
+        hasUnreadMessages,
         unreadNotificationCount: readable(0),
         isEncrypted: readable(false),
         isChatEnabled: readable(true),
@@ -140,10 +141,11 @@ function fakeRoom(
         ensureTimelineInitialized: vi.fn(() => Promise.resolve()),
         loadMorePreviousMessages: vi.fn(() => Promise.resolve()),
         ensureTimelineEventVisible: vi.fn<(eventId: string) => Promise<boolean>>(() => Promise.resolve(false)),
-        setTimelineAsRead: vi.fn(),
+        // As on MatrixChatRoom, marking the room read clears its unread state.
+        setTimelineAsRead: vi.fn(() => hasUnreadMessages.set(false)),
         getReadMarker: () => options.readMarker,
     };
-    return { room, timelineItems, initializationState, hasPreviousMessage };
+    return { room, timelineItems, initializationState, hasPreviousMessage, hasUnreadMessages };
 }
 
 /** The scrolling list: jsdom has no layout, so its sizes come from here. */
@@ -497,7 +499,7 @@ describe("RoomTimeline characterization", () => {
         expect(jumpButton()).toBeNull();
     });
 
-    it("marks the room read when it opens and on each new last message, also while the user reads history, but not while the tab is hidden", async () => {
+    it("marks the room read when it opens and on each new last message at the bottom, but not while the tab is hidden or the user reads history", async () => {
         const { room, timelineItems } = fakeRoom({ items: others(3) });
         render(room);
         await wait(10);
@@ -507,23 +509,106 @@ describe("RoomTimeline characterization", () => {
         await settle();
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
 
-        // RT-02 (pinned): the 2 messages the jump button counts as new are reported read.
-        userScrollsToTop();
-        timelineItems.update((items) => [...items, ...others(2, 4)]);
-        await settle();
-        expect(jumpButton()?.textContent).toContain("2 new messages");
-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
-
         visibility = "hidden";
         document.dispatchEvent(new Event("visibilitychange"));
-        timelineItems.update((items) => [...items, ...others(1, 6)]);
+        timelineItems.update((items) => [...items, ...others(1, 4)]);
         await settle();
-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
 
         visibility = "visible";
         document.dispatchEvent(new Event("visibilitychange"));
         await settle();
-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(4);
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+
+        // Coming back to the tab with nothing new sends nothing.
+        visibility = "hidden";
+        document.dispatchEvent(new Event("visibilitychange"));
+        await settle();
+        visibility = "visible";
+        document.dispatchEvent(new Event("visibilitychange"));
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+
+        // RT-02 (fixed): the 2 messages the jump button counts as new are not reported read.
+        userScrollsToTop();
+        timelineItems.update((items) => [...items, ...others(2, 5)]);
+        await settle();
+        expect(jumpButton()?.textContent).toContain("2 new messages");
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+    });
+
+    it("RT-02 (fixed): marks the room read when the user gets back to the bottom after new messages, and not when nothing new came", async () => {
+        const { room, timelineItems } = fakeRoom({ items: others(3) });
+        render(room);
+        await wait(10);
+        userScrollsToTop();
+        timelineItems.update((items) => [...items, ...others(2, 3)]);
+        await settle();
+        expect(jumpButton()?.textContent).toContain("2 new messages");
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+
+        jumpButton()?.click();
+        await settle();
+        expect(jumpButton()).toBeNull();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+
+        // Up and back down with nothing new: the last message is already marked read.
+        userScrollsToTop();
+        await settle();
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+
+        userScrollsToTop();
+        timelineItems.update((items) => [...items, ...others(2, 5)]);
+        await settle();
+        expect(jumpButton()?.textContent).toContain("2 new messages");
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
+        expect(jumpButton()).toBeNull();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+    });
+
+    it("RT-02 (fixed): marks the room read when the user gets back to the tab or to the bottom while the room counts unread messages it shows no row for", async () => {
+        const { room, hasUnreadMessages } = fakeRoom({ items: others(3) });
+        render(room);
+        await wait(10);
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+
+        // A thread reply: the room counts it as unread, and the timeline gets no new row.
+        visibility = "hidden";
+        document.dispatchEvent(new Event("visibilitychange"));
+        hasUnreadMessages.set(true);
+        await settle();
+        visibility = "visible";
+        document.dispatchEvent(new Event("visibilitychange"));
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+        expect(get(hasUnreadMessages)).toBe(false);
+
+        // Nothing new and nothing unread: coming back sends nothing.
+        visibility = "hidden";
+        document.dispatchEvent(new Event("visibilitychange"));
+        await settle();
+        visibility = "visible";
+        document.dispatchEvent(new Event("visibilitychange"));
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+
+        userScrollsToTop();
+        hasUnreadMessages.set(true);
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+
+        // The room reporting unread messages again, as a sync does for a thread, sends nothing while the user stays.
+        hasUnreadMessages.set(true);
+        await settle();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
     });
 
     it("RT-01 (fixed): a read receipt update hands its props again to the user's own message rows only", async () => {
