@@ -3936,6 +3936,8 @@ ${escapedMessage}
             if (player.companion) {
                 player.companion.destroy();
             }
+            // update() throws for an interpolation whose player is gone.
+            this.playersPositionInterpolator.removePlayer(player.userId);
         });
         this.MapPlayersByKey.clear();
         this.remotePlayersSpatialIndex.clear();

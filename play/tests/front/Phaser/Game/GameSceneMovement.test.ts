@@ -226,10 +226,10 @@ describe("GameScene remote players, once per frame (update)", () => {
         expect(remotePlayers.get(7)?.destroy).toHaveBeenCalledTimes(1);
     });
 
-    // GS-02 (pinned bug): removeAllRemotePlayers clears the players but not their interpolations. The next frame
-    // throws from update(), and a throw there ends Phaser's requestAnimationFrame loop: the canvas stops for good.
-    it("GS-02: throws from the next frame when the players are removed while one is still moving", () => {
-        const { scene, internals } = createScene();
+    // GS-02 (fixed): removeAllRemotePlayers used to keep the interpolations of the players it removed. The next frame
+    // threw from update(), and a throw there ends Phaser's requestAnimationFrame loop: the canvas stopped for good.
+    it("GS-02: keeps drawing frames when the players are removed while one is still moving", () => {
+        const { scene, internals, remotePlayers } = createScene();
         const repository = scene.getRemotePlayersRepository();
         repository.addPlayer(joined(7, 100, 200));
         scene.update(1_000, 16);
@@ -237,7 +237,15 @@ describe("GameScene remote players, once per frame (update)", () => {
         scene.update(2_000, 16);
         internals.removeAllRemotePlayers();
 
-        expect(() => scene.update(2_100, 16)).toThrow('Cannot find player with ID "7"');
+        expect(() => scene.update(2_100, 16)).not.toThrow();
+        expect(remotePlayers.get(7)?.positions).toHaveLength(1);
+
+        // Later frames keep drawing: a player who joins after the removal is drawn on a frame of its own.
+        repository.addPlayer(joined(8, 300, 400));
+        scene.update(2_200, 16);
+        repository.movePlayer(moved(8, 500, 400));
+        scene.update(2_300, 16);
+        expect(remotePlayers.get(8)?.positions).toHaveLength(1);
     });
 });
 
