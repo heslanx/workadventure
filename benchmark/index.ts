@@ -1,73 +1,46 @@
-import {connectionManager} from "../play/src/front/Connection/ConnectionManager";
-import { WorkAdventureWebSocket } from "../play/src/front/Connection/WebSocket";
-import * as WebSocket from "ws"
-import { AvailabilityStatus, PositionMessage_Direction } from '../libs/messages/src/ts-proto-generated/messages';
+import { writeFileSync } from "node:fs";
+import { ConfigError, USAGE, parseConfig } from "./src/config";
+import { runLoad } from "./src/runner";
 
-let userMovedCount = 0;
+const EXIT_USAGE = 1;
+const EXIT_RUN_NOT_VALID = 2;
 
-function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-WorkAdventureWebSocket.setWebsocketFactory((url: string) => {
-    return new WebSocket(url);
-});
-
-async function startOneUser(): Promise<void> {
-    const onConnect = await connectionManager.connectToRoomSocket(process.env.ROOM_ID ? process.env.ROOM_ID : '_/global/maps.workadventure.localhost/Floor0/floor0.json', 'TEST', ['male3'],
-        {
-            x: 783,
-            y: 170
-        }, {
-            top: 0,
-            bottom: 200,
-            left: 500,
-            right: 800
-        },
-        0);
-
-    const connection = onConnect.connection;
-
-    connection.onUserMoved(() => {
-        userMovedCount++;
-    })
-
-    console.log(connection.getUserId());
-
-    let angle = Math.random() * Math.PI * 2;
-
-    for (let i = 0; i < 100; i++) {
-        const x = Math.floor(320 + 1472/2 * (1 + Math.sin(angle)));
-        const y = Math.floor(200 + 1090/2 * (1 + Math.cos(angle)));
-
-        connection.sharePosition(x, y, PositionMessage_Direction.DOWN, true, {
-            top: y - 200,
-            bottom: y + 200,
-            left: x - 320,
-            right: x + 320
-        })
-
-        angle += 0.05;
-
-        await sleep(200);
+async function main(): Promise<number> {
+    let config;
+    try {
+        config = parseConfig(process.argv.slice(2), process.env);
+    } catch (error) {
+        if (error instanceof ConfigError) {
+            console.error(`${error.message}\n\n${USAGE}`);
+            return EXIT_USAGE;
+        }
+        throw error;
     }
 
-    await sleep(10000);
-    connection.closeConnection();
+    const stop = new AbortController();
+    const onSignal = () => stop.abort();
+    process.once("SIGINT", onSignal);
+    process.once("SIGTERM", onSignal);
+
+    const summary = await runLoad(config, stop.signal);
+
+    process.off("SIGINT", onSignal);
+    process.off("SIGTERM", onSignal);
+    const json = JSON.stringify(summary, null, 2);
+    if (config.output !== undefined) {
+        writeFileSync(config.output, `${json}\n`);
+    }
+    console.log(json);
+
+    return summary.reconciled && summary.sessions.accepted >= config.minAccepted ? 0 : EXIT_RUN_NOT_VALID;
 }
 
-(async () => {
-    connectionManager.initBenchmark();
-
-    const promises = [];
-
-    for (let userNo = 0; userNo < 160; userNo++) {
-        const promise = startOneUser();
-        promises.push(promise);
-        // Wait 0.5s between adding users
-        await sleep(125);
-    }
-
-    await Promise.all(promises);
-    console.log('User moved count: '+userMovedCount);
-})();
+main().then(
+    (exitCode) => {
+        process.exitCode = exitCode;
+    },
+    (error: unknown) => {
+        console.error(error);
+        process.exitCode = EXIT_USAGE;
+    },
+);

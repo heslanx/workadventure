@@ -1,69 +1,97 @@
-# Load testing
+# Headless room load generator
 
-Load testing is performed with Artillery.
+Opens real `/ws/room` WebSocket sessions against a WorkAdventure play/pusher service, using the `ws` package and
+the generated protobuf codecs (`libs/messages/src/ts-proto-generated`). No browser, no Phaser, no media.
 
-Install:
+**What it does not measure.** The bots speak the room protocol only. A run certifies neither client rendering
+(FPS, memory of a real tab) nor audio/video (WebRTC, LiveKit) performance, and a passing run is not a capacity
+claim: read the server metrics next to the summary.
+
+## Session model
+
+Each session follows the handshake of the real client:
+
+1. `POST <pusher>/anonymLogin` returns `{ authToken }` (skipped with `--auth=none`).
+2. WebSocket to `<ws>/ws/room?roomId=…&version=…&tabId=…&…`, the token sent as the WebSocket subprotocol.
+3. The pusher sends `roomConnectedMessage`; the bot answers `joinRoomFrontMessage`.
+4. The pusher sends `roomJoinedMessage`: only now is the session **accepted**.
+
+Every frame is wrapped in the nonce envelope (`FrontToPusherWebSocketMessage` / `PusherToFrontWebSocketMessage`).
+A refused upgrade is still upgraded by the pusher, which then sends one error message and closes with code 1000:
+that is a **rejected** session, never an accepted one.
+
+```
+connecting ──roomJoinedMessage──▶ accepted ──▶ leaving ──▶ closed
+     └─error message / socket error / close / join timeout──▶ rejected ──▶ leaving ──▶ closed
+```
+
+Accepted room sessions and open sockets are counted separately. The bot answers server pings, sends one
+`viewportMessage` after joining and then `userMovesMessage` at `--move-hz` along a deterministic ellipse
+(same session index, same path), and leaves with close code 1000.
+
+## Run
+
+Needs Node 24 and the workspace dependencies installed from the repository root (`npm install`).
 
 ```bash
 cd benchmark
-npm install
+npm start -- \
+  --pusher-url=http://play.workadventure.localhost \
+  --room-urls=http://play.workadventure.localhost/_/global/maps.workadventure.localhost/tests/E2E/empty.json \
+  --sessions=10 --ramp-seconds=5 --duration-seconds=30 --move-hz=2 \
+  --output=./summary.json
 ```
 
-Running the tests (on one core):
+Every flag is also an environment variable (`--ramp-seconds` is `WA_RAMP_SECONDS`); flags win.
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--pusher-url` | required | http(s) base URL of the play/pusher service |
+| `--ws-url` | `--pusher-url` | WebSocket base URL when it differs (http→ws is applied automatically) |
+| `--room-urls` | required | Comma-separated room URLs; session `i` joins room `i mod rooms` |
+| `--sessions` | required | Number of sessions to start |
+| `--ramp-seconds` | `10` | Session `i` starts at `i × ramp / sessions` |
+| `--duration-seconds` | `60` | Total run time, ramp included. Shorter than the ramp stops mid-ramp |
+| `--move-hz` | `1` | Movement messages per second per accepted session, `0` for idle |
+| `--join-timeout-seconds` | `30` | Not joined in time counts as rejected (`join_timeout`) |
+| `--close-timeout-seconds` | `5` | A socket that does not close in time is terminated |
+| `--auth` | `anonymous` | `anonymous` or `none` |
+| `--api-version` | `apiVersionHash` of this checkout | Must equal the pusher's `apiVersionHash`, else it answers `NEW_VERSION` |
+| `--character-texture` | `male1` | Woka texture id |
+| `--name-prefix` | `bot` | Player name is `<prefix>-<index>` |
+| `--disconnect-fraction` | `0` | Share of sessions (lowest indexes) that leave early |
+| `--disconnect-at-seconds` | half the duration | When they leave |
+| `--min-accepted` | `1` | Fewer accepted sessions makes the run invalid |
+| `--output` | none | Also write the JSON summary to this file |
+
+`SIGINT`/`SIGTERM` stop the run early; the summary is still printed after every socket and timer is released.
+
+Exit codes: `0` run valid, `1` configuration or fatal error, `2` run finished but invalid (counters do not
+reconcile, cleanup incomplete, or fewer than `--min-accepted` sessions accepted).
+
+## Summary
+
+One JSON document on stdout: `sessions` (requested, started, neverStarted, accepted, rejected,
+abortedBeforeJoin, unexpectedCloses, uniqueUserIds), `sockets` (opened, openPeak, openAtStop, closed),
+`joinLatencyMs` (p50, p95, max; `null` without samples), `rooms`, `sent`, `received.eventsByType`, `rejections`,
+`errors`, `closeCodes`, `generator` (CPU, RSS, event-loop lag), `cleanup` and `reconciled`.
+
+Discard a run whose `generator.cpuPercentOfOneCore` approaches 100 or whose `generator.eventLoopLagMs.p99`
+grows: the generator, not the server, was the bottleneck. Spread the population over several processes instead
+(`benchmark_multi_core.sh`).
+
+## Checks
 
 ```bash
 cd benchmark
-npm run start
+npm test -- tests/harness.test.ts   # envelope handling, accepted vs rejected sessions, cleanup
+npm run typecheck
 ```
 
-You can adapt the `socketio-load-test.yaml` file to increase/decrease load.
+The tests drive the harness against an in-process fake pusher over real sockets; they do not need a running
+WorkAdventure.
 
-Default settings are:
+## What to watch on the server
 
-```yaml
-  phases:
-    - duration: 20
-      arrivalRate: 2
-```
-
-which means: during 20 seconds, 2 users will be added every second (peaking at 40 simultaneous users).
-
-Important: don't go above 40 simultaneous users for Artillery, otherwise, it is Artillery that will fail to run the tests properly.
-To know, simply run "top". The "node" process for Artillery should never reach 100%.
-
-Reports are generated in `artillery_output.html`.
-
-# Multicore tests
-
-You will want to test with Artillery running on multiple cores.
-
-You can use
-
-```bash
-./artillery_multi_core.sh
-```
-
-This will trigger 4 Artillery instances in parallel.
-
-Beware, the report generated is generated for only one instance.
-
-# How to test, what to track?
-
-While testing, you can check:
-
-- CPU load of WorkAdventure API node process (it should not reach 100%)
-- Get metrics at the end of the run: `http://api.workadventure.localhost/metrics`  
-  In particular, look for:
-  ```
-  # HELP nodejs_eventloop_lag_max_seconds The maximum recorded event loop delay.
-  # TYPE nodejs_eventloop_lag_max_seconds gauge
-  nodejs_eventloop_lag_max_seconds 23.991418879
-  ```
-  This is the maximum time it took Node to process an event (you need to restart node after each test to reset this counter)
-- Generate a profiling using "node --prof" by switching the command in docker-compose.yaml:
-  ```
-      #command: yarn dev
-      command: yarn run profile
-  ```
-  Read https://nodejs.org/en/docs/guides/simple-profiling/ on how to generate a profile.
-
+- CPU of the play and back Node processes.
+- `nodejs_eventloop_lag_max_seconds` on the `/metrics` endpoints (restart the service between runs to reset it).
