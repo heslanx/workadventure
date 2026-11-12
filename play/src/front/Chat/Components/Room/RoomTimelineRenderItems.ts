@@ -1,6 +1,6 @@
 import { get } from "svelte/store";
 import type { ChatMessage, ChatTimelineItem } from "../../Connection/ChatConnection";
-import LL from "../../../../i18n/i18n-svelte";
+import LL, { locale } from "../../../../i18n/i18n-svelte";
 
 export type RoomTimelineRenderItem =
     | { kind: "separator"; key: string; label: string }
@@ -33,7 +33,7 @@ function dayLabel(d: Date): string {
     if (isSameLocalDay(d, today)) return labels.chat.timeLine.today();
     if (isSameLocalDay(d, yesterday)) return labels.chat.timeLine.yesterday();
 
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(get(locale), {
         weekday: "short",
         day: "numeric",
         month: "short",
