@@ -584,18 +584,63 @@ describe("MapsManager autosave", () => {
     });
 
     describe("when two replacements of a map overlap", () => {
-        it("(known defect) should run the later replacement while the earlier one runs, so the earlier one lands last", async () => {
+        it("should run the later replacement only once the earlier one finished", async () => {
             storage.writeMode = "hold";
             const first = mapsManager.replaceStoredMaps([mapKey], () => storage.writeStringAsFile(mapKey, "first"));
             await vi.advanceTimersByTimeAsync(0);
             storage.writeMode = "succeed";
-            const second = mapsManager.replaceStoredMaps([mapKey], () => storage.writeStringAsFile(mapKey, "second"));
+            const writeSecond = vi.fn(() => storage.writeStringAsFile(mapKey, "second"));
+            const second = mapsManager.replaceStoredMaps([mapKey], writeSecond);
             await vi.advanceTimersByTimeAsync(0);
 
+            expect(writeSecond).not.toHaveBeenCalled();
             await releaseHeldWritesNewestFirst();
-            await Promise.all([first, second]);
+            await expect(Promise.all([first, second])).resolves.toEqual(["replaced", "replaced"]);
 
+            expect(storage.files.get(mapKey)).toBe("second");
+        });
+
+        it("should reject the later replacement when the earlier one does not finish in time", async () => {
+            storage.writeMode = "hold";
+            const first = mapsManager.replaceStoredMaps([mapKey], () => storage.writeStringAsFile(mapKey, "first"));
+            await vi.advanceTimersByTimeAsync(0);
+            const writeSecond = vi.fn(() => storage.writeStringAsFile(mapKey, "second"));
+            const second = mapsManager.replaceStoredMaps([mapKey], writeSecond);
+
+            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+            await expect(second).resolves.toBe("writesInFlight");
+            await releaseHeldWritesNewestFirst();
+            await expect(first).resolves.toBe("replaced");
+
+            expect(writeSecond).not.toHaveBeenCalled();
             expect(storage.files.get(mapKey)).toBe("first");
+        });
+
+        it("should count the wait for the earlier replacement and for the writes in flight against one deadline", async () => {
+            const otherKey = mapKey.replace(".wam", "-other.wam");
+            await edit("cmd-1");
+            storage.writeMode = "hold";
+            const first = mapsManager.replaceStoredMaps([otherKey], () =>
+                storage.writeStringAsFile(otherKey, UPLOADED_WAM),
+            );
+            // The autosave write of cmd-1 starts and stays held too.
+            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+            storage.writeMode = "succeed";
+            let secondSettled = false;
+            const second = mapsManager
+                .replaceStoredMaps([otherKey, mapKey], () => storage.deleteFiles(mapKey))
+                .finally(() => {
+                    secondSettled = true;
+                });
+
+            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS / 2);
+            // Only the write of the first replacement.
+            storage.settleOldestHeldWrite("succeed");
+            await expect(first).resolves.toBe("replaced");
+            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS / 2);
+
+            expect(secondSettled).toBe(true);
+            await expect(second).resolves.toBe("writesInFlight");
         });
     });
 });

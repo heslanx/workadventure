@@ -58,6 +58,12 @@ class MapsManager {
     private readonly writesInFlight = new Map<string, Set<Promise<void>>>();
 
     /**
+     * Replacements of stored maps that have not finished, per map, from the moment they were requested. A
+     * replacement waits for the earlier ones of its maps, so the replacements of a map run in request order.
+     */
+    private readonly replacementsRequested = new Map<string, Set<Promise<void>>>();
+
+    /**
      * Replacements of stored maps that dropped their maps and have not finished, per map. Loading such a map
      * waits for them: a copy loaded before the replacement is the old map, and its next write would restore it.
      */
@@ -226,64 +232,56 @@ class MapsManager {
 
     /**
      * Deletes or replaces the stored files of maps, `replace` doing it. A write already handed to storage
-     * cannot be cancelled, and one landing after `replace` would restore the old map. So this waits until
-     * none of their writes is in flight, then drops the in-memory maps, holds back their loads and runs
-     * `replace`. When a write is still in flight after REPLACEMENT_WAIT_MS, `replace` does not run and the
-     * maps stay loaded: storage is left unchanged, the next autosave stores their edits, and the caller
-     * must reject the request.
+     * cannot be cancelled, and one landing after `replace` would restore the old map. So this waits for the
+     * earlier replacements of these maps, which run in the order they were requested, then until none of
+     * their writes is in flight. Then it drops the in-memory maps, holds back their loads and runs `replace`.
+     * The maps stay loaded and editable while it waits. When an earlier replacement or a write is still in
+     * flight REPLACEMENT_WAIT_MS after the call, `replace` does not run and the maps stay loaded: storage is
+     * left unchanged, the next autosave stores their edits, and the caller must reject the request.
      */
     public async replaceStoredMaps(
         keys: readonly string[],
         replace: () => Promise<void>,
     ): Promise<"replaced" | "writesInFlight"> {
-        if (!(await this.writesSettle(keys, Date.now() + this.REPLACEMENT_WAIT_MS))) {
-            const busyKeys = keys.filter((key) => this.writesInFlight.has(key));
-            const message = `A write of map ${busyKeys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete or upload is rejected, storage is left unchanged`;
-            console.error(`[${new Date().toISOString()}] ${message}`);
-            Sentry.captureException(new Error(message), {
-                tags: { location: "replaceStoredMaps" },
-                extra: { keys: busyKeys },
-            });
-            return "writesInFlight";
-        }
-        // No write of these maps starts before they are dropped: a write starts only from a timer
-        // (scheduleSave), and none runs between the last check of writesSettle and this line.
+        const deadline = Date.now() + this.REPLACEMENT_WAIT_MS;
+        const earlierReplacements = keys.flatMap((key) => [...(this.replacementsRequested.get(key) ?? [])]);
         let finish = (): void => undefined;
         const replacement = new Promise<void>((resolve) => {
             finish = resolve;
         });
-        this.replacementsStarted++;
         for (const key of keys) {
-            trackUntilSettled(this.replacementsInProgress, key, replacement);
-            this.clearAfterUpload(key);
+            trackUntilSettled(this.replacementsRequested, key, replacement);
         }
         try {
+            let ready = await settledBefore(earlierReplacements, deadline);
+            while (ready && keys.some((key) => this.writesInFlight.has(key))) {
+                // Checked again after each batch rather than trusting one snapshot: an edit made meanwhile can
+                // start a write. The last check and the drop below run in one synchronous block.
+                // eslint-disable-next-line no-await-in-loop
+                ready = await settledBefore(
+                    keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]),
+                    deadline,
+                );
+            }
+            if (!ready) {
+                const message = `A write of map ${keys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete, upload or move is rejected, storage is left unchanged`;
+                console.error(`[${new Date().toISOString()}] ${message}`);
+                Sentry.captureException(new Error(message), {
+                    tags: { location: "replaceStoredMaps" },
+                    extra: { keys },
+                });
+                return "writesInFlight";
+            }
+            this.replacementsStarted++;
+            for (const key of keys) {
+                trackUntilSettled(this.replacementsInProgress, key, replacement);
+                this.clearAfterUpload(key);
+            }
             await replace();
             return "replaced";
         } finally {
             finish();
         }
-    }
-
-    /** Resolves true once no write of these maps is in flight, false at the deadline if one still is. */
-    private async writesSettle(keys: readonly string[], deadline: number): Promise<boolean> {
-        const writes = keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]);
-        if (writes.length === 0) {
-            return true;
-        }
-        let timer: NodeJS.Timeout | undefined;
-        const settled = await Promise.race([
-            Promise.allSettled(writes).then(() => true),
-            new Promise<false>((resolve) => {
-                timer = setTimeout(() => resolve(false), deadline - Date.now());
-            }),
-        ]);
-        clearTimeout(timer);
-        if (!settled) {
-            return false;
-        }
-        // Checked again rather than trusting the first snapshot: an edit made meanwhile can start a write.
-        return this.writesSettle(keys, deadline);
     }
 
     public addCommandToQueue(mapKey: string, message: EditMapCommandMessage): void {
@@ -497,6 +495,22 @@ class MapsManager {
             });
         }
     }
+}
+
+/** Resolves true once every promise settled, false at the deadline if one has not. */
+async function settledBefore(promises: readonly Promise<void>[], deadline: number): Promise<boolean> {
+    if (promises.length === 0) {
+        return true;
+    }
+    let timer: NodeJS.Timeout | undefined;
+    const settled = await Promise.race([
+        Promise.allSettled(promises).then(() => true),
+        new Promise<false>((resolve) => {
+            timer = setTimeout(() => resolve(false), deadline - Date.now());
+        }),
+    ]);
+    clearTimeout(timer);
+    return settled;
 }
 
 /** Keeps `promise` in the set of `key` until it settles, and drops the set once it is empty. */
