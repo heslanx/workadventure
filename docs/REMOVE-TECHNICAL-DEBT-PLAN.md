@@ -90,6 +90,7 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 | 2026-11-12 | 2 | Fix RT-10: pass the chat locale to `Intl.DateTimeFormat` in `dayLabel`. The RT-10 pin flips in the fix commit | The user approved the recommendation. One timeline then shows one language. |
 | 2026-11-12 | all | Move CI and worker checks to the `ci` host, in capped containers (2 CPU and 6 GB for CI, 1.5 CPU and 4 GB per worker); `knc` and `sbh` take no new jobs | The user's instruction at 15:55 UTC. The host also serves production containers, so the caps stay. |
 | 2026-11-12 | all | Run the authorized local `npm ci` inside the node 24 Linux container used for commits | The checkout's `node_modules` are linux-arm64 for that container; a native macOS install would break the commit hook. |
+| 2026-11-12 | all | Commit the plan, `TECH-DEBT.md` and `TESTING.md` as their own docs commits (first `c007401b5`); keep the evidence under `docs/audits/` local | The intake decision gives docs their own commits. The evidence holds raw logs and host details that do not belong in history. |
 
 ## Next Actions
 

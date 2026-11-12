@@ -1,0 +1,83 @@
+Thu Nov 12 00:18:41 UTC 2026
+Sentry plugin disabled
+12:18:49 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+12:18:49 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstderr[2m | src/front/Space/tests/SpaceRegistry.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+[90mstderr[2m | src/front/Space/tests/SpaceRegistry.test.ts[2m > [22m[2mSpaceProviderInterface implementation[2m > [22m[2mSpaceRegistry[2m > [22m[2mSpaceRegistry destroy[2m > [22m[2mshould destroy space store
+[22m[39mSpace "space-test1" was not destroyed properly.
+Space "space-test2" was not destroyed properly.
+Space "space-test3" was not destroyed properly.
+
+[90mstderr[2m | src/front/Space/tests/SpaceRegistry.test.ts[2m > [22m[2mSpaceProviderInterface implementation[2m > [22m[2mSpaceRegistry[2m > [22m[2mSpaceRegistry shouldPublishScreenShareStore[2m > [22m[2mshould be true in a bubble and for a speaker, never for an audience
+[22m[39mSpace is destroyed, skipping unregisterSpaceFilter
+Space is destroyed, skipping unregisterSpaceFilter
+
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry Add[2m > [22mshould add a space when ...[32m 5[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry Add[2m > [22mshould return a error when you try to add a space which already exist[32m 2[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry exist[2m > [22mshould return true when space is in store[32m 1[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry exist[2m > [22mshould return false when space is in store[32m 0[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry delete[2m > [22mshould delete a space when space is in the store[32m 2[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry delete[2m > [22mshould return a error when you try to delete a space who is not in the space [32m 0[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry destroy[2m > [22mshould destroy space store[32m 2[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry raisedHandSectionsStore[2m > [22mshould keep one section per space with a raised hand, never merging spaces[32m 4[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry raisedHandSectionsStore[2m > [22mshould say the local user is on air as a host, but not as a guest given the floor[32m 2[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry shouldPublishScreenShareStore[2m > [22mshould be true in a bubble and for a speaker, never for an audience[32m 4[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry race condition handling[2m > [22mshould handle race condition when leaving and joining the same space immediately[32m 1[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceRegistry.test.ts[2m > [22mSpaceProviderInterface implementation[2m > [22mSpaceRegistry[2m > [22mSpaceRegistry race condition handling[2m > [22mshould coalesce concurrent joins of the same space instead of throwing SpaceAlreadyExistError[32m 1[2mms[22m[39m
+[90mstderr[2m | tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22m[2mProximityChatRoomManager[2m > [22m[2mdoes not report an aborted join to Sentry, but reports other failures
+[22m[39mProximity room operation failed for space: space-a Error: Space user id not found
+    at [90m/work/play/[39mtests/front/Chat/Connection/ProximityChatRoomManager.test.ts:351:50
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at file:///work/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20
+
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mnormalizes empty proximity area display names with translated area type labels[32m 4[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22muses a non-empty fallback display name when joining named area room kinds with empty names[32m 3[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mupdates an existing room display name to the kind fallback when rejoining with an empty name[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mjoins multiple spaces without leaving existing rooms[32m 3[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mreuses a room instance when rejoining the same space[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mdrops empty rooms after leave and keeps rooms with user messages[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mkeeps the default proximity room visible and first[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mroutes all bubble spaces to the default proximity room row[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mkeeps the default room joined when a stale bubble space leave is ignored[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mdoes not lose a concurrently re-joined room when a leave completes after its server round-trip[32m 2[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mruns a leave requested during an in-flight join only after the join completes[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mdoes not report an aborted join to Sentry, but reports other failures[32m 13[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mresolves legacy targets from selected joined room then most recent joined room[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mnested zones[2m > [22msorts the bubble first, then joined zones from the last entered, then rooms kept for their history[32m 0[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mnested zones[2m > [22mmakes the zone entered last the only active one, and falls back to its parent when it is left[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mnested zones[2m > [22mannounces the deepest zone even when the joins of zones entered together complete in reverse order[32m 0[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mnested zones[2m > [22mdoes not announce a zone whose chat is disabled, and forgets a dismissed announcement[32m 0[2mms[22m[39m
+ [32m✓[39m tests/front/Chat/Connection/ProximityChatRoomManager.test.ts[2m > [22mProximityChatRoomManager[2m > [22mnested zones[2m > [22mdoes not treat the bubble as a zone[32m 1[2mms[22m[39m
+[90mstderr[2m | src/front/Space/tests/SpaceIntegration.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+ [32m✓[39m src/front/Space/tests/SpaceIntegration.test.ts[2m > [22mshould emit event when you create space and spaceFilter[32m 7[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceIntegration.test.ts[2m > [22mshould add user inSpaceFilter._users when receive AddSpaceUserMessage[32m 1[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceIntegration.test.ts[2m > [22mshould define reactive property after... [32m 1[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceIntegration.test.ts[2m > [22m... [32m 3[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceIntegration.test.ts[2m > [22mshould forward public events to the space[32m 1[2mms[22m[39m
+ [32m✓[39m src/front/Space/tests/SpaceIntegration.test.ts[2m > [22mshould forward private events to the space[32m 1[2mms[22m[39m
+ [32m✓[39m tests/front/WebRtc/ProximitySpaceManager.test.ts[2m > [22mProximitySpaceManager[2m > [22maborts the join of a bubble left before it was joined, so the next bubble does not wait for it[32m 58[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m37 passed[39m[22m[90m (37)[39m
+[2m   Start at [22m 00:18:50
+[2m   Duration [22m 47.88s[2m (transform 32.65s, setup 104ms, import 41.62s, tests 421ms, environment 4.72s)[22m
+
+npm notice
+npm notice New major version of npm available! 11.19.1 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+EXIT_CODE=0
+Thu Nov 12 00:19:39 UTC 2026

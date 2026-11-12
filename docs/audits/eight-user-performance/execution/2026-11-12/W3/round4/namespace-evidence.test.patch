@@ -1,0 +1,122 @@
+diff --git a/back/tests/CpuTracker.test.ts b/back/tests/CpuTracker.test.ts
+index 8fe2f80..0517464 100644
+--- a/back/tests/CpuTracker.test.ts
++++ b/back/tests/CpuTracker.test.ts
+@@ -1,6 +1,7 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import {
+     CpuTracker,
++    type CpuCapacity,
+     parseCgroupMount,
+     parseCgroupV1CfsQuota,
+     parseCgroupV1CpuPath,
+@@ -30,6 +31,81 @@ const DOCKER_V1_MOUNTINFO = [
+ ].join("\n");
+ const DOCKER_V1_CPU = "/sys/fs/cgroup/cpu,cpuacct";
+ 
++const ONE_CORE_REFERENCE: CpuCapacity = { cores: 1, source: "no cgroup CPU quota, one-core reference" };
++
++// Probed in Docker containers with --cpus 0.5 on a cgroup v2 host (Linux 6.8). The kernel renders the path in
++// /proc/self/cgroup and the cgroup mount root in /proc/self/mountinfo relative to the reader's cgroup namespace root.
++const HOST_NS_SCOPE = "system.slice/docker-6fd459bddccd65df9f8067d594a32d1e162b79d19bd6a06d87cba94bedb4f11c.scope";
++const HOST_NS_BIND_SCOPE = "system.slice/docker-43c1d151803f1308e8ba687727a2536f9b0ec8cb0ed33a0a678e2a49d2fb4870.scope";
++const HOST_CGROUPFS_SCOPE =
++    "system.slice/docker-5db3c24585e8adfe2746d6966a47fda84795baf8ebcb42e511649d32755587c9.scope";
++const HOST_CGROUPFS_ELSEWHERE_SCOPE =
++    "system.slice/docker-9485a72d7c0e40bfb5494721eebbd98bef39cde9eadac7d707cbc124d3d5402d.scope";
++const HOST_CGROUPFS_OVER_DEFAULT_MOUNTINFO =
++    "1673 1627 0:28 /../.. /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n";
++
++const OBSERVED_V2_LAYOUTS: { layout: string; files: Record<string, string>; capacity: CpuCapacity }[] = [
++    {
++        layout: "a private cgroup namespace (Docker default)",
++        files: {
++            [PROC_SELF_CGROUP]: "0::/\n",
++            [PROC_SELF_MOUNTINFO]:
++                "3473 3472 0:28 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup rw\n",
++            [V2_CPU_MAX]: "50000 100000\n",
++        },
++        capacity: { cores: 0.5, source: `cgroup v2 ${V2_CPU_MAX} (quota 0.5 cores)` },
++    },
++    {
++        layout: "--cgroupns host",
++        files: {
++            [PROC_SELF_CGROUP]: `0::/${HOST_NS_SCOPE}\n`,
++            [PROC_SELF_MOUNTINFO]:
++                "3470 3469 0:28 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup rw\n",
++            [`/sys/fs/cgroup/${HOST_NS_SCOPE}/cpu.max`]: "50000 100000\n",
++            "/sys/fs/cgroup/system.slice/cpu.max": "max 100000\n",
++        },
++        capacity: { cores: 0.5, source: `cgroup v2 /sys/fs/cgroup/${HOST_NS_SCOPE}/cpu.max (quota 0.5 cores)` },
++    },
++    {
++        layout: "--cgroupns host with the host cgroupfs bound over /sys/fs/cgroup",
++        files: {
++            [PROC_SELF_CGROUP]: `0::/${HOST_NS_BIND_SCOPE}\n`,
++            [PROC_SELF_MOUNTINFO]:
++                "3330 3323 0:28 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n",
++            [`/sys/fs/cgroup/${HOST_NS_BIND_SCOPE}/cpu.max`]: "50000 100000\n",
++            "/sys/fs/cgroup/system.slice/cpu.max": "max 100000\n",
++        },
++        capacity: { cores: 0.5, source: `cgroup v2 /sys/fs/cgroup/${HOST_NS_BIND_SCOPE}/cpu.max (quota 0.5 cores)` },
++    },
++    {
++        layout: "a private cgroup namespace with the host cgroupfs bound at /host-cgroup",
++        files: {
++            [PROC_SELF_CGROUP]: "0::/\n",
++            [PROC_SELF_MOUNTINFO]: [
++                "3268 3202 0:28 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup rw",
++                "3272 3194 0:28 /../.. /host-cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw",
++                "",
++            ].join("\n"),
++            [V2_CPU_MAX]: "50000 100000\n",
++            [`/host-cgroup/${HOST_CGROUPFS_ELSEWHERE_SCOPE}/cpu.max`]: "50000 100000\n",
++            "/host-cgroup/system.slice/cpu.max": "max 100000\n",
++        },
++        capacity: { cores: 0.5, source: `cgroup v2 ${V2_CPU_MAX} (quota 0.5 cores)` },
++    },
++    {
++        // The mount root is two levels above the namespace root and neither file names those levels, so the
++        // container's own cgroup cannot be found.
++        layout: "a private cgroup namespace with the host cgroupfs bound over /sys/fs/cgroup",
++        files: {
++            [PROC_SELF_CGROUP]: "0::/\n",
++            [PROC_SELF_MOUNTINFO]: HOST_CGROUPFS_OVER_DEFAULT_MOUNTINFO,
++            [`/sys/fs/cgroup/${HOST_CGROUPFS_SCOPE}/cpu.max`]: "50000 100000\n",
++            "/sys/fs/cgroup/system.slice/cpu.max": "max 100000\n",
++        },
++        capacity: ONE_CORE_REFERENCE,
++    },
++];
++
+ const fakeCgroup =
+     (files: Record<string, string>) =>
+     (path: string): string | undefined =>
+@@ -243,6 +319,27 @@ describe("CpuTracker", () => {
+         });
+     });
+ 
++    describe("observed cgroup v2 layouts", () => {
++        for (const { layout, files, capacity } of OBSERVED_V2_LAYOUTS) {
++            it(`should resolve ${layout}`, () => {
++                expect(readCpuCapacity(fakeCgroup(files))).toEqual(capacity);
++            });
++        }
++
++        it("should not read the host cgroup that has the process path when the mount root is above the namespace root", () => {
++            // Derived from the host cgroupfs bind: a process moved below its namespace root, as systemd in the
++            // container would do. The probe could not move one because it may not write to cgroupfs.
++            const files = {
++                [PROC_SELF_CGROUP]: "0::/system.slice/wa-back.service\n",
++                [PROC_SELF_MOUNTINFO]: HOST_CGROUPFS_OVER_DEFAULT_MOUNTINFO,
++                [`/sys/fs/cgroup/${HOST_CGROUPFS_SCOPE}/system.slice/wa-back.service/cpu.max`]: "max 100000\n",
++                [`/sys/fs/cgroup/${HOST_CGROUPFS_SCOPE}/cpu.max`]: "50000 100000\n",
++                "/sys/fs/cgroup/system.slice/wa-back.service/cpu.max": "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++    });
++
+     describe("readOptionalFile", () => {
+         it("should return undefined for a missing file without logging", () => {
+             expect(readOptionalFile("/nonexistent/wa-cpu-tracker/cpu.max")).toBeUndefined();

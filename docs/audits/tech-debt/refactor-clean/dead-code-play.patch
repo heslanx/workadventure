@@ -1,0 +1,207 @@
+diff --git a/play/src/pusher/models/Movable.ts b/play/src/pusher/models/Movable.ts
+deleted file mode 100644
+index 31aeba9..0000000
+--- a/play/src/pusher/models/Movable.ts
++++ /dev/null
+@@ -1,8 +0,0 @@
+-import type { PositionInterface } from "../models/PositionInterface";
+-
+-/**
+- * A physical object that can be placed into a Zone
+- */
+-export interface Movable {
+-    getPosition(): PositionInterface;
+-}
+diff --git a/play/src/pusher/models/PositionInterface.ts b/play/src/pusher/models/PositionInterface.ts
+deleted file mode 100644
+index 6563675..0000000
+--- a/play/src/pusher/models/PositionInterface.ts
++++ /dev/null
+@@ -1,4 +0,0 @@
+-export interface PositionInterface {
+-    x: number;
+-    y: number;
+-}
+diff --git a/play/src/pusher/models/Websocket/ItemEventMessage.ts b/play/src/pusher/models/Websocket/ItemEventMessage.ts
+deleted file mode 100644
+index fd28293..0000000
+--- a/play/src/pusher/models/Websocket/ItemEventMessage.ts
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import { z } from "zod";
+-
+-export const isItemEventMessageInterface = z.object({
+-    itemId: z.number(),
+-    event: z.string(),
+-    state: z.unknown(),
+-    parameters: z.unknown(),
+-});
+-
+-export type ItemEventMessageInterface = z.infer<typeof isItemEventMessageInterface>;
+diff --git a/play/src/pusher/models/Websocket/Point.ts b/play/src/pusher/models/Websocket/Point.ts
+deleted file mode 100644
+index c9d8057..0000000
+--- a/play/src/pusher/models/Websocket/Point.ts
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import type { PointInterface } from "./PointInterface";
+-
+-export class Point implements PointInterface {
+-    constructor(
+-        public x: number,
+-        public y: number,
+-        public direction: string = "none",
+-        public moving: boolean = false,
+-    ) {}
+-}
+diff --git a/play/src/pusher/models/Websocket/PointInterface.ts b/play/src/pusher/models/Websocket/PointInterface.ts
+deleted file mode 100644
+index 5b76b68..0000000
+--- a/play/src/pusher/models/Websocket/PointInterface.ts
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import { z } from "zod";
+-
+-export const PointInterface = z.object({
+-    x: z.number(),
+-    y: z.number(),
+-    direction: z.string(),
+-    moving: z.boolean(),
+-});
+-
+-export type PointInterface = z.infer<typeof PointInterface>;
+diff --git a/play/src/pusher/models/Websocket/ProtobufUtils.ts b/play/src/pusher/models/Websocket/ProtobufUtils.ts
+deleted file mode 100644
+index 7cd4f7b..0000000
+--- a/play/src/pusher/models/Websocket/ProtobufUtils.ts
++++ /dev/null
+@@ -1,30 +0,0 @@
+-import type { PositionMessage } from "@workadventure/messages";
+-import { PositionMessage_Direction } from "@workadventure/messages";
+-import type { PointInterface } from "./PointInterface";
+-
+-export class ProtobufUtils {
+-    public static toPositionMessage(point: PointInterface): PositionMessage {
+-        let direction: PositionMessage_Direction;
+-        switch (point.direction) {
+-            case "up":
+-                direction = PositionMessage_Direction.UP;
+-                break;
+-            case "down":
+-                direction = PositionMessage_Direction.DOWN;
+-                break;
+-            case "left":
+-                direction = PositionMessage_Direction.LEFT;
+-                break;
+-            case "right":
+-                direction = PositionMessage_Direction.RIGHT;
+-                break;
+-            default:
+-                throw new Error("unexpected direction");
+-        }
+-
+-        return {
+-            ...point,
+-            direction,
+-        };
+-    }
+-}
+diff --git a/play/src/pusher/services/AdminApi.ts b/play/src/pusher/services/AdminApi.ts
+index efe5fc7..60c90a6 100644
+--- a/play/src/pusher/services/AdminApi.ts
++++ b/play/src/pusher/services/AdminApi.ts
+@@ -105,18 +105,10 @@ export const isFetchMemberDataByUuidSuccessResponse = z.object({
+     }),
+ });
+ 
+-export const isFetchWorldChatMembers = z.object({
+-    total: z.number().positive(),
+-    members: z.array(isFetchMemberDataByUuidSuccessResponse),
+-});
+-export type FetchMemberDataByUuidSuccessResponse = z.infer<typeof isFetchMemberDataByUuidSuccessResponse>;
+-
+ export const isFetchMemberDataByUuidResponse = z.union([isFetchMemberDataByUuidSuccessResponse, ErrorApiData]);
+ 
+ export type FetchMemberDataByUuidResponse = z.infer<typeof isFetchMemberDataByUuidResponse>;
+ 
+-export type FetchWorldChatMembers = z.infer<typeof isFetchWorldChatMembers>;
+-
+ class AdminApi implements AdminInterface {
+     private capabilities: Capabilities = {};
+     private capabilitiesDeferred = new Deferred<Capabilities>();
+diff --git a/play/src/pusher/services/CpuTracker.ts b/play/src/pusher/services/CpuTracker.ts
+deleted file mode 100644
+index cfde53d..0000000
+--- a/play/src/pusher/services/CpuTracker.ts
++++ /dev/null
+@@ -1,50 +0,0 @@
+-import { CPU_OVERHEAT_THRESHOLD } from "../enums/EnvironmentVariable";
+-
+-function secNSec2ms(secNSec: Array<number> | number): number {
+-    if (Array.isArray(secNSec)) {
+-        return secNSec[0] * 1000 + secNSec[1] / 1000000;
+-    }
+-    return secNSec / 1000;
+-}
+-
+-class CpuTracker {
+-    private cpuPercent = 0;
+-    private overHeating = false;
+-
+-    constructor() {
+-        let time = process.hrtime.bigint();
+-        let usage = process.cpuUsage();
+-        setInterval(() => {
+-            const elapTime = process.hrtime.bigint();
+-            const elapUsage = process.cpuUsage(usage);
+-            usage = process.cpuUsage();
+-
+-            const elapTimeMS = elapTime - time;
+-            const elapUserMS = secNSec2ms(elapUsage.user);
+-            const elapSystMS = secNSec2ms(elapUsage.system);
+-            this.cpuPercent = Math.round(((100 * (elapUserMS + elapSystMS)) / Number(elapTimeMS)) * 1000000);
+-
+-            time = elapTime;
+-
+-            if (!this.overHeating && this.cpuPercent > CPU_OVERHEAT_THRESHOLD) {
+-                this.overHeating = true;
+-                console.warn('CPU high threshold alert. Going in "overheat" mode');
+-            } else if (this.overHeating && this.cpuPercent <= CPU_OVERHEAT_THRESHOLD) {
+-                this.overHeating = false;
+-                console.info('CPU is back to normal. Canceling "overheat" mode');
+-            }
+-        }, 100);
+-    }
+-
+-    public getCpuPercent(): number {
+-        return this.cpuPercent;
+-    }
+-
+-    public isOverHeating(): boolean {
+-        return this.overHeating;
+-    }
+-}
+-
+-const cpuTracker = new CpuTracker();
+-
+-export { cpuTracker };
+diff --git a/play/src/pusher/services/SocketManager.ts b/play/src/pusher/services/SocketManager.ts
+index fdc479a..7567a49 100644
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -69,7 +69,6 @@ import type { SpaceInterface } from "../models/Space";
+ import { Space } from "../models/Space";
+ import { SpaceConnection } from "../models/SpaceConnection";
+ import { ClientNotPartOfSpaceError, SpaceDestroyedError } from "../models/SpaceValidationErrors";
+-import type { UpgradeFailedData } from "../controllers/IoSocketController";
+ import { eventProcessor } from "../models/eventProcessorInit";
+ import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../common/WebSocketCloseCodes";
+ import { clientEventsEmitter } from "./ClientEventsEmitter";
+@@ -86,7 +85,6 @@ import { isFrameable } from "./EmbeddableHeaders";
+ const debug = Debug("socket");
+ 
+ export type AdminSocket = WebSocket<AdminSocketData>;
+-export type SocketUpgradeFailed = WebSocket<UpgradeFailedData>;
+ 
+ /**
+  * The place an announcement leads to, as an absolute URL, if it stays on the sender's origin; "" otherwise.

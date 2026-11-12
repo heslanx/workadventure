@@ -1,0 +1,112 @@
+diff --git a/map-storage/src/tests/UploadController.test.ts b/map-storage/src/tests/UploadController.test.ts
+index e0e9b238b..be869dabd 100644
+--- a/map-storage/src/tests/UploadController.test.ts
++++ b/map-storage/src/tests/UploadController.test.ts
+@@ -1,5 +1,8 @@
++import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+ import type { Server } from "node:http";
+ import type { AddressInfo } from "node:net";
++import { tmpdir } from "node:os";
++import path from "node:path";
+ import express from "express";
+ import bodyParser from "body-parser";
+ import ZipStream from "zip-stream";
+@@ -232,6 +235,16 @@ async function until(condition: () => boolean): Promise<void> {
+     }
+ }
+ 
++/** Lets real I/O progress for this many turns of the event loop. */
++async function ioTurns(count: number): Promise<void> {
++    for (let turn = 0; turn < count; turn++) {
++        // eslint-disable-next-line no-await-in-loop
++        await new Promise((resolve) => {
++            setImmediate(resolve);
++        });
++    }
++}
++
+ describe("UploadController", () => {
+     beforeAll(async () => {
+         const app = express();
+@@ -414,4 +427,81 @@ describe("UploadController", () => {
+             expect(storage.files.has(keyOf("b.wam"))).toBe(false);
+         });
+     });
++
++    describe("the temporary file Multer stored the upload in", () => {
++        let uploads: string;
++
++        beforeEach(() => {
++            uploads = mkdtempSync(path.join(tmpdir(), "uploads-"));
++            // Multer stores each upload in os.tmpdir(), which reads TMPDIR on every call.
++            vi.stubEnv("TMPDIR", uploads);
++        });
++
++        afterEach(() => {
++            vi.unstubAllEnvs();
++            rmSync(uploads, { recursive: true, force: true });
++        });
++
++        /** Starts an autosave write of a.wam and holds it open. */
++        async function holdAWriteOfA(): Promise<void> {
++            storage.files.set(keyOf("a.wam"), wam("a"));
++            await edit(keyOf("a.wam"), "cmd-1");
++            storage.holdWrites();
++            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
++        }
++
++        it("(known defect) should be kept when the zip upload answers 503", async () => {
++            await holdAWriteOfA();
++            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
++
++            const uploading = uploadZip({ "a.wam": wam("a-uploaded") });
++            await until(() => replacing.mock.calls.length > 0);
++            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
++            const response = await uploading;
++            await ioTurns(100);
++
++            expect(response.status).toBe(503);
++            expect(readdirSync(uploads)).toHaveLength(1);
++        });
++
++        it("(known defect) should be kept when the PUT of a map answers 503", async () => {
++            await holdAWriteOfA();
++            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
++            const form = new FormData();
++            form.append("file", new Blob([wam("a-uploaded")]), "a.wam");
++
++            const uploading = request("PUT", `/${directory}/a.wam`, form);
++            await until(() => replacing.mock.calls.length > 0);
++            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
++            const response = await uploading;
++            await ioTurns(100);
++
++            expect(response.status).toBe(503);
++            expect(readdirSync(uploads)).toHaveLength(1);
++        });
++
++        it("(known defect) should be kept when the zip upload is rejected", async () => {
++            const form = new FormData();
++            form.append("directory", "../elsewhere");
++            form.append("file", await zipOf({ "a.wam": wam("a") }), "maps.zip");
++
++            const response = await request("POST", "/upload", form);
++            await ioTurns(100);
++
++            expect(response.status).toBe(400);
++            expect(readdirSync(uploads)).toHaveLength(1);
++        });
++
++        it("(known defect) should be kept when the zip upload fails", async () => {
++            const form = new FormData();
++            form.append("directory", directory);
++            form.append("file", new Blob(["not a zip"]), "maps.zip");
++
++            const response = await request("POST", "/upload", form);
++            await ioTurns(100);
++
++            expect(response.status).toBe(500);
++            expect(readdirSync(uploads)).toHaveLength(1);
++        });
++    });
+ });

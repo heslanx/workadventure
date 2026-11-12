@@ -1,0 +1,42 @@
+# host knc, container wa-fable-p1 (node:24-trixie, v24.22.2), snapshot of benchmark/ + libs/messages/src generated codecs
+# captured (UTC): 2026-11-12T00:12:56Z
+
+$ cd benchmark && npx vitest run tests/harness.test.ts
+
+ RUN  v4.1.12 /work/benchmark
+
+ ✓ tests/harness.test.ts > protocol envelope > wraps a client message in the nonce envelope the pusher decodes 5ms
+ ✓ tests/harness.test.ts > protocol envelope > reports the authoritative join with the user id the server assigned 2ms
+ ✓ tests/harness.test.ts > protocol envelope > counts every batched event and answers only the ping 1ms
+ ✓ tests/harness.test.ts > protocol envelope > reports a refused upgrade as a rejection, never as a join 1ms
+ ✓ tests/harness.test.ts > protocol envelope > builds the websocket URL with the query the pusher validates 1ms
+ ✓ tests/harness.test.ts > session state machine > accepts only a connecting session and keeps a rejected one rejected 0ms
+ ✓ tests/harness.test.ts > load run > counts accepted room sessions per room and leaves with every socket and timer released 520ms
+ ✓ tests/harness.test.ts > load run > counts a refused connection as rejected and not as an accepted session 504ms
+ ✓ tests/harness.test.ts > load run > releases everything when stopped before the ramp completes 717ms
+ ✓ tests/harness.test.ts > configuration > lets a command-line flag override the environment 2ms
+ ✓ tests/harness.test.ts > configuration > refuses to start without a room 1ms
+ ✓ tests/harness.test.ts > percentile > uses the nearest rank and has no value for an empty sample 1ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  00:12:56
+   Duration  3.00s (transform 909ms, setup 0ms, import 1.07s, tests 1.76s, environment 0ms)
+
+exit code: 0
+
+$ npx tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node index.ts tests/harness.test.ts
+exit code: 0
+
+# mutation check (remote snapshot only): errorScreenMessage no longer mapped to a rejection -> the rejection tests must fail
+166c166
+<         return [{ kind: "rejected", reason: `errorScreenMessage:${code}` }];
+---
+>         return [];
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/harness.test.ts > protocol envelope > reports a refused upgrade as a rejection, never as a join
+ FAIL  tests/harness.test.ts > load run > counts a refused connection as rejected and not as an accepted session
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+exit code: 1
+# mutation reverted

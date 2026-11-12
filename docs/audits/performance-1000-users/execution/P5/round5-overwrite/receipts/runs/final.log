@@ -1,0 +1,30 @@
+container wa-fable-ovw5-61-final
+408a8aad1e63c9c854636999222587879c7eff8666cb738ac735d4e2a331e158  src/MapsManager.ts
+9c01a30939e02a8e3ef37a25fb837387dddcde3279014afa33ae5192cad48663  src/Upload/UploadController.ts
+963495d0fbed43261bc97698c7b30fa0d978afb5470f136ea4dded7949b1b244  src/tests/MapsManagerAutosave.test.ts
+70c2483d8e919b96ed4b4b0bea4111194ffefd80a102958ef15be61aa38ccd17  src/tests/UploadController.test.ts
+1be0b55c07fe4b2881328a5749852d27e6941432daa47665fdbf22a5be6650c2  src/tests/MapStorageServer.test.ts
+3a52822d686b31ebff133beb15c384c7206cd1be9d8dbc5bf0e0ef92cd567a0c  ../libs/map-editor/src/GameMap/MapValidator.ts
+== npx vitest run
+ ✓ src/Commands/Area/tests/CreateAreaMapStorageCommand.test.ts (2 tests) 6ms
+ ✓ src/Services/tests/canUserEditCustomEntity.test.ts (9 tests) 5ms
+
+ Test Files  12 passed (12)
+      Tests  102 passed (102)
+   Start at  03:37:18
+   Duration  11.29s (transform 3.39s, setup 0ms, import 8.21s, tests 721ms, environment 1ms)
+
+VITEST_EXIT=0
+== npm run typecheck
+
+> map-storage@1.0.0 typecheck
+> tsc --project tsconfig-node.json --noEmit
+
+TYPECHECK_EXIT=0
+== npx eslint
+ESLINT_EXIT=0
+== npx prettier --check
+Checking formatting...
+All matched files use Prettier code style!
+PRETTIER_EXIT=0
+EXIT=0

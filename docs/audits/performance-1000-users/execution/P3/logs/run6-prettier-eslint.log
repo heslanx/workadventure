@@ -1,0 +1,14 @@
+Checking formatting...
+All matched files use Prettier code style!
+--- eslint (empty output = no problem)
+--- eslint first attempts (fixed before the final run)
+/work/play/tests/pusher/PusherRoomSocketController.test.ts
+  235:13  error  Expected 'undefined' and instead saw 'void'  no-void
+
+✖ 1 problem (1 error, 0 warnings)
+
+/work/play/tests/pusher/PusherRoomSocketController.test.ts
+  234:47  error  Promise returned in function argument where a void return was expected  @typescript-eslint/no-misused-promises
+
+✖ 1 problem (1 error, 0 warnings)
+

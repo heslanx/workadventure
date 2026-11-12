@@ -1,0 +1,248 @@
+# date_checked_utc=2026-11-11T23:54:51Z
+## pr | state=open | query: benchmark
+#6437	ready	2026-09-17T11:23:32Z	app/dependabot	chore(deps): bump deepmerge-ts from 7.1.5 to 8.0.2
+#6254	ready	2026-10-15T18:12:28Z	moufmouf	Detect sustained background noise
+exit=0
+## issue | state=open | query: benchmark
+exit=0
+## pr | state=open | query: load test
+#2860	ready	2026-04-24T08:31:05Z	moufmouf	[WIP] Load-testing chat
+#6711	ready	2026-10-20T10:36:07Z	moufmouf	fix(chat): encrypt attachments, report upload errors, send HTML formatting
+#6635	draft	2026-10-01T09:58:20Z	ydiarra	feat(analytics): measure how long the game takes to become playable
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+#6810	draft	2026-11-10T17:07:50Z	ydiarra	Go server replacing play/pusher, back, map-storage and uploader
+#6519	ready	2026-10-28T16:25:28Z	app/dependabot	chore(deps): bump js-yaml in /messages
+#6458	ready	2026-09-04T14:36:09Z	ydiarra	perf(front): take the room, WAM and TMJ requests off the render loop
+#6809	draft	2026-10-30T17:27:25Z	ydiarra	Dev socle and server mode for the Go/Rust server rewrite
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+#6637	draft	2026-10-01T09:58:33Z	ydiarra	feat(analytics): report which arrival screens are shown and why the others are skipped
+#6376	ready	2026-07-21T13:53:56Z	ydiarra	test(e2e): stabilise pre-existing flaky E2E (Firefox WebGL, media readiness, map editor)
+#3674	ready	2026-04-24T08:31:05Z	moufmouf	Delaying loader hiding until everything is loaded
+#6150	draft	2026-09-01T15:35:11Z	ydiarra	feat(chat): reliable long-message sending, collapsible messages & start-aligned auto-scroll
+#6357	ready	2026-10-01T14:49:55Z	ydiarra	fix(media): show the permission help modal on Safari and Firefox
+#6342	ready	2026-10-27T09:26:36Z	moufmouf	feat(livekit): auto-mute microphone when joining a crowded meeting
+#6254	ready	2026-10-15T18:12:28Z	moufmouf	Detect sustained background noise
+#6294	ready	2026-08-10T09:07:14Z	app/dependabot	chore(deps): bump js-yaml from 4.1.1 to 4.3.0 in /desktop/electron
+#5325	ready	2026-04-24T08:31:05Z	moufmouf	Adding Gateway api support in Helm chart
+#6706	ready	2026-10-20T10:36:01Z	moufmouf	fix(play): install app follow-ups from the docs page
+#6752	draft	2026-11-09T12:01:13Z	ydiarra	feat(whiteboard): collaborative Excalidraw whiteboard in areas, shown like a screen share
+#6316	draft	2026-07-07T07:48:02Z	ydiarra	feat(chat): verify a device by displaying a QR code (matrix SAS/QR)
+#6085	ready	2026-05-15T15:38:04Z	BAWES	fix(pusher): silent OIDC refresh token on access token expiry
+exit=0
+## issue | state=open | query: load test
+#3701	2024-03-11T12:26:01Z	zobadaniel	100% CPU load with Firefox in a "full" bubble
+#5396	2026-05-01T17:39:15Z	failvaliev	Some problems on mobile Opera Browser
+#5495	2026-05-01T17:39:40Z	jonzxz	Issue on connecting to WorkAdventure on self-hosted Kubernetes environment
+#404	2020-11-09T14:11:20Z	moufmouf	Move server to a cluster
+#5579	2026-05-01T17:40:03Z	Gfdcvn	Waiting for OIDC mock server to be up indefenitly
+#5825	2026-05-02T08:53:11Z	ViniciusgCaetano	WebSocket disconnects after login with Microsoft Entra ID on self-hosted Docker Compose deployment
+#789	2022-12-19T15:41:54Z	koduck	Conference Rooms: User participates multiple times involuntarily
+#2325	2022-06-24T20:40:36Z	taksan	Big Blue Button integration doesn't work on Chrome when Oauth2 is on
+#1339	2021-10-27T10:48:31Z	BLubomski	Fourth user lagging severely or unable to join proximity chat
+#4450	2025-08-27T17:05:12Z	dercaptainbc	Avoid Double Authentication with Authentik OIDC in WorkAdventure
+#5399	2026-05-01T17:39:25Z	dercaptainbc	How to add custom Woka designs?
+#932	2021-10-03T04:58:13Z	gcommit	NETWORK ERROR when docker-compose up
+#1826	2022-02-15T08:52:42Z	dickshaydle	very long loading times
+#3334	2024-04-12T00:57:06Z	netzwerkgoettin	Jitsi problem after upgrading to 1.15.12
+#738	2021-03-11T12:20:53Z	beccon4	Make Workadventure available to the World
+#5068	2026-05-01T17:37:50Z	gabrielcald	OIDC invalid_token on userinfo call despite successful manual verification in self-hosted environment
+#3012	2023-02-02T14:13:56Z	Juju-no-dev	Unable to obtain ACME certificate for domains
+#5527	2026-05-01T17:39:44Z	simon-bachhuber	Self-hosted using `tailscale`, some small issues
+exit=0
+## pr | state=open | query: load generator
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+exit=0
+## issue | state=open | query: load generator
+exit=0
+## pr | state=open | query: headless
+#6816	draft	2026-11-09T15:52:33Z	ydiarra	feat(background): colour-guided mask edges and a background-only blur
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+#6376	ready	2026-07-21T13:53:56Z	ydiarra	test(e2e): stabilise pre-existing flaky E2E (Firefox WebGL, media readiness, map editor)
+#5700	ready	2026-04-24T08:31:04Z	moufmouf	Upgrading to Phaser 3.90
+#6333	ready	2026-07-09T15:17:26Z	moufmouf	Render conversation bubbles with a fragment shader (WebGL), keep Canvas fallback
+exit=0
+## issue | state=open | query: headless
+#4801	2025-04-28T14:05:24Z	moufmouf	phaserMode=headless is ignored
+exit=0
+## pr | state=open | query: artillery
+exit=0
+## issue | state=open | query: artillery
+#1657	2021-12-20T14:25:09Z	telmich	Backend does not connect to IPv6 only redis
+#1951	2022-05-18T10:03:30Z	mielune	Connection lost after about one hour
+#5579	2026-05-01T17:40:03Z	Gfdcvn	Waiting for OIDC mock server to be up indefenitly
+exit=0
+## pr | state=open | query: svelte in:title
+#4455	ready	2026-04-24T08:31:05Z	moufmouf	[WIP] Svelte 4 + ESM migration
+#6095	ready	2026-06-16T09:56:53Z	app/dependabot	build(deps-dev): bump svelte from 3.46.4 to 5.55.7 in /desktop/local-app
+exit=0
+## issue | state=open | query: svelte in:title
+#2835	2022-11-25T08:17:42Z	moufmouf	Missing keyed items in Svelte #each
+exit=0
+## pr | state=open | query: svelte 5
+#6958	ready	2026-11-02T11:48:25Z	ydiarra	feat(a11y): announce what happens in the world to screen readers
+#6983	ready	2026-11-03T16:19:25Z	moufmouf	fix(theme): upgrade the design system to 3.0.5 so titles render in Oswald
+#6700	ready	2026-10-20T10:35:45Z	moufmouf	fix(chat): chat room moderation follow-ups from the docs review
+#6776	draft	2026-10-14T08:29:42Z	ydiarra	test(e2e): wait for the camera and microphone before saving the media step
+#6608	draft	2026-10-01T16:34:10Z	ydiarra	fix(audio): play the WebAudio fallback on the selected speaker, and never twice
+#6095	ready	2026-06-16T09:56:53Z	app/dependabot	build(deps-dev): bump svelte from 3.46.4 to 5.55.7 in /desktop/local-app
+#5663	draft	2026-04-24T08:31:04Z	app/copilot-swe-agent	Migrate play container from Vite 5 to Vite 6
+#6671	draft	2026-10-20T10:34:57Z	ydiarra	docs(user): add a page on writing chat messages
+#6847	ready	2026-10-29T20:36:36Z	ydiarra	feat: add cached minimap with area navigation
+#5158	draft	2026-04-24T08:31:05Z	app/copilot-swe-agent	Modernize desktop application: Upgrade Electron from 18.0.3 to 32.3.3 and all dependencies
+#6152	draft	2026-10-14T17:48:09Z	gparant	feat: create news feature for WorkAdventure
+#6383	ready	2026-07-21T17:36:50Z	ydiarra	feat(play/storybook): stories, component tests & a11y across the design system
+#6806	draft	2026-10-27T09:22:14Z	ydiarra	feat(media): a camera that gives no image is "unavailable", never turned off
+#6688	ready	2026-10-05T09:57:36Z	ydiarra	fix(pusher): cap what a socket keeps for a resume
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+#6800	ready	2026-10-27T09:21:59Z	ydiarra	fix(livekit): keep paused tracks paused after a full reconnection
+#6365	draft	2026-07-16T15:49:50Z	ydiarra	feat(chat): show link previews in the timeline
+exit=0
+## issue | state=open | query: svelte 5
+#6659	2026-10-02T13:34:10Z	dalosa14	Closing Jitsi inside its map area leaves JITSI availability and prevents proximity regrouping
+#4157	2024-09-09T15:21:50Z	angelogeninatti	Changing the default language
+#1495	2021-10-01T13:06:03Z	wachri	front is crashing with RpcIpcMessagePortClosedError: Cannot send the message - the message port has been closed for the process 166
+#932	2021-10-03T04:58:13Z	gcommit	NETWORK ERROR when docker-compose up
+exit=0
+## pr | state=open | query: typescript in:title
+#5698	ready	2026-04-24T08:31:04Z	nolway	refactor: improve back typescript configuration
+#6709	draft	2026-11-06T16:24:36Z	ydiarra	test(desktop): end-to-end tests on Windows, macOS and Ubuntu, TypeScript for tests and rules
+#5429	ready	2026-04-24T08:31:05Z	moufmouf	[WIP] Switching to Typescript 7 prerelease
+#3679	ready	2026-04-24T08:31:05Z	moufmouf	Adding @typescript-eslint/no-unnecessary-condition rule
+exit=0
+## issue | state=open | query: typescript in:title
+#3064	2023-02-16T13:13:34Z	moufmouf	Update the Typescript documentation
+exit=0
+## pr | state=open | query: tsgo
+exit=0
+## issue | state=open | query: tsgo
+exit=0
+## pr | state=open | query: typescript-go
+#6810	draft	2026-11-10T17:07:50Z	ydiarra	Go server replacing play/pusher, back, map-storage and uploader
+#6809	draft	2026-10-30T17:27:25Z	ydiarra	Dev socle and server mode for the Go/Rust server rewrite
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+#4173	draft	2024-10-18T12:36:04Z	pizkaz	Improve availability status
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+exit=0
+## issue | state=open | query: typescript-go
+#3734	2024-12-10T08:12:47Z	nolway	Improve typing to find strange bugs
+#2244	2022-12-19T15:26:01Z	app/	Two or more clocks in one floor
+#3481	2023-09-13T14:22:25Z	FabiSauerbrey	Containers throwing NPM errors
+#5825	2026-05-02T08:53:11Z	ViniciusgCaetano	WebSocket disconnects after login with Microsoft Entra ID on self-hosted Docker Compose deployment
+exit=0
+## pr | state=open | query: native-preview
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+#5895	ready	2026-04-24T08:31:04Z	moufmouf	Refactor to use fetch instead of Axios
+exit=0
+## issue | state=open | query: native-preview
+exit=0
+## pr | state=open | query: TypeScript 6
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+#6709	draft	2026-11-06T16:24:36Z	ydiarra	test(desktop): end-to-end tests on Windows, macOS and Ubuntu, TypeScript for tests and rules
+#5158	draft	2026-04-24T08:31:05Z	app/copilot-swe-agent	Modernize desktop application: Upgrade Electron from 18.0.3 to 32.3.3 and all dependencies
+#6437	ready	2026-09-17T11:23:32Z	app/dependabot	chore(deps): bump deepmerge-ts from 7.1.5 to 8.0.2
+#4086	ready	2026-04-24T08:31:05Z	app/dependabot	build(deps): bump electron-updater from 4.6.5 to 6.3.0 in /desktop/electron
+#6640	ready	2026-10-31T08:55:05Z	app/dependabot	chore(deps): bump axios from 1.16.1 to 1.20.0
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+exit=0
+## issue | state=open | query: TypeScript 6
+#1837	2022-02-09T08:51:14Z	zenhighzer	error with docker-compose within vagrant-box
+#1514	2021-10-11T13:22:47Z	xx1182	Non-Docker Information
+#932	2021-10-03T04:58:13Z	gcommit	NETWORK ERROR when docker-compose up
+#3481	2023-09-13T14:22:25Z	FabiSauerbrey	Containers throwing NPM errors
+#5825	2026-05-02T08:53:11Z	ViniciusgCaetano	WebSocket disconnects after login with Microsoft Entra ID on self-hosted Docker Compose deployment
+exit=0
+## pr | state=open | query: TypeScript 7
+#5429	ready	2026-04-24T08:31:05Z	moufmouf	[WIP] Switching to Typescript 7 prerelease
+#6709	draft	2026-11-06T16:24:36Z	ydiarra	test(desktop): end-to-end tests on Windows, macOS and Ubuntu, TypeScript for tests and rules
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+#5158	draft	2026-04-24T08:31:05Z	app/copilot-swe-agent	Modernize desktop application: Upgrade Electron from 18.0.3 to 32.3.3 and all dependencies
+#6437	ready	2026-09-17T11:23:32Z	app/dependabot	chore(deps): bump deepmerge-ts from 7.1.5 to 8.0.2
+#4086	ready	2026-04-24T08:31:05Z	app/dependabot	build(deps): bump electron-updater from 4.6.5 to 6.3.0 in /desktop/electron
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+exit=0
+## issue | state=open | query: TypeScript 7
+#1514	2021-10-11T13:22:47Z	xx1182	Non-Docker Information
+#1837	2022-02-09T08:51:14Z	zenhighzer	error with docker-compose within vagrant-box
+#932	2021-10-03T04:58:13Z	gcommit	NETWORK ERROR when docker-compose up
+#5825	2026-05-02T08:53:11Z	ViniciusgCaetano	WebSocket disconnects after login with Microsoft Entra ID on self-hosted Docker Compose deployment
+exit=0
+## pr | state=open | query: PositionDispatcher
+exit=0
+## issue | state=open | query: PositionDispatcher
+#1067	2021-05-26T09:35:20Z	buenni86	Feature Request: Showing Mini-Map on big maps
+exit=0
+## pr | state=open | query: viewport zone
+#6491	ready	2026-10-29T14:09:57Z	ydiarra	feat(front): animated Woka emotes with a radial selection wheel
+exit=0
+## issue | state=open | query: viewport zone
+#1067	2021-05-26T09:35:20Z	buenni86	Feature Request: Showing Mini-Map on big maps
+#532	2022-08-18T06:28:48Z	Natureshadow	Evaluate replacement of backend with Matrix
+exit=0
+## pr | state=open | query: zone pusher
+#6491	ready	2026-10-29T14:09:57Z	ydiarra	feat(front): animated Woka emotes with a radial selection wheel
+#6636	draft	2026-10-01T09:58:27Z	ydiarra	fix(analytics): stop reporting message list openings and TURN successes nobody asked for
+#5923	draft	2026-04-28T08:48:25Z	gparant	Matrix connection for guest user
+exit=0
+## issue | state=open | query: zone pusher
+#1152	2021-06-17T12:32:46Z	jonnytest1	weird user nesting in /dump api
+#3013	2023-02-03T16:03:36Z	moufmouf	Ghost bubbles randomly appear
+#1067	2021-05-26T09:35:20Z	buenni86	Feature Request: Showing Mini-Map on big maps
+#2482	2022-08-18T04:28:49Z	franxi2953	KeyPressed Events
+#5332	2026-05-01T17:38:53Z	moufmouf	Error when entering and leaving a meeting room quickly
+#2024	2022-03-30T15:00:02Z	moufmouf	Crash in staging environment
+exit=0
+## pr | state=open | query: reconcile
+#6169	ready	2026-07-20T09:31:47Z	ydiarra	fix: prevent feedback attendees from connecting peer-to-peer
+exit=0
+## issue | state=open | query: reconcile
+exit=0
+## pr | state=open | query: MapsManager
+exit=0
+## issue | state=open | query: MapsManager
+exit=0
+## pr | state=open | query: autosave
+exit=0
+## issue | state=open | query: autosave
+exit=0
+## pr | state=open | query: map-storage save
+#6752	draft	2026-11-09T12:01:13Z	ydiarra	feat(whiteboard): collaborative Excalidraw whiteboard in areas, shown like a screen share
+#6809	draft	2026-10-30T17:27:25Z	ydiarra	Dev socle and server mode for the Go/Rust server rewrite
+exit=0
+## issue | state=open | query: map-storage save
+#2957	2023-01-10T13:36:29Z	Waclaw-I	Possible desync for map-editor commands
+#5527	2026-05-01T17:39:44Z	simon-bachhuber	Self-hosted using `tailscale`, some small issues
+#3012	2023-02-02T14:13:56Z	Juju-no-dev	Unable to obtain ACME certificate for domains
+#2996	2023-02-04T04:15:06Z	thund3rsh0ck	bad gateway error
+#5825	2026-05-02T08:53:11Z	ViniciusgCaetano	WebSocket disconnects after login with Microsoft Entra ID on self-hosted Docker Compose deployment
+exit=0
+## pr | state=open | query: map-storage in:title
+#6811	draft	2026-11-10T17:09:44Z	ydiarra	Rust server replacing play/pusher, back, map-storage and uploader
+#6810	draft	2026-11-10T17:07:50Z	ydiarra	Go server replacing play/pusher, back, map-storage and uploader
+#6326	ready	2026-07-07T20:46:06Z	moufmouf	feat(map-storage): S3 health-check alerting + optional throwOnRequestTimeout
+#5218	ready	2026-10-18T12:22:26Z	steigr	feat: configurable gRPC bind host for back and map-storage (default [::], dual-stack)
+#2951	ready	2024-10-18T12:36:05Z	moufmouf	[WIP] Migrating tests from map-storage to jest
+exit=0
+## issue | state=open | query: map-storage in:title
+#3405	2023-07-06T17:10:03Z	moufmouf	[Map editor] wrong collection URLs when creating WAM file from map-storage UI
+#3703	2024-02-02T17:25:30Z	moufmouf	Map-storage API: modify the PUT to accept JSON body
+exit=0
+## pr | state=open | query: NoncedMessageStore
+#6688	ready	2026-10-05T09:57:36Z	ydiarra	fix(pusher): cap what a socket keeps for a resume
+exit=0
+## issue | state=open | query: NoncedMessageStore
+exit=0
+## pr | state=open | query: resume replay
+#6688	ready	2026-10-05T09:57:36Z	ydiarra	fix(pusher): cap what a socket keeps for a resume
+#6800	ready	2026-10-27T09:21:59Z	ydiarra	fix(livekit): keep paused tracks paused after a full reconnection
+#6616	ready	2026-10-31T08:55:00Z	app/dependabot	chore(deps): bump undici
+#6245	draft	2026-10-23T14:16:51Z	ydiarra	Add Electron desktop WorkAdventure shell
+exit=0
+## issue | state=open | query: resume replay
+exit=0
+## pr | state=open | query: backpressure
+#6688	ready	2026-10-05T09:57:36Z	ydiarra	fix(pusher): cap what a socket keeps for a resume
+#6616	ready	2026-10-31T08:55:00Z	app/dependabot	chore(deps): bump undici
+exit=0
+## issue | state=open | query: backpressure
+#2024	2022-03-30T15:00:02Z	moufmouf	Crash in staging environment
+exit=0

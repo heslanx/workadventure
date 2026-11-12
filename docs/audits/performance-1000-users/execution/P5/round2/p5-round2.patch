@@ -1,0 +1,345 @@
+diff --git a/map-storage/src/MapsManager.ts b/map-storage/src/MapsManager.ts
+index 7ab27ae..a540245 100644
+--- a/map-storage/src/MapsManager.ts
++++ b/map-storage/src/MapsManager.ts
+@@ -20,21 +20,25 @@ const EDITION_LOCK_TIMEOUT_MS = 10_000;
+  *
+  * - "dirty": unsaved edits, a write starts when the timer fires.
+  * - "retrying": the last write failed, the next attempt starts when the timer fires.
+- * - "saving": the only write of this map is in flight. `editedDuringWriteAt` is set when an edit
+- *   landed after that write started: its completion must not make the map clean.
++ * - "saving": the only write of this map is in flight, the timer fails it if it does not settle in
++ *   time. `editedDuringWriteAt` is set when an edit landed after that write started: its completion
++ *   must not make the map clean.
++ *
++ * `lastEditAt` is the time of the newest unsaved edit, from which the retry horizon is measured.
+  */
+ type MapSaveState =
+     | {
+           status: "dirty" | "retrying";
+           timer: NodeJS.Timeout;
+-          unsavedSince: number;
++          lastEditAt: number;
+           failedAttempts: number;
+       }
+     | {
+           status: "saving";
++          timer: NodeJS.Timeout;
+           writeStartedAt: number;
+           editedDuringWriteAt: number | undefined;
+-          unsavedSince: number;
++          lastEditAt: number;
+           failedAttempts: number;
+       };
+ 
+@@ -71,10 +75,21 @@ class MapsManager {
+      */
+     private readonly COMMAND_TIME_IN_QUEUE_MS: number = this.AUTO_SAVE_INTERVAL_MS * 2;
+     /**
+-     * Age of the oldest unsaved edit after which a failing save is abandoned, so maps edited during a
+-     * storage outage are not kept in memory forever.
++     * Time without a new edit after which a failing save is abandoned, so maps edited during a storage
++     * outage are not kept in memory forever. Measured from the newest unsaved edit: a map that is still
++     * being edited keeps being retried.
+      */
+     private readonly SAVE_RETRY_HORIZON_MS: number = 60 * 60 * 1000; // 1 hour
++    /**
++     * Time after which a write that has not settled is counted as failed, so a hung storage call cannot
++     * leave a map unsaved and unretried forever. Above the 60 s default S3 request timeout.
++     */
++    private readonly SAVE_WRITE_TIMEOUT_MS: number = 5 * 60 * 1000; // 5 minutes
++    /**
++     * During an outage, a failing save is logged on its first attempt and then once every this many
++     * attempts (every 5 minutes at the autosave interval), not on every attempt of every dirty map.
++     */
++    private readonly SAVE_FAILURE_LOG_EVERY_ATTEMPTS: number = 20;
+ 
+     constructor() {
+         this.loadedMaps = new Map<string, WamFile>();
+@@ -162,7 +177,7 @@ class MapsManager {
+         // The in-memory map is obsolete: no further write of it may start. A write already handed to
+         // the storage cannot be cancelled, but its completion no longer finds its state and is ignored.
+         const saveState = this.mapSaveStates.get(key);
+-        if (saveState && saveState.status !== "saving") {
++        if (saveState) {
+             clearTimeout(saveState.timer);
+         }
+         this.mapSaveStates.delete(key);
+@@ -176,7 +191,13 @@ class MapsManager {
+         }
+         queue.push(message);
+         this.setCommandDeletionTimeout(mapKey, message.id);
+-        this.loadedMaps.get(mapKey)?.updateLastCommandIdProperty(message.id);
++        const wamFile = this.loadedMaps.get(mapKey);
++        if (wamFile) {
++            wamFile.updateLastCommandIdProperty(message.id);
++            // The WAM changed (its last command id, and the map for commands that do not run through
++            // executeCommand, such as custom entity deletion), so it must be saved.
++            this.markUnsaved(mapKey);
++        }
+     }
+ 
+     private setCommandDeletionTimeout(mapKey: string, commandId: string): void {
+@@ -230,54 +251,82 @@ class MapsManager {
+     }
+ 
+     private markUnsaved(mapKey: string): void {
++        const now = Date.now();
+         const saveState = this.mapSaveStates.get(mapKey);
+         if (saveState === undefined) {
+-            this.scheduleSave(mapKey, "dirty", this.AUTO_SAVE_INTERVAL_MS, Date.now(), 0);
+-        } else if (saveState.status === "saving") {
+-            saveState.editedDuringWriteAt ??= Date.now();
++            this.scheduleSave(mapKey, "dirty", this.AUTO_SAVE_INTERVAL_MS, now, 0);
++            return;
++        }
++        // A scheduled write saves the map as it is when it starts, so only the edit time changes.
++        saveState.lastEditAt = now;
++        if (saveState.status === "saving") {
++            saveState.editedDuringWriteAt ??= now;
+         }
+-        // Otherwise a write is already scheduled, and it will save the map as it is when it starts.
+     }
+ 
+     private scheduleSave(
+         mapKey: string,
+         status: "dirty" | "retrying",
+         delayMs: number,
+-        unsavedSince: number,
++        lastEditAt: number,
+         failedAttempts: number,
+     ): void {
+-        const timer = setTimeout(() => this.startSave(mapKey, unsavedSince, failedAttempts), delayMs);
+-        this.mapSaveStates.set(mapKey, { status, timer, unsavedSince, failedAttempts });
++        const state: MapSaveState = {
++            status,
++            timer: setTimeout(() => this.startSave(mapKey, state), delayMs),
++            lastEditAt,
++            failedAttempts,
++        };
++        this.mapSaveStates.set(mapKey, state);
+     }
+ 
+-    private startSave(mapKey: string, unsavedSince: number, failedAttempts: number): void {
++    private startSave(mapKey: string, scheduled: MapSaveState): void {
+         const wamFile = this.loadedMaps.get(mapKey);
+         if (!wamFile) {
+             this.mapSaveStates.delete(mapKey);
+             return;
+         }
+-        const saving: MapSaveState = {
++        const saving: MapSaveState & { status: "saving" } = {
+             status: "saving",
++            timer: setTimeout(() => {
++                this.onSaveFailed(
++                    mapKey,
++                    saving,
++                    new Error(`Write of map ${mapKey} did not settle within ${this.SAVE_WRITE_TIMEOUT_MS}ms`),
++                );
++            }, this.SAVE_WRITE_TIMEOUT_MS),
+             writeStartedAt: Date.now(),
+             editedDuringWriteAt: undefined,
+-            unsavedSince,
+-            failedAttempts,
++            // Read when the write starts: edits made while it was scheduled updated the scheduled state.
++            lastEditAt: scheduled.lastEditAt,
++            failedAttempts: scheduled.failedAttempts,
+         };
+         this.mapSaveStates.set(mapKey, saving);
+         console.info(`[${new Date().toISOString()}] saving map ${mapKey}`);
+         (async () => {
+             await fileSystem.writeStringAsFile(mapKey, JSON.stringify(wamFile.getWam()));
+-        })().then(
+-            () => this.onSaveSucceeded(mapKey, saving),
+-            (e: unknown) => this.onSaveFailed(mapKey, saving, e),
+-        );
++        })()
++            .then(
++                () => this.onSaveSucceeded(mapKey, saving),
++                (e: unknown) => this.onSaveFailed(mapKey, saving, e),
++            )
++            .catch((e: unknown) => {
++                console.error(`[${new Date().toISOString()}] Error while handling the save of map ${mapKey}`, e);
++                Sentry.captureException(e, { tags: { key: mapKey, location: "autosaveCompletion" } });
++            });
+     }
+ 
+     private onSaveSucceeded(mapKey: string, saving: MapSaveState & { status: "saving" }): void {
+         if (this.mapSaveStates.get(mapKey) !== saving) {
+-            // The map was replaced or deleted while this write was in flight.
++            // The map was replaced or deleted, or this write timed out, while it was in flight.
+             return;
+         }
++        clearTimeout(saving.timer);
++        if (saving.failedAttempts > 0) {
++            console.info(
++                `[${new Date().toISOString()}] Saving map ${mapKey} succeeded after ${saving.failedAttempts} failed attempts`,
++            );
++        }
+         if (saving.editedDuringWriteAt === undefined) {
+             this.mapSaveStates.delete(mapKey);
+             this.evictIfIdle(mapKey);
+@@ -290,42 +339,45 @@ class MapsManager {
+             mapKey,
+             "dirty",
+             Math.max(0, this.AUTO_SAVE_INTERVAL_MS - sinceWriteStarted),
+-            saving.editedDuringWriteAt,
++            saving.lastEditAt,
+             0,
+         );
+     }
+ 
+     private onSaveFailed(mapKey: string, saving: MapSaveState & { status: "saving" }, error: unknown): void {
+         if (this.mapSaveStates.get(mapKey) !== saving) {
+-            // The map was replaced or deleted while this write was in flight.
++            // The map was replaced or deleted, or this write timed out, while it was in flight.
+             return;
+         }
++        clearTimeout(saving.timer);
+         const failedAttempts = saving.failedAttempts + 1;
+-        const unsavedForMs = Date.now() - saving.unsavedSince;
+-        if (unsavedForMs >= this.SAVE_RETRY_HORIZON_MS) {
++        const sinceLastEditMs = Date.now() - saving.lastEditAt;
++        if (sinceLastEditMs >= this.SAVE_RETRY_HORIZON_MS) {
+             console.error(
+-                `[${new Date().toISOString()}] SAVING MAP ${mapKey} FAILED ${failedAttempts} TIMES IN ${unsavedForMs}ms. GIVING UP, UNSAVED CHANGES ARE LOST UNLESS THE MAP IS EDITED AGAIN`,
++                `[${new Date().toISOString()}] SAVING MAP ${mapKey} FAILED ${failedAttempts} TIMES, LAST EDIT ${sinceLastEditMs}ms AGO. GIVING UP, UNSAVED CHANGES ARE LOST UNLESS THE MAP IS EDITED AGAIN`,
+                 error,
+             );
+             Sentry.captureException(error, {
+                 tags: { key: mapKey, location: "autosaveAbandoned" },
+-                extra: { failedAttempts, unsavedForMs },
++                extra: { failedAttempts, sinceLastEditMs },
+             });
+             this.mapSaveStates.delete(mapKey);
+             this.evictIfIdle(mapKey);
+             return;
+         }
+-        console.error(
+-            `[${new Date().toISOString()}] Saving map ${mapKey} failed (attempt ${failedAttempts}, unsaved for ${unsavedForMs}ms). Retrying in ${this.AUTO_SAVE_INTERVAL_MS}ms`,
+-            error,
+-        );
++        if (failedAttempts === 1 || failedAttempts % this.SAVE_FAILURE_LOG_EVERY_ATTEMPTS === 0) {
++            console.error(
++                `[${new Date().toISOString()}] Saving map ${mapKey} failed (attempt ${failedAttempts}, last edit ${sinceLastEditMs}ms ago). Retrying every ${this.AUTO_SAVE_INTERVAL_MS}ms, logging every ${this.SAVE_FAILURE_LOG_EVERY_ATTEMPTS} attempts`,
++                error,
++            );
++        }
+         if (failedAttempts === 1) {
+             // Once per failing streak: an outage must not report every attempt of every dirty map.
+             Sentry.captureException(error, {
+                 tags: { key: mapKey, location: "autosaveFailed" },
+             });
+         }
+-        this.scheduleSave(mapKey, "retrying", this.AUTO_SAVE_INTERVAL_MS, saving.unsavedSince, failedAttempts);
++        this.scheduleSave(mapKey, "retrying", this.AUTO_SAVE_INTERVAL_MS, saving.lastEditAt, failedAttempts);
+     }
+ }
+ 
+diff --git a/map-storage/src/tests/MapsManagerAutosave.test.ts b/map-storage/src/tests/MapsManagerAutosave.test.ts
+index b85f334..e57666e 100644
+--- a/map-storage/src/tests/MapsManagerAutosave.test.ts
++++ b/map-storage/src/tests/MapsManagerAutosave.test.ts
+@@ -102,6 +102,7 @@ const DOMAIN = "play.test";
+ const AUTOSAVE_INTERVAL_MS = 15_000;
+ const LONG_AFTER_LAST_EDIT_MS = 5 * 60_000;
+ const RETRY_HORIZON_MS = 60 * 60_000;
++const WRITE_TIMEOUT_MS = 5 * 60_000;
+ 
+ // mapsManager is a process singleton: every test edits its own map.
+ let mapCount = 0;
+@@ -127,6 +128,10 @@ async function edit(commandId: string): Promise<void> {
+     });
+ }
+ 
++function errorLogsAboutMap(key: string): number {
++    return vi.mocked(console.error).mock.calls.filter(([message]) => String(message).includes(key)).length;
++}
++
+ /** Lets the held writes succeed, most recently started first, and stops holding the following ones. */
+ async function releaseHeldWritesNewestFirst(): Promise<void> {
+     storage.writeMode = "succeed";
+@@ -191,6 +196,22 @@ describe("MapsManager autosave", () => {
+             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-at-60s");
+             expect(storage.writesStarted).toBe(5);
+         });
++
++        it("should persist a change made by a command that only went through the command queue", async () => {
++            // Custom entity commands mutate the WAM outside mapsManager.executeCommand, then get queued.
++            await mapsManager.waitForLock(mapKey, async () => {
++                const wamFile = await mapsManager.getOrLoadWamFile(mapKey);
++                wamFile.getWam().metadata = { name: "edited by entity-cmd" };
++                mapsManager.addCommandToQueue(mapKey, { id: "entity-cmd", editMapMessage: undefined });
++            });
++
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            expect(storedWam(mapKey)).toMatchObject({
++                lastCommandId: "entity-cmd",
++                metadata: { name: "edited by entity-cmd" },
++            });
++        });
+     });
+ 
+     describe("when a save fails", () => {
+@@ -227,6 +248,30 @@ describe("MapsManager autosave", () => {
+             expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
+         });
+ 
++        it("should measure the retry horizon from the newest edit, not the first one", async () => {
++            await edit("cmd-1");
++            storage.writeMode = "fail";
++            await vi.advanceTimersByTimeAsync(RETRY_HORIZON_MS - 10_000);
++            await edit("cmd-2");
++            await vi.advanceTimersByTimeAsync(60_000);
++            storage.writeMode = "succeed";
++
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
++        });
++
++        it("should log a failing save on its first attempt and then periodically, not on every attempt", async () => {
++            await edit("cmd-1");
++            storage.writeMode = "fail";
++
++            await vi.advanceTimersByTimeAsync(10 * 60_000);
++
++            expect(storage.writesStarted).toBe(40);
++            expect(errorLogsAboutMap(mapKey)).toBeGreaterThanOrEqual(1);
++            expect(errorLogsAboutMap(mapKey)).toBeLessThanOrEqual(3);
++        });
++
+         it("should stop retrying once the map was replaced or deleted", async () => {
+             await edit("cmd-1");
+             storage.writeMode = "fail";
+@@ -265,6 +310,18 @@ describe("MapsManager autosave", () => {
+ 
+             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
+         });
++
++        it("should count a write that never settles as failed and retry it", async () => {
++            await edit("cmd-1");
++            storage.writeMode = "hold";
++            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
++            storage.writeMode = "succeed";
++
++            await vi.advanceTimersByTimeAsync(WRITE_TIMEOUT_MS + 2 * AUTOSAVE_INTERVAL_MS);
++
++            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
++            expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
++        });
+     });
+ 
+     describe("when an edit lands while a save is in flight", () => {
+@@ -281,7 +338,9 @@ describe("MapsManager autosave", () => {
+             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
+         });
+ 
+-        it("should not write the abandoned state after the map was replaced by an upload", async () => {
++        // Regression guard, it also passes on trunk: the held write fails, so this covers retries only. A held
++        // write that succeeds after the replacement still overwrites it (see the PR description).
++        it("should not retry the abandoned state after the map was replaced by an upload", async () => {
+             await edit("cmd-1");
+             storage.writeMode = "hold";
+             await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);

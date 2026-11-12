@@ -1,0 +1,65 @@
+{
+  "lane": 3,
+  "plan": "docs/audits/performance-1000-users/plans/upstream-pr-plan.md P1 lane 3",
+  "host": "sbh: x86_64 AMD EPYC 9354P (VM), 4 vCPU, 15 GB, shared with production services; Node 24.22.2, tsx 4.22.3, ws 8.21.0",
+  "stack": "wa-fable-stack (baseline ddbe245a8, dev mode): play/pusher capped 0.65 CPU / 1536 MB, back 0.65 CPU / 1536 MB, redis 0.10, maps nginx 0.10; generator container capped 1 CPU / 1 GB, all --cpu-shares 512",
+  "goal": "Two sessions in the same room: the second observes the first's movement and, after the first leaves, its user-left event.",
+  "observerKind": "Headless protocol observer (a second harness process with WA_MOVE_HZ=0), NOT a real browser client. Rendering of the observed position was not checked.",
+  "runs": [
+    {
+      "run": "lane-3-observer",
+      "command": "docker run --rm --name wa-fable-gen-obs --label owner=wa-fable-20261111 --cpus 1 --cpu-shares 512 --memory 1g --network wa-fable-net --tmpfs /tmp -v ~/wa-jobs/wa-fable-20261111/src-wa-fable-stack:/work -v ~/wa-jobs/wa-fable-20261111/p1-live/out:/out -w /work/benchmark -e WA_PUSHER_URL=http://wa-fable-stack-play:3000 -e WA_WS_URL=ws://wa-fable-stack-play:3001 -e WA_ROOM_URLS=http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json -e WA_API_VERSION=dev -e WA_OUTPUT=/out/lane-3-observer.json -e WA_SESSIONS=1 -e WA_RAMP_SECONDS=1 -e WA_DURATION_SECONDS=22 -e WA_MOVE_HZ=0 -e WA_NAME_PREFIX=observer node:24-trixie /work/node_modules/.bin/tsx ./index.ts",
+      "exitCode": 0,
+      "stderr": "(empty)",
+      "summary": {
+        "schemaVersion": 1,
+        "notice": "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
+        "startedAt": "2026-11-12T00:37:39.660Z",
+        "wallSeconds": 22.009,
+        "stopReason": "completed",
+        "config": {"pusherUrl": "http://wa-fable-stack-play:3000", "wsUrl": "ws://wa-fable-stack-play:3001", "roomUrls": ["http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json"], "sessions": 1, "rampSeconds": 1, "durationSeconds": 22, "moveHz": 0, "joinTimeoutSeconds": 30, "closeTimeoutSeconds": 5, "auth": "anonymous", "apiVersion": "dev", "characterTextureId": "male1", "namePrefix": "observer", "disconnectFraction": 0, "disconnectAtSeconds": 11, "minAccepted": 1, "output": "/out/lane-3-observer.json"},
+        "sessions": {"requested": 1, "started": 1, "neverStarted": 0, "accepted": 1, "acceptedAtStop": 1, "rejected": 0, "abortedBeforeJoin": 0, "unexpectedCloses": 0, "uniqueUserIds": 1},
+        "sockets": {"opened": 1, "openPeak": 1, "openAtStop": 1, "closed": 1},
+        "joinLatencyMs": {"count": 1, "p50": 115.3, "p95": 115.3, "max": 115.3},
+        "rooms": [{"roomUrl": "http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json", "started": 1, "accepted": 1, "rejected": 0, "uniqueUserIds": 1}],
+        "sent": {"joinRoomFrontMessage": 1, "viewportMessage": 1},
+        "received": {"frames": 21, "bytes": 958, "eventsByType": {"roomConnectedMessage": 1, "roomJoinedMessage": 1, "joinSpaceRequestMessage": 1, "userJoinedMessage": 1, "groupUpdateMessage": 5, "userMovedMessage": 15, "leaveSpaceRequestMessage": 1, "groupUsersUpdateMessage": 1, "groupDeleteMessage": 1, "userLeftMessage": 1}},
+        "rejections": {},
+        "errors": {},
+        "closeCodes": {"1000": 1},
+        "generator": {"cpuUserMs": 221.3, "cpuSystemMs": 55.1, "cpuPercentOfOneCore": 1.3, "rssPeakBytes": 150138880, "rssEndBytes": 145117184, "eventLoopLagMs": {"p50": 10.14, "p95": 11.46, "p99": 12.72, "max": 77.79}},
+        "cleanup": {"openSockets": 0, "activeTimers": 0},
+        "reconciled": true
+      }
+    },
+    {
+      "run": "lane-3-mover",
+      "command": "docker run --rm --name wa-fable-gen --label owner=wa-fable-20261111 --cpus 1 --cpu-shares 512 --memory 1g --network wa-fable-net --tmpfs /tmp -v ~/wa-jobs/wa-fable-20261111/src-wa-fable-stack:/work -v ~/wa-jobs/wa-fable-20261111/p1-live/out:/out -w /work/benchmark -e WA_PUSHER_URL=http://wa-fable-stack-play:3000 -e WA_WS_URL=ws://wa-fable-stack-play:3001 -e WA_ROOM_URLS=http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json -e WA_API_VERSION=dev -e WA_OUTPUT=/out/lane-3-mover.json -e WA_SESSIONS=1 -e WA_RAMP_SECONDS=1 -e WA_DURATION_SECONDS=8 -e WA_MOVE_HZ=2 -e WA_NAME_PREFIX=mover node:24-trixie /work/node_modules/.bin/tsx ./index.ts",
+      "exitCode": 0,
+      "stderr": "(empty)",
+      "summary": {
+        "schemaVersion": 1,
+        "notice": "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
+        "startedAt": "2026-11-12T00:37:45.596Z",
+        "wallSeconds": 8.007,
+        "stopReason": "completed",
+        "config": {"pusherUrl": "http://wa-fable-stack-play:3000", "wsUrl": "ws://wa-fable-stack-play:3001", "roomUrls": ["http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json"], "sessions": 1, "rampSeconds": 1, "durationSeconds": 8, "moveHz": 2, "joinTimeoutSeconds": 30, "closeTimeoutSeconds": 5, "auth": "anonymous", "apiVersion": "dev", "characterTextureId": "male1", "namePrefix": "mover", "disconnectFraction": 0, "disconnectAtSeconds": 4, "minAccepted": 1, "output": "/out/lane-3-mover.json"},
+        "sessions": {"requested": 1, "started": 1, "neverStarted": 0, "accepted": 1, "acceptedAtStop": 1, "rejected": 0, "abortedBeforeJoin": 0, "unexpectedCloses": 0, "uniqueUserIds": 1},
+        "sockets": {"opened": 1, "openPeak": 1, "openAtStop": 1, "closed": 1},
+        "joinLatencyMs": {"count": 1, "p50": 122.8, "p95": 122.8, "max": 122.8},
+        "rooms": [{"roomUrl": "http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json", "started": 1, "accepted": 1, "rejected": 0, "uniqueUserIds": 1}],
+        "sent": {"joinRoomFrontMessage": 1, "viewportMessage": 1, "userMovesMessage": 15},
+        "received": {"frames": 8, "bytes": 607, "eventsByType": {"roomConnectedMessage": 1, "roomJoinedMessage": 1, "joinSpaceRequestMessage": 1, "userJoinedMessage": 1, "groupUpdateMessage": 5, "leaveSpaceRequestMessage": 1, "groupUsersUpdateMessage": 1, "groupDeleteMessage": 1}},
+        "rejections": {},
+        "errors": {},
+        "closeCodes": {"1000": 1},
+        "generator": {"cpuUserMs": 158.6, "cpuSystemMs": 25.8, "cpuPercentOfOneCore": 2.3, "rssPeakBytes": 154587136, "rssEndBytes": 154587136, "eventLoopLagMs": {"p50": 10.14, "p95": 11.4, "p99": 12.41, "max": 62.29}},
+        "cleanup": {"openSockets": 0, "activeTimers": 0},
+        "reconciled": true
+      }
+    }
+  ],
+  "timeline": "observer started 00:37:37 UTC; mover started 6 s later in a separate container, ran 8 s and closed; observer kept running 22 s in total",
+  "verdict": "PASS for the headless criterion; the plan's 'real client observes the expected position' remains open",
+  "evidence": ["mover sent userMovesMessage=15; idle observer received userMovedMessage=15 (it sends no moves, so every userMovedMessage it received came from the mover)", "observer received userJoinedMessage=1 and, after the mover closed, userLeftMessage=1, groupDeleteMessage=1", "the mover's last position (step 15, about x=1558 y=1144) still produced a delivered move, and no position followed it, so the userLeftMessage is the disconnect, not a viewport exit", "the harness counts event types only: it does not assert the coordinates of the observed moves or the id in userLeftMessage"]
+}

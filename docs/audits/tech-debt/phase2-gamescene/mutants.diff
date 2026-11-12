@@ -1,0 +1,30 @@
+--- a/play/src/front/Phaser/Game/GameScene.ts (stage 3)
++++ b/play/src/front/Phaser/Game/GameScene.ts (r1)
+@@ -1477,7 +1477,6 @@
+         }
+         for (const removedPlayerId of this.remotePlayersRepository.getRemovedPlayers()) {
+             debugRemovePlayer("Player will be remove from GameScene", removedPlayerId);
+-            this.doRemovePlayer(removedPlayerId);
+             debugRemovePlayer("Player has been removed from GameScene", removedPlayerId);
+         }
+ 
+--- a/play/src/front/Phaser/Game/GameScene.ts (stage 3)
++++ b/play/src/front/Phaser/Game/GameScene.ts (r2)
+@@ -1468,7 +1468,6 @@
+             debugAddPlayer("Player has been added to the GameScene", addedPlayer);
+         }
+         for (const movedPlayer of this.remotePlayersRepository.getMovedPlayers()) {
+-            this.doUpdatePlayerPosition(movedPlayer);
+         }
+         for (const updatedPlayer of this.remotePlayersRepository.getUpdatedPlayers()) {
+             debugUpdatePlayer("Player will be update from GameScene", updatedPlayer);
+--- a/play/src/front/Phaser/Game/GameScene.ts (stage 3)
++++ b/play/src/front/Phaser/Game/GameScene.ts (r3)
+@@ -1514,7 +1514,6 @@
+                 throw new Error('Cannot find player with ID "' + userId + '"');
+             }
+             const previousPosition = { x: player.x, y: player.y };
+-            player.updatePosition(moveEvent);
+             this.addConversationBubblesAffectedByPlayerMove(
+                 userId,
+                 previousPosition,

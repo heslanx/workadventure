@@ -1,0 +1,48 @@
+# P1 lane 1 - trunk failure of the benchmark entry point
+# baseline commit ddbe245a84c78c947dd9ae5310da1fc53cd3d278, benchmark/index.ts unmodified at capture time
+# captured (UTC): 2026-11-11T23:51:52Z
+# runner: docker exec wa-fable-local (Node v24.22.2)
+
+$ cd /usr/src/app/benchmark && npm start
+
+> workadventure-artillery@1.0.0 start
+> ts-node ./index.ts
+
+exit code: 124
+
+# NOTE: exit 124 above is the 150 s 'timeout' wrapper killing ts-node before it printed anything (full type-check of the play front over a bind mount). It is NOT a pass; no user ever connected.
+
+# Static evidence that the entry point cannot work at this commit:
+$ ls play/src/front/Connection/ | grep -i websocket
+WorkAdventureWebSocket.ts
+$ test -e play/src/front/Connection/WebSocket.ts; echo $?
+1
+$ rg -c "initBenchmark|setWebsocketFactory" play/src/front/Connection/ConnectionManager.ts play/src/front/Connection/WorkAdventureWebSocket.ts
+play/src/front/Connection/WorkAdventureWebSocket.ts:1
+play/src/front/Connection/ConnectionManager.ts:1
+exit code: 0
+$ rg -n "public (async )?connectToRoomSocket" -A8 play/src/front/Connection/ConnectionManager.ts
+380:    public connectToRoomSocket(
+381-        roomUrl: string,
+382-        name: string,
+383-        characterTextureIds: string[],
+384-        companionTextureId: string | null,
+385-        lastCommandId?: string,
+386-        retryAttempt = 0,
+387-    ): Promise<OnConnectInterface> {
+388-        Sentry.setTag("roomId", roomUrl);
+
+$ cd /usr/src/app/benchmark && timeout 90 npx tsx ./index.ts   (fast transpile-only attempt of the same file)
+exit code: 124
+
+# NOTE on the tsx attempt: exit 124 is again the timeout wrapper (90 s). The shared local container was at load
+# average ~42 at the time (other lanes), so neither runtime attempt reached its own error. Neither is a pass,
+# and neither is a captured runtime error message: the runtime failure text was NOT observed.
+# What the static part above does establish:
+#  - benchmark/index.ts imports "../play/src/front/Connection/WebSocket"; that module does not exist
+#    (test -e -> 1). The class now lives in WorkAdventureWebSocket.ts, so module resolution must fail.
+#  - initBenchmark and setWebsocketFactory still exist (rg -c -> 1 match each), so those two calls are not
+#    the breakage.
+#  - connectToRoomSocket(roomUrl, name, characterTextureIds, companionTextureId, lastCommandId?, retryAttempt)
+#    no longer takes the position and viewport objects the script passes as arguments 4 and 5.
+# No baseline run exists for trunk; no speedup ratio can be derived from it.

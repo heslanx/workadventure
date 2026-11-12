@@ -1,0 +1,30 @@
++       "message": {
++         "$case": "groupUpdateMessage",
++         "groupUpdateMessage": {
++           "groupId": 1,
++           "groupSize": 2,
++           "locked": false,
++           "position": {
++             "x": 110,
++             "y": 10,
++           },
++           "userIds": [
++             1,
++             2,
+            ],
+          },
+        },
+      },
+    ],
+ ❯ tests/pusher/PusherWebSocketBatch.test.ts:83:31
+     81|         socket.flushBatch();
+     82|
+     83|         expect(sentBatches()).toEqual([[groupUpdate(1, 110, [1, 2]), g…
+       |                               ^
+     84|     });
+     85|
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  02:43:32
+   Duration  63.80s (transform 42.47s, setup 1.00s, import 48.10s, tests 589ms, environment 10.80s)

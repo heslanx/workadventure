@@ -1,0 +1,84 @@
+ba63e453b1516e71b97be217f02aa86144d1d3c6264a185714d6def67ac05ee9  src-cpu/back/src/Services/CpuTracker.ts
+4ab1585dea5a38fc0fc2152e463ea975475ca7bb03308f81b46bce1421deeb99  src-cpu/back/src/Services/QuotaAwareCpuTracker.ts
+7c37b5580ed1576766d66907977bd26388190cf959fb07d70511c061154a142a  src-cpu/back/tests/CpuTracker.test.ts
+## prettier --check
+Checking formatting...
+All matched files use Prettier code style!
+PRETTIER_EXIT=0
+## eslint
+ESLINT_EXIT=0
+## vitest CpuTracker
+
+ RUN  v4.1.7 /work/back
+
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should read a quota as cores 9ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should treat max as unlimited 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should reject malformed content 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should read a quota as cores 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should treat -1 as unlimited 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should reject malformed content 10ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2Path > should read the cgroup v2 path of the process 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2Path > should reject a missing entry or a path that is not plain absolute 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should read the path of the process in the hierarchy that holds the cpu controller 5ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should reject a missing entry or a path that is not plain absolute 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the mount of the v1 cpu controller and its root 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the cgroup2 mount and decode octal escapes 11ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should prefer cgroup v2 over cgroup v1 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should read cpu.max of the process cgroup from /proc/self/cgroup before the root 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should fall back to the root cpu.max when the process cgroup has none 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cpu.max over the process cgroup and its ancestors 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cgroup v1 quota over the process cgroup and its ancestors 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should find the cgroup v1 cpu controller through /proc/self/mountinfo when it is mounted elsewhere 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should map a cgroup v1 path below the mount root to the directory under the mount point 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should read cgroup v1 when cpu.max is absent 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should report no quota when the files are missing 6ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should warn about malformed content but not about an unlimited quota 3ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readOptionalFile > should return undefined for a missing file without logging 5ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readOptionalFile > should log a read failure other than a missing file 6ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.65-core cgroup v2 quota 7ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.5-core cgroup v1 quota 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when a parent cgroup caps the process at 0.5 core 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should not overheat at 60 % of a 0.65-core quota 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota exceeds one core 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota is unlimited, missing or malformed 3ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should reject a capacity that is not a positive number of cores 2ms
+
+ Test Files  1 passed (1)
+      Tests  31 passed (31)
+   Start at  02:37:45
+   Duration  684ms (transform 238ms, setup 0ms, import 289ms, tests 96ms, environment 0ms)
+
+VITEST_EXIT=0
+## typecheck
+
+> workadventureback@1.0.0 typecheck
+> tsc --noEmit
+
+TYPECHECK_EXIT=0
+## consumer tests
+
+ RUN  v4.1.7 /work/back
+
+ ✓ tests/RoomManager.test.ts (1 test) 114ms
+ ✓ tests/CpuTracker.test.ts (31 tests) 38ms
+stdout | tests/GameRoom.test.ts
+CPU tracker: percentages are relative to 1 core(s), from cgroup v2 /sys/fs/cgroup/cpu.max (quota 1 cores)
+
+stderr | tests/GameRoom.test.ts > GameRoom > should connect user1 and user2
+WARNING: Redis is not configured. No players variables will be persisted.
+
+stdout | tests/GameRoom.test.ts > GameRoom > should not notify duplicate user when reconnecting from the same tab
+Detected reconnection from same tab for user duplicate-user. Killing stale connection.
+
+stderr | tests/GameRoom.test.ts > GameRoom > variable listeners > should not write to a listener that was removed
+WARNING: Redis is not configured. No variables will be persisted.
+
+ ✓ tests/GameRoom.test.ts (14 tests) 25ms
+ ✓ tests/SessionAnalytics.test.ts (14 tests) 24ms
+
+ Test Files  4 passed (4)
+      Tests  60 passed (60)
+   Start at  02:38:12
+   Duration  10.08s (transform 3.55s, setup 0ms, import 8.98s, tests 201ms, environment 0ms)
+
+CONSUMERS_EXIT=0

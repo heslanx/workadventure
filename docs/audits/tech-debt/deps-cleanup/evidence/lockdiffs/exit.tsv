@@ -1,0 +1,11 @@
+step0-noop npm-exit=0
+noop drift lines: 0
+dep02-back npm-exit=0
+dep02-shared-utils npm-exit=0
+dep02-map-storage npm-exit=0
+dep01-back npm-exit=0
+dep01-map-storage npm-exit=0
+dep01-libs-messages npm-exit=0
+dep01-libs-store-utils npm-exit=0
+dep01-play npm-exit=0
+done

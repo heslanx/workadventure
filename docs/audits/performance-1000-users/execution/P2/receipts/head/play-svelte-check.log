@@ -1,0 +1,8 @@
+
+> workadventure-play@1.0.0 svelte-check
+> cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --compiler-warnings "a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore"
+
+Loading svelte-check in workspace: /work/play
+Getting Svelte diagnostics...
+
+svelte-check found 0 errors and 0 warnings

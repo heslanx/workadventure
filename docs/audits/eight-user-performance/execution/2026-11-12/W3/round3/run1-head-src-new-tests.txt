@@ -1,0 +1,197 @@
+# HEAD source (QuotaAwareCpuTracker.ts sha256 9c8eb7aadaa1eda4) + round-3 tests
+
+ RUN  v4.1.7 /work/back
+
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should read a quota as cores 3ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should treat max as unlimited 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should reject malformed content 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should read a quota as cores 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should treat -1 as unlimited 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should reject malformed content 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2Path > should read the cgroup v2 path of the process 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2Path > should reject a missing entry or a path that is not plain absolute 0ms
+ × tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should read the path of the process in the hierarchy that holds the cpu controller 18ms
+   → parseCgroupV1CpuPath is not a function
+ × tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should reject a missing entry or a path that is not plain absolute 2ms
+   → parseCgroupV1CpuPath is not a function
+ × tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the mount of the v1 cpu controller and its root 3ms
+   → parseCgroupMount is not a function
+ × tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the cgroup2 mount and decode octal escapes 1ms
+   → parseCgroupMount is not a function
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should prefer cgroup v2 over cgroup v1 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should read cpu.max of the process cgroup from /proc/self/cgroup before the root 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should fall back to the root cpu.max when the process cgroup has none 2ms
+ × tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cpu.max over the process cgroup and its ancestors 7ms
+   → expected undefined to be 0.5 // Object.is equality
+ × tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cgroup v1 quota over the process cgroup and its ancestors 2ms
+   → expected undefined to be 0.5 // Object.is equality
+ × tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should find the cgroup v1 cpu controller through /proc/self/mountinfo when it is mounted elsewhere 1ms
+   → expected undefined to be 0.5 // Object.is equality
+ × tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should map a cgroup v1 path below the mount root to the directory under the mount point 1ms
+   → expected undefined to be 0.5 // Object.is equality
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should read cgroup v1 when cpu.max is absent 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should report no quota when the files are missing 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should warn about malformed content but not about an unlimited quota 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readOptionalFile > should return undefined for a missing file without logging 3ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readOptionalFile > should log a read failure other than a missing file 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.65-core cgroup v2 quota 8ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.5-core cgroup v1 quota 1ms
+ × tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when a parent cgroup caps the process at 0.5 core 3ms
+   → expected 50 to be 100 // Object.is equality
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should not overheat at 60 % of a 0.65-core quota 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota exceeds one core 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota is unlimited, missing or malformed 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should reject a capacity that is not a positive number of cores 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should read the path of the process in the hierarchy that holds the cpu controller
+TypeError: parseCgroupV1CpuPath is not a function
+ ❯ tests/CpuTracker.test.ts:122:20
+    120|         it("should read the path of the process in the hierarchy that …
+    121|             const content = "12:cpuset:/docker/other\n11:name=systemd:…
+    122|             expect(parseCgroupV1CpuPath(content)).toBe("/docker/abc");
+       |                    ^
+    123|         });
+    124|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should reject a missing entry or a path that is not plain absolute
+TypeError: parseCgroupV1CpuPath is not a function
+ ❯ tests/CpuTracker.test.ts:126:20
+    124|
+    125|         it("should reject a missing entry or a path that is not plain …
+    126|             expect(parseCgroupV1CpuPath("0::/\n")).toBeUndefined();
+       |                    ^
+    127|             expect(parseCgroupV1CpuPath("5:cpuacct:/a\n")).toBeUndefin…
+    128|             expect(parseCgroupV1CpuPath("4:cpu,cpuacct:/../escape\n"))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the mount of the v1 cpu controller and its root
+TypeError: parseCgroupMount is not a function
+ ❯ tests/CpuTracker.test.ts:134:20
+    132|     describe("parseCgroupMount", () => {
+    133|         it("should find the mount of the v1 cpu controller and its roo…
+    134|             expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v1")).toEqua…
+       |                    ^
+    135|                 root: "/docker/abc",
+    136|                 mountPoint: DOCKER_V1_CPU,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the cgroup2 mount and decode octal escapes
+TypeError: parseCgroupMount is not a function
+ ❯ tests/CpuTracker.test.ts:143:20
+    141|         it("should find the cgroup2 mount and decode octal escapes", (…
+    142|             const mountinfo = "30 23 0:26 / /run/my\\040cgroup rw,nosu…
+    143|             expect(parseCgroupMount(mountinfo, "v2")).toEqual({ root: …
+       |                    ^
+    144|             expect(parseCgroupMount(mountinfo, "v1")).toBeUndefined();
+    145|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cpu.max over the process cgroup and its ancestors
+AssertionError: expected undefined to be 0.5 // Object.is equality
+
+- Expected:
+0.5
+
++ Received:
+undefined
+
+ ❯ tests/CpuTracker.test.ts:177:72
+    175|                 [V2_CPU_MAX]: "max 100000\n",
+    176|             };
+    177|             expect(readCgroupCpuQuotaCores(fakeCgroup(parentLimited)))…
+       |                                                                        ^
+    178|             expect(readCpuCapacity(fakeCgroup(parentLimited)).source).…
+    179|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cgroup v1 quota over the process cgroup and its ancestors
+AssertionError: expected undefined to be 0.5 // Object.is equality
+
+- Expected:
+0.5
+
++ Received:
+undefined
+
+ ❯ tests/CpuTracker.test.ts:197:64
+    195|                 [V1_PERIOD]: "100000\n",
+    196|             };
+    197|             expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.…
+       |                                                                ^
+    198|         });
+    199|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should find the cgroup v1 cpu controller through /proc/self/mountinfo when it is mounted elsewhere
+AssertionError: expected undefined to be 0.5 // Object.is equality
+
+- Expected:
+0.5
+
++ Received:
+undefined
+
+ ❯ tests/CpuTracker.test.ts:207:64
+    205|                 [`${DOCKER_V1_CPU}/cpu.cfs_period_us`]: "100000\n",
+    206|             };
+    207|             expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.…
+       |                                                                ^
+    208|             expect(readCpuCapacity(fakeCgroup(files)).source).toContai…
+    209|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should map a cgroup v1 path below the mount root to the directory under the mount point
+AssertionError: expected undefined to be 0.5 // Object.is equality
+
+- Expected:
+0.5
+
++ Received:
+undefined
+
+ ❯ tests/CpuTracker.test.ts:220:64
+    218|                 [`${DOCKER_V1_CPU}/cpu.cfs_period_us`]: "100000\n",
+    219|             };
+    220|             expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.…
+       |                                                                ^
+    221|         });
+    222|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when a parent cgroup caps the process at 0.5 core
+AssertionError: expected 50 to be 100 // Object.is equality
+
+- Expected
++ Received
+
+- 100
++ 50
+
+ ❯ tests/CpuTracker.test.ts:277:45
+    275|                 "/sys/fs/cgroup/system.slice/cpu.max": "50000 100000\n…
+    276|             });
+    277|             expect(tracker.getCpuPercent()).toBe(100);
+       |                                             ^
+    278|             expect(tracker.isOverHeating()).toBe(true);
+    279|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 22 passed (31)
+   Start at  02:35:06
+   Duration  739ms (transform 246ms, setup 0ms, import 298ms, tests 75ms, environment 0ms)
+
+EXIT=1

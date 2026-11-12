@@ -1,0 +1,45 @@
+# Thu Nov 12 02:38:49 UTC 2026 host=srv742000 load before: 6.29 5.93 5.17 5/1194 713898; diagnostic run, not reported as a timing
+stationary               B        hit=100%    ns/update med=44 p10=33 p90=213              B/update med=122 min=120 max=122           time/ref med=1 p10=1 p90=1 trace=15bb0b23369b
+inside-bounds            B        hit=100%    ns/update med=47 p10=29 p90=468              B/update med=120 min=120 max=120           time/ref med=1 p10=1 p90=1 trace=15bb0b23369b
+walk                     B        hit=84%     ns/update med=2406 p10=2010 p90=3320         B/update med=2032 min=2032 max=2035        time/ref med=1 p10=1 p90=1 trace=927d0200f674
+cross-every-update       B        hit=0%      ns/update med=23919 p10=18232 p90=48495      B/update med=17500 min=17497 max=17500     time/ref med=1 p10=1 p90=1 trace=f6ca1e19844f
+max-inside-bounds        B        hit=100%    ns/update med=57 p10=45 p90=68               B/update med=123 min=123 max=123           time/ref med=1 p10=1 p90=1 trace=27c18de17a27
+max-cross-every-update   B        hit=0%      ns/update med=301621 p10=264095 p90=336057   B/update med=265153 min=265153 max=267612  time/ref med=1 p10=1 p90=1 trace=fdd32d3047bf
+oversized-cropped        B        hit=100%    ns/update med=120 p10=91 p90=162             B/update med=203 min=203 max=203           time/ref med=1 p10=1 p90=1 trace=6eeab25373c2
+crowd-walk               B        hit=84.1%   ns/update med=3249 p10=2530 p90=3738         B/update med=1639 min=1628 max=1739        time/ref med=1 p10=1 p90=1 trace=4c5a40ebcb2e
+exit=0
+total 1100
+drwxr-xr-x 2 root root    4096 Nov 12 02:39 .
+drwxr-xr-x 6 root root    4096 Nov 12 02:38 ..
+-rw------- 1 root root 1100805 Nov 12 02:39 CPU.20261112.023850.34.0.001.cpuprofile
+-rw-r--r-- 1 root root   13631 Nov 12 02:39 out-B.json
+samples=22751
+ 34.7%  reconcileZones bench/PositionDispatcher.B.ts:2
+ 25.6%  (garbage collector) :0
+ 12.9%  (anonymous) bench/PositionDispatcher.B.ts:2
+  6.0%  setViewport bench/PositionDispatcher.B.ts:2
+  4.2%  subscribeZone bench/PositionDispatcher.B.ts:2
+  2.8%  startListening models/Zone.ts:2
+  2.6%  stopListening models/Zone.ts:2
+  1.9%  unsubscribeZone bench/PositionDispatcher.B.ts:2
+  1.9%  replay bench/viewport-bench.ts:2
+  1.3%  runCallSync lib/main.js:2424
+  1.1%  Zone models/Zone.ts:2
+  0.5%  getZoneKey bench/PositionDispatcher.B.ts:2
+  0.4%  wrapSafe cjs/loader:1819
+  0.3%  update crypto/hash:186
+  0.2%  observeBehavior bench/viewport-bench.ts:2
+  0.2%  main bench/viewport-bench.ts:2
+  0.1%  removeViewport bench/PositionDispatcher.B.ts:2
+  0.1%  compileForInternalLoader bootstrap/realm:383
+  0.1%  I dist/index-D9F1FXzN.cjs:10
+  0.1%  add bench/viewport-bench.ts:2
+  0.1%  (program) :0
+  0.1%  internalModuleStat :0
+  0.1%  boundZoneRectangle bench/PositionDispatcher.B.ts:2
+  0.1%  delete bench/viewport-bench.ts:2
+  0.1%  realpathSync node:fs:2781
+# Thu Nov 12 02:39:25 UTC 2026 done
+0
+
+[exited with code 0]

@@ -1,0 +1,87 @@
+== sha before
+e1743a01d947aac33efcff244112f961ef40591744e1969b004f1ffcf57fae69  src/front/Chat/Components/Room/RoomTimeline.svelte
+9f385f096d193ce56fca1b59086e3b440d40f491a4fd1cbbe6e903b6225a8719  src/front/Components/Video/PictureInPicture/childWindow.ts
+== mutant 1: RoomTimeline returns out without reuseUnchangedRenderItems
+48:    import { reuseUnchangedRenderItems, type RoomTimelineRenderItem } from "./RoomTimelineRenderItems";
+339:        return out;
+Sentry plugin disabled
+2:07:15 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+2:07:15 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+@sveltejs/svelte-virtual-list@3.0.1
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+[90mstdout[2m | src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts
+[22m[39mWake lock is not supported by this browser.
+ [31m❯[39m src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 88[2mms[22m[39m
+[31m     [31m×[31m does not update the rows already shown when one message is appended[39m[32m 86[2mms[22m[39m
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[41m[1m FAIL [22m[49m src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts[2m > [22mRoomTimeline row reuse[2m > [22mdoes not update the rows already shown when one message is appended
+[31m[1mAssertionError[22m: row m0 was updated: expected 4 to be 3 // Object.is equality[39m
+[32m- Expected[39m
+[31m+ Received[39m
+[32m- 3[39m
+[31m+ 4[39m
+[36m [2m❯[22m src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts:[2m146:76[22m[39m
+    [90m144|[39m         [34mexpect[39m(messageRows[33m.[39mpropReads[33m.[39m[35mget[39m([32m"m5"[39m))[33m.[39m[34mtoBeGreaterThan[39m([34m0[39m)[33m;[39m
+    [90m145|[39m         [35mfor[39m ([35mconst[39m id [35mof[39m [[32m"m0"[39m[33m,[39m [32m"m1"[39m[33m,[39m [32m"m2"[39m[33m,[39m [32m"m3"[39m[33m,[39m [32m"m4"[39m]) {
+    [90m146|[39m             expect(messageRows.propReads.get(id), `row ${id} was updat…
+    [90m   |[39m                                                                            [31m^[39m
+    [90m147|[39m         }
+    [90m148|[39m     })[33m;[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m   Start at [22m 02:07:15
+[2m   Duration [22m 41.24s[2m (transform 35.28s, setup 68ms, import 39.92s, tests 88ms, environment 950ms)[22m
+EXIT_MUTANT1_ROWREUSE=1
+== mutant 2: delegateSvelteEvents registers no listener
+76:    const stops = [target].map(() => () => {});
+Sentry plugin disabled
+2:07:59 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+2:07:59 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+@sveltejs/svelte-virtual-list@3.0.1
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+ [31m❯[39m src/front/Components/Video/PictureInPicture/childWindow.test.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 97[2mms[22m[39m
+     [32m✓[39m observes from the window the element lives in, not from the page[32m 41[2mms[22m[39m
+[31m     [31m×[31m runs a Svelte onclick on DOM moved into another window's document[39m[32m 52[2mms[22m[39m
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[41m[1m FAIL [22m[49m src/front/Components/Video/PictureInPicture/childWindow.test.ts[2m > [22mdelegateSvelteEvents[2m > [22mruns a Svelte onclick on DOM moved into another window's document
+[31m[1mAssertionError[22m: expected "vi.fn()" to be called 1 times, but got 0 times[39m
+[36m [2m❯[22m src/front/Components/Video/PictureInPicture/childWindow.test.ts:[2m71:25[22m[39m
+    [90m 69|[39m         [34mexpect[39m(button[33m.[39mownerDocument)[33m.[39m[34mtoBe[39m(child[33m.[39mdocument)[33m;[39m
+    [90m 70|[39m         // Once: the click after stop() shows nothing else forwards a …
+    [90m 71|[39m         [34mexpect[39m(onclick)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)[33m;[39m
+    [90m   |[39m                         [31m^[39m
+    [90m 72|[39m         [35mawait[39m [34munmount[39m(app)[33m;[39m
+    [90m 73|[39m     })[33m;[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m   Start at [22m 02:07:59
+[2m   Duration [22m 5.36s[2m (transform 3.08s, setup 236ms, import 3.37s, tests 97ms, environment 1.43s)[22m
+EXIT_MUTANT2_CHILDWINDOW=1
+== sha after restore
+e1743a01d947aac33efcff244112f961ef40591744e1969b004f1ffcf57fae69  src/front/Chat/Components/Room/RoomTimeline.svelte
+9f385f096d193ce56fca1b59086e3b440d40f491a4fd1cbbe6e903b6225a8719  src/front/Components/Video/PictureInPicture/childWindow.ts
+== eslint
+
+/work/play/src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts
+   96:36  error  Return values from promise executor functions cannot be read                                                                                                                                                                                                                                                                                no-promise-executor-return
+  112:5   error  A method that is not declared with `this: void` may cause unintentional scoping of `this` when separated from its object.
+Consider using an arrow function or explicitly `.bind()`ing the method to avoid calling the method with an unintended `this` value. 
+If a function does not access `this`, it can be annotated with `this: void`  @typescript-eslint/unbound-method
+  113:5   error  A method that is not declared with `this: void` may cause unintentional scoping of `this` when separated from its object.
+Consider using an arrow function or explicitly `.bind()`ing the method to avoid calling the method with an unintended `this` value. 
+If a function does not access `this`, it can be annotated with `this: void`  @typescript-eslint/unbound-method
+
+✖ 3 problems (3 errors, 0 warnings)
+
+EXIT_ESLINT=1
+== prettier
+Checking formatting...
+[warn] src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.
+EXIT_PRETTIER=1

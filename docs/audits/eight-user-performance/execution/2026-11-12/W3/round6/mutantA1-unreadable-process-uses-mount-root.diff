@@ -1,0 +1,7 @@
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -154,3 +154,3 @@
+     const root = parseCgroupPath(mount.root);
+-    const own = parseCgroupPath(processPath);
++    const own = parseCgroupPath(processPath) ?? root;
+     if (root === undefined || own === undefined) {

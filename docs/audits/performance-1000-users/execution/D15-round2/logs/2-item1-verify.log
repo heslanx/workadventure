@@ -1,0 +1,24 @@
+
+up to date in 3s
+NPMCI_DRYRUN_EXIT=0
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 01:27:33
+[2m   Duration [22m 5.45s[2m (transform 2.16s, setup 0ms, import 2.63s, tests 1.82s, environment 0ms)[22m
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /work/benchmark
+npm error workspace workadventure-artillery@1.0.0
+npm error location /work/benchmark
+npm error command failed
+npm error command sh -c vitest run
+TEST_EXIT=1
+
+> workadventure-artillery@1.0.0 typecheck
+> tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node index.ts tests/harness.test.ts
+
+TSC_EXIT=0

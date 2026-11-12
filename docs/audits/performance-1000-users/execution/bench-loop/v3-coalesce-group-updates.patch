@@ -1,0 +1,170 @@
+diff --git a/play/src/pusher/services/PusherWebSocket.ts b/play/src/pusher/services/PusherWebSocket.ts
+index 8197935..16f0da6 100644
+--- a/play/src/pusher/services/PusherWebSocket.ts
++++ b/play/src/pusher/services/PusherWebSocket.ts
+@@ -28,6 +28,12 @@ export class PusherWebSocket {
+         event: "",
+         payload: [],
+     };
++    /**
++     * Group id to the index, in batchedMessages, of a groupUpdateMessage that no later message of the batch is about.
++     * A newer update for that group replaces it in place: a batch is applied by the client at once, so the
++     * superseded state is never seen, and every message in between concerns other users or groups.
++     */
++    private batchedGroupUpdateIndexes = new Map<number, number>();
+     private nextOutgoingNonce = 1;
+     private lastSentNonce = 0;
+     private waitingForDrain = false;
+@@ -79,6 +85,20 @@ export class PusherWebSocket {
+     }
+ 
+     public emitInBatch(payload: SubMessage): void {
++        const message = payload.message;
++        if (message?.$case === "groupUpdateMessage") {
++            const groupId = message.groupUpdateMessage.groupId;
++            const index = this.batchedGroupUpdateIndexes.get(groupId);
++            if (index !== undefined) {
++                this.batchedMessages.payload[index] = payload;
++                return;
++            }
++            this.batchedGroupUpdateIndexes.set(groupId, this.batchedMessages.payload.length);
++        } else if (message?.$case === "groupDeleteMessage") {
++            this.batchedGroupUpdateIndexes.delete(message.groupDeleteMessage.groupId);
++        } else if (message?.$case === "groupUsersUpdateMessage") {
++            this.batchedGroupUpdateIndexes.delete(message.groupUsersUpdateMessage.groupId);
++        }
+         this.batchedMessages.payload.push(payload);
+ 
+         if (this.batchTimeout) {
+@@ -315,6 +335,7 @@ export class PusherWebSocket {
+             event: "",
+             payload: [],
+         };
++        this.batchedGroupUpdateIndexes.clear();
+     }
+ 
+     private sendStoredPayload(nonce: number, payload: Uint8Array<ArrayBuffer>): ReturnType<RawSocket["send"]> {
+diff --git a/play/tests/pusher/PusherWebSocketBatch.test.ts b/play/tests/pusher/PusherWebSocketBatch.test.ts
+new file mode 100644
+index 0000000..e734e85
+--- /dev/null
++++ b/play/tests/pusher/PusherWebSocketBatch.test.ts
+@@ -0,0 +1,118 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { PusherToFrontWebSocketMessage, type SubMessage } from "@workadventure/messages";
++
++vi.mock("../../src/pusher/enums/EnvironmentVariable", () => import("./mocks/pusherEnvironmentVariableMock"));
++
++import { PusherWebSocket, type RawSocket } from "../../src/pusher/services/PusherWebSocket";
++
++function createSocket(): { socket: PusherWebSocket; sentBatches: () => SubMessage[][] } {
++    const sent: Uint8Array[] = [];
++    const raw = {
++        send: vi.fn((payload: Uint8Array) => {
++            sent.push(payload);
++            return 1;
++        }),
++        ping: vi.fn().mockReturnValue(1),
++        end: vi.fn(),
++        getBufferedAmount: vi.fn().mockReturnValue(0),
++        getUserData: vi.fn().mockReturnValue({}),
++    } as unknown as RawSocket;
++    return {
++        socket: new PusherWebSocket(raw),
++        sentBatches: () =>
++            sent.map((bytes) => {
++                const message = PusherToFrontWebSocketMessage.decode(bytes).message?.message;
++                if (message?.$case !== "batchMessage") {
++                    throw new Error(`expected a batch, got ${message?.$case}`);
++                }
++                return message.batchMessage.payload;
++            }),
++    };
++}
++
++function groupUpdate(groupId: number, x: number, userIds: number[]): SubMessage {
++    return {
++        message: {
++            $case: "groupUpdateMessage",
++            groupUpdateMessage: { groupId, position: { x, y: 10 }, groupSize: userIds.length, locked: false, userIds },
++        },
++    };
++}
++
++function groupDelete(groupId: number): SubMessage {
++    return { message: { $case: "groupDeleteMessage", groupDeleteMessage: { groupId } } };
++}
++
++function groupUsersUpdate(groupId: number, userIds: number[]): SubMessage {
++    return { message: { $case: "groupUsersUpdateMessage", groupUsersUpdateMessage: { groupId, userIds } } };
++}
++
++function userLeft(userId: number): SubMessage {
++    return { message: { $case: "userLeftMessage", userLeftMessage: { userId } } };
++}
++
++describe("PusherWebSocket batch", () => {
++    beforeEach(() => {
++        vi.useFakeTimers();
++    });
++
++    afterEach(() => {
++        vi.useRealTimers();
++    });
++
++    it("sends only the latest state of a group updated several times within one batch, where its first update was", () => {
++        const { socket, sentBatches } = createSocket();
++
++        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
++        socket.emitInBatch(userLeft(3));
++        socket.emitInBatch(groupUpdate(7, 120, [1, 2]));
++        socket.emitInBatch(groupUpdate(7, 140, [1, 2, 4]));
++        vi.advanceTimersByTime(100);
++
++        expect(sentBatches()).toEqual([[groupUpdate(7, 140, [1, 2, 4]), userLeft(3)]]);
++    });
++
++    it("keeps the updates of different groups apart", () => {
++        const { socket, sentBatches } = createSocket();
++
++        socket.emitInBatch(groupUpdate(1, 100, [1, 2]));
++        socket.emitInBatch(groupUpdate(2, 300, [3, 4]));
++        socket.emitInBatch(groupUpdate(1, 110, [1, 2]));
++        socket.flushBatch();
++
++        expect(sentBatches()).toEqual([[groupUpdate(1, 110, [1, 2]), groupUpdate(2, 300, [3, 4])]]);
++    });
++
++    it("keeps an update that follows a delete of the same group, so a group that leaves and re-enters the viewport is shown", () => {
++        const { socket, sentBatches } = createSocket();
++
++        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
++        socket.emitInBatch(groupDelete(7));
++        socket.emitInBatch(groupUpdate(7, 120, [1, 2]));
++        socket.flushBatch();
++
++        expect(sentBatches()).toEqual([[groupUpdate(7, 100, [1, 2]), groupDelete(7), groupUpdate(7, 120, [1, 2])]]);
++    });
++
++    it("keeps an update that follows a users update of the same group, so the latest user list is applied last", () => {
++        const { socket, sentBatches } = createSocket();
++
++        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
++        socket.emitInBatch(groupUsersUpdate(7, [1]));
++        socket.emitInBatch(groupUpdate(7, 120, [1]));
++        socket.flushBatch();
++
++        expect(sentBatches()).toEqual([[groupUpdate(7, 100, [1, 2]), groupUsersUpdate(7, [1]), groupUpdate(7, 120, [1])]]);
++    });
++
++    it("does not merge a group update into a batch that was already sent", () => {
++        const { socket, sentBatches } = createSocket();
++
++        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
++        socket.flushBatch();
++        socket.emitInBatch(groupUpdate(7, 120, [1, 2]));
++        socket.flushBatch();
++
++        expect(sentBatches()).toEqual([[groupUpdate(7, 100, [1, 2])], [groupUpdate(7, 120, [1, 2])]]);
++    });
++});

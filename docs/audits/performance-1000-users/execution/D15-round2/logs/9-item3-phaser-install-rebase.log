@@ -1,0 +1,23 @@
+
+changed 1 package in 7s
+NPM_INSTALL_EXIT=0
+  "version": "4.2.1",
+Hunk #5 succeeded at 208354 (offset 3 lines).
+Hunk #6 succeeded at 208434 (offset 3 lines).
+Hunk #7 succeeded at 208533 (offset 3 lines).
+Hunk #8 succeeded at 208574 (offset 3 lines).
+Hunk #9 succeeded at 244017 (offset 11 lines).
+Hunk #10 succeeded at 246771 (offset 11 lines).
+patching file node_modules/phaser/src/renderer/webgl/shaders/TilemapGPULayer-frag.js
+patching file node_modules/phaser/src/renderer/webgl/shaders/TilemapGPULayer-vert.js
+patching file node_modules/phaser/src/renderer/webgl/shaders/src/TilemapGPULayer.frag
+patching file node_modules/phaser/src/renderer/webgl/shaders/src/TilemapGPULayer.vert
+patching file node_modules/phaser/src/tilemaps/TilemapGPULayer.js
+patching file node_modules/phaser/src/tilemaps/Tileset.js
+PATCH_APPLY_EXIT=0
+  error: null
+}
+
+Node.js v24.22.2
+PATCH_PACKAGE_EXIT=1
+phaser+4.2.0.patch

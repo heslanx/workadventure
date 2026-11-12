@@ -1,0 +1,56 @@
+label=change host=srv818933 start=2026-11-12T01:27:00Z
+container=wa-fable-r2-20261112-p4-impl-1 image=node:24-trixie --cpus 1 --memory 3g --network none
+9605481a64dcb9aa48a1b0f9e5e5aecd32c6def89df7c6748dd16de5645a4c7b  play/src/pusher/models/PositionDispatcher.ts
+0209e81e4a1170ea9f76c4f99f26ae73ed3db612960889acb78301e17c2d1027  play/tests/pusher/PositionDispatcher.test.ts
+
+> workadventure-play@1.0.0 test
+> PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --run tests/pusher/PositionDispatcher.test.ts
+
+Sentry plugin disabled
+1:27:05 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+1:27:05 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > ignores a viewport whose coordinates are inverted
+Invalid viewport received:  { left: 1000, top: 0, right: 0, bottom: 1000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > ignores a viewport whose coordinates are not finite
+Invalid viewport received:  { left: 0, top: 0, right: NaN, bottom: 1000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > crops an oversized viewport around its center instead of subscribing to a huge number of zones
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > crops an oversized viewport that is extremely elongated
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 3126 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 0 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > only reports the first oversized viewport of a room
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > does not touch the subscriptions when the same oversized square viewport is sent again
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > does not touch the subscriptions when the same oversized extremely elongated viewport is sent again
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 3126 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 0 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > moves the cropped window when an oversized viewport moves
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > keeps the current zones when an invalid viewport follows a valid one
+Invalid viewport received:  { left: 0, top: 0, right: Infinity, bottom: 319 }
+Invalid viewport received:  { left: 639, top: 0, right: 0, bottom: 319 }
+
+ ✓ tests/pusher/PositionDispatcher.test.ts (23 tests) 151ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  01:27:07
+   Duration  5.32s (transform 3.16s, setup 101ms, import 3.30s, tests 151ms, environment 1.44s)
+
+exit=0
+end=2026-11-12T01:27:13Z

@@ -1,0 +1,15 @@
+checkout HEAD: 1f48d79d5
+git apply --cached 1-pin-autosave-overwrite.test.patch: exit 0  sha256 f40c1b3a06a220bd1d4146b3fe255179c49c1d55ac165d7fb6fcd62f4c2338f1
+git apply --cached 2-fix-autosave-overwrite.patch: exit 0  sha256 881603cd8855984364f6cb80ec90ba760ee92fe621966146be6841086ca30b35
+git apply --cached 3-pin-upload-move-clear.test.patch: exit 0  sha256 ab6b4862e2b7e3bc9be4aafac11c80b6756be2b2cfc2b8e403f19740000abae5
+git apply --cached 4-fix-upload-move-clear.patch: exit 0  sha256 76e476ac3248020c8fa509a861575d867d5fc7be9e6438c6e40898d6a9b55bf3
+git apply --cached 5-pin-rejected-replacement-edit.test.patch: exit 0  sha256 8b12d45341a837dc0f9b20c2de9a5eee9e62d23aae9a7dca4b3fc307404f501a
+git apply --cached 6-fix-rejected-replacement-edit.patch: exit 0  sha256 4bff6b0ee61acb69bd7404ea2ea3ec7b8a12bf05e4dc6fad9902b47ea7ef05a2
+temp index  5cb916432bb7adf1bb353a6c0af28ec5b2ba4c8a  map-storage/src/MapsManager.ts
+temp index  83d1d48a5a50886e7a065531028ebe67a2c5c527  map-storage/src/Upload/UploadController.ts
+temp index  fd48ecc5e4fc282490e4ac4a8018c6f59770d73f  map-storage/src/tests/MapsManagerAutosave.test.ts
+temp index  4ac46aa795346ae939e04066eae7ed884a2a7245  map-storage/src/tests/UploadController.test.ts
+tested file 5cb916432bb7adf1bb353a6c0af28ec5b2ba4c8a  map-storage/src/MapsManager.ts
+tested file 83d1d48a5a50886e7a065531028ebe67a2c5c527  map-storage/src/Upload/UploadController.ts
+tested file fd48ecc5e4fc282490e4ac4a8018c6f59770d73f  map-storage/src/tests/MapsManagerAutosave.test.ts
+tested file 4ac46aa795346ae939e04066eae7ed884a2a7245  map-storage/src/tests/UploadController.test.ts

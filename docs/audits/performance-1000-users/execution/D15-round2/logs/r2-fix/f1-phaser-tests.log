@@ -1,0 +1,136 @@
+=== tests/front/Phaser/Game/CameraManualPan.test.ts
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m28 passed[39m[22m[90m (28)[39m
+[2m   Start at [22m 01:49:38
+[2m   Duration [22m 21.71s[2m (transform 18.52s, setup 57ms, import 20.53s, tests 84ms, environment 844ms)[22m
+
+EXIT tests/front/Phaser/Game/CameraManualPan.test.ts 0
+=== tests/front/Phaser/Components/WalkDestinationMarker.test.ts
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m   Start at [22m 01:50:05
+[2m   Duration [22m 23.35s[2m (transform 19.88s, setup 122ms, import 21.64s, tests 7ms, environment 1.24s)[22m
+
+EXIT tests/front/Phaser/Components/WalkDestinationMarker.test.ts 0
+=== src/front/Space/tests/SpaceRegistry.test.ts
+[22m[39mSpace "space-test1" was not destroyed properly.
+Space "space-test2" was not destroyed properly.
+Space "space-test3" was not destroyed properly.
+
+[90mstderr[2m | src/front/Space/tests/SpaceRegistry.test.ts[2m > [22m[2mSpaceProviderInterface implementation[2m > [22m[2mSpaceRegistry[2m > [22m[2mSpaceRegistry shouldPublishScreenShareStore[2m > [22m[2mshould be true in a bubble and for a speaker, never for an audience
+[22m[39mSpace is destroyed, skipping unregisterSpaceFilter
+Space is destroyed, skipping unregisterSpaceFilter
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 01:50:30
+[2m   Duration [22m 31.58s[2m (transform 26.12s, setup 73ms, import 30.20s, tests 105ms, environment 877ms)[22m
+
+EXIT src/front/Space/tests/SpaceRegistry.test.ts 0
+=== src/front/Space/tests/SpaceWatcherSocket.test.ts
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstderr[2m | src/front/Space/tests/SpaceWatcherSocket.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 01:51:05
+[2m   Duration [22m 30.26s[2m (transform 25.40s, setup 55ms, import 28.95s, tests 22ms, environment 914ms)[22m
+
+EXIT src/front/Space/tests/SpaceWatcherSocket.test.ts 0
+=== src/front/Space/tests/SpaceFilter.test.ts
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstderr[2m | src/front/Space/tests/SpaceFilter.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 01:51:37
+[2m   Duration [22m 31.64s[2m (transform 26.41s, setup 53ms, import 30.49s, tests 11ms, environment 855ms)[22m
+
+EXIT src/front/Space/tests/SpaceFilter.test.ts 0
+=== src/front/Space/tests/SpaceIntegration.test.ts
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstderr[2m | src/front/Space/tests/SpaceIntegration.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 01:52:11
+[2m   Duration [22m 30.25s[2m (transform 25.59s, setup 67ms, import 29.04s, tests 15ms, environment 882ms)[22m
+
+EXIT src/front/Space/tests/SpaceIntegration.test.ts 0
+=== src/front/Space/tests/Space.test.ts
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstderr[2m | src/front/Space/tests/Space.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m24 passed[39m[22m[90m (24)[39m
+[2m   Start at [22m 01:52:44
+[2m   Duration [22m 31.59s[2m (transform 27.04s, setup 58ms, import 30.43s, tests 60ms, environment 825ms)[22m
+
+EXIT src/front/Space/tests/Space.test.ts 0
+=== src/front/Chat/Connection/Proximity/tests/ProximityChatRoomJoinEvents.test.ts
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstderr[2m | src/front/Chat/Connection/Proximity/tests/ProximityChatRoomJoinEvents.test.ts
+[22m[39mPostHog is configured but not initialized. Analytics will not be sent.
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m   Start at [22m 01:53:17
+[2m   Duration [22m 31.07s[2m (transform 26.28s, setup 54ms, import 29.68s, tests 269ms, environment 896ms)[22m
+
+EXIT src/front/Chat/Connection/Proximity/tests/ProximityChatRoomJoinEvents.test.ts 0

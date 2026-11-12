@@ -1,0 +1,39 @@
+# Thu Nov 12 02:19:52 UTC 2026 host=srv742000 run=1 label-order=A A2 B
+# load before: 5.06 4.39 3.44 3/1169 662492 nproc=4 waited-for-sibling=90s
+# other wa-fable containers before: wa-fable-clean-3 
+v24.22.3
+fb964bb8779510bf6d35a3db8c0fe7ea34e7fb87ae52f860f05c925266843d84  ../docs/audits/performance-1000-users/execution/p4db/bench/PositionDispatcher.A.ts
+fb964bb8779510bf6d35a3db8c0fe7ea34e7fb87ae52f860f05c925266843d84  ../docs/audits/performance-1000-users/execution/p4db/bench/PositionDispatcher.A2.ts
+964e91c635f0685ff922d146781304b1f4fecd2e1f8518f204af4bda74dec604  ../docs/audits/performance-1000-users/execution/p4db/bench/PositionDispatcher.B.ts
+28ffdce7fb32d67c091b73c17229ab37959049e739473bfd31cadcd78a51346a  ../docs/audits/performance-1000-users/execution/p4db/bench/viewport-bench.ts
+stationary               A        hit=100%    ns/update med=49 p10=35 p90=414              B/update med=120 min=120 max=122           time/ref med=1 p10=1 p90=1 trace=15bb0b23369b
+stationary               A2       hit=100%    ns/update med=52 p10=37 p90=539              B/update med=120 min=120 max=122           time/ref med=0.997 p10=0.356 p90=9.202 trace=15bb0b23369b
+stationary               B        hit=100%    ns/update med=51 p10=39 p90=562              B/update med=120 min=120 max=122           time/ref med=1.121 p10=0.6 p90=7.504 trace=15bb0b23369b
+inside-bounds            A        hit=100%    ns/update med=53 p10=43 p90=980              B/update med=120 min=120 max=120           time/ref med=1 p10=1 p90=1 trace=15bb0b23369b
+inside-bounds            A2       hit=100%    ns/update med=54 p10=37 p90=1035             B/update med=120 min=120 max=120           time/ref med=1.014 p10=0.092 p90=17.129 trace=15bb0b23369b
+inside-bounds            B        hit=100%    ns/update med=52 p10=39 p90=152              B/update med=120 min=120 max=120           time/ref med=0.907 p10=0.055 p90=2.188 trace=15bb0b23369b
+walk                     A        hit=84%     ns/update med=3079 p10=2377 p90=5138         B/update med=2032 min=2032 max=2035        time/ref med=1 p10=1 p90=1 trace=927d0200f674
+walk                     A2       hit=84%     ns/update med=3179 p10=2167 p90=5441         B/update med=2032 min=2032 max=2035        time/ref med=0.973 p10=0.616 p90=1.446 trace=927d0200f674
+walk                     B        hit=84%     ns/update med=3036 p10=2244 p90=4861         B/update med=2032 min=2032 max=2035        time/ref med=0.958 p10=0.728 p90=1.315 trace=927d0200f674
+cross-every-update       A        hit=0%      ns/update med=23348 p10=20376 p90=27946      B/update med=17500 min=17497 max=17500     time/ref med=1 p10=1 p90=1 trace=f6ca1e19844f
+cross-every-update       A2       hit=0%      ns/update med=25384 p10=19396 p90=29431      B/update med=17500 min=17497 max=17500     time/ref med=1.052 p10=0.844 p90=1.257 trace=f6ca1e19844f
+cross-every-update       B        hit=0%      ns/update med=23307 p10=21297 p90=28771      B/update med=17500 min=17497 max=17500     time/ref med=1.016 p10=0.843 p90=1.241 trace=f6ca1e19844f
+max-inside-bounds        A        hit=100%    ns/update med=73 p10=58 p90=79               B/update med=123 min=123 max=123           time/ref med=1 p10=1 p90=1 trace=27c18de17a27
+max-inside-bounds        A2       hit=100%    ns/update med=73 p10=53 p90=82               B/update med=123 min=123 max=123           time/ref med=1.043 p10=0.687 p90=1.294 trace=27c18de17a27
+max-inside-bounds        B        hit=100%    ns/update med=76 p10=67 p90=85               B/update med=123 min=123 max=123           time/ref med=1.072 p10=0.868 p90=1.34 trace=27c18de17a27
+max-cross-every-update   A        hit=0%      ns/update med=370275 p10=315042 p90=461306   B/update med=265153 min=265153 max=267612  time/ref med=1 p10=1 p90=1 trace=fdd32d3047bf
+max-cross-every-update   A2       hit=0%      ns/update med=370546 p10=322874 p90=418538   B/update med=265153 min=265153 max=267612  time/ref med=1.031 p10=0.773 p90=1.161 trace=fdd32d3047bf
+max-cross-every-update   B        hit=0%      ns/update med=364068 p10=306536 p90=461403   B/update med=265153 min=265153 max=267612  time/ref med=0.966 p10=0.774 p90=1.243 trace=fdd32d3047bf
+oversized-cropped        A        hit=100%    ns/update med=136 p10=101 p90=165            B/update med=203 min=203 max=203           time/ref med=1 p10=1 p90=1 trace=6eeab25373c2
+oversized-cropped        A2       hit=100%    ns/update med=130 p10=96 p90=153             B/update med=203 min=203 max=203           time/ref med=0.963 p10=0.615 p90=1.265 trace=6eeab25373c2
+oversized-cropped        B        hit=100%    ns/update med=135 p10=114 p90=151            B/update med=203 min=203 max=203           time/ref med=0.986 p10=0.649 p90=1.249 trace=6eeab25373c2
+crowd-walk               A        hit=84.1%   ns/update med=3950 p10=3493 p90=4970         B/update med=1639 min=1628 max=1739        time/ref med=1 p10=1 p90=1 trace=4c5a40ebcb2e
+crowd-walk               A2       hit=84.1%   ns/update med=4046 p10=3429 p90=4999         B/update med=1639 min=1628 max=1739        time/ref med=0.997 p10=0.84 p90=1.17 trace=4c5a40ebcb2e
+crowd-walk               B        hit=84.1%   ns/update med=3875 p10=3490 p90=4518         B/update med=1639 min=1628 max=1739        time/ref med=1.001 p10=0.791 p90=1.163 trace=4c5a40ebcb2e
+exit=0
+
+real	2m3.951s
+user	2m11.092s
+sys	0m2.457s
+# load after: 6.16 5.37 3.95 2/1193 667133
+# Thu Nov 12 02:21:57 UTC 2026 done run=1

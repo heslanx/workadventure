@@ -1,0 +1,34 @@
+Sentry plugin disabled
+1:51:01 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+1:51:01 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstdout[2m | tests/front/Chat/W4TimelineMeasure.test.ts[2m > [22m[2mW4 H05 measurement: real RoomTimeline.svelte (jsdom, no layout)[2m > [22m[2mmounts the real timeline with 20 loaded items
+[22m[39mWake lock is not supported by this browser.
+
+[90mstdout[2m | tests/front/Chat/W4TimelineMeasure.test.ts[2m > [22m[2mW4 H05 measurement: real RoomTimeline.svelte (jsdom, no layout)[2m > [22m[2mmounts the real timeline with 20 loaded items
+[22m[39mW4RESULT {"label":"room-timeline","size":20,"listItems":20,"elementNodes":475,"observedElementsAfterMount":22,"observedElementsEnd":52,"mountMs":555.8,"appendOneMedianMs":11.91,"appendOneMaxMs":52.12,"appendSamples":10,"itemsAfterAppend":30,"prepend20Ms":135.8,"itemsAfterPrepend":50,"nodesAfterPrepend":1183,"unmountMs":70.3,"loadMoreCalls":1,"loaded":50}
+
+[90mstdout[2m | tests/front/Chat/W4TimelineMeasure.test.ts[2m > [22m[2mW4 H05 measurement: real RoomTimeline.svelte (jsdom, no layout)[2m > [22m[2mmounts the real timeline with 500 loaded items
+[22m[39mW4RESULT {"label":"room-timeline","size":500,"listItems":500,"elementNodes":11755,"observedElementsAfterMount":502,"observedElementsEnd":532,"mountMs":6557.7,"appendOneMedianMs":29.11,"appendOneMaxMs":52.68,"appendSamples":10,"itemsAfterAppend":510,"prepend20Ms":112.4,"itemsAfterPrepend":530,"nodesAfterPrepend":12463,"unmountMs":311.7,"loadMoreCalls":1,"loaded":530}
+
+[90mstdout[2m | tests/front/Chat/W4TimelineMeasure.test.ts[2m > [22m[2mW4 H05 measurement: real RoomTimeline.svelte (jsdom, no layout)[2m > [22m[2mmounts the real timeline with 2000 loaded items
+[22m[39mW4RESULT {"label":"room-timeline","size":2000,"listItems":2000,"elementNodes":47010,"observedElementsAfterMount":2002,"observedElementsEnd":2032,"mountMs":19220.8,"appendOneMedianMs":108.94,"appendOneMaxMs":184.78,"appendSamples":10,"itemsAfterAppend":2010,"prepend20Ms":193.4,"itemsAfterPrepend":2030,"nodesAfterPrepend":47714,"unmountMs":771.6,"loadMoreCalls":1,"loaded":2030}
+
+ [32m✓[39m tests/front/Chat/W4TimelineMeasure.test.ts [2m([22m[2m9 tests[22m[2m | [22m[33m6 skipped[39m[2m)[22m[33m 74025[2mms[22m[39m
+     [33m[2m✓[22m[39m mounts the real timeline with 20 loaded items [33m 44182[2mms[22m[39m
+     [33m[2m✓[22m[39m mounts the real timeline with 500 loaded items [33m 7654[2mms[22m[39m
+     [33m[2m✓[22m[39m mounts the real timeline with 2000 loaded items [33m 22178[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m3 passed[39m[22m[2m | [22m[33m6 skipped[39m[90m (9)[39m
+[2m   Start at [22m 01:51:02
+[2m   Duration [22m 79.98s[2m (transform 40.03s, setup 316ms, import 2.86s, tests 74.02s, environment 1.70s)[22m
+
+0

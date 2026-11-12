@@ -1,0 +1,42 @@
+# Testing
+
+Draft from Phase 1 (working-with-legacy-code) for `play/src/front/Phaser/Game/GameScene.ts`, 2026-11-12.
+
+## Test Strategy
+
+Pyramid: Vitest unit and characterization tests under `play/tests/` (jsdom), then Playwright end-to-end in `tests/`. No eight-user or browser-performance test exists. Green means the `play` CI job passes: `npm run typecheck`, `npm run lint`, `npm run pretty-check`, `npm test`. For `GameScene.ts`, `GameSceneMovement.test.ts` must also pass unchanged.
+
+- Legacy code here means code without tests. Before any change to `GameScene.ts`, its change points get characterization tests. These tests pin what the code does today, including its quirks. They do not pin what the code should do.
+- Coverage grows along the paths the program changes: the movement path and the remote-player path. These are where the eight-user freeze (H02, H15) and the 1,000-user cost are decided.
+- Tests run at pinch points, not at every method:
+  - **P1: `update(time, delta)`, remote-player section (`GameScene.ts:1412-1518`).** Every remote join, move, detail change and leave is buffered in `RemotePlayersRepository`. It reaches the scene only here, through `doAddPlayer`, `doUpdatePlayerPosition`, `doUpdatePlayerDetails` and `doRemovePlayer`. Every drawn remote position comes from `PlayersPositionInterpolator.getUpdatedPositions(time)` in this same block. Tests at P1 cover the repository, the interpolator, `PlayerMovement` and the scene's player map together.
+  - **P2: `handleCurrentPlayerHasMovedEvent` → `pushPlayerPosition` (`:4290-4408`).** Every local move reaches the server (`connection.sharePosition`), map scripts (`iframeListener.hasPlayerMoved`), the map position and the activatable-distance update only through this path.
+  - **P3 (not covered yet): the conversation-bubble block in `update()` (`:1499-1534`).** It covers H01 and GS-05.
+- Harness: the real constructor, with a fake `Room`. Methods that need a running Phaser game are replaced on the instance (Subclass and Override, applied to the instance). Collaborators are injected as fields for sensing. DOM-bound singletons are spied. No product file was edited to get the scene under test.
+- Bugs found while characterizing are pinned with their ledger ID. Each is fixed in a separate behavior patch whose test flips.
+
+## Safety Net Map
+
+| Module | Pinned behaviors | Test files | Gaps |
+|---|---|---|---|
+| `GameScene.ts`: local position sharing | A turn and a stop are shared at once. A straight walk is shared at most once per `POSITION_DELAY` (200 ms, `>=`). Re-sending the same event object does nothing. Map scripts get exactly the shared events. GS-01: a first walk heading DOWN is not shared until a turn or a stop (flips with `fix-GS-01.patch`). | `play/tests/front/Phaser/Game/GameSceneMovement.test.ts` | `doPushPlayerPosition` with a real camera viewport; the headless (bot) viewport |
+| `GameScene.ts`: local move side effects | Each move event sets the map position. It also passes every remote player, actionable item and entity (3 + 0 + 1 = 4 objects) to `updateActivatableObjectsDistances` (GS-04). Only the first of two events 16 ms apart is shared. | same | The `onMapExit` teleport path (`:1177`); `Player.moveUser` emission (lives in `Player.ts`) |
+| `GameScene.ts`: remote players per frame (`update`) | A received move is drawn from the current position to the target over 200 ms (100 → 200 → 300). It is extrapolated 100 ms (400), drawn once more as stopped (401, `moving: false`), then no longer updated (GS-06). 50 players in flight get one update each per frame. A leaving player is destroyed, removed from the map and no longer drawn in the same frame. GS-02: removing all players while one moves makes the next frame throw (flips with `fix-GS-02.patch`). | same | Real `RemotePlayer` construction (`doAddPlayer`); `doUpdatePlayerDetails`; the camera-follow viewport resend; the conversation-bubble block (P3); `pendingEvents` group events |
+| `PlayerMovement.ts` | Interpolation and extrapolation (existing) | `play/tests/front/Phaser/Game/PlayerMovement.test.ts` | none for this phase |
+| `CameraManager.ts` | Pan, zoom and walk framing (existing) | `play/tests/front/Phaser/Game/CameraManualPan.test.ts` | none for this phase |
+
+## Characterization Backlog
+
+- [ ] `GameScene.update` conversation-bubble block: which bubbles `step()` for a remote move near, inside and far from a bubble (GS-05, H01; risk medium, P1 before any A01 work)
+- [ ] `GameScene.doAddPlayer` with the real `RemotePlayer` behind a fake texture loader, including the texture-error rethrow (GS-03; risk high, P1)
+- [ ] `GameScene.doUpdatePlayerDetails` and the repository's re-add-after-remove path (risk medium, P2)
+- [ ] `GameScene.update` camera-follow branch that resends the viewport for a followed remote player (risk low, P2)
+- [ ] `GameScene` group events from `pendingEvents` and the current-group stores (risk medium, P2)
+- [ ] `Game.step` loop guard for GS-03, test-first (Phase 7; risk high, P1)
+
+## CI Gates
+
+- Existing (`.github/workflows/continuous_integration.yml`, `play` job): `npm run typecheck`, `npm run lint`, `npm run pretty-check`, `npm test`. `GameSceneMovement.test.ts` runs inside `npm test` with no new step.
+- Heap condition (GS-08): importing `GameScene` needs more than the default heap of a 3 GB container. A run on knc with 3 GB hit an OOM (exit 134); with `NODE_OPTIONS=--max-old-space-size=2700` it passed. The CI `vitest` step sets no `NODE_OPTIONS`. On `ubuntu-latest` the default heap is larger, but this was not measured. If the CI run hits an OOM, set `NODE_OPTIONS` on the step; do not drop the test.
+- Gate for any change to `GameScene.ts` from Phase 2 on: `GameSceneMovement.test.ts` passes unchanged, except a test whose ledger fix is part of that change.
+- `npm run pretty-check` covers only `src/`. Test files under `tests/` are checked with `prettier --check <file>` by hand. That gap belongs to the cross-cutting phases.

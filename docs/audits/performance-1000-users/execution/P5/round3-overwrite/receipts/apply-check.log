@@ -1,0 +1,13 @@
+date: 2026-11-12T02:37:14Z
+checkout HEAD: e19bbf7dc999d92ea1f1ed14e640679cc4469a62
+git -C <checkout> apply --check pin-autosave-overwrite.test.patch: exit=0
+temp index = HEAD: apply --cached --check patch 1: exit=0
+temp index: apply --cached patch 1: exit=0
+temp index = HEAD+patch 1: apply --cached --check patch 2: exit=0
+temp index: apply --cached patch 2: exit=0
+result sha256 bc2ad646ed244062d5cad0f9b875f470321d34c223dbfe7329c2cfae6360996c map-storage/src/MapsManager.ts
+result sha256 a6a514d753e591879041417e04c5d9920ec68ae2184a24d8d22fe7d99621829d map-storage/src/Upload/UploadController.ts
+result sha256 db81843fc7030d169cac078473b2ced7d76ff84da355f23976424df46c0403b9 map-storage/src/tests/MapsManagerAutosave.test.ts
+checkout status map-storage (must be empty):
+febf9edeef6633ba3879569e917de17ac17abce70d9a3abcf985599fe8614cef  fix-autosave-overwrite.patch
+f40c1b3a06a220bd1d4146b3fe255179c49c1d55ac165d7fb6fcd62f4c2338f1  pin-autosave-overwrite.test.patch

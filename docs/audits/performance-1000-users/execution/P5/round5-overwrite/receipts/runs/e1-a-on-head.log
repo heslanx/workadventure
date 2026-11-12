@@ -1,0 +1,35 @@
+container wa-fable-ovw5-45-e1-a-on-head
+84ddd0b7ee989824915af1900b8db81638caea0533fffa32e724b628ab052d45  src/MapsManager.ts
+c5bbc727a74948541a1bf8c3f25edc472fd67a981c18b297ab5a0798faed8159  src/Upload/UploadController.ts
+1be0b55c07fe4b2881328a5749852d27e6941432daa47665fdbf22a5be6650c2  src/tests/MapStorageServer.test.ts
+06635f0e61c3caa32de3207d061249aa59f5cbabcdc7a2eb9f4302a99bbd511f  src/tests/MapsManagerAutosave.test.ts
+3a52822d686b31ebff133beb15c384c7206cd1be9d8dbc5bf0e0ef92cd567a0c  ../libs/map-editor/src/GameMap/MapValidator.ts
+
+ RUN  v4.1.7 /w/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist the edited map and release it from memory 18ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a map edited once a single time 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a continuously edited map once per autosave interval 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist a change made by a command that only went through the command queue 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should persist the edit once storage recovers, without waiting for another edit 3ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should keep the unsaved edit in memory after its command history expired 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should report the failure, then give up and release the map past the retry horizon 14ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should measure the retry horizon from the newest edit, not the first one 14ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should log a failing save on its first attempt and then periodically, not on every attempt 5ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should still retry and report the handler error when logging the failure throws 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should stop retrying once the map was replaced or deleted 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should never run two writes of the same map at once 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when the first write is the last to finish 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should count a write that never settles as failed and retry it 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > restores the older edit when a write past its timeout lands after its retry (known defect) 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should persist that newer edit with a follow-up write 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should not retry the abandoned state after the map was replaced by an upload 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > recreates the deleted map when the write in flight lands after the delete (known defect) 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > overwrites the uploaded map when the write in flight lands after the upload (known defect) 1ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  03:36:26
+   Duration  3.20s (transform 2.05s, setup 0ms, import 2.94s, tests 74ms, environment 0ms)
+
+EXIT=0

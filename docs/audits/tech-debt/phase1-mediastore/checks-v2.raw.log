@@ -1,0 +1,206 @@
+=== fix.log
+Sentry plugin disabled
+5:03:21 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+5:03:21 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+ ✓ tests/front/Stores/MediaStoreGetUserMedia.test.ts (11 tests) 6288ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  5590ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  05:03:21
+   Duration  7.90s (transform 5.11s, setup 63ms, import 623ms, tests 6.29s, environment 749ms)
+
+EXIT 0
+=== head.log
+Sentry plugin disabled
+5:03:31 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+5:03:31 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (11 tests | 2 failed) 6608ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  5889ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 104ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 58ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 79ms
+     × MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 53ms
+     × MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 75ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 54ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 75ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 73ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 71ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 75ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again
+AssertionError: expected null to be 'permission_denied' // Object.is equality
+
+- Expected:
+"permission_denied"
+
++ Received:
+null
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:296:47
+    294|         expect(get(m.requestedCameraState)).toBe(false);
+    295|         expect(get(m.requestedMicrophoneState)).toBe(true);
+    296|         expect(get(m.cameraAccessIssueStore)).toBe("permission_denied"…
+       |                                               ^
+    297|         expect(get(m.cameraButtonHelpContextStore)).toBe("permission");
+    298|         expect(get(m.microphoneAccessIssueStore)).toBe(null);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again
+AssertionError: expected null to be 'permission_denied' // Object.is equality
+
+- Expected:
+"permission_denied"
+
++ Received:
+null
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:323:51
+    321|         expect(requested(browser, 0)).toEqual({ video: false, audio: t…
+    322|         expect(get(m.requestedMicrophoneState)).toBe(false);
+    323|         expect(get(m.microphoneAccessIssueStore)).toBe("permission_den…
+       |                                                   ^
+    324|         expect(get(m.microphoneButtonHelpContextStore)).toBe("permissi…
+    325|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  05:03:31
+   Duration  8.38s (transform 5.42s, setup 54ms, import 711ms, tests 6.61s, environment 782ms)
+
+EXIT 1
+=== m13.log
+Sentry plugin disabled
+5:03:42 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+5:03:42 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (11 tests | 1 failed) 6121ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  5366ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 113ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 58ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 89ms
+     × MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 64ms
+     ✓ MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 86ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 60ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 79ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 70ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 81ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 53ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again
+AssertionError: expected 'permission_denied' to be null // Object.is equality
+
+- Expected:
+null
+
++ Received:
+"permission_denied"
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:306:47
+    304|         expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
+    305|         expect(requested(browser, 2)).toEqual({ video: true, audio: fa…
+    306|         expect(get(m.cameraAccessIssueStore)).toBe(null);
+       |                                               ^
+    307|         expect(get(m.cameraButtonHelpContextStore)).toBe(null);
+    308|         expect(current(m)).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  05:03:42
+   Duration  7.53s (transform 4.78s, setup 58ms, import 492ms, tests 6.12s, environment 673ms)
+
+EXIT 1
+=== m14.log
+Sentry plugin disabled
+5:03:51 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+5:03:51 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (11 tests | 1 failed) 5854ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  5100ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 112ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 57ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 89ms
+     ✓ MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 52ms
+     × MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 79ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 55ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 86ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 76ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 81ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 66ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again
+AssertionError: expected 'permission_denied' to be null // Object.is equality
+
+- Expected:
+null
+
++ Received:
+"permission_denied"
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:338:51
+    336|         expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
+    337|         expect(requested(browser, 2)).toEqual({ video: false, audio: t…
+    338|         expect(get(m.microphoneAccessIssueStore)).toBe(null);
+       |                                                   ^
+    339|         expect(current(m)).toEqual([
+    340|             { kind: "video", id: "video-0" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  05:03:52
+   Duration  7.35s (transform 4.63s, setup 47ms, import 570ms, tests 5.85s, environment 699ms)
+
+EXIT 1
+=== static.log
+Checking formatting...
+All matched files use Prettier code style!
+PRETTIER 0
+ESLINT 0
+TSC 0
+EXIT 0

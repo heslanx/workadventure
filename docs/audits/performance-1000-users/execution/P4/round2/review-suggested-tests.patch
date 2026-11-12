@@ -1,0 +1,39 @@
+diff --git a/play/tests/pusher/PositionDispatcher.test.ts b/play/tests/pusher/PositionDispatcher.test.ts
+index 75b88a4..bd37b8d 100644
+--- a/play/tests/pusher/PositionDispatcher.test.ts
++++ b/play/tests/pusher/PositionDispatcher.test.ts
+@@ -189,6 +189,34 @@ describe("PositionDispatcher", () => {
+         expect(listenedZones).toEqual(new Set(["0,0", "1,0"]));
+     });
+ 
++    it("subscribes to the new zones when the viewport grows downward only", () => {
++        const { dispatcher, pusherRoom, socket, listenedZones } = createDispatcher();
++        dispatcher.setViewport(socket, { left: 0, top: 0, right: 319, bottom: 319 });
++        pusherRoom.subscribeToZone.mockClear();
++
++        dispatcher.setViewport(socket, { left: 0, top: 0, right: 319, bottom: 959 });
++
++        expect(pusherRoom.subscribeToZone.mock.calls).toEqual([
++            [0, 1],
++            [0, 2],
++        ]);
++        expect(listenedZones).toEqual(new Set(["0,0", "0,1", "0,2"]));
++    });
++
++    it("finishes a move that failed halfway when the same viewport is sent again", () => {
++        const { dispatcher, pusherRoom, socket, listenedZones } = createDispatcher();
++        dispatcher.setViewport(socket, ZONES_0_AND_1);
++        pusherRoom.subscribeToZone.mockImplementationOnce(() => {
++            throw new Error("The back refused zone 2");
++        });
++        expect(() => dispatcher.setViewport(socket, ZONES_1_AND_2)).toThrow("The back refused zone 2");
++
++        dispatcher.setViewport(socket, ZONES_1_AND_2);
++
++        expect(pusherRoom.unsubscribeFromZone.mock.calls).toEqual([[0, 0]]);
++        expect(listenedZones).toEqual(new Set(["1,0", "2,0"]));
++    });
++
+     it("subscribes and unsubscribes exactly once per zone when the viewport crosses a zone boundary", () => {
+         const { dispatcher, pusherRoom, socket, listenedZones } = createDispatcher();
+         dispatcher.setViewport(socket, ZONES_0_AND_1);

@@ -1,0 +1,45 @@
+source,line,declaration
+back/Dockerfile,2,FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS proto-builder
+back/Dockerfile,11,FROM node:24-trixie-slim
+contrib/docker/docker-compose.prod.yaml,3,image: traefik:v3.6.1
+contrib/docker/docker-compose.prod.yaml,31,image: thecodingmachine/workadventure-play:${VERSION}
+contrib/docker/docker-compose.prod.yaml,171,image: thecodingmachine/workadventure-back:${VERSION}
+contrib/docker/docker-compose.prod.yaml,228,image: matthiasluedtke/iconserver:v3.21.0
+contrib/docker/docker-compose.prod.yaml,254,image: redis:6
+contrib/docker/docker-compose.prod.yaml,260,image: thecodingmachine/workadventure-map-storage:${VERSION}
+contrib/docker/tests/docker-compose.test.yaml,14,image: thecodingmachine/php:8.1-v4-apache-node12
+contrib/docker/tests/docker-compose.test.yaml,41,image: livekit/livekit-server:v1.13.11
+contrib/docker/tests/docker-compose.test.yaml,68,image: livekit/egress:v1.15.0
+contrib/docker/tests/docker-compose.test.yaml,94,image: rustfs/rustfs:1.0.0-alpha.83
+contrib/docker/tests/docker-compose.test.yaml,124,image: amazon/aws-cli:2.31.1
+docker-compose.e2e.yml,13,image: ghcr.io/workadventure/play-dev-build:amd64-${GITHUB_SHA}
+docker-compose.e2e.yml,59,image: ghcr.io/workadventure/back-dev-build:amd64-${GITHUB_SHA}
+docker-compose.e2e.yml,77,image: ghcr.io/workadventure/map-storage-dev-build:amd64-${GITHUB_SHA}
+docker-compose.e2e.yml,99,image: ghcr.io/workadventure/maps-dev-build:amd64-${GITHUB_SHA}
+docker-compose.e2e.yml,120,image: alpine:3.14
+docker-compose.livekit.yaml,3,image: livekit/livekit-server:v1.13.11
+docker-compose.livekit.yaml,23,image: livekit/egress:v1.15.0
+docker-compose.livekit.yaml,57,image: rustfs/rustfs:1.0.0-alpha.83
+docker-compose.livekit.yaml,75,image: amazon/aws-cli:2.31.1
+docker-compose.rustfs.yaml,9,image: rustfs/rustfs:1.0.0-alpha.83
+docker-compose.rustfs.yaml,29,image: amazon/aws-cli:2.31.1
+docker-compose.yaml,3,image: traefik:v3.6.1
+docker-compose.yaml,34,image: ghcr.io/thecodingmachine/nodejs:v2-24-trixie
+docker-compose.yaml,215,image: thecodingmachine/php:8.1-v4-apache-node12
+docker-compose.yaml,235,image: ghcr.io/thecodingmachine/nodejs:v2-24-trixie
+docker-compose.yaml,288,image: ghcr.io/thecodingmachine/nodejs:v2-24-trixie
+docker-compose.yaml,330,image: ghcr.io/thecodingmachine/nodejs:v2-24-trixie-build
+docker-compose.yaml,343,image: redis:6
+docker-compose.yaml,346,image: redislabs/redisinsight:latest
+docker-compose.yaml,354,image: matthiasluedtke/iconserver:v3.21.0
+docker-compose.yaml,363,image: ghcr.io/soluto/oidc-server-mock:0.7.0
+docker-compose.yaml,487,image: matrixdotorg/synapse:v1.140.0
+map-storage/Dockerfile,6,FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS proto-builder
+map-storage/Dockerfile,15,FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS builder
+map-storage/Dockerfile,37,FROM node:24-trixie-slim
+maps/Dockerfile,1,FROM thecodingmachine/php:8.1-v4-apache-node12
+play/Dockerfile,6,FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS proto-builder
+play/Dockerfile,15,FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS builder
+play/Dockerfile,58,FROM ${PREVIOUS_FRONT_IMAGE} AS previous-front
+play/Dockerfile,65,FROM nginx:1.30-alpine3.24 AS front
+play/Dockerfile,73,FROM node:24-trixie-slim

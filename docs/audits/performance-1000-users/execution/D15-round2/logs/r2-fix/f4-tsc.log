@@ -1,0 +1,3 @@
+MATH_UTILS_TSC_EXIT=0
+error TS5057: Cannot find a tsconfig.json file at the specified directory: '.'.
+MESSAGES_TSC_EXIT=1

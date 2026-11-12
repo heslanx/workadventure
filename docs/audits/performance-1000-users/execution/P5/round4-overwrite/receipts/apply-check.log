@@ -1,0 +1,14 @@
+checkout HEAD: 32f5571f1
+git apply --cached 1-pin-autosave-overwrite.test.patch: exit 0
+git apply --cached 2-fix-autosave-overwrite.patch: exit 0
+git apply --cached 3-pin-upload-move-clear.test.patch: exit 0
+git apply --cached 4-fix-upload-move-clear.patch: exit 0
+temp index  a06c4af7f3ed167f46d5de70396b7599ac2a48d4  map-storage/src/MapsManager.ts
+temp index  83d1d48a5a50886e7a065531028ebe67a2c5c527  map-storage/src/Upload/UploadController.ts
+temp index  63079b03d686928799cc0547f5c401ac967daff2  map-storage/src/tests/MapsManagerAutosave.test.ts
+temp index  4ac46aa795346ae939e04066eae7ed884a2a7245  map-storage/src/tests/UploadController.test.ts
+tested file a06c4af7f3ed167f46d5de70396b7599ac2a48d4  map-storage/src/MapsManager.ts
+tested file 83d1d48a5a50886e7a065531028ebe67a2c5c527  map-storage/src/Upload/UploadController.ts
+tested file 63079b03d686928799cc0547f5c401ac967daff2  map-storage/src/tests/MapsManagerAutosave.test.ts
+tested file 4ac46aa795346ae939e04066eae7ed884a2a7245  map-storage/src/tests/UploadController.test.ts
+git apply --check 1-pin-autosave-overwrite.test.patch on the working tree: exit 0

@@ -1,0 +1,41 @@
+Sentry plugin disabled
+2:05:54 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+2:05:54 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+ [32m✓[39m src/front/Components/Video/PictureInPicture/childWindow.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m   Start at [22m 02:05:54
+[2m   Duration [22m 3.20s[2m (transform 1.63s, setup 63ms, import 1.90s, tests 79ms, environment 941ms)[22m
+
+EXIT_CHILDWINDOW=0
+Sentry plugin disabled
+2:05:59 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+2:05:59 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+[90mstdout[2m | src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts
+[22m[39mWake lock is not supported by this browser.
+
+ [32m✓[39m src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 83[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m   Start at [22m 02:05:59
+[2m   Duration [22m 38.24s[2m (transform 31.45s, setup 201ms, import 36.11s, tests 83ms, environment 1.48s)[22m
+
+EXIT_ROWREUSE=0

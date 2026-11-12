@@ -1,0 +1,163 @@
+container wa-fable-ovw4-83-e3-b-tests-on-a
+84ddd0b7ee989824915af1900b8db81638caea0533fffa32e724b628ab052d45  src/MapsManager.ts
+c5bbc727a74948541a1bf8c3f25edc472fd67a981c18b297ab5a0798faed8159  src/Upload/UploadController.ts
+2318d3b999258a88b03bb481de15e23b2d24b3b34ffc582405c8ffd7dfedca56  src/tests/MapsManagerAutosave.test.ts
+
+ RUN  v4.1.7 /w/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist the edited map and release it from memory 9ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a map edited once a single time 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a continuously edited map once per autosave interval 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist a change made by a command that only went through the command queue 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should persist the edit once storage recovers, without waiting for another edit 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should keep the unsaved edit in memory after its command history expired 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should report the failure, then give up and release the map past the retry horizon 13ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should measure the retry horizon from the newest edit, not the first one 16ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should log a failing save on its first attempt and then periodically, not on every attempt 22ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should still retry and report the handler error when logging the failure throws 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should stop retrying once the map was replaced or deleted 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should never run two writes of the same map at once 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when the first write is the last to finish 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should count a write that never settles as failed and retry it 1ms
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when a write past its timeout lands after its retry 6ms
+   → expected 'cmd-1' to be 'cmd-2' // Object.is equality
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should persist that newer edit with a follow-up write 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should not retry the abandoned state after the map was replaced by an upload 1ms
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when the write in flight lands after the delete 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the uploaded map when the write in flight lands after the upload 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when a write past its timeout lands after the delete 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should reject the delete and leave storage unchanged when the write in flight settles after the wait 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should load the map only once its replacement finished 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should give every load that waited for the replacement the same map 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should not keep a map whose read was in flight when its replacement started 1ms
+   → mapsManager.replaceStoredMaps is not a function
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when an edit arrives while the delete waits 1ms
+   → mapsManager.replaceStoredMaps is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when a write past its timeout lands after its retry
+AssertionError: expected 'cmd-1' to be 'cmd-2' // Object.is equality
+
+Expected: "cmd-2"
+Received: "cmd-1"
+
+ ❯ src/tests/MapsManagerAutosave.test.ts:382:54
+    380|             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+    381|
+    382|             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
+       |                                                      ^
+    383|             expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
+    384|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when the write in flight lands after the delete
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:424:42
+    422|             await editAndHoldItsWrite("cmd-1");
+    423|             // UploadController.deleteFile.
+    424|             const deleting = mapsManager.replaceStoredMaps([mapKey], (…
+       |                                          ^
+    425|
+    426|             await releaseHeldWritesNewestFirst();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the uploaded map when the write in flight lands after the upload
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:436:43
+    434|             await editAndHoldItsWrite("cmd-1");
+    435|             // Upload endpoints replace the file, then the back server…
+    436|             const uploading = mapsManager.replaceStoredMaps([mapKey], …
+       |                                           ^
+    437|                 storage.writeStringAsFile(mapKey, UPLOADED_WAM),
+    438|             );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when a write past its timeout lands after the delete
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:455:42
+    453|             storage.writeMode = "succeed";
+    454|             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+    455|             const deleting = mapsManager.replaceStoredMaps([mapKey], (…
+       |                                          ^
+    456|
+    457|             await releaseHeldWritesNewestFirst();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should reject the delete and leave storage unchanged when the write in flight settles after the wait
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:466:42
+    464|             await editAndHoldItsWrite("cmd-1");
+    465|             const deleteFiles = vi.fn(() => storage.deleteFiles(mapKey…
+    466|             const deleting = mapsManager.replaceStoredMaps([mapKey], d…
+       |                                          ^
+    467|
+    468|             await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should load the map only once its replacement finished
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:482:43
+    480|         it("should load the map only once its replacement finished", a…
+    481|             await editAndHoldItsWrite("cmd-1");
+    482|             const uploading = mapsManager.replaceStoredMaps([mapKey], …
+       |                                           ^
+    483|                 storage.writeStringAsFile(mapKey, UPLOADED_WAM),
+    484|             );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should give every load that waited for the replacement the same map
+TypeError: mapsManager.replaceStoredMaps is not a function
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 16 passed (25)
+   Start at  03:11:47
+ ❯ src/tests/MapsManagerAutosave.test.ts:500:43
+    498|         it("should give every load that waited for the replacement the…
+    499|             await editAndHoldItsWrite("cmd-1");
+    500|             const uploading = mapsManager.replaceStoredMaps([mapKey], …
+       |                                           ^
+    501|                 storage.writeStringAsFile(mapKey, UPLOADED_WAM),
+    502|             );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should not keep a map whose read was in flight when its replacement started
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:515:43
+    513|         it("should not keep a map whose read was in flight when its re…
+    514|             const loading = mapsManager.getOrLoadWamFile(mapKey);
+    515|             const uploading = mapsManager.replaceStoredMaps([mapKey], …
+       |                                           ^
+    516|                 storage.writeStringAsFile(mapKey, UPLOADED_WAM),
+    517|             );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when an edit arrives while the delete waits
+TypeError: mapsManager.replaceStoredMaps is not a function
+ ❯ src/tests/MapsManagerAutosave.test.ts:526:42
+    524|         it("should keep the deleted map deleted when an edit arrives w…
+    525|             await editAndHoldItsWrite("cmd-1");
+    526|             const deleting = mapsManager.replaceStoredMaps([mapKey], (…
+       |                                          ^
+    527|             storage.writeMode = "hold";
+    528|             const editing = edit("cmd-2").catch(() => undefined);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+   Duration  3.42s (transform 2.27s, setup 0ms, import 3.09s, tests 89ms, environment 0ms)
+
+EXIT=1

@@ -1,0 +1,43 @@
+# run 3: private-bind-host-cgroupfs-over-default
+# docker run flags: --cpus 0.5 --cpu-shares 512 --memory 1g --network none -v /sys/fs/cgroup:/sys/fs/cgroup:ro
+# started 03:53:45 UTC
+9b79bf6ab046e41ff399bcc91881fecc3ac318ceeb1091850f7086d48d28dbca  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r6/stage/QuotaAwareCpuTracker.fix.ts
+## container view (inside c9f9aaa5f1fa)
+/proc/self/cgroup:
+0::/
+mountinfo cgroup lines:
+2084 2073 0:28 /../.. /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw
+/sys/fs/cgroup/system.slice/docker-c9f9aaa5f1fac558c1fa5c780e168a00cee2c0d50a98b2f0b2569af10183b904.scope/cpu.max: 50000 100000
+## unshare attempts
+unshare: unshare failed: Operation not permitted
+unshare --cgroup exit=1
+unshare: unshare failed: Operation not permitted
+unshare --user --map-root-user --cgroup exit=1
+## probe (prefix: none)
+
+ RUN  v4.1.7 /work/back
+
+stdout | tests/CpuTracker.test.ts > prints the cgroup view of the process and what the tracker resolves from it
+PROC_SELF_CGROUP "0::/\n"
+MOUNTINFO_CGROUP_LINES "2084 2073 0:28 /../.. /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw"
+PARSED_MOUNT_V2 {"root":"/../..","mountPoint":"/sys/fs/cgroup"}
+PARSED_MOUNT_V1 undefined
+QUOTA_CORES undefined
+CAPACITY {"cores":1,"source":"no cgroup CPU quota, one-core reference"}
+
+ ✓ tests/CpuTracker.test.ts (1 test) 17ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  03:53:47
+   Duration  673ms (transform 178ms, setup 0ms, import 206ms, tests 17ms, environment 0ms)
+
+VITEST_EXIT=0
+container_exit=0
+## host view
+container id: c9f9aaa5f1fac558c1fa5c780e168a00cee2c0d50a98b2f0b2569af10183b904
+HostConfig.NanoCpus: 500000000
+HostConfig.CgroupnsMode: private
+/sys/fs/cgroup/system.slice/docker-c9f9aaa5f1fac558c1fa5c780e168a00cee2c0d50a98b2f0b2569af10183b904.scope/cpu.max: 50000 100000
+/sys/fs/cgroup/system.slice/cpu.max: max 100000
+# finished 03:53:48 UTC

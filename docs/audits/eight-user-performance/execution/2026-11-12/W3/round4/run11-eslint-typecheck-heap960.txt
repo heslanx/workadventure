@@ -1,0 +1,14 @@
+# run 11: eslint-typecheck-heap960 (--cpus 0.5)
+# source override: -
+# started 03:21:19 UTC
+# command: export NODE_OPTIONS=--max-old-space-size=960; DEBUG= npx eslint src/Services/CpuTracker.ts src/Services/QuotaAwareCpuTracker.ts tests/CpuTracker.test.ts; echo ESLINT_EXIT=$?; npm run typecheck; echo TYPECHECK_EXIT=$?
+1da08e29b12a5ee18aebf0a72599143707526e004ddc8f6330b34476f90aa1a1  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r4/stage/CpuTracker.test.ts
+4ab1585dea5a38fc0fc2152e463ea975475ca7bb03308f81b46bce1421deeb99  /root/wa-jobs/wa-fable-20261112/src-cpu/back/src/Services/QuotaAwareCpuTracker.ts
+ESLINT_EXIT=0
+
+> workadventureback@1.0.0 typecheck
+> tsc --noEmit
+
+TYPECHECK_EXIT=0
+container_exit=0
+# finished 03:22:29 UTC

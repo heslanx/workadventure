@@ -1,0 +1,11 @@
+     [32m✓[39m keeps the previous rows when one message is appended to rebuilt timeline items[32m 34[2mms[22m[39m
+     [32m✓[39m gives a new row when its grouping, time, payload or day label changes[32m 9[2mms[22m[39m
+     [32m✓[39m reuses a poll row only while it shows the same poll[32m 5[2mms[22m[39m
+[31m     [31m×[31m gives a new row when a poll or question gets a new sender on the same object[39m[32m 49[2mms[22m[39m
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[41m[1m FAIL [22m[49m src/front/Chat/Components/Room/RoomTimelineRenderItems.test.ts[2m > [22mreuseUnchangedRenderItems[2m > [22mgives a new row when a poll or question gets a new sender on the same object
+[31m[1mAssertionError[22m: expected { kind: 'item', key: 'poll-p', …(3) } to be { kind: 'item', key: 'poll-p', …(3) } // Object.is equality
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
+MUTANT_VITEST_EXIT=1
+a51c08b32841a4b2
+wa-fable-r2-chat-fix-2 Exited (0) 3 seconds ago

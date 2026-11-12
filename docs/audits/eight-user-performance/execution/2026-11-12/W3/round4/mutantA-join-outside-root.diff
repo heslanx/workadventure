@@ -1,0 +1,11 @@
+--- ../repo/back/src/Services/QuotaAwareCpuTracker.ts	2026-11-12 04:14:20
++++ mutantA-join-outside-root.ts	2026-11-12 04:16:22
+@@ -134,7 +134,7 @@
+     const pathParts = cgroupPath.split("/").filter(Boolean);
+     const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
+     const directories = [mount.mountPoint];
+-    for (const part of isBelowRoot ? pathParts.slice(rootParts.length) : []) {
++    for (const part of isBelowRoot ? pathParts.slice(rootParts.length) : pathParts) {
+         directories.unshift(posix.join(directories[0], part));
+     }
+     return directories;

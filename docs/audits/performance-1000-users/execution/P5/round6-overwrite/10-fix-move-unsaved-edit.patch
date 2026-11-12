@@ -1,0 +1,197 @@
+diff --git a/map-storage/src/MapsManager.ts b/map-storage/src/MapsManager.ts
+index e5f3998f9..b692d4be3 100644
+--- a/map-storage/src/MapsManager.ts
++++ b/map-storage/src/MapsManager.ts
+@@ -238,10 +238,17 @@ class MapsManager {
+      * The maps stay loaded and editable while it waits. When an earlier replacement or a write is still in
+      * flight REPLACEMENT_WAIT_MS after the call, `replace` does not run and the maps stay loaded: storage is
+      * left unchanged, the next autosave stores their edits, and the caller must reject the request.
++     *
++     * Edits that no write carried when the maps are dropped are dropped with them. For a delete or an upload
++     * this is intended: the request is the later operation and supersedes them. A move keeps the edits of the
++     * moved map by naming it in `saveFirst`, one of `keys`: its unsaved edits are saved now rather than at
++     * the next autosave, and the maps are dropped only once it has none left. When that save fails, the
++     * request is rejected as above.
+      */
+     public async replaceStoredMaps(
+         keys: readonly string[],
+         replace: () => Promise<void>,
++        { saveFirst = [] }: { saveFirst?: readonly string[] } = {},
+     ): Promise<"replaced" | "writesInFlight"> {
+         const deadline = Date.now() + this.REPLACEMENT_WAIT_MS;
+         const earlierReplacements = keys.flatMap((key) => [...(this.replacementsRequested.get(key) ?? [])]);
+@@ -254,17 +261,19 @@ class MapsManager {
+         }
+         try {
+             let ready = await settledBefore(earlierReplacements, deadline);
+-            while (ready && keys.some((key) => this.writesInFlight.has(key))) {
++            while (
++                ready &&
++                (keys.some((key) => this.writesInFlight.has(key)) ||
++                    saveFirst.some((key) => this.mapSaveStates.has(key)))
++            ) {
+                 // Checked again after each batch rather than trusting one snapshot: an edit made meanwhile can
+-                // start a write. The last check and the drop below run in one synchronous block.
++                // start a write or leave an edit unsaved. The last check and the drop below run in one
++                // synchronous block.
+                 // eslint-disable-next-line no-await-in-loop
+-                ready = await settledBefore(
+-                    keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]),
+-                    deadline,
+-                );
++                ready = await this.saveAndSettle(keys, saveFirst, deadline);
+             }
+             if (!ready) {
+-                const message = `A write of map ${keys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete, upload or move is rejected, storage is left unchanged`;
++                const message = `A write of map ${keys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms, or failed. The delete, upload or move is rejected, storage is left unchanged`;
+                 console.error(`[${new Date().toISOString()}] ${message}`);
+                 Sentry.captureException(new Error(message), {
+                     tags: { location: "replaceStoredMaps" },
+@@ -284,6 +293,27 @@ class MapsManager {
+         }
+     }
+ 
++    /**
++     * Starts the save of the unsaved edits of `saveFirst` now, then waits for the writes of `keys`. Resolves
++     * false at the deadline, or at once when the last write of a map of `saveFirst` failed.
++     */
++    private saveAndSettle(keys: readonly string[], saveFirst: readonly string[], deadline: number): Promise<boolean> {
++        for (const key of saveFirst) {
++            const saveState = this.mapSaveStates.get(key);
++            if (saveState?.status === "retrying") {
++                return Promise.resolve(false);
++            }
++            if (saveState?.status === "dirty") {
++                clearTimeout(saveState.timer);
++                this.startSave(key, saveState);
++            }
++        }
++        return settledBefore(
++            keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]),
++            deadline,
++        );
++    }
++
+     public addCommandToQueue(mapKey: string, message: EditMapCommandMessage): void {
+         let queue = this.loadedMapsCommandsQueue.get(mapKey);
+         if (queue === undefined) {
+diff --git a/map-storage/src/Upload/UploadController.ts b/map-storage/src/Upload/UploadController.ts
+index 83d1d48a5..aa596eb74 100644
+--- a/map-storage/src/Upload/UploadController.ts
++++ b/map-storage/src/Upload/UploadController.ts
+@@ -879,9 +879,12 @@ export class UploadController {
+                 }
+ 
+                 if (path.extname(virtualPath) === ".wam") {
+-                    // Both keys: a copy loaded at either one would be saved back over the move.
+-                    const outcome = await mapsManager.replaceStoredMaps([virtualPath, newVirtualPath], () =>
+-                        this.fileSystem.move(virtualPath, newVirtualPath),
++                    // Both keys: a copy loaded at either one would be saved back over the move. The source is
++                    // saved first, so the moved file has its edits.
++                    const outcome = await mapsManager.replaceStoredMaps(
++                        [virtualPath, newVirtualPath],
++                        () => this.fileSystem.move(virtualPath, newVirtualPath),
++                        { saveFirst: [virtualPath] },
+                     );
+                     if (outcome === "writesInFlight") {
+                         rejectWhileMapIsSaving(res);
+diff --git a/map-storage/src/tests/MapsManagerAutosave.test.ts b/map-storage/src/tests/MapsManagerAutosave.test.ts
+index 295ce9c52..1f9aec131 100644
+--- a/map-storage/src/tests/MapsManagerAutosave.test.ts
++++ b/map-storage/src/tests/MapsManagerAutosave.test.ts
+@@ -583,6 +583,35 @@ describe("MapsManager autosave", () => {
+         });
+     });
+ 
++    describe("when a replacement saves the edits of its map first, as a move does", () => {
++        it("should run the replacement once the edits are stored", async () => {
++            await edit("cmd-1");
++            const moveFile = vi.fn(() => Promise.resolve());
++
++            await expect(mapsManager.replaceStoredMaps([mapKey], moveFile, { saveFirst: [mapKey] })).resolves.toBe(
++                "replaced",
++            );
++
++            expect(moveFile).toHaveBeenCalledOnce();
++            expect(storedWam(mapKey)).toMatchObject({ lastCommandId: "cmd-1", metadata: { name: "edited by cmd-1" } });
++        });
++
++        it("should reject the replacement and keep the edit when its save fails", async () => {
++            await edit("cmd-1");
++            storage.writeMode = "fail";
++            const moveFile = vi.fn(() => Promise.resolve());
++
++            await expect(mapsManager.replaceStoredMaps([mapKey], moveFile, { saveFirst: [mapKey] })).resolves.toBe(
++                "writesInFlight",
++            );
++            storage.writeMode = "succeed";
++            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
++
++            expect(moveFile).not.toHaveBeenCalled();
++            expect(storedWam(mapKey)).toMatchObject({ lastCommandId: "cmd-1", metadata: { name: "edited by cmd-1" } });
++        });
++    });
++
+     describe("when two replacements of a map overlap", () => {
+         it("should run the later replacement only once the earlier one finished", async () => {
+             storage.writeMode = "hold";
+diff --git a/map-storage/src/tests/UploadController.test.ts b/map-storage/src/tests/UploadController.test.ts
+index 11c4ad518..e0e9b238b 100644
+--- a/map-storage/src/tests/UploadController.test.ts
++++ b/map-storage/src/tests/UploadController.test.ts
+@@ -350,7 +350,7 @@ describe("UploadController", () => {
+     });
+ 
+     describe("POST /move of a map", () => {
+-        it("should not recreate the moved map at its old path when it had an unsaved edit", async () => {
++        it("should move the map with its unsaved edit, and not recreate it at its old path", async () => {
+             storage.files.set(keyOf("a.wam"), wam("a"));
+             await edit(keyOf("a.wam"), "cmd-1");
+ 
+@@ -363,11 +363,11 @@ describe("UploadController", () => {
+             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+ 
+             expect(response.status).toBe(200);
+-            expect(storage.files.get(keyOf("b.wam"))).toBe(wam("a"));
++            expect(storedName("b.wam")).toBe("edited by cmd-1");
+             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+         });
+ 
+-        it("(known defect) should lose an edit made while the write of an earlier edit was in flight", async () => {
++        it("should move the map with an edit made while the write of an earlier edit was in flight", async () => {
+             storage.files.set(keyOf("a.wam"), wam("a"));
+             await edit(keyOf("a.wam"), "cmd-1");
+             storage.holdWrites();
+@@ -387,8 +387,31 @@ describe("UploadController", () => {
+             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+ 
+             expect(response.status).toBe(200);
+-            expect(storedName("b.wam")).toBe("edited by cmd-1");
++            expect(storedName("b.wam")).toBe("edited by cmd-2");
+             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+         });
++
++        it("should answer 503 and keep the map and its edit when the save of the edit does not settle in time", async () => {
++            storage.files.set(keyOf("a.wam"), wam("a"));
++            await edit(keyOf("a.wam"), "cmd-1");
++            storage.holdWrites();
++            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
++
++            const moving = request(
++                "POST",
++                "/move",
++                JSON.stringify({ source: `${directory}/a.wam`, destination: `${directory}/b.wam` }),
++                "application/json",
++            );
++            await until(() => replacing.mock.calls.length > 0);
++            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
++            const response = await moving;
++            storage.releaseHeldWrites();
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            expect(response.status).toBe(503);
++            expect(storedName("a.wam")).toBe("edited by cmd-1");
++            expect(storage.files.has(keyOf("b.wam"))).toBe(false);
++        });
+     });
+ });

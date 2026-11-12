@@ -1,0 +1,42 @@
+# v1-n500-r1-2-prof, pusher (play container), 20 s CPU profile at 1 ms sampling, steady window
+profile 20.5 s, busy 97.9% of samples
+ 21.92%     4385 ms  (garbage collector)  :0
+ 17.23%     3447 ms  finish  node_modules/@bufbuild/protobuf/dist/esm/wire/binary-encoding.js:92
+ 13.36%     2673 ms  encode  libs/messages/src/ts-proto-generated/messages.ts:1
+  8.60%     1721 ms  raw  node_modules/@bufbuild/protobuf/dist/esm/wire/binary-encoding.js:151
+  6.09%     1218 ms  send  :0
+  4.26%      852 ms  join  node_modules/@bufbuild/protobuf/dist/esm/wire/binary-encoding.js:125
+  2.67%      535 ms  encode  node:internal/encoding:355
+  2.05%      410 ms  (idle)  :0
+  1.49%      298 ms  isListeningZone  play/src/pusher/models/Zone.ts:1
+  1.26%      253 ms  (program)  :0
+  1.24%      249 ms  notifyUserMove  play/src/pusher/models/Zone.ts:1
+  1.14%      229 ms  getUserData  play/src/pusher/services/PusherWebSocket.ts:1
+  1.01%      202 ms  writeBuffer  :0
+  0.85%      170 ms  decode  libs/messages/src/ts-proto-generated/messages.ts:1
+  0.69%      139 ms  encodeUtf8String  :0
+  0.69%      139 ms  assertUInt32  node_modules/@bufbuild/protobuf/dist/esm/wire/binary-encoding.js:491
+  0.59%      118 ms  handleUserMoved  play/src/pusher/models/Zone.ts:1
+  0.57%      115 ms  uuid4  node_modules/@sentry/core/build/esm/utils/misc.js:14
+  0.57%      114 ms  setTag  node_modules/@sentry/core/build/esm/scope.js:151
+  0.56%      111 ms  pruneExpired  play/src/common/NoncedMessageStore.ts:1
+  0.50%       99 ms  uint32  node_modules/@bufbuild/protobuf/dist/esm/wire/binary-encoding.js:162
+  0.47%       95 ms  startListening  play/src/pusher/models/Zone.ts:1
+  0.46%       92 ms  (anonymous)  node:internal/http2/core:2321
+  0.45%       89 ms  clearSentMessages  node_modules/@grpc/grpc-js/build/src/retrying-call.js:219
+  0.43%       87 ms  notifyGroupMove  play/src/pusher/models/Zone.ts:1
+
+# v1-n500-r1-2-prof, back, same window
+profile 20.4 s, busy 6.5% of samples
+ 93.48%    18701 ms  (idle)  :0
+  1.02%      204 ms  (program)  :0
+  0.82%      165 ms  queryCircle  libs/shared-utils/src/SpatialMap.ts:1
+  0.27%       53 ms  (garbage collector)  :0
+  0.25%       49 ms  encode  libs/messages/src/ts-proto-generated/messages.ts:1
+  0.23%       45 ms  searchForNearbyUsers  back/src/Model/Group.ts:1
+  0.22%       45 ms  getAllUsersInSquareAroundZone  back/src/Model/PositionNotifier.ts:1
+  0.22%       45 ms  Subject.next  node_modules/rxjs/dist/cjs/internal/Subject.js:57
+  0.21%       42 ms  searchClosestAvailableUserOrGroup  back/src/Model/GameRoom.ts:1
+  0.17%       34 ms  writeBuffer  :0
+  0.16%       32 ms  previewGroupPosition  back/src/Model/Group.ts:1
+  0.15%       30 ms  finish  node_modules/@bufbuild/protobuf/dist/esm/wire/binary-encoding.js:92

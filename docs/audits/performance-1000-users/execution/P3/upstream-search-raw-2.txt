@@ -1,0 +1,135 @@
+# date_checked_utc=2026-11-11T23:58:34Z
+## gh pr view 5429
+#5429	OPEN	ready	moufmouf	created=2025-12-05T10:57:32Z	updated=2026-04-24T08:31:05Z	head=800907f36a0f	+267/-40 files=17	[WIP] Switching to Typescript 7 prerelease	https://github.com/workadventure/workadventure/pull/5429
+BODY_EXCERPT: 
+exit=0
+## gh pr view 6811
+#6811	OPEN	draft	ydiarra	created=2026-10-17T14:27:32Z	updated=2026-11-10T17:09:44Z	head=fb687ecdc8c4	+85845/-12203 files=718	Rust server replacing play/pusher, back, map-storage and uploader	https://github.com/workadventure/workadventure/pull/6811
+BODY_EXCERPT: ## What **Stacked on #6809 (socle).** Retarget to `master` before merging, once #6809 is merged. Replaces the TypeScript play/pusher, back, map-storage and uploader by one Rust server (`server-rust/`), and makes the `deploy` label build and deploy it instead of the TypeScript images. It is the same plumbing as the Go server (#6810): only one of the two is meant to be merged, the other stays a candidate. - **`server
+exit=0
+## gh pr view 6810
+#6810	OPEN	draft	ydiarra	created=2026-10-17T08:52:57Z	updated=2026-11-10T17:07:50Z	head=b020d56e6002	+103729/-12126 files=794	Go server replacing play/pusher, back, map-storage and uploader	https://github.com/workadventure/workadventure/pull/6810
+BODY_EXCERPT: ## What **Stacked on #6809 (socle).** Retarget to `master` before merging, once #6809 is merged. Replaces the TypeScript play/pusher, back, map-storage and uploader by one Go server (`server-go/`), and makes the `deploy` label build and deploy it instead of the TypeScript images. - **`server-go/`**: the server (WebSocket protocol, rooms and spaces, map editor and map-storage, scripting and variables, moderation, Li
+exit=0
+## gh pr view 6809
+#6809	OPEN	draft	ydiarra	created=2026-10-17T08:52:48Z	updated=2026-10-30T17:27:25Z	head=47121578c811	+4673/-15 files=54	Dev socle and server mode for the Go/Rust server rewrite	https://github.com/workadventure/workadventure/pull/6809
+BODY_EXCERPT: ## What The shared base for replacing the TypeScript servers (play/pusher, back, map-storage, uploader) with a single server rewritten in Go or Rust. **Nothing changes for the TypeScript deployment**: every addition is opt-in. - **`contrib/helm`: `server.enabled`** (default `false`). One server image runs in the play Deployment; the map-storage and uploader Services select its pods (`server.mapStoragePort` 3002, `s
+exit=0
+## gh pr view 6095
+#6095	OPEN	ready	app/dependabot	created=2026-05-14T23:35:31Z	updated=2026-06-16T09:56:53Z	head=50d7dcf376f3	+132/-5 files=2	build(deps-dev): bump svelte from 3.46.4 to 5.55.7 in /desktop/local-app	https://github.com/workadventure/workadventure/pull/6095
+BODY_EXCERPT: Bumps [svelte](https://github.com/sveltejs/svelte/tree/HEAD/packages/svelte) from 3.46.4 to 5.55.7. <details> <summary>Release notes</summary> <p><em>Sourced from <a href="https://github.com/sveltejs/svelte/releases">svelte's releases</a>.</em></p> <blockquote> <h2>svelte@5.55.7</h2> <h3>Patch Changes</h3> <ul> <li> <p>fix: prevent XSS on <code>hydratable</code> from user contents (<a href="https://github.com/sveltej
+exit=0
+## gh pr view 4455
+#4455	OPEN	ready	moufmouf	created=2024-12-12T09:32:17Z	updated=2026-04-24T08:31:05Z	head=8b881fdea408	+3/-2 files=4	[WIP] Svelte 4 + ESM migration	https://github.com/workadventure/workadventure/pull/4455
+BODY_EXCERPT: 
+exit=0
+## gh pr view 2860
+#2860	OPEN	ready	moufmouf	created=2022-11-30T17:36:35Z	updated=2026-04-24T08:31:05Z	head=fef73f6b2ab1	+2577/-948 files=12	[WIP] Load-testing chat	https://github.com/workadventure/workadventure/pull/2860
+BODY_EXCERPT: This PR is work-in-progress It is used to put the chat under load.
+exit=0
+## gh pr view 6458
+#6458	OPEN	ready	ydiarra	created=2026-08-26T10:08:27Z	updated=2026-09-04T14:36:09Z	head=e4484f92fea6	+497/-55 files=9	perf(front): take the room, WAM and TMJ requests off the render loop	https://github.com/workadventure/workadventure/pull/6458
+BODY_EXCERPT: > **Stacked on #6495** (background loading). This PR's own diff is the two commits below; the > base will retarget to `master` when #6495 merges. ## What this PR does **1. Takes the network off the render loop.** The room resolution (`/room`), the WAM and the TMJ used to be requested from `EntryScene.create()` and `GameScene.preload()`, so they only started once Phaser had booted and `EntryScene` had downloaded its
+exit=0
+## gh pr view 5663
+#5663	OPEN	draft	app/copilot-swe-agent	created=2026-02-04T21:29:04Z	updated=2026-04-24T08:31:04Z	head=673d117f2082	+25699/-35229 files=11	Migrate play container from Vite 5 to Vite 6	https://github.com/workadventure/workadventure/pull/5663
+BODY_EXCERPT: Migrates the play container build system from Vite 5 to Vite 6. The `@sveltejs/vite-plugin-svelte` v5+ requires Svelte 5, necessitating a simultaneous Svelte upgrade. ## Package Updates **Core:** - `vite`: 5.4.21 → 6.4.1 - `svelte`: 4.2.20 → 5.49.2 **Vite Ecosystem:** - `@sveltejs/vite-plugin-svelte`: 3.1.2 → 5.1.1 - `@vitejs/plugin-legacy`: 5.4.3 → 6.1.1 (requires `terser` ^5.16.0) - `vite-tsconfig-paths`: 4.3.2 
+exit=0
+## gh pr view 6333
+#6333	OPEN	ready	moufmouf	created=2026-07-09T15:08:42Z	updated=2026-07-09T15:17:26Z	head=80c0d0fe5ec1	+372/-115 files=1	Render conversation bubbles with a fragment shader (WebGL), keep Canvas fallback	https://github.com/workadventure/workadventure/pull/6333
+BODY_EXCERPT: ## What Conversation bubbles were rasterizing a Catmull-Rom spline into a **brand-new texture every animating frame** via `generateTexture()` — allocating and uploading a GL texture per bubble per frame, plus texture-manager/GC churn from `Date.now()`-keyed textures. With many people/bubbles this became a visible cost, and the cached texture also looked soft when zoomed in. This PR moves the drawing onto the GPU wh
+exit=0
+## gh pr view 5700
+#5700	OPEN	ready	moufmouf	created=2026-02-18T11:16:46Z	updated=2026-04-24T08:31:04Z	head=828009b8764e	+41/-33 files=5	Upgrading to Phaser 3.90	https://github.com/workadventure/workadventure/pull/5700
+BODY_EXCERPT: Removing rexWebFontLoader and moving to the new native font loader of Phaser 3.87+.
+exit=0
+## pr | state=all (15 most recently updated) | query: PositionDispatcher
+#6471	MERGED	2026-09-03T07:56:56Z	moufmouf	fix(pusher): count joined sockets when deciding a room is empty
+#6423	MERGED	2026-08-11T15:20:42Z	ydiarra	fix(zones): bound the number of zones a viewport can subscribe to
+#5395	MERGED	2025-11-28T13:47:22Z	moufmouf	refactor: consolidate gRPC streams and optimize zone message routing
+#5392	MERGED	2025-11-27T13:27:12Z	moufmouf	Fixing zones delete in PositionDispatcher
+#1712	MERGED	2022-01-09T21:39:39Z	albanbruder	Fix circular serialization in pusher dump endpoint
+exit=0
+## pr | state=all (15 most recently updated) | query: MapsManager
+#6427	MERGED	2026-08-14T16:56:37Z	ydiarra	fix(map-storage): decode URL paths before building storage keys
+#6339	MERGED	2026-07-10T12:38:00Z	moufmouf	feat(shared-utils): report LockByKey callback failures and require observability hooks
+#5887	MERGED	2026-03-31T09:14:30Z	moufmouf	Fixing map-storage discrepancies
+#5888	MERGED	2026-03-24T14:36:38Z	app/copilot-swe-agent	Move map eviction behind per-map edition lock
+#5753	MERGED	2026-02-24T14:13:57Z	moufmouf	Splitting GameMap into GameMap and WamFile
+#2918	MERGED	2023-01-05T10:37:38Z	moufmouf	Working on a S3 backend for map storage
+exit=0
+## pr | state=all (15 most recently updated) | query: autosave
+#5887	MERGED	2026-03-31T09:14:30Z	moufmouf	Fixing map-storage discrepancies
+exit=0
+## pr | state=all (15 most recently updated) | query: benchmark in:title
+#2034	MERGED	2022-04-04T15:54:06Z	app/dependabot	Bump minimist from 1.2.5 to 1.2.6 in /benchmark
+#1357	MERGED	2021-09-01T15:48:35Z	app/dependabot	Bump path-parse from 1.0.6 to 1.0.7 in /benchmark
+#1095	MERGED	2021-06-17T09:29:40Z	app/dependabot	Bump ws from 7.3.1 to 7.4.6 in /benchmark
+#1143	MERGED	2021-06-08T12:36:10Z	app/dependabot	Bump glob-parent from 5.1.1 to 5.1.2 in /benchmark
+#1025	MERGED	2021-05-26T13:49:55Z	app/dependabot	Bump hosted-git-info from 2.8.8 to 2.8.9 in /benchmark
+exit=0
+## pr | state=all (15 most recently updated) | query: viewport in:title
+#6774	MERGED	2026-10-14T14:49:17Z	ydiarra	fix(front): give headless bots a viewport around their Woka
+#6490	MERGED	2026-09-04T12:13:45Z	moufmouf	Read the viewport option instead of building a page to measure it
+#6423	MERGED	2026-08-11T15:20:42Z	ydiarra	fix(zones): bound the number of zones a viewport can subscribe to
+#6109	MERGED	2026-05-21T15:20:33Z	ydiarra	fix: update locate viewport on camera updates
+#6003	MERGED	2026-04-21T14:03:33Z	moufmouf	Fixing viewport and depths
+#5911	MERGED	2026-03-30T15:31:20Z	ydiarra	refactor(play): centralize network viewport pipeline and align outbound paths
+#5631	MERGED	2026-01-29T16:10:07Z	moufmouf	Fixing viewport computation on map start
+#5627	MERGED	2026-01-28T17:34:34Z	moufmouf	Fixing viewport computation when zoomed out
+#4883	MERGED	2025-05-30T17:19:24Z	moufmouf	Fixing the isNaN number for viewport causing blank screen after full screening a cowebsite
+#4858	MERGED	2025-05-23T07:27:13Z	moufmouf	Fixing crash when viewport returns NaN
+#4003	MERGED	2024-06-03T16:18:47Z	moufmouf	Fixing viewport for bots
+#273	MERGED	2020-09-16T09:26:03Z	moufmouf	Performance: Sending position only for players in the viewport
+exit=0
+## pr | state=all (15 most recently updated) | query: typescript in:title
+#6959	MERGED	2026-11-10T16:10:16Z	moufmouf	build(desktop): TypeScript 5.9 everywhere in the desktop app
+#6709	OPEN	2026-11-06T16:24:36Z	ydiarra	test(desktop): end-to-end tests on Windows, macOS and Ubuntu, TypeScript for tests and rules
+#5429	OPEN	2026-04-24T08:31:05Z	moufmouf	[WIP] Switching to Typescript 7 prerelease
+#3679	OPEN	2026-04-24T08:31:05Z	moufmouf	Adding @typescript-eslint/no-unnecessary-condition rule
+#5698	OPEN	2026-04-24T08:31:04Z	nolway	refactor: improve back typescript configuration
+#5539	MERGED	2026-01-13T15:44:32Z	app/copilot-swe-agent	Upgrade typescript-eslint to v8.53.0 and enable auto-removal of unused imports
+#4446	MERGED	2024-11-29T17:01:38Z	moufmouf	Upgrading back/map-storage/libs/uploader to Typescript 5.7.2
+#4443	MERGED	2024-11-29T15:59:47Z	moufmouf	Upgrading play to Typescript 5.7
+#2408	MERGED	2022-07-08T13:35:16Z	moufmouf	Adding additional rule @typescript-eslint/recommended on pusher
+#2409	MERGED	2022-07-08T09:17:41Z	moufmouf	Adding additional rule @typescript-eslint/recommended on back
+#2406	MERGED	2022-07-08T08:21:20Z	moufmouf	Adding additional rule @typescript-eslint/recommended on front
+#2002	MERGED	2022-06-06T09:28:53Z	moufmouf	Upgrade to Typescript 4.6 on front
+#2112	MERGED	2022-04-22T16:09:41Z	moufmouf	Fine-tuning the @typescript-eslint/no-unused-vars rule
+#2072	MERGED	2022-04-11T20:47:38Z	moufmouf	Removing Typescript on maps container
+#1671	MERGED	2021-12-23T14:43:45Z	moufmouf	Upgrading Typescript on back server
+exit=0
+## pr | state=all (15 most recently updated) | query: svelte in:title
+#6980	MERGED	2026-11-10T16:42:11Z	moufmouf	feat(desktop): build the Landing with electron-vite, Svelte and Tailwind
+#6851	MERGED	2026-11-10T16:10:13Z	ydiarra	feat(desktop): WA chat in the companion, Svelte screen annotations, desktop versions
+#6685	MERGED	2026-10-09T10:34:52Z	ydiarra	fix(front): defer the focus store update out of Svelte's render
+#6285	MERGED	2026-06-29T14:00:35Z	moufmouf	Fixing map-storage UI following Svelte 5 migration
+#6247	MERGED	2026-06-18T12:41:30Z	angerenage	Fix missups from the svelte 5 migration
+#6229	MERGED	2026-06-17T09:36:58Z	angerenage	Bring back prefer-svelte-reactivity and prefer-writable-derived
+#6095	OPEN	2026-06-16T09:56:53Z	app/dependabot	build(deps-dev): bump svelte from 3.46.4 to 5.55.7 in /desktop/local-app
+#6096	CLOSED	2026-06-08T13:53:35Z	app/dependabot	build(deps-dev): bump svelte from 4.2.20 to 5.55.7
+#6157	MERGED	2026-06-08T13:50:15Z	angerenage	Migrate to svelte 5 and bump all libs
+#6091	CLOSED	2026-06-02T09:46:54Z	angerenage	Update core libs (typescrit, vite, svelte, ...)
+#5786	CLOSED	2026-05-15T00:35:35Z	app/dependabot	Bump svelte from 4.2.20 to 5.53.5
+#5787	CLOSED	2026-05-14T23:35:37Z	app/dependabot	Bump svelte from 3.46.4 to 5.53.5 in /desktop/local-app
+#4455	OPEN	2026-04-24T08:31:05Z	moufmouf	[WIP] Svelte 4 + ESM migration
+#5946	MERGED	2026-04-14T10:41:45Z	app/copilot-swe-agent	fix: align map-storage build tooling to Svelte 4.x
+#5717	CLOSED	2026-02-28T13:40:16Z	app/dependabot	Bump svelte from 3.46.4 to 5.51.5 in /desktop/local-app
+exit=0
+## pr | state=all (15 most recently updated) | query: load in:title
+#6757	MERGED	2026-11-11T22:24:01Z	heslanx	fix(play): load room images on demand and shrink the fallback background
+#6976	MERGED	2026-11-03T14:31:42Z	ydiarra	fix(chat): show a loading skeleton instead of "No message" while a conversation opens
+#6905	MERGED	2026-10-28T23:37:50Z	ydiarra	feat(chat): show a folder's rooms loading error with a Retry button
+#6868	MERGED	2026-10-28T15:22:01Z	ydiarra	feat(chat): actionable connection error, skeleton loading and a single empty-search message
+#6753	MERGED	2026-10-12T10:05:39Z	moufmouf	perf(chat): load matrix-js-sdk on demand, and stop holding the map for Matrix
+#6615	MERGED	2026-10-08T17:11:57Z	ydiarra	feat(audio): overload fallback for DeepFilterNet3, and its load telemetry
+#6495	MERGED	2026-09-09T14:29:23Z	ydiarra	feat(front): let a window that starts in the background load its world
+#6447	MERGED	2026-08-20T13:17:34Z	ydiarra	fix(chat): say what the participant loaders are actually loading
+#6440	MERGED	2026-08-18T15:16:42Z	moufmouf	Fixing script loading on localhost
+#6356	MERGED	2026-07-20T09:25:20Z	ydiarra	fix(chat): stop jumping to the latest message when loading older ones
+#6366	MERGED	2026-07-17T12:38:38Z	moufmouf	Fixing error handling of image loading in map list
+#6336	OPEN	2026-07-09T20:25:49Z	moufmouf	perf(chat): lazy-load Matrix room members to bound the sync blob
+#5402	CLOSED	2026-05-31T11:32:15Z	BAWES	Fix Matrix Chat "Connecting to server" Infinite Loading Issue
+#6164	MERGED	2026-05-29T09:53:39Z	moufmouf	Hiding Woka names on load
+#6066	MERGED	2026-05-11T15:53:53Z	restray	fix(play front): load fonts and boyscout
+exit=0

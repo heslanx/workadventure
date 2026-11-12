@@ -1,0 +1,29 @@
+# Rows to merge into docs/TECH-DEBT.md
+
+Source: Phase 2 (refactoring-patterns), first pass on `play/src/pusher/services/SocketManager.ts` (2026-11-12). Baseline `HEAD` = `08040b7e0`, `SocketManager.ts` sha256 `de35ca77…09c68673` (1,822 lines). After the five patches: `4c6ffd63…a5dae64` (1,841 lines). Evidence: `docs/audits/tech-debt/phase2-socketmanager/README.md`. Locations marked "after" are line numbers in the patched file; the others are `HEAD`'s.
+
+## Debt Ledger: status updates
+
+| Item | New status |
+|---|---|
+| SM-02 | Unchanged. The `userId` write and the analytics `open` of a late join now sit in `handleMessageFromBack` (after `:332-349`), moved verbatim. The remainder is still not pinned. |
+| SM-06 | Unchanged. The constructor (after `:115-128`) still registers four global listeners. |
+
+## Smell Inventory: status updates
+
+| Smell | New location | New status |
+|---|---|---|
+| God class | `SocketManager.ts` (after: 1,841 lines) | open (Phase 2+). This pass added three private methods and removed no responsibility. |
+| Long method with three inline stream handlers: `handleConnectToRoom` (was 148 lines) | after `:262-320` (`handleConnectToRoom`, 59 lines), `:322-366` (`handleMessageFromBack`, 45), `:368-401` (`closeSocketWhenBackEnds`, 34), `:403-431` (`closeSocketWhenBackFails`, 29) | done by `02-extract-back-stream-handlers.patch` (Extract Method, three times). The `data` handler writes the back's close reason and the `end` handler reads it, so the shared `let` became a `BackConnectionClose` holder (after `:106`) that both methods receive. `handleMessageFromBack`'s `switch` is still long; it is pinned, and a later pass can split it per `$case`. |
+| Side effect before validation (SM-01) | after `:702-712` | open (unchanged) |
+| Back-message side effects run for a closed socket; only the relay checks it (SM-02) | after `:322-366` (`handleMessageFromBack`) | unchanged: fixed by `322c7704c` for the viewport; the `userId` write and the analytics `open` still run |
+| Constructor parameter typed as the class (`SpaceConnection`) | after `:115` | done by `05-extract-space-connection-interface.patch` (Extract Interface, type-only: the parameter is now `SpaceConnectionInterface`, still defaulting to `new SpaceConnection()`). The test's cast `satisfies SpaceConnectionInterface as unknown as SpaceConnection` and its comment are gone. |
+| A method that does nothing: `refreshRoomData` | after `:1211-1216` | open (out of this pass's scope) |
+| Duplicated "thinks he is in space … does not exist anymore" error block | after `:786-793`, `:931-938` | open (out of this pass's scope) |
+| Commented-out code | none | done by `03-remove-commented-out-code.patch` (Remove Dead Code, 8 lines): `//user leave previous room`, `//Client.leave(Client.roomId);` and `//delete Client.roomId;` in `leaveRoom`, `//await this.checkClientIsPartOfSpace(...)` and the `/*console.error(...)...*/` block in `handleRemoveSpaceFilterMessage`. The prose comments that explain why the filter removal skips the check and the error stay. |
+
+## Smell Inventory: new rows
+
+| Smell | Location | Refactoring | Status |
+|---|---|---|---|
+| Misleading comment: "Useless now, will be useful again if we allow editing details in game" on `handleSetPlayerDetails`. The browser sends this message for every status, voice-indicator, chat-ID and outline-color change (`RoomConnection.ts:940-965`), and the method forwards it to the back and updates the user in every space | was `:730` | Fix the comment | done by `04-handleSetPlayerDetails-comment.patch`: after `:757` reads "Sends the new details (the status, for instance) to the back and to every space the user is in." |

@@ -1,0 +1,205 @@
+diff --git a/back/src/Services/QuotaAwareCpuTracker.ts b/back/src/Services/QuotaAwareCpuTracker.ts
+index 5c1f03f..9d283a7 100644
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -95,10 +95,12 @@ function unescapeMountinfo(field: string): string {
+ }
+ 
+ /**
+- * Parses `/proc/self/mountinfo` and returns the first mount of the hierarchy that holds the cpu controller: the
+- * cgroup2 mount for v2, a cgroup mount with the cpu option for v1.
++ * Parses `/proc/self/mountinfo` and returns every mount of the hierarchy that holds the cpu controller, in the order
++ * listed: the cgroup2 mounts for v2, the cgroup mounts with the cpu option for v1. Each mount is a view of the same
++ * hierarchy, rooted at its own cgroup.
+  */
+-export function parseCgroupMount(content: string, version: CgroupVersion): CgroupMount | undefined {
++export function parseCgroupMounts(content: string, version: CgroupVersion): CgroupMount[] {
++    const mounts: CgroupMount[] = [];
+     for (const line of content.split("\n")) {
+         const separator = line.indexOf(" - ");
+         if (separator === -1) {
+@@ -111,10 +113,10 @@ export function parseCgroupMount(content: string, version: CgroupVersion): Cgrou
+                 ? fsType === "cgroup2"
+                 : fsType === "cgroup" && (superOptions ?? "").split(",").includes("cpu");
+         if (mountFields.length >= 5 && holdsCpu) {
+-            return { root: unescapeMountinfo(mountFields[3]), mountPoint: unescapeMountinfo(mountFields[4]) };
++            mounts.push({ root: unescapeMountinfo(mountFields[3]), mountPoint: unescapeMountinfo(mountFields[4]) });
+         }
+     }
+-    return undefined;
++    return mounts;
+ }
+ 
+ /**
+@@ -226,22 +228,25 @@ const CGROUP_HIERARCHIES: readonly CgroupHierarchy[] = [
+ 
+ /**
+  * Reads the effective CPU quota of the process in cores: the tightest quota of the process cgroup and its ancestors up
+- * to the mounted root, in the cgroup v2 hierarchy and in the cgroup v1 hierarchy holding the cpu controller. The paths
+- * come from `/proc/self/cgroup` and `/proc/self/mountinfo`.
++ * to the mounted root, in the cgroup v2 hierarchy and in the cgroup v1 hierarchy holding the cpu controller. Every
++ * listed mount of a hierarchy is read, because each directory a listed mount yields is the process cgroup or one of
++ * its ancestors, so every quota found through it is a real constraint. The paths come from `/proc/self/cgroup` and
++ * `/proc/self/mountinfo`. When mountinfo lists no mount of a hierarchy, the default mount point is assumed to be
++ * rooted at `/`. Any mount at that path would be listed, so this assumption is unproven only when mountinfo is
++ * unreadable, where it keeps the earlier behavior of reading the default mount point.
+  * Returns undefined when no quota applies (no cgroup files, unlimited quotas or malformed content).
+  */
+ export function readCgroupCpuQuota(readFile: ReadOptionalFile): CpuCapacity | undefined {
+     const procSelfCgroup = readFile(PROC_SELF_CGROUP) ?? "";
+     const mountinfo = readFile(PROC_SELF_MOUNTINFO) ?? "";
+     const quotas = CGROUP_HIERARCHIES.flatMap((hierarchy) => {
+-        const mount = parseCgroupMount(mountinfo, hierarchy.version) ?? {
+-            root: "/",
+-            mountPoint: hierarchy.defaultMountPoint,
+-        };
++        const listedMounts = parseCgroupMounts(mountinfo, hierarchy.version);
++        const mounts =
++            listedMounts.length > 0 ? listedMounts : [{ root: "/", mountPoint: hierarchy.defaultMountPoint }];
+         // Without an entry in /proc/self/cgroup the process is taken to be at the namespace root.
+         const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "/";
+-        return cgroupDirectories(mount, cgroupPath).flatMap(
+-            (directory) => hierarchy.readQuota(readFile, directory) ?? [],
++        return mounts.flatMap((mount) =>
++            cgroupDirectories(mount, cgroupPath).flatMap((directory) => hierarchy.readQuota(readFile, directory) ?? []),
+         );
+     });
+     return quotas.reduce<CpuCapacity | undefined>(
+diff --git a/back/tests/CpuTracker.test.ts b/back/tests/CpuTracker.test.ts
+index 9955ded..877ec11 100644
+--- a/back/tests/CpuTracker.test.ts
++++ b/back/tests/CpuTracker.test.ts
+@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import {
+     CpuTracker,
+     type CpuCapacity,
+-    parseCgroupMount,
++    parseCgroupMounts,
+     parseCgroupV1CfsQuota,
+     parseCgroupV1CpuPath,
+     parseCgroupV2CpuMax,
+@@ -34,8 +34,8 @@ const DOCKER_V1_CPU = "/sys/fs/cgroup/cpu,cpuacct";
+ const ONE_CORE_REFERENCE: CpuCapacity = { cores: 1, source: "no cgroup CPU quota, one-core reference" };
+ 
+ const WA_SERVICE = "0::/system.slice/wa.service\n";
+-const mountRootedAt = (root: string): string =>
+-    `1673 1627 0:28 ${root} /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
++const mountRootedAt = (root: string, mountPoint = "/sys/fs/cgroup"): string =>
++    `1673 1627 0:28 ${root} ${mountPoint} ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
+ 
+ // Probed in Docker containers with --cpus 0.5 on a cgroup v2 host (Linux 6.8). The kernel renders the path in
+ // /proc/self/cgroup and the cgroup mount root in /proc/self/mountinfo relative to the reader's cgroup namespace root.
+@@ -214,20 +214,37 @@ describe("CpuTracker", () => {
+         });
+     });
+ 
+-    describe("parseCgroupMount", () => {
++    describe("parseCgroupMounts", () => {
+         it("should find the mount of the v1 cpu controller and its root", () => {
+-            expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v1")).toEqual({
+-                root: "/docker/abc",
+-                mountPoint: DOCKER_V1_CPU,
+-            });
+-            expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v2")).toBeUndefined();
++            expect(parseCgroupMounts(DOCKER_V1_MOUNTINFO, "v1")).toEqual([
++                { root: "/docker/abc", mountPoint: DOCKER_V1_CPU },
++            ]);
++            expect(parseCgroupMounts(DOCKER_V1_MOUNTINFO, "v2")).toEqual([]);
+         });
+ 
+         it("should find the cgroup2 mount and decode octal escapes", () => {
+             const mountinfo =
+                 "30 23 0:26 / /run/my\\040cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 cgroup2 rw\n";
+-            expect(parseCgroupMount(mountinfo, "v2")).toEqual({ root: "/", mountPoint: "/run/my cgroup" });
+-            expect(parseCgroupMount(mountinfo, "v1")).toBeUndefined();
++            expect(parseCgroupMounts(mountinfo, "v2")).toEqual([{ root: "/", mountPoint: "/run/my cgroup" }]);
++            expect(parseCgroupMounts(mountinfo, "v1")).toEqual([]);
++        });
++
++        it("should return every mount of the hierarchy in the order listed", () => {
++            const v2 = mountRootedAt("/system.slice/other.service") + mountRootedAt("/", "/mnt/cgroup");
++            expect(parseCgroupMounts(v2, "v2")).toEqual([
++                { root: "/system.slice/other.service", mountPoint: "/sys/fs/cgroup" },
++                { root: "/", mountPoint: "/mnt/cgroup" },
++            ]);
++            const v1 = [
++                "1278 1276 0:27 /docker/other /sys/fs/cgroup/cpu,cpuacct ro - cgroup cgroup rw,cpu,cpuacct",
++                "1279 1276 0:28 /docker/abc /sys/fs/cgroup/cpuset ro - cgroup cgroup rw,cpuset",
++                "1280 1276 0:27 /docker/abc /mnt/cpu ro - cgroup cgroup rw,cpu,cpuacct",
++                "",
++            ].join("\n");
++            expect(parseCgroupMounts(v1, "v1")).toEqual([
++                { root: "/docker/other", mountPoint: "/sys/fs/cgroup/cpu,cpuacct" },
++                { root: "/docker/abc", mountPoint: "/mnt/cpu" },
++            ]);
+         });
+     });
+ 
+@@ -486,6 +503,67 @@ describe("CpuTracker", () => {
+         });
+     });
+ 
++    describe("several mounts of one cgroup hierarchy", () => {
++        const sibling = mountRootedAt("/system.slice/other.service");
++        const wholeHierarchy = mountRootedAt("/", "/mnt/cgroup");
++        const processOnly = mountRootedAt("/system.slice/wa.service", "/mnt/self");
++        const mountOrders = [
++            { order: "the sibling first", mounts: sibling + wholeHierarchy },
++            { order: "the sibling last", mounts: wholeHierarchy + sibling },
++        ];
++
++        it.each(mountOrders)(
++            "should read a valid mount listed after a mount rooted at a sibling ($order)",
++            ({ mounts }) => {
++                const files = {
++                    [PROC_SELF_CGROUP]: WA_SERVICE,
++                    [PROC_SELF_MOUNTINFO]: mounts,
++                    "/mnt/cgroup/system.slice/wa.service/cpu.max": "20000 100000\n",
++                    [V2_CPU_MAX]: "10000 100000\n",
++                };
++                expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                    cores: 0.2,
++                    source: "cgroup v2 /mnt/cgroup/system.slice/wa.service/cpu.max (quota 0.2 cores)",
++                });
++            },
++        );
++
++        it.each([
++            { order: "the mount of the whole hierarchy first", mounts: wholeHierarchy + processOnly },
++            { order: "the mount of the process cgroup first", mounts: processOnly + wholeHierarchy },
++        ])("should take the tightest quota over two valid mounts ($order)", ({ mounts }) => {
++            const files = {
++                [PROC_SELF_CGROUP]: WA_SERVICE,
++                [PROC_SELF_MOUNTINFO]: mounts,
++                "/mnt/self/cpu.max": "50000 100000\n",
++                "/mnt/cgroup/system.slice/wa.service/cpu.max": "50000 100000\n",
++                "/mnt/cgroup/system.slice/cpu.max": "30000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                cores: 0.3,
++                source: "cgroup v2 /mnt/cgroup/system.slice/cpu.max (quota 0.3 cores)",
++            });
++        });
++
++        it("should read a valid cgroup v1 mount listed after a mount rooted at a sibling", () => {
++            const v1Mount = (root: string, mountPoint: string): string =>
++                `1278 1276 0:27 ${root} ${mountPoint} ro,nosuid,nodev,noexec,relatime - cgroup cgroup rw,cpu,cpuacct\n`;
++            const files = {
++                [PROC_SELF_CGROUP]: "4:cpu,cpuacct:/docker/abc\n",
++                [PROC_SELF_MOUNTINFO]:
++                    v1Mount("/docker/other", "/sys/fs/cgroup/cpu,cpuacct") + v1Mount("/docker/abc", "/mnt/cpu"),
++                "/mnt/cpu/cpu.cfs_quota_us": "20000\n",
++                "/mnt/cpu/cpu.cfs_period_us": "100000\n",
++                "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us": "10000\n",
++                "/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us": "100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                cores: 0.2,
++                source: "cgroup v1 /mnt/cpu/cpu.cfs_quota_us (quota 0.2 cores)",
++            });
++        });
++    });
++
+     describe("readOptionalFile", () => {
+         it("should return undefined for a missing file without logging", () => {
+             expect(readOptionalFile("/nonexistent/wa-cpu-tracker/cpu.max")).toBeUndefined();

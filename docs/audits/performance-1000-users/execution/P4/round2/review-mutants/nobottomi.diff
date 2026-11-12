@@ -1,0 +1,11 @@
+--- a/play/src/pusher/models/PositionDispatcher.ts
++++ b/play/src/pusher/models/PositionDispatcher.ts
+@@ -164,7 +164,7 @@
+             reconciled !== undefined &&
+             reconciled.topLeft.i === topLeft.i &&
+             reconciled.topLeft.j === topLeft.j &&
+-            reconciled.bottomRight.i === bottomRight.i &&
++            true &&
+             reconciled.bottomRight.j === bottomRight.j
+         ) {
+             return;

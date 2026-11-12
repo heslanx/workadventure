@@ -1,0 +1,11 @@
+{
+  "target": "term_12b57763-67f8-40fd-9909-f5b9199d94c7",
+  "modelObserved": "Fable 5.2",
+  "effortObserved": "xhigh",
+  "promptPath": "/Users/erickheslan/Developments/study/workadventure/docs/audits/eight-user-performance/FABLE-EXECUTION-PROMPT.md",
+  "promptBytes": 27183,
+  "promptSha256": "73487683b49dac7744b7fda8eb1d863a95db356a4aeb494eab19d7d683633684",
+  "deadlineUtc": "2026-11-12T01:25:49Z",
+  "transport": "orca orchestration send",
+  "purpose": "Integrate eight-user performance program concurrently with existing assignment"
+}

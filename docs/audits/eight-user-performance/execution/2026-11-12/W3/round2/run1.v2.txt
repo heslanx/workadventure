@@ -1,0 +1,40 @@
+src/Services/CpuTracker.ts 69ms (unchanged)
+src/Services/QuotaAwareCpuTracker.ts 129ms (unchanged)
+tests/CpuTracker.test.ts 125ms
+PRETTIER_WRITE=0
+Checking formatting...
+All matched files use Prettier code style!
+PRETTIER_CHECK=0
+ESLINT=0
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/back[39m
+
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV2CpuMax[2m > [22mshould read a quota as cores[32m 4[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV2CpuMax[2m > [22mshould treat max as unlimited[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV2CpuMax[2m > [22mshould reject malformed content[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV1CfsQuota[2m > [22mshould read a quota as cores[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV1CfsQuota[2m > [22mshould treat -1 as unlimited[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV1CfsQuota[2m > [22mshould reject malformed content[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV2Path[2m > [22mshould read the cgroup v2 path of the process[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mparseCgroupV2Path[2m > [22mshould reject a missing entry or a path that is not plain absolute[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadCgroupCpuQuotaCores[2m > [22mshould prefer cgroup v2 over cgroup v1[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadCgroupCpuQuotaCores[2m > [22mshould read cpu.max of the process cgroup from /proc/self/cgroup before the root[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadCgroupCpuQuotaCores[2m > [22mshould fall back to the root cpu.max when the process cgroup has none[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadCgroupCpuQuotaCores[2m > [22mshould read cgroup v1 when cpu.max is absent[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadCgroupCpuQuotaCores[2m > [22mshould report no quota when the files are missing[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadCgroupCpuQuotaCores[2m > [22mshould warn about malformed content but not about an unlimited quota[32m 5[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadOptionalFile[2m > [22mshould return undefined for a missing file without logging[32m 5[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mreadOptionalFile[2m > [22mshould log a read failure other than a missing file[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mgetCpuPercent and isOverHeating[2m > [22mshould overheat when the process fully consumes a 0.65-core cgroup v2 quota[32m 3[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mgetCpuPercent and isOverHeating[2m > [22mshould overheat when the process fully consumes a 0.5-core cgroup v1 quota[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mgetCpuPercent and isOverHeating[2m > [22mshould not overheat at 60 % of a 0.65-core quota[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mgetCpuPercent and isOverHeating[2m > [22mshould keep the one-core reference when the quota exceeds one core[32m 0[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mgetCpuPercent and isOverHeating[2m > [22mshould keep the one-core reference when the quota is unlimited, missing or malformed[32m 1[2mms[22m[39m
+ [32m✓[39m tests/CpuTracker.test.ts[2m > [22mCpuTracker[2m > [22mgetCpuPercent and isOverHeating[2m > [22mshould reject a capacity that is not a positive number of cores[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m22 passed[39m[22m[90m (22)[39m
+[2m   Start at [22m 01:45:30
+[2m   Duration [22m 429ms[2m (transform 130ms, setup 0ms, import 227ms, tests 30ms, environment 0ms)[22m
+
+VITEST=0

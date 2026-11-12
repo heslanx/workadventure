@@ -1,0 +1,23 @@
+# Rows to merge into docs/TECH-DEBT.md
+
+Source: Phase 2 (refactoring-patterns), pass on `play/src/front/Chat/Components/Room/RoomTimeline.svelte` (2026-11-12). Baseline `HEAD` = `40f7184b1`, `RoomTimeline.svelte` 1,107 lines (script 788). After the three patches: 1,009 lines (script 690), and `RoomTimelineRenderItems.ts` 68 to 175 lines. Evidence: `docs/audits/tech-debt/phase2-roomtimeline/README.md`. Locations marked "after" are line numbers in the files after all three patches; the others are `HEAD`'s.
+
+## Debt Ledger: status updates
+
+| Item | New status |
+|---|---|
+| RT-05 | Pinned, not fixed. Location: `dayLabel` and `buildRenderItems` in `RoomTimelineRenderItems.ts` (after `:27-41`, `:54-112`), called from `renderItems` (after `RoomTimeline.svelte:242-246`). The test "RT-05 (pinned): computes the day labels when the timeline changes, not when the day does" holds a message from 23:58 under "Today" after the clock passes midnight, and relabels it "Yesterday" only when the next message arrives. `dayLabel` still reads `new Date()` and `get(LL)` once per separator on every timeline change, and still builds one `Intl.DateTimeFormat` per older-day separator. One more observation for the fix: "Today" and "Yesterday" come from the chat's locale (`LL`), but an older day comes from `Intl.DateTimeFormat(undefined, …)`, the runtime's locale. The new label test pins that form. In a browser whose language differs from the one chosen in WorkAdventure, one timeline would mix two languages (inferred from the code, not seen in a browser). |
+| RT-07 | Location update only: the `renderItems` rebuild is `buildRenderItems` (after `RoomTimelineRenderItems.ts:54-112`) called from after `RoomTimeline.svelte:242-246`. The work per timeline change is the same: the move added one function call and no pass. |
+
+## Debt Ledger: new rows
+
+| Item | Location | Type | Impact | Effort | Priority | Status |
+|---|---|---|---|---|---|---|
+| RT-09: focusing the same message a second time does not replay its highlight. `scrollToTimelineEvent` removes and adds `highlight-message` in the same task, and nothing else ever removes the class, so the second focus finds it already there. The browser sees no style change between the two calls, so `highlight-pulse` (2 s, once) does not start again. The forced reflow that would restart it (`target.offsetWidth`) was left commented out when the line came in (`b94fa79f8`, "create poll in matrix room", whose comment named a poll clicked again). `03-remove-dead-highlight-comment.patch` deletes the comment and leaves the behavior as it is. | after `RoomTimeline.svelte:687-688`, the style after `:995-1008` | bug (minor, cosmetic) | low (a second click on the same poll or search result scrolls to it with no pulse; inferred from the code and CSS, not seen in a browser) | XS (remove the class on `animationend`, or force a reflow between remove and add) | P3 | open; not pinned. The P6 test checks only that the class is present, and jsdom runs no CSS animations, so a browser test would have to pin it |
+
+## Smell Inventory: status updates
+
+| Smell | New location | New status |
+|---|---|---|
+| Large component (1,096 lines, three parents: `RoomList.svelte`, `CompactConversation.svelte`, `ThreadPanel.svelte`) with four concerns: the header and its unread-elsewhere popover, the render items, the open and pagination sequence, and the scroll engine | `RoomTimeline.svelte` (after: 1,009 lines, script 690) | partly done. `02-move-build-render-items.patch` (Move Function) made the render items (P1) a function of the timeline items: `buildRenderItems` and its five helpers and constant now sit in `RoomTimelineRenderItems.ts` next to `reuseUnchangedRenderItems`. The component's `renderItems` is a 5-line `$derived.by` that reads `$timelineItems`, builds the rows and reuses the unchanged ones. Still open: the header and its popover, the scroll engine (P3, P5, P6) and the open sequence (P2). |
+| (new) Dead code: a commented-out forced reflow in `scrollToTimelineEvent` | `RoomTimeline.svelte` `HEAD` `:784-785` | done in `03-remove-dead-highlight-comment.patch` (Remove Dead Code, comment only). The behavior it was meant to give is RT-09. |

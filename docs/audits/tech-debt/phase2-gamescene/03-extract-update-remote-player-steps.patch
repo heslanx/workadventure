@@ -1,0 +1,130 @@
+diff --git a/play/src/front/Phaser/Game/GameScene.ts b/play/src/front/Phaser/Game/GameScene.ts
+index 456cdf9..872f1d5 100644
+--- a/play/src/front/Phaser/Game/GameScene.ts
++++ b/play/src/front/Phaser/Game/GameScene.ts
+@@ -1409,6 +1409,59 @@ export class GameScene extends DirtyScene {
+             this.mapEditorModeManager.update(time, delta);
+         }
+ 
++        this.applyBufferedRemotePlayerChanges();
++
++        // Let's handle all events
++        while (this.pendingEvents.length !== 0) {
++            this.dirty = true;
++            const event = this.pendingEvents.dequeue();
++            switch (event.type) {
++                case "GroupCreatedUpdatedEvent":
++                    this.doShareGroupPosition(event.event);
++                    break;
++                case "DeleteGroupEvent": {
++                    this.doDeleteGroup(event.groupId);
++                    if (this.currentPlayerGroupId === event.groupId) {
++                        this.currentPlayerGroupId = undefined;
++                        currentPlayerGroupIdStore.set(undefined);
++                        currentPlayerGroupLockStateStore.set(undefined);
++                    }
++                    break;
++                }
++                case "GroupUsersUpdatedEvent": {
++                    this.doUpdateGroupUsers(event.event.groupId, event.event.userIds);
++                    break;
++                }
++                default: {
++                    const _exhaustiveCheck: never = event;
++                }
++            }
++        }
++        const conversationBubblesToUpdate = this.drawRemotePlayersAtInterpolatedPositions(time);
++
++        if (this.hasMovedThisFrame && currentPlayerPreviousPosition !== undefined) {
++            this.addConversationBubblesAffectedByPlayerMove(
++                this.connection?.getUserId(),
++                currentPlayerPreviousPosition,
++                this.CurrentPlayer,
++                conversationBubblesToUpdate,
++            );
++        }
++
++        // If a user close to a bubble has moved, we need to recompute that bubble shape.
++        for (const group of this.groups.values()) {
++            if (group.needsStep || group.isAnimating || conversationBubblesToUpdate.has(group)) {
++                group.step(this.getConversationBubbleAvatars(group));
++            }
++        }
++        this.hasMovedThisFrame = false;
++
++        if (DEBUG_MODE) {
++            this.updateServerViewportDebugOverlay();
++        }
++    }
++
++    private applyBufferedRemotePlayerChanges(): void {
+         for (const addedPlayer of this.remotePlayersRepository.getAddedPlayers()) {
+             debugAddPlayer("Player will be add to the GameScene", addedPlayer);
+             this.doAddPlayer(addedPlayer);
+@@ -1449,34 +1502,9 @@ export class GameScene extends DirtyScene {
+         }
+ 
+         this.remotePlayersRepository.reset();
++    }
+ 
+-        // Let's handle all events
+-        while (this.pendingEvents.length !== 0) {
+-            this.dirty = true;
+-            const event = this.pendingEvents.dequeue();
+-            switch (event.type) {
+-                case "GroupCreatedUpdatedEvent":
+-                    this.doShareGroupPosition(event.event);
+-                    break;
+-                case "DeleteGroupEvent": {
+-                    this.doDeleteGroup(event.groupId);
+-                    if (this.currentPlayerGroupId === event.groupId) {
+-                        this.currentPlayerGroupId = undefined;
+-                        currentPlayerGroupIdStore.set(undefined);
+-                        currentPlayerGroupLockStateStore.set(undefined);
+-                    }
+-                    break;
+-                }
+-                case "GroupUsersUpdatedEvent": {
+-                    this.doUpdateGroupUsers(event.event.groupId, event.event.userIds);
+-                    break;
+-                }
+-                default: {
+-                    const _exhaustiveCheck: never = event;
+-                }
+-            }
+-        }
+-        // Let's move all users
++    private drawRemotePlayersAtInterpolatedPositions(time: number): Set<ConversationBubble> {
+         const updatedPlayersPositions = this.playersPositionInterpolator.getUpdatedPositions(time);
+         const conversationBubblesToUpdate = new Set<ConversationBubble>();
+         updatedPlayersPositions.forEach((moveEvent: HasPlayerMovedInterface, userId: number) => {
+@@ -1498,27 +1526,7 @@ export class GameScene extends DirtyScene {
+                 this._sendViewportToServer();
+             }
+         });
+-
+-        if (this.hasMovedThisFrame && currentPlayerPreviousPosition !== undefined) {
+-            this.addConversationBubblesAffectedByPlayerMove(
+-                this.connection?.getUserId(),
+-                currentPlayerPreviousPosition,
+-                this.CurrentPlayer,
+-                conversationBubblesToUpdate,
+-            );
+-        }
+-
+-        // If a user close to a bubble has moved, we need to recompute that bubble shape.
+-        for (const group of this.groups.values()) {
+-            if (group.needsStep || group.isAnimating || conversationBubblesToUpdate.has(group)) {
+-                group.step(this.getConversationBubbleAvatars(group));
+-            }
+-        }
+-        this.hasMovedThisFrame = false;
+-
+-        if (DEBUG_MODE) {
+-            this.updateServerViewportDebugOverlay();
+-        }
++        return conversationBubblesToUpdate;
+     }
+ 
+     private addConversationBubblesAffectedByPlayerMove(

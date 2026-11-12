@@ -1,0 +1,10 @@
+## cmd: npm view @types/node versions --json | grep -E '"2[45]\.' | tail
+  "24.19.0",
+  "24.19.1",
+  "24.19.2"
+]
+exit=0
+  "25.9.8",
+  "25.9.9"
+]
+exit=0

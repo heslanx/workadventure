@@ -1,0 +1,88 @@
+### e1: s1 line 747
+--- a/s1/MediaStore.ts
++++ b/e1/MediaStore.ts
+@@ -746,3 +746,3 @@
+     }
+-    if (name === "NotFoundError" || name === "DevicesNotFoundError") {
++    if (name === "DevicesNotFoundError") {
+         return "no_device";
+### e2: s1 line 978
+--- a/s1/MediaStore.ts
++++ b/e2/MediaStore.ts
+@@ -977,3 +977,3 @@
+                 );
+-                emitCurrentStreamOrError(setIfCurrent, e);
++                // emitCurrentStreamOrError(setIfCurrent, e);
+                 const classified = classifyMediaAccessError(e);
+### e3: s1 line 972
+--- a/s1/MediaStore.ts
++++ b/e3/MediaStore.ts
+@@ -971,3 +971,3 @@
+                 batchGetUserMediaStore.commitChanges();
+-            } else if (mustRequestNewVideo) {
++            } else if (mustRequestNewVideo && classifyMediaAccessError(e) !== null) {
+                 console.info(
+### e4: s1 line 747
+--- a/s1/MediaStore.ts
++++ b/e4/MediaStore.ts
+@@ -746,3 +746,3 @@
+     }
+-    if (name === "NotFoundError" || name === "DevicesNotFoundError") {
++    if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "NotReadableError") {
+         return "no_device";
+### r1: s2 line 809
+--- a/s2/MediaStore.ts
++++ b/r1/MediaStore.ts
+@@ -808,3 +808,3 @@
+         // must not cost the microphone.
+-        requestedCameraState.disableWebcam();
++        requestedCameraState.disableWebcam(); requestedMicrophoneState.disableMicrophone();
+         cameraAccessIssueStore.set(classified);
+### r2: s2 line 799
+--- a/s2/MediaStore.ts
++++ b/r2/MediaStore.ts
+@@ -798,3 +798,3 @@
+         requestedCameraDeviceIdStore.set(undefined);
+-        requestedMicrophoneDeviceIdStore.set(undefined);
++        // requestedMicrophoneDeviceIdStore.set(undefined);
+         batchGetUserMediaStore.commitChanges();
+### r3: s2 line 801
+--- a/s2/MediaStore.ts
++++ b/r3/MediaStore.ts
+@@ -800,3 +800,3 @@
+         batchGetUserMediaStore.commitChanges();
+-    } else if (mustRequestNewVideo) {
++    } else if (mustRequestNewVideo && classifyMediaAccessError(e) !== null) {
+         console.info("Error. Unable to get microphone and/or camera access. Trying audio only.", newConstraints, e);
+### p1: s3 line 859
+--- a/s3/MediaStore.ts
++++ b/p1/MediaStore.ts
+@@ -858,3 +858,3 @@
+         !hasWarmAudioTrack &&
+-        (!deepEqual(oldConstraints.audio, constraints.audio) || !hasLiveAudioTrack);
++        true;
+     const mustStopVideo = oldConstraints.video !== false && constraints.video === false;
+### p2: s3 line 860
+--- a/s3/MediaStore.ts
++++ b/p2/MediaStore.ts
+@@ -859,3 +859,3 @@
+         (!deepEqual(oldConstraints.audio, constraints.audio) || !hasLiveAudioTrack);
+-    const mustStopVideo = oldConstraints.video !== false && constraints.video === false;
++    const mustStopVideo = !(oldConstraints.video !== false && constraints.video === false);
+     const oldAudioConstraints = oldConstraints.audio;
+### p3: s3 line 932
+--- a/s3/MediaStore.ts
++++ b/p3/MediaStore.ts
+@@ -931,3 +931,3 @@
+         constraints,
+-        { hasLiveVideoTrack, hasLiveAudioTrack, hasWarmAudioTrack: warmAudioTrack !== undefined },
++        { hasLiveVideoTrack, hasLiveAudioTrack, hasWarmAudioTrack: false },
+     );
+### p4: s3 line 863
+--- a/s3/MediaStore.ts
++++ b/p4/MediaStore.ts
+@@ -862,3 +862,3 @@
+     if (oldAudioConstraints !== false && constraints.audio === false) {
+-        return { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio: true, oldAudioConstraints };
++        return { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio: false, oldAudioConstraints };
+     }

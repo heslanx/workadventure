@@ -1,0 +1,26 @@
+
+> postinstall
+> patch-package || echo 'patch-package not found. Maybe you are installing only a subproject without it (e.g. a scoped `npm ci --workspace`); patches are only needed for the play build.'
+
+patch-package 8.0.1
+Applying patches...
+phaser@4.2.0 ✔
+
+> prepare
+> husky install || echo 'Husky not found. Maybe you are installing only a subproject.'
+
+husky - install command is DEPRECATED
+.git can't be found
+changed 7 packages in 6s
+npm warn install-scripts 9 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   @scarf/scarf@1.4.0 (postinstall: node ./report.js)
+npm warn install-scripts   @sentry/cli@2.58.6 (postinstall: node ./scripts/install.js)
+npm warn install-scripts   @sentry/cli@3.5.1 (postinstall: node ./scripts/install.js)
+npm warn install-scripts   cpu-features@0.0.10 (install: node-gyp rebuild)
+npm warn install-scripts   esbuild@0.28.1 (postinstall: node install.js)
+npm warn install-scripts   node-datachannel@0.32.3 (install: prebuild-install -r napi || (npm install --ignore-scripts --production=false && npm run _prebuild))
+npm warn install-scripts   protobufjs@7.6.1 (postinstall: node scripts/postinstall)
+npm warn install-scripts   ssh2@1.17.0 (install: node install.js)
+npm warn install-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.

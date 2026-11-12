@@ -1,0 +1,151 @@
+diff --git a/back/tests/CpuTracker.test.ts b/back/tests/CpuTracker.test.ts
+index 0472e19..8fe2f80 100644
+--- a/back/tests/CpuTracker.test.ts
++++ b/back/tests/CpuTracker.test.ts
+@@ -1,7 +1,9 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import {
+     CpuTracker,
++    parseCgroupMount,
+     parseCgroupV1CfsQuota,
++    parseCgroupV1CpuPath,
+     parseCgroupV2CpuMax,
+     parseCgroupV2Path,
+     readCgroupCpuQuotaCores,
+@@ -12,10 +14,22 @@ import {
+ vi.mock("../src/Enum/EnvironmentVariable", () => ({ CPU_OVERHEAT_THRESHOLD: 80 }));
+ 
+ const PROC_SELF_CGROUP = "/proc/self/cgroup";
++const PROC_SELF_MOUNTINFO = "/proc/self/mountinfo";
+ const V2_CPU_MAX = "/sys/fs/cgroup/cpu.max";
+ const V1_QUOTA = "/sys/fs/cgroup/cpu/cpu.cfs_quota_us";
+ const V1_PERIOD = "/sys/fs/cgroup/cpu/cpu.cfs_period_us";
+ 
++// A Docker container on a cgroup v1 host: the cpu controller is mounted at cpu,cpuacct and rooted at the container's
++// cgroup, and there is no cpu symlink.
++const DOCKER_V1_MOUNTINFO = [
++    "1270 1269 0:120 / / rw,relatime master:9 - overlay overlay rw,lowerdir=/l,upperdir=/u,workdir=/w",
++    "1276 1270 0:122 / /sys/fs/cgroup ro,nosuid,nodev,noexec - tmpfs tmpfs rw,mode=755",
++    "1277 1276 0:28 /docker/abc /sys/fs/cgroup/cpuset ro,nosuid,nodev,noexec,relatime master:12 - cgroup cgroup rw,cpuset",
++    "1278 1276 0:27 /docker/abc /sys/fs/cgroup/cpu,cpuacct ro,nosuid,nodev,noexec,relatime master:11 - cgroup cgroup rw,cpu,cpuacct",
++    "",
++].join("\n");
++const DOCKER_V1_CPU = "/sys/fs/cgroup/cpu,cpuacct";
++
+ const fakeCgroup =
+     (files: Record<string, string>) =>
+     (path: string): string | undefined =>
+@@ -102,6 +116,36 @@ describe("CpuTracker", () => {
+         });
+     });
+ 
++    describe("parseCgroupV1CpuPath", () => {
++        it("should read the path of the process in the hierarchy that holds the cpu controller", () => {
++            const content = "12:cpuset:/docker/other\n11:name=systemd:/x\n4:cpu,cpuacct:/docker/abc\n0::/\n";
++            expect(parseCgroupV1CpuPath(content)).toBe("/docker/abc");
++        });
++
++        it("should reject a missing entry or a path that is not plain absolute", () => {
++            expect(parseCgroupV1CpuPath("0::/\n")).toBeUndefined();
++            expect(parseCgroupV1CpuPath("5:cpuacct:/a\n")).toBeUndefined();
++            expect(parseCgroupV1CpuPath("4:cpu,cpuacct:/../escape\n")).toBeUndefined();
++        });
++    });
++
++    describe("parseCgroupMount", () => {
++        it("should find the mount of the v1 cpu controller and its root", () => {
++            expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v1")).toEqual({
++                root: "/docker/abc",
++                mountPoint: DOCKER_V1_CPU,
++            });
++            expect(parseCgroupMount(DOCKER_V1_MOUNTINFO, "v2")).toBeUndefined();
++        });
++
++        it("should find the cgroup2 mount and decode octal escapes", () => {
++            const mountinfo =
++                "30 23 0:26 / /run/my\\040cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 cgroup2 rw\n";
++            expect(parseCgroupMount(mountinfo, "v2")).toEqual({ root: "/", mountPoint: "/run/my cgroup" });
++            expect(parseCgroupMount(mountinfo, "v1")).toBeUndefined();
++        });
++    });
++
+     describe("readCgroupCpuQuotaCores", () => {
+         it("should prefer cgroup v2 over cgroup v1", () => {
+             const quota = readCgroupCpuQuotaCores(
+@@ -124,6 +168,59 @@ describe("CpuTracker", () => {
+             expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.65);
+         });
+ 
++        it("should take the tightest cpu.max over the process cgroup and its ancestors", () => {
++            const parentLimited = {
++                [PROC_SELF_CGROUP]: "0::/system.slice/wa.service\n",
++                "/sys/fs/cgroup/system.slice/wa.service/cpu.max": "max 100000\n",
++                "/sys/fs/cgroup/system.slice/cpu.max": "50000 100000\n",
++                [V2_CPU_MAX]: "max 100000\n",
++            };
++            expect(readCgroupCpuQuotaCores(fakeCgroup(parentLimited))).toBe(0.5);
++            expect(readCpuCapacity(fakeCgroup(parentLimited)).source).toContain("/sys/fs/cgroup/system.slice/cpu.max");
++
++            const leafTighter = {
++                ...parentLimited,
++                "/sys/fs/cgroup/system.slice/wa.service/cpu.max": "30000 100000\n",
++            };
++            expect(readCgroupCpuQuotaCores(fakeCgroup(leafTighter))).toBe(0.3);
++        });
++
++        it("should take the tightest cgroup v1 quota over the process cgroup and its ancestors", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: "4:cpu,cpuacct:/workers/back\n",
++                "/sys/fs/cgroup/cpu/workers/back/cpu.cfs_quota_us": "80000\n",
++                "/sys/fs/cgroup/cpu/workers/back/cpu.cfs_period_us": "100000\n",
++                "/sys/fs/cgroup/cpu/workers/cpu.cfs_quota_us": "50000\n",
++                "/sys/fs/cgroup/cpu/workers/cpu.cfs_period_us": "100000\n",
++                [V1_QUOTA]: "-1\n",
++                [V1_PERIOD]: "100000\n",
++            };
++            expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.5);
++        });
++
++        it("should find the cgroup v1 cpu controller through /proc/self/mountinfo when it is mounted elsewhere", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: "4:cpu,cpuacct:/docker/abc\n",
++                [PROC_SELF_MOUNTINFO]: DOCKER_V1_MOUNTINFO,
++                [`${DOCKER_V1_CPU}/cpu.cfs_quota_us`]: "50000\n",
++                [`${DOCKER_V1_CPU}/cpu.cfs_period_us`]: "100000\n",
++            };
++            expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.5);
++            expect(readCpuCapacity(fakeCgroup(files)).source).toContain(`${DOCKER_V1_CPU}/cpu.cfs_quota_us`);
++        });
++
++        it("should map a cgroup v1 path below the mount root to the directory under the mount point", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: "4:cpu,cpuacct:/docker/abc/back\n",
++                [PROC_SELF_MOUNTINFO]: DOCKER_V1_MOUNTINFO,
++                [`${DOCKER_V1_CPU}/back/cpu.cfs_quota_us`]: "50000\n",
++                [`${DOCKER_V1_CPU}/back/cpu.cfs_period_us`]: "100000\n",
++                [`${DOCKER_V1_CPU}/cpu.cfs_quota_us`]: "-1\n",
++                [`${DOCKER_V1_CPU}/cpu.cfs_period_us`]: "100000\n",
++            };
++            expect(readCgroupCpuQuotaCores(fakeCgroup(files))).toBe(0.5);
++        });
++
+         it("should read cgroup v1 when cpu.max is absent", () => {
+             expect(readCgroupCpuQuotaCores(fakeCgroup({ [V1_QUOTA]: "50000\n", [V1_PERIOD]: "100000\n" }))).toBe(0.5);
+         });
+@@ -172,6 +269,16 @@ describe("CpuTracker", () => {
+             expect(tracker.isOverHeating()).toBe(true);
+         });
+ 
++        it("should overheat when a parent cgroup caps the process at 0.5 core", () => {
++            const tracker = trackerConsuming(0.5, {
++                [PROC_SELF_CGROUP]: "0::/system.slice/wa.service\n",
++                "/sys/fs/cgroup/system.slice/wa.service/cpu.max": "max 100000\n",
++                "/sys/fs/cgroup/system.slice/cpu.max": "50000 100000\n",
++            });
++            expect(tracker.getCpuPercent()).toBe(100);
++            expect(tracker.isOverHeating()).toBe(true);
++        });
++
+         it("should not overheat at 60 % of a 0.65-core quota", () => {
+             const tracker = trackerConsuming(0.39, { [V2_CPU_MAX]: "65000 100000\n" });
+             expect(tracker.getCpuPercent()).toBe(60);

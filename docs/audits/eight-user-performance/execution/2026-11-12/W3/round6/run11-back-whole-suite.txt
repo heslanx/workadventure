@@ -1,0 +1,218 @@
+# run 11: back-whole-suite (--cpus 0.5)
+# tracker override: QuotaAwareCpuTracker.fix.ts; test file: CpuTracker.final.test.ts
+# started 03:52:38 UTC
+# command: npm test -- --run
+c17f59319133788f390a85ca9565a374516df34c35a24f8ab00335077e43c3c4  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r6/stage/CpuTracker.final.test.ts
+4ab1585dea5a38fc0fc2152e463ea975475ca7bb03308f81b46bce1421deeb99  /root/wa-jobs/wa-fable-20261112/src-cpu/back/src/Services/QuotaAwareCpuTracker.ts
+9b79bf6ab046e41ff399bcc91881fecc3ac318ceeb1091850f7086d48d28dbca  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r6/stage/QuotaAwareCpuTracker.fix.ts
+
+> workadventureback@1.0.0 test
+> PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --config vitest.config.ts --run
+
+
+ RUN  v4.1.7 /work/back
+
+ ✓ tests/CpuTracker.test.ts (55 tests) 116ms
+ ✓ tests/SpaceStateManagers.test.ts (18 tests) 803ms
+     ✓ drops the oldest element beyond the limit  776ms
+stdout | tests/SpacesWatcher.test.ts
+CPU tracker: percentages are relative to 0.5 core(s), from cgroup v2 /sys/fs/cgroup/cpu.max (quota 0.5 cores)
+
+ ✓ tests/SpacesWatcher.test.ts (3 tests) 312ms
+     ✓ should not close the socket because pong was received to the ping  301ms
+stderr | tests/CommunicationManager.test.ts > CommunicationManager > delayed transition callback > should not notify the admin when a started webhook arrives, and survive a failing admin on end
+Failed to notify the admin of a recording end (egress egress-1): Error: admin down
+    at /work/back/tests/CommunicationManager.test.ts:1013:70
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+ ✓ tests/CommunicationManager.test.ts (50 tests) 269ms
+stderr | tests/Space.test.ts > Space with filter > updateUser > should not send anything when user is not found on watcher list
+User not found in this space {
+  spaceUserId: 'foo_1',
+  name: '',
+  playUri: '',
+  color: '',
+  characterTextures: [],
+  isLogged: false,
+  availabilityStatus: 0,
+  roomName: undefined,
+  visitCardUrl: undefined,
+  tags: [],
+  cameraState: false,
+  microphoneState: false,
+  screenSharingState: false,
+  megaphoneState: false,
+  jitsiParticipantId: undefined,
+  uuid: 'uuid-test',
+  chatID: undefined,
+  showVoiceIndicator: false,
+  attendeesState: false,
+  cpuLimited: false,
+  cameraHeld: false,
+  microphoneHeld: false
+}
+
+stderr | tests/Space.test.ts > Space state > answers an error when the query is refused
+Error while handling query Error: Only a speaker or an admin can manage the floor
+    at RaiseHandManager.assertCanModerate (/work/back/src/Model/RaiseHandManager.ts:105:15)
+    at RaiseHandManager.lowerHand (/work/back/src/Model/RaiseHandManager.ts:53:14)
+    at Space.handleStateQuery (/work/back/src/Model/Space.ts:706:46)
+    at Space.handleQuery (/work/back/src/Model/Space.ts:672:32)
+    at /work/back/tests/Space.test.ts:1282:36
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+
+stderr | tests/Space.test.ts > Space state > records the kind a client declares, and refuses one outside the enum
+Error while handling query ZodError: [
+  {
+    "received": "lobby",
+    "code": "invalid_enum_value",
+    "options": [
+      "bubble",
+      "area",
+      "megaphone",
+      "speaker_zone"
+    ],
+    "path": [],
+    "message": "Invalid enum value. Expected 'bubble' | 'area' | 'megaphone' | 'speaker_zone', received 'lobby'"
+  }
+]
+    at Object.get error [as error] (file:///work/node_modules/zod/v3/types.js:39:31)
+    at ZodEnum.parse (file:///work/node_modules/zod/v3/types.js:114:22)
+    at Space.setKind (/work/back/src/Model/Space.ts:769:44)
+    at Space.handleStateQuery (/work/back/src/Model/Space.ts:736:29)
+    at Space.handleQuery (/work/back/src/Model/Space.ts:672:32)
+    at setKind (/work/back/tests/Space.test.ts:1300:19)
+    at /work/back/tests/Space.test.ts:1314:23
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20 {
+  issues: [
+    {
+      received: 'lobby',
+      code: 'invalid_enum_value',
+      options: [Array],
+      path: [],
+      message: "Invalid enum value. Expected 'bubble' | 'area' | 'megaphone' | 'speaker_zone', received 'lobby'"
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)]
+}
+
+ ✓ tests/Space.test.ts (35 tests | 2 skipped) 121ms
+ ✓ tests/AutoRecorder.test.ts (9 tests) 30ms
+ ✓ tests/LivekitService.test.ts (14 tests) 30ms
+ ✓ tests/RoomManager.test.ts (1 test) 118ms
+stderr | tests/WebRTCCommunicationStrategy.test.ts > WebRTCCommunicationStrategy.handleMeetingConnectionRestartMessage > ignores a restart when no connection exists between the peers
+No existing connection found for meetingConnectionRestartMessage  user-a user-b
+
+stderr | tests/WebRTCCommunicationStrategy.test.ts > WebRTCCommunicationStrategy.handleMeetingConnectionRestartMessage > ignores a restart without a target userId
+No receiverId found for meetingConnectionRestartMessage  { userId: undefined, connectionId: undefined }
+
+ ✓ tests/WebRTCCommunicationStrategy.test.ts (9 tests) 16ms
+ ✓ tests/AdminApi.test.ts (4 tests) 90ms
+stderr | tests/StateLifecycleManager.test.ts > StateLifecycleManager > dispose > should handle finalize errors gracefully when disposed
+Error while finalizing state during dispose: Error: Finalize error
+    at Object.<anonymous> (/work/back/tests/StateLifecycleManager.test.ts:201:23)
+    at Object.Mock [as finalize] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at StateLifecycleManager.finalizeState (/work/back/src/Model/Services/StateLifecycleManager.ts:123:15)
+    at StateLifecycleManager.dispose (/work/back/src/Model/Services/StateLifecycleManager.ts:101:22)
+    at /work/back/tests/StateLifecycleManager.test.ts:205:34
+    at Proxy.assertThrows (file:///work/node_modules/chai/index.js:2798:5)
+    at Proxy.methodWrapper (file:///work/node_modules/chai/index.js:1700:25)
+    at Proxy.<anonymous> (file:///work/node_modules/@vitest/expect/dist/index.js:1216:12)
+    at Proxy.overwritingMethodWrapper (file:///work/node_modules/chai/index.js:1750:33)
+    at Proxy.<anonymous> (file:///work/node_modules/@vitest/expect/dist/index.js:1552:16)
+
+stderr | tests/StateLifecycleManager.test.ts > StateLifecycleManager > error handling > should not throw when finalize throws error during scheduled finalization
+Error while finalizing state: Error: Finalize error
+    at Object.<anonymous> (/work/back/tests/StateLifecycleManager.test.ts:236:23)
+    at Object.Mock [as finalize] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at StateLifecycleManager.finalizeState (/work/back/src/Model/Services/StateLifecycleManager.ts:123:15)
+    at /work/back/src/Model/Services/StateLifecycleManager.ts:75:26
+    at callTimer (file:///work/node_modules/vitest/dist/chunks/test.DNmyFkvJ.js:1773:25)
+    at doTickInner (file:///work/node_modules/vitest/dist/chunks/test.DNmyFkvJ.js:2444:30)
+    at doTick (file:///work/node_modules/vitest/dist/chunks/test.DNmyFkvJ.js:2525:21)
+    at Object.tick (file:///work/node_modules/vitest/dist/chunks/test.DNmyFkvJ.js:2533:21)
+    at FakeTimers.advanceTimersByTime (file:///work/node_modules/vitest/dist/chunks/test.DNmyFkvJ.js:3271:44)
+    at Object.advanceTimersByTime (file:///work/node_modules/vitest/dist/chunks/test.DNmyFkvJ.js:3509:13)
+
+ ✓ tests/StateLifecycleManager.test.ts (24 tests) 93ms
+ ✓ tests/LivekitCommunicationStrategy.test.ts (2 tests) 90ms
+stderr | tests/TransitionOrchestrator.test.ts > TransitionOrchestrator > executeImmediateTransition > should return null when StateFactory throws an error
+Error while executing immediate transition: Error: Creation failed
+    at /work/back/tests/TransitionOrchestrator.test.ts:101:54
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+stderr | tests/TransitionOrchestrator.test.ts > TransitionOrchestrator > scheduleDelayedTransition > should call onError callback when StateFactory throws an error
+Error while executing scheduled transition: Error: Creation failed
+    at /work/back/tests/TransitionOrchestrator.test.ts:173:54
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+ ✓ tests/TransitionOrchestrator.test.ts (21 tests) 84ms
+ ✓ tests/MaxUsersInAreaManager.test.ts (4 tests) 11ms
+ ✓ tests/SessionAnalytics.test.ts (14 tests) 14ms
+ ✓ tests/ModerationRights.test.ts (7 tests) 10ms
+ ✓ tests/EmoteValidator.test.ts (5 tests) 4ms
+stdout | tests/GameRoom.test.ts
+CPU tracker: percentages are relative to 0.5 core(s), from cgroup v2 /sys/fs/cgroup/cpu.max (quota 0.5 cores)
+
+stderr | tests/GameRoom.test.ts > GameRoom > should connect user1 and user2
+WARNING: Redis is not configured. No players variables will be persisted.
+
+stdout | tests/GameRoom.test.ts > GameRoom > should not notify duplicate user when reconnecting from the same tab
+Detected reconnection from same tab for user duplicate-user. Killing stale connection.
+
+stderr | tests/GameRoom.test.ts > GameRoom > variable listeners > should not write to a listener that was removed
+WARNING: Redis is not configured. No variables will be persisted.
+
+ ✓ tests/GameRoom.test.ts (14 tests) 21ms
+stderr | tests/PositionNotifier.test.ts > PositionNotifier > should receive notifications when player moves
+WARNING: Redis is not configured. No players variables will be persisted.
+
+ ✓ tests/PositionNotifier.test.ts (2 tests) 10ms
+ ✓ tests/RecordingManager.test.ts (10 tests) 22ms
+ ✓ tests/TransitionPolicy.test.ts (29 tests) 14ms
+ ✓ tests/ArrayHelper.test.ts (3 tests) 59ms
+ ✓ tests/UserRegistry.test.ts (27 tests) 21ms
+ ✓ tests/EnvironmentVariableValidator.test.ts (1 test) 60ms
+ ✓ tests/AreaZoneTracker.test.ts (6 tests) 17ms
+ ✓ tests/WebRTCState.test.ts (4 tests) 8ms
+ ✓ tests/WamManager.test.ts (2 tests) 9ms
+ ✓ tests/getNearbyDescriptorsMatrix.test.ts (3 tests) 4ms
+ ✓ tests/EventProcessorInit.test.ts (2 tests) 4ms
+
+ Test Files  29 passed (29)
+      Tests  376 passed | 2 skipped (378)
+   Start at  03:52:40
+   Duration  57.71s (transform 6.80s, setup 0ms, import 43.18s, tests 2.46s, environment 3ms)
+
+container_exit=0
+# finished 03:53:38 UTC

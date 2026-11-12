@@ -1,0 +1,155 @@
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M1)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M1)
+@@ -301,9 +301,6 @@
+                 }
+             }
+ 
+-            if (insertedSeparator) {
+-                previousMessage = undefined;
+-            }
+ 
+             const currentMessage = timelineItem.kind === "message" ? timelineItem.message : undefined;
+             const previousMessageUserId = previousMessage?.sender?.spaceUserId ?? previousMessage?.sender?.chatId;
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M2)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M2)
+@@ -331,7 +331,7 @@
+         // A run of messages from one sender shows its time once, on its last message.
+         out.forEach((item, index) => {
+             const next = out[index + 1];
+-            if (item.kind === "item" && next?.kind === "item" && !next.showHeader) {
++            if (item.kind === "item" && next?.kind === "item" && !next.showHeader && index < 0) {
+                 item.showTime = false;
+             }
+         });
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M3)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M3)
+@@ -405,7 +405,7 @@
+         // isViewportNotFilled() reads the DOM: without this it measures the pre-insert list.
+         await tick();
+ 
+-        if (remainingRounds > 1 && get(room.hasPreviousMessage) && isViewportNotFilled()) {
++        if (remainingRounds > 0 && get(room.hasPreviousMessage) && isViewportNotFilled()) {
+             await fillViewport(remainingRounds - 1);
+         }
+     }
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M4)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M4)
+@@ -430,7 +430,6 @@
+             }
+ 
+             await fillViewport(MAX_INITIAL_FILL_ROUNDS);
+-            await loadUntilReadMarker(MAX_READ_MARKER_ROUNDS);
+         } catch (error) {
+             console.error(`Failed to load messages: ${error}`);
+             // A failed initialization has its own error state; this one covers the pages fetched after it.
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M5)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M5)
+@@ -434,7 +434,7 @@
+         } catch (error) {
+             console.error(`Failed to load messages: ${error}`);
+             // A failed initialization has its own error state; this one covers the pages fetched after it.
+-            historyLoadFailed = get(room.initializationState) === "ready";
++            historyLoadFailed = false;
+         } finally {
+             // Must be set even on failure, otherwise the $roomTimelineFocusStore effect stays frozen.
+             initialMessagesLoaded = true;
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M6)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M6)
+@@ -538,7 +538,7 @@
+                 ? lastItem.timelineItem.message
+                 : undefined;
+ 
+-        if (isNewLastItem && lastMessage?.sender?.chatId === myChatID) {
++        if (isNewLastItem && lastMessage?.sender?.chatId === myChatID && lastKey === undefined) {
+             // I just sent this: jump to it even if I was reading history.
+             scrollToMessageListBottom();
+             return;
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M7)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M7)
+@@ -549,7 +549,7 @@
+             return;
+         }
+         // untrack: scrollToMessageListBottom writes autoScroll, reading it reactively would re-enter.
+-        if (isNewLastItem && untrack(() => autoScroll)) {
++        if (isNewLastItem) {
+             scrollToMessageListBottom();
+         }
+     });
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M8)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M8)
+@@ -503,7 +503,7 @@
+         return undefined;
+     });
+     $effect(() => {
+-        if ($initializationState === "ready" && pageVisible && lastRenderedKey !== undefined) {
++        if ($initializationState === "ready" && lastRenderedKey !== undefined) {
+             untrack(() => room.setTimelineAsRead());
+         }
+     });
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M9)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M9)
+@@ -691,7 +691,7 @@
+     }
+ 
+     function loadMorePreviousMessages() {
+-        if (loadingMessagePromise || !shouldLoadMoreMessages()) return;
++        if (!shouldLoadMoreMessages()) return;
+ 
+         // Synchronous, before any await: the DOM here is exactly what the user is looking at.
+         captureScrollAnchor();
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M10)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M10)
+@@ -687,7 +687,7 @@
+         if (scrollAnchor !== undefined) captureScrollAnchor();
+ 
+         clearTimeout(scrollTimer);
+-        scrollTimer = setTimeout(loadMorePreviousMessages, 100);
++        scrollTimer = setTimeout(loadMorePreviousMessages, 0);
+     }
+ 
+     function loadMorePreviousMessages() {
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M11)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M11)
+@@ -749,7 +749,7 @@
+             (element) => element.dataset.eventId === request.eventId,
+         );
+ 
+-        if (!target) {
++        if (!target && request.sequence < 0) {
+             const wasMadeVisible = (await room.ensureTimelineEventVisible?.(request.eventId)) ?? false;
+             if (wasMadeVisible) {
+                 await tick();
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M12)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M12)
+@@ -451,7 +451,7 @@
+     function hasPendingTimelineFocusRequest(
+         request: RoomTimelineFocusRequest | undefined,
+     ): request is RoomTimelineFocusRequest {
+-        return request !== undefined && request.roomId === room.id && request.sequence > lastTimelineFocusSequence;
++        return request !== undefined && request.sequence > lastTimelineFocusSequence;
+     }
+ 
+     async function focusPendingTimelineRequestOrScrollToBottom() {
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M13)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M13)
+@@ -703,8 +703,7 @@
+ 
+         const pending = room
+             .loadMorePreviousMessages()
+-            .then(() => tick())
+-            .then(() => restoreScrollAnchor());
++            .then(() => tick());
+ 
+         loadingMessagePromise = pending;
+         pending
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M14)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (M14)
+@@ -1018,7 +1018,7 @@
+                                 showHeader={item.showHeader}
+                                 membersForMessageAvatars={room.membersForMessageAvatars}
+                                 showThreadSummary={room.conversationKind === "room"}
+-                                readReceipts={$readReceipts}
++                                readReceipts={undefined}
+                                 showReaders={$roomType === "multiple" &&
+                                     item.timelineItem.message.id === lastOwnMessageId}
+                                 isDirect={$roomType === "direct"}

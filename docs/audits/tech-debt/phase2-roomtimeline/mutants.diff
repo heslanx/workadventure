@@ -1,0 +1,100 @@
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E1, s1)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E1, s1)
+@@ -262,7 +262,7 @@
+         yesterday.setDate(today.getDate() - 1);
+ 
+         const labels = get(LL);
+-        if (isSameLocalDay(d, today)) return labels.chat.timeLine.today();
++        if (isSameLocalDay(d, today)) return labels.chat.timeLine.yesterday();
+         if (isSameLocalDay(d, yesterday)) return labels.chat.timeLine.yesterday();
+ 
+         return new Intl.DateTimeFormat(undefined, {
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E2, s1)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E2, s1)
+@@ -259,7 +259,7 @@
+         const today = new Date();
+         // eslint-disable-next-line svelte/prefer-svelte-reactivity
+         const yesterday = new Date();
+-        yesterday.setDate(today.getDate() - 1);
++        yesterday.setDate(today.getDate() - 2);
+ 
+         const labels = get(LL);
+         if (isSameLocalDay(d, today)) return labels.chat.timeLine.today();
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E3, s1)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E3, s1)
+@@ -266,7 +266,7 @@
+         if (isSameLocalDay(d, yesterday)) return labels.chat.timeLine.yesterday();
+ 
+         return new Intl.DateTimeFormat(undefined, {
+-            weekday: "short",
++            weekday: "long",
+             day: "numeric",
+             month: "short",
+         }).format(d);
+--- a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (E4, s1)
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (E4, s1)
+@@ -34,7 +34,7 @@
+ 
+ function isSameRenderItem(previous: RoomTimelineRenderItem, next: RoomTimelineRenderItem): boolean {
+     if (previous.kind === "separator") {
+-        return next.kind === "separator" && previous.label === next.label;
++        return next.kind === "separator";
+     }
+     return (
+         next.kind === "item" &&
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E5, s1)
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte (E5, s1)
+@@ -326,7 +326,7 @@
+                 showHeader: !isRepeatedSender,
+                 showTime: true,
+             });
+-            previousMessage = currentMessage;
++            previousMessage = currentMessage ?? previousMessage;
+         }
+ 
+         // A run of messages from one sender shows its time once, on its last message.
+--- a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R1, s2)
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R1, s2)
+@@ -73,9 +73,6 @@
+             }
+         }
+ 
+-        if (insertedSeparator) {
+-            previousMessage = undefined;
+-        }
+ 
+         const currentMessage = timelineItem.kind === "message" ? timelineItem.message : undefined;
+         const previousMessageUserId = previousMessage?.sender?.spaceUserId ?? previousMessage?.sender?.chatId;
+--- a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R2, s2)
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R2, s2)
+@@ -103,7 +103,7 @@
+     // A run of messages from one sender shows its time once, on its last message.
+     out.forEach((item, index) => {
+         const next = out[index + 1];
+-        if (item.kind === "item" && next?.kind === "item" && !next.showHeader) {
++        if (item.kind === "item" && next?.kind === "item" && !next.showHeader && index < 0) {
+             item.showTime = false;
+         }
+     });
+--- a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R3, s2)
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R3, s2)
+@@ -30,7 +30,7 @@
+     yesterday.setDate(today.getDate() - 1);
+ 
+     const labels = get(LL);
+-    if (isSameLocalDay(d, today)) return labels.chat.timeLine.today();
++    if (isSameLocalDay(d, today)) return labels.chat.timeLine.yesterday();
+     if (isSameLocalDay(d, yesterday)) return labels.chat.timeLine.yesterday();
+ 
+     return new Intl.DateTimeFormat(undefined, {
+--- a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R4, s2)
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts (R4, s2)
+@@ -7,7 +7,7 @@
+     | { kind: "item"; key: string; timelineItem: ChatTimelineItem; showHeader: boolean; showTime: boolean };
+ 
+ // Time gap threshold for message grouping (5 minutes)
+-const TIME_GAP_THRESHOLD = 5 * 60 * 1000;
++const TIME_GAP_THRESHOLD = 10 * 60 * 1000;
+ 
+ function isValidDate(d: Date) {
+     return d instanceof Date && !Number.isNaN(d.getTime());

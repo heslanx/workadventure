@@ -1,0 +1,62 @@
+# run 9: prettier-eslint-typecheck (--cpus 0.5)
+# source override: -
+# started 03:18:06 UTC
+# command: npx prettier --check src/Services/CpuTracker.ts src/Services/QuotaAwareCpuTracker.ts tests/CpuTracker.test.ts; echo PRETTIER_EXIT=$?; DEBUG= npx eslint src/Services/CpuTracker.ts src/Services/QuotaAwareCpuTracker.ts tests/CpuTracker.test.ts; echo ESLINT_EXIT=$?; npm run typecheck; echo TYPECHECK_EXIT=$?
+1da08e29b12a5ee18aebf0a72599143707526e004ddc8f6330b34476f90aa1a1  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r4/stage/CpuTracker.test.ts
+4ab1585dea5a38fc0fc2152e463ea975475ca7bb03308f81b46bce1421deeb99  /root/wa-jobs/wa-fable-20261112/src-cpu/back/src/Services/QuotaAwareCpuTracker.ts
+Checking formatting...
+All matched files use Prettier code style!
+PRETTIER_EXIT=0
+
+<--- Last few GCs --->
+
+[45:0x7826000]    36292 ms: Scavenge 506.3 (511.2) -> 504.7 (515.4) MB, pooled: 0 MB, 2.69 / 0.00 ms  (average mu = 0.310, current mu = 0.270) allocation failure; 
+[45:0x7826000]    37959 ms: Mark-Compact (reduce) 509.0 (515.9) -> 504.3 (508.7) MB, pooled: 0 MB, 94.69 / 0.00 ms  (+ 1470.6 ms in 68 steps since start of marking, biggest step 90.7 ms, walltime since start of marking 1667 ms) (average mu = 0.261, curren
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x942e80  [node]
+ 2: 0x75f71e node::OOMErrorHandler(char const*, v8::OOMDetails const&) [node]
+ 3: 0xc9a1e0  [node]
+ 4: 0xc9a2cf  [node]
+ 5: 0xf3e5a5  [node]
+ 6: 0xf3e5d2  [node]
+ 7: 0xf3e8ca  [node]
+ 8: 0xf4f5ca  [node]
+ 9: 0xf53970  [node]
+10: 0x19f1e81  [node]
+Aborted (core dumped)
+ESLINT_EXIT=134
+
+> workadventureback@1.0.0 typecheck
+> tsc --noEmit
+
+
+<--- Last few GCs --->
+
+[68:0x30a35000]    52117 ms: Scavenge 506.9 (513.0) -> 506.3 (517.5) MB, pooled: 0 MB, 2.49 / 0.00 ms  (average mu = 0.300, current mu = 0.223) allocation failure; 
+[68:0x30a35000]    53916 ms: Mark-Compact (reduce) 509.9 (517.5) -> 506.9 (511.5) MB, pooled: 0 MB, 519.59 / 0.00 ms  (+ 1075.4 ms in 54 steps since start of marking, biggest step 85.4 ms, walltime since start of marking 1798 ms) (average mu = 0.270, curr
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x942e80  [node]
+ 2: 0x75f71e node::OOMErrorHandler(char const*, v8::OOMDetails const&) [node]
+ 3: 0xc9a1e0  [node]
+ 4: 0xc9a2cf  [node]
+ 5: 0xf3e5a5  [node]
+ 6: 0xf3e5d2  [node]
+ 7: 0xf3e8ca  [node]
+ 8: 0xf4f5ca  [node]
+ 9: 0xf53970  [node]
+10: 0x19f1e81  [node]
+Aborted (core dumped)
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 134
+npm error path /work/back
+npm error workspace workadventureback@1.0.0
+npm error location /work/back
+npm error command failed
+npm error command sh -c tsc --noEmit
+TYPECHECK_EXIT=134
+container_exit=0
+# finished 03:19:43 UTC

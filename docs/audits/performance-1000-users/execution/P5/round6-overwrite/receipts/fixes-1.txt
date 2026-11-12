@@ -1,0 +1,20 @@
+function storedName(fileName: string): string | undefined {
+=>
+function storedName(fileName: string): string | null | undefined {
+====
+                (keys.some((key) => this.writesInFlight.has(key)) || saveFirst.some((key) => this.mapSaveStates.has(key)))
+=>
+                (keys.some((key) => this.writesInFlight.has(key)) ||
+                    saveFirst.some((key) => this.mapSaveStates.has(key)))
+====
+                    .catch((e) => {
+                    console.error(`[${new Date().toISOString()}]`, e);
+                    Sentry.captureException(e);
+                    next(e);
+                });
+=>
+                    .catch((e) => {
+                        console.error(`[${new Date().toISOString()}]`, e);
+                        Sentry.captureException(e);
+                        next(e);
+                    });

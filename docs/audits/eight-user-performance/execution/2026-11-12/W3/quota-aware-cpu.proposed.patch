@@ -1,0 +1,181 @@
+diff -ruN a/back/src/Services/CpuTracker.ts b/back/src/Services/CpuTracker.ts
+--- a/back/src/Services/CpuTracker.ts	2026-11-12 01:38:05
++++ b/back/src/Services/CpuTracker.ts	2026-11-12 01:38:22
+@@ -1,3 +1,4 @@
++import { existsSync, readFileSync } from "node:fs";
+ import { CPU_OVERHEAT_THRESHOLD } from "../Enum/EnvironmentVariable";
+ 
+ function secNSec2ms(secNSec: Array<number> | number) {
+@@ -7,11 +8,67 @@
+     return secNSec / 1000;
+ }
+ 
++function positiveRatio(numerator: string, denominator: string): number | undefined {
++    const quota = Number(numerator);
++    const period = Number(denominator);
++    if (!Number.isFinite(quota) || !Number.isFinite(period) || quota <= 0 || period <= 0) {
++        return undefined;
++    }
++    return quota / period;
++}
++
++/**
++ * Parses cgroup v2 `cpu.max` ("<quota> <period>" or "max <period>") into cores, or undefined when unlimited.
++ */
++export function parseCgroupV2CpuMax(content: string): number | undefined {
++    const [quota, period = "100000"] = content.trim().split(/\s+/);
++    if (quota === undefined || quota === "max") {
++        return undefined;
++    }
++    return positiveRatio(quota, period);
++}
++
++/**
++ * Parses cgroup v1 `cpu.cfs_quota_us` / `cpu.cfs_period_us` into cores, or undefined when unlimited (-1).
++ */
++export function parseCgroupV1CfsQuota(quotaUs: string, periodUs: string): number | undefined {
++    return positiveRatio(quotaUs.trim(), periodUs.trim());
++}
++
++function readCgroupCpuQuotaCores(): number | undefined {
++    if (existsSync("/sys/fs/cgroup/cpu.max")) {
++        return parseCgroupV2CpuMax(readFileSync("/sys/fs/cgroup/cpu.max", "utf8"));
++    }
++    if (existsSync("/sys/fs/cgroup/cpu/cpu.cfs_quota_us") && existsSync("/sys/fs/cgroup/cpu/cpu.cfs_period_us")) {
++        return parseCgroupV1CfsQuota(
++            readFileSync("/sys/fs/cgroup/cpu/cpu.cfs_quota_us", "utf8"),
++            readFileSync("/sys/fs/cgroup/cpu/cpu.cfs_period_us", "utf8"),
++        );
++    }
++    return undefined;
++}
++
++/**
++ * The percentage stays relative to one core because the event loop saturates at one core, whatever the quota above it.
++ * A quota below one core lowers the ceiling: otherwise a fully throttled process (e.g. 0.65 CPU) reports 65 % and never
++ * crosses the default 80 % threshold.
++ */
++export function cpuCapacityCores(quotaCores: number | undefined): number {
++    return quotaCores === undefined ? 1 : Math.min(1, quotaCores);
++}
++
++export function computeCpuPercent(cpuTimeMs: number, elapsedMs: number, capacityCores: number): number {
++    if (elapsedMs <= 0 || capacityCores <= 0) {
++        return 0;
++    }
++    return Math.round((100 * cpuTimeMs) / (elapsedMs * capacityCores));
++}
++
+ class CpuTracker {
+     private cpuPercent = 0;
+     private overHeating = false;
+ 
+-    constructor() {
++    constructor(private readonly capacityCores: number = cpuCapacityCores(readCgroupCpuQuotaCores())) {
+         let time = process.hrtime.bigint();
+         let usage = process.cpuUsage();
+         setInterval(() => {
+@@ -19,10 +76,10 @@
+             const elapUsage = process.cpuUsage(usage);
+             usage = process.cpuUsage();
+ 
+-            const elapTimeMS = elapTime - time;
++            const elapTimeMS = Number(elapTime - time) / 1000000;
+             const elapUserMS = secNSec2ms(elapUsage.user);
+             const elapSystMS = secNSec2ms(elapUsage.system);
+-            this.cpuPercent = Math.round(((100 * (elapUserMS + elapSystMS)) / Number(elapTimeMS)) * 1000000);
++            this.cpuPercent = computeCpuPercent(elapUserMS + elapSystMS, elapTimeMS, this.capacityCores);
+ 
+             time = elapTime;
+ 
+@@ -47,4 +104,4 @@
+ 
+ const cpuTracker = new CpuTracker();
+ 
+-export { cpuTracker };
++export { cpuTracker, CpuTracker };
+diff -ruN a/back/tests/CpuTracker.test.ts b/back/tests/CpuTracker.test.ts
+--- a/back/tests/CpuTracker.test.ts	1970-01-01 01:00:00
++++ b/back/tests/CpuTracker.test.ts	2026-11-12 01:38:32
+@@ -0,0 +1,81 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++
++vi.mock("../src/Enum/EnvironmentVariable", () => ({ CPU_OVERHEAT_THRESHOLD: 80 }));
++
++// Synthetic clock: each 100 ms tick credits the process `coresUsed * 100 ms` of CPU time.
++async function trackerConsuming(coresUsed: number, capacityCores: number) {
++    vi.resetModules();
++    let nowNs = 0n;
++    let cpuUs = 0;
++    vi.spyOn(process.hrtime, "bigint").mockImplementation(() => nowNs);
++    vi.spyOn(process, "cpuUsage").mockImplementation((previous?: NodeJS.CpuUsage) =>
++        previous ? { user: cpuUs - previous.user, system: 0 - previous.system } : { user: cpuUs, system: 0 },
++    );
++    vi.useFakeTimers({ toFake: ["setInterval"] });
++    const { CpuTracker } = await import("../src/Services/CpuTracker");
++    const tracker = new CpuTracker(capacityCores);
++    for (let tick = 0; tick < 5; tick++) {
++        nowNs += 100_000_000n;
++        cpuUs += coresUsed * 100_000;
++        vi.advanceTimersByTime(100);
++    }
++    return tracker;
++}
++
++describe("CpuTracker", () => {
++    afterEach(() => {
++        vi.useRealTimers();
++        vi.restoreAllMocks();
++    });
++
++    describe("cgroup quota parsing", () => {
++        it("reads a cgroup v2 quota as cores and treats max as unlimited", async () => {
++            const { parseCgroupV2CpuMax } = await import("../src/Services/CpuTracker");
++            expect(parseCgroupV2CpuMax("65000 100000\n")).toBe(0.65);
++            expect(parseCgroupV2CpuMax("200000 100000")).toBe(2);
++            expect(parseCgroupV2CpuMax("max 100000")).toBeUndefined();
++            expect(parseCgroupV2CpuMax("garbage")).toBeUndefined();
++        });
++
++        it("reads a cgroup v1 quota as cores and treats -1 as unlimited", async () => {
++            const { parseCgroupV1CfsQuota } = await import("../src/Services/CpuTracker");
++            expect(parseCgroupV1CfsQuota("50000\n", "100000\n")).toBe(0.5);
++            expect(parseCgroupV1CfsQuota("-1", "100000")).toBeUndefined();
++        });
++    });
++
++    describe("capacity", () => {
++        it("caps the capacity at one core and lowers it to a quota below one core", async () => {
++            const { cpuCapacityCores } = await import("../src/Services/CpuTracker");
++            expect(cpuCapacityCores(undefined)).toBe(1);
++            expect(cpuCapacityCores(0.65)).toBe(0.65);
++            expect(cpuCapacityCores(2)).toBe(1);
++        });
++
++        it("reports a fully used 0.65-core quota as 100 %, against 65 % relative to one core", async () => {
++            const { computeCpuPercent } = await import("../src/Services/CpuTracker");
++            expect(computeCpuPercent(65, 100, 0.65)).toBe(100);
++            expect(computeCpuPercent(65, 100, 1)).toBe(65);
++        });
++    });
++
++    describe("overheat", () => {
++        it("overheats when the process fully consumes a quota below one core", async () => {
++            const tracker = await trackerConsuming(0.65, 0.65);
++            expect(tracker.getCpuPercent()).toBe(100);
++            expect(tracker.isOverHeating()).toBe(true);
++        });
++
++        it("does not overheat at 60 % of a 0.65-core quota", async () => {
++            const tracker = await trackerConsuming(0.39, 0.65);
++            expect(tracker.getCpuPercent()).toBe(60);
++            expect(tracker.isOverHeating()).toBe(false);
++        });
++
++        it("keeps the one-core reference above one core: a saturated event loop overheats in a 2-core quota", async () => {
++            const tracker = await trackerConsuming(1, 1);
++            expect(tracker.getCpuPercent()).toBe(100);
++            expect(tracker.isOverHeating()).toBe(true);
++        });
++    });
++});

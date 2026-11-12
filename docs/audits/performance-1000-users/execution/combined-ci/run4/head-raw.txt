@@ -1,0 +1,59 @@
+HEAD 322c7704c150737e99c38c764f51cd07f4d614c3 (src.tgz sha256 prefix 4c103cdcb352f040)
+v24.22.2
+11.19.1
+4
+git version 2.47.3
+npm-ci	.	0	51s
+play-i18n-check	play	0	2s
+play-typecheck	play	0	21s
+play-svelte-check	play	0	40s
+play-lint	play	0	319s
+play-pretty-check	play	0	24s
+play-test	play	0	380s
+back-typecheck	back	0	9s
+back-lint	back	0	21s
+back-test	back	0	22s
+back-pretty-check	back	0	2s
+map-storage-typecheck	map-storage	0	5s
+map-storage-lint	map-storage	0	14s
+map-storage-test	map-storage	0	9s
+map-storage-pretty-check	map-storage	0	2s
+benchmark-test	benchmark	0	6s
+benchmark-typecheck	benchmark	0	2s
+store-utils-typecheck	libs/store-utils	0	2s
+store-utils-svelte-check	libs/store-utils	0	3s
+store-utils-lint	libs/store-utils	0	3s
+store-utils-test	libs/store-utils	0	1s
+shared-utils-typecheck	libs/shared-utils	0	5s
+shared-utils-lint	libs/shared-utils	0	9s
+shared-utils-test	libs/shared-utils	0	3s
+map-editor-typecheck	libs/map-editor	0	5s
+map-editor-lint	libs/map-editor	0	9s
+map-editor-test	libs/map-editor	0	4s
+math-utils-typecheck	libs/math-utils	0	2s
+play-build	play	0	26s
+total 1003s
+== resolution
+      1 @types/node@18.19.130
+      1 @types/node@22.19.19
+     41 @types/node@24.19.2
+workadventure@ /w/head
++-- @workadventure/eslint-config@1.0.0 -> ./libs/eslint-config
+== play-test
+ Test Files  256 passed (256)
+      Tests  1651 passed | 10 skipped (1661)
+== back-test
+ Test Files  29 passed (29)
+      Tests  382 passed | 2 skipped (384)
+== map-storage-test
+ Test Files  12 passed (12)
+      Tests  114 passed (114)
+== benchmark-test
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+== npm ci
+phaser@4.2.1 ✔
+== play-build
+✓ 4179 modules transformed.
+✓ built in 17.15s
+marker-files=2

@@ -1,0 +1,2232 @@
+# checks.raw.log: fix-md09 (job fixmd), host ci, ANSI stripped. Each section is one container run unless marked Mac.
+# Section order is run order. Each container section starts with '=== <suffix> stage=<mounted dirs> load=<1-min load> <UTC time>', then the command, the in-container sha256 of every mounted file, the output, and 'EXIT <code>'.
+
+########## section s0-focus-attempt1 (check 1, first attempt: the tree has no play/node_modules/.vite mount point)
+=== s0-focus stage=- load=9.27 2026-11-12T16:09:05Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts src/front/Stores/HeldMediaStore.test.ts src/front/Stores/PrivacyShutdownStore.test.ts src/front/Stores/MicrophoneSignalDetectorStore.test.ts src/front/Stores/RaiseHandAvailabilityStore.test.ts src/front/Space/Utils/BindMuteEvents.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Livekit/LiveKitRoom.test.ts src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts tests/front/WebRtc/JitsiCoWebsite.test.ts tests/front/Connection/RoomConnection.test.ts
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error mounting "tmpfs" to rootfs at "/work/play/node_modules/.vite": create mountpoint for /work/play/node_modules/.vite mount: make mountpoint "/work/play/node_modules/.vite": mkdirat /var/lib/docker/rootfs/overlayfs/5445d1d1c8f0520031ed484fb40fd441a902fa5be8764c9ba81a2a34cbdc4281/work/play/node_modules/.vite: read-only file system
+
+Run 'docker run --help' for more information
+EXIT 125
+
+
+########## section s0-focus
+=== s0-focus stage=- load=7.48 2026-11-12T16:09:42Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts src/front/Stores/HeldMediaStore.test.ts src/front/Stores/PrivacyShutdownStore.test.ts src/front/Stores/MicrophoneSignalDetectorStore.test.ts src/front/Stores/RaiseHandAvailabilityStore.test.ts src/front/Space/Utils/BindMuteEvents.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Livekit/LiveKitRoom.test.ts src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts tests/front/WebRtc/JitsiCoWebsite.test.ts tests/front/Connection/RoomConnection.test.ts
+Sentry plugin disabled
+4:09:44 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:09:44 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+stdout | src/front/Livekit/LiveKitRoom.test.ts
+Wake lock is not supported by this browser.
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > LiveKitRoom > should not ask livekit-client to switch the audio output where it cannot
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+ ✓ src/front/Livekit/LiveKitRoom.test.ts (32 tests) 43ms
+ ✓ tests/front/Stores/MediaStoreGetUserMedia.test.ts (13 tests) 1994ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  1145ms
+stderr | src/front/Space/tests/SpaceFilter.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceFilter.test.ts (7 tests) 16ms
+ ✓ src/front/Stores/HeldMediaStore.test.ts (11 tests) 6ms
+ ✓ src/front/Stores/RaiseHandAvailabilityStore.test.ts (13 tests) 7ms
+ ✓ src/front/Stores/MicrophoneSignalDetectorStore.test.ts (3 tests) 13ms
+ ✓ src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts (4 tests) 120ms
+stdout | tests/front/Connection/RoomConnection.test.ts > RoomConnection > does not leave an unhandled rejection when the socket is lost before the room is joined
+Socket has been closed null false CloseEvent { isTrusted: [Getter] }
+
+ ✓ tests/front/Connection/RoomConnection.test.ts (1 test) 9ms
+ ✓ src/front/Space/Utils/BindMuteEvents.test.ts (2 tests) 5ms
+ ✓ src/front/Stores/PrivacyShutdownStore.test.ts (4 tests) 5ms
+ ✓ tests/front/WebRtc/JitsiCoWebsite.test.ts (4 tests) 6ms
+
+ Test Files  11 passed (11)
+      Tests  94 passed (94)
+   Start at  16:09:44
+   Duration  41.43s (transform 22.48s, setup 105ms, import 30.82s, tests 2.22s, environment 6.47s)
+
+EXIT 0
+
+########## section fmt-s1-wrongpath
+=== fmt-s1 stage=s1:rw load=15.01 2026-11-12T16:11:34Z
+=== cmd: npx prettier --write src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte src/front/Stores/MediaStore.ts src/i18n/ar-SA/camera.ts src/i18n/ca-ES/camera.ts src/i18n/de-DE/camera.ts src/i18n/dsb-DE/camera.ts src/i18n/en-US/camera.ts src/i18n/es-ES/camera.ts src/i18n/fr-FR/camera.ts src/i18n/hsb-DE/camera.ts src/i18n/it-IT/camera.ts src/i18n/ja-JP/camera.ts src/i18n/ko-KR/camera.ts src/i18n/nl-NL/camera.ts src/i18n/pt-BR/camera.ts src/i18n/th-TH/camera.ts src/i18n/vi-VN/camera.ts src/i18n/zh-CN/camera.ts src/i18n/zh-TW/camera.ts tests/front/Stores/MediaStoreGetUserMedia.test.ts 
+src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte 148ms (unchanged)
+src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte 47ms (unchanged)
+src/front/Stores/MediaStore.ts 269ms (unchanged)
+src/i18n/ar-SA/camera.ts 10ms (unchanged)
+src/i18n/ca-ES/camera.ts 6ms (unchanged)
+src/i18n/de-DE/camera.ts 6ms (unchanged)
+src/i18n/dsb-DE/camera.ts 4ms (unchanged)
+src/i18n/en-US/camera.ts 7ms (unchanged)
+src/i18n/es-ES/camera.ts 19ms (unchanged)
+src/i18n/fr-FR/camera.ts 6ms (unchanged)
+src/i18n/hsb-DE/camera.ts 5ms (unchanged)
+src/i18n/it-IT/camera.ts 4ms (unchanged)
+src/i18n/ja-JP/camera.ts 6ms (unchanged)
+src/i18n/ko-KR/camera.ts 42ms (unchanged)
+src/i18n/nl-NL/camera.ts 3ms (unchanged)
+src/i18n/pt-BR/camera.ts 3ms (unchanged)
+src/i18n/th-TH/camera.ts 4ms (unchanged)
+src/i18n/vi-VN/camera.ts 4ms (unchanged)
+src/i18n/zh-CN/camera.ts 4ms (unchanged)
+src/i18n/zh-TW/camera.ts 3ms (unchanged)
+tests/front/Stores/MediaStoreGetUserMedia.test.ts 140ms (unchanged)
+EXIT 0
+
+########## section fmt-s1
+=== fmt-s1 stage=v/s1:rw load=14.11 2026-11-12T16:11:42Z
+=== cmd: npx prettier --write src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte src/front/Stores/MediaStore.ts src/i18n/ar-SA/camera.ts src/i18n/ca-ES/camera.ts src/i18n/de-DE/camera.ts src/i18n/dsb-DE/camera.ts src/i18n/en-US/camera.ts src/i18n/es-ES/camera.ts src/i18n/fr-FR/camera.ts src/i18n/hsb-DE/camera.ts src/i18n/it-IT/camera.ts src/i18n/ja-JP/camera.ts src/i18n/ko-KR/camera.ts src/i18n/nl-NL/camera.ts src/i18n/pt-BR/camera.ts src/i18n/th-TH/camera.ts src/i18n/vi-VN/camera.ts src/i18n/zh-CN/camera.ts src/i18n/zh-TW/camera.ts tests/front/Stores/MediaStoreGetUserMedia.test.ts 
+f7b3e9602e452205961873c0a6cc540e6f21d200ecedc7b009c80e3ef9ca9efc  /work/play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+06c7a9a634bf42dad5ba113ec245007b013ecb3fcc3174edda0869d1f051cadb  /work/play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+e9a5a9294cade141869b84941c08731c546df5a5dec515c058e1133274da5a46  /work/play/src/front/Stores/MediaStore.ts
+4b68f4cebb2ceeffb80fc1b6df5257daca86f8f30aff384d2605d7a3aa43659d  /work/play/src/i18n/ar-SA/camera.ts
+eb5c3fe2743222b5f740fb3c0e205c11941694d52205c52778ac644cffba8512  /work/play/src/i18n/ca-ES/camera.ts
+7df1f188862ad4aedddaee1be14597e9d0307d8b223fab6aabe5240dd317e9a9  /work/play/src/i18n/de-DE/camera.ts
+1e8e8de448c1928ac25e294e67dbc88b13b0b94f8fcd4cf7fbef590c60411422  /work/play/src/i18n/dsb-DE/camera.ts
+a9cbd4e2a7a1afdfa0cd8228498dea8701d073e86f23fac965e7317d96a6dc7e  /work/play/src/i18n/en-US/camera.ts
+4181694f57780ae630b12b3d125e0a57fec95c82d9a3ced6ff2c6789967d005f  /work/play/src/i18n/es-ES/camera.ts
+3f730f62cc7d20d36afd6e18d8aecc1805f276bb977cc3b11c608dc88bf10326  /work/play/src/i18n/fr-FR/camera.ts
+a01f4288813379a9fbf48e2b2d79d9360e46d30123b22cde0a5e311688956893  /work/play/src/i18n/hsb-DE/camera.ts
+0120afac6c02083b8be5b27463da9a5eb3a03240d6ee66392a71f28f88b9bf94  /work/play/src/i18n/it-IT/camera.ts
+e94017246c3b7ff0dfb789f50ad418b48d1022e68ab963620eba3dae450fc1de  /work/play/src/i18n/ja-JP/camera.ts
+41b810e5d5df55f1015bdac2719176dc3241831d89d01281bc5f0677594be7ff  /work/play/src/i18n/ko-KR/camera.ts
+ba95b0b308ee0a63b2c9751da044fbf7cdc16278e1b45de44f4e322291becfea  /work/play/src/i18n/nl-NL/camera.ts
+ff94aecc1192e78b95f4c2e55d641357fc12f4e96cb6f6881c62590772e39457  /work/play/src/i18n/pt-BR/camera.ts
+7497b0d93cf8ad8770236f3319b19d1aa42cd9a9b87f6b8633b4ce41a13808b7  /work/play/src/i18n/th-TH/camera.ts
+f55ccd3f359f86ff19bb19223504b425c8efdcda321557e212df65df694d0df0  /work/play/src/i18n/vi-VN/camera.ts
+5d3b00abfe21f21f50a2544b12a5c1041a5b7c8eedc8e31892625ac639a825d8  /work/play/src/i18n/zh-CN/camera.ts
+13a89bbd09d43bd4facdf52db2ff152c70689fbfe08c0cb8d4cda9b2823507f5  /work/play/src/i18n/zh-TW/camera.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte 146ms (unchanged)
+src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte 39ms (unchanged)
+src/front/Stores/MediaStore.ts 216ms (unchanged)
+src/i18n/ar-SA/camera.ts 7ms
+src/i18n/ca-ES/camera.ts 5ms (unchanged)
+src/i18n/de-DE/camera.ts 5ms (unchanged)
+src/i18n/dsb-DE/camera.ts 5ms
+src/i18n/en-US/camera.ts 5ms (unchanged)
+src/i18n/es-ES/camera.ts 5ms
+src/i18n/fr-FR/camera.ts 4ms
+src/i18n/hsb-DE/camera.ts 4ms
+src/i18n/it-IT/camera.ts 4ms
+src/i18n/ja-JP/camera.ts 4ms (unchanged)
+src/i18n/ko-KR/camera.ts 5ms (unchanged)
+src/i18n/nl-NL/camera.ts 3ms (unchanged)
+src/i18n/pt-BR/camera.ts 3ms
+src/i18n/th-TH/camera.ts 3ms
+src/i18n/vi-VN/camera.ts 4ms
+src/i18n/zh-CN/camera.ts 3ms
+src/i18n/zh-TW/camera.ts 4ms
+tests/front/Stores/MediaStoreGetUserMedia.test.ts 108ms (unchanged)
+EXIT 0
+
+########## section gen-s1
+=== gen-s1 stage=v/s1,v/gen:rw load=12.93 2026-11-12T16:12:13Z
+=== cmd: npx typesafe-i18n --no-watch
+f7b3e9602e452205961873c0a6cc540e6f21d200ecedc7b009c80e3ef9ca9efc  /work/play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+06c7a9a634bf42dad5ba113ec245007b013ecb3fcc3174edda0869d1f051cadb  /work/play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+e9a5a9294cade141869b84941c08731c546df5a5dec515c058e1133274da5a46  /work/play/src/front/Stores/MediaStore.ts
+83d0458912c245c7bea0a008e8e97b9849deadae41686c77cc446d9927fd47b8  /work/play/src/i18n/ar-SA/camera.ts
+eb5c3fe2743222b5f740fb3c0e205c11941694d52205c52778ac644cffba8512  /work/play/src/i18n/ca-ES/camera.ts
+7df1f188862ad4aedddaee1be14597e9d0307d8b223fab6aabe5240dd317e9a9  /work/play/src/i18n/de-DE/camera.ts
+bbc81019a8874c8fd0c977c59261a093f85fcdc77f08e9310ca052919459e963  /work/play/src/i18n/dsb-DE/camera.ts
+a9cbd4e2a7a1afdfa0cd8228498dea8701d073e86f23fac965e7317d96a6dc7e  /work/play/src/i18n/en-US/camera.ts
+65e019445c7ca84d89135c16a7704cec6993db96edc5ee8f178e3b78eb03a26c  /work/play/src/i18n/es-ES/camera.ts
+604f38e95d4286365541031d3d2dc46aec62dcd6a57cfc6b58d7d55bf04e8e49  /work/play/src/i18n/fr-FR/camera.ts
+8f0e71a79108f13cf12f8429ec5bda54be243cbd34e386d18577482e30fdd263  /work/play/src/i18n/hsb-DE/camera.ts
+3108a87af07268888584d596e1c885016491042fd60a6f543c6b26ba7e5ec1c1  /work/play/src/i18n/it-IT/camera.ts
+e94017246c3b7ff0dfb789f50ad418b48d1022e68ab963620eba3dae450fc1de  /work/play/src/i18n/ja-JP/camera.ts
+41b810e5d5df55f1015bdac2719176dc3241831d89d01281bc5f0677594be7ff  /work/play/src/i18n/ko-KR/camera.ts
+ba95b0b308ee0a63b2c9751da044fbf7cdc16278e1b45de44f4e322291becfea  /work/play/src/i18n/nl-NL/camera.ts
+cceab38127c20f868fd582b2a838ddf6c0da0a1f3dc0d968c0dd6ff12018da7c  /work/play/src/i18n/pt-BR/camera.ts
+b5a55102df8b4069c7b61e2d22008ec046fdb308f8d8b704d96316ac234d586e  /work/play/src/i18n/th-TH/camera.ts
+9d17ba012c7375c57317d2e124737e3ef3d6002b9be9d154c8e4071112b44b75  /work/play/src/i18n/vi-VN/camera.ts
+27b79573e698372dd73160d88f5dc67dc3906480ae4f0725350c05c0d09c6748  /work/play/src/i18n/zh-CN/camera.ts
+752e417011bce11f059ebc85235cea7dd3bc68f5391b0ba61c8063ed3705630c  /work/play/src/i18n/zh-TW/camera.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+fe7571909aca6d3963b3935b8af6a2fe1d1ac36934698d109b3cc6d80bd4fc09  /work/play/.typesafe-i18n.json
+2ae3280f6759d1750a3d0d7e345df0de192fad814d575d7b4aca67f8dcf8cf9d  /work/play/src/i18n/i18n-svelte.ts
+859d0d78e825264a2d033f173ec049158645e82a0409e0aa1f78904ba2b36e85  /work/play/src/i18n/i18n-types.ts
+40a91ddf8b192648039d295caa5df5215a01e8976597856c7de1a7e1cd848fa6  /work/play/src/i18n/i18n-util.async.ts
+fbb46ea6be0a2097259eb980bfbcdc8b0aa963cd95fbb7a0d355839eca58bce2  /work/play/src/i18n/i18n-util.sync.ts
+d721b01234d0b4e0f5e2f06ec157e4936768c3ba2c58e55c99f1b9645c3f4099  /work/play/src/i18n/i18n-util.ts
+[typesafe-i18n] version 5.27.1
+[typesafe-i18n] generating files for TypeScript version: '5.9.x'
+[typesafe-i18n] options: {
+  baseLocale: 'en-US',
+  adapter: 'svelte',
+  tempPath: '/tmp/typesafe-i18n-temp/'
+}
+[typesafe-i18n] generated file: './src/i18n/i18n-types.ts'
+[typesafe-i18n] ... all files are up to date
+[typesafe-i18n] generating files completed
+EXIT 0
+
+########## section t1-on-s0
+=== t1-on-s0 stage=v/t1 load=12.46 2026-11-12T16:12:26Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+Sentry plugin disabled
+4:12:27 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:12:27 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (14 tests | 2 failed) 8960ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  8096ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 62ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 74ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 60ms
+     ✓ MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 69ms
+     ✓ MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 67ms
+     ✓ a camera the browser cannot find (NotFoundError) turns the camera off, records no_device, and asks again for the microphone alone 43ms
+     × MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again 111ms
+     × MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again 62ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 84ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 48ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 74ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 49ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 59ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again
+AssertionError: expected null to be 'device_in_use' // Object.is equality
+
+- Expected:
+"device_in_use"
+
++ Received:
+null
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:378:47
+    376|         expect(get(m.requestedCameraState)).toBe(false);
+    377|         expect(get(m.requestedMicrophoneState)).toBe(true);
+    378|         expect(get(m.cameraAccessIssueStore)).toBe("device_in_use");
+       |                                               ^
+    379|         expect(get(m.cameraButtonHelpContextStore)).toBe("device_in_us…
+    380|         expect(get(m.microphoneAccessIssueStore)).toBe(null);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again
+AssertionError: expected null to be 'device_in_use' // Object.is equality
+
+- Expected:
+"device_in_use"
+
++ Received:
+null
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:406:51
+    404|         expect(requested(browser, 0)).toEqual({ video: false, audio: t…
+    405|         expect(get(m.requestedMicrophoneState)).toBe(false);
+    406|         expect(get(m.microphoneAccessIssueStore)).toBe("device_in_use"…
+       |                                                   ^
+    407|         expect(get(m.microphoneButtonHelpContextStore)).toBe("device_i…
+    408|
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  16:12:28
+   Duration  10.38s (transform 7.21s, setup 36ms, import 516ms, tests 8.96s, environment 635ms)
+
+EXIT 1
+
+########## section s1-focus
+=== s1-focus stage=v/s1,v/gen load=11.98 2026-11-12T16:12:44Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts src/front/Stores/HeldMediaStore.test.ts src/front/Stores/PrivacyShutdownStore.test.ts src/front/Stores/MicrophoneSignalDetectorStore.test.ts src/front/Stores/RaiseHandAvailabilityStore.test.ts src/front/Space/Utils/BindMuteEvents.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Livekit/LiveKitRoom.test.ts src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts tests/front/WebRtc/JitsiCoWebsite.test.ts tests/front/Connection/RoomConnection.test.ts
+f7b3e9602e452205961873c0a6cc540e6f21d200ecedc7b009c80e3ef9ca9efc  /work/play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+06c7a9a634bf42dad5ba113ec245007b013ecb3fcc3174edda0869d1f051cadb  /work/play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+e9a5a9294cade141869b84941c08731c546df5a5dec515c058e1133274da5a46  /work/play/src/front/Stores/MediaStore.ts
+83d0458912c245c7bea0a008e8e97b9849deadae41686c77cc446d9927fd47b8  /work/play/src/i18n/ar-SA/camera.ts
+eb5c3fe2743222b5f740fb3c0e205c11941694d52205c52778ac644cffba8512  /work/play/src/i18n/ca-ES/camera.ts
+7df1f188862ad4aedddaee1be14597e9d0307d8b223fab6aabe5240dd317e9a9  /work/play/src/i18n/de-DE/camera.ts
+bbc81019a8874c8fd0c977c59261a093f85fcdc77f08e9310ca052919459e963  /work/play/src/i18n/dsb-DE/camera.ts
+a9cbd4e2a7a1afdfa0cd8228498dea8701d073e86f23fac965e7317d96a6dc7e  /work/play/src/i18n/en-US/camera.ts
+65e019445c7ca84d89135c16a7704cec6993db96edc5ee8f178e3b78eb03a26c  /work/play/src/i18n/es-ES/camera.ts
+604f38e95d4286365541031d3d2dc46aec62dcd6a57cfc6b58d7d55bf04e8e49  /work/play/src/i18n/fr-FR/camera.ts
+8f0e71a79108f13cf12f8429ec5bda54be243cbd34e386d18577482e30fdd263  /work/play/src/i18n/hsb-DE/camera.ts
+3108a87af07268888584d596e1c885016491042fd60a6f543c6b26ba7e5ec1c1  /work/play/src/i18n/it-IT/camera.ts
+e94017246c3b7ff0dfb789f50ad418b48d1022e68ab963620eba3dae450fc1de  /work/play/src/i18n/ja-JP/camera.ts
+41b810e5d5df55f1015bdac2719176dc3241831d89d01281bc5f0677594be7ff  /work/play/src/i18n/ko-KR/camera.ts
+ba95b0b308ee0a63b2c9751da044fbf7cdc16278e1b45de44f4e322291becfea  /work/play/src/i18n/nl-NL/camera.ts
+cceab38127c20f868fd582b2a838ddf6c0da0a1f3dc0d968c0dd6ff12018da7c  /work/play/src/i18n/pt-BR/camera.ts
+b5a55102df8b4069c7b61e2d22008ec046fdb308f8d8b704d96316ac234d586e  /work/play/src/i18n/th-TH/camera.ts
+9d17ba012c7375c57317d2e124737e3ef3d6002b9be9d154c8e4071112b44b75  /work/play/src/i18n/vi-VN/camera.ts
+27b79573e698372dd73160d88f5dc67dc3906480ae4f0725350c05c0d09c6748  /work/play/src/i18n/zh-CN/camera.ts
+752e417011bce11f059ebc85235cea7dd3bc68f5391b0ba61c8063ed3705630c  /work/play/src/i18n/zh-TW/camera.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+6cd6fe6b2726d28fc1dc00ae2cfcf7a500e618effb105b55c7796826a711c1e2  /work/play/src/i18n/i18n-types.ts
+Sentry plugin disabled
+4:12:46 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:12:46 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+stdout | src/front/Livekit/LiveKitRoom.test.ts
+Wake lock is not supported by this browser.
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > LiveKitRoom > should not ask livekit-client to switch the audio output where it cannot
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+ ✓ src/front/Livekit/LiveKitRoom.test.ts (32 tests) 91ms
+ ✓ tests/front/Stores/MediaStoreGetUserMedia.test.ts (14 tests) 2147ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  1107ms
+stderr | src/front/Space/tests/SpaceFilter.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceFilter.test.ts (7 tests) 19ms
+ ✓ src/front/Stores/HeldMediaStore.test.ts (11 tests) 12ms
+ ✓ src/front/Stores/RaiseHandAvailabilityStore.test.ts (13 tests) 11ms
+ ✓ src/front/Stores/MicrophoneSignalDetectorStore.test.ts (3 tests) 15ms
+ ✓ src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts (4 tests) 93ms
+stdout | tests/front/Connection/RoomConnection.test.ts > RoomConnection > does not leave an unhandled rejection when the socket is lost before the room is joined
+Socket has been closed null false CloseEvent { isTrusted: [Getter] }
+
+ ✓ tests/front/Connection/RoomConnection.test.ts (1 test) 14ms
+ ✓ src/front/Space/Utils/BindMuteEvents.test.ts (2 tests) 6ms
+ ✓ src/front/Stores/PrivacyShutdownStore.test.ts (4 tests) 5ms
+ ✓ tests/front/WebRtc/JitsiCoWebsite.test.ts (4 tests) 8ms
+
+ Test Files  11 passed (11)
+      Tests  95 passed (95)
+   Start at  16:12:46
+   Duration  55.76s (transform 28.18s, setup 153ms, import 39.90s, tests 2.42s, environment 10.78s)
+
+EXIT 0
+
+########## section m1
+=== m1 stage=v/t1,v/m1 load=15.23 2026-11-12T16:14:05Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts src/front/Stores/HeldMediaStore.test.ts src/front/Stores/PrivacyShutdownStore.test.ts src/front/Stores/MicrophoneSignalDetectorStore.test.ts src/front/Stores/RaiseHandAvailabilityStore.test.ts src/front/Space/Utils/BindMuteEvents.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Livekit/LiveKitRoom.test.ts src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts tests/front/WebRtc/JitsiCoWebsite.test.ts tests/front/Connection/RoomConnection.test.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+014772a355ff3ab81a9d8ac8a5fc0852414ee17242df5fb15dbd9efe6010c642  /work/play/src/front/Stores/MediaStore.ts
+Sentry plugin disabled
+4:14:08 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:14:08 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+stdout | src/front/Livekit/LiveKitRoom.test.ts
+Wake lock is not supported by this browser.
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > LiveKitRoom > should not ask livekit-client to switch the audio output where it cannot
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+ ✓ src/front/Livekit/LiveKitRoom.test.ts (32 tests) 66ms
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (14 tests | 2 failed) 2155ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  1120ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 82ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 85ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 77ms
+     ✓ MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 56ms
+     ✓ MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 84ms
+     ✓ a camera the browser cannot find (NotFoundError) turns the camera off, records no_device, and asks again for the microphone alone 55ms
+     × MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again 126ms
+     × MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again 86ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 119ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 85ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 59ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 48ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 72ms
+stderr | src/front/Space/tests/SpaceFilter.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceFilter.test.ts (7 tests) 16ms
+ ✓ src/front/Stores/HeldMediaStore.test.ts (11 tests) 10ms
+ ✓ src/front/Stores/RaiseHandAvailabilityStore.test.ts (13 tests) 34ms
+ ✓ src/front/Stores/MicrophoneSignalDetectorStore.test.ts (3 tests) 13ms
+ ✓ src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts (4 tests) 160ms
+stdout | tests/front/Connection/RoomConnection.test.ts > RoomConnection > does not leave an unhandled rejection when the socket is lost before the room is joined
+Socket has been closed null false CloseEvent { isTrusted: [Getter] }
+
+ ✓ tests/front/Connection/RoomConnection.test.ts (1 test) 9ms
+ ✓ src/front/Space/Utils/BindMuteEvents.test.ts (2 tests) 5ms
+ ✓ src/front/Stores/PrivacyShutdownStore.test.ts (4 tests) 5ms
+ ✓ tests/front/WebRtc/JitsiCoWebsite.test.ts (4 tests) 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again
+AssertionError: expected 'no_device' to be 'device_in_use' // Object.is equality
+
+Expected: "device_in_use"
+Received: "no_device"
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:378:47
+    376|         expect(get(m.requestedCameraState)).toBe(false);
+    377|         expect(get(m.requestedMicrophoneState)).toBe(true);
+    378|         expect(get(m.cameraAccessIssueStore)).toBe("device_in_use");
+       |                                               ^
+    379|         expect(get(m.cameraButtonHelpContextStore)).toBe("device_in_us…
+    380|         expect(get(m.microphoneAccessIssueStore)).toBe(null);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again
+AssertionError: expected 'no_device' to be 'device_in_use' // Object.is equality
+
+Expected: "device_in_use"
+Received: "no_device"
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:406:51
+    404|         expect(requested(browser, 0)).toEqual({ video: false, audio: t…
+    405|         expect(get(m.requestedMicrophoneState)).toBe(false);
+    406|         expect(get(m.microphoneAccessIssueStore)).toBe("device_in_use"…
+       |                                                   ^
+    407|         expect(get(m.microphoneButtonHelpContextStore)).toBe("device_i…
+    408|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 10 passed (11)
+      Tests  2 failed | 93 passed (95)
+   Start at  16:14:10
+   Duration  60.29s (transform 34.13s, setup 179ms, import 45.60s, tests 2.48s, environment 9.65s)
+
+EXIT 1
+
+########## section m2
+=== m2 stage=v/t1,v/m2 load=21.61 2026-11-12T16:15:13Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts src/front/Stores/HeldMediaStore.test.ts src/front/Stores/PrivacyShutdownStore.test.ts src/front/Stores/MicrophoneSignalDetectorStore.test.ts src/front/Stores/RaiseHandAvailabilityStore.test.ts src/front/Space/Utils/BindMuteEvents.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Livekit/LiveKitRoom.test.ts src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts tests/front/WebRtc/JitsiCoWebsite.test.ts tests/front/Connection/RoomConnection.test.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+33c082ca2009271cd385285f8817b4aad15835b02ce42e3d255ac6cabb0bf104  /work/play/src/front/Stores/MediaStore.ts
+Sentry plugin disabled
+4:15:16 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:15:16 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+stdout | src/front/Livekit/LiveKitRoom.test.ts
+Wake lock is not supported by this browser.
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > LiveKitRoom > should not ask livekit-client to switch the audio output where it cannot
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+ ✓ src/front/Livekit/LiveKitRoom.test.ts (32 tests) 49ms
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (14 tests | 1 failed) 1833ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  1030ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 95ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 52ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 73ms
+     ✓ MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 47ms
+     ✓ MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 64ms
+     ✓ a camera the browser cannot find (NotFoundError) turns the camera off, records no_device, and asks again for the microphone alone 43ms
+     × MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again 92ms
+     ✓ MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again 45ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 69ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 58ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 46ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 50ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 68ms
+stderr | src/front/Space/tests/SpaceFilter.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceFilter.test.ts (7 tests) 31ms
+ ✓ src/front/Stores/HeldMediaStore.test.ts (11 tests) 8ms
+ ✓ src/front/Stores/RaiseHandAvailabilityStore.test.ts (13 tests) 10ms
+ ✓ src/front/Stores/MicrophoneSignalDetectorStore.test.ts (3 tests) 15ms
+ ✓ src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts (4 tests) 104ms
+stdout | tests/front/Connection/RoomConnection.test.ts > RoomConnection > does not leave an unhandled rejection when the socket is lost before the room is joined
+Socket has been closed null false CloseEvent { isTrusted: [Getter] }
+
+ ✓ tests/front/Connection/RoomConnection.test.ts (1 test) 12ms
+ ✓ src/front/Space/Utils/BindMuteEvents.test.ts (2 tests) 7ms
+ ✓ src/front/Stores/PrivacyShutdownStore.test.ts (4 tests) 4ms
+ ✓ tests/front/WebRtc/JitsiCoWebsite.test.ts (4 tests) 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again
+AssertionError: expected null to be 'device_in_use' // Object.is equality
+
+- Expected:
+"device_in_use"
+
++ Received:
+null
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:379:53
+    377|         expect(get(m.requestedMicrophoneState)).toBe(true);
+    378|         expect(get(m.cameraAccessIssueStore)).toBe("device_in_use");
+    379|         expect(get(m.cameraButtonHelpContextStore)).toBe("device_in_us…
+       |                                                     ^
+    380|         expect(get(m.microphoneAccessIssueStore)).toBe(null);
+    381|         expect(get(m.microphoneButtonHelpContextStore)).toBe(null);
+
+
+ Test Files  1 failed | 10 passed (11)
+      Tests  1 failed | 94 passed (95)
+   Start at  16:15:22
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+   Duration  50.15s (transform 27.12s, setup 120ms, import 36.64s, tests 2.08s, environment 8.69s)
+
+EXIT 1
+
+########## section m3
+=== m3 stage=v/t1,v/m3 load=20.91 2026-11-12T16:16:14Z
+=== cmd: npx vitest run tests/front/Stores/MediaStoreGetUserMedia.test.ts src/front/Stores/HeldMediaStore.test.ts src/front/Stores/PrivacyShutdownStore.test.ts src/front/Stores/MicrophoneSignalDetectorStore.test.ts src/front/Stores/RaiseHandAvailabilityStore.test.ts src/front/Space/Utils/BindMuteEvents.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Livekit/LiveKitRoom.test.ts src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts tests/front/WebRtc/JitsiCoWebsite.test.ts tests/front/Connection/RoomConnection.test.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+1e69e3595a3b91b7927a0cc729d3c538b2258b2866f623ae022ee7a1e7cdc312  /work/play/src/front/Stores/MediaStore.ts
+Sentry plugin disabled
+4:16:16 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:16:16 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+stdout | src/front/Livekit/LiveKitRoom.test.ts
+Wake lock is not supported by this browser.
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > LiveKitRoom > should not ask livekit-client to switch the audio output where it cannot
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+ ✓ src/front/Livekit/LiveKitRoom.test.ts (32 tests) 53ms
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts (14 tests | 1 failed) 2083ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  1008ms
+     ✓ MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing 71ms
+     ✓ turning the camera off stops only its track, and turning it on asks for the camera alone 90ms
+     ✓ keeps a muted microphone open and disabled while our audio is streamed, and unmutes it without asking again 50ms
+     ✓ MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again 78ms
+     ✓ MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again 50ms
+     ✓ a camera the browser cannot find (NotFoundError) turns the camera off, records no_device, and asks again for the microphone alone 61ms
+     ✓ MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again 75ms
+     × MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again 59ms
+     ✓ MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone 127ms
+     ✓ away mode releases the camera and keeps the microphone, and coming back asks for the camera alone 211ms
+     ✓ energy saving releases the camera and the microphone after 10 s idle outside a conversation, and a conversation asks for both at once 61ms
+     ✓ MD-02 (pinned): a change during a pending request throws away its whole stream, then reopens the microphone it still wanted 67ms
+     ✓ lists the devices once the first stream exists and on each device change, and asks again for a default microphone that was unplugged 70ms
+stderr | src/front/Space/tests/SpaceFilter.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceFilter.test.ts (7 tests) 19ms
+ ✓ src/front/Stores/HeldMediaStore.test.ts (11 tests) 9ms
+ ✓ src/front/Stores/RaiseHandAvailabilityStore.test.ts (13 tests) 9ms
+ ✓ src/front/Stores/MicrophoneSignalDetectorStore.test.ts (3 tests) 24ms
+ ✓ src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts (4 tests) 105ms
+stdout | tests/front/Connection/RoomConnection.test.ts > RoomConnection > does not leave an unhandled rejection when the socket is lost before the room is joined
+Socket has been closed null false CloseEvent { isTrusted: [Getter] }
+
+ ✓ tests/front/Connection/RoomConnection.test.ts (1 test) 15ms
+ ✓ src/front/Space/Utils/BindMuteEvents.test.ts (2 tests) 5ms
+ ✓ src/front/Stores/PrivacyShutdownStore.test.ts (4 tests) 6ms
+ ✓ tests/front/WebRtc/JitsiCoWebsite.test.ts (4 tests) 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/front/Stores/MediaStoreGetUserMedia.test.ts > MediaStore getUserMedia chain > MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again
+AssertionError: expected 'no_device' to be 'device_in_use' // Object.is equality
+
+Expected: "device_in_use"
+Received: "no_device"
+
+ ❯ tests/front/Stores/MediaStoreGetUserMedia.test.ts:407:57
+    405|         expect(get(m.requestedMicrophoneState)).toBe(false);
+    406|         expect(get(m.microphoneAccessIssueStore)).toBe("device_in_use"…
+    407|         expect(get(m.microphoneButtonHelpContextStore)).toBe("device_i…
+       |                                                         ^
+    408|
+    409|         m.myCameraStore.set(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 10 passed (11)
+      Tests  1 failed | 94 passed (95)
+   Start at  16:16:20
+   Duration  58.28s (transform 27.55s, setup 172ms, import 39.11s, tests 2.33s, environment 13.55s)
+
+EXIT 1
+
+########## section static-s1
+=== static-s1 stage=v/s1,v/gen load=23.21 2026-11-12T16:18:34Z
+=== cmd: for step in "npx eslint --max-warnings 0 src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte src/front/Stores/MediaStore.ts src/i18n/ar-SA/camera.ts src/i18n/ca-ES/camera.ts src/i18n/de-DE/camera.ts src/i18n/dsb-DE/camera.ts src/i18n/en-US/camera.ts src/i18n/es-ES/camera.ts src/i18n/fr-FR/camera.ts src/i18n/hsb-DE/camera.ts src/i18n/it-IT/camera.ts src/i18n/ja-JP/camera.ts src/i18n/ko-KR/camera.ts src/i18n/nl-NL/camera.ts src/i18n/pt-BR/camera.ts src/i18n/th-TH/camera.ts src/i18n/vi-VN/camera.ts src/i18n/zh-CN/camera.ts src/i18n/zh-TW/camera.ts tests/front/Stores/MediaStoreGetUserMedia.test.ts " "npx prettier --check src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte src/front/Stores/MediaStore.ts src/i18n/ar-SA/camera.ts src/i18n/ca-ES/camera.ts src/i18n/de-DE/camera.ts src/i18n/dsb-DE/camera.ts src/i18n/en-US/camera.ts src/i18n/es-ES/camera.ts src/i18n/fr-FR/camera.ts src/i18n/hsb-DE/camera.ts src/i18n/it-IT/camera.ts src/i18n/ja-JP/camera.ts src/i18n/ko-KR/camera.ts src/i18n/nl-NL/camera.ts src/i18n/pt-BR/camera.ts src/i18n/th-TH/camera.ts src/i18n/vi-VN/camera.ts src/i18n/zh-CN/camera.ts src/i18n/zh-TW/camera.ts tests/front/Stores/MediaStoreGetUserMedia.test.ts " "npm run typecheck" "npm run svelte-check" "npm run i18n:check"; do echo "##### $step"; bash -c "$step"; echo "##### exit $? for: ${step%% *} $(echo $step | cut -d' ' -f2-3)"; done
+f7b3e9602e452205961873c0a6cc540e6f21d200ecedc7b009c80e3ef9ca9efc  /work/play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+06c7a9a634bf42dad5ba113ec245007b013ecb3fcc3174edda0869d1f051cadb  /work/play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+e9a5a9294cade141869b84941c08731c546df5a5dec515c058e1133274da5a46  /work/play/src/front/Stores/MediaStore.ts
+83d0458912c245c7bea0a008e8e97b9849deadae41686c77cc446d9927fd47b8  /work/play/src/i18n/ar-SA/camera.ts
+eb5c3fe2743222b5f740fb3c0e205c11941694d52205c52778ac644cffba8512  /work/play/src/i18n/ca-ES/camera.ts
+7df1f188862ad4aedddaee1be14597e9d0307d8b223fab6aabe5240dd317e9a9  /work/play/src/i18n/de-DE/camera.ts
+bbc81019a8874c8fd0c977c59261a093f85fcdc77f08e9310ca052919459e963  /work/play/src/i18n/dsb-DE/camera.ts
+a9cbd4e2a7a1afdfa0cd8228498dea8701d073e86f23fac965e7317d96a6dc7e  /work/play/src/i18n/en-US/camera.ts
+65e019445c7ca84d89135c16a7704cec6993db96edc5ee8f178e3b78eb03a26c  /work/play/src/i18n/es-ES/camera.ts
+604f38e95d4286365541031d3d2dc46aec62dcd6a57cfc6b58d7d55bf04e8e49  /work/play/src/i18n/fr-FR/camera.ts
+8f0e71a79108f13cf12f8429ec5bda54be243cbd34e386d18577482e30fdd263  /work/play/src/i18n/hsb-DE/camera.ts
+3108a87af07268888584d596e1c885016491042fd60a6f543c6b26ba7e5ec1c1  /work/play/src/i18n/it-IT/camera.ts
+e94017246c3b7ff0dfb789f50ad418b48d1022e68ab963620eba3dae450fc1de  /work/play/src/i18n/ja-JP/camera.ts
+41b810e5d5df55f1015bdac2719176dc3241831d89d01281bc5f0677594be7ff  /work/play/src/i18n/ko-KR/camera.ts
+ba95b0b308ee0a63b2c9751da044fbf7cdc16278e1b45de44f4e322291becfea  /work/play/src/i18n/nl-NL/camera.ts
+cceab38127c20f868fd582b2a838ddf6c0da0a1f3dc0d968c0dd6ff12018da7c  /work/play/src/i18n/pt-BR/camera.ts
+b5a55102df8b4069c7b61e2d22008ec046fdb308f8d8b704d96316ac234d586e  /work/play/src/i18n/th-TH/camera.ts
+9d17ba012c7375c57317d2e124737e3ef3d6002b9be9d154c8e4071112b44b75  /work/play/src/i18n/vi-VN/camera.ts
+27b79573e698372dd73160d88f5dc67dc3906480ae4f0725350c05c0d09c6748  /work/play/src/i18n/zh-CN/camera.ts
+752e417011bce11f059ebc85235cea7dd3bc68f5391b0ba61c8063ed3705630c  /work/play/src/i18n/zh-TW/camera.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+6cd6fe6b2726d28fc1dc00ae2cfcf7a500e618effb105b55c7796826a711c1e2  /work/play/src/i18n/i18n-types.ts
+##### npx eslint --max-warnings 0 src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte src/front/Stores/MediaStore.ts src/i18n/ar-SA/camera.ts src/i18n/ca-ES/camera.ts src/i18n/de-DE/camera.ts src/i18n/dsb-DE/camera.ts src/i18n/en-US/camera.ts src/i18n/es-ES/camera.ts src/i18n/fr-FR/camera.ts src/i18n/hsb-DE/camera.ts src/i18n/it-IT/camera.ts src/i18n/ja-JP/camera.ts src/i18n/ko-KR/camera.ts src/i18n/nl-NL/camera.ts src/i18n/pt-BR/camera.ts src/i18n/th-TH/camera.ts src/i18n/vi-VN/camera.ts src/i18n/zh-CN/camera.ts src/i18n/zh-TW/camera.ts tests/front/Stores/MediaStoreGetUserMedia.test.ts 
+##### exit 0 for: npx eslint --max-warnings
+##### npx prettier --check src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte src/front/Stores/MediaStore.ts src/i18n/ar-SA/camera.ts src/i18n/ca-ES/camera.ts src/i18n/de-DE/camera.ts src/i18n/dsb-DE/camera.ts src/i18n/en-US/camera.ts src/i18n/es-ES/camera.ts src/i18n/fr-FR/camera.ts src/i18n/hsb-DE/camera.ts src/i18n/it-IT/camera.ts src/i18n/ja-JP/camera.ts src/i18n/ko-KR/camera.ts src/i18n/nl-NL/camera.ts src/i18n/pt-BR/camera.ts src/i18n/th-TH/camera.ts src/i18n/vi-VN/camera.ts src/i18n/zh-CN/camera.ts src/i18n/zh-TW/camera.ts tests/front/Stores/MediaStoreGetUserMedia.test.ts 
+Checking formatting...
+All matched files use Prettier code style!
+##### exit 0 for: npx prettier --check
+##### npm run typecheck
+
+> workadventure-play@1.0.0 typecheck
+> cross-env tsc --noEmit
+
+##### exit 0 for: npm run typecheck
+##### npm run svelte-check
+
+> workadventure-play@1.0.0 svelte-check
+> cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --compiler-warnings "a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore"
+
+Loading svelte-check in workspace: /work/play
+Getting Svelte diagnostics...
+
+svelte-check found 0 errors and 0 warnings
+##### exit 0 for: npm run svelte-check
+##### npm run i18n:check
+
+> workadventure-play@1.0.0 i18n:check
+> TSX_TSCONFIG_PATH=tsconfig.json tsx ./scripts/diff-i18n.ts --check
+
+✅ All translations are complete.
+##### exit 0 for: npm run i18n:check
+EXIT 0
+
+########## section suite-s1
+=== suite-s1 stage=v/s1,v/gen load=19.83 2026-11-12T16:20:46Z
+=== cmd: npm test -- --run
+f7b3e9602e452205961873c0a6cc540e6f21d200ecedc7b009c80e3ef9ca9efc  /work/play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+06c7a9a634bf42dad5ba113ec245007b013ecb3fcc3174edda0869d1f051cadb  /work/play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+e9a5a9294cade141869b84941c08731c546df5a5dec515c058e1133274da5a46  /work/play/src/front/Stores/MediaStore.ts
+83d0458912c245c7bea0a008e8e97b9849deadae41686c77cc446d9927fd47b8  /work/play/src/i18n/ar-SA/camera.ts
+eb5c3fe2743222b5f740fb3c0e205c11941694d52205c52778ac644cffba8512  /work/play/src/i18n/ca-ES/camera.ts
+7df1f188862ad4aedddaee1be14597e9d0307d8b223fab6aabe5240dd317e9a9  /work/play/src/i18n/de-DE/camera.ts
+bbc81019a8874c8fd0c977c59261a093f85fcdc77f08e9310ca052919459e963  /work/play/src/i18n/dsb-DE/camera.ts
+a9cbd4e2a7a1afdfa0cd8228498dea8701d073e86f23fac965e7317d96a6dc7e  /work/play/src/i18n/en-US/camera.ts
+65e019445c7ca84d89135c16a7704cec6993db96edc5ee8f178e3b78eb03a26c  /work/play/src/i18n/es-ES/camera.ts
+604f38e95d4286365541031d3d2dc46aec62dcd6a57cfc6b58d7d55bf04e8e49  /work/play/src/i18n/fr-FR/camera.ts
+8f0e71a79108f13cf12f8429ec5bda54be243cbd34e386d18577482e30fdd263  /work/play/src/i18n/hsb-DE/camera.ts
+3108a87af07268888584d596e1c885016491042fd60a6f543c6b26ba7e5ec1c1  /work/play/src/i18n/it-IT/camera.ts
+e94017246c3b7ff0dfb789f50ad418b48d1022e68ab963620eba3dae450fc1de  /work/play/src/i18n/ja-JP/camera.ts
+41b810e5d5df55f1015bdac2719176dc3241831d89d01281bc5f0677594be7ff  /work/play/src/i18n/ko-KR/camera.ts
+ba95b0b308ee0a63b2c9751da044fbf7cdc16278e1b45de44f4e322291becfea  /work/play/src/i18n/nl-NL/camera.ts
+cceab38127c20f868fd582b2a838ddf6c0da0a1f3dc0d968c0dd6ff12018da7c  /work/play/src/i18n/pt-BR/camera.ts
+b5a55102df8b4069c7b61e2d22008ec046fdb308f8d8b704d96316ac234d586e  /work/play/src/i18n/th-TH/camera.ts
+9d17ba012c7375c57317d2e124737e3ef3d6002b9be9d154c8e4071112b44b75  /work/play/src/i18n/vi-VN/camera.ts
+27b79573e698372dd73160d88f5dc67dc3906480ae4f0725350c05c0d09c6748  /work/play/src/i18n/zh-CN/camera.ts
+752e417011bce11f059ebc85235cea7dd3bc68f5391b0ba61c8063ed3705630c  /work/play/src/i18n/zh-TW/camera.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  /work/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+6cd6fe6b2726d28fc1dc00ae2cfcf7a500e618effb105b55c7796826a711c1e2  /work/play/src/i18n/i18n-types.ts
+
+> workadventure-play@1.0.0 test
+> PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --run
+
+Sentry plugin disabled
+4:20:49 PM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+4:20:49 PM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+Warning: A vi.mock("../MatrixChatRoom") call in "/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("../MatrixChatRoom") call in "/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("../MatrixChatRoom") call in "/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should contains all room with type direct and KnownMembership = join from roomList in directRooms
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:122:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should contains all room with type multiple and KnownMembership = join from roomList in rooms
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:150:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should contains all room with KnownMembership = invite from roomList in invitations
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:180:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should set isEncryptionRequiredAndNotSet with value of isEncryptionRequiredAndNotSet from matrixSecurity
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:209:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should set isEncryptionRequiredAndNotSet with value of isEncryptionRequiredAndNotSet from matrixSecurity 
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:227:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should set isEncryptionRequiredAndNotSet with value of isEncryptionRequiredAndNotSet from matrixSecurity 
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:227:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should call startMatrixClient when client promise resolve
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.startMatrixClient (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:240:13
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > Constructor > should not call startMatrixClient when client promise reject
+Error: 
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:246:50
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > init > should not wait for the initial sync once the session is logged out
+The Matrix session is no longer valid:  M_UNKNOWN_TOKEN: MatrixError: [401] Invalid access token passed.
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:293:25)
+    at Object.Mock [as startClient] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:848:27)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:300:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20 {
+  httpStatus: 401,
+  httpHeaders: undefined,
+  errcode: 'M_UNKNOWN_TOKEN',
+  error: 'Invalid access token passed.',
+  data: { errcode: 'M_UNKNOWN_TOKEN', error: 'Invalid access token passed.' },
+  url: undefined,
+  event: undefined
+}
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > init > should not wait for the initial sync once the session is logged out
+Failed to wait initial sync: Error: Failed to wait initial sync : the Matrix session is no longer valid
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:943:28)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:300:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > computeInitialState > should add historyVisibility option to initial state when historyVisibility from roomOptions is defined
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:487:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > computeInitialState > should not add historyVisibility option to initial state when historyVisibility from roomOptions is undefined
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:513:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createRoom > should reject promise when roomOptions is undefined
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:540:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createRoom > should return client.createRoom Reject error when roomOptions is defined but name is undefined
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:563:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createRoom > should return client.createRoom Result when roomOptions is defined
+Failed to manage room or folder :  TypeError: room.isSpaceRoom is not a function
+    at MatrixChatConnection.handleOrphanRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1450:18)
+    at MatrixChatConnection.manageRoomOrFolder (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1290:22)
+    at MatrixChatConnection.drainMatrixClientRoomManageQueueChain (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1259:21)
+    at MatrixChatConnection.startMatrixClientRoomManageQueueDrainIfNeeded (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1240:30)
+    at MatrixChatConnection.enqueueMatrixClientRoomManage (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1231:14)
+    at MatrixChatConnection.onClientEventRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1282:14)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:578:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:820:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createRoom > should return client.createRoom Result when roomOptions is defined
+TypeError: event.getType is not a function
+    at MatrixChatConnection.onRoomStateEvent (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1194:33)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:578:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:823:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:593:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createRoom > should not hand back an encrypted room before its encryption event has synced
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:614:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createDirectRoom > should return existing direct room when a direct room already exist with this user  
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:662:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createDirectRoom > should create new room / add it to account data and add it to roomList 
+Failed to manage room or folder :  TypeError: room.isSpaceRoom is not a function
+    at MatrixChatConnection.handleOrphanRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1450:18)
+    at MatrixChatConnection.manageRoomOrFolder (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1290:22)
+    at MatrixChatConnection.drainMatrixClientRoomManageQueueChain (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1259:21)
+    at MatrixChatConnection.startMatrixClientRoomManageQueueDrainIfNeeded (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1240:30)
+    at MatrixChatConnection.enqueueMatrixClientRoomManage (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1231:14)
+    at MatrixChatConnection.onClientEventRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1282:14)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:689:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:820:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createDirectRoom > should create new room / add it to account data and add it to roomList 
+TypeError: event.getType is not a function
+    at MatrixChatConnection.onRoomStateEvent (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1194:33)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:689:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:823:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:705:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createDirectRoom > should deduplicate concurrent creations for the same user
+Failed to manage room or folder :  TypeError: room.isSpaceRoom is not a function
+    at MatrixChatConnection.handleOrphanRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1450:18)
+    at MatrixChatConnection.manageRoomOrFolder (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1290:22)
+    at MatrixChatConnection.drainMatrixClientRoomManageQueueChain (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1259:21)
+    at MatrixChatConnection.startMatrixClientRoomManageQueueDrainIfNeeded (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1240:30)
+    at MatrixChatConnection.enqueueMatrixClientRoomManage (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1231:14)
+    at MatrixChatConnection.onClientEventRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1282:14)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:732:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:820:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > createDirectRoom > should deduplicate concurrent creations for the same user
+TypeError: event.getType is not a function
+    at MatrixChatConnection.onRoomStateEvent (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1194:33)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:732:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:823:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:746:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should find an existing direct room from the SDK client even when roomList is empty
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:825:71
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should return the already-registered wrapper instead of creating a new one
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:835:71
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should find a direct room where the other user is still invited
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:850:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should find a direct room I am still invited to
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:864:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should ignore rooms with more than two active members
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:875:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should ignore a crowded room whose only loaded members are the two of us
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:883:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should prefer the room flagged as a direct room in m.direct
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:891:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should ignore rooms the other user has left
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:903:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should ignore rooms I have left
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:912:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should ignore space rooms
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:919:46
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > getDirectRoomFor > should pick the most recently active room when duplicates exist
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at getConnectionWithSdkRooms (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:810:42)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:927:71
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > searchAccessibleRooms > should search all public rooms with searchText in the options
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:965:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > searchAccessibleRooms > should only return rooms that are not in the room list
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1024:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > joinRoom > should join new room and set roomlist with new data
+Failed to manage room or folder :  TypeError: room.isSpaceRoom is not a function
+    at MatrixChatConnection.handleOrphanRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1450:18)
+    at MatrixChatConnection.manageRoomOrFolder (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1290:22)
+    at MatrixChatConnection.drainMatrixClientRoomManageQueueChain (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1259:21)
+    at MatrixChatConnection.startMatrixClientRoomManageQueueDrainIfNeeded (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1240:30)
+    at MatrixChatConnection.enqueueMatrixClientRoomManage (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1231:14)
+    at MatrixChatConnection.onClientEventRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1282:14)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1062:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:820:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > joinRoom > should join new room and set roomlist with new data
+TypeError: event.getType is not a function
+    at MatrixChatConnection.onRoomStateEvent (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1194:33)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1062:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:823:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1085:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > joinRoom > should add room in account data when user join a direct room
+Failed to manage room or folder :  TypeError: room.isSpaceRoom is not a function
+    at MatrixChatConnection.handleOrphanRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1450:18)
+    at MatrixChatConnection.manageRoomOrFolder (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1290:22)
+    at MatrixChatConnection.drainMatrixClientRoomManageQueueChain (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1259:21)
+    at MatrixChatConnection.startMatrixClientRoomManageQueueDrainIfNeeded (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1240:30)
+    at MatrixChatConnection.enqueueMatrixClientRoomManage (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1231:14)
+    at MatrixChatConnection.onClientEventRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1282:14)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1113:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:820:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > joinRoom > should add room in account data when user join a direct room
+TypeError: event.getType is not a function
+    at MatrixChatConnection.onRoomStateEvent (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1194:33)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1113:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:823:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1136:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > joinRoom > should fall back to the room returned by joinRoom when it is not yet in the client store
+Failed to manage room or folder :  TypeError: room.isSpaceRoom is not a function
+    at MatrixChatConnection.handleOrphanRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1450:18)
+    at MatrixChatConnection.manageRoomOrFolder (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1290:22)
+    at MatrixChatConnection.drainMatrixClientRoomManageQueueChain (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1259:21)
+    at MatrixChatConnection.startMatrixClientRoomManageQueueDrainIfNeeded (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1240:30)
+    at MatrixChatConnection.enqueueMatrixClientRoomManage (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1231:14)
+    at MatrixChatConnection.onClientEventRoom (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1282:14)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1168:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:820:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > joinRoom > should fall back to the room returned by joinRoom when it is not yet in the client store
+TypeError: event.getType is not a function
+    at MatrixChatConnection.onRoomStateEvent (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:1194:33)
+    at Object.<anonymous> (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1168:21)
+    at Object.Mock [as on] (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:823:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1189:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > addDMRoomInAccountData > should create and set account data when account data is undefined
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1229:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > addDMRoomInAccountData > should get account data / add new direct room in Account Data and set account data when account data is defined
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1280:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > addDMRoomInAccountData > should not rewrite account data when the room is already recorded for this user
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1324:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > isUserExist > should look the exact user up instead of searching the user directory
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1358:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > isUserExist > should return false when the homeserver knows no such user
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1365:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > isUserExist > should rethrow any other error instead of reporting the user as missing
+Failed to wait initial sync: TypeError: this.client?.isInitialSyncComplete is not a function
+    at checkSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:939:34)
+    at /work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:952:13
+    at new Promise (<anonymous>)
+    at MatrixChatConnection.waitInitialSync (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:936:16)
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:861:24)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:13)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:1373:42
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > space topology handling > should init existing nested folder when adding a space child
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:2008:42
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > onSyncStateChange > should report sync errors to Sentry, except when the homeserver cannot be reached
+TypeError: this.client.on is not a function
+    at MatrixChatConnection.startMatrixClient (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:818:21)
+    at MatrixChatConnection.init (/work/play/src/front/Chat/Connection/Matrix/MatrixChatConnection.ts:576:24)
+    at getMatrixConnection (/work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:89:9)
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:2022:42
+
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts (68 tests) 293ms
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts > MatrixChatConnection > onSyncStateChange > should report sync errors to Sentry, except when the homeserver cannot be reached
+Matrix sync error (previous state:  RECONNECTING ):  ConnectionError: fetch failed: Failed to fetch
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:2026:24
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+Matrix sync error (previous state:  SYNCING ):  M_UNKNOWN: MatrixError: [500] Unknown message
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixChatConnection.test.ts:2030:27
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20 {
+  httpStatus: 500,
+  httpHeaders: undefined,
+  errcode: 'M_UNKNOWN',
+  error: undefined,
+  data: { errcode: 'M_UNKNOWN' },
+  url: undefined,
+  event: undefined
+}
+
+stderr | tests/pusher/SpaceToFrontDispatcher.test.ts > SpaceToFrontDispatcher > handleMessage > addSpaceUserMessage > should notify all users
+[SpaceToFrontDispatcher.addUser] Local socket found but no user in _localConnectedUserWithSpaceUser for foo_1. Creating new object.
+
+ ✓ tests/pusher/SpaceToFrontDispatcher.test.ts (20 tests | 9 skipped) 23ms
+stdout | src/front/Livekit/LiveKitRoom.test.ts
+Wake lock is not supported by this browser.
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > LiveKitRoom > should not ask livekit-client to switch the audio output where it cannot
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > republishes the screen share without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+stderr | src/front/Livekit/LiveKitRoom.test.ts > codec demotion > unpublishes the camera for real, once, to publish it again without the demoted codec
+Local participant not found
+
+ ✓ src/front/Livekit/LiveKitRoom.test.ts (32 tests) 41ms
+stderr | tests/pusher/SpaceToBackForwarder.test.ts > SpaceToBackForwarder > unregisterUser > should send a single removeSpaceUserQuery when unregisterUser is called twice concurrently
+Trying to remove user foo_1 that does not exist in space test
+
+ ✓ tests/pusher/SpaceToBackForwarder.test.ts (19 tests | 1 skipped) 20ms
+stderr | src/front/Space/tests/Space.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+Not implemented: HTMLMediaElement's play() method
+Not implemented: HTMLMediaElement's play() method
+ ✓ src/front/Space/tests/Space.test.ts (24 tests) 40ms
+ ✓ tests/pusher/AnalyticsEventCatalog.test.ts (18 tests) 70ms
+stderr | tests/pusher/Space.test.ts > Space > handleWatch > should not send users to the new watcher if the user is already watching the space
+test : filter already exists for undefined
+
+ ✓ tests/pusher/Space.test.ts (15 tests) 25ms
+stderr | tests/pusher/AnalyticsEventsQueue.test.ts > AnalyticsEventsQueue > caps oversized properties on UTF-8 bytes rather than UTF-16 code units
+Analytics event dropped {
+  reason: 'properties exceed max bytes',
+  eventName: 'user.connected',
+  eventId: 'oversized-multibyte',
+  bytes: 15011,
+  maxBytes: 8192
+}
+
+stderr | tests/pusher/AnalyticsEventsQueue.test.ts > AnalyticsEventsQueue > splits batches rejected by admin validation and drops only invalid events
+Analytics event dropped after admin validation failed {
+  eventName: 'room.changed',
+  eventId: 'invalid-event',
+  response: { errors: { 'events.1.properties': [Array] } }
+}
+
+stderr | tests/pusher/AnalyticsEventsQueue.test.ts > AnalyticsEventsQueue > accounts partial success when a non-validation error aborts the individual retry mid-loop
+Analytics events batch send failed Error: Analytics drain deadline reached before the batch could be sent
+    at AnalyticsEventsQueue.sendWithRetry (/work/libs/shared-utils/src/AnalyticsEventsQueue.ts:242:15)
+    at AnalyticsEventsQueue.sendEventsIndividually (/work/libs/shared-utils/src/AnalyticsEventsQueue.ts:312:17)
+    at AnalyticsEventsQueue.sendWithRetry (/work/libs/shared-utils/src/AnalyticsEventsQueue.ts:220:28)
+    at AnalyticsEventsQueue.flush (/work/libs/shared-utils/src/AnalyticsEventsQueue.ts:168:32)
+
+stderr | tests/pusher/AnalyticsEventsQueue.test.ts > AnalyticsEventsQueue > drops video quality samples for a space the socket has not joined
+Analytics video-quality sample dropped: socket not joined to reported space {
+  streamId: 'stream-id',
+  spaceName: 'other-space',
+  reporterUserUuid: 'reporter-uuid'
+}
+
+stderr | tests/pusher/AnalyticsEventsQueue.test.ts > AnalyticsEventsQueue > drops video quality samples from a socket that has joined no space at all
+Analytics video-quality sample dropped: socket not joined to reported space {
+  streamId: 'stream-id',
+  spaceName: 'any-space-i-like',
+  reporterUserUuid: 'reporter-uuid'
+}
+
+ ✓ tests/pusher/AnalyticsEventsQueue.test.ts (17 tests) 235ms
+stdout | src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts (13 tests) 1004ms
+     ✓ fetches one older page 100 ms after the user scrolls near the top, and never a second one while it is pending  476ms
+ ✓ tests/front/Stores/MediaStoreGetUserMedia.test.ts (14 tests) 1604ms
+     ✓ asks once for both devices when the room turns them on in a batch, and not again for changes that keep the constraints  824ms
+ ✓ src/front/Utils/RetryWithBackoff.test.ts (37 tests) 28ms
+ ✓ tests/front/Phaser/Game/CameraManualPan.test.ts (28 tests) 54ms
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixSecurity.test.ts > MatrixSecurity > verifyOwnDevice > does not start SAS when the other party does not support it
+Failed to start SAS verification from the initiating device Error: the other device does not support SAS verification
+    at startSasVerification (/work/play/src/front/Chat/Connection/Matrix/MatrixSecurity.ts:382:35)
+
+stdout | src/front/Chat/Connection/Matrix/tests/MatrixSecurity.test.ts > MatrixSecurity > initClientCryptoConfiguration > should return void when Encryption is already initialized
+Encryption already initialized
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixSecurity.test.ts > MatrixSecurity > initClientCryptoConfiguration > should set initializingEncryptionPromise to undefined when we catch a error during the initialization
+initClientCryptoConfiguration error:  
+
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixSecurity.test.ts (16 tests) 22ms
+stderr | tests/pusher/SocketManagerRoomTraffic.test.ts > SocketManager room traffic > opens a back stream per socket and one room stream, and relays the back's messages once the user joined
+Empty message returned on streamToBack
+
+stderr | tests/pusher/SocketManagerRoomTraffic.test.ts > SocketManager room traffic > closes the socket with the back's reason when its back stream ends, and relays nothing afterwards
+In SET_VIEWPORT, could not find world with id ' https://play.test/@/org/world/room '
+
+ ✓ tests/pusher/SocketManagerRoomTraffic.test.ts (10 tests) 150ms
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > initMatrixClient > should throw a error when matrix access token is null
+Unable to connect to matrix, access token is null
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > initMatrixClient > should throw a error when matrix access token is null
+Unable to connect to matrix, access token is null
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > initMatrixClient > should throw a error when matrixUserId is null
+Unable to connect to matrix, matrixUserId is null
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > initMatrixClient > should throw a error when matrixDeviceId is null
+Unable to connect to matrix, matrixDeviceId is null
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > exchangeLoginToken > should give up at once when the homeserver refuses the token
+Invalid login token M_FORBIDDEN: MatrixError: [403] Invalid login token
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts:384:36
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64 {
+  httpStatus: 403,
+  httpHeaders: undefined,
+  errcode: 'M_FORBIDDEN',
+  error: 'Invalid login token',
+  data: { errcode: 'M_FORBIDDEN', error: 'Invalid login token' },
+  url: undefined,
+  event: undefined
+}
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > exchangeLoginToken > should retry when the homeserver does not answer
+Unable to exchange the Matrix login token, retrying TypeError: Failed to fetch
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts:401:40
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > exchangeLoginToken > should fail with the last error once the retries are spent
+Unable to exchange the Matrix login token, retrying TypeError: Failed to fetch
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts:415:60
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > exchangeLoginToken > should fail with the last error once the retries are spent
+Unable to exchange the Matrix login token, retrying TypeError: Failed to fetch
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts:415:60
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > exchangeLoginToken > should drop the stored session of another WorkAdventure user once the exchange gives up
+Invalid login token M_FORBIDDEN: MatrixError: [403] Invalid login token
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts:447:36
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2025:60
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10) {
+  httpStatus: 403,
+  httpHeaders: undefined,
+  errcode: 'M_FORBIDDEN',
+  error: 'Invalid login token',
+  data: { errcode: 'M_FORBIDDEN', error: 'Invalid login token' },
+  url: undefined,
+  event: undefined
+}
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts > MatrixClientWrapper > exchangeLoginToken > should drop the stored session of an unknown user (stored by an older version) once the exchange gives up
+Invalid login token M_FORBIDDEN: MatrixError: [403] Invalid login token
+    at /work/play/src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts:447:36
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2025:60
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10) {
+  httpStatus: 403,
+  httpHeaders: undefined,
+  errcode: 'M_FORBIDDEN',
+  error: 'Invalid login token',
+  data: { errcode: 'M_FORBIDDEN', error: 'Invalid login token' },
+  url: undefined,
+  event: undefined
+}
+
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixClientWrapper.test.ts (16 tests) 107ms
+stdout | src/front/Chat/Connection/Proximity/tests/ProximityChatRoom.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityChatRoom.test.ts (18 tests) 42ms
+stderr | src/front/Space/tests/SpaceRegistry.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+stderr | src/front/Space/tests/SpaceRegistry.test.ts > SpaceProviderInterface implementation > SpaceRegistry > SpaceRegistry destroy > should destroy space store
+Space "space-test1" was not destroyed properly.
+Space "space-test2" was not destroyed properly.
+Space "space-test3" was not destroyed properly.
+
+stderr | src/front/Space/tests/SpaceRegistry.test.ts > SpaceProviderInterface implementation > SpaceRegistry > SpaceRegistry shouldPublishScreenShareStore > should be true in a bubble and for a speaker, never for an audience
+Space is destroyed, skipping unregisterSpaceFilter
+Space is destroyed, skipping unregisterSpaceFilter
+
+ ✓ src/front/Space/tests/SpaceRegistry.test.ts (12 tests) 43ms
+ ✓ tests/pusher/AnalyticsReportMessageHandler.test.ts (31 tests) 67ms
+stdout | tests/pusher/PusherRoomSocketController.test.ts > PusherRoomSocketController reconnect retention > delays logical cleanup so a closed transport can still be replaced
+[PusherRoomSocketController] attempting transport replacement {
+  connectionId: 'conn-1',
+  userUuid: 'user-uuid',
+  clientLastReceivedNonce: 0
+}
+Replacing WebSocket transport for user user-uuid on tab tab-1 (lastReceivedNonce=0)
+
+stdout | tests/pusher/PusherRoomSocketController.test.ts > PusherRoomSocketController reconnect retention > cancels the scheduled cleanup when the same tab reconnects in time
+[PusherRoomSocketController] attempting transport replacement {
+  connectionId: 'conn-1',
+  userUuid: 'user-uuid',
+  clientLastReceivedNonce: 0
+}
+Replacing WebSocket transport for user user-uuid on tab tab-1 (lastReceivedNonce=0)
+
+stdout | tests/pusher/PusherRoomSocketController.test.ts > PusherRoomSocketController reconnect retention > queues outgoing messages while a transport is closed and flushes them after replacement
+[PusherRoomSocketController] attempting transport replacement {
+  connectionId: 'conn-1',
+  userUuid: 'user-uuid',
+  clientLastReceivedNonce: 1
+}
+Replacing WebSocket transport for user user-uuid on tab tab-1 (lastReceivedNonce=1)
+
+stdout | tests/pusher/PusherRoomSocketController.test.ts > PusherRoomSocketController transport resume identity > refuses a resume from a WorkAdventureWebSocket that never opened a connection here
+[PusherRoomSocketController] attempting transport replacement {
+  connectionId: 'current',
+  userUuid: 'user-uuid',
+  clientLastReceivedNonce: 0
+}
+Replacing WebSocket transport for user user-uuid on tab tab-1 (lastReceivedNonce=0)
+
+stderr | tests/pusher/PusherRoomSocketController.test.ts > PusherRoomSocketController transport resume identity > rejects a replacement socket carrying a different connection id
+Cannot replace WebSocket transport for user user-uuid on tab tab-1: connection id mismatch (previous=a, new=b)
+
+stdout | tests/pusher/PusherRoomSocketController.test.ts > PusherRoomSocketController transport resume identity > rejects a replacement socket carrying a different connection id
+Replacing WebSocket transport for user user-uuid on tab tab-1 (lastReceivedNonce=0)
+
+ ✓ tests/pusher/PusherRoomSocketController.test.ts (18 tests) 49ms
+stderr | tests/front/Chat/Connection/ProximityChatRoomManager.test.ts > ProximityChatRoomManager > does not report an aborted join to Sentry, but reports other failures
+Proximity room operation failed for space: space-a Error: Space user id not found
+    at /work/play/tests/front/Chat/Connection/ProximityChatRoomManager.test.ts:351:50
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+ ✓ tests/front/Chat/Connection/ProximityChatRoomManager.test.ts (18 tests) 93ms
+stderr | src/front/Space/tests/SpaceIntegration.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceIntegration.test.ts (6 tests) 19ms
+ ✓ tests/front/Utils/locales.test.ts (10 tests) 147ms
+ ✓ tests/front/WebRtc/BackgroundProcessor/MediaPipeTasksVisionWorkerRuntime.test.ts (11 tests) 1467ms
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > ignores a viewport whose coordinates are inverted
+Invalid viewport received:  { left: 1000, top: 0, right: 0, bottom: 1000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > ignores a viewport whose coordinates are not finite
+Invalid viewport received:  { left: 0, top: 0, right: NaN, bottom: 1000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > crops an oversized viewport around its center instead of subscribing to a huge number of zones
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > crops an oversized viewport that is extremely elongated
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 3126 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 0 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > only reports the first oversized viewport of a room
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > does not touch the subscriptions when the same oversized square viewport is sent again
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > does not touch the subscriptions when the same oversized extremely elongated viewport is sent again
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 3126 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 0 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > moves the cropped window when an oversized viewport moves
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > keeps the current zones when an invalid viewport follows a valid one
+Invalid viewport received:  { left: 0, top: 0, right: Infinity, bottom: 319 }
+Invalid viewport received:  { left: 639, top: 0, right: 0, bottom: 319 }
+
+ ✓ tests/pusher/PositionDispatcher.test.ts (25 tests) 100ms
+stderr | src/front/Chat/Connection/Proximity/tests/ProximityFileTransferService.test.ts > ProximityFileTransferService > should stop sending when the data channel closes while waiting for it to drain
+Error while sending proximity file transfer Error: Proximity file transfer data channel closed
+    at StuckDataChannel.onClosed (/work/play/src/front/Chat/Connection/Proximity/ProximityFileTransferService.ts:637:24)
+    at StuckDataChannel.callTheUserObjectsOperation (/work/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/work/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/work/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at EventTargetImpl._dispatch (/work/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at EventTargetImpl.dispatchEvent (/work/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+    at StuckDataChannel.dispatchEvent (/work/node_modules/jsdom/lib/generated/idl/EventTarget.js:241:34)
+    at StuckDataChannel.close (/work/play/src/front/Chat/Connection/Proximity/tests/ProximityFileTransferService.test.ts:39:14)
+    at /work/play/src/front/Chat/Connection/Proximity/tests/ProximityFileTransferService.test.ts:259:21
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityFileTransferService.test.ts (16 tests) 143ms
+ ✓ tests/front/Utils/TokenBucket.test.ts (28 tests) 26ms
+Warning: A vi.mock("../../src/room-api/guards/AuthenticationGuard") call in "/work/play/tests/room-api/RoomApiServer.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("../../src/pusher/services/ApiClientRepository") call in "/work/play/tests/room-api/RoomApiServer.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+stderr | tests/room-api/RoomApiServer.test.ts > RoomApiServer > readVariable > with the api client repository returning an error
+Internal authentication error: Error: Invalid client
+    at /work/play/tests/room-api/RoomApiServer.test.ts:46:36
+    at new Promise (<anonymous>)
+    at Object.getClient (/work/play/tests/room-api/RoomApiServer.test.ts:44:28)
+    at /work/play/src/room-api/RoomApiServer.ts:14:22
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+stderr | tests/room-api/RoomApiServer.test.ts > RoomApiServer > listenVariable > with the api client repository returning an error
+Error on creating api client! Error: Invalid client
+    at /work/play/tests/room-api/RoomApiServer.test.ts:46:36
+    at new Promise (<anonymous>)
+    at Object.getClient (/work/play/tests/room-api/RoomApiServer.test.ts:44:28)
+    at /work/play/src/room-api/RoomApiServer.ts:57:22
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+stderr | tests/room-api/RoomApiServer.test.ts > RoomApiServer > listenVariable > with a random end event triggered on variable listener
+Error on variable listener: Error: Unexpected error
+    at Timeout._onTimeout (/work/play/tests/room-api/RoomApiServer.test.ts:256:52)
+    at listOnTimeout (node:internal/timers:685:17)
+    at processTimers (node:internal/timers:618:7)
+
+stderr | tests/room-api/RoomApiServer.test.ts > RoomApiServer > listenVariable > with a canceled end event triggered on variable listener
+Error on variable listener: undefined
+
+stderr | tests/room-api/RoomApiServer.test.ts > RoomApiServer > saveVariable > with the api client repository returning an error
+Error on creating api client! Error: Invalid client
+    at /work/play/tests/room-api/RoomApiServer.test.ts:46:36
+    at new Promise (<anonymous>)
+    at Object.getClient (/work/play/tests/room-api/RoomApiServer.test.ts:44:28)
+    at /work/play/src/room-api/RoomApiServer.ts:101:22
+
+ ✓ tests/room-api/RoomApiServer.test.ts (13 tests) 895ms
+       ✓ should be listen updates  407ms
+stdout | src/front/Livekit/LivekitParticipant.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Livekit/LivekitParticipant.test.ts (9 tests) 25ms
+ ✓ src/front/WebRtc/VideoPresets.test.ts (20 tests) 17ms
+ ✓ tests/pusher/AnalyticsTimedEventTracker.test.ts (13 tests) 12ms
+ ✓ src/front/Rules/StatusRules/tests/status.test.ts (15 tests) 13ms
+stdout | tests/front/Phaser/Game/GameSceneMovement.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ tests/front/Phaser/Game/GameSceneMovement.test.ts (7 tests) 16ms
+ ✓ tests/front/WebRtc/BackgroundProcessor/MediaPipeTasksVisionWorkerTransformer.test.ts (10 tests) 43ms
+stdout | tests/front/WebRtc/SimplePeer.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ tests/front/WebRtc/SimplePeer.test.ts (4 tests) 332ms
+ ✓ tests/front/Administration/AnalyticsClient.test.ts (11 tests) 20ms
+stderr | src/front/Chat/Connection/Proximity/tests/ProximityChatRoomJoinEvents.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityChatRoomJoinEvents.test.ts (3 tests) 80ms
+ ✓ src/front/WebRtc/CpuLimitationDetector.test.ts (11 tests) 17ms
+stderr | src/front/Space/ScreenAnnotation/ScreenAnnotationManager.test.ts > ScreenAnnotationManager > drops the draft of a refused element
+Annotation refused Error: refused
+    at /work/play/src/front/Space/ScreenAnnotation/ScreenAnnotationManager.test.ts:256:80
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+ ✓ src/front/Space/ScreenAnnotation/ScreenAnnotationManager.test.ts (14 tests) 79ms
+stderr | src/front/Space/tests/SpaceFilter.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceFilter.test.ts (7 tests) 16ms
+stderr | tests/front/Utils/PathfindingManager.test.ts > PathfindingManager > Timeout and edge cases > should timeout when pathfinding takes too long
+Pathfinding max calculations reached, returning empty path
+
+stderr | tests/front/Utils/PathfindingManager.test.ts > PathfindingManager > Maximum calculation limit > should stop after maximum calculations and return empty path
+Pathfinding max calculations reached, returning empty path
+
+ ✓ tests/front/Utils/PathfindingManager.test.ts (9 tests) 1268ms
+       ✓ should timeout when pathfinding takes too long  585ms
+       ✓ should stop after maximum calculations and return empty path  571ms
+stderr | src/front/Stores/LoudEnvironmentWarningStore.test.ts > LoudEnvironmentDetectionController > reports initialization failure once and retries only for a new track session
+Failed to initialize loud environment detection Error: RNNoise failed
+    at /work/play/src/front/Stores/LoudEnvironmentWarningStore.test.ts:224:23
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64
+
+ ✓ src/front/Stores/LoudEnvironmentWarningStore.test.ts (6 tests) 140ms
+ ✓ tests/front/Phaser/Game/EntityAudioManager.test.ts (15 tests) 23ms
+ ✓ tests/front/WebRtc/WebRtcStatsFactory.test.ts (7 tests) 10ms
+stdout | src/front/Chat/Connection/Proximity/tests/ProximityChatReplyReactions.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityChatReplyReactions.test.ts (10 tests) 25ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixPollUtils.test.ts (7 tests) 16ms
+ ✓ tests/pusher/AnalyticsConnectionSession.test.ts (7 tests) 7ms
+Warning: A vi.mock("../../../src/pusher/enums/EnvironmentVariable") call in "/work/play/tests/room-api/authentication/AdminAuthenticator.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("axios-cache-interceptor") call in "/work/play/tests/room-api/authentication/AdminAuthenticator.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("axios") call in "/work/play/tests/room-api/authentication/AdminAuthenticator.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+stderr | tests/room-api/authentication/AdminAuthenticator.test.ts > AdminAuthenticator > a weird success status has been returned
+Invalid response from the API for endpoint /api/room-api/authorization: { status: 200, data: { success: false } }
+
+ ✓ tests/room-api/authentication/AdminAuthenticator.test.ts (6 tests) 9ms
+ ✓ tests/front/Phaser/BiggestFreeAreaOnScreen/01_CreateVerticesArrays.test.ts (20 tests) 7ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixMediaResolver.test.ts (6 tests) 10ms
+ ✓ tests/front/Administration/TimedAnalyticsEvent.test.ts (11 tests) 9ms
+ ✓ src/front/Components/Menu/DesktopApplicationSettings.test.ts (7 tests) 450ms
+ ✓ src/front/WebRtc/AudioQualityAnalytics.test.ts (10 tests) 19ms
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatRoom.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixChatRoom.test.ts
+Error while changing status TypeError: Cannot read properties of undefined (reading 'changeStatusTo')
+    at /work/play/src/front/Stores/MediaStore.ts:505:23
+    at Object.subscribe (/work/node_modules/svelte/src/store/shared/index.js:85:3)
+    at /work/play/src/front/Stores/MediaStore.ts:487:25
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at VitestModuleEvaluator._runInlinedModule (file:///work/node_modules/vitest/dist/module-evaluator.js:206:4)
+    at VitestModuleRunner.directRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1259:59)
+    at VitestModuleRunner.cachedRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1166:73)
+    at /work/play/src/front/Rules/StatusRules/statusChangerFunctions.ts:1:1
+    at VitestModuleEvaluator._runInlinedModule (file:///work/node_modules/vitest/dist/module-evaluator.js:206:4)
+    at VitestModuleRunner.directRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1259:59)
+
+stdout | src/front/Chat/Connection/Matrix/tests/MatrixChatRoom.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixChatRoom.test.ts (9 tests) 10ms
+ ✓ tests/pusher/LocalScriptController.test.ts (10 tests) 12ms
+ ✓ src/front/Stores/NoiseSuppressionController.test.ts (7 tests) 11ms
+ ✓ tests/front/Phaser/BiggestFreeAreaOnScreen/03_FindBiggestFreeArea.test.ts (13 tests) 5ms
+ ✓ tests/front/Stores/Utils/createDelayedUnsubscribeStore.test.ts (10 tests) 17ms
+stdout | tests/front/WebRtc/AudioContextManager.test.ts > AudioContextManager > keeps each context on the selected audio output until it is closed
+[AudioContextManager] Created new AudioContext with default sample rate
+[AudioContextManager] Created new AudioContext with sample rate 48000
+
+stdout | tests/front/WebRtc/AudioContextManager.test.ts > AudioContextManager > keeps each context on the selected audio output until it is closed
+[AudioContextManager] Closed AudioContext with key 0
+
+stdout | tests/front/WebRtc/AudioContextManager.test.ts > AudioContextManager > keeps each context on the selected audio output until it is closed
+[AudioContextManager] All AudioContexts closed
+
+stderr | tests/front/WebRtc/AudioContextManager.test.ts > AudioContextManager > recoverFromRenderErrors > cycles a context that says it runs while its clock is frozen, and gives up eventually
+[AudioContextManager] AudioContext did not recover from a render error
+
+ ✓ tests/front/WebRtc/AudioContextManager.test.ts (6 tests) 22ms
+ ✓ src/front/Stores/HeldMediaStore.test.ts (11 tests) 11ms
+stdout | src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Chat/Components/Room/RoomTimelineRowReuse.test.ts (1 test) 58ms
+ ✓ tests/front/WebRtc/VideoQualityAnalytics.test.ts (5 tests) 13ms
+ ✓ tests/front/WebRtc/VideoPlaybackWindow.test.ts (8 tests) 7ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixThreadUtils.test.ts (10 tests) 11ms
+ ✓ src/front/Components/ActionBar/MenuIcons/RecordingMenuUtils.test.ts (7 tests) 5ms
+ ✓ src/front/Stores/RaiseHandAvailabilityStore.test.ts (13 tests) 11ms
+ ✓ tests/front/Components/Calendar/agenda.test.ts (13 tests) 10ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixRoomPowerLevels.test.ts (4 tests) 6ms
+ ✓ src/front/Stores/MicrophoneSettings.test.ts (14 tests) 11ms
+ ✓ src/front/Chat/UserProvider/AdminUserProvider.test.ts (5 tests) 42ms
+ ✓ tests/front/WebRtc/AudioOutputManager.test.ts (7 tests) 16ms
+stderr | tests/pusher/AuthenticatedProviderController.test.ts > AuthenticatedProviderController > should fail if verifyJWTToken fails
+Connection refused for token: foo Error: failed to verify token
+    at JWTTokenManagerMock.<anonymous> (/work/play/tests/pusher/AuthenticatedProviderController.test.ts:150:19)
+    at JWTTokenManagerMock.verifyJWTToken (file:///work/node_modules/@vitest/spy/dist/index.js:332:34)
+    at AsyncFunction.<anonymous> (/work/play/src/pusher/controllers/AuthenticatedProviderController.ts:45:60)
+    at MockApp.simulateRequest (/work/play/tests/pusher/AuthenticatedProviderController.test.ts:28:32)
+    at /work/play/tests/pusher/AuthenticatedProviderController.test.ts:160:23
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+
+ ✓ tests/pusher/AuthenticatedProviderController.test.ts (4 tests) 12ms
+ ✓ tests/front/Stores/CoWebsiteStore.test.ts (6 tests) 11ms
+ ✓ src/pusher/services/FrontAssets.test.ts (6 tests) 100ms
+ ✓ tests/front/Phaser/Map/LayersIterator.test.ts (2 tests) 5ms
+ ✓ src/front/Stores/MicrophoneSignalDetectorStore.test.ts (3 tests) 13ms
+ ✓ tests/pusher/OpenIDClientRefresh.test.ts (7 tests) 14ms
+ ✓ tests/pusher/RecordingServiceThumbnails.test.ts (7 tests) 18ms
+ ✓ tests/front/Phaser/Game/GameLoop.test.ts (4 tests) 22ms
+stderr | tests/pusher/SocketManagerBan.test.ts > SocketManager.handleBanPlayerMessage > bans the account only when a back does not answer
+Could not find the IP of the banned user, banning their account only: Error: deadline exceeded
+
+ ✓ tests/pusher/SocketManagerBan.test.ts (9 tests) 11ms
+ ✓ src/front/Chat/Mentions.test.ts (8 tests) 42ms
+ ✓ tests/front/WebRtc/AdaptiveVideoEncoding.test.ts (8 tests) 75ms
+ ✓ tests/front/WebRtc/LocalEncoderStats.test.ts (18 tests) 8ms
+ ✓ src/front/Components/ActionBar/MenuIcons/InviteMenuItem.test.ts (4 tests) 65ms
+stderr | tests/front/Components/Video/AudioStream.svelte.test.ts > AudioStream > does not reset to the default output when a newer device choice took over
+Could not set the audio output device DOMException {}
+
+stderr | tests/front/Components/Video/AudioStream.svelte.test.ts > AudioStream > reports a device it could not switch to, once
+Could not set the audio output device, falling back to the default one DOMException {}
+
+ ✓ tests/front/Components/Video/AudioStream.svelte.test.ts (4 tests) 55ms
+ ✓ tests/pusher/PusherWebSocketBatch.test.ts (5 tests) 21ms
+ ✓ src/front/Stores/NoMicrophoneSoundWarningVisibleStore.test.ts (4 tests) 84ms
+ ✓ src/front/Stores/ToastStore.test.ts (7 tests) 9ms
+ ✓ src/front/WebRtc/CodecPerformance.test.ts (7 tests) 7ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityTimelineItemsStore.test.ts (3 tests) 5ms
+ ✓ tests/front/Stores/StableNSorter.test.ts (5 tests) 8ms
+ ✓ tests/pusher/AuthenticateControllerDesktop.test.ts (3 tests) 9ms
+stderr | src/front/Streaming/tests/BroadcastService.test.ts
+Error while changing status TypeError: Cannot read properties of undefined (reading 'changeStatusTo')
+    at /work/play/src/front/Stores/MediaStore.ts:505:23
+    at Object.subscribe (/work/node_modules/svelte/src/store/shared/index.js:85:3)
+    at /work/play/src/front/Stores/MediaStore.ts:487:25
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at VitestModuleEvaluator._runInlinedModule (file:///work/node_modules/vitest/dist/module-evaluator.js:206:4)
+    at VitestModuleRunner.directRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1259:59)
+    at VitestModuleRunner.cachedRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1166:73)
+    at /work/play/src/front/Rules/StatusRules/statusChangerFunctions.ts:1:1
+    at VitestModuleEvaluator._runInlinedModule (file:///work/node_modules/vitest/dist/module-evaluator.js:206:4)
+    at VitestModuleRunner.directRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1259:59)
+
+ ✓ src/front/Streaming/tests/BroadcastService.test.ts (4 tests) 9ms
+ ✓ tests/front/Stores/Utils/MapStore.test.ts (4 tests) 9ms
+ ✓ src/front/Chat/Components/Room/RoomTimelineRenderItems.test.ts (4 tests) 6ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityChatPoll.test.ts (5 tests) 9ms
+ ✓ tests/front/Api/Desktop/MiniWindowAgenda.test.ts (4 tests) 32ms
+ ✓ src/front/Chat/Components/Room/RoomTimelineNewMessages.test.ts (10 tests) 5ms
+ ✓ src/front/Api/Desktop/SvelteAnnotations.test.ts (6 tests) 9ms
+stderr | src/front/Space/tests/SpaceWatcherSocket.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+ ✓ src/front/Space/tests/SpaceWatcherSocket.test.ts (1 test) 7ms
+ ✓ src/front/Chat/Components/unreadCount.test.ts (14 tests) 18ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityChatQuestion.test.ts (4 tests) 10ms
+ ✓ tests/front/Components/ActionBar/MenuIcons/ParticipantMenuParticipants.test.ts (3 tests) 4ms
+ ✓ src/front/Components/Video/PictureInPicture/pictureInPictureGridLayout.test.ts (8 tests) 10ms
+ ✓ src/front/Components/Menu/GuestSubMenu.test.ts (3 tests) 195ms
+ ✓ src/front/Chat/Components/ChatMenu.test.ts (2 tests) 67ms
+ ✓ tests/front/Stores/SpeakerSelection.test.ts (3 tests) 117ms
+ ✓ tests/front/Administration/CowebsiteAnalyticsProperties.test.ts (6 tests) 8ms
+ ✓ src/front/Chat/Components/roomRowKeyboard.test.ts (4 tests) 66ms
+ ✓ tests/pusher/SocketManagerPlayGlobalMessage.test.ts (4 tests) 11ms
+stdout | tests/front/Connection/RoomConnection.test.ts > RoomConnection > does not leave an unhandled rejection when the socket is lost before the room is joined
+Socket has been closed null false CloseEvent { isTrusted: [Getter] }
+
+ ✓ tests/front/Connection/RoomConnection.test.ts (1 test) 10ms
+ ✓ tests/front/Phaser/Connection/LocalUser.test.ts (15 tests) 7ms
+stderr | src/front/Stores/AudioPlaybackStore.test.ts > AudioPlaybackStore > registers multiple retries and restores the empty state after removal
+Trace: Audio source unregister called
+    at /work/play/src/front/Stores/AudioPlaybackStore.ts:21:25
+    at /work/play/src/front/Stores/AudioPlaybackStore.test.ts:15:9
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+Trace: Audio source unregister called
+    at /work/play/src/front/Stores/AudioPlaybackStore.ts:21:25
+    at /work/play/src/front/Stores/AudioPlaybackStore.test.ts:16:9
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+Trace: Audio source unregister called
+    at /work/play/src/front/Stores/AudioPlaybackStore.ts:21:25
+    at /work/play/src/front/Stores/AudioPlaybackStore.test.ts:18:9
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+
+ ✓ src/front/Stores/AudioPlaybackStore.test.ts (7 tests) 65ms
+ ✓ src/front/Utils/svelte-floatingui-show.test.ts (6 tests) 12ms
+ ✓ src/front/Space/Utils/BindMuteEvents.test.ts (2 tests) 5ms
+ ✓ tests/front/Phaser/UserInput/MapPanShortcut.test.ts (2 tests) 17ms
+ ✓ tests/pusher/EnvironmentVariable.test.ts (16 tests) 72ms
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixRoomFolder.test.ts
+PostHog is configured but not initialized. Analytics will not be sent.
+
+stderr | src/front/Chat/Connection/Matrix/tests/MatrixRoomFolder.test.ts
+Error while changing status TypeError: Cannot read properties of undefined (reading 'changeStatusTo')
+    at /work/play/src/front/Stores/MediaStore.ts:505:23
+    at Object.subscribe (/work/node_modules/svelte/src/store/shared/index.js:85:3)
+    at /work/play/src/front/Stores/MediaStore.ts:487:25
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at VitestModuleEvaluator._runInlinedModule (file:///work/node_modules/vitest/dist/module-evaluator.js:206:4)
+    at VitestModuleRunner.directRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1259:59)
+    at VitestModuleRunner.cachedRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1166:73)
+    at /work/play/src/front/Rules/StatusRules/statusChangerFunctions.ts:1:1
+    at VitestModuleEvaluator._runInlinedModule (file:///work/node_modules/vitest/dist/module-evaluator.js:206:4)
+    at VitestModuleRunner.directRequest (file:///work/node_modules/vite/dist/node/module-runner.js:1259:59)
+
+stdout | src/front/Chat/Connection/Matrix/tests/MatrixRoomFolder.test.ts
+Wake lock is not supported by this browser.
+
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixRoomFolder.test.ts (1 test) 6ms
+stderr | tests/front/Phaser/Game/StartPositionCalculator.test.ts > computeStartPosition > keeps the forbidden start position when the map has no other one
+Every start position of this map is inside an area the user does not have access to.
+
+ ✓ tests/front/Phaser/Game/StartPositionCalculator.test.ts (3 tests) 15ms
+ ✓ tests/front/Phaser/UserInput/MapDragGesture.test.ts (7 tests) 4ms
+ ✓ tests/front/Administration/HeldIntervalTracker.test.ts (7 tests) 9ms
+ ✓ tests/pusher/AdminWebSocketBackpressureWriter.test.ts (4 tests) 7ms
+ ✓ tests/pusher/SocketManagerSpaceStateQuery.test.ts (2 tests) 8ms
+ ✓ tests/front/Components/TodoList/todo.test.ts (7 tests) 25ms
+ ✓ src/pusher/services/DesktopAuthService.test.ts (3 tests) 454ms
+     ✓ bounds the memory fallback by evicting the oldest codes  448ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixChatMessageAttachment.test.ts (3 tests) 111ms
+ ✓ tests/front/Phaser/Services/HdpiManager.test.ts (5 tests) 4ms
+ ✓ tests/front/Phaser/Game/PlayerMovement.test.ts (3 tests) 5ms
+ ✓ tests/front/Phaser/Map/TilemapGpuLayerEligibility.test.ts (9 tests) 10ms
+ ✓ tests/front/WebRtc/ProximitySpaceManager.test.ts (1 test) 56ms
+ ✓ src/front/Stores/RaisedHandsStore.test.ts (6 tests) 6ms
+ ✓ src/front/Stores/RaisedHandsAdminVisibleStore.test.ts (6 tests) 5ms
+ ✓ tests/front/Utils/StringUtils.test.ts (9 tests) 5ms
+ ✓ tests/front/ExternalModule/ExternalMeetingAnalytics.test.ts (3 tests) 6ms
+ ✓ tests/front/Phaser/Components/WalkDestinationMarker.test.ts (2 tests) 6ms
+ ✓ src/front/Stores/ShortcutsStore.test.ts (4 tests) 8ms
+ ✓ tests/front/Components/PwaInstallScreen.test.ts (4 tests) 84ms
+ ✓ tests/front/Stores/LocalStreamTypes.test.ts (3 tests) 4ms
+ ✓ src/pusher/controllers/DesktopCallbackUrl.test.ts (9 tests) 5ms
+ ✓ src/pusher/services/DesktopOidcTransactionService.test.ts (2 tests) 5ms
+ ✓ tests/pusher/AuthenticateControllerLoginHint.test.ts (2 tests) 13ms
+ ✓ src/front/Chat/Connection/ReadReceipts.test.ts (5 tests) 6ms
+stderr | tests/pusher/SocketManagerClientGauge.test.ts > SocketManager client join/leave events > emits a single leave when the join fails
+An error occurred on "join_room" event Error: back is down
+    at Object.write (/work/play/tests/pusher/SocketManagerClientGauge.test.ts:61:19)
+    at SocketManager.handleJoinRoom (/work/play/src/pusher/services/SocketManager.ts:480:26)
+    at joinRoom (/work/play/tests/pusher/SocketManagerClientGauge.test.ts:38:40)
+    at /work/play/tests/pusher/SocketManagerClientGauge.test.ts:63:15
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///work/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+
+ ✓ tests/pusher/SocketManagerClientGauge.test.ts (3 tests) 14ms
+ ✓ src/front/Chat/Links/tests/ChatLinkPolicy.test.ts (13 tests) 26ms
+stderr | tests/pusher/AuthenticateControllerMe.test.ts
+Failed to override admin account ratelimit: TypeError: Invalid URL
+    at new URL (node:internal/url:895:25)
+    at dispatchHttpRequest (file:///work/node_modules/axios/lib/adapters/http.js:648:22)
+    at file:///work/node_modules/axios/lib/adapters/http.js:451:5
+    at new Promise (<anonymous>)
+    at wrapAsync (file:///work/node_modules/axios/lib/adapters/http.js:431:10)
+    at http (file:///work/node_modules/axios/lib/adapters/http.js:519:12)
+    at Axios.dispatchRequest (file:///work/node_modules/axios/lib/core/dispatchRequest.js:48:10)
+    at Axios._request (file:///work/node_modules/axios/lib/core/Axios.js:218:33)
+    at Axios.request (file:///work/node_modules/axios/lib/core/Axios.js:41:25)
+    at Axios.httpMethod [as post] (file:///work/node_modules/axios/lib/core/Axios.js:257:19)
+    at Axios.request (file:///work/node_modules/axios/lib/core/Axios.js:46:41)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at MatrixProvider.loginToMatrix (/work/play/src/pusher/services/MatrixProvider.ts:193:26)
+    at MatrixProvider.getAccessToken (/work/play/src/pusher/services/MatrixProvider.ts:102:33)
+    at MatrixProvider.getAxios (/work/play/src/pusher/services/MatrixProvider.ts:47:29)
+    at MatrixProvider.overrideRateLimitForAdminAccount (/work/play/src/pusher/services/MatrixProvider.ts:382:31)
+    at MatrixProvider.overrideRateLimitForAdminAccountWithRetry (/work/play/src/pusher/services/MatrixProvider.ts:365:17) {
+  code: 'ERR_INVALID_URL',
+  input: 'undefined_matrix/client/r0/login'
+}
+
+ ✓ tests/pusher/AuthenticateControllerMe.test.ts (1 test) 20ms
+ ✓ tests/pusher/UpdateWAMSettingFrontCommand.test.ts (2 tests) 9ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixChatMessageReactions.test.ts (1 test) 6ms
+ ✓ src/front/Stores/PrivacyShutdownStore.test.ts (4 tests) 4ms
+ ✓ tests/front/Administration/CurrentMeeting.test.ts (3 tests) 6ms
+ ✓ src/front/Components/Video/VideoTags/NoVideoOutputDetector.test.ts (3 tests) 8ms
+ ✓ src/front/Chat/Components/Room/longPress.test.ts (6 tests) 8ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityPollState.test.ts (4 tests) 7ms
+ ✓ src/front/Components/Video/PictureInPicture/childWindow.test.ts (2 tests) 69ms
+ ✓ tests/pusher/SocketManagerGetOrCreateRoom.test.ts (2 tests) 4ms
+ ✓ tests/front/WebRtc/SelectedIceRoute.test.ts (3 tests) 5ms
+ ✓ tests/front/Phaser/UserInput/MapDragPointerCapture.test.ts (3 tests) 8ms
+ ✓ tests/front/Connection/WorkAdventureWebSocket.test.ts (2 tests) 14ms
+ ✓ src/front/Utils/InlineMimeType.test.ts (7 tests) 6ms
+ ✓ src/front/WebRtc/AudioStream/ScriptingInputAudioStreamManager.test.ts (1 test) 4ms
+ ✓ src/front/Chat/UserProviderMerger/UserProviderMerger.test.ts (1 test) 4ms
+ ✓ src/front/Chat/Connection/Matrix/tests/MatrixChatUser.test.ts (4 tests) 6ms
+ ✓ src/pusher/services/LivekitWebhookService.test.ts (3 tests) 9ms
+ ✓ tests/front/Utils/MapStorageUrl.test.ts (8 tests) 4ms
+ ✓ src/front/Chat/Components/RoomListLayout.test.ts (7 tests) 6ms
+ ✓ tests/front/Phaser/BiggestFreeAreaOnScreen/02_CreateOccupiedGrid.test.ts (3 tests) 4ms
+ ✓ tests/front/Phaser/Entity/Character.test.ts (3 tests) 6ms
+ ✓ tests/front/Components/Calendar/CalendarReminder.test.ts (5 tests) 4ms
+ ✓ tests/front/Chat/Connection/MatrixChatRoomMemberTyping.test.ts (3 tests) 5ms
+ ✓ src/front/Stores/BrowserNotificationStore.test.ts (4 tests) 6ms
+ ✓ src/front/Components/Video/ScreenAnnotationOverlay.test.ts (1 test) 44ms
+ ✓ tests/front/WebRtc/FpsVariabilityTracker.test.ts (4 tests) 5ms
+ ✓ src/common/DesktopVersionPolicy.test.ts (19 tests) 6ms
+ ✓ src/front/Stores/BiggestAvailableAreaStore.test.ts (3 tests) 15ms
+ ✓ tests/front/Utils/HtmlSanitizer.test.ts (3 tests) 36ms
+ ✓ src/front/Stores/ScreenSharingErrors.test.ts (4 tests) 5ms
+ ✓ tests/front/Stores/SidePanelStore.test.ts (3 tests) 7ms
+ ✓ tests/pusher/DesktopVersionPolicy.test.ts (11 tests) 22ms
+ ✓ tests/front/WebRtc/IceServersManager.test.ts (2 tests) 8ms
+ ✓ tests/pusher/EmbeddableHeaders.test.ts (7 tests) 6ms
+ ✓ tests/front/Components/MapDeletedPrompt.test.ts (2 tests) 83ms
+ ✓ src/front/Utils/trackFormFocus.test.ts (4 tests) 27ms
+ ✓ src/front/Stores/StreamableCollectionRules.test.ts (6 tests) 5ms
+ ✓ tests/front/Chat/Connection/ProximityTimelineItemsStore.test.ts (1 test) 8ms
+ ✓ src/front/Chat/MessageNotificationPolicy.test.ts (6 tests) 7ms
+ ✓ tests/front/WebRtc/BackgroundProcessor/ResegmentController.test.ts (4 tests) 5ms
+ ✓ tests/front/Phaser/BiggestFreeAreaOnScreen/findBiggestAvailableArea.test.ts (5 tests) 6ms
+ ✓ src/front/Chat/Components/Room/MessageInputChildDocument.test.ts (1 test) 53ms
+stderr | tests/front/Components/AudioStreamOutputDevice.test.ts > AudioStream output device > calls setSinkId() again for a device whose previous attempt failed
+Could not set the audio output device DOMException {}
+
+ ✓ tests/front/Components/AudioStreamOutputDevice.test.ts (1 test) 76ms
+ ✓ src/front/Chat/Components/unreadFolderRooms.test.ts (3 tests) 4ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityParticipantWokaMenu.test.ts (2 tests) 5ms
+ ✓ tests/front/Chat/ChatSidebarWidth.test.ts (10 tests) 7ms
+ ✓ src/front/Components/Video/annotationRender.test.ts (2 tests) 5ms
+ ✓ tests/front/Utils/isKeyFromInteractiveElement.test.ts (3 tests) 22ms
+ ✓ src/front/Chat/ChatInteractionContext.test.ts (2 tests) 5ms
+Warning: A vi.mock("../../../src/pusher/enums/EnvironmentVariable") call in "/work/play/tests/room-api/authentication/LocalAuthenticator.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+ ✓ tests/room-api/authentication/LocalAuthenticator.test.ts (3 tests) 7ms
+stderr | src/front/Chat/Connection/Proximity/tests/ProximityFileStorage.test.ts > ProximityFileStorage > should fall back to an in-memory sink when the storage worker fails to load
+Proximity file storage unavailable, received files will stay in memory Error: Proximity file storage worker failed: Security Error
+    at default.worker.onerror (/work/play/src/front/Chat/Connection/Proximity/ProximityFileStorage.ts:155:31)
+    at Timeout._onTimeout (/work/play/src/front/Chat/Connection/Proximity/tests/ProximityFileStorage.test.ts:11:35)
+    at listOnTimeout (node:internal/timers:685:17)
+    at processTimers (node:internal/timers:618:7)
+
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityFileStorage.test.ts (2 tests) 10ms
+ ✓ src/front/Api/Iframe/Spaces/Space.test.ts (1 test) 7ms
+ ✓ src/front/Chat/Components/showMoreUnread.test.ts (6 tests) 7ms
+ ✓ src/front/Space/tests/SpaceStateSharing.test.ts (3 tests) 5ms
+ ✓ tests/front/Utils/PathValidation.test.ts (4 tests) 5ms
+ ✓ src/front/Chat/Components/Room/reactionTooltipText.test.ts (4 tests) 21ms
+ ✓ tests/front/WebRtc/BackgroundProcessor/MediaPipeTasksVisionWorkerProtocol.test.ts (3 tests) 17ms
+ ✓ src/front/Chat/Components/Room/conversationSubtitle.test.ts (5 tests) 6ms
+ ✓ src/front/Chat/Stores/SelectedThreadStore.test.ts (2 tests) 4ms
+Warning: A vi.mock("../../../src/pusher/enums/EnvironmentVariable") call in "/work/play/tests/room-api/guards/AuthenticationGuard.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+Warning: A vi.mock("../../../src/room-api/authentication/AdminAuthenticator") call in "/work/play/tests/room-api/guards/AuthenticationGuard.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+ ✓ tests/room-api/guards/AuthenticationGuard.test.ts (2 tests) 5ms
+ ✓ src/front/Chat/Components/Room/roomPermissionPresets.test.ts (2 tests) 6ms
+ ✓ src/front/Chat/Components/typingIndicator.test.ts (5 tests) 18ms
+ ✓ tests/front/WebRtc/AudioSdp.test.ts (3 tests) 6ms
+ ✓ src/front/Components/Video/ScreenAnnotationToolbar.test.ts (1 test) 56ms
+ ✓ src/front/Stores/RaiseHandStore.test.ts (5 tests) 6ms
+ ✓ src/pusher/middlewares/AssetsProxy.test.ts (1 test) 32ms
+ ✓ src/front/WebRtc/NoiseSuppression/BackgroundNoiseRule.test.ts (3 tests) 5ms
+ ✓ tests/front/Chat/Components/Room/MessageInputBarDisabling.test.ts (3 tests) 12ms
+ ✓ src/front/Chat/Components/Room/optionsPlacement.test.ts (5 tests) 5ms
+ ✓ tests/pusher/AdminApiBan.test.ts (3 tests) 9ms
+ ✓ tests/front/Notification/DesktopNotification.test.ts (2 tests) 9ms
+ ✓ tests/pusher/SocketManagerSetPlayerDetails.test.ts (1 test) 5ms
+ ✓ src/front/Phaser/Game/CameraZoomUtils.test.ts (4 tests) 5ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityQAState.test.ts (2 tests) 8ms
+ ✓ tests/front/Utils/TabFreezing.test.ts (2 tests) 58ms
+ ✓ tests/front/Chat/Connection/TypingExpiry.test.ts (3 tests) 9ms
+ ✓ tests/front/WebRtc/JitsiCoWebsite.test.ts (4 tests) 8ms
+ ✓ tests/front/Stores/Utils/ConcatenateMapStore.test.ts (1 test) 5ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityFileTransferProtocol.test.ts (3 tests) 9ms
+ ✓ tests/front/WebRtc/BackgroundProcessor/WebGlBlurPipeline.test.ts (2 tests) 4ms
+ ✓ tests/front/Components/RangeSlider.test.ts (2 tests) 42ms
+ ✓ src/front/Chat/Connection/ChatConnection.test.ts (2 tests) 4ms
+ ✓ tests/front/Rules/MeetingRules.test.ts (1 test) 3ms
+ ✓ tests/pusher/AdminApiMapDetails.test.ts (1 test) 8ms
+ ✓ tests/front/Chat/Connection/ChatConnection.test.ts (2 tests) 4ms
+ ✓ src/front/Chat/Components/sortByLastMessage.test.ts (2 tests) 5ms
+ ✓ tests/front/Stores/ErrorScreenStoreImage.test.ts (1 test) 108ms
+ ✓ src/front/Components/Video/PictureInPicture/PictureInPictureAvailabilityPolicy.test.ts (4 tests) 4ms
+ ✓ src/front/Stores/ToastSources.test.ts (1 test) 5ms
+ ✓ src/front/Space/tests/VideoBoxPriorities.test.ts (4 tests) 4ms
+ ✓ tests/pusher/PusherRoom.test.ts (1 test) 2ms
+ ✓ tests/front/Utils/UrlPlaceholderResolver.test.ts (4 tests) 4ms
+ ✓ tests/front/Chat/ApplicationManager.test.ts (1 test) 4ms
+ ✓ src/front/Components/Video/PictureInPicture/PictureInPictureHighlightPolicy.test.ts (4 tests) 3ms
+ ✓ src/front/Chat/Components/Room/creationErrorMessage.test.ts (3 tests) 5ms
+ ✓ tests/front/Stores/VisibilityStore.test.ts (1 test) 13ms
+ ✓ tests/front/Stores/Utils/ForwardableStore.test.ts (1 test) 5ms
+ ✓ tests/front/Stores/Utils/NestedStore.test.ts (1 test) 4ms
+ ✓ tests/front/Connection/LocalUserStorePrivacy.test.ts (2 tests) 4ms
+ ✓ tests/front/Stores/Utils/waitForStoreValue.test.ts (2 tests) 4ms
+ ✓ src/front/Chat/decodeHtmlEntities.test.ts (3 tests) 3ms
+ ✓ src/front/Stores/ScreenSharingCapturePolicy.test.ts (3 tests) 3ms
+ ✓ tests/front/Stores/Utils/ConcatenateStore.test.ts (1 test) 4ms
+ ✓ tests/front/Stores/ErrorScreenStore.test.ts (1 test) 6ms
+ ✓ tests/front/Phaser/Game/HtmlUtils.test.ts (3 tests) 15ms
+ ✓ src/front/Utils/BreakpointsUtils.test.ts (2 tests) 3ms
+ ✓ src/front/Components/ProximityNotification/NotificationRoomFocus.test.ts (1 test) 4ms
+ ✓ src/front/Chat/Components/Room/messageInputText.test.ts (2 tests) 3ms
+ ✓ src/front/Components/Video/DesktopCapturerSourcePickerPolicy.test.ts (3 tests) 3ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityNotificationControl.test.ts (1 test) 5ms
+ ✓ src/front/Chat/Components/Room/RoomTimelineHeaderLayout.test.ts (2 tests) 4ms
+ ✓ tests/pusher/ArrayHelper.test.ts (3 tests) 3ms
+ ✓ src/front/Stores/AudioInterruptedStore.test.ts (1 test) 3ms
+ ✓ src/front/Chat/Connection/Proximity/tests/ProximityCreationPermissions.test.ts (2 tests) 3ms
+ ✓ tests/pusher/ClientIp.test.ts (2 tests) 3ms
+
+ Test Files  259 passed (259)
+      Tests  1683 passed | 10 skipped (1693)
+   Start at  16:20:52
+   Duration  407.95s (transform 59.78s, setup 2.12s, import 174.63s, tests 13.40s, environment 169.02s)
+
+EXIT 0
+
+########## section tree-matches-head (Mac and ci): sha256 of the 21 touched files in git archive 5deb37fd5 (Mac) and in src-review (ci) before any run
+identical (21 files)
+21d9c104f55462e242efa2d152f4c62ca4a92a861dbc6a13d2d0d71327a5a2c1  play/src/front/Stores/MediaStore.ts
+7a03f49a52d14c1553bb4117cd5f2c2343212655e76b84cf0f06dd8a5931dcec  play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+e3b8f13b860035f2c43f3a1e5a473b5d68e5cbfcdca75456bdfd8abaeb080011  play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+20927dfba22d696415d8e5565a954d0c217217c1f4e3a5e13b8ad305b1bd420e  play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+69de9cd8c07ed907dbb6137d0ca6d691c1cbc0cd797f01f6920f70dc675101bb  play/src/i18n/ar-SA/camera.ts
+5b74119ec8f638b01384653de8b09170ed19e30142f441f4277e69163215fde7  play/src/i18n/ca-ES/camera.ts
+a2df9c6b17445d8d40e64fc71c1bfe201ed8928666b94e25f742de2908edb357  play/src/i18n/de-DE/camera.ts
+3bf308c03cd14046dcff845a1f9ec53694b358d53bfcacb7f20c08fc16031004  play/src/i18n/dsb-DE/camera.ts
+bd122c1a77cce2d0d8f6205bb200e24da1225f0e65e6e3b3689ae7e29f2895a5  play/src/i18n/en-US/camera.ts
+2623bd1e8ce08ee093b48f601eef2b6a33035ce7b23c28f0e6fe172c652560ee  play/src/i18n/es-ES/camera.ts
+0a4f178e6f9d86d5bb5054440b1252eb756f6a4a89f4f7886f37fccc13456328  play/src/i18n/fr-FR/camera.ts
+e0dac11bd1985a8243827f1df983d1e8ab546665c60e15884b4d2f054f4214fa  play/src/i18n/hsb-DE/camera.ts
+d17a8b4766caafd73ad2f300699e10d55099434445c342862b6a8308f3707945  play/src/i18n/it-IT/camera.ts
+110b092354c49b16c2e05cd8c9c4a611acc6f4881bd3d689ecb9fa569c80596c  play/src/i18n/ja-JP/camera.ts
+40a22b4655f9bead0ddad7a6a88aad396fd8f96eb97ac8e6f12da972a27d2226  play/src/i18n/ko-KR/camera.ts
+e0995dbb1547d82231103a6fbbb2fb98a45aab103c77f599fea2234ed6075770  play/src/i18n/nl-NL/camera.ts
+cdbe5c29e52e271eaa1488bd3fe8db4c328ae576fe43e5ee2d6a742e41539169  play/src/i18n/pt-BR/camera.ts
+1f1254b154c36b5b262e4a94c6e56223892597cfb4e8fa0b16ef1a059b7380b6  play/src/i18n/th-TH/camera.ts
+78875f7875f75f3964b904270edddec9c4e4421b1f9bad72eb36cadaebd89738  play/src/i18n/vi-VN/camera.ts
+3dcf6b73fe7d42427add6ca2863de7981bb31331fbce40449f6a9f139ce518f5  play/src/i18n/zh-CN/camera.ts
+8bb5e6a0d54d2ea4f374f16c1346777b7971626292a9f2b5e35d8c1187f0e952  play/src/i18n/zh-TW/camera.ts
+
+########## section gen-diff (ci): i18n-types.ts regenerated for stage 1 against the tree's copy; the other generated files were byte-identical (cmp)
+236a237,244
+> 				/**
+> 				 * C​a​m​e​r​a​ ​i​n​ ​u​s​e
+> 				 */
+> 				deviceInUseTitle: string
+> 				/**
+> 				 * Y​o​u​r​ ​c​a​m​e​r​a​ ​i​s​ ​b​e​i​n​g​ ​u​s​e​d​ ​b​y​ ​a​n​o​t​h​e​r​ ​a​p​p​l​i​c​a​t​i​o​n​.​ ​C​l​o​s​e​ ​t​h​a​t​ ​a​p​p​l​i​c​a​t​i​o​n​,​ ​t​h​e​n​ ​t​r​y​ ​a​g​a​i​n​.
+> 				 */
+> 				deviceInUseDesc: string
+276a285,292
+> 				/**
+> 				 * M​i​c​r​o​p​h​o​n​e​ ​i​n​ ​u​s​e
+> 				 */
+> 				deviceInUseTitle: string
+> 				/**
+> 				 * Y​o​u​r​ ​m​i​c​r​o​p​h​o​n​e​ ​i​s​ ​b​e​i​n​g​ ​u​s​e​d​ ​b​y​ ​a​n​o​t​h​e​r​ ​a​p​p​l​i​c​a​t​i​o​n​.​ ​C​l​o​s​e​ ​t​h​a​t​ ​a​p​p​l​i​c​a​t​i​o​n​,​ ​t​h​e​n​ ​t​r​y​ ​a​g​a​i​n​.
+> 				 */
+> 				deviceInUseDesc: string
+9575a9592,9599
+> 				/**
+> 				 * Camera in use
+> 				 */
+> 				deviceInUseTitle: () => LocalizedString
+> 				/**
+> 				 * Your camera is being used by another application. Close that application, then try again.
+> 				 */
+> 				deviceInUseDesc: () => LocalizedString
+9615a9640,9647
+> 				/**
+> 				 * Microphone in use
+> 				 */
+> 				deviceInUseTitle: () => LocalizedString
+> 				/**
+> 				 * Your microphone is being used by another application. Close that application, then try again.
+> 				 */
+> 				deviceInUseDesc: () => LocalizedString
+diff exit 1
+
+########## section apply-check (Mac): fresh git archive 5deb37fd5
+$ git apply --check 01-md09-device-in-use.patch
+exit 0
+$ git apply 01-md09-device-in-use.patch
+exit 0
+cmp: 21 of 21 files equal stage 1
+
+########## section sha256 (Mac): deliverables
+d82df040aebb72fe0249c54247ccca8b02715bc44dbdf22424a8d005cc4a5147  01-md09-device-in-use.patch
+e0822d4ab18ded0372dd23903331752f3f7801fce9199f283e7ec379a22a2fb4  mutants.diff
+579720fe67742c9decb9b5a6575a359ef649107c0e00ada626d1799c7028b4a7  add_i18n.py
+52d348d76e3283970ad0b8c66097ff954a81e2fb038f69c9e1b3fd98fa4643e3  make_mutants.py
+d32b67df8858bd477775ab12213334024ab8bf5dc4d43b25924ba1285424a39d  run.sh
+
+########## section stage-hashes (Mac): stage 1 files in the scratch repo
+f7b3e9602e452205961873c0a6cc540e6f21d200ecedc7b009c80e3ef9ca9efc  play/src/front/Components/ActionBar/MenuIcons/CameraMenuItem.svelte
+06c7a9a634bf42dad5ba113ec245007b013ecb3fcc3174edda0869d1f051cadb  play/src/front/Components/ActionBar/MenuIcons/MicrophoneMenuItem.svelte
+e9a5a9294cade141869b84941c08731c546df5a5dec515c058e1133274da5a46  play/src/front/Stores/MediaStore.ts
+83d0458912c245c7bea0a008e8e97b9849deadae41686c77cc446d9927fd47b8  play/src/i18n/ar-SA/camera.ts
+eb5c3fe2743222b5f740fb3c0e205c11941694d52205c52778ac644cffba8512  play/src/i18n/ca-ES/camera.ts
+7df1f188862ad4aedddaee1be14597e9d0307d8b223fab6aabe5240dd317e9a9  play/src/i18n/de-DE/camera.ts
+bbc81019a8874c8fd0c977c59261a093f85fcdc77f08e9310ca052919459e963  play/src/i18n/dsb-DE/camera.ts
+a9cbd4e2a7a1afdfa0cd8228498dea8701d073e86f23fac965e7317d96a6dc7e  play/src/i18n/en-US/camera.ts
+65e019445c7ca84d89135c16a7704cec6993db96edc5ee8f178e3b78eb03a26c  play/src/i18n/es-ES/camera.ts
+604f38e95d4286365541031d3d2dc46aec62dcd6a57cfc6b58d7d55bf04e8e49  play/src/i18n/fr-FR/camera.ts
+8f0e71a79108f13cf12f8429ec5bda54be243cbd34e386d18577482e30fdd263  play/src/i18n/hsb-DE/camera.ts
+3108a87af07268888584d596e1c885016491042fd60a6f543c6b26ba7e5ec1c1  play/src/i18n/it-IT/camera.ts
+e94017246c3b7ff0dfb789f50ad418b48d1022e68ab963620eba3dae450fc1de  play/src/i18n/ja-JP/camera.ts
+41b810e5d5df55f1015bdac2719176dc3241831d89d01281bc5f0677594be7ff  play/src/i18n/ko-KR/camera.ts
+ba95b0b308ee0a63b2c9751da044fbf7cdc16278e1b45de44f4e322291becfea  play/src/i18n/nl-NL/camera.ts
+cceab38127c20f868fd582b2a838ddf6c0da0a1f3dc0d968c0dd6ff12018da7c  play/src/i18n/pt-BR/camera.ts
+b5a55102df8b4069c7b61e2d22008ec046fdb308f8d8b704d96316ac234d586e  play/src/i18n/th-TH/camera.ts
+9d17ba012c7375c57317d2e124737e3ef3d6002b9be9d154c8e4071112b44b75  play/src/i18n/vi-VN/camera.ts
+27b79573e698372dd73160d88f5dc67dc3906480ae4f0725350c05c0d09c6748  play/src/i18n/zh-CN/camera.ts
+752e417011bce11f059ebc85235cea7dd3bc68f5391b0ba61c8063ed3705630c  play/src/i18n/zh-TW/camera.ts
+9d59ed8ec4d164d37e9890edf1d29372a7d0368535902ad3950e17ccacaad378  play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+
+########## section apply-check-checkout (Mac, 16:28 UTC): the checkout at HEAD c007401b5 with its working tree
+$ git log --oneline 5deb37fd5..HEAD
+c007401b5 docs: add the technical-debt plan, debt ledger and safety-net map
+$ git diff --name-only 5deb37fd5 HEAD -- <the patch's paths>  (empty = untouched)
+$ git diff --name-only -- <the patch's paths>  (working tree; empty = untouched)
+$ git apply --check docs/audits/tech-debt/fix-md09/01-md09-device-in-use.patch
+exit 0

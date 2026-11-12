@@ -1,0 +1,91 @@
+container wa-fable-ovw6-15-s6-i-pin-on-j
+cccbc2abd9451ce6667135ac65c1ff79f8dbef15e68a8e118ce1b975ab082c33  src/MapsManager.ts
+7414e0595e24928c76a67e47f624b8ed97ae859ffbd4dfe701b80f8358cc8297  src/Upload/UploadController.ts
+1be0b55c07fe4b2881328a5749852d27e6941432daa47665fdbf22a5be6650c2  src/tests/MapStorageServer.test.ts
+f3479aa5818761abd78e4222150ca19907cff2a278ad5e80d2dc53cddc0e5d03  src/tests/MapsManagerAutosave.test.ts
+4a5f1040483beff0f809550bf877c731a94ad20891f5600e8985013bf7cbfdec  src/tests/UploadController.test.ts
+3a52822d686b31ebff133beb15c384c7206cd1be9d8dbc5bf0e0ef92cd567a0c  ../libs/map-editor/src/GameMap/MapValidator.ts
+
+ RUN  v4.1.7 /w/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist the edited map and release it from memory 11ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a map edited once a single time 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a continuously edited map once per autosave interval 3ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist a change made by a command that only went through the command queue 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should persist the edit once storage recovers, without waiting for another edit 3ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should keep the unsaved edit in memory after its command history expired 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should report the failure, then give up and release the map past the retry horizon 13ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should measure the retry horizon from the newest edit, not the first one 11ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should log a failing save on its first attempt and then periodically, not on every attempt 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should still retry and report the handler error when logging the failure throws 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should stop retrying once the map was replaced or deleted 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should never run two writes of the same map at once 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when the first write is the last to finish 33ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should count a write that never settles as failed and retry it 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when a write past its timeout lands after its retry 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should persist that newer edit with a follow-up write 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should not retry the abandoned state after the map was replaced by an upload 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when the write in flight lands after the delete 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the uploaded map when the write in flight lands after the upload 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when a write past its timeout lands after the delete 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should reject the delete and leave storage unchanged when the write in flight settles after the wait 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep and save the edit made after the write in flight began when the delete is rejected 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should load the map only once its replacement finished 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should give every load that waited for the replacement the same map 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should not keep a map whose read was in flight when its replacement started 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when an edit arrives while the delete waits 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when an edit made while the delete waits starts its own write 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when two replacements of a map overlap > should run the later replacement only once the earlier one finished 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when two replacements of a map overlap > should reject the later replacement when the earlier one does not finish in time 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when two replacements of a map overlap > should count the wait for the earlier replacement and for the writes in flight against one deadline 1ms
+ ✓ src/tests/UploadController.test.ts > UploadController > DELETE of a map whose autosave write is in flight > should answer 503 and leave storage unchanged when the write does not settle in time 33ms
+ ✓ src/tests/UploadController.test.ts > UploadController > DELETE of a map whose autosave write is in flight > should delete the map once the write landed, and keep it deleted 10ms
+ ✓ src/tests/UploadController.test.ts > UploadController > zip upload > should answer 503 and write nothing when a map of the zip has a write in flight 79ms
+ ✓ src/tests/UploadController.test.ts > UploadController > zip upload > should answer 503 and write nothing when a map the zip deletes has a write in flight 79ms
+ ✓ src/tests/UploadController.test.ts > UploadController > zip upload > should keep a map the zip deleted deleted when it had an unsaved edit 13ms
+ × src/tests/UploadController.test.ts > UploadController > POST /move of a map > should not recreate the moved map at its old path when it had an unsaved edit 18ms
+   → expected '{"version":"2.1.0","mapUrl":"http://p…' to be '{"version":"1.0.0","mapUrl":"http://p…' // Object.is equality
+ × src/tests/UploadController.test.ts > UploadController > POST /move of a map > (known defect) should lose an edit made while the write of an earlier edit was in flight 7ms
+   → expected 'edited by cmd-2' to be 'edited by cmd-1' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/UploadController.test.ts > UploadController > POST /move of a map > should not recreate the moved map at its old path when it had an unsaved edit
+AssertionError: expected '{"version":"2.1.0","mapUrl":"http://p…' to be '{"version":"1.0.0","mapUrl":"http://p…' // Object.is equality
+
+Expected: "{"version":"1.0.0","mapUrl":"http://play.test/a.tmj","entities":{},"areas":[],"entityCollections":[]}"
+Received: "{"version":"2.1.0","mapUrl":"http://play.test/a.tmj","entities":{},"areas":[],"entityCollections":[],"metadata":{"name":"edited by cmd-1"},"lastCommandId":"cmd-1"}"
+
+ ❯ src/tests/UploadController.test.ts:366:55
+    364|
+    365|             expect(response.status).toBe(200);
+    366|             expect(storage.files.get(keyOf("b.wam"))).toBe(wam("a"));
+       |                                                       ^
+    367|             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+    368|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/tests/UploadController.test.ts > UploadController > POST /move of a map > (known defect) should lose an edit made while the write of an earlier edit was in flight
+AssertionError: expected 'edited by cmd-2' to be 'edited by cmd-1' // Object.is equality
+
+Expected: "edited by cmd-1"
+Received: "edited by cmd-2"
+
+ ❯ src/tests/UploadController.test.ts:390:41
+    388|
+    389|             expect(response.status).toBe(200);
+    390|             expect(storedName("b.wam")).toBe("edited by cmd-1");
+       |                                         ^
+    391|             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+    392|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 35 passed (37)
+   Start at  03:58:59
+   Duration  6.34s (transform 3.45s, setup 0ms, import 5.53s, tests 360ms, environment 0ms)
+
+EXIT=1

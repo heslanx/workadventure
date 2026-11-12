@@ -1,0 +1,187 @@
+## cmd: npm view phaser version dist-tags types; zod; @anatine/zod-openapi version peerDependencies; @types/node; npm view <pkg> version deprecated peerDependencies types --json (9 packages). Run 2026-11-12 ~00:20 UTC on the Mac host.
+=== phaser
+[
+  {
+    "name": "phaser",
+    "version": "4.2.1",
+    "dist-tags": {
+      "phaser@3.0.0-alpha.2": "3.0.0-alpha.2",
+      "alpha": "4.0.0-alpha.4",
+      "beta": "4.0.0-rc.7",
+      "latest": "4.2.1"
+    },
+    "types": "./types/phaser.d.ts"
+  }
+]
+exit=0
+=== zod
+[
+  {
+    "name": "zod",
+    "version": "4.6.7",
+    "dist-tags": {
+      "next": "3.25.0-beta.20250519T094321",
+      "alpha": "3.25.68-alpha.11",
+      "beta": "4.1.13-beta.0",
+      "canary": "4.5.0-canary.20260828T171753",
+      "latest": "4.6.7"
+    },
+    "types": "./index.d.cts"
+  }
+]
+exit=0
+=== @anatine/zod-openapi
+[
+  {
+    "name": "@anatine/zod-openapi",
+    "version": "2.2.8",
+    "dist-tags": {
+      "latest": "2.2.8"
+    },
+    "peerDependencies": {
+      "openapi3-ts": "^4.1.2",
+      "zod": "^3.20.0"
+    },
+    "types": "src/index.d.ts"
+  }
+]
+exit=0
+=== @types/node
+[
+  {
+    "name": "@types/node",
+    "version": "26.6.6",
+    "dist-tags": {
+      "old-version": "24.19.2",
+      "latest": "26.6.6"
+    },
+    "peerDependencies": {},
+    "types": "index.d.ts"
+  }
+]
+exit=0
+=== @types/adm-zip
+[
+  {
+    "name": "@types/adm-zip",
+    "version": "0.6.0",
+    "dist-tags": {
+      "latest": "0.6.0",
+    },
+    "deprecated": "This is a stub types definition. adm-zip provides its own type definitions, so you do not need this installed."
+  }
+]
+exit=0
+=== @types/http-status-codes
+[
+  {
+    "name": "@types/http-status-codes",
+    "version": "1.2.0",
+    "dist-tags": {
+      "latest": "1.2.0",
+    },
+    "deprecated": "This is a stub types definition for http-status-codes (https://github.com/prettymuchbryce/node-http-status). http-status-codes provides its own type definitions, so you don\\'t need @types/http-status-codes installed!",
+    "typings": null
+  }
+]
+exit=0
+=== @types/mime
+[
+  {
+    "name": "@types/mime",
+    "version": "4.0.0",
+    "dist-tags": {
+      "latest": "4.0.0",
+    },
+    "deprecated": "This is a stub types definition. mime provides its own type definitions, so you do not need this installed."
+  }
+]
+exit=0
+=== @types/mkdirp
+[
+  {
+    "name": "@types/mkdirp",
+    "version": "2.0.0",
+    "dist-tags": {
+      "latest": "2.0.0",
+    },
+    "deprecated": "This is a stub types definition. mkdirp provides its own type definitions, so you do not need this installed."
+  }
+]
+exit=0
+=== @types/uuid
+[
+  {
+    "name": "@types/uuid",
+    "version": "11.0.0",
+    "dist-tags": {
+      "latest": "11.0.0",
+    },
+    "deprecated": "This is a stub types definition. uuid provides its own type definitions, so you do not need this installed."
+  }
+]
+exit=0
+=== axios-retry
+[
+  {
+    "name": "axios-retry",
+    "version": "4.5.0",
+    "dist-tags": {
+      "latest": "4.5.0"
+    },
+    "peerDependencies": {
+      "axios": "0.x || 1.x"
+    },
+    "deprecated": "axios-retry is no longer maintained. See https://github.com/softonic/axios-retry for alternatives.",
+    "types": "dist/cjs/index.d.ts"
+  }
+]
+exit=0
+=== dtslint
+[
+  {
+    "name": "dtslint",
+    "version": "4.2.1",
+    "dist-tags": {
+      "latest": "4.2.1"
+    },
+    "peerDependencies": {
+      "typescript": ">= 3.0.0-dev || >= 3.1.0-dev || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.7.0-dev || >= 3.8.0-dev || >= 3.9.0-dev || >= 4.0.0-dev"
+    },
+    "deprecated": "See https://aka.ms/type-testing-tools",
+    "engines": {
+      "node": ">=10.0.0"
+    }
+  }
+]
+exit=0
+=== prom-client
+[
+  {
+    "name": "prom-client",
+    "version": "15.1.3",
+    "dist-tags": {
+      "next": "15.0.0-1",
+      "latest": "15.1.3"
+    },
+    "deprecated": "prom-client has been replaced by @prometheus-io/client",
+    "engines": {
+      "node": "^16 || ^18 || >=20"
+    },
+    "types": "./index.d.ts"
+  }
+]
+exit=0
+=== uuidv4
+[
+  {
+    "name": "uuidv4",
+    "version": "6.2.13",
+    "dist-tags": {
+      "latest": "6.2.13"
+    },
+    "deprecated": "Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.",
+    "types": "build/lib/uuidv4.d.ts"
+  }
+]
+exit=0

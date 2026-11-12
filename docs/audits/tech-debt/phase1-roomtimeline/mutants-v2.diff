@@ -1,0 +1,42 @@
+--- a/RoomTimeline.svelte
++++ b/RoomTimeline.svelte
+@@ -703,8 +703,7 @@
+ 
+         const pending = room
+             .loadMorePreviousMessages()
+-            .then(() => tick())
+-            .then(() => restoreScrollAnchor());
++            .then(() => tick());
+ 
+         loadingMessagePromise = pending;
+         pending
+--- a/RoomTimeline.svelte
++++ b/RoomTimeline.svelte
+@@ -545,7 +545,6 @@
+         }
+         // Older messages were prepended: hold position, never fall through to a bottom scroll.
+         if (scrollAnchor !== undefined) {
+-            restoreScrollAnchor();
+             return;
+         }
+         // untrack: scrollToMessageListBottom writes autoScroll, reading it reactively would re-enter.
+--- a/RoomTimeline.svelte
++++ b/RoomTimeline.svelte
+@@ -545,7 +545,6 @@
+         }
+         // Older messages were prepended: hold position, never fall through to a bottom scroll.
+         if (scrollAnchor !== undefined) {
+-            restoreScrollAnchor();
+             return;
+         }
+         // untrack: scrollToMessageListBottom writes autoScroll, reading it reactively would re-enter.
+@@ -703,8 +702,7 @@
+ 
+         const pending = room
+             .loadMorePreviousMessages()
+-            .then(() => tick())
+-            .then(() => restoreScrollAnchor());
++            .then(() => tick());
+ 
+         loadingMessagePromise = pending;
+         pending

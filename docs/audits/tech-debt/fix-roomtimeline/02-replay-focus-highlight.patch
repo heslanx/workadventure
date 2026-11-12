@@ -1,0 +1,59 @@
+diff --git a/play/src/front/Chat/Components/Room/RoomTimeline.svelte b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+index 39a5bdc..5eb0dee 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+@@ -684,8 +684,19 @@
+         releaseScrollAnchor();
+         beginProgrammaticScroll("resync");
+         target.scrollIntoView({ block: "center", behavior: "smooth" });
+-        target.classList.remove("highlight-message");
+-        target.classList.add("highlight-message");
++        highlightRow(target);
++    }
++
++    /** The pulse plays when the class is added, so the class goes when it ends and the next focus plays it again. */
++    function highlightRow(row: HTMLLIElement) {
++        const endHighlight = (event: AnimationEvent) => {
++            // An animation inside the message bubbles up here too; only the row's own is the pulse.
++            if (event.target !== row) return;
++            row.classList.remove("highlight-message");
++            row.removeEventListener("animationend", endHighlight);
++        };
++        row.addEventListener("animationend", endHighlight);
++        row.classList.add("highlight-message");
+     }
+ </script>
+ 
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+index b7c9c8d..e1f3dd2 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
++++ b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+@@ -627,4 +627,28 @@ describe("RoomTimeline characterization", () => {
+         expect(room.ensureTimelineEventVisible).toHaveBeenCalledWith("older");
+         expect(scrolledIntoView).toEqual(["m1", "older"]);
+     });
++
++    it("RT-09 (fixed): ends the highlight when its pulse ends, so focusing the same message again plays it again", async () => {
++        const { room } = fakeRoom({ items: others(4) });
++        render(room);
++        await wait(10);
++        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "m1", sequence: 1 });
++        await wait(10);
++        const row = target.querySelector("li[data-event-id='m1']");
++        if (!row) throw new Error("no row m1");
++        const highlighted = () => row.classList.contains("highlight-message");
++        expect(highlighted()).toBe(true);
++
++        // jsdom runs no CSS animation, so the test ends them. One inside the message is not the pulse.
++        row.appendChild(document.createElement("span")).dispatchEvent(new Event("animationend", { bubbles: true }));
++        expect(highlighted()).toBe(true);
++        row.dispatchEvent(new Event("animationend", { bubbles: true }));
++        expect(highlighted()).toBe(false);
++
++        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "m1", sequence: 2 });
++        await wait(10);
++        expect(highlighted()).toBe(true);
++        row.dispatchEvent(new Event("animationend", { bubbles: true }));
++        expect(highlighted()).toBe(false);
++    });
+ });

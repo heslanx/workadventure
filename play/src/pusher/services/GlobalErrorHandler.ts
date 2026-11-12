@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { isAxiosError } from "axios";
 import { ErrorApiData } from "@workadventure/messages";
 import * as Sentry from "@sentry/node";
+import { captureBackendException } from "@workadventure/shared-utils/src/Observability/PostHogErrors";
 //import { DEBUG_ERROR_MESSAGES } from "../enums/EnvironmentVariable";
 
 export function globalErrorHandler(error: unknown, request: Request, response: Response, next: NextFunction) {
@@ -23,6 +24,7 @@ export function globalErrorHandler(error: unknown, request: Request, response: R
     }
 
     Sentry.captureException(error);
+    captureBackendException(error);
 
     if (isAxiosError(error) && error.response) {
         response.status(error.response.status);

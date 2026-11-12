@@ -1,0 +1,11 @@
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -140,7 +140,7 @@
+     const pathParts = cgroupPath.split("/").filter(Boolean);
+     const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
+     if (!isBelowRoot) {
+-        return rootParts.every((part) => part === "..") ? [mount.mountPoint] : [];
++        return [];
+     }
+     const directories = [mount.mountPoint];
+     for (const part of pathParts.slice(rootParts.length)) {

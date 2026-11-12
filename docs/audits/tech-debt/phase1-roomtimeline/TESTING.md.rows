@@ -1,0 +1,35 @@
+# Rows to merge into docs/TESTING.md
+
+Source: Phase 1 for `play/src/front/Chat/Components/Room/RoomTimeline.svelte` (2026-11-12). Evidence: `docs/audits/tech-debt/phase1-roomtimeline/README.md`.
+
+## Test Strategy lines (pinch points for RoomTimeline)
+
+- **P1: `renderItems` (`RoomTimeline.svelte:281-341`).** Every timeline change meets here. It inserts the day separators, decides which message shows its sender header and which shows its time, and hands the previous render's rows back for reuse. A test reads its effect as the rows and the props each message row receives.
+- **P2: the open sequence (`onMount`, `initMessages`, `fillViewport`, `loadUntilReadMarker`, `retryLoading`, `:355-449`).** It initializes the timeline, fetches older pages, and chooses the loading, error, empty or message state.
+- **P3: the last-item effect (`:511-559`).** A new last message scrolls a pinned list to the bottom, is counted on the jump button while the user reads history, or scrolls back for the user's own message.
+- **P4: the read effect (`:488-509`).** It calls `room.setTimelineAsRead()` when the room opens, on every new last message, and when a hidden tab becomes visible. In a Matrix room each call sends a read receipt that every other member receives.
+- **P5: back-pagination (`handleScroll`, `loadMorePreviousMessages`, `shouldLoadMoreMessages`, `:675-729`).** A scroll near the top fetches one older page after 100 ms, one page at a time.
+- **P6: focus requests (`$roomTimelineFocusStore` effect, `focusPendingTimelineRequestOrScrollToBottom`, `focusTimelineEvent`, `:233-237`, `:457-470`, `:741-777`).** A search result, a poll or a thread asks the timeline to show one event.
+- Harness: the real component mounted with Svelte's `mount`, as in `RoomTimelineRowReuse.test.ts`. Fakes only at the boundaries: a structural fake room (its stores and the methods the timeline calls), a stand-in `Message.svelte` that records the props of each row, the `GameManager` and `UIWebsiteManager` modules, the four children outside the list, `ResizeObserver`, and the layout that jsdom lacks (`scrollHeight`, `clientHeight`, `scrollTop`, `scroll`, `scrollIntoView`, `document.visibilityState`). The `en-US` locale is loaded, so the tests read the user's text. No product file was edited to get the component under test.
+
+## Safety Net Map rows
+
+| Module | Pinned behaviors | Test files | Gaps |
+|---|---|---|---|
+| `RoomTimeline.svelte`: rows (P1) | One separator per local day. A sender's messages within 5 minutes share one header, and only the last of the run shows its time. A gap over 5 minutes or a new day starts a new run. | `play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts`, `RoomTimelineRowReuse.test.ts`, `RoomTimelineRenderItems.test.ts` | Poll, question and system rows inside a run; the day labels ("Today", "Yesterday", RT-05) |
+| `RoomTimeline.svelte`: open (P2) | The loading skeleton shows until the timeline is initialized. The open then fetches older pages while the list does not overflow, five at most, and up to three more to reach the read marker. It opens on the "New messages" line when the unread messages do not fit on one screen, at the bottom otherwise. A failed page shows "Couldn't load the messages" with a retry that runs the whole open again. | same | The encrypted room that needs a key; a failed initialization (`initializationState` `"error"`); the proximity room's empty state |
+| `RoomTimeline.svelte`: new messages (P3) | A new message scrolls a pinned list to the bottom. While the user reads history, nothing scrolls and the jump button counts the others' messages ("2 new messages"). The user's own message scrolls to the bottom even then and hides the button. | same | The jump button click; the list squeezed under 48 px; the resize observer re-pinning on late layout |
+| `RoomTimeline.svelte`: read receipts (P4) | `setTimelineAsRead` is called once when the room opens and once per new last message while the tab is visible, not while it is hidden, and once more when it comes back. RT-02: also while the user reads history. RT-01: a receipts update hands its props again to every message row (flipped by `fix-RT-01.patch`: to the user's own rows only). | same | The Matrix receipt fan-out itself (`MatrixChatRoom.readReceipts`) |
+| `RoomTimeline.svelte`: back-pagination (P5) | A scroll near the top fetches one older page 100 ms after the last scroll event, never a second one while it is pending, and another one after it settles. | same | The scroll anchor that holds the reading position after a prepend (mutant M13 survives); the loader in the full header |
+| `RoomTimeline.svelte`: focus requests (P6) | A request for a loaded message scrolls it into view and highlights it, without the bottom scroll. A request for another room is ignored. A request for a message not loaded asks the room to load it, then scrolls to it. RT-03: a request pending at open is focused twice (flipped by `fix-RT-03.patch`: once). | same | A request whose event cannot be loaded (RT-04) |
+
+## Characterization Backlog items
+
+- [ ] The scroll anchor after a prepend: fake per-row `getBoundingClientRect` so a test can see the reading position held, and kill mutant M13 (risk medium, P5, before any scroll-engine refactor)
+- [ ] The resize observer path: a pinned list stays pinned when a row grows after layout (late markdown, images), and an anchored list holds its position (risk medium, P3 and P5)
+- [ ] A focus request whose event the room cannot load (RT-04): the open neither focuses nor scrolls to the bottom (risk low, P6)
+- [ ] Browser measurement for the eight-user freeze: in a Matrix room with eight active members, the receipt emissions per message and the main-thread time each one costs with 50 and 500 loaded messages, before and after `fix-RT-01.patch` (risk medium, P4)
+
+## CI Gates line
+
+- Gate for any change to `RoomTimeline.svelte`, `RoomTimelineRenderItems.ts` or `RoomTimelineNewMessages.ts` from Phase 2 on: `RoomTimelineCharacterization.test.ts` and `RoomTimelineRowReuse.test.ts` pass unchanged, except a test whose ledger fix is part of that change. They run inside `npm test` with no new step. Alone, the file took about 26 s (vitest `Duration`, 1.5 CPUs), almost all of it the transform and import of the component graph; the nine tests take under 1 s.

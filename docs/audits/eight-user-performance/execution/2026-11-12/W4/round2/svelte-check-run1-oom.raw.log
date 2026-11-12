@@ -1,0 +1,13 @@
+ 6: 0xf3e5d2  [node]
+ 7: 0xf3e8ca  [node]
+ 8: 0xf4f5ca  [node]
+ 9: 0xf53970  [node]
+10: 0x19f1e81  [node]
+npm error Lifecycle script `svelte-check` failed with error:
+npm error code 1
+npm error path /work/play
+npm error workspace workadventure-play@1.0.0
+npm error location /work/play
+npm error command failed
+npm error command sh -c cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --compiler-warnings "a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore"
+SVELTE_CHECK_EXIT=1 01:32:10

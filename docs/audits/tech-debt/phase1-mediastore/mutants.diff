@@ -1,0 +1,127 @@
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M1)
+@@ -568,9 +568,6 @@
+         set,
+     ) => {
+         // If a batch is in process, don't do anything.
+-        if ($batchGetUserMediaStore) {
+-            return;
+-        }
+ 
+         let currentVideoConstraint: boolean | MediaTrackConstraints = $videoConstraintStore;
+         let currentAudioConstraint: boolean | MediaTrackConstraints = $audioConstraintStore;
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M2)
+@@ -595,7 +595,7 @@
+         // A space streams our audio in a bubble, a meeting area, or a speaker zone where we are a speaker
+         // (not a mere listener, who cannot be heard anyway).
+         const keepAudioWarm =
+-            $isLiveStreamingAudioStore && $requestedMicrophoneState === false && !isMicrophoneForcedOff;
++            false;
+ 
+         // Video constraints only apply when NOT in background settings (to allow camera preview)
+         if (!$inBackgroundSettingsStore) {
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M3)
+@@ -843,7 +843,6 @@
+ 
+         if (mustStopVideo) {
+             oldStream.getVideoTracks().forEach((t) => {
+-                t.stop();
+                 oldStream.removeTrack(t);
+             });
+         }
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M4)
+@@ -885,7 +885,7 @@
+         } else {
+             newConstraints.video = false;
+         }
+-        if (mustRequestNewAudio) {
++        if (constraints.audio !== false) {
+             newConstraints.audio = constraints.audio;
+         } else {
+             newConstraints.audio = false;
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M5)
+@@ -976,6 +976,7 @@
+                 // its own turn if it fails too. A camera taken by another application (NotReadableError on Windows)
+                 // must not cost the microphone.
+                 requestedCameraState.disableWebcam();
++                requestedMicrophoneState.disableMicrophone();
+                 cameraAccessIssueStore.set(classified);
+             } else if (!constraints.video && !constraints.audio) {
+                 console.error("Error. getUserMedia called with no audio and no video.");
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M6)
+@@ -811,7 +811,6 @@
+         });
+     }
+ 
+-    cameraAccessIssueStore.set(null);
+     microphoneAccessIssueStore.set(null);
+ 
+     const nextConstraints = {
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M7)
+@@ -961,7 +961,6 @@
+                 );
+                 batchGetUserMediaStore.startBatch();
+                 requestedCameraDeviceIdStore.set(undefined);
+-                requestedMicrophoneDeviceIdStore.set(undefined);
+                 batchGetUserMediaStore.commitChanges();
+             } else if (mustRequestNewVideo) {
+                 console.info(
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M8)
+@@ -603,7 +603,6 @@
+                 $requestedCameraState === false ||
+                 $myCameraStore === false ||
+                 isInExternalService ||
+-                heldByStatus.camera ||
+                 isEnergySaving
+             ) {
+                 currentVideoConstraint = false;
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M9)
+@@ -582,7 +582,7 @@
+ 
+         // Every reason, other than the user muting it, to cut the microphone
+         const isMicrophoneForcedOff =
+-            $myMicrophoneStore === false || isInExternalService || heldByStatus.microphone || isEnergySaving;
++            $myMicrophoneStore === false || isInExternalService || heldByStatus.microphone;
+ 
+         // Audio constraints always apply
+         if ($requestedMicrophoneState === false || isMicrophoneForcedOff) {
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M10)
+@@ -909,7 +909,7 @@
+ 
+         try {
+             const stream = await navigator.mediaDevices.getUserMedia(newConstraints);
+-            if (generation !== rawStreamGeneration) {
++            if (false && generation !== rawStreamGeneration) {
+                 // A newer update is queued/running: discard this stale stream so devices are released immediately.
+                 // The returned constraints are ignored by caller for stale generations.
+                 stream.getTracks().forEach((track) => track.stop());
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M11)
+@@ -1718,7 +1718,7 @@
+             ) {
+                 if (get(requestedMicrophoneDeviceIdStore) === undefined) {
+                     // If we removed the default microphone device, we retry (and ask for the new default microphone that the OS will pick)
+-                    retryGetUserMedia(false, true);
++                    // retryGetUserMedia(false, true);
+                 } else {
+                     // If we removed a microphone specifically requested, we retry without passing a device id.
+                     requestedMicrophoneDeviceIdStore.set(undefined);
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts (M12)
+@@ -1553,7 +1553,6 @@
+         if (streamResult && streamResult.type === "success" && streamResult.stream !== undefined) {
+             if (deviceListCanBeQueried === false) {
+                 queryDeviceList();
+-                deviceListCanBeQueried = true;
+             }
+         }
+     });

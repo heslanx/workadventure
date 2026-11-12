@@ -1,0 +1,104 @@
+{
+  "environment": "Local Docker development stack, current checkout",
+  "browser": "Chrome DevTools dedicated profile, two isolated contexts",
+  "runCount": 1,
+  "cacheDisabled": false,
+  "firstAppearance": {
+    "remotePlayerId": 3,
+    "textureIds": [
+      "body1",
+      "eyes1",
+      "hair1",
+      "clothes1",
+      "hat1",
+      "accessory1"
+    ],
+    "requests": [
+      {
+        "requestId": 1636,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_color/character_color0.png",
+        "status": 200
+      },
+      {
+        "requestId": 1637,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_eyes/character_eyes1.png",
+        "status": 200
+      },
+      {
+        "requestId": 1638,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_hairs/character_hairs0.png",
+        "status": 200
+      },
+      {
+        "requestId": 1639,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_clothes/character_clothes0.png",
+        "status": 200
+      },
+      {
+        "requestId": 1640,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_hats/character_hats1.png",
+        "status": 200
+      },
+      {
+        "requestId": 1641,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_accessories/character_accessories1.png",
+        "status": 200
+      }
+    ]
+  },
+  "departure": {
+    "remotePlayerCount": 0,
+    "allSixTexturesRetained": true
+  },
+  "reappearance": {
+    "remotePlayerId": 4,
+    "remotePlayerName": "Visitor",
+    "allSixTexturesRendered": true,
+    "newSpriteRequestCount": 0
+  },
+  "observerPageReload": {
+    "requests": [
+      {
+        "requestId": 3260,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_color/character_color0.png",
+        "status": 304
+      },
+      {
+        "requestId": 3261,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_eyes/character_eyes1.png",
+        "status": 304
+      },
+      {
+        "requestId": 3262,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_hairs/character_hairs0.png",
+        "status": 304
+      },
+      {
+        "requestId": 3263,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_clothes/character_clothes0.png",
+        "status": 304
+      },
+      {
+        "requestId": 3264,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_hats/character_hats1.png",
+        "status": 304
+      },
+      {
+        "requestId": 3265,
+        "url": "http://play.workadventure.localhost/resources/customisation/character_accessories/character_accessories1.png",
+        "status": 304
+      }
+    ],
+    "allSixTexturesRendered": true
+  },
+  "scope": "Requests for the six custom avatar sprites in the observer client. Does not include WebSocket or HTTP headers, media traffic, or total page traffic.",
+  "source": {
+    "cache": "play/src/front/Phaser/Services/SuperLoaderPlugin.ts:127",
+    "remotePlayer": "play/src/front/Phaser/Game/GameScene.ts:4473"
+  },
+  "notes": [
+    "A navigation tool timed out while reopening the visitor tab; successful reconnection was then verified by the observer receiving player ID 4 and all six rendered textures.",
+    "The development server revalidates cached assets. Production cache headers were not exercised.",
+    "No product code or cache implementation was changed."
+  ]
+}

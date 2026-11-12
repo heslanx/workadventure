@@ -1,0 +1,37 @@
+# Thu Nov 12 00:41:40 UTC 2026 host=knc container=wa-fable-p4-bench (--cpus 2 --memory 3g --cpu-shares 512 --network none); base/base2 = unchanged copies, head = checkout PositionDispatcher.ts; label order: base=/bench/docs/audits/performance-1000-users/execution/P4/bench/PositionDispatcher.base.ts head=/usr/src/app/play/src/pusher/models/PositionDispatcher.ts base2=/bench/docs/audits/performance-1000-users/execution/P4/bench/PositionDispatcher.base2.ts
+f2bcb3a425b0720a8154c2bf5616db42d812f5651b182e68eed1807925b3734e  src/pusher/models/PositionDispatcher.ts
+4ccf053672db7c8b2f9f419974f385b06b6d11e5edb3d99ca67587897dd9abb9  tests/pusher/PositionDispatcher.test.ts
+167161d762febba01684d393a3be517d9a388e2ed566bc19d65794606b2f6209  src/pusher/models/Zone.ts
+28ffdce7fb32d67c091b73c17229ab37959049e739473bfd31cadcd78a51346a  /bench/docs/audits/performance-1000-users/execution/P4/bench/viewport-bench.ts
+a70406802074ad65e7d5d6fda538f1a592f71cc0b09a79a82b91df7edc84a5d0  /bench/docs/audits/performance-1000-users/execution/P4/bench/PositionDispatcher.base.ts
+a70406802074ad65e7d5d6fda538f1a592f71cc0b09a79a82b91df7edc84a5d0  /bench/docs/audits/performance-1000-users/execution/P4/bench/PositionDispatcher.base2.ts
+stationary               base     hit=100%    ns/update med=6265 p10=5665 p90=7068         B/update med=6665 min=6665 max=6666        time/ref med=1 p10=1 p90=1 trace=15bb0b23369b
+stationary               head     hit=100%    ns/update med=48 p10=38 p90=227              B/update med=168 min=168 max=170           time/ref med=0.008 p10=0.005 p90=0.038 trace=15bb0b23369b
+stationary               base2    hit=100%    ns/update med=6405 p10=5892 p90=8513         B/update med=6665 min=6665 max=6666        time/ref med=1.047 p10=0.905 p90=1.343 trace=15bb0b23369b
+inside-bounds            base     hit=100%    ns/update med=6019 p10=5631 p90=7697         B/update med=6609 min=6609 max=6609        time/ref med=1 p10=1 p90=1 trace=15bb0b23369b
+inside-bounds            head     hit=100%    ns/update med=58 p10=47 p90=150              B/update med=168 min=168 max=168           time/ref med=0.009 p10=0.007 p90=0.022 trace=15bb0b23369b
+inside-bounds            base2    hit=100%    ns/update med=6569 p10=5731 p90=8641         B/update med=6609 min=6609 max=6609        time/ref med=1.017 p10=0.919 p90=1.382 trace=15bb0b23369b
+walk                     base     hit=84%     ns/update med=7832 p10=7063 p90=8367         B/update med=7490 min=7490 max=7494        time/ref med=1 p10=1 p90=1 trace=927d0200f674
+walk                     head     hit=84%     ns/update med=2308 p10=2000 p90=2506         B/update med=1995 min=1994 max=1998        time/ref med=0.29 p10=0.251 p90=0.326 trace=927d0200f674
+walk                     base2    hit=84%     ns/update med=8088 p10=7318 p90=9641         B/update med=7490 min=7490 max=7494        time/ref med=1.044 p10=0.891 p90=1.273 trace=927d0200f674
+cross-every-update       base     hit=0%      ns/update med=16639 p10=15244 p90=18250      B/update med=16855 min=16852 max=16855     time/ref med=1 p10=1 p90=1 trace=f6ca1e19844f
+cross-every-update       head     hit=0%      ns/update med=17883 p10=16369 p90=19093      B/update med=16528 min=16525 max=16528     time/ref med=1.064 p10=0.986 p90=1.186 trace=f6ca1e19844f
+cross-every-update       base2    hit=0%      ns/update med=16645 p10=15479 p90=18766      B/update med=16855 min=16852 max=16855     time/ref med=1.037 p10=0.924 p90=1.109 trace=f6ca1e19844f
+max-inside-bounds        base     hit=100%    ns/update med=232954 p10=210676 p90=254340   B/update med=195959 min=195959 max=195959  time/ref med=1 p10=1 p90=1 trace=27c18de17a27
+max-inside-bounds        head     hit=100%    ns/update med=76 p10=59 p90=86               B/update med=171 min=171 max=171           time/ref med=0 p10=0 p90=0 trace=27c18de17a27
+max-inside-bounds        base2    hit=100%    ns/update med=227270 p10=208762 p90=279711   B/update med=195959 min=195959 max=195959  time/ref med=0.973 p10=0.899 p90=1.171 trace=27c18de17a27
+max-cross-every-update   base     hit=0%      ns/update med=339396 p10=317294 p90=511541   B/update med=265089 min=265089 max=267548  time/ref med=1 p10=1 p90=1 trace=fdd32d3047bf
+max-cross-every-update   head     hit=0%      ns/update med=381813 p10=332996 p90=458930   B/update med=265109 min=265109 max=267567  time/ref med=1.079 p10=0.812 p90=1.28 trace=fdd32d3047bf
+max-cross-every-update   base2    hit=0%      ns/update med=345588 p10=328553 p90=404314   B/update med=265089 min=265089 max=267548  time/ref med=1.025 p10=0.821 p90=1.093 trace=fdd32d3047bf
+oversized-cropped        base     hit=100%    ns/update med=247947 p10=230174 p90=275249   B/update med=200508 min=200508 max=200508  time/ref med=1 p10=1 p90=1 trace=6eeab25373c2
+oversized-cropped        head     hit=100%    ns/update med=239 p10=204 p90=274            B/update med=251 min=251 max=251           time/ref med=0.001 p10=0.001 p90=0.001 trace=6eeab25373c2
+oversized-cropped        base2    hit=100%    ns/update med=250202 p10=221004 p90=301418   B/update med=200508 min=200508 max=200508  time/ref med=1.01 p10=0.782 p90=1.238 trace=6eeab25373c2
+crowd-walk               base     hit=84.1%   ns/update med=13305 p10=12566 p90=18258      B/update med=7264 min=7253 max=7363        time/ref med=1 p10=1 p90=1 trace=4c5a40ebcb2e
+crowd-walk               head     hit=84.1%   ns/update med=4056 p10=3635 p90=4589         B/update med=1606 min=1595 max=1705        time/ref med=0.307 p10=0.271 p90=0.337 trace=4c5a40ebcb2e
+crowd-walk               base2    hit=84.1%   ns/update med=13519 p10=12576 p90=16232      B/update med=7264 min=7253 max=7363        time/ref med=1.022 p10=0.927 p90=1.122 trace=4c5a40ebcb2e
+
+real	2m38.663s
+user	3m46.562s
+sys	0m2.857s
+exit=0
+Thu Nov 12 00:44:19 UTC 2026

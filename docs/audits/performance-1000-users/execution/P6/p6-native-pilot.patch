@@ -1,0 +1,304 @@
+diff --git a/back/package.json b/back/package.json
+index 02bfd4d..cfcdf97 100644
+--- a/back/package.json
++++ b/back/package.json
+@@ -8,7 +8,8 @@
+     "dev": "tsx watch --inspect=0.0.0.0:9229 src/server.ts",
+     "runprod": "tsx src/server.ts",
+     "profile": "node --prof --import tsx src/server.ts",
+-    "typecheck": "tsc --noEmit",
++    "typecheck": "tsc6 --noEmit",
++    "typecheck:native": "tsc --noEmit",
+     "test": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --config vitest.config.ts ",
+     "test:coverage": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --config vitest.config.ts --coverage -- --verbose=true",
+     "lint": "DEBUG= eslint src/ --ext .ts",
+@@ -85,7 +86,8 @@
+     "eslint": "^9.39.4",
+     "lint-staged": "^17.0.5",
+     "prettier": "^3.8.3",
+-    "typescript": "^5.9.3",
++    "@typescript/native": "npm:typescript@^7.0.2",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "vitest": "^4.1.7",
+     "vitest-mock-extended": "^4.0.0"
+   },
+diff --git a/benchmark/package.json b/benchmark/package.json
+index ffcd0e5..478c4ce 100644
+--- a/benchmark/package.json
++++ b/benchmark/package.json
+@@ -24,7 +24,7 @@
+     "@types/ws": "^8.18.1",
+     "@workadventure/messages": "1.0.0",
+     "ts-node-dev": "^2.0.0",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "ws": "^8.21.0"
+   }
+ }
+diff --git a/contrib/tools/e2e-report/package.json b/contrib/tools/e2e-report/package.json
+index e5ef858..90e958f 100644
+--- a/contrib/tools/e2e-report/package.json
++++ b/contrib/tools/e2e-report/package.json
+@@ -7,11 +7,11 @@
+   "scripts": {
+     "start": "tsx src/cli.ts",
+     "test": "tsx --test src/*.test.ts",
+-    "typecheck": "tsc --noEmit"
++    "typecheck": "tsc6 --noEmit"
+   },
+   "devDependencies": {
+     "@types/node": "^25.9.1",
+     "tsx": "^4.22.3",
+-    "typescript": "^5.9.3"
++    "typescript": "npm:@typescript/typescript6@^6.0.2"
+   }
+ }
+diff --git a/contrib/tools/e2e-report/tsconfig.json b/contrib/tools/e2e-report/tsconfig.json
+index e6ae112..6da5a9f 100644
+--- a/contrib/tools/e2e-report/tsconfig.json
++++ b/contrib/tools/e2e-report/tsconfig.json
+@@ -4,6 +4,7 @@
+     "module": "NodeNext",
+     "moduleResolution": "NodeNext",
+     "lib": ["ES2022"],
++    "types": ["node"],
+     "strict": true,
+     "esModuleInterop": true,
+     "skipLibCheck": true,
+diff --git a/contrib/tools/generate-env-docs/package.json b/contrib/tools/generate-env-docs/package.json
+index 3b6d8a0..21b7766 100644
+--- a/contrib/tools/generate-env-docs/package.json
++++ b/contrib/tools/generate-env-docs/package.json
+@@ -13,7 +13,7 @@
+     "@workadventure/messages": "1.0.0",
+     "@workadventure/shared-utils": "1.0.0",
+     "tsx": "^4.22.3",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "zod": "^3.25.76"
+   }
+ }
+diff --git a/libs/map-editor/package.json b/libs/map-editor/package.json
+index bb2a0ce..169bf4c 100644
+--- a/libs/map-editor/package.json
++++ b/libs/map-editor/package.json
+@@ -14,8 +14,8 @@
+     "test:watch": "vitest watch",
+     "test:cov": "vitest run --coverage",
+     "test:debug": "NODE_OPTIONS='--loader tsx' node --inspect-brk -r tsconfig-paths/register node_modules/.bin/vitest --runInBand",
+-    "typecheck": "tsc --noEmit",
+-    "build": "tsc",
++    "typecheck": "tsc6 --noEmit",
++    "build": "tsc6",
+     "export-json-schema": "tsx ./src/exportJsonSchema.ts"
+   },
+   "author": "WorkAdventure",
+@@ -41,7 +41,7 @@
+     "lint-staged": "^17.0.5",
+     "prettier": "^3.8.3",
+     "tsx": "^4.22.3",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "vitest": "^4.1.7"
+   },
+   "files": [
+diff --git a/libs/math-utils/package.json b/libs/math-utils/package.json
+index 575283f..70916b5 100644
+--- a/libs/math-utils/package.json
++++ b/libs/math-utils/package.json
+@@ -11,7 +11,7 @@
+   "license": "ISC",
+   "devDependencies": {
+     "@types/node": "^25.9.1",
+-    "typescript": "^5.9.3"
++    "typescript": "npm:@typescript/typescript6@^6.0.2"
+   },
+   "files": [
+     "src"
+diff --git a/libs/messages/package.json b/libs/messages/package.json
+index c59b70c..57beb3b 100644
+--- a/libs/messages/package.json
++++ b/libs/messages/package.json
+@@ -5,8 +5,8 @@
+   "type": "module",
+   "main": "./src/index.ts",
+   "scripts": {
+-    "build": "tsc",
+-    "typecheck": "tsc --noEmit",
++    "build": "tsc6",
++    "typecheck": "tsc6 --noEmit",
+     "export-json-schema": "tsx ./src/exportAnalyticsJsonSchema.ts"
+   },
+   "author": "WorkAdventure",
+@@ -24,7 +24,7 @@
+   "devDependencies": {
+     "@types/node": "^25.9.1",
+     "tsx": "^4.22.3",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "zod-to-json-schema": "^3.25.2"
+   },
+   "files": [
+diff --git a/libs/messages/tsconfig.json b/libs/messages/tsconfig.json
+index 74fbc21..765eeb4 100644
+--- a/libs/messages/tsconfig.json
++++ b/libs/messages/tsconfig.json
+@@ -2,6 +2,7 @@
+   "compilerOptions": {
+     "target": "ES2020",
+     "lib": [ "ES2020" ],
++    "types": [ "node" ],
+     "module": "esnext",
+     "moduleResolution": "bundler",
+ 
+diff --git a/libs/shared-utils/package.json b/libs/shared-utils/package.json
+index 401bbc7..1019993 100644
+--- a/libs/shared-utils/package.json
++++ b/libs/shared-utils/package.json
+@@ -14,8 +14,8 @@
+     "test:watch": "vitest watch",
+     "test:cov": "vitest run --coverage",
+     "test:debug": "NODE_OPTIONS='--loader tsx' node --inspect-brk -r tsconfig-paths/register node_modules/.bin/vitest --runInBand",
+-    "typecheck": "tsc --noEmit",
+-    "build": "tsc"
++    "typecheck": "tsc6 --noEmit",
++    "build": "tsc6"
+   },
+   "author": "WorkAdventure",
+   "license": "ISC",
+@@ -36,7 +36,7 @@
+     "eslint": "^9.39.4",
+     "lint-staged": "^17.0.5",
+     "prettier": "^3.8.3",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "vitest": "^4.1.7"
+   },
+   "files": [
+diff --git a/libs/store-utils/package.json b/libs/store-utils/package.json
+index f08a609..f2372ee 100644
+--- a/libs/store-utils/package.json
++++ b/libs/store-utils/package.json
+@@ -5,14 +5,14 @@
+   "type": "module",
+   "main": "./src/index.ts",
+   "scripts": {
+-    "build": "tsc",
++    "build": "tsc6",
+     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+     "lint-fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+     "svelte-check": "svelte-check",
+     "precommit": "lint-staged",
+     "pretty": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+     "pretty-check": "prettier --check 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'",
+-    "typecheck": "tsc --noEmit",
++    "typecheck": "tsc6 --noEmit",
+     "test": "vitest run",
+     "test:watch": "vitest watch",
+     "test:cov": "vitest run --coverage"
+@@ -28,7 +28,7 @@
+     "svelte": "^5.55.9",
+     "svelte-check": "^4.4.8",
+     "prettier": "^3.8.3",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "rxjs": "^7.8.2",
+     "vitest": "^4.1.7"
+   },
+diff --git a/map-storage/package.json b/map-storage/package.json
+index bd4b0da..60b067b 100644
+--- a/map-storage/package.json
++++ b/map-storage/package.json
+@@ -26,7 +26,8 @@
+   "license": "SEE LICENSE IN LICENSE.txt",
+   "scripts": {
+     "prebuild": "rimraf dist",
+-    "typecheck": "tsc --project tsconfig-node.json --noEmit",
++    "typecheck": "tsc6 --project tsconfig-node.json --noEmit",
++    "typecheck:native": "tsc --project tsconfig-node.json --noEmit",
+     "pretty": "prettier --write \"{src,src-ui}/**/*.{ts,svelte}\" vite.config.ts",
+     "pretty-check": "prettier --check '{src,src-ui}/**/*.{ts,svelte}' vite.config.ts",
+     "start": "if [ $PATH_PREFIX ]; then npm run front:build; fi && ESBK_TSCONFIG_PATH=tsconfig-node.json tsx ./src/index.ts",
+@@ -111,7 +112,8 @@
+     "svelte-check": "^4.4.8",
+     "ts-loader": "^9.5.7",
+     "tsconfig-paths": "4.2.0",
+-    "typescript": "^5.9.3",
++    "@typescript/native": "npm:typescript@^7.0.2",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "vite": "^8.0.16",
+     "vitest": "^4.1.7"
+   },
+diff --git a/package.json b/package.json
+index abb65b9..4b4cf6b 100644
+--- a/package.json
++++ b/package.json
+@@ -2,9 +2,10 @@
+   "name": "workadventure",
+   "private": true,
+   "devDependencies": {
++    "@typescript/native": "npm:typescript@^7.0.2",
+     "husky": "^9.1.7",
+     "patch-package": "^8.0.1",
+-    "typescript": "^5.9.3"
++    "typescript": "npm:@typescript/typescript6@^6.0.2"
+   },
+   "scripts": {
+     "postinstall": "patch-package || echo 'patch-package not found. Maybe you are installing only a subproject without it (e.g. a scoped `npm ci --workspace`); patches are only needed for the play build.'",
+diff --git a/play/package.json b/play/package.json
+index 8f26c89..7ed3e7e 100644
+--- a/play/package.json
++++ b/play/package.json
+@@ -19,12 +19,12 @@
+     "dev-front": "cross-env vite",
+     "dev-pusher": "TSX_TSCONFIG_PATH=tsconfig-pusher.json tsx watch --clear-screen=false --inspect=0.0.0.0:9229 ./src/server.ts",
+     "build": "echo \"Compiling with options: $NODE_OPTIONS \" && cross-env vite build",
+-    "typecheck": "cross-env tsc --noEmit",
++    "typecheck": "cross-env tsc6 --noEmit",
+     "profile": "if [ -n \"$STARTUP_COMMAND\" ]; then sh -c \"$STARTUP_COMMAND\"; fi && TSX_TSCONFIG_PATH=tsconfig-pusher.json node --prof --import tsx ./src/server.ts",
+-    "push-sentry-sourcemaps": "tsc --project tsconfig-pusher.json && sentry-cli sourcemaps inject dist/ && sentry-cli releases new $SENTRY_RELEASE && sentry-cli sourcemaps upload dist --release=\"$SENTRY_RELEASE\" && sentry-cli releases finalize $SENTRY_RELEASE",
++    "push-sentry-sourcemaps": "tsc6 --project tsconfig-pusher.json && sentry-cli sourcemaps inject dist/ && sentry-cli releases new $SENTRY_RELEASE && sentry-cli sourcemaps upload dist --release=\"$SENTRY_RELEASE\" && sentry-cli releases finalize $SENTRY_RELEASE",
+     "build-iframe-api": "vite --config iframe-api.vite.config.ts build",
+     "watch-iframe-api": "npm run build-iframe-api -- --watch",
+-    "build-typings": "cross-env tsc --project tsconfig-for-iframe-api-typings.json",
++    "build-typings": "cross-env tsc6 --project tsconfig-for-iframe-api-typings.json",
+     "precommit": "lint-staged",
+     "test": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest",
+     "test:coverage": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --coverage",
+@@ -88,7 +88,7 @@
+     "svelte-eslint-parser": "^1.6.1",
+     "tailwindcss": "^4.3.0",
+     "tslib": "^2.8.1",
+-    "typescript": "^5.9.3",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "vite": "^8.1.4",
+     "vite-plugin-node-polyfills": "^0.28.0",
+     "vite-tsconfig-paths": "^6.1.1",
+diff --git a/play/tsconfig-pusher.json b/play/tsconfig-pusher.json
+index 9f36c4e..e6c0c93 100644
+--- a/play/tsconfig-pusher.json
++++ b/play/tsconfig-pusher.json
+@@ -5,8 +5,8 @@
+     "moduleResolution": "bundler",
+     "allowImportingTsExtensions": true,
+     "rewriteRelativeImportExtensions": true,
++    "rootDir": ".",
+     "outDir": "./dist",
+-    "preserveValueImports": false,
+   },
+   "include": [
+     "./src",
+diff --git a/play/tsconfig.json b/play/tsconfig.json
+index a7d8448..d4ce452 100644
+--- a/play/tsconfig.json
++++ b/play/tsconfig.json
+@@ -10,6 +10,9 @@
+     "inlineSources": true,
+     "declaration": false,
+     "outDir": "./dist/public",
++    // vite.config.ts imports ../libs/messages by relative path, so the sources span the monorepo root.
++    // TypeScript 6 no longer infers the common root and defaults rootDir to this directory.
++    "rootDir": "..",
+ 
+     "strict": true,
+     "forceConsistentCasingInFileNames": true,

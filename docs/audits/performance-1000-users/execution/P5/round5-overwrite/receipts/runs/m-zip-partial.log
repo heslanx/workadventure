@@ -1,0 +1,116 @@
+container wa-fable-ovw5-70-m-zip-partial
+408a8aad1e63c9c854636999222587879c7eff8666cb738ac735d4e2a331e158  src/MapsManager.ts
+510b3fbea4c4355737f4906f99ebc336d133c4e4ec06546a701f89ab1cd2aed2  src/Upload/UploadController.ts
+1be0b55c07fe4b2881328a5749852d27e6941432daa47665fdbf22a5be6650c2  src/tests/MapStorageServer.test.ts
+963495d0fbed43261bc97698c7b30fa0d978afb5470f136ea4dded7949b1b244  src/tests/MapsManagerAutosave.test.ts
+70c2483d8e919b96ed4b4b0bea4111194ffefd80a102958ef15be61aa38ccd17  src/tests/UploadController.test.ts
+3a52822d686b31ebff133beb15c384c7206cd1be9d8dbc5bf0e0ef92cd567a0c  ../libs/map-editor/src/GameMap/MapValidator.ts
+
+ RUN  v4.1.7 /w/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist the edited map and release it from memory 9ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a map edited once a single time 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a continuously edited map once per autosave interval 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist a change made by a command that only went through the command queue 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should persist the edit once storage recovers, without waiting for another edit 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should keep the unsaved edit in memory after its command history expired 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should report the failure, then give up and release the map past the retry horizon 12ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should measure the retry horizon from the newest edit, not the first one 29ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should log a failing save on its first attempt and then periodically, not on every attempt 4ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should still retry and report the handler error when logging the failure throws 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should stop retrying once the map was replaced or deleted 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should never run two writes of the same map at once 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when the first write is the last to finish 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should count a write that never settles as failed and retry it 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when a write past its timeout lands after its retry 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should persist that newer edit with a follow-up write 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should not retry the abandoned state after the map was replaced by an upload 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when the write in flight lands after the delete 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the uploaded map when the write in flight lands after the upload 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when a write past its timeout lands after the delete 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should reject the delete and leave storage unchanged when the write in flight settles after the wait 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep and save the edit made after the write in flight began when the delete is rejected 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should load the map only once its replacement finished 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should give every load that waited for the replacement the same map 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should not keep a map whose read was in flight when its replacement started 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when an edit arrives while the delete waits 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > should keep the deleted map deleted when an edit made while the delete waits starts its own write 1ms
+ ✓ src/tests/UploadController.test.ts > UploadController > DELETE of a map whose autosave write is in flight > should answer 503 and leave storage unchanged when the write does not settle in time 34ms
+ ✓ src/tests/UploadController.test.ts > UploadController > DELETE of a map whose autosave write is in flight > should delete the map once the write landed, and keep it deleted 11ms
+ × src/tests/UploadController.test.ts > UploadController > zip upload > should answer 503 and write nothing when a map of the zip has a write in flight 98ms
+   → expected Map{ 'upload-3/c.wam' => '{"version"…' } to deeply equal Map{ …(2) }
+ × src/tests/UploadController.test.ts > UploadController > zip upload > should answer 503 and write nothing when a map the zip deletes has a write in flight 13ms
+   → expected 200 to be 503 // Object.is equality
+ × src/tests/UploadController.test.ts > UploadController > zip upload > should keep a map the zip deleted deleted when it had an unsaved edit 11ms
+   → expected true to be false // Object.is equality
+ ✓ src/tests/UploadController.test.ts > UploadController > POST /move of a map > should not recreate the moved map at its old path when it had an unsaved edit 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/UploadController.test.ts > UploadController > zip upload > should answer 503 and write nothing when a map of the zip has a write in flight
+AssertionError: expected Map{ 'upload-3/c.wam' => '{"version"…' } to deeply equal Map{ …(2) }
+
+- Expected
++ Received
+
+  Map {
+-   "upload-3/a.wam" => "{\"version\":\"1.0.0\",\"mapUrl\":\"http://play.test/a.tmj\",\"entities\":{},\"areas\":[],\"entityCollections\":[]}",
+-   "upload-3/b.wam" => "{\"version\":\"1.0.0\",\"mapUrl\":\"http://play.test/b.tmj\",\"entities\":{},\"areas\":[],\"entityCollections\":[]}",
++   "upload-3/c.wam" => "{\"version\":\"1.0.0\",\"mapUrl\":\"http://play.test/c-uploaded.tmj\",\"entities\":{},\"areas\":[],\"entityCollections\":[]}",
+  }
+
+ ❯ src/tests/UploadController.test.ts:312:35
+    310|
+    311|             expect(response.status).toBe(503);
+    312|             expect(storage.files).toEqual(before);
+       |                                   ^
+    313|         });
+    314|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/tests/UploadController.test.ts > UploadController > zip upload > should answer 503 and write nothing when a map the zip deletes has a write in flight
+AssertionError: expected 200 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 200
+
+ ❯ src/tests/UploadController.test.ts:328:37
+    326|             const response = await uploading;
+    327|
+    328|             expect(response.status).toBe(503);
+       |                                     ^
+    329|             expect(storage.files).toEqual(before);
+    330|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/tests/UploadController.test.ts > UploadController > zip upload > should keep a map the zip deleted deleted when it had an unsaved edit
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/tests/UploadController.test.ts:340:55
+    338|
+    339|             expect(response.status).toBe(200);
+    340|             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+       |                                                       ^
+    341|             expect(storage.files.get(keyOf("b.wam"))).toBe(wam("b"));
+    342|         });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 30 passed (33)
+   Start at  03:39:15
+   Duration  4.73s (transform 2.14s, setup 0ms, import 4.06s, tests 274ms, environment 0ms)
+
+EXIT=1

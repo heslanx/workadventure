@@ -1,0 +1,11 @@
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -107,7 +107,7 @@
+  * cgroup2 mount for v2, a cgroup mount with the cpu option for v1.
+  */
+ export function parseCgroupMount(content: string, version: CgroupVersion): CgroupMount | undefined {
+-    for (const line of content.split("\n")) {
++    for (const line of content.split("\n").reverse()) {
+         const separator = line.indexOf(" - ");
+         if (separator === -1) {
+             continue;

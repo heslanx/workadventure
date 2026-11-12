@@ -1,0 +1,71 @@
+Unable to find image 'node:24-trixie' locally
+24-trixie: Pulling from library/node
+a6dd1c05fbba: Pulling fs layer
+e8a88afca2bd: Pulling fs layer
+411d2dc8717d: Pulling fs layer
+696c1fe91c64: Pulling fs layer
+435ec0d09e91: Pulling fs layer
+d235f402ab3a: Pulling fs layer
+4b15e6b9f563: Pulling fs layer
+74b96050122c: Pulling fs layer
+696c1fe91c64: Waiting
+435ec0d09e91: Waiting
+d235f402ab3a: Waiting
+4b15e6b9f563: Waiting
+74b96050122c: Waiting
+a6dd1c05fbba: Verifying Checksum
+a6dd1c05fbba: Download complete
+e8a88afca2bd: Verifying Checksum
+e8a88afca2bd: Download complete
+411d2dc8717d: Verifying Checksum
+411d2dc8717d: Download complete
+435ec0d09e91: Verifying Checksum
+435ec0d09e91: Download complete
+4b15e6b9f563: Verifying Checksum
+4b15e6b9f563: Download complete
+74b96050122c: Download complete
+d235f402ab3a: Verifying Checksum
+d235f402ab3a: Download complete
+a6dd1c05fbba: Pull complete
+e8a88afca2bd: Pull complete
+696c1fe91c64: Verifying Checksum
+696c1fe91c64: Download complete
+411d2dc8717d: Pull complete
+696c1fe91c64: Pull complete
+435ec0d09e91: Pull complete
+d235f402ab3a: Pull complete
+4b15e6b9f563: Pull complete
+74b96050122c: Pull complete
+Digest: sha256:6e5d4c38403930b420404f190be8563396dca2bd156a6cb4722707b0efcf6fc1
+Status: Downloaded newer image for node:24-trixie
+Sentry plugin disabled
+2:04:52 AM [vite-plugin-svelte] no Svelte config found at /work/play - using default configuration.
+2:04:52 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/work/play[39m
+
+
+<--- Last few GCs --->
+
+[23:0x2ba97000]    43499 ms: Scavenge (interleaved) 1515.3 (1525.4) -> 1513.4 (1545.2) MB, pooled: 0 MB, 100.82 / 0.00 ms  (average mu = 0.271, current mu = 0.230) allocation failure; 
+[23:0x2ba97000]    45120 ms: Mark-Compact (reduce) 1515.2 (1545.2) -> 1514.4 (1517.7) MB, pooled: 0 MB, 1435.95 / 0.00 ms  (+ 95.5 ms in 28 steps since start of marking, biggest step 49.2 ms, walltime since start of marking 1604 ms) (average mu = 0.271, c
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x9434f0  [node]
+ 2: 0x75f7fa node::OOMErrorHandler(char const*, v8::OOMDetails const&) [node]
+ 3: 0xc9ba10  [node]
+ 4: 0xc9baff  [node]
+ 5: 0xf3fdd5  [node]
+ 6: 0xf3fe02  [node]
+ 7: 0xf400fa  [node]
+ 8: 0xf50dfa  [node]
+ 9: 0xf551a0  [node]
+10: 0x19f36b1  [node]
+Aborted (core dumped)
+EXIT=134

@@ -1,0 +1,25 @@
+# Rows to merge into docs/TECH-DEBT.md
+
+Source: Phase 2 (refactoring-patterns), first pass on `play/src/front/Phaser/Game/GameScene.ts` (2026-11-12). Baseline `HEAD` = `052f2d840`, `GameScene.ts` sha256 `6abf3d8f…4f258ef`. After the three patches: `699f7356…81650301`. Evidence: `docs/audits/tech-debt/phase2-gamescene/README.md`. Locations marked "after" are line numbers in the patched file; the others are `HEAD`'s.
+
+## Debt Ledger: status updates
+
+| Item | New status |
+|---|---|
+| GS-07 | Not dead: `onPlayerMovementEnded` is part of `ExtensionModuleOptions` (`ExtensionModule.ts:44`). `GameScene` passes it to every extension module it loads from the git-ignored `play/src/front/external-modules/` (`GameScene.ts:2711`, `play/.gitignore:35`), and those modules live outside this repository, so no search here can prove it has no caller. The API was added for them on purpose (`9988cb7a3`, "Add possibility to listen player movement for the external modules (#4890)"). The misleading comments are fixed by `02-gs07-onPlayerMovementEnded-comment.patch`: the method's comment now says that callbacks get every local move event (after `:4847-4849`). Callback behavior unchanged. Kept open as GS-09 for the name. |
+
+## Debt Ledger: new rows
+
+| Item | Location | Type | Risk | Effort | Priority | Status |
+|---|---|---|---|---|---|---|
+| GS-09: `onPlayerMovementEnded` delivers every move event of the local player (one per frame while walking, plus each stop, turn and teleport), not the end of a movement. An extension module that trusts the name runs its callback once per frame while the user walks (inferred from `Player.moveUser`, which emits on every moving frame). Renaming it, or filtering on `moving: false`, changes the extension API that modules outside this repository use. | `ExtensionModule.ts:44`; after `GameScene.ts:4293-4295`, `:4847-4852` | design (misleading public name) | low in this repository (no in-repo caller); unknown for the external modules, which were not read | S here, plus a coordinated change in the repository that holds the extension modules | P3 | open; comment corrected in Phase 2 (`02-gs07-onPlayerMovementEnded-comment.patch`) |
+
+## Smell Inventory: status updates
+
+| Smell | New location | New status |
+|---|---|---|
+| Long methods (the `update` part) | after `:1379-1462` (`update`, 84 lines), `:1464-1505` (`applyBufferedRemotePlayerChanges`, 42), `:1507-1530` (`drawRemotePlayersAtInterpolatedPositions`, 24) | `update`: done by `03-extract-update-remote-player-steps.patch` (Extract Method, twice), 162 → 84 lines. The inventory proposed Break Out Method Object; Extract Method was enough, because the two steps share no locals, and this pass ruled out a new class. Still inline in `update`, because nothing pins them: the local-player input block, the `pendingEvents` group-event loop and the conversation-bubble step. `listenToIframeEvents`, `connect`, `create` and `subscribeToStores`: open. |
+| Commented-out switch cases (`AddPlayerEvent`, `RemovePlayerEvent`, `UserMovedEvent`, `PlayerDetailsUpdated`) | none | done by `01-remove-dead-switch-cases.patch` (Remove Dead Code). The queue's type (`:318-320`) holds only the three group events, so those cases could not occur. |
+| Duplicated repository diagnostic dump | after `:1484-1502` (moved verbatim into `applyBufferedRemotePlayerChanges`), `:4445-4457` | open. The first copy moved with its step; deduplicating it touches `doAddPlayer`, which is not pinned. |
+| Throw in the frame path | after `:1514` (inside `drawRemotePlayersAtInterpolatedPositions`) | unchanged (moved verbatim); `Game.step` reports it since GS-03's fix |
+| Misleading comment on `onPlayerMovementEnded` callbacks | after `:4847-4849` | done by `02-gs07-onPlayerMovementEnded-comment.patch` (comment fixed, API kept; see GS-07 and GS-09) |

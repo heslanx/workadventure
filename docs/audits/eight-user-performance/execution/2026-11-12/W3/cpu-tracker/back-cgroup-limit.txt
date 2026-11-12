@@ -1,0 +1,4 @@
+# date -u: Thu Nov 12 00:37:14 UTC 2026, host sbh
+# cmd: docker inspect wa-fable-stack-back --format 'NanoCpus={{.HostConfig.NanoCpus}} CpuQuota={{.HostConfig.CpuQuota}} CpuPeriod={{.HostConfig.CpuPeriod}} CpuShares={{.HostConfig.CpuShares}} Memory={{.HostConfig.Memory}}'
+NanoCpus=650000000 CpuQuota=0 CpuPeriod=0 CpuShares=512 Memory=1610612736
+# = 0.65 CPU cgroup quota, 1.5 GiB memory; host nproc=4. Same value in performance-1000-users/execution/P1/stack/stack-state.txt line 11.

@@ -1,0 +1,11 @@
+
+> map-storage@1.0.0 typecheck
+> tsc --project tsconfig-node.json --noEmit
+
+MAPSTORAGE_TYPECHECK_EXIT=0
+src/example_variables.ts(50,15): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/index.ts(1,15): error TS2307: Cannot find module './compiled_proto/room-api' or its corresponding type declarations.
+src/index.ts(7,8): error TS2307: Cannot find module 'nice-grpc' or its corresponding type declarations.
+src/index.ts(8,36): error TS2307: Cannot find module './compiled_proto/room-api' or its corresponding type declarations.
+src/index.ts(9,35): error TS2307: Cannot find module './compiled_proto/room-api' or its corresponding type declarations.
+ROOMAPI_TSC_EXIT=2

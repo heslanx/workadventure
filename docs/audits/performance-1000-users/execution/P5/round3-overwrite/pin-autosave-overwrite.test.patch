@@ -1,0 +1,105 @@
+diff --git a/map-storage/src/tests/MapsManagerAutosave.test.ts b/map-storage/src/tests/MapsManagerAutosave.test.ts
+index 93cf8cc..90eadc3 100644
+--- a/map-storage/src/tests/MapsManagerAutosave.test.ts
++++ b/map-storage/src/tests/MapsManagerAutosave.test.ts
+@@ -79,7 +79,11 @@ const { storage } = vi.hoisted(() => {
+             });
+         }
+ 
+-        public deleteFiles = unsupported;
++        public deleteFiles(virtualPath: string): Promise<void> {
++            this.files.delete(virtualPath);
++            return Promise.resolve();
++        }
++
+         public deleteFilesExceptWAM = unsupported;
+         public writeFile = unsupported;
+         public exist = unsupported;
+@@ -103,6 +107,13 @@ const AUTOSAVE_INTERVAL_MS = 15_000;
+ const LONG_AFTER_LAST_EDIT_MS = 5 * 60_000;
+ const RETRY_HORIZON_MS = 60 * 60_000;
+ const WRITE_TIMEOUT_MS = 5 * 60_000;
++const UPLOADED_WAM = JSON.stringify({
++    version: "1.0.0",
++    mapUrl: "http://play.test/uploaded.tmj",
++    entities: {},
++    areas: [],
++    entityCollections: [],
++});
+ 
+ // mapsManager is a process singleton: every test edits its own map.
+ let mapCount = 0;
+@@ -132,6 +143,14 @@ function errorLogsAboutMap(key: string): number {
+     return vi.mocked(console.error).mock.calls.filter(([message]) => String(message).includes(key)).length;
+ }
+ 
++/** Edits the map, lets its autosave write start and holds that write open; later writes succeed. */
++async function editAndHoldItsWrite(commandId: string): Promise<void> {
++    await edit(commandId);
++    storage.writeMode = "hold";
++    await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
++    storage.writeMode = "succeed";
++}
++
+ /** Lets the held writes succeed, most recently started first, and stops holding the following ones. */
+ async function releaseHeldWritesNewestFirst(): Promise<void> {
+     storage.writeMode = "succeed";
+@@ -342,6 +361,24 @@ describe("MapsManager autosave", () => {
+             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+             expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
+         });
++
++        // KNOWN DEFECT, pinned: the timeout retries while the timed-out write still runs. When that write lands
++        // after its retry, storage goes back to the older edit and nothing saves the newer one again. The fix
++        // flips this assertion.
++        it("restores the older edit when a write past its timeout lands after its retry (known defect)", async () => {
++            await edit("cmd-1");
++            storage.writeMode = "hold";
++            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS + WRITE_TIMEOUT_MS);
++            await edit("cmd-2");
++            storage.writeMode = "succeed";
++            // The retry stores cmd-2, then the command history expires while the timed-out write still runs.
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            await releaseHeldWritesNewestFirst();
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
++        });
+     });
+ 
+     describe("when an edit lands while a save is in flight", () => {
+@@ -375,4 +412,33 @@ describe("MapsManager autosave", () => {
+             expect(storage.files.get(mapKey)).toBe("replacement upload");
+         });
+     });
++
++    // KNOWN DEFECT, pinned: clearAfterUpload drops the save state but cannot cancel a write already handed to
++    // storage. When that write lands after the delete or the upload, the pre-delete map comes back. The fix
++    // flips both assertions.
++    describe("when the map is deleted or replaced while its save is in flight", () => {
++        it("recreates the deleted map when the write in flight lands after the delete (known defect)", async () => {
++            await editAndHoldItsWrite("cmd-1");
++            // UploadController.deleteFile: clear the cache, then delete the file.
++            mapsManager.clearAfterUpload(mapKey);
++            await storage.deleteFiles(mapKey);
++
++            await releaseHeldWritesNewestFirst();
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
++        });
++
++        it("overwrites the uploaded map when the write in flight lands after the upload (known defect)", async () => {
++            await editAndHoldItsWrite("cmd-1");
++            // Upload endpoints write the file, then the back servers relay handleClearAfterUpload.
++            await storage.writeStringAsFile(mapKey, UPLOADED_WAM);
++            mapsManager.clearAfterUpload(mapKey);
++
++            await releaseHeldWritesNewestFirst();
++            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
++
++            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
++        });
++    });
+ });

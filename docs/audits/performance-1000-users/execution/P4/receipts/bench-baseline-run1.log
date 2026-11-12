@@ -1,0 +1,2 @@
+docker exec wa-fable-local bash -lc   0.03s user 0.06s system 0% cpu 14:49.50 total
+exit=143

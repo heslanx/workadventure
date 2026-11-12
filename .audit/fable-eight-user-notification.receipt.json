@@ -1,0 +1,34 @@
+{
+  "id": "db328706-b62c-4f9d-bc0a-398e6de33f43",
+  "ok": true,
+  "result": {
+    "send": {
+      "handle": "term_12b57763-67f8-40fd-9909-f5b9199d94c7",
+      "accepted": true,
+      "bytesWritten": 795,
+      "prompt": {
+        "requestId": "bf12b057-e010-4ab5-bff1-908b2c297c02",
+        "stages": [
+          "input_accepted"
+        ],
+        "provider": "claude",
+        "observation": "supported",
+        "processIncarnation": "da0bf88a-84c9-47ee-8fe6-d9e699c60d5d",
+        "generation": 17,
+        "baselineWorkingSequence": 18,
+        "baselineExplicitWorkingStartedAt": null,
+        "baselinePermissionSequence": 0
+      }
+    },
+    "mutation": {
+      "requestId": "bf12b057-e010-4ab5-bff1-908b2c297c02",
+      "replayed": false
+    },
+    "warnings": [
+      "input was accepted, but no turn start was observed yet (a send without --wait-submit does not wait for one). Confirm delivery by reissuing the exact command with --retry-request bf12b057-e010-4ab5-bff1-908b2c297c02 --wait-submit <seconds>; the same request ID observes this prompt instead of sending it again."
+    ]
+  },
+  "_meta": {
+    "runtimeId": "81fc035b-9432-43bd-ac40-248f7c23d7e6"
+  }
+}

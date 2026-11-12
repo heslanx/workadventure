@@ -1,0 +1,38 @@
+{
+  "lane": 5,
+  "plan": "docs/audits/performance-1000-users/plans/upstream-pr-plan.md P1 lane 5",
+  "host": "sbh: x86_64 AMD EPYC 9354P (VM), 4 vCPU, 15 GB, shared with production services; Node 24.22.2, tsx 4.22.3, ws 8.21.0",
+  "stack": "wa-fable-stack (baseline ddbe245a8, dev mode): play/pusher capped 0.65 CPU / 1536 MB, back 0.65 CPU / 1536 MB, redis 0.10, maps nginx 0.10; generator container capped 1 CPU / 1 GB, all --cpu-shares 512",
+  "goal": "A deliberately invalid connection (WA_API_VERSION=wrong-version) is counted as rejected, not joined.",
+  "runs": [
+    {
+      "run": "lane-5",
+      "command": "docker run --rm --name wa-fable-gen --label owner=wa-fable-20261111 --cpus 1 --cpu-shares 512 --memory 1g --network wa-fable-net --tmpfs /tmp -v ~/wa-jobs/wa-fable-20261111/src-wa-fable-stack:/work -v ~/wa-jobs/wa-fable-20261111/p1-live/out:/out -w /work/benchmark -e WA_PUSHER_URL=http://wa-fable-stack-play:3000 -e WA_WS_URL=ws://wa-fable-stack-play:3001 -e WA_ROOM_URLS=http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json -e WA_API_VERSION=dev -e WA_OUTPUT=/out/lane-5.json -e WA_SESSIONS=1 -e WA_RAMP_SECONDS=1 -e WA_DURATION_SECONDS=5 -e WA_API_VERSION=wrong-version -e WA_MIN_ACCEPTED=0 node:24-trixie /work/node_modules/.bin/tsx ./index.ts",
+      "exitCode": 0,
+      "stderr": "(empty)",
+      "summary": {
+        "schemaVersion": 1,
+        "notice": "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
+        "startedAt": "2026-11-12T00:38:47.659Z",
+        "wallSeconds": 5.001,
+        "stopReason": "completed",
+        "config": {"pusherUrl": "http://wa-fable-stack-play:3000", "wsUrl": "ws://wa-fable-stack-play:3001", "roomUrls": ["http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json"], "sessions": 1, "rampSeconds": 1, "durationSeconds": 5, "moveHz": 1, "joinTimeoutSeconds": 30, "closeTimeoutSeconds": 5, "auth": "anonymous", "apiVersion": "wrong-version", "characterTextureId": "male1", "namePrefix": "bot", "disconnectFraction": 0, "disconnectAtSeconds": 2.5, "minAccepted": 0, "output": "/out/lane-5.json"},
+        "sessions": {"requested": 1, "started": 1, "neverStarted": 0, "accepted": 0, "acceptedAtStop": 0, "rejected": 1, "abortedBeforeJoin": 0, "unexpectedCloses": 0, "uniqueUserIds": 0},
+        "sockets": {"opened": 1, "openPeak": 1, "openAtStop": 0, "closed": 1},
+        "joinLatencyMs": {"count": 0, "p50": null, "p95": null, "max": null},
+        "rooms": [{"roomUrl": "http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json", "started": 1, "accepted": 0, "rejected": 1, "uniqueUserIds": 0}],
+        "sent": {},
+        "received": {"frames": 1, "bytes": 235, "eventsByType": {"errorScreenMessage": 1}},
+        "rejections": {"errorScreenMessage:NEW_VERSION": 1},
+        "errors": {},
+        "closeCodes": {"1000": 1},
+        "generator": {"cpuUserMs": 128.2, "cpuSystemMs": 25, "cpuPercentOfOneCore": 3.1, "rssPeakBytes": 153010176, "rssEndBytes": 153010176, "eventLoopLagMs": {"p50": 10.14, "p95": 11.25, "p99": 12.1, "max": 42.47}},
+        "cleanup": {"openSockets": 0, "activeTimers": 0},
+        "reconciled": true
+      }
+    }
+  ],
+  "note": "the later -e WA_API_VERSION overrides the base -e WA_API_VERSION=dev (docker keeps the last value); summary.config.apiVersion confirms it",
+  "verdict": "PASS",
+  "evidence": ["rejections {errorScreenMessage:NEW_VERSION: 1}; accepted=0; no joinLatency sample; reconciled=true", "exit 0 only because WA_MIN_ACCEPTED=0 declares a fully rejected run as expected; with the default 1 the same run exits 2"]
+}

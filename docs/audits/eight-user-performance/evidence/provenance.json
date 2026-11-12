@@ -1,0 +1,19 @@
+{
+  "consolidatedOn": "2026-11-12",
+  "referenceCommit": "ddbe245a84c78c947dd9ae5310da1fc53cd3d278",
+  "scope": "Two-client functional sprite-cache observation from the preceding session; not an eight-user benchmark. Existing local working-tree modifications are not represented by the commit alone.",
+  "files": [
+    {
+      "source": ".audit/sprite-cache.browser.json",
+      "preservedAs": "sprite-cache.browser.json",
+      "bytes": 3589,
+      "sha256": "edf48090d6765a0fce007bd2f3db902d6fb058c703fa358649415556754b26a7"
+    },
+    {
+      "source": ".audit/sprite-cache.http.json",
+      "preservedAs": "sprite-cache.http.json",
+      "bytes": 430,
+      "sha256": "df70d35f137f0f54941d4dd3d2f0c16ce6734ab3800c80e9e41ef7c5275678c2"
+    }
+  ]
+}

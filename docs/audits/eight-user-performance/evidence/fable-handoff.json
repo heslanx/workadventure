@@ -1,0 +1,18 @@
+{
+  "targetTerminal": "term_12b57763-67f8-40fd-9909-f5b9199d94c7",
+  "observedModel": "Fable 5.2",
+  "observedEffort": "xhigh",
+  "prompt": "../FABLE-EXECUTION-PROMPT.md",
+  "promptBytes": 27183,
+  "promptSha256": "73487683b49dac7744b7fda8eb1d863a95db356a4aeb494eab19d7d683633684",
+  "deadlineUtc": "2026-11-12T01:25:49Z",
+  "deadlineEuropeRome": "2026-11-12T02:25:49+01:00",
+  "messageId": "msg_cb975a6b2cc9",
+  "status": "message_registered_by_orca",
+  "workerAcknowledgment": "not_yet_observed",
+  "warnings": [
+    "term_12b57763-67f8-40fd-9909-f5b9199d94c7 is a live terminal-only mailbox. Delivery is not durable after that terminal closes; prefer run:<id> or dispatch:<id>."
+  ],
+  "scope": "Additional work to integrate concurrently with the existing assignment; not evidence of implementation or quota consumption.",
+  "resourceOwnership": "Existing user terminal preserved. No worker/server/SSH session started by this handoff."
+}

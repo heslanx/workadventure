@@ -1,0 +1,20 @@
+# host knc, container wa-fable-p1 (node:24-trixie, v24.22.2), cwd /work/benchmark, 2026-11-12T00:11Z
+# Transcribed from the command output of that run (the container has since been removed).
+# No WorkAdventure stack involved: this only shows the entry point starts, validates and reports.
+
+$ npx tsx ./index.ts            (no configuration)
+WA_PUSHER_URL is required
+
+Usage: npm start -- [--key=value ...]   (every flag is also an environment variable)
+[...]
+exit code: 1
+
+$ WA_PUSHER_URL=http://127.0.0.1:9 WA_ROOM_URLS=http://127.0.0.1:9/_/global/x/y.json WA_SESSIONS=2 \
+  WA_RAMP_SECONDS=0.2 WA_DURATION_SECONDS=1 npx tsx ./index.ts      (nothing listens on port 9)
+exit code: 2
+summary excerpt:
+{"sessions":{"requested":2,"started":2,"neverStarted":0,"accepted":0,"acceptedAtStop":0,"rejected":2,"abortedBeforeJoin":0,"unexpectedCloses":0,"uniqueUserIds":0},
+ "sockets":{"opened":0,"openPeak":0,"openAtStop":0,"closed":0},
+ "rejections":{"fetch failed":2},
+ "cleanup":{"openSockets":0,"activeTimers":0},"reconciled":true,
+ "generator":{"cpuUserMs":25.1,"cpuSystemMs":8.7,"cpuPercentOfOneCore":3.4,"rssPeakBytes":101367808,"rssEndBytes":101367808,"eventLoopLagMs":{"p50":10.12,"p95":11.55,"p99":12.58,"max":32.7}}}

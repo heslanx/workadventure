@@ -1,0 +1,35 @@
+diff --git a/play/tests/front/Phaser/Game/GameSceneMovement.test.ts b/play/tests/front/Phaser/Game/GameSceneMovement.test.ts
+index 6ee831f..94d93bc 100644
+--- a/play/tests/front/Phaser/Game/GameSceneMovement.test.ts
++++ b/play/tests/front/Phaser/Game/GameSceneMovement.test.ts
+@@ -42,6 +42,7 @@ interface GameSceneInternals {
+     connection: unknown;
+     activatablesManager: unknown;
+     gameMapFrontWrapper: unknown;
++    actionableItems: Map<number, unknown>;
+     getViewport(): typeof VIEWPORT;
+     doAddPlayer(data: { userId: number; position: PositionMessage }): void;
+     pushPlayerPosition(event: HasPlayerMovedInterface): void;
+@@ -259,7 +260,9 @@ describe("GameScene local move (handleCurrentPlayerHasMovedEvent)", () => {
+         };
+         const setPosition = vi.fn();
+         const entity = { name: "entity" };
++        const item = { name: "item" };
+         internals.gameMapFrontWrapper = { setPosition, getActivatableEntities: () => [entity] };
++        internals.actionableItems.set(1, item);
+         for (let userId = 1; userId <= 3; userId++) {
+             scene.MapPlayersByKey.set(userId, fakeRemotePlayer(userId, 0, 0) as unknown as RemotePlayer);
+         }
+@@ -269,7 +272,11 @@ describe("GameScene local move (handleCurrentPlayerHasMovedEvent)", () => {
+         internals.handleCurrentPlayerHasMovedEvent(move(6, PositionMessage_Direction.LEFT));
+ 
+         // Every move event lists all remote players again: the cost grows with the room, not with the neighbours.
+-        expect(updateActivatableObjectsDistances.mock.calls.map(([objects]) => objects.length)).toEqual([4, 4]);
++        const measured = updateActivatableObjectsDistances.mock.calls.map(([objects]) => objects);
++        expect(measured.map((objects) => objects.length)).toEqual([5, 5]);
++        for (const objects of measured) {
++            expect(objects).toContain(item);
++        }
+         expect(setPosition.mock.calls).toEqual([
+             [5, 100],
+             [6, 100],

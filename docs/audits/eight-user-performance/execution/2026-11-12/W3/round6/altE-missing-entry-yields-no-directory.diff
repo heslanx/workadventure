@@ -1,0 +1,7 @@
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -241,3 +241,3 @@
+         // Without an entry in /proc/self/cgroup the process is taken to be at the namespace root.
+-        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "/";
++        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "relative";
+         return cgroupDirectories(mount, cgroupPath).flatMap(

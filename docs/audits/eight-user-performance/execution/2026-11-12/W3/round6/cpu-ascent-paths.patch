@@ -1,0 +1,291 @@
+diff --git a/back/src/Services/QuotaAwareCpuTracker.ts b/back/src/Services/QuotaAwareCpuTracker.ts
+index 213451aa1..5c1f03fd5 100644
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -58,34 +58,26 @@ export function parseCgroupV1CfsQuota(quotaContent: string, periodContent: strin
+     return quotaToCores(quotaContent.trim(), periodContent.trim());
+ }
+ 
+-function plainAbsolutePath(path: string | undefined): string | undefined {
+-    const trimmed = path?.trim();
+-    if (trimmed === undefined || !trimmed.startsWith("/") || trimmed.split("/").includes("..")) {
+-        return undefined;
+-    }
+-    return trimmed;
+-}
+-
+ /**
+- * Parses `/proc/self/cgroup` and returns the cgroup v2 path of the process ("0::<path>").
+- * Returns undefined when there is no cgroup v2 entry or the path is not a plain absolute path.
++ * Parses `/proc/self/cgroup` and returns the cgroup v2 path of the process ("0::<path>"), as the file renders it.
++ * Returns undefined when there is no cgroup v2 entry.
+  */
+ export function parseCgroupV2Path(content: string): string | undefined {
+     const line = content.split("\n").find((entry) => entry.startsWith("0::"));
+-    return plainAbsolutePath(line?.slice("0::".length));
++    return line?.slice("0::".length).trim();
+ }
+ 
+ /**
+  * Parses `/proc/self/cgroup` and returns the cgroup v1 path of the process in the hierarchy that holds the cpu
+- * controller ("<id>:cpu,cpuacct:<path>").
+- * Returns undefined when there is no such entry or the path is not a plain absolute path.
++ * controller ("<id>:cpu,cpuacct:<path>"), as the file renders it.
++ * Returns undefined when there is no such entry.
+  */
+ export function parseCgroupV1CpuPath(content: string): string | undefined {
+     const entry = content
+         .split("\n")
+         .map((line) => /^\d+:([^:]+):(.*)$/.exec(line))
+         .find((fields) => fields !== null && fields[1].split(",").includes("cpu"));
+-    return plainAbsolutePath(entry?.[2]);
++    return entry?.[2].trim();
+ }
+ 
+ export type CgroupVersion = "v1" | "v2";
+@@ -125,28 +117,53 @@ export function parseCgroupMount(content: string, version: CgroupVersion): Cgrou
+     return undefined;
+ }
+ 
++/**
++ * A cgroup path as the kernel renders it relative to the namespace root of the reader: `ascent` levels above that root
++ * (one "/.." each), then the `names` below the level reached.
++ */
++interface CgroupPath {
++    ascent: number;
++    names: string[];
++}
++
++/**
++ * Returns undefined when the path is not absolute or has a ".." after a name, which the kernel never renders.
++ */
++function parseCgroupPath(path: string): CgroupPath | undefined {
++    const parts = path.split("/").filter(Boolean);
++    const firstName = parts.findIndex((part) => part !== "..");
++    const ascent = firstName === -1 ? parts.length : firstName;
++    const names = parts.slice(ascent);
++    return path.startsWith("/") && !names.includes("..") ? { ascent, names } : undefined;
++}
++
+ /**
+  * The directories of the process cgroup and its ancestors under the mount point, from the process cgroup up to the
+  * mount point.
+  *
+- * The kernel renders the process path and the mount root relative to the namespace root of the reader. The mount root
+- * is an ancestor of the process cgroup when the process path is below it. It is also one when the root only climbs out
+- * of the namespace root ("/../.."): the mount point is then an ancestor, and the levels between it and the namespace
+- * root have no names, so only the mount point is known. Any other root (a sibling of the process cgroup, or a climb
+- * that descends again) names no ancestor, so no directory of that mount is read.
++ * The process path and the mount root are both rendered relative to the namespace root of the reader. The mount point
++ * is the cgroup "up a levels, then down the root names" and the process is "up b levels, then down its names":
++ * - When a = b and the root names are a prefix of the process names, the mount point is an ancestor and the process
++ *   cgroup is reached below it by the remaining names.
++ * - When a > b and the root has no names, the mount point is an ancestor, and the levels between it and the process
++ *   have no names, so only the mount point is known.
++ * - In any other layout, or when either path cannot be read, the mount point is not known to be an ancestor and no
++ *   directory is read.
+  */
+-function cgroupDirectories(mount: CgroupMount, cgroupPath: string): string[] {
+-    const rootParts = mount.root.split("/").filter(Boolean);
+-    const pathParts = cgroupPath.split("/").filter(Boolean);
+-    const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
+-    if (!isBelowRoot) {
+-        return rootParts.every((part) => part === "..") ? [mount.mountPoint] : [];
++function cgroupDirectories(mount: CgroupMount, processPath: string): string[] {
++    const root = parseCgroupPath(mount.root);
++    const own = parseCgroupPath(processPath);
++    if (root === undefined || own === undefined) {
++        return [];
+     }
+-    const directories = [mount.mountPoint];
+-    for (const part of pathParts.slice(rootParts.length)) {
+-        directories.unshift(posix.join(directories[0], part));
++    if (root.ascent === own.ascent && root.names.every((name, index) => own.names[index] === name)) {
++        const directories = [mount.mountPoint];
++        for (const name of own.names.slice(root.names.length)) {
++            directories.unshift(posix.join(directories[0], name));
++        }
++        return directories;
+     }
+-    return directories;
++    return root.ascent > own.ascent && root.names.length === 0 ? [mount.mountPoint] : [];
+ }
+ 
+ function isUnlimitedQuota(content: string): boolean {
+@@ -221,7 +238,8 @@ export function readCgroupCpuQuota(readFile: ReadOptionalFile): CpuCapacity | un
+             root: "/",
+             mountPoint: hierarchy.defaultMountPoint,
+         };
+-        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? mount.root;
++        // Without an entry in /proc/self/cgroup the process is taken to be at the namespace root.
++        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "/";
+         return cgroupDirectories(mount, cgroupPath).flatMap(
+             (directory) => hierarchy.readQuota(readFile, directory) ?? [],
+         );
+diff --git a/back/tests/CpuTracker.test.ts b/back/tests/CpuTracker.test.ts
+index 732e901d5..9955ded57 100644
+--- a/back/tests/CpuTracker.test.ts
++++ b/back/tests/CpuTracker.test.ts
+@@ -33,6 +33,10 @@ const DOCKER_V1_CPU = "/sys/fs/cgroup/cpu,cpuacct";
+ 
+ const ONE_CORE_REFERENCE: CpuCapacity = { cores: 1, source: "no cgroup CPU quota, one-core reference" };
+ 
++const WA_SERVICE = "0::/system.slice/wa.service\n";
++const mountRootedAt = (root: string): string =>
++    `1673 1627 0:28 ${root} /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
++
+ // Probed in Docker containers with --cpus 0.5 on a cgroup v2 host (Linux 6.8). The kernel renders the path in
+ // /proc/self/cgroup and the cgroup mount root in /proc/self/mountinfo relative to the reader's cgroup namespace root.
+ const HOST_NS_SCOPE = "system.slice/docker-6fd459bddccd65df9f8067d594a32d1e162b79d19bd6a06d87cba94bedb4f11c.scope";
+@@ -185,10 +189,12 @@ describe("CpuTracker", () => {
+             );
+         });
+ 
+-        it("should reject a missing entry or a path that is not plain absolute", () => {
++        it("should keep a path that climbs out of the namespace root as the file renders it", () => {
++            expect(parseCgroupV2Path("0::/../../escape\n")).toBe("/../../escape");
++        });
++
++        it("should reject a missing entry", () => {
+             expect(parseCgroupV2Path("12:cpu,cpuacct:/docker/abc\n")).toBeUndefined();
+-            expect(parseCgroupV2Path("0::relative\n")).toBeUndefined();
+-            expect(parseCgroupV2Path("0::/../../escape\n")).toBeUndefined();
+         });
+     });
+ 
+@@ -198,10 +204,13 @@ describe("CpuTracker", () => {
+             expect(parseCgroupV1CpuPath(content)).toBe("/docker/abc");
+         });
+ 
+-        it("should reject a missing entry or a path that is not plain absolute", () => {
++        it("should keep a path that climbs out of the namespace root as the file renders it", () => {
++            expect(parseCgroupV1CpuPath("4:cpu,cpuacct:/../escape\n")).toBe("/../escape");
++        });
++
++        it("should reject a missing entry", () => {
+             expect(parseCgroupV1CpuPath("0::/\n")).toBeUndefined();
+             expect(parseCgroupV1CpuPath("5:cpuacct:/a\n")).toBeUndefined();
+-            expect(parseCgroupV1CpuPath("4:cpu,cpuacct:/../escape\n")).toBeUndefined();
+         });
+     });
+ 
+@@ -341,10 +350,6 @@ describe("CpuTracker", () => {
+     });
+ 
+     describe("cgroup v2 mount roots outside the process path", () => {
+-        const WA_SERVICE = "0::/system.slice/wa.service\n";
+-        const mountRootedAt = (root: string): string =>
+-            `1673 1627 0:28 ${root} /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
+-
+         it("should not read the quota of a mount rooted at a sibling of the process cgroup", () => {
+             const files = {
+                 [PROC_SELF_CGROUP]: WA_SERVICE,
+@@ -379,6 +384,108 @@ describe("CpuTracker", () => {
+         );
+     });
+ 
++    describe("cgroup paths that climb out of the namespace root", () => {
++        const sysCgroup = (...parts: string[]): string => ["/sys/fs/cgroup", ...parts].join("/");
++
++        it("should not read the mount point for a process outside the namespace root", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: "0::/../x\n",
++                [PROC_SELF_MOUNTINFO]: mountRootedAt("/"),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++
++        it.each([
++            { quotaAtProcess: "20000 100000\n", cores: 0.2, directory: sysCgroup("x") },
++            { quotaAtProcess: "max 100000\n", cores: 0.5, directory: sysCgroup() },
++        ])(
++            "should walk down from a mount rooted at the level the process climbed to (process quota $quotaAtProcess)",
++            ({ quotaAtProcess, cores, directory }) => {
++                const files = {
++                    [PROC_SELF_CGROUP]: "0::/../x\n",
++                    [PROC_SELF_MOUNTINFO]: mountRootedAt("/.."),
++                    [sysCgroup("x", "cpu.max")]: quotaAtProcess,
++                    [V2_CPU_MAX]: "50000 100000\n",
++                };
++                expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                    cores,
++                    source: `cgroup v2 ${directory}/cpu.max (quota ${cores} cores)`,
++                });
++            },
++        );
++
++        it("should read the mount point of a mount rooted above the level the process climbed to", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: "0::/../x\n",
++                [PROC_SELF_MOUNTINFO]: mountRootedAt("/../.."),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                cores: 0.2,
++                source: `cgroup v2 ${V2_CPU_MAX} (quota 0.2 cores)`,
++            });
++        });
++
++        it.each([
++            { layout: "a sibling at the same level", procSelfCgroup: "0::/../x\n", root: "/../y" },
++            { layout: "a named level above the process", procSelfCgroup: "0::/y\n", root: "/../y" },
++        ])("should not read the mount point of a mount rooted at $layout", ({ procSelfCgroup, root }) => {
++            const files = {
++                [PROC_SELF_CGROUP]: procSelfCgroup,
++                [PROC_SELF_MOUNTINFO]: mountRootedAt(root),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++
++        it.each(["0::/system.slice/../x\n", "0::/../system.slice/../x\n", "0::relative\n"])(
++            "should not read the mount point when the process path cannot be read (%j)",
++            (procSelfCgroup) => {
++                const files = {
++                    [PROC_SELF_CGROUP]: procSelfCgroup,
++                    [PROC_SELF_MOUNTINFO]: mountRootedAt("/"),
++                    [V2_CPU_MAX]: "20000 100000\n",
++                };
++                expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++            },
++        );
++
++        it("should not read the mount point when the mount root cannot be read", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: WA_SERVICE,
++                [PROC_SELF_MOUNTINFO]: mountRootedAt("/system.slice/../x"),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++
++        it("should not read a mount rooted at a named cgroup when the file has no entry for the process", () => {
++            const files = {
++                [PROC_SELF_MOUNTINFO]: mountRootedAt("/system.slice/other.service"),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++
++        it("should walk down below a cgroup v1 mount rooted at the level the process climbed to", () => {
++            const v1Cpu = "/sys/fs/cgroup/cpu,cpuacct";
++            const files = {
++                [PROC_SELF_CGROUP]: "4:cpu,cpuacct:/../x\n",
++                [PROC_SELF_MOUNTINFO]:
++                    "1278 1276 0:27 /.. /sys/fs/cgroup/cpu,cpuacct ro,nosuid,nodev,noexec,relatime master:11 - cgroup cgroup rw,cpu,cpuacct\n",
++                [`${v1Cpu}/x/cpu.cfs_quota_us`]: "20000\n",
++                [`${v1Cpu}/x/cpu.cfs_period_us`]: "100000\n",
++                [`${v1Cpu}/cpu.cfs_quota_us`]: "50000\n",
++                [`${v1Cpu}/cpu.cfs_period_us`]: "100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                cores: 0.2,
++                source: `cgroup v1 ${v1Cpu}/x/cpu.cfs_quota_us (quota 0.2 cores)`,
++            });
++        });
++    });
++
+     describe("readOptionalFile", () => {
+         it("should return undefined for a missing file without logging", () => {
+             expect(readOptionalFile("/nonexistent/wa-cpu-tracker/cpu.max")).toBeUndefined();

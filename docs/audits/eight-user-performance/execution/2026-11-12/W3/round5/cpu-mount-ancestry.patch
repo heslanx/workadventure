@@ -1,0 +1,80 @@
+diff --git a/back/src/Services/QuotaAwareCpuTracker.ts b/back/src/Services/QuotaAwareCpuTracker.ts
+index b45a368..213451a 100644
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -127,14 +127,23 @@ export function parseCgroupMount(content: string, version: CgroupVersion): Cgrou
+ 
+ /**
+  * The directories of the process cgroup and its ancestors under the mount point, from the process cgroup up to the
+- * mount point. A cgroup path outside the mounted root leaves only the mount point.
++ * mount point.
++ *
++ * The kernel renders the process path and the mount root relative to the namespace root of the reader. The mount root
++ * is an ancestor of the process cgroup when the process path is below it. It is also one when the root only climbs out
++ * of the namespace root ("/../.."): the mount point is then an ancestor, and the levels between it and the namespace
++ * root have no names, so only the mount point is known. Any other root (a sibling of the process cgroup, or a climb
++ * that descends again) names no ancestor, so no directory of that mount is read.
+  */
+ function cgroupDirectories(mount: CgroupMount, cgroupPath: string): string[] {
+     const rootParts = mount.root.split("/").filter(Boolean);
+     const pathParts = cgroupPath.split("/").filter(Boolean);
+     const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
++    if (!isBelowRoot) {
++        return rootParts.every((part) => part === "..") ? [mount.mountPoint] : [];
++    }
+     const directories = [mount.mountPoint];
+-    for (const part of isBelowRoot ? pathParts.slice(rootParts.length) : []) {
++    for (const part of pathParts.slice(rootParts.length)) {
+         directories.unshift(posix.join(directories[0], part));
+     }
+     return directories;
+diff --git a/back/tests/CpuTracker.test.ts b/back/tests/CpuTracker.test.ts
+index 0517464..732e901 100644
+--- a/back/tests/CpuTracker.test.ts
++++ b/back/tests/CpuTracker.test.ts
+@@ -340,6 +340,45 @@ describe("CpuTracker", () => {
+         });
+     });
+ 
++    describe("cgroup v2 mount roots outside the process path", () => {
++        const WA_SERVICE = "0::/system.slice/wa.service\n";
++        const mountRootedAt = (root: string): string =>
++            `1673 1627 0:28 ${root} /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
++
++        it("should not read the quota of a mount rooted at a sibling of the process cgroup", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: WA_SERVICE,
++                [PROC_SELF_MOUNTINFO]: mountRootedAt("/system.slice/other.service"),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++
++        it("should not read the quota of a mount whose root climbs out of the namespace root and descends again", () => {
++            const files = {
++                [PROC_SELF_CGROUP]: WA_SERVICE,
++                [PROC_SELF_MOUNTINFO]: mountRootedAt("/../x"),
++                [V2_CPU_MAX]: "20000 100000\n",
++            };
++            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
++        });
++
++        it.each(["0::/\n", WA_SERVICE])(
++            "should read the quota of a mount whose root only climbs out of the namespace root (process %j)",
++            (procSelfCgroup) => {
++                const files = {
++                    [PROC_SELF_CGROUP]: procSelfCgroup,
++                    [PROC_SELF_MOUNTINFO]: mountRootedAt("/../.."),
++                    [V2_CPU_MAX]: "20000 100000\n",
++                };
++                expect(readCpuCapacity(fakeCgroup(files))).toEqual({
++                    cores: 0.2,
++                    source: `cgroup v2 ${V2_CPU_MAX} (quota 0.2 cores)`,
++                });
++            },
++        );
++    });
++
+     describe("readOptionalFile", () => {
+         it("should return undefined for a missing file without logging", () => {
+             expect(readOptionalFile("/nonexistent/wa-cpu-tracker/cpu.max")).toBeUndefined();

@@ -1,0 +1,102 @@
+# M1 sha256 a3ee24324fb61e8610fc4660940d079db8f01bff4eaca81720012fbf5277c0d2
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -286,7 +286,6 @@
+                                 socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
+ 
+                             // If this is the first message sent, send back the viewport.
+-                            this.handleViewport(client, client.getUserData().viewport);
+                             // A session is an interval like any other: the tracker
+                             // emits user.connected now and user.disconnected when it
+                             // closes. open() is idempotent on the handle, which is what
+# M2 sha256 00be7e67390bb87fbd79a00225dcbb1a2227fcdb5c9434b63731bf10045a56ab
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -306,7 +306,7 @@
+                         }
+                         case "backConnectionCloseReasonMessage": {
+                             backConnectionCloseReason = message.message.backConnectionCloseReasonMessage.reason;
+-                            return;
++                            break;
+                         }
+                     }
+ 
+# M3 sha256 4e2e979e5d6200e7c80a50762f191c1f8dfe4c125790660dc5fccbc8823c26d2
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -685,7 +685,6 @@
+         }
+ 
+         // Now, we need to listen to the correct viewport.
+-        this.handleViewport(client, viewport);
+     }
+ 
+     onGroupUsersUpdated(group: GroupDescriptor, listener: PusherWebSocket): void {
+# M4 sha256 7b39cb901f6fee6bacba0ab12b9eb0856be17c24ce4526b0f1cc4a12c1693311
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -281,7 +281,6 @@
+                     }
+                     switch (message.message.$case) {
+                         case "roomJoinedMessage": {
+-                            socketData.userId = message.message.roomJoinedMessage.currentUserId;
+                             socketData.spaceUserId =
+                                 socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
+ 
+# M5 sha256 600de70ad3cfe2a4f692808d100bff849967446649870cfafdcbc4adee206ca8
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -1053,6 +1053,8 @@
+     }
+ 
+     public onUserMoves(user: UserDescriptor, listener: PusherWebSocket): void {
++        this.onUserEnters(user, listener);
++        return;
+         listener.emitInBatch({
+             message: {
+                 $case: "userMovedMessage",
+# M6 sha256 d3b4092f52400bb5fffb33e747155638c420be1e70fed6567e6270770c8288ef
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -923,7 +923,6 @@
+ 
+     private deleteRoomIfEmpty(room: PusherRoom): void {
+         if (room.isEmpty()) {
+-            room.close();
+             this.rooms.delete(room.roomUrl);
+             debug("Room %s is empty. Deleting.", room.roomUrl);
+         }
+# M7 sha256 60d76d0e693e71824a78e35657b1fa2cd6286a7098a03bb9f21ac059c4ff8744
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -876,7 +876,6 @@
+             }
+         } finally {
+             if (socketData.backConnection) {
+-                socketData.backConnection.end();
+             }
+         }
+     }
+# M8 sha256 e9e77a8dea82ffe193a75424aa4d1b9f901b4c4a4da2c9465e12a1be95a7b856
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -538,7 +538,6 @@
+                 propertiesToSync,
+             );
+ 
+-            this.spaces.set(spaceName, space);
+             clientEventsEmitter.emitCreateSpace(spaceName);
+ 
+             space.initSpace();
+# M9 sha256 55b76f8ac7171d255d3b2ffc895aa501b23c0e7b4e6bb92ce4a3e85c8d3e188e
+--- a/play/src/pusher/models/PusherRoom.ts
++++ b/play/src/pusher/models/PusherRoom.ts
+@@ -142,7 +142,7 @@
+                             // Let's dispatch this variable to all the listeners
+                             for (const listener of this.listeners) {
+                                 const userData = listener.getUserData();
+-                                if (!readableBy || userData.tags.includes(readableBy)) {
++                                if (true) {
+                                     listener.emitInBatch({
+                                         message: {
+                                             $case: "variableMessage",

@@ -1,0 +1,28 @@
+## cmd: cd phaser421/package && patch -p3 --dry-run --forward < patches/phaser+4.2.0.patch ; exit=0
+patching file 'dist/phaser.esm.js'
+patching file 'src/renderer/webgl/shaders/TilemapGPULayer-frag.js'
+patching file 'src/renderer/webgl/shaders/TilemapGPULayer-vert.js'
+patching file 'src/renderer/webgl/shaders/src/TilemapGPULayer.frag'
+patching file 'src/renderer/webgl/shaders/src/TilemapGPULayer.vert'
+patching file 'src/tilemaps/TilemapGPULayer.js'
+patching file 'src/tilemaps/Tileset.js'
+## cmd: git apply -p3 --check --verbose (4.2.1)
+Checking patch dist/phaser.esm.js...
+Hunk #1 succeeded at 208269 (offset 3 lines).
+Hunk #2 succeeded at 208292 (offset 3 lines).
+Hunk #3 succeeded at 208302 (offset 3 lines).
+Hunk #4 succeeded at 208329 (offset 3 lines).
+Hunk #5 succeeded at 208354 (offset 3 lines).
+Hunk #6 succeeded at 208434 (offset 3 lines).
+Hunk #7 succeeded at 208533 (offset 3 lines).
+Hunk #8 succeeded at 208574 (offset 3 lines).
+Hunk #9 succeeded at 244017 (offset 11 lines).
+Hunk #10 succeeded at 246771 (offset 11 lines).
+Checking patch src/renderer/webgl/shaders/TilemapGPULayer-frag.js...
+Checking patch src/renderer/webgl/shaders/TilemapGPULayer-vert.js...
+Checking patch src/renderer/webgl/shaders/src/TilemapGPULayer.frag...
+Checking patch src/renderer/webgl/shaders/src/TilemapGPULayer.vert...
+Checking patch src/tilemaps/TilemapGPULayer.js...
+Checking patch src/tilemaps/Tileset.js...
+## cmd: grep -rl 'WA_DATA_PRECISION|WA patch' in pristine 4.2.0 / 4.2.1 -> 0 / 0 files (patch content not upstream)
+## npm view phaser@4.2 version -> ["4.2.0","4.2.1"]; dist.shasum 4.2.1 = 5512f23d348e6fb5c48ce71a9fbddd200ef919ea

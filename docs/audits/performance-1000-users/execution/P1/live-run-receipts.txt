@@ -1,0 +1,34 @@
+# P1 live run receipts (lane P1-live), host sbh, 2026-11-12 UTC
+# Lane JSON files (lane-2..lane-7.json) hold each harness summary, command and exit code.
+
+## 1. Files copied to sbh:~/wa-jobs/wa-fable-20261111/src-wa-fable-stack/ (rsync -aR, no node_modules), 00:36 UTC
+# sha256 of checkout files; remote sha256sum of the same paths diffed equal -> CHECKSUMS_MATCH
+d2569a74602cc9444977210755acbc47f22c73145ed143a0a1e74c43e8722463  benchmark/index.ts
+14d688af08b0120ac321358c3fef5f57e326360992ce2c0a85c187158872facb  benchmark/package.json
+7908954d6bdc31ee4a987153a43f5b8ff82e4defa5f14e1f3a50840dc0864bae  benchmark/README.md
+88ab50d7a2f68d0dd89cd5299456046ca72f12b8e9be9e5403ce26023a490584  benchmark/src/config.ts
+108aec7eb2777bf5fb8baaf617f44ed589a75fd4989a000b7fa0d4b7661ee129  benchmark/src/protocol.ts
+7952ace5d0dbc0999bd2c8a2aa9b35736d39e1d623ee9066d3fa03b0fe3507e5  benchmark/src/runner.ts
+3233d0ac3ab96f99f8489dee49eb686a1d1d44185253f6bac4810cf2ec01c483  benchmark/src/session.ts
+d0390e17655e645cff5c0894789cf330a98a38eb2de28b5ea493336b156650be  benchmark/src/stats.ts
+aa0d4ccf95cfe3b11cc691dbc6334f7d08e7581d1da6151cf03804cf72d33728  benchmark/tests/harness.test.ts
+
+## 2. Unit tests on that sbh tree, 00:42 UTC (container wa-fable-gen-test, --network none, 1 CPU / 1 GB)
+$ /work/node_modules/.bin/vitest run tests/harness.test.ts   # vitest 4.1.7, Node v24.22.2
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+exit=0
+
+## 3. Stack logs over the lanes (00:33-00:43 UTC)
+$ docker logs --since 10m wa-fable-stack-play | grep -ciE "error|exception"   -> 0
+$ docker logs --since 10m wa-fable-stack-back | grep -ciE "error|exception"   -> 0
+
+## 4. Teardown, 00:44 UTC
+$ docker compose -f ~/wa-jobs/wa-fable-20261111/stack/docker-compose.yaml down   # piped through tail, exit status not captured; end state verified below
+ (tail) Container wa-fable-stack-redis Removed / wa-fable-stack-maps Removed / Network wa-fable-net Removed
+$ docker ps -a --filter label=owner=wa-fable-20261111 --format "{{.Names}} {{.Status}}"
+wa-fable-h8 Up 35 minutes
+wa-fable-svelte Up About an hour
+$ docker network ls --filter name=wa-fable-net --format "{{.Name}}"
+(empty)
+# wa-fable-gen, wa-fable-gen-obs, wa-fable-gen-test, wa-fable-probe were all --rm and absent before teardown.

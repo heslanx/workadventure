@@ -1,0 +1,13 @@
+diff --git a/play/src/front/Chat/Components/Room/RoomTimeline.svelte b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+index 9b9b94d..39a5bdc 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+@@ -685,8 +685,6 @@
+         beginProgrammaticScroll("resync");
+         target.scrollIntoView({ block: "center", behavior: "smooth" });
+         target.classList.remove("highlight-message");
+-        // // Force the highlight animation to restart when the same poll is clicked again.
+-        // target.offsetWidth;
+         target.classList.add("highlight-message");
+     }
+ </script>

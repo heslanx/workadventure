@@ -1,0 +1,45 @@
+apply-dep02-back	.	check=0 apply=0	0s
+apply-dep02-shared-utils	.	check=0 apply=0	0s
+apply-dep02-map-storage	.	check=0 apply=0	0s
+apply-dep01-back	.	check=0 apply=0	0s
+apply-dep01-map-storage	.	check=0 apply=0	0s
+apply-dep01-libs-messages	.	check=0 apply=0	0s
+apply-dep01-libs-store-utils	.	check=0 apply=0	0s
+apply-dep01-play	.	check=0 apply=0	0s
+npm-ci	.	0	59s
+npm-ls-back-uuid-mapeditor	.	0	0s
+npm-ls-shared-utils-messages	.	0	0s
+npm-ls-map-storage-smithy	.	0	0s
+npm-ls-removed-roots	.	0	0s
+npm-ls-all-problems	.	0	0s
+play-i18n-check	play	0	3s
+play-typecheck	play	0	26s
+play-svelte-check	play	0	41s
+play-lint	play	0	337s
+play-pretty-check	play	0	26s
+play-test	play	0	407s
+back-typecheck	back	0	12s
+back-lint	back	0	16s
+back-test	back	0	22s
+back-pretty-check	back	0	2s
+map-storage-typecheck	map-storage	0	5s
+map-storage-lint	map-storage	0	16s
+map-storage-test	map-storage	0	8s
+map-storage-pretty-check	map-storage	0	2s
+messages-typecheck	libs/messages	0	3s
+store-utils-typecheck	libs/store-utils	0	2s
+store-utils-svelte-check	libs/store-utils	0	3s
+store-utils-lint	libs/store-utils	0	4s
+store-utils-test	libs/store-utils	0	1s
+shared-utils-typecheck	libs/shared-utils	0	5s
+shared-utils-lint	libs/shared-utils	0	8s
+shared-utils-test	libs/shared-utils	0	3s
+map-editor-typecheck	libs/map-editor	0	5s
+map-editor-lint	libs/map-editor	0	9s
+map-editor-test	libs/map-editor	0	6s
+math-utils-typecheck	libs/math-utils	0	2s
+benchmark-test	benchmark	0	5s
+benchmark-typecheck	benchmark	0	2s
+play-build	play	0	21s
+NEGCTRL-play-typecheck-without-dom-mediacapture-transform	play	0	19s
+total done 05:23:55

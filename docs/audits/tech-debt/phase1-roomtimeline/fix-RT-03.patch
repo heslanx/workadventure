@@ -1,0 +1,57 @@
+diff --git a/play/src/front/Chat/Components/Room/RoomTimeline.svelte b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+index 8db5613..92d3c5a 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+@@ -127,6 +127,7 @@
+     let anchorIdleReleaseTimer: ReturnType<typeof setTimeout> | undefined;
+     let anchorHardReleaseTimer: ReturnType<typeof setTimeout> | undefined;
+     let lastSeenLastItemKey: string | undefined;
++    let focusingSequence: number | undefined;
+     let contentResizeObserver: ResizeObserver | undefined;
+     const observedItems = new WeakSet<Element>();
+ 
+@@ -738,7 +739,16 @@
+         }
+     }
+ 
+-    async function focusTimelineEvent(request: RoomTimelineFocusRequest) {
++    // A request pending at open is asked for twice, by the open and by the $roomTimelineFocusStore effect.
++    function focusTimelineEvent(request: RoomTimelineFocusRequest): Promise<void> {
++        if (request.sequence === focusingSequence) return Promise.resolve();
++        focusingSequence = request.sequence;
++        return scrollToTimelineEvent(request).finally(() => {
++            focusingSequence = undefined;
++        });
++    }
++
++    async function scrollToTimelineEvent(request: RoomTimelineFocusRequest) {
+         if (!hasPendingTimelineFocusRequest(request)) {
+             return;
+         }
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+index 913059b..aaa6469 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
++++ b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+@@ -472,18 +472,18 @@ describe("RoomTimeline characterization", () => {
+         render(room);
+         await wait(10);
+ 
+-        // RT-03 (pinned): the request pending at open is focused twice.
+-        expect(scrolledIntoView).toEqual(["m1", "m1"]);
++        // RT-03 (fixed): the request pending at open is focused once.
++        expect(scrolledIntoView).toEqual(["m1"]);
+         expect(scrollCalls).toEqual([]);
+         expect(target.querySelector("li[data-event-id='m1']")?.classList.contains("highlight-message")).toBe(true);
+ 
+         roomTimelineFocusStore.set({ roomId: "!other:test", eventId: "m2", sequence: 2 });
+         await wait(10);
+-        expect(scrolledIntoView).toEqual(["m1", "m1"]);
++        expect(scrolledIntoView).toEqual(["m1"]);
+ 
+         roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "older", sequence: 3 });
+         await wait(10);
+         expect(room.ensureTimelineEventVisible).toHaveBeenCalledWith("older");
+-        expect(scrolledIntoView).toEqual(["m1", "m1", "older"]);
++        expect(scrolledIntoView).toEqual(["m1", "older"]);
+     });
+ });

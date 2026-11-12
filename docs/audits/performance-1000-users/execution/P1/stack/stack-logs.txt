@@ -1,0 +1,40 @@
+# captured: 2026-11-12T00:02:17Z host=sbh
+## wa-fable-stack-back (last 30 lines)
+
+> workadventureback@1.0.0 dev
+> tsx watch --inspect=0.0.0.0:9229 src/server.ts
+
+Debugger listening on ws://0.0.0.0:9229/8f0ff168-ee5a-4502-a05c-aa5911817ab9
+For help, see: https://nodejs.org/learn/getting-started/debugging
+Admin API not configured. Will use local implementations
+WorkAdventure HTTP API starting on port 8080!
+WorkAdventure Prometheus API starting on port 9100!
+WorkAdventure HTTP/2 API starting on port 50051!
+(node:30) DeprecationWarning: Calling start() is no longer necessary. It can be safely omitted.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Redis client is connected
+Redis client is ready
+
+## wa-fable-stack-maps: requests for the map JSON (proves the back fetched it over HTTP)
+172.21.0.6 - - [11/Nov/2026:23:57:57 +0000] "GET /starter/map.json HTTP/1.1" 200 33251 "-" "curl/8.14.1" "-"
+172.21.0.4 - - [12/Nov/2026:00:01:10 +0000] "GET /starter/map.json HTTP/1.1" 200 33251 "-" "axios/1.16.1" "-"
+
+## wa-fable-stack-play (stack frames of the one-off Matrix startup error removed, last 30 lines)
+
+> workadventure-play@1.0.0 dev-pusher
+> TSX_TSCONFIG_PATH=tsconfig-pusher.json tsx watch --clear-screen=false --inspect=0.0.0.0:9229 ./src/server.ts
+
+Debugger listening on ws://0.0.0.0:9229/7d70ca74-bc46-45ce-99ff-9efaebc19f71
+For help, see: https://nodejs.org/learn/getting-started/debugging
+Admin API not configured. Will use local implementations
+RoomAPI is disabled! ROOM_API_SECRET_KEY is not defined on environment variables.
+WorkAdventure Pusher web-socket server started on port 3001!
+WorkAdventure Prometheus web-server started on port 9100!
+WorkAdventure Pusher web-server started on port 3000!
+Redis client is connected
+Redis client is ready
+Failed to override admin account ratelimit: TypeError: Invalid URL
+Upgrading connection to WebSocket for tab 541a8760-c33e-4080-a034-8b98d1932ee3
+Error: Invalid websocket payload: missing client message
+Upgrading connection to WebSocket for tab c8079039-8078-4cd8-bf2e-8391d15a03a9
+Upgrading connection to WebSocket for tab dbd72860-d32d-4fd1-9706-651fdb757f04

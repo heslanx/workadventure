@@ -1,0 +1,79 @@
+# P5 round 2 v2 verification (sbh, node:24-trixie, --cpus 1 --memory 3g --network none, cwd map-storage)
+## wa-fable-r2-p5-fix-1: patched tree (MapsManager.ts 4380e3c3, test 94660593)
+ RUN  v4.1.7 /work/map-storage
+ ✓ src/tests/MapsManagerAutosave.test.ts (16 tests) 76ms
+ ✓ src/tests/MapStorageServer.test.ts (13 tests) 36ms
+ Test Files  2 passed (2)
+      Tests  29 passed (29)
+   Start at  01:45:38
+   Duration  6.16s (transform 3.20s, setup 0ms, import 5.54s, tests 112ms, environment 0ms)
+VITEST_EXIT=0
+> map-storage@1.0.0 typecheck
+> tsc --project tsconfig-node.json --noEmit
+TYPECHECK_EXIT=0
+ESLINT_EXIT=0
+Checking formatting...
+All matched files use Prettier code style!
+PRETTIER_EXIT=0
+## wa-fable-r2-p5-fix-2: v2 test file against author round-2 MapsManager.ts (e109bb53, read-only bind mount)
+4380e3c394856e85c47536e20daf5497faac6df7  src-p5/map-storage/src/MapsManager.ts
+94660593ea3d315aeb873f1817d8354c7e67b9e9  src-p5/map-storage/src/tests/MapsManagerAutosave.test.ts
+e109bb53e31ab3dd3d9fd5154ea900657562a4c8  p5-fix-tmp/MapsManager.round2.ts
+       ✓ should persist the edit once storage recovers, without waiting for another edit 6ms
+       ✓ should keep the unsaved edit in memory after its command history expired 4ms
+       ✓ should report the failure, then give up and release the map past the retry horizon 18ms
+       ✓ should measure the retry horizon from the newest edit, not the first one 23ms
+       ✓ should log a failing save on its first attempt and then periodically, not on every attempt 3ms
+       × should still retry and report the handler error when logging the failure throws 6ms
+       ✓ should stop retrying once the map was replaced or deleted 1ms
+       ✓ should never run two writes of the same map at once 1ms
+       ✓ should end with the newest edit stored when the first write is the last to finish 1ms
+       ✓ should count a write that never settles as failed and retry it 1ms
+       ✓ should persist that newer edit with a follow-up write 1ms
+       ✓ should not retry the abandoned state after the map was replaced by an upload 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should still retry and report the handler error when logging the failure throws
+AssertionError: expected undefined to be 'cmd-1' // Object.is equality
+- Expected:
+"cmd-1"
++ Received:
+undefined
+ ❯ src/tests/MapsManagerAutosave.test.ts:288:54
+    286|             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+    287|
+    288|             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+       |                                                      ^
+    289|             expect(console.error).toHaveBeenCalledWith(
+    290|                 expect.stringContaining(`Error while handling the save…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  01:45:37
+   Duration  4.21s (transform 2.67s, setup 0ms, import 3.87s, tests 92ms, environment 0ms)
+EXIT=1
+## wa-fable-r2-p5-fix-3: v2 test file against v2 MapsManager.ts with the terminal .catch removed (a7d9dc7f, read-only bind mount)
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Logger unavailable
+ ❯ Console.<anonymous> src/tests/MapsManagerAutosave.test.ts:278:27
+    276|             vi.mocked(console.error).mockImplementation((message: unkn…
+    277|                 if (String(message).includes("failed (attempt 1")) {
+    278|                     throw new Error("Logger unavailable");
+       |                           ^
+    279|                 }
+    280|             });
+ ❯ Console.error ../node_modules/@vitest/spy/dist/index.js:332:34
+ ❯ MapsManager.onSaveFailed src/MapsManager.ts:369:21
+ ❯ src/MapsManager.ts:314:38
+This error originated in "src/tests/MapsManagerAutosave.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should still retry and report the handler error when logging the failure throws". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+     Errors  1 error
+   Start at  01:47:18
+   Duration  3.98s (transform 2.67s, setup 0ms, import 3.64s, tests 106ms, environment 0ms)
+EXIT=1

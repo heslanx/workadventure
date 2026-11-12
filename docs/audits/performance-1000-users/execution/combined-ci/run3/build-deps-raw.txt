@@ -1,0 +1,14 @@
+apply 06-01-benchmark-devdeps.v2.patch 0
+apply 07-02-types-node-24.v2.patch 0
+apply 08-03-phaser-4.2.1.v2.patch 0
+npm-ci 0 59s
+phaser@4.2.1 ✔
+typesafe-i18n 0 3s
+build 0 18s
+4.2.1
+marker files: 2
+179M	dist
+BUILD_DONE
+== vite
+✓ 4179 modules transformed.
+✓ built in 16.52s

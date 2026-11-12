@@ -1,0 +1,34 @@
+# dist/public/iframe_api.js and its .map are excluded from every head figure. They are written to play/public by "npm run build-iframe-api", which this lane ran after the base build, so only the head "vite build" copied them into dist. They are not an effect of the Svelte upgrade.
+## totals by type (files, raw bytes, gzip -9 bytes)
+js: base n=73 raw=18138584 gz=7454976 | head n=73 raw=18129923 gz=7455538 | raw -0.05% gz 0.01%
+css: base n=4 raw=502144 gz=99897 | head n=4 raw=502144 gz=99897 | raw 0.00% gz 0.00%
+wasm: base n=8 raw=69288460 gz=20281915 | head n=8 raw=69288460 gz=20281915 | raw 0.00% gz 0.00%
+all dist files: base n=1167 bytes=184838080 | head n=1167 bytes=184880629 | 0.02%
+  .map: base 40349451 head 40400661 delta 51210 (0.13%)
+  .js: base 18138584 head 18129923 delta -8661 (-0.05%)
+  .css: base 502144 head 502144 delta 0 (0.00%)
+  .wasm: base 69288460 head 69288460 delta 0 (0.00%)
+## names only in base: (none)
+## names only in head: (none)
+## 12 largest head JS/CSS chunks: name | base raw/gz | head raw/gz | delta raw / gz
+assets/audio-worklet-processor.js | 5824304/4066450 | 5824304/4066450 | 0 / 0
+assets/GameManager.js | 1758057/473064 | 1757104/473094 | -953 / 30
+assets/main.js | 1562748/453779 | 1551093/452689 | -11655 / -1090
+assets/ActionableItem.js | 1380542/354399 | 1380542/354399 | 0 / 0
+assets/MatrixClientWrapper.js | 966527/262470 | 966519/262485 | -8 / 15
+assets/es.js | 915778/300853 | 915778/300853 | 0 / 0
+assets/indexeddb-crypto-store.js | 709547/208512 | 709547/208512 | 0 / 0
+assets/main.css | 493665/97176 | 493665/97176 | 0 / 0
+assets/EmoteStore.js | 421900/61787 | 421898/61788 | -2 / 1
+assets/vision_wasm_module_internal.js | 322082/77439 | 322082/77439 | 0 / 0
+assets/litert_wasm_threaded_internal.js | 311769/77049 | 311769/77049 | 0 / 0
+assets/litert_wasm_jspi_internal.js | 281025/67364 | 281025/67364 | 0 / 0
+## 8 largest absolute raw deltas
+assets/main.js raw -11655 gz -1090
+assets/i18n-svelte.js raw +2350 gz +827
+assets/Popup.js raw +1948 gz +822
+assets/GameManager.js raw -953 gz +30
+assets/MatrixSecurity.js raw -187 gz -13
+assets/DesktopCapturerSourcePicker.js raw -129 gz -30
+assets/ResetKeyStorageConfirmationModal.js raw -17 gz -3
+assets/MatrixClientWrapper.js raw -8 gz +15

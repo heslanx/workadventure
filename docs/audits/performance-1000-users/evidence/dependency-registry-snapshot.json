@@ -1,0 +1,2903 @@
+{
+  "checked_at_utc": "2026-11-11T23:11:00.752581+00:00",
+  "scope": "All distinct directly declared package names; latest tag is a candidate, not proof of compatibility. Internal workspaces excluded from registry lookup.",
+  "packages": {
+    "@16bits/nes.css": {
+      "version": "2.3.2",
+      "engines": {
+        "node": ">=10.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/nostalgic-css/NES.css.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%4016bits%2Fnes.css/latest",
+      "status": "observed_latest"
+    },
+    "@anatine/zod-openapi": {
+      "version": "2.2.8",
+      "engines": {},
+      "peerDependencies": {
+        "zod": "^3.20.0",
+        "openapi3-ts": "^4.1.2"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/anatine/zod-plugins.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40anatine%2Fzod-openapi/latest",
+      "status": "observed_latest"
+    },
+    "@aws-sdk/client-s3": {
+      "version": "3.1167.0",
+      "engines": {
+        "node": ">=20.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/aws/aws-sdk-js-v3.git",
+        "type": "git",
+        "directory": "clients/client-s3"
+      },
+      "source": "https://registry.npmjs.org/%40aws-sdk%2Fclient-s3/latest",
+      "status": "observed_latest"
+    },
+    "@aws-sdk/s3-request-presigner": {
+      "version": "3.1167.0",
+      "engines": {
+        "node": ">=20.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/aws/aws-sdk-js-v3.git",
+        "type": "git",
+        "directory": "packages/s3-request-presigner"
+      },
+      "source": "https://registry.npmjs.org/%40aws-sdk%2Fs3-request-presigner/latest",
+      "status": "observed_latest"
+    },
+    "@bufbuild/protobuf": {
+      "version": "2.17.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/bufbuild/protobuf-es.git",
+        "type": "git",
+        "directory": "packages/protobuf"
+      },
+      "source": "https://registry.npmjs.org/%40bufbuild%2Fprotobuf/latest",
+      "status": "observed_latest"
+    },
+    "@eslint/compat": {
+      "version": "2.1.1",
+      "engines": {
+        "node": "^20.19.0 || ^22.13.0 || >=24"
+      },
+      "peerDependencies": {
+        "eslint": "^8.40 || 9 || 10"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/eslint/rewrite.git",
+        "type": "git",
+        "directory": "packages/compat"
+      },
+      "source": "https://registry.npmjs.org/%40eslint%2Fcompat/latest",
+      "status": "observed_latest"
+    },
+    "@eslint/js": {
+      "version": "10.0.1",
+      "engines": {
+        "node": "^20.19.0 || ^22.13.0 || >=24"
+      },
+      "peerDependencies": {
+        "eslint": "^10.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/eslint/eslint.git",
+        "type": "git",
+        "directory": "packages/js"
+      },
+      "source": "https://registry.npmjs.org/%40eslint%2Fjs/latest",
+      "status": "observed_latest"
+    },
+    "@floating-ui/dom": {
+      "version": "1.8.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/floating-ui/floating-ui.git",
+        "type": "git",
+        "directory": "packages/dom"
+      },
+      "source": "https://registry.npmjs.org/%40floating-ui%2Fdom/latest",
+      "status": "observed_latest"
+    },
+    "@fontsource/oswald": {
+      "version": "5.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/fontsource/font-files.git",
+        "type": "git",
+        "directory": "fonts/google/oswald"
+      },
+      "source": "https://registry.npmjs.org/%40fontsource%2Foswald/latest",
+      "status": "observed_latest"
+    },
+    "@fontsource/press-start-2p": {
+      "version": "5.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/fontsource/font-files.git",
+        "type": "git",
+        "directory": "fonts/google/press-start-2p"
+      },
+      "source": "https://registry.npmjs.org/%40fontsource%2Fpress-start-2p/latest",
+      "status": "observed_latest"
+    },
+    "@fontsource/roboto": {
+      "version": "5.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/fontsource/font-files.git",
+        "type": "git",
+        "directory": "fonts/google/roboto"
+      },
+      "source": "https://registry.npmjs.org/%40fontsource%2Froboto/latest",
+      "status": "observed_latest"
+    },
+    "@fontsource/roboto-condensed": {
+      "version": "5.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/fontsource/font-files.git",
+        "type": "git",
+        "directory": "fonts/google/roboto-condensed"
+      },
+      "source": "https://registry.npmjs.org/%40fontsource%2Froboto-condensed/latest",
+      "status": "observed_latest"
+    },
+    "@grpc/grpc-js": {
+      "version": "1.14.7",
+      "engines": {
+        "node": ">=12.10.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/grpc/grpc-node.git#master",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40grpc%2Fgrpc-js/latest",
+      "status": "observed_latest"
+    },
+    "@grpc/proto-loader": {
+      "version": "0.8.1",
+      "engines": {
+        "node": ">=6"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/grpc/grpc-node.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40grpc%2Fproto-loader/latest",
+      "status": "observed_latest"
+    },
+    "@iconify-json/tabler": {
+      "version": "1.2.44",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": null,
+      "source": "https://registry.npmjs.org/%40iconify-json%2Ftabler/latest",
+      "status": "observed_latest"
+    },
+    "@jitsi/rnnoise-wasm": {
+      "version": "0.2.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/jitsi/rnnoise-wasm.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40jitsi%2Frnnoise-wasm/latest",
+      "status": "observed_latest"
+    },
+    "@livekit/track-processors": {
+      "version": "0.8.2",
+      "engines": {},
+      "peerDependencies": {
+        "livekit-client": "^1.12.0 || ^2.1.0",
+        "@types/dom-mediacapture-transform": "^0.1.9"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/livekit/track-processors-js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40livekit%2Ftrack-processors/latest",
+      "status": "observed_latest"
+    },
+    "@mediapipe/tasks-vision": {
+      "version": "1.2.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": null,
+      "source": "https://registry.npmjs.org/%40mediapipe%2Ftasks-vision/latest",
+      "status": "observed_latest"
+    },
+    "@playwright/test": {
+      "version": "1.65.0",
+      "engines": {
+        "node": ">=20"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/microsoft/playwright.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40playwright%2Ftest/latest",
+      "status": "observed_latest"
+    },
+    "@posthog/types": {
+      "version": "1.424.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/PostHog/posthog-js.git",
+        "type": "git",
+        "directory": "packages/types"
+      },
+      "source": "https://registry.npmjs.org/%40posthog%2Ftypes/latest",
+      "status": "observed_latest"
+    },
+    "@rollup/plugin-inject": {
+      "version": "5.0.5",
+      "engines": {
+        "node": ">=14.0.0"
+      },
+      "peerDependencies": {
+        "rollup": "^1.20.0||^2.0.0||^3.0.0||^4.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/rollup/plugins.git",
+        "directory": "packages/inject"
+      },
+      "source": "https://registry.npmjs.org/%40rollup%2Fplugin-inject/latest",
+      "status": "observed_latest"
+    },
+    "@sentry/browser": {
+      "version": "11.12.0",
+      "engines": {
+        "node": ">=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/getsentry/sentry-javascript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40sentry%2Fbrowser/latest",
+      "status": "observed_latest"
+    },
+    "@sentry/cli": {
+      "version": "3.8.2",
+      "engines": {
+        "node": ">= 18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/getsentry/sentry-cli.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40sentry%2Fcli/latest",
+      "status": "observed_latest"
+    },
+    "@sentry/node": {
+      "version": "11.12.0",
+      "engines": {
+        "node": ">=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/getsentry/sentry-javascript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40sentry%2Fnode/latest",
+      "status": "observed_latest"
+    },
+    "@sentry/svelte": {
+      "version": "11.12.0",
+      "engines": {
+        "node": ">=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0"
+      },
+      "peerDependencies": {
+        "svelte": "3.x || 4.x || 5.x"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/getsentry/sentry-javascript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40sentry%2Fsvelte/latest",
+      "status": "observed_latest"
+    },
+    "@sentry/vite-plugin": {
+      "version": "11.12.0",
+      "engines": {
+        "node": ">=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/getsentry/sentry-javascript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40sentry%2Fvite-plugin/latest",
+      "status": "observed_latest"
+    },
+    "@smarttools/eslint-plugin-rxjs": {
+      "version": "1.0.22",
+      "engines": {},
+      "peerDependencies": {
+        "typescript": ">=4.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/DaveMBush/eslint-plugin-rxjs.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40smarttools%2Feslint-plugin-rxjs/latest",
+      "status": "observed_latest"
+    },
+    "@sveltejs/svelte-virtual-list": {
+      "version": "3.0.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/svelte-virtual-list.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40sveltejs%2Fsvelte-virtual-list/latest",
+      "status": "observed_latest"
+    },
+    "@sveltejs/vite-plugin-svelte": {
+      "version": "7.3.1",
+      "engines": {
+        "node": "^20.19 || ^22.12 || >=24"
+      },
+      "peerDependencies": {
+        "vite": "^8.0.0-beta.7 || ^8.0.0",
+        "svelte": "^5.46.4"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/vite-plugin-svelte.git",
+        "type": "git",
+        "directory": "packages/vite-plugin-svelte"
+      },
+      "source": "https://registry.npmjs.org/%40sveltejs%2Fvite-plugin-svelte/latest",
+      "status": "observed_latest"
+    },
+    "@tailwindcss/forms": {
+      "version": "0.5.11",
+      "engines": {},
+      "peerDependencies": {
+        "tailwindcss": ">=3.0.0 || >= 3.0.0-alpha.1 || >= 4.0.0-alpha.20 || >= 4.0.0-beta.1"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/tailwindlabs/tailwindcss-forms.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40tailwindcss%2Fforms/latest",
+      "status": "observed_latest"
+    },
+    "@tailwindcss/vite": {
+      "version": "4.3.5",
+      "engines": {},
+      "peerDependencies": {
+        "vite": "^5.2.0 || ^6 || ^7 || ^8"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/tailwindlabs/tailwindcss.git",
+        "type": "git",
+        "directory": "packages/@tailwindcss-vite"
+      },
+      "source": "https://registry.npmjs.org/%40tailwindcss%2Fvite/latest",
+      "status": "observed_latest"
+    },
+    "@total-typescript/ts-reset": {
+      "version": "0.6.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/total-typescript/ts-reset.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40total-typescript%2Fts-reset/latest",
+      "status": "observed_latest"
+    },
+    "@tsconfig/svelte": {
+      "version": "5.0.9",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/tsconfig/bases.git",
+        "type": "git",
+        "directory": "bases"
+      },
+      "source": "https://registry.npmjs.org/%40tsconfig%2Fsvelte/latest",
+      "status": "observed_latest"
+    },
+    "@types/adm-zip": {
+      "version": "0.6.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": "This is a stub types definition. adm-zip provides its own type definitions, so you do not need this installed.",
+      "repository": null,
+      "source": "https://registry.npmjs.org/%40types%2Fadm-zip/latest",
+      "status": "observed_latest"
+    },
+    "@types/bigbluebutton-js": {
+      "version": "0.2.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/bigbluebutton-js"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fbigbluebutton-js/latest",
+      "status": "observed_latest"
+    },
+    "@types/busboy": {
+      "version": "1.5.5",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/busboy"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fbusboy/latest",
+      "status": "observed_latest"
+    },
+    "@types/chroma-js": {
+      "version": "3.1.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/chroma-js"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fchroma-js/latest",
+      "status": "observed_latest"
+    },
+    "@types/cookie-parser": {
+      "version": "1.4.10",
+      "engines": {},
+      "peerDependencies": {
+        "@types/express": "*"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/cookie-parser"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fcookie-parser/latest",
+      "status": "observed_latest"
+    },
+    "@types/cors": {
+      "version": "2.8.19",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/cors"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fcors/latest",
+      "status": "observed_latest"
+    },
+    "@types/debug": {
+      "version": "4.1.13",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/debug"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fdebug/latest",
+      "status": "observed_latest"
+    },
+    "@types/dockerode": {
+      "version": "4.0.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/dockerode"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fdockerode/latest",
+      "status": "observed_latest"
+    },
+    "@types/dom-screen-wake-lock": {
+      "version": "1.0.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/dom-screen-wake-lock"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fdom-screen-wake-lock/latest",
+      "status": "observed_latest"
+    },
+    "@types/express": {
+      "version": "5.0.6",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/express"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fexpress/latest",
+      "status": "observed_latest"
+    },
+    "@types/fs-extra": {
+      "version": "11.0.4",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/fs-extra"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Ffs-extra/latest",
+      "status": "observed_latest"
+    },
+    "@types/google-protobuf": {
+      "version": "3.15.12",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/google-protobuf"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fgoogle-protobuf/latest",
+      "status": "observed_latest"
+    },
+    "@types/http-status-codes": {
+      "version": "1.2.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": "This is a stub types definition for http-status-codes (https://github.com/prettymuchbryce/node-http-status). http-status-codes provides its own type definitions, so you don\\'t need @types/http-status-codes installed!",
+      "repository": "https://github.com/prettymuchbryce/node-http-status",
+      "source": "https://registry.npmjs.org/%40types%2Fhttp-status-codes/latest",
+      "status": "observed_latest"
+    },
+    "@types/jsonwebtoken": {
+      "version": "9.0.10",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/jsonwebtoken"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fjsonwebtoken/latest",
+      "status": "observed_latest"
+    },
+    "@types/mime": {
+      "version": "4.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": "This is a stub types definition. mime provides its own type definitions, so you do not need this installed.",
+      "repository": null,
+      "source": "https://registry.npmjs.org/%40types%2Fmime/latest",
+      "status": "observed_latest"
+    },
+    "@types/mkdirp": {
+      "version": "2.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": "This is a stub types definition. mkdirp provides its own type definitions, so you do not need this installed.",
+      "repository": null,
+      "source": "https://registry.npmjs.org/%40types%2Fmkdirp/latest",
+      "status": "observed_latest"
+    },
+    "@types/multer": {
+      "version": "2.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/multer"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fmulter/latest",
+      "status": "observed_latest"
+    },
+    "@types/mustache": {
+      "version": "4.2.6",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/mustache"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fmustache/latest",
+      "status": "observed_latest"
+    },
+    "@types/node": {
+      "version": "26.6.6",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/node"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fnode/latest",
+      "status": "observed_latest"
+    },
+    "@types/passport": {
+      "version": "1.0.17",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/passport"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fpassport/latest",
+      "status": "observed_latest"
+    },
+    "@types/passport-http": {
+      "version": "0.3.11",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/passport-http"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fpassport-http/latest",
+      "status": "observed_latest"
+    },
+    "@types/passport-http-bearer": {
+      "version": "1.0.42",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/passport-http-bearer"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fpassport-http-bearer/latest",
+      "status": "observed_latest"
+    },
+    "@types/qs": {
+      "version": "6.15.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/qs"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fqs/latest",
+      "status": "observed_latest"
+    },
+    "@types/quill": {
+      "version": "2.0.14",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/quill"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fquill/latest",
+      "status": "observed_latest"
+    },
+    "@types/sdp-transform": {
+      "version": "3.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/sdp-transform"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fsdp-transform/latest",
+      "status": "observed_latest"
+    },
+    "@types/swagger-jsdoc": {
+      "version": "6.0.4",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/swagger-jsdoc"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fswagger-jsdoc/latest",
+      "status": "observed_latest"
+    },
+    "@types/throttle-debounce": {
+      "version": "5.0.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/throttle-debounce"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fthrottle-debounce/latest",
+      "status": "observed_latest"
+    },
+    "@types/unzipper": {
+      "version": "0.10.11",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/unzipper"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Funzipper/latest",
+      "status": "observed_latest"
+    },
+    "@types/uuid": {
+      "version": "11.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": "This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.",
+      "repository": null,
+      "source": "https://registry.npmjs.org/%40types%2Fuuid/latest",
+      "status": "observed_latest"
+    },
+    "@types/ws": {
+      "version": "8.18.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/ws"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fws/latest",
+      "status": "observed_latest"
+    },
+    "@types/xmpp__client": {
+      "version": "0.14.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/xmpp__client"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fxmpp__client/latest",
+      "status": "observed_latest"
+    },
+    "@types/xmpp__jid": {
+      "version": "0.14.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/xmpp__jid"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fxmpp__jid/latest",
+      "status": "observed_latest"
+    },
+    "@types/zip-stream": {
+      "version": "7.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "type": "git",
+        "directory": "types/zip-stream"
+      },
+      "source": "https://registry.npmjs.org/%40types%2Fzip-stream/latest",
+      "status": "observed_latest"
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "version": "8.72.2",
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "peerDependencies": {
+        "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
+        "typescript": ">=4.8.4 <6.1.0",
+        "@typescript-eslint/parser": "^8.72.2"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/typescript-eslint/typescript-eslint.git",
+        "type": "git",
+        "directory": "packages/eslint-plugin"
+      },
+      "source": "https://registry.npmjs.org/%40typescript-eslint%2Feslint-plugin/latest",
+      "status": "observed_latest"
+    },
+    "@typescript-eslint/parser": {
+      "version": "8.72.2",
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "peerDependencies": {
+        "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
+        "typescript": ">=4.8.4 <6.1.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/typescript-eslint/typescript-eslint.git",
+        "type": "git",
+        "directory": "packages/parser"
+      },
+      "source": "https://registry.npmjs.org/%40typescript-eslint%2Fparser/latest",
+      "status": "observed_latest"
+    },
+    "@workadventure/design-system": {
+      "version": "3.0.5",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/workadventure/design-system.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40workadventure%2Fdesign-system/latest",
+      "status": "observed_latest"
+    },
+    "@workadventure/desktop-api": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/eslint-config": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/iframe-api-typings": {
+      "version": "1.34.5",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/workadventure/workadventure.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40workadventure%2Fiframe-api-typings/latest",
+      "status": "observed_latest",
+      "note": "Local publication workspace has version placeholder; consumers request published semver versions. Treat consumed package as registry dependency."
+    },
+    "@workadventure/map-editor": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/math-utils": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/messages": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/noise-suppression": {
+      "version": "0.2.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/workadventure/noise-suppression.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40workadventure%2Fnoise-suppression/latest",
+      "status": "observed_latest"
+    },
+    "@workadventure/shared-utils": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/simple-peer": {
+      "version": "12.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/workadventure/simple-peer.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40workadventure%2Fsimple-peer/latest",
+      "status": "observed_latest"
+    },
+    "@workadventure/store-utils": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/tailwind": {
+      "status": "internal_workspace",
+      "version": null
+    },
+    "@workadventure/tiled-map-type-guard": {
+      "version": "2.1.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/workadventure/tiled-map-type-guard.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/%40workadventure%2Ftiled-map-type-guard/latest",
+      "status": "observed_latest"
+    },
+    "adm-zip": {
+      "version": "0.6.1",
+      "engines": {
+        "node": ">=14.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/cthackers/adm-zip.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/adm-zip/latest",
+      "status": "observed_latest"
+    },
+    "axios": {
+      "version": "1.21.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/axios/axios.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/axios/latest",
+      "status": "observed_latest"
+    },
+    "axios-cache-interceptor": {
+      "version": "1.13.0",
+      "engines": {
+        "node": ">=12"
+      },
+      "peerDependencies": {
+        "axios": "^1.19.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/arthurfiorette/axios-cache-interceptor.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/axios-cache-interceptor/latest",
+      "status": "observed_latest"
+    },
+    "axios-retry": {
+      "version": "4.5.0",
+      "engines": {},
+      "peerDependencies": {
+        "axios": "0.x || 1.x"
+      },
+      "deprecated": "axios-retry is no longer maintained. See https://github.com/softonic/axios-retry for alternatives.",
+      "repository": {
+        "url": "git+https://github.com/softonic/axios-retry.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/axios-retry/latest",
+      "status": "observed_latest"
+    },
+    "bigbluebutton-js": {
+      "version": "0.2.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/aakatev/bigbluebutton-js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/bigbluebutton-js/latest",
+      "status": "observed_latest"
+    },
+    "body-parser": {
+      "version": "2.4.0",
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/expressjs/body-parser.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/body-parser/latest",
+      "status": "observed_latest"
+    },
+    "buffer": {
+      "version": "6.0.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/feross/buffer.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/buffer/latest",
+      "status": "observed_latest"
+    },
+    "busboy": {
+      "version": "1.6.0",
+      "engines": {
+        "node": ">=10.16.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/mscdex/busboy.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/busboy/latest",
+      "status": "observed_latest"
+    },
+    "cancelable-promise": {
+      "version": "4.3.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/alkemics/CancelablePromise.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/cancelable-promise/latest",
+      "status": "observed_latest"
+    },
+    "catch-unknown": {
+      "version": "2.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/trevorr/catch-unknown.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/catch-unknown/latest",
+      "status": "observed_latest"
+    },
+    "cheerio": {
+      "version": "1.2.0",
+      "engines": {
+        "node": ">=20.18.1"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/cheeriojs/cheerio.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/cheerio/latest",
+      "status": "observed_latest"
+    },
+    "chokidar-cli": {
+      "version": "3.0.0",
+      "engines": {
+        "node": ">= 8.10.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/open-npm-tools/chokidar-cli.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/chokidar-cli/latest",
+      "status": "observed_latest"
+    },
+    "chroma-js": {
+      "version": "3.3.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/gka/chroma.js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/chroma-js/latest",
+      "status": "observed_latest"
+    },
+    "concurrently": {
+      "version": "10.0.7",
+      "engines": {
+        "node": ">=22"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/open-cli-tools/concurrently.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/concurrently/latest",
+      "status": "observed_latest"
+    },
+    "cookie-parser": {
+      "version": "1.4.7",
+      "engines": {
+        "node": ">= 0.8.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/expressjs/cookie-parser.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/cookie-parser/latest",
+      "status": "observed_latest"
+    },
+    "cors": {
+      "version": "2.8.6",
+      "engines": {
+        "node": ">= 0.10"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/expressjs/cors.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/cors/latest",
+      "status": "observed_latest"
+    },
+    "cross-env": {
+      "version": "10.1.0",
+      "engines": {
+        "node": ">=20"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/kentcdodds/cross-env.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/cross-env/latest",
+      "status": "observed_latest"
+    },
+    "debug": {
+      "version": "4.4.3",
+      "engines": {
+        "node": ">=6.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/debug-js/debug.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/debug/latest",
+      "status": "observed_latest"
+    },
+    "deepmerge-ts": {
+      "version": "8.0.2",
+      "engines": {
+        "node": ">=16.9.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/RebeccaStevens/deepmerge-ts.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/deepmerge-ts/latest",
+      "status": "observed_latest"
+    },
+    "dockerode": {
+      "version": "5.0.1",
+      "engines": {
+        "node": ">= 14.17"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/apocas/dockerode.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/dockerode/latest",
+      "status": "observed_latest"
+    },
+    "dompurify": {
+      "version": "3.4.17",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/cure53/DOMPurify.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/dompurify/latest",
+      "status": "observed_latest"
+    },
+    "dotenv-cli": {
+      "version": "11.1.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/entropitor/dotenv-cli.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/dotenv-cli/latest",
+      "status": "observed_latest"
+    },
+    "dtslint": {
+      "version": "4.2.1",
+      "engines": {
+        "node": ">=10.0.0"
+      },
+      "peerDependencies": {
+        "typescript": ">= 3.0.0-dev || >= 3.1.0-dev || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.7.0-dev || >= 3.8.0-dev || >= 3.9.0-dev || >= 4.0.0-dev"
+      },
+      "deprecated": "See https://aka.ms/type-testing-tools",
+      "repository": {
+        "url": "git+https://github.com/Microsoft/dtslint.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/dtslint/latest",
+      "status": "observed_latest"
+    },
+    "easystarjs": {
+      "version": "0.4.4",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/prettymuchbryce/easystarjs.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/easystarjs/latest",
+      "status": "observed_latest"
+    },
+    "electron": {
+      "version": "45.3.0",
+      "engines": {
+        "node": ">= 22.12.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/electron/electron.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/electron/latest",
+      "status": "observed_latest"
+    },
+    "electron-builder": {
+      "version": "26.18.0",
+      "engines": {
+        "node": ">=14.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/electron-userland/electron-builder.git",
+        "type": "git",
+        "directory": "packages/electron-builder"
+      },
+      "source": "https://registry.npmjs.org/electron-builder/latest",
+      "status": "observed_latest"
+    },
+    "electron-log": {
+      "version": "5.4.4",
+      "engines": {
+        "node": ">= 14"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/megahertz/electron-log.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/electron-log/latest",
+      "status": "observed_latest"
+    },
+    "electron-settings": {
+      "version": "4.0.4",
+      "engines": {},
+      "peerDependencies": {
+        "electron": ">= 2"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/nathanbuchar/electron-settings.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/electron-settings/latest",
+      "status": "observed_latest"
+    },
+    "electron-updater": {
+      "version": "6.8.11",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/electron-userland/electron-builder.git",
+        "type": "git",
+        "directory": "packages/electron-updater"
+      },
+      "source": "https://registry.npmjs.org/electron-updater/latest",
+      "status": "observed_latest"
+    },
+    "electron-vite": {
+      "version": "6.0.0",
+      "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+      },
+      "peerDependencies": {
+        "vite": "^6.0.0 || ^7.0.0 || ^8.0.0",
+        "@swc/core": "^1.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/alex8088/electron-vite.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/electron-vite/latest",
+      "status": "observed_latest"
+    },
+    "electron-window-state": {
+      "version": "5.0.3",
+      "engines": {
+        "node": ">=8.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/mawie81/electron-window-state.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/electron-window-state/latest",
+      "status": "observed_latest"
+    },
+    "emoji-picker-element": {
+      "version": "1.29.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/nolanlawson/emoji-picker-element.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/emoji-picker-element/latest",
+      "status": "observed_latest"
+    },
+    "eslint": {
+      "version": "10.14.0",
+      "engines": {
+        "node": "^20.19.0 || ^22.13.0 || >=24"
+      },
+      "peerDependencies": {
+        "jiti": "*"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/eslint/eslint.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint/latest",
+      "status": "observed_latest"
+    },
+    "eslint-config-airbnb-typescript": {
+      "version": "18.0.0",
+      "engines": {},
+      "peerDependencies": {
+        "eslint": "^8.56.0",
+        "@typescript-eslint/parser": "^7.0.0",
+        "@typescript-eslint/eslint-plugin": "^7.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/iamturns/eslint-config-airbnb-typescript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint-config-airbnb-typescript/latest",
+      "status": "observed_latest"
+    },
+    "eslint-import-resolver-typescript": {
+      "version": "4.4.5",
+      "engines": {
+        "node": "^16.17.0 || >=18.6.0"
+      },
+      "peerDependencies": {
+        "eslint": "*",
+        "eslint-plugin-import": "*",
+        "eslint-plugin-import-x": "*"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/import-js/eslint-import-resolver-typescript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint-import-resolver-typescript/latest",
+      "status": "observed_latest"
+    },
+    "eslint-plugin-import": {
+      "version": "2.32.0",
+      "engines": {
+        "node": ">=4"
+      },
+      "peerDependencies": {
+        "eslint": "^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/import-js/eslint-plugin-import.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint-plugin-import/latest",
+      "status": "observed_latest"
+    },
+    "eslint-plugin-listeners": {
+      "version": "1.6.0",
+      "engines": {
+        "node": ">=20.0.0"
+      },
+      "peerDependencies": {
+        "eslint": ">=8.57.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/foad/eslint-plugin-listeners.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint-plugin-listeners/latest",
+      "status": "observed_latest"
+    },
+    "eslint-plugin-playwright": {
+      "version": "2.12.2",
+      "engines": {
+        "node": ">=16.9.0"
+      },
+      "peerDependencies": {
+        "eslint": ">=8.40.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/mskelton/eslint-plugin-playwright.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint-plugin-playwright/latest",
+      "status": "observed_latest"
+    },
+    "eslint-plugin-sonarjs": {
+      "version": "4.2.2",
+      "engines": {},
+      "peerDependencies": {
+        "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/SonarSource/SonarJS.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/eslint-plugin-sonarjs/latest",
+      "status": "observed_latest"
+    },
+    "eslint-plugin-svelte": {
+      "version": "3.24.1",
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "peerDependencies": {
+        "eslint": "^8.57.1 || ^9.0.0 || ^10.0.0",
+        "svelte": "^3.37.0 || ^4.0.0 || ^5.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/eslint-plugin-svelte.git",
+        "type": "git",
+        "directory": "packages/eslint-plugin-svelte"
+      },
+      "source": "https://registry.npmjs.org/eslint-plugin-svelte/latest",
+      "status": "observed_latest"
+    },
+    "express": {
+      "version": "5.3.0",
+      "engines": {
+        "node": ">= 18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/expressjs/express.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/express/latest",
+      "status": "observed_latest"
+    },
+    "fast-deep-equal": {
+      "version": "3.1.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/epoberezkin/fast-deep-equal.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/fast-deep-equal/latest",
+      "status": "observed_latest"
+    },
+    "fast-json-patch": {
+      "version": "3.1.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/Starcounter-Jack/JSON-Patch.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/fast-json-patch/latest",
+      "status": "observed_latest"
+    },
+    "fs-extra": {
+      "version": "11.4.1",
+      "engines": {
+        "node": ">=14.14"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/jprichardson/node-fs-extra.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/fs-extra/latest",
+      "status": "observed_latest"
+    },
+    "globals": {
+      "version": "17.14.0",
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sindresorhus/globals.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/globals/latest",
+      "status": "observed_latest"
+    },
+    "google-protobuf": {
+      "version": "4.0.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/protocolbuffers/protobuf-javascript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/google-protobuf/latest",
+      "status": "observed_latest"
+    },
+    "grpc-tools": {
+      "version": "1.13.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/grpc/grpc-node.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/grpc-tools/latest",
+      "status": "observed_latest"
+    },
+    "grpc_tools_node_protoc_ts": {
+      "version": "5.3.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/agreatfool/grpc_tools_node_protoc_ts.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/grpc_tools_node_protoc_ts/latest",
+      "status": "observed_latest"
+    },
+    "highlight-words": {
+      "version": "2.0.0",
+      "engines": {
+        "npm": ">= 9",
+        "node": ">= 20"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/tricinel/highlight-words.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/highlight-words/latest",
+      "status": "observed_latest"
+    },
+    "highlight.js": {
+      "version": "11.12.0",
+      "engines": {
+        "node": ">=12.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/highlightjs/highlight.js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/highlight.js/latest",
+      "status": "observed_latest"
+    },
+    "husky": {
+      "version": "9.1.7",
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/typicode/husky.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/husky/latest",
+      "status": "observed_latest"
+    },
+    "hyper-express": {
+      "version": "7.0.2",
+      "engines": {
+        "node": ">=22 <23 || >=24 <25 || >=26 <27"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/kartikk221/hyper-express.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/hyper-express/latest",
+      "status": "observed_latest"
+    },
+    "ipaddr.js": {
+      "version": "2.5.0",
+      "engines": {
+        "node": ">= 10"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/whitequark/ipaddr.js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/ipaddr.js/latest",
+      "status": "observed_latest"
+    },
+    "jose": {
+      "version": "6.2.17",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/panva/jose.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/jose/latest",
+      "status": "observed_latest"
+    },
+    "jsdom": {
+      "version": "31.0.0",
+      "engines": {
+        "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+      },
+      "peerDependencies": {
+        "@napi-rs/canvas": "^1.0.13"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/jsdom/jsdom.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/jsdom/latest",
+      "status": "observed_latest"
+    },
+    "limiter": {
+      "version": "4.1.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/jhurliman/node-rate-limiter.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/limiter/latest",
+      "status": "observed_latest"
+    },
+    "lint-staged": {
+      "version": "17.6.0",
+      "engines": {
+        "node": ">=22.22.1"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/lint-staged/lint-staged.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/lint-staged/latest",
+      "status": "observed_latest"
+    },
+    "live-directory": {
+      "version": "3.0.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/kartikk221/live-directory.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/live-directory/latest",
+      "status": "observed_latest"
+    },
+    "livekit-client": {
+      "version": "2.23.0",
+      "engines": {},
+      "peerDependencies": {
+        "@types/dom-mediacapture-record": "^1"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/livekit/client-sdk-js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/livekit-client/latest",
+      "status": "observed_latest"
+    },
+    "livekit-server-sdk": {
+      "version": "2.19.3",
+      "engines": {
+        "node": ">=19"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/livekit/node-sdks.git",
+        "type": "git",
+        "directory": "packages/livekit-server-sdk"
+      },
+      "source": "https://registry.npmjs.org/livekit-server-sdk/latest",
+      "status": "observed_latest"
+    },
+    "long": {
+      "version": "5.3.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/dcodeIO/long.js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/long/latest",
+      "status": "observed_latest"
+    },
+    "marked": {
+      "version": "18.2.0",
+      "engines": {
+        "node": ">= 20"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/markedjs/marked.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/marked/latest",
+      "status": "observed_latest"
+    },
+    "marked-highlight": {
+      "version": "2.2.4",
+      "engines": {},
+      "peerDependencies": {
+        "marked": ">=4 <19"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/markedjs/marked-highlight.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/marked-highlight/latest",
+      "status": "observed_latest"
+    },
+    "matrix-js-sdk": {
+      "version": "45.1.0",
+      "engines": {
+        "node": ">=22.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/matrix-org/matrix-js-sdk.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/matrix-js-sdk/latest",
+      "status": "observed_latest"
+    },
+    "mime": {
+      "version": "4.1.2",
+      "engines": {
+        "node": ">=16"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/broofa/mime.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/mime/latest",
+      "status": "observed_latest"
+    },
+    "mkdirp": {
+      "version": "3.0.1",
+      "engines": {
+        "node": ">=10"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/isaacs/node-mkdirp.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/mkdirp/latest",
+      "status": "observed_latest"
+    },
+    "multer": {
+      "version": "2.5.0",
+      "engines": {
+        "node": ">= 10.16.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/expressjs/multer.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/multer/latest",
+      "status": "observed_latest"
+    },
+    "mustache": {
+      "version": "4.2.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/janl/mustache.js.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/mustache/latest",
+      "status": "observed_latest"
+    },
+    "nice-grpc": {
+      "version": "2.1.18",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/deeplay-io/nice-grpc.git",
+        "type": "git",
+        "directory": "packages/nice-grpc"
+      },
+      "source": "https://registry.npmjs.org/nice-grpc/latest",
+      "status": "observed_latest"
+    },
+    "nodemon": {
+      "version": "3.1.14",
+      "engines": {
+        "node": ">=10"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/remy/nodemon.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/nodemon/latest",
+      "status": "observed_latest"
+    },
+    "npm-check-updates": {
+      "version": "23.1.1",
+      "engines": {
+        "npm": ">=10.0.0",
+        "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/raineorshine/npm-check-updates.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/npm-check-updates/latest",
+      "status": "observed_latest"
+    },
+    "npm-run-all": {
+      "version": "4.1.5",
+      "engines": {
+        "node": ">= 4"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/mysticatea/npm-run-all.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/npm-run-all/latest",
+      "status": "observed_latest"
+    },
+    "openapi3-ts": {
+      "version": "4.6.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/metadevpro/openapi3-ts.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/openapi3-ts/latest",
+      "status": "observed_latest"
+    },
+    "openid-client": {
+      "version": "6.8.9",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/panva/openid-client.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/openid-client/latest",
+      "status": "observed_latest"
+    },
+    "p-limit": {
+      "version": "7.3.3",
+      "engines": {
+        "node": ">=20"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sindresorhus/p-limit.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/p-limit/latest",
+      "status": "observed_latest"
+    },
+    "passport": {
+      "version": "0.7.0",
+      "engines": {
+        "node": ">= 0.4.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/jaredhanson/passport.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/passport/latest",
+      "status": "observed_latest"
+    },
+    "passport-http": {
+      "version": "0.3.0",
+      "engines": {
+        "node": ">= 0.4.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/jaredhanson/passport-http.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/passport-http/latest",
+      "status": "observed_latest"
+    },
+    "passport-http-bearer": {
+      "version": "1.0.1",
+      "engines": {
+        "node": ">= 0.4.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/jaredhanson/passport-http-bearer.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/passport-http-bearer/latest",
+      "status": "observed_latest"
+    },
+    "patch-package": {
+      "version": "8.0.1",
+      "engines": {
+        "npm": ">5",
+        "node": ">=14"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/ds300/patch-package.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/patch-package/latest",
+      "status": "observed_latest"
+    },
+    "phaser": {
+      "version": "4.2.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://phaserjs@github.com/phaserjs/phaser.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/phaser/latest",
+      "status": "observed_latest"
+    },
+    "phaser4-rex-plugins": {
+      "version": "4.2.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/rexrainbow/phaser3-rex-notes.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/phaser4-rex-plugins/latest",
+      "status": "observed_latest"
+    },
+    "prettier": {
+      "version": "3.10.0",
+      "engines": {
+        "node": ">=14"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/prettier/prettier.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/prettier/latest",
+      "status": "observed_latest"
+    },
+    "prettier-plugin-svelte": {
+      "version": "4.1.1",
+      "engines": {
+        "node": ">=20"
+      },
+      "peerDependencies": {
+        "svelte": "^5.0.0",
+        "prettier": "^3.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/prettier-plugin-svelte.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/prettier-plugin-svelte/latest",
+      "status": "observed_latest"
+    },
+    "prom-client": {
+      "version": "15.1.3",
+      "engines": {
+        "node": "^16 || ^18 || >=20"
+      },
+      "peerDependencies": {},
+      "deprecated": "prom-client has been replaced by @prometheus-io/client",
+      "repository": {
+        "url": "git+ssh://git@github.com/siimon/prom-client.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/prom-client/latest",
+      "status": "observed_latest"
+    },
+    "protobuf-fieldmask": {
+      "version": "2.0.0",
+      "engines": {
+        "node": ">=8"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/kibertoad/protobuf-fieldmask.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/protobuf-fieldmask/latest",
+      "status": "observed_latest"
+    },
+    "qs": {
+      "version": "6.17.1",
+      "engines": {
+        "node": ">=0.6"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/ljharb/qs.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/qs/latest",
+      "status": "observed_latest"
+    },
+    "query-string": {
+      "version": "10.0.0",
+      "engines": {
+        "node": ">=22"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sindresorhus/query-string.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/query-string/latest",
+      "status": "observed_latest"
+    },
+    "queue-typescript": {
+      "version": "1.0.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sfkiwi/queue-typescript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/queue-typescript/latest",
+      "status": "observed_latest"
+    },
+    "quill": {
+      "version": "2.0.3",
+      "engines": {
+        "npm": ">=8.2.3"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/slab/quill.git",
+        "type": "git",
+        "directory": "packages/quill"
+      },
+      "source": "https://registry.npmjs.org/quill/latest",
+      "status": "observed_latest"
+    },
+    "quill-delta-to-html": {
+      "version": "0.12.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/nozer/quill-delta-to-html.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/quill-delta-to-html/latest",
+      "status": "observed_latest"
+    },
+    "redis": {
+      "version": "6.3.1",
+      "engines": {
+        "node": ">= 20.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/redis/node-redis.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/redis/latest",
+      "status": "observed_latest"
+    },
+    "reflect-metadata": {
+      "version": "0.2.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/rbuckton/reflect-metadata.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/reflect-metadata/latest",
+      "status": "observed_latest"
+    },
+    "rimraf": {
+      "version": "6.1.4",
+      "engines": {
+        "node": "20 || >=22"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/isaacs/rimraf.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/rimraf/latest",
+      "status": "observed_latest"
+    },
+    "rxjs": {
+      "version": "7.8.2",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/reactivex/rxjs.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/rxjs/latest",
+      "status": "observed_latest"
+    },
+    "sdp-transform": {
+      "version": "3.0.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/clux/sdp-transform.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/sdp-transform/latest",
+      "status": "observed_latest"
+    },
+    "shelljs": {
+      "version": "0.10.0",
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git://github.com/shelljs/shelljs.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/shelljs/latest",
+      "status": "observed_latest"
+    },
+    "source-map-support": {
+      "version": "0.5.21",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/evanw/node-source-map-support.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/source-map-support/latest",
+      "status": "observed_latest"
+    },
+    "stanza": {
+      "version": "12.22.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/legastero/stanza.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/stanza/latest",
+      "status": "observed_latest"
+    },
+    "svelte": {
+      "version": "5.57.3",
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/svelte.git",
+        "type": "git",
+        "directory": "packages/svelte"
+      },
+      "source": "https://registry.npmjs.org/svelte/latest",
+      "status": "observed_latest"
+    },
+    "svelte-check": {
+      "version": "4.7.8",
+      "engines": {
+        "node": ">= 18.0.0"
+      },
+      "peerDependencies": {
+        "svelte": "^4.0.0 || ^5.0.0-next.0",
+        "typescript": "^5.0.0 || ^6.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/language-tools.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/svelte-check/latest",
+      "status": "observed_latest"
+    },
+    "svelte-eslint-parser": {
+      "version": "1.10.1",
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0",
+        "pnpm": "10.34.6"
+      },
+      "peerDependencies": {
+        "svelte": "^3.37.0 || ^4.0.0 || ^5.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/sveltejs/svelte-eslint-parser.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/svelte-eslint-parser/latest",
+      "status": "observed_latest"
+    },
+    "svelte-modals": {
+      "version": "2.0.1",
+      "engines": {},
+      "peerDependencies": {
+        "svelte": ">=5"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/mattjennings/svelte-modals.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/svelte-modals/latest",
+      "status": "observed_latest"
+    },
+    "svelte-outside": {
+      "version": "0.0.5",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/propolies/svelte-outside.git",
+        "type": "git",
+        "directory": "package"
+      },
+      "source": "https://registry.npmjs.org/svelte-outside/latest",
+      "status": "observed_latest"
+    },
+    "svelte-pan-zoom": {
+      "version": "0.1.1",
+      "engines": {},
+      "peerDependencies": {
+        "svelte": "^5.29.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/captaincodeman/svelte-pan-zoom.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/svelte-pan-zoom/latest",
+      "status": "observed_latest"
+    },
+    "svelte-select": {
+      "version": "6.0.0",
+      "engines": {},
+      "peerDependencies": {
+        "svelte": ">=5"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://rob-balfre@github.com/rob-balfre/svelte-select.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/svelte-select/latest",
+      "status": "observed_latest"
+    },
+    "swagger-jsdoc": {
+      "version": "6.3.0",
+      "engines": {
+        "node": ">=20.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/Surnet/swagger-jsdoc.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/swagger-jsdoc/latest",
+      "status": "observed_latest"
+    },
+    "swagger-ui-dist": {
+      "version": "5.34.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/swagger-api/swagger-ui.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/swagger-ui-dist/latest",
+      "status": "observed_latest"
+    },
+    "sync-directory": {
+      "version": "6.0.6",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/hoperyy/sync-directory.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/sync-directory/latest",
+      "status": "observed_latest"
+    },
+    "tailwindcss": {
+      "version": "4.3.5",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/tailwindlabs/tailwindcss.git",
+        "type": "git",
+        "directory": "packages/tailwindcss"
+      },
+      "source": "https://registry.npmjs.org/tailwindcss/latest",
+      "status": "observed_latest"
+    },
+    "throttle-debounce": {
+      "version": "5.0.2",
+      "engines": {
+        "node": ">=12.22"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/niksy/throttle-debounce.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/throttle-debounce/latest",
+      "status": "observed_latest"
+    },
+    "ts-loader": {
+      "version": "9.6.2",
+      "engines": {
+        "node": ">=12.0.0"
+      },
+      "peerDependencies": {
+        "webpack": "^4.0.0 || ^5.0.0",
+        "typescript": "*",
+        "loader-utils": "*"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/TypeStrong/ts-loader.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/ts-loader/latest",
+      "status": "observed_latest"
+    },
+    "ts-node-dev": {
+      "version": "2.0.0",
+      "engines": {
+        "node": ">=0.8.0"
+      },
+      "peerDependencies": {
+        "typescript": "*",
+        "node-notifier": "*"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+ssh://git@github.com/whitecolor/ts-node-dev.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/ts-node-dev/latest",
+      "status": "observed_latest"
+    },
+    "ts-proto": {
+      "version": "2.18.4",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/stephenh/ts-proto.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/ts-proto/latest",
+      "status": "observed_latest"
+    },
+    "ts-proto-descriptors": {
+      "version": "2.1.0",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": "github:stephenh/ts-proto",
+      "source": "https://registry.npmjs.org/ts-proto-descriptors/latest",
+      "status": "observed_latest"
+    },
+    "tsconfig-paths": {
+      "version": "4.2.0",
+      "engines": {
+        "node": ">=6"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/dividab/tsconfig-paths.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/tsconfig-paths/latest",
+      "status": "observed_latest"
+    },
+    "tslib": {
+      "version": "2.9.1",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/Microsoft/tslib.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/tslib/latest",
+      "status": "observed_latest"
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "engines": {
+        "node": ">=18.0.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/privatenumber/tsx.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/tsx/latest",
+      "status": "observed_latest"
+    },
+    "typesafe-i18n": {
+      "version": "5.27.1",
+      "engines": {},
+      "peerDependencies": {
+        "typescript": ">=3.5.1"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/codingcommons/typesafe-i18n.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/typesafe-i18n/latest",
+      "status": "observed_latest"
+    },
+    "typescript": {
+      "version": "7.0.2",
+      "engines": {
+        "node": ">=16.20.0"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/microsoft/TypeScript.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/typescript/latest",
+      "status": "observed_latest"
+    },
+    "typescript-eslint": {
+      "version": "8.72.2",
+      "engines": {
+        "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+      },
+      "peerDependencies": {
+        "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
+        "typescript": ">=4.8.4 <6.1.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/typescript-eslint/typescript-eslint.git",
+        "type": "git",
+        "directory": "packages/typescript-eslint"
+      },
+      "source": "https://registry.npmjs.org/typescript-eslint/latest",
+      "status": "observed_latest"
+    },
+    "uWebSockets.js": {
+      "status": "git_release_previously_verified",
+      "version": "20.71.0",
+      "source": "https://github.com/uNetworking/uWebSockets.js/releases/tag/v20.71.0",
+      "checked_date": "2026-11-11"
+    },
+    "unplugin-icons": {
+      "version": "24.0.0",
+      "engines": {},
+      "peerDependencies": {
+        "svelte": "^3.0.0 || ^4.0.0 || ^5.0.0",
+        "@svgr/core": ">=7.0.0",
+        "@svgx/core": "^1.0.1",
+        "@vue/compiler-sfc": "^3.0.2",
+        "@vue/compiler-vapor": "^3.6.0-rc.5"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/unplugin/unplugin-icons.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/unplugin-icons/latest",
+      "status": "observed_latest"
+    },
+    "unzipper": {
+      "version": "0.12.5",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/ZJONSSON/node-unzipper.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/unzipper/latest",
+      "status": "observed_latest"
+    },
+    "uuid": {
+      "version": "14.0.3",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/uuidjs/uuid.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/uuid/latest",
+      "status": "observed_latest"
+    },
+    "uuidv4": {
+      "version": "6.2.13",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": "Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.",
+      "repository": {
+        "url": "git://github.com/thenativeweb/uuidv4.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/uuidv4/latest",
+      "status": "observed_latest"
+    },
+    "vite": {
+      "version": "8.3.8",
+      "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+      },
+      "peerDependencies": {
+        "tsx": "^4.8.1",
+        "jiti": ">=1.21.0",
+        "less": "^4.0.0",
+        "sass": "^1.70.0",
+        "yaml": "^2.4.2",
+        "stylus": ">=0.54.8",
+        "terser": "^5.16.0",
+        "esbuild": "^0.27.0 || ^0.28.0",
+        "sugarss": "^5.0.0",
+        "@types/node": "^20.19.0 || >=22.12.0",
+        "sass-embedded": "^1.70.0",
+        "@vitejs/devtools": "^0.7.1 || ^0.8.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/vitejs/vite.git",
+        "type": "git",
+        "directory": "packages/vite"
+      },
+      "source": "https://registry.npmjs.org/vite/latest",
+      "status": "observed_latest"
+    },
+    "vite-plugin-node-polyfills": {
+      "version": "0.28.0",
+      "engines": {},
+      "peerDependencies": {
+        "vite": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/davidmyersdev/vite-plugin-node-polyfills.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/vite-plugin-node-polyfills/latest",
+      "status": "observed_latest"
+    },
+    "vite-tsconfig-paths": {
+      "version": "6.1.1",
+      "engines": {},
+      "peerDependencies": {
+        "vite": "*"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/aleclarson/vite-tsconfig-paths.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/vite-tsconfig-paths/latest",
+      "status": "observed_latest"
+    },
+    "vitest": {
+      "version": "5.1.0",
+      "engines": {
+        "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+      },
+      "peerDependencies": {
+        "vite": "^6.4.0 || ^7.0.0 || ^8.0.0",
+        "jsdom": "*",
+        "happy-dom": "*",
+        "@vitest/ui": "5.1.0",
+        "@types/node": "^22.0.0 || >=24.0.0",
+        "@edge-runtime/vm": "*",
+        "@opentelemetry/api": "^1.9.0",
+        "@vitest/coverage-v8": "5.1.0",
+        "@vitest/browser-preview": "5.1.0",
+        "@vitest/coverage-istanbul": "5.1.0",
+        "@vitest/browser-playwright": "5.1.0",
+        "@vitest/browser-webdriverio": "^5.0.0-beta.5 || >=5.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/vitest-dev/vitest.git",
+        "type": "git",
+        "directory": "packages/vitest"
+      },
+      "source": "https://registry.npmjs.org/vitest/latest",
+      "status": "observed_latest"
+    },
+    "vitest-mock-extended": {
+      "version": "6.0.0",
+      "engines": {},
+      "peerDependencies": {
+        "vitest": ">=4.0.0",
+        "typescript": "3.x || 4.x || 5.x || 6.x || 7.x"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "https://github.com/eratio08/vitest-mock-extended",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/vitest-mock-extended/latest",
+      "status": "observed_latest"
+    },
+    "vitest-websocket-mock": {
+      "version": "0.8.0",
+      "engines": {},
+      "peerDependencies": {
+        "vitest": ">=5 <6"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/akiomik/vitest-websocket-mock.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/vitest-websocket-mock/latest",
+      "status": "observed_latest"
+    },
+    "ws": {
+      "version": "8.22.2",
+      "engines": {
+        "node": ">=10.0.0"
+      },
+      "peerDependencies": {
+        "bufferutil": "^4.0.1",
+        "utf-8-validate": ">=5.0.2"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/websockets/ws.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/ws/latest",
+      "status": "observed_latest"
+    },
+    "zip-stream": {
+      "version": "7.0.5",
+      "engines": {
+        "node": ">=18"
+      },
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/archiverjs/node-zip-stream.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/zip-stream/latest",
+      "status": "observed_latest"
+    },
+    "zod": {
+      "version": "4.6.7",
+      "engines": {},
+      "peerDependencies": {},
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/colinhacks/zod.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/zod/latest",
+      "status": "observed_latest"
+    },
+    "zod-error": {
+      "version": "2.0.0",
+      "engines": {},
+      "peerDependencies": {
+        "zod": "^4.0.0"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/andrewvo89/zod-error.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/zod-error/latest",
+      "status": "observed_latest"
+    },
+    "zod-to-json-schema": {
+      "version": "3.25.2",
+      "engines": {},
+      "peerDependencies": {
+        "zod": "^3.25.28 || ^4"
+      },
+      "deprecated": null,
+      "repository": {
+        "url": "git+https://github.com/StefanTerdell/zod-to-json-schema.git",
+        "type": "git"
+      },
+      "source": "https://registry.npmjs.org/zod-to-json-schema/latest",
+      "status": "observed_latest"
+    }
+  }
+}

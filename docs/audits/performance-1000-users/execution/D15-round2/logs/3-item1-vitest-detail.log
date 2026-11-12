@@ -1,0 +1,10 @@
+grep: (standard input): binary file matches
+ RUN  v4.1.7 /work/benchmark
+ ❯ tests/._harness.test.ts (0 test)
+ ✓ tests/harness.test.ts (12 tests) 1755ms
+     ✓ counts accepted room sessions per room and leaves with every socket and timer released  527ms
+     ✓ counts a refused connection as rejected and not as an accepted session  504ms
+     ✓ releases everything when stopped before the ramp completes  709ms
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/._harness.test.ts [ tests/._harness.test.ts ]
+EXIT=1

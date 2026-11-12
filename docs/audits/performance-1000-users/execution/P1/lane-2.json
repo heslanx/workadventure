@@ -1,0 +1,37 @@
+{
+  "lane": 2,
+  "plan": "docs/audits/performance-1000-users/plans/upstream-pr-plan.md P1 lane 2",
+  "host": "sbh: x86_64 AMD EPYC 9354P (VM), 4 vCPU, 15 GB, shared with production services; Node 24.22.2, tsx 4.22.3, ws 8.21.0",
+  "stack": "wa-fable-stack (baseline ddbe245a8, dev mode): play/pusher capped 0.65 CPU / 1536 MB, back 0.65 CPU / 1536 MB, redis 0.10, maps nginx 0.10; generator container capped 1 CPU / 1 GB, all --cpu-shares 512",
+  "goal": "One anonymous session joins; an authoritative roomJoinedMessage is counted.",
+  "runs": [
+    {
+      "run": "lane-2",
+      "command": "docker run --rm --name wa-fable-gen --label owner=wa-fable-20261111 --cpus 1 --cpu-shares 512 --memory 1g --network wa-fable-net --tmpfs /tmp -v ~/wa-jobs/wa-fable-20261111/src-wa-fable-stack:/work -v ~/wa-jobs/wa-fable-20261111/p1-live/out:/out -w /work/benchmark -e WA_PUSHER_URL=http://wa-fable-stack-play:3000 -e WA_WS_URL=ws://wa-fable-stack-play:3001 -e WA_ROOM_URLS=http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json -e WA_API_VERSION=dev -e WA_OUTPUT=/out/lane-2.json -e WA_SESSIONS=1 -e WA_RAMP_SECONDS=1 -e WA_DURATION_SECONDS=6 -e WA_MOVE_HZ=2 node:24-trixie /work/node_modules/.bin/tsx ./index.ts",
+      "exitCode": 0,
+      "stderr": "(empty)",
+      "summary": {
+        "schemaVersion": 1,
+        "notice": "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
+        "startedAt": "2026-11-12T00:37:03.980Z",
+        "wallSeconds": 6.031,
+        "stopReason": "completed",
+        "config": {"pusherUrl": "http://wa-fable-stack-play:3000", "wsUrl": "ws://wa-fable-stack-play:3001", "roomUrls": ["http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json"], "sessions": 1, "rampSeconds": 1, "durationSeconds": 6, "moveHz": 2, "joinTimeoutSeconds": 30, "closeTimeoutSeconds": 5, "auth": "anonymous", "apiVersion": "dev", "characterTextureId": "male1", "namePrefix": "bot", "disconnectFraction": 0, "disconnectAtSeconds": 3, "minAccepted": 1, "output": "/out/lane-2.json"},
+        "sessions": {"requested": 1, "started": 1, "neverStarted": 0, "accepted": 1, "acceptedAtStop": 1, "rejected": 0, "abortedBeforeJoin": 0, "unexpectedCloses": 0, "uniqueUserIds": 1},
+        "sockets": {"opened": 1, "openPeak": 1, "openAtStop": 1, "closed": 1},
+        "joinLatencyMs": {"count": 1, "p50": 983.8, "p95": 983.8, "max": 983.8},
+        "rooms": [{"roomUrl": "http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json", "started": 1, "accepted": 1, "rejected": 0, "uniqueUserIds": 1}],
+        "sent": {"joinRoomFrontMessage": 1, "viewportMessage": 1, "userMovesMessage": 10},
+        "received": {"frames": 2, "bytes": 70, "eventsByType": {"roomConnectedMessage": 1, "roomJoinedMessage": 1}},
+        "rejections": {},
+        "errors": {},
+        "closeCodes": {"1000": 1},
+        "generator": {"cpuUserMs": 104.4, "cpuSystemMs": 30.9, "cpuPercentOfOneCore": 2.2, "rssPeakBytes": 163069952, "rssEndBytes": 163069952, "eventLoopLagMs": {"p50": 10.15, "p95": 12.17, "p99": 13.5, "max": 68.29}},
+        "cleanup": {"openSockets": 0, "activeTimers": 0},
+        "reconciled": true
+      }
+    }
+  ],
+  "verdict": "PASS",
+  "evidence": ["sessions.accepted=1 from received.eventsByType.roomJoinedMessage=1; rejected=0; reconciled=true; exit 0", "joinLatencyMs 983.8 is the first join into an empty room (room creation and map fetch by the back included); a single sample, not a latency measurement"]
+}

@@ -1,0 +1,23 @@
+# Rows to merge into docs/TECH-DEBT.md
+
+Source: Phase 2 (refactoring-patterns), pass on `play/src/front/Stores/MediaStore.ts` (2026-11-12). Baseline `HEAD` = `40f7184b1`, `MediaStore.ts` sha256 `fc5f6b6e…10403640d` (1,811 lines). After the four patches: `8dad9d1e…5b638470` (1,865 lines). Evidence: `docs/audits/tech-debt/phase2-mediastore/README.md`. Locations marked "after" are line numbers in the patched file; the others are `HEAD`'s.
+
+## Debt Ledger: status updates
+
+| Item | New status |
+|---|---|
+| MD-01 | Unchanged. The `OverconstrainedError` branch moved verbatim into `handleGetUserMediaFailure` (after `:787-800`). Still pinned by "MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone"; mutant R2 (Phase 1's M7 inside the new function) still fails it. |
+| MD-02 | Unchanged. The stale-generation check stays in `runRawStreamUpdate`'s `try` (after `:1006-1011`); the queue is after `:1085-1118`. |
+| MD-03 | Unchanged (fixed in `87b3c6e03`). The per-kind clears stay at the top of the run (after `:906-913`); the two writes moved verbatim into `handleGetUserMediaFailure` (camera after `:809-810`, microphone after `:822-823`). |
+| MD-05 | Location update only: the comment is after `:1563-1571`, the three module-scope subscriptions after `:1711`, `:1729`, `:1803`. `04-correct-md05-comment.patch` corrects the comment so it says the chain runs from import, and that nothing is requested at import only because `myCameraStore` and `myMicrophoneStore` start `false`. The design row stays open: any input of `mediaStreamConstraintsStore` that starts `true` would still request a device at import. |
+
+## Smell Inventory: status updates
+
+| Smell | New location | New status |
+|---|---|---|
+| Large module (1,805 lines, 62 importers in `play/src`) | `MediaStore.ts` (after: 1,865 lines) | open (Phase 2+). This pass added two module functions and one type, and removed no responsibility. |
+| Long function with four error branches: `runRawStreamUpdate` (was 230 lines, `:776-1005`) | after `:868-1057` (`runRawStreamUpdate`, 190 lines), `:780-826` (`handleGetUserMediaFailure`, 47), `:832-839` (`TrackPlan`), `:845-866` (`planTracks`, 22) | partly done. `02-extract-getusermedia-failure-handler.patch` (Extract Function) moved the four error branches out of the `catch`. `03-extract-track-plan.patch` (Extract Function, the prescribed refactoring) made the stop and request decisions a pure function of the previous constraints, the new constraints and three track flags. Still in `runRawStreamUpdate`: the `navigator.mediaDevices` branches (a P3 gap, so not moved), the stop loops, the warm-track reuse, the request and the merge of the new tracks. The success path after `getUserMedia` (store writes, about 30 lines) is the next candidate. |
+
+## Debt Ledger: new rows
+
+None. Both new tests pin what the code does today, and neither branch showed a defect. One observation, not filed as a bug: a `NotReadableError` (camera taken by another application) records no access issue, because `MediaAccessIssue` has only `"permission_denied"` and `"no_device"`. The camera button then has no help context (`null`), while the first request's error (pinned: `rawLocalStreamStore` emits it) still reaches `MediaManager`, which shows the camera help popup when `myCameraStore` is `true` (`MediaManager.ts:35-39`; inferred from the code, not tested). Whether the tooltip should name this cause is a product call.

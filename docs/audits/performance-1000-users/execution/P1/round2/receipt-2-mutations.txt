@@ -1,0 +1,24 @@
+     × keeps a planned early leaver that has not started yet out of the room 1525ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/harness.test.ts > load run > keeps a planned early leaver that has not started yet out of the room
+      Tests  1 failed | 14 passed (15)
+M1_no_cancel VITEST_EXIT=1
+     × counts accepted room sessions per room and leaves with every socket and timer released 531ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/harness.test.ts > load run > counts accepted room sessions per room and leaves with every socket and timer released
+      Tests  1 failed | 14 passed (15)
+M2_flatten_ids VITEST_EXIT=1
+     × prints the summary of a run stopped by SIGINT once everything is released 566ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/harness.test.ts > load run > prints the summary of a run stopped by SIGINT once everything is released
+      Tests  1 failed | 14 passed (15)
+M3_no_sigint VITEST_EXIT=1
+     × reports only the delay beyond the sampling interval 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/harness.test.ts > event-loop lag > reports only the delay beyond the sampling interval
+      Tests  1 failed | 14 passed (15)
+M4_raw_lag VITEST_EXIT=1
+11c9ff0702b3c536e9aec3957a9c88c4d8a31a7f4caac3b62c7606f681bab3a8  src/runner.ts
+ee02cb91e339ebb94a23a9d8756592f8bdf61e46b64d44bdf43ab4ec9ba25c6d  src/stats.ts
+d2569a74602cc9444977210755acbc47f22c73145ed143a0a1e74c43e8722463  index.ts
+Thu Nov 12 01:29:20 UTC 2026

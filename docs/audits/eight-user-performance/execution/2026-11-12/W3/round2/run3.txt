@@ -1,0 +1,34 @@
+Thu Nov 12 01:28:44 UTC 2026
+
+ RUN  v4.1.7 /work/back
+
+stderr | tests/GameRoom.test.ts > GameRoom > should connect user1 and user2
+WARNING: Redis is not configured. No players variables will be persisted.
+
+stdout | tests/GameRoom.test.ts > GameRoom > should not notify duplicate user when reconnecting from the same tab
+Detected reconnection from same tab for user duplicate-user. Killing stale connection.
+
+stderr | tests/GameRoom.test.ts > GameRoom > variable listeners > should not write to a listener that was removed
+WARNING: Redis is not configured. No variables will be persisted.
+
+ ✓ tests/GameRoom.test.ts (14 tests) 26ms
+ ✓ tests/SessionAnalytics.test.ts (14 tests) 18ms
+stderr | tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.65-core cgroup v2 quota
+CPU high threshold alert. Going in "overheat" mode
+
+stderr | tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.5-core cgroup v1 quota
+CPU high threshold alert. Going in "overheat" mode
+
+stderr | tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota exceeds one core
+CPU high threshold alert. Going in "overheat" mode
+
+ ✓ tests/CpuTracker.test.ts (14 tests) 20ms
+ ✓ tests/RoomManager.test.ts (1 test) 111ms
+
+ Test Files  4 passed (4)
+      Tests  43 passed (43)
+   Start at  01:28:45
+   Duration  6.78s (transform 2.76s, setup 0ms, import 5.85s, tests 174ms, environment 0ms)
+
+VITEST_CONSUMERS_EXIT=0
+Thu Nov 12 01:28:52 UTC 2026

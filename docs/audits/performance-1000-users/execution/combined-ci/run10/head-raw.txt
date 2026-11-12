@@ -1,0 +1,41 @@
+HEAD 5deb37fd5 src.tgz sha256 810096820627ea4a (host knc)
+v24.22.2
+11.19.1
+4
+git version 2.47.3
+
+npm-ci	.	0	57s
+play-i18n-check	play	0	2s
+play-typecheck	play	0	23s
+play-svelte-check	play	0	45s
+play-lint	play	0	354s
+play-pretty-check	play	0	23s
+play-test	play	0	416s
+back-typecheck	back	0	11s
+back-lint	back	0	20s
+back-test	back	0	24s
+back-pretty-check	back	0	2s
+map-storage-typecheck	map-storage	0	6s
+map-storage-lint	map-storage	0	18s
+map-storage-test	map-storage	0	8s
+map-storage-pretty-check	map-storage	0	2s
+benchmark-test	benchmark	0	5s
+benchmark-typecheck	benchmark	0	3s
+store-utils-typecheck	libs/store-utils	0	2s
+store-utils-svelte-check	libs/store-utils	0	2s
+store-utils-lint	libs/store-utils	0	4s
+store-utils-test	libs/store-utils	0	2s
+shared-utils-typecheck	libs/shared-utils	0	5s
+shared-utils-lint	libs/shared-utils	0	9s
+shared-utils-test	libs/shared-utils	0	4s
+map-editor-typecheck	libs/map-editor	0	7s
+map-editor-lint	libs/map-editor	0	10s
+map-editor-test	libs/map-editor	0	5s
+messages-typecheck	libs/messages	0	3s
+math-utils-typecheck	libs/math-utils	0	2s
+play-build	play	0	22s
+total 1099s
+
+marker-files=2
+
+Note: every lane exited 0. The per-suite test counts were not captured: the collector grep missed ANSI-coloured vitest summaries and the remote logs were removed afterwards.

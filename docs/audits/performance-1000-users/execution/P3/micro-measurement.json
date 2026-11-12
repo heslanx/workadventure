@@ -1,0 +1,262 @@
+{
+ "node": "v24.22.2",
+ "differential": [
+  {
+   "seed": 1,
+   "operations": 200000,
+   "calls": {
+    "add": 109894,
+    "advance": 40115,
+    "getAll": 16266,
+    "getAfter": 17781,
+    "hasEveryNonceAfter": 15944
+   },
+   "mismatches": {
+    "getAll": 0,
+    "getAfter": 0,
+    "hasEveryNonceAfterEmptyStorePeerBehind": 409,
+    "hasEveryNonceAfterOther": 0
+   }
+  },
+  {
+   "seed": 2,
+   "operations": 200000,
+   "calls": {
+    "add": 109914,
+    "advance": 40123,
+    "getAll": 16119,
+    "getAfter": 17918,
+    "hasEveryNonceAfter": 15926
+   },
+   "mismatches": {
+    "getAll": 0,
+    "getAfter": 0,
+    "hasEveryNonceAfterEmptyStorePeerBehind": 345,
+    "hasEveryNonceAfterOther": 0
+   }
+  },
+  {
+   "seed": 3,
+   "operations": 200000,
+   "calls": {
+    "add": 110268,
+    "advance": 39852,
+    "getAll": 16034,
+    "getAfter": 17907,
+    "hasEveryNonceAfter": 15939
+   },
+   "mismatches": {
+    "getAll": 0,
+    "getAfter": 0,
+    "hasEveryNonceAfterEmptyStorePeerBehind": 372,
+    "hasEveryNonceAfterOther": 0
+   }
+  }
+ ],
+ "storm": [
+  {
+   "label": "baseline",
+   "frames": 25000,
+   "frameBytes": 256,
+   "addMs": 105.89,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 25000,
+   "peakRetainedPayloadBytes": 6400000,
+   "retainedMessagesAtEnd": 25000,
+   "heapUsedDeltaBytes": 6830984,
+   "arrayBuffersDeltaBytes": 5709574,
+   "replayTailOf100MicrosPerCall": 2727.43,
+   "pruneAllMs": 353.98,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head uncapped (front configuration)",
+   "frames": 25000,
+   "frameBytes": 256,
+   "addMs": 44.26,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 25000,
+   "peakRetainedPayloadBytes": 6400000,
+   "retainedMessagesAtEnd": 25000,
+   "heapUsedDeltaBytes": 6884384,
+   "arrayBuffersDeltaBytes": 0,
+   "replayTailOf100MicrosPerCall": 6.34,
+   "pruneAllMs": 44.94,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head capped (pusher configuration)",
+   "frames": 25000,
+   "frameBytes": 256,
+   "addMs": 178.95,
+   "refusedAdds": 12,
+   "peakRetainedMessages": 2000,
+   "peakRetainedPayloadBytes": 512000,
+   "retainedMessagesAtEnd": 988,
+   "heapUsedDeltaBytes": 298376,
+   "arrayBuffersDeltaBytes": 0,
+   "replayTailOf100MicrosPerCall": 26.48,
+   "pruneAllMs": 0.04,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "baseline",
+   "frames": 50000,
+   "frameBytes": 256,
+   "addMs": 119.3,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 50000,
+   "peakRetainedPayloadBytes": 12800000,
+   "retainedMessagesAtEnd": 50000,
+   "heapUsedDeltaBytes": 13633584,
+   "arrayBuffersDeltaBytes": 12800000,
+   "replayTailOf100MicrosPerCall": 579.57,
+   "pruneAllMs": 1328.41,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head uncapped (front configuration)",
+   "frames": 50000,
+   "frameBytes": 256,
+   "addMs": 63.81,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 50000,
+   "peakRetainedPayloadBytes": 12800000,
+   "retainedMessagesAtEnd": 50000,
+   "heapUsedDeltaBytes": 13604248,
+   "arrayBuffersDeltaBytes": 184576,
+   "replayTailOf100MicrosPerCall": 155.09,
+   "pruneAllMs": 1.73,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head capped (pusher configuration)",
+   "frames": 50000,
+   "frameBytes": 256,
+   "addMs": 101.93,
+   "refusedAdds": 24,
+   "peakRetainedMessages": 2000,
+   "peakRetainedPayloadBytes": 512000,
+   "retainedMessagesAtEnd": 1976,
+   "heapUsedDeltaBytes": 545720,
+   "arrayBuffersDeltaBytes": 2552576,
+   "replayTailOf100MicrosPerCall": 14.37,
+   "pruneAllMs": 0.03,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "baseline",
+   "frames": 100000,
+   "frameBytes": 256,
+   "addMs": 113.53,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 100000,
+   "peakRetainedPayloadBytes": 25600000,
+   "retainedMessagesAtEnd": 100000,
+   "heapUsedDeltaBytes": 27365344,
+   "arrayBuffersDeltaBytes": 25463808,
+   "replayTailOf100MicrosPerCall": 1431.09,
+   "pruneAllMs": 5120.66,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head uncapped (front configuration)",
+   "frames": 100000,
+   "frameBytes": 256,
+   "addMs": 103.37,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 100000,
+   "peakRetainedPayloadBytes": 25600000,
+   "retainedMessagesAtEnd": 100000,
+   "heapUsedDeltaBytes": 27322632,
+   "arrayBuffersDeltaBytes": 0,
+   "replayTailOf100MicrosPerCall": 9.31,
+   "pruneAllMs": 8.9,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head capped (pusher configuration)",
+   "frames": 100000,
+   "frameBytes": 256,
+   "addMs": 125.23,
+   "refusedAdds": 49,
+   "peakRetainedMessages": 2000,
+   "peakRetainedPayloadBytes": 512000,
+   "retainedMessagesAtEnd": 1951,
+   "heapUsedDeltaBytes": 535704,
+   "arrayBuffersDeltaBytes": 4397568,
+   "replayTailOf100MicrosPerCall": 10.13,
+   "pruneAllMs": 0.68,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "baseline",
+   "frames": 200000,
+   "frameBytes": 256,
+   "addMs": 142.93,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 200000,
+   "peakRetainedPayloadBytes": 51200000,
+   "retainedMessagesAtEnd": 200000,
+   "heapUsedDeltaBytes": 54889792,
+   "arrayBuffersDeltaBytes": 51200000,
+   "replayTailOf100MicrosPerCall": 6746.58,
+   "pruneAllMs": 20142.39,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head uncapped (front configuration)",
+   "frames": 200000,
+   "frameBytes": 256,
+   "addMs": 218.75,
+   "refusedAdds": 0,
+   "peakRetainedMessages": 200000,
+   "peakRetainedPayloadBytes": 51200000,
+   "retainedMessagesAtEnd": 200000,
+   "heapUsedDeltaBytes": 54873952,
+   "arrayBuffersDeltaBytes": 281088,
+   "replayTailOf100MicrosPerCall": 10.37,
+   "pruneAllMs": 57.12,
+   "retainedMessagesAfterPrune": 0
+  },
+  {
+   "label": "pr-head capped (pusher configuration)",
+   "frames": 200000,
+   "frameBytes": 256,
+   "addMs": 326.09,
+   "refusedAdds": 99,
+   "peakRetainedMessages": 2000,
+   "peakRetainedPayloadBytes": 512000,
+   "retainedMessagesAtEnd": 1901,
+   "heapUsedDeltaBytes": 528144,
+   "arrayBuffersDeltaBytes": -50711040,
+   "replayTailOf100MicrosPerCall": 7.21,
+   "pruneAllMs": 0.2,
+   "retainedMessagesAfterPrune": 0
+  }
+ ],
+ "steady": {
+  "addsPerRound": 1000000,
+  "rounds": 7,
+  "baselineNanosPerAdd": [
+   161.1,
+   106.1,
+   110.8,
+   94.7,
+   106.3,
+   101.7,
+   150.5
+  ],
+  "prCappedNanosPerAdd": [
+   455.1,
+   912.5,
+   473.5,
+   115.2,
+   615,
+   243.3,
+   747.1
+  ],
+  "baselineMedianNanosPerAdd": 106.3,
+  "prCappedMedianNanosPerAdd": 473.5
+ }
+}

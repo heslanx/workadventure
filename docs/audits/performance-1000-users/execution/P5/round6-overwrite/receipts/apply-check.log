@@ -1,0 +1,21 @@
+checkout HEAD: 50632e874
+git apply --cached 1-pin-autosave-overwrite.test.patch: exit 0  sha256 f40c1b3a06a220bd1d4146b3fe255179c49c1d55ac165d7fb6fcd62f4c2338f1
+git apply --cached 2-fix-autosave-overwrite.patch: exit 0  sha256 881603cd8855984364f6cb80ec90ba760ee92fe621966146be6841086ca30b35
+git apply --cached 3-pin-upload-move-clear.test.patch: exit 0  sha256 ab6b4862e2b7e3bc9be4aafac11c80b6756be2b2cfc2b8e403f19740000abae5
+git apply --cached 4-fix-upload-move-clear.patch: exit 0  sha256 76e476ac3248020c8fa509a861575d867d5fc7be9e6438c6e40898d6a9b55bf3
+git apply --cached 5-pin-rejected-replacement-edit.test.patch: exit 0  sha256 8b12d45341a837dc0f9b20c2de9a5eee9e62d23aae9a7dca4b3fc307404f501a
+git apply --cached 6-fix-rejected-replacement-edit.patch: exit 0  sha256 4bff6b0ee61acb69bd7404ea2ea3ec7b8a12bf05e4dc6fad9902b47ea7ef05a2
+git apply --cached 7-pin-overlapping-replacements.test.patch: exit 0  sha256 ebb7a1eddca92a34d6d0944076cd962b8c0db5bda8cd4a4d66463a9b767a8fd5
+git apply --cached 8-fix-overlapping-replacements.patch: exit 0  sha256 63a9c509610ad008539bbf6fcbb2c54a8573dd4e3db8e6fec33b83b5ebcb347a
+git apply --cached 9-pin-move-unsaved-edit.test.patch: exit 0  sha256 f29e4422ed5a0e024ee982b55432e027d196b99e4e0983695dd6a1de05b29132
+git apply --cached 10-fix-move-unsaved-edit.patch: exit 0  sha256 0ef4c504610b86e067343486d27f287174ee66db3c9cb51a518893c03867b01f
+git apply --cached 11-pin-upload-temp-file.test.patch: exit 0  sha256 17c13d2e58545ad3ea20712d7d6153c391b82c38b343c5b1e7942de0a892700a
+git apply --cached 12-fix-upload-temp-file.patch: exit 0  sha256 a0bd17effc2bd62638dcf57b0a4c6df47affc834ab7c234f6efcbac2bd05d63a
+temp index  b692d4be3f71075914d9d64213516c2790a5e6fe  map-storage/src/MapsManager.ts
+temp index  cec2cd70be97f01e5bf2969e7b1a37b2dd466d8f  map-storage/src/Upload/UploadController.ts
+temp index  1f9aec131768d64117c576508fd7b3c3b3bcbe64  map-storage/src/tests/MapsManagerAutosave.test.ts
+temp index  59d7a4f2d919e5b015190c6c27e76abb19895881  map-storage/src/tests/UploadController.test.ts
+tested file b692d4be3f71075914d9d64213516c2790a5e6fe  map-storage/src/MapsManager.ts
+tested file cec2cd70be97f01e5bf2969e7b1a37b2dd466d8f  map-storage/src/Upload/UploadController.ts
+tested file 1f9aec131768d64117c576508fd7b3c3b3bcbe64  map-storage/src/tests/MapsManagerAutosave.test.ts
+tested file 59d7a4f2d919e5b015190c6c27e76abb19895881  map-storage/src/tests/UploadController.test.ts

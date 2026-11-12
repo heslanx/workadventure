@@ -1,0 +1,172 @@
+diff --git a/play/src/front/Chat/Components/Room/RoomTimeline.svelte b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+index d2bfdad..fd5a3fe 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+@@ -45,6 +45,7 @@
+     import RoomTimelineLoading from "./RoomTimelineLoading.svelte";
+     import { shouldReserveFloatingCloseButtonSpace, shouldShowBackToRoomList } from "./RoomTimelineHeaderLayout";
+     import { countIncomingMessagesAfter, findFirstUnreadKey, isReadMarkerLoaded } from "./RoomTimelineNewMessages";
++    import { reuseUnchangedRenderItems, type RoomTimelineRenderItem } from "./RoomTimelineRenderItems";
+     import {
+         IconArrowDown,
+         IconChevronLeft,
+@@ -235,9 +236,9 @@
+         }
+     });
+ 
+-    type RenderItem =
+-        | { kind: "separator"; key: string; label: string }
+-        | { kind: "item"; key: string; timelineItem: ChatTimelineItem; showHeader: boolean; showTime: boolean };
++    type RenderItem = RoomTimelineRenderItem;
++    /** Rows of the last render, read only to reuse them in the next one: deliberately not $state. */
++    let previousRenderItems: readonly RenderItem[] = [];
+ 
+     function isValidDate(d: Date) {
+         return d instanceof Date && !Number.isNaN(d.getTime());
+@@ -336,7 +337,8 @@
+             }
+         });
+ 
+-        return out;
++        previousRenderItems = reuseUnchangedRenderItems(out, previousRenderItems);
++        return previousRenderItems;
+     });
+ 
+     const MAX_INITIAL_FILL_ROUNDS = 5;
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.test.ts b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.test.ts
+new file mode 100644
+index 0000000..935a704
+--- /dev/null
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.test.ts
+@@ -0,0 +1,71 @@
++import { describe, expect, it } from "vitest";
++import type { ChatMessage, ChatPollItem, ChatTimelineItem } from "../../Connection/ChatConnection";
++import { reuseUnchangedRenderItems, type RoomTimelineRenderItem } from "./RoomTimelineRenderItems";
++
++const date = new Date(Date.UTC(2026, 10, 12, 8, 0, 0));
++
++function row(timelineItem: ChatTimelineItem, showHeader = true, showTime = true): RoomTimelineRenderItem {
++    return { kind: "item", key: `${timelineItem.kind}-${timelineItem.id}`, timelineItem, showHeader, showTime };
++}
++
++// The proximity store rebuilds every item object on each change; the message objects stay the same.
++function messageItem(id: string, message: ChatMessage): ChatTimelineItem {
++    return { kind: "message", id, date: new Date(date), message };
++}
++
++describe("reuseUnchangedRenderItems", () => {
++    it("keeps the previous rows when one message is appended to rebuilt timeline items", () => {
++        const a = { id: "a" } as ChatMessage;
++        const b = { id: "b" } as ChatMessage;
++        const separator: RoomTimelineRenderItem = { kind: "separator", key: "sep-2026-11-12", label: "Today" };
++        const previous = reuseUnchangedRenderItems([separator, row(messageItem("a", a)), row(messageItem("b", b))], []);
++
++        const next = reuseUnchangedRenderItems(
++            [
++                { ...separator },
++                row(messageItem("a", a)),
++                row(messageItem("b", b)),
++                row(messageItem("c", { id: "c" } as ChatMessage)),
++            ],
++            previous,
++        );
++
++        expect(next.slice(0, 3)).toEqual(previous);
++        for (let index = 0; index < 3; index++) {
++            expect(next[index]).toBe(previous[index]);
++        }
++        expect(next.map((item) => item.key)).toEqual(["sep-2026-11-12", "message-a", "message-b", "message-c"]);
++    });
++
++    it("gives a new row when its grouping, time, payload or day label changes", () => {
++        const a = { id: "a" } as ChatMessage;
++        const previous = reuseUnchangedRenderItems(
++            [{ kind: "separator", key: "sep-2026-11-12", label: "Today" }, row(messageItem("a", a), true, true)],
++            [],
++        );
++
++        const hiddenTime = row(messageItem("a", a), true, false);
++        expect(reuseUnchangedRenderItems([previous[0], hiddenTime], previous)[1]).toBe(hiddenTime);
++
++        const grouped = row(messageItem("a", a), false, true);
++        expect(reuseUnchangedRenderItems([previous[0], grouped], previous)[1]).toBe(grouped);
++
++        const replaced = row(messageItem("a", { id: "a" } as ChatMessage));
++        expect(reuseUnchangedRenderItems([previous[0], replaced], previous)[1]).toBe(replaced);
++
++        const relabelled: RoomTimelineRenderItem = { kind: "separator", key: "sep-2026-11-12", label: "Yesterday" };
++        expect(reuseUnchangedRenderItems([relabelled, previous[1]], previous)[0]).toBe(relabelled);
++    });
++
++    it("reuses a poll row only while it shows the same poll", () => {
++        const poll = { id: "p" } as ChatPollItem;
++        const pollRow = row({ kind: "poll", id: "p", date: null, poll });
++        const previous = reuseUnchangedRenderItems([pollRow], []);
++        const otherPoll = row({ kind: "poll", id: "p", date: null, poll: { id: "p" } as ChatPollItem });
++
++        expect(reuseUnchangedRenderItems([row({ kind: "poll", id: "p", date: null, poll })], previous)[0]).toBe(
++            pollRow,
++        );
++        expect(reuseUnchangedRenderItems([otherPoll], previous)[0]).toBe(otherPoll);
++    });
++});
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts
+new file mode 100644
+index 0000000..ab9b751
+--- /dev/null
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts
+@@ -0,0 +1,54 @@
++import type { ChatTimelineItem } from "../../Connection/ChatConnection";
++
++export type RoomTimelineRenderItem =
++    | { kind: "separator"; key: string; label: string }
++    | { kind: "item"; key: string; timelineItem: ChatTimelineItem; showHeader: boolean; showTime: boolean };
++
++/**
++ * Gives back the previous render's row for every row whose content did not change.
++ * The keyed {#each} only updates a row whose value changed identity, and the timeline stores rebuild
++ * every item object on each change: without this, one new message re-runs the effects of every loaded row.
++ */
++export function reuseUnchangedRenderItems(
++    next: readonly RoomTimelineRenderItem[],
++    previous: readonly RoomTimelineRenderItem[],
++): RoomTimelineRenderItem[] {
++    const previousByKey = new Map(previous.map((item) => [item.key, item]));
++    return next.map((item) => {
++        const previousItem = previousByKey.get(item.key);
++        return previousItem !== undefined && isSameRenderItem(previousItem, item) ? previousItem : item;
++    });
++}
++
++function isSameRenderItem(previous: RoomTimelineRenderItem, next: RoomTimelineRenderItem): boolean {
++    if (previous.kind === "separator") {
++        return next.kind === "separator" && previous.label === next.label;
++    }
++    return (
++        next.kind === "item" &&
++        previous.showHeader === next.showHeader &&
++        previous.showTime === next.showTime &&
++        isSameTimelineItem(previous.timelineItem, next.timelineItem)
++    );
++}
++
++function isSameTimelineItem(previous: ChatTimelineItem, next: ChatTimelineItem): boolean {
++    return (
++        previous.kind === next.kind &&
++        previous.id === next.id &&
++        previous.date?.getTime() === next.date?.getTime() &&
++        timelinePayload(previous) === timelinePayload(next)
++    );
++}
++
++function timelinePayload(item: ChatTimelineItem): unknown {
++    switch (item.kind) {
++        case "message":
++        case "system":
++            return item.message;
++        case "poll":
++            return item.poll;
++        case "question":
++            return item.question;
++    }
++}

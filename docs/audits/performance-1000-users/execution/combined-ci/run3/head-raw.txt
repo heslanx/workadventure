@@ -1,0 +1,66 @@
+v24.22.2
+11.19.1
+4
+git version 2.47.3
+===
+npm-ci	.	0	77s
+play-i18n-check	play	0	3s
+play-typecheck	play	0	30s
+play-svelte-check	play	0	49s
+play-lint	play	0	355s
+play-pretty-check	play	0	27s
+play-test	play	0	404s
+back-typecheck	back	0	9s
+back-lint	back	0	16s
+back-test	back	0	25s
+back-pretty-check	back	0	2s
+map-storage-typecheck	map-storage	0	6s
+map-storage-lint	map-storage	0	14s
+map-storage-test	map-storage	0	7s
+map-storage-pretty-check	map-storage	0	1s
+benchmark-test	benchmark	0	6s
+benchmark-typecheck	benchmark	0	3s
+store-utils-typecheck	libs/store-utils	0	1s
+store-utils-svelte-check	libs/store-utils	0	3s
+store-utils-lint	libs/store-utils	0	4s
+store-utils-test	libs/store-utils	0	1s
+shared-utils-typecheck	libs/shared-utils	0	7s
+shared-utils-lint	libs/shared-utils	0	11s
+shared-utils-test	libs/shared-utils	0	4s
+map-editor-typecheck	libs/map-editor	0	5s
+map-editor-lint	libs/map-editor	0	10s
+map-editor-test	libs/map-editor	0	4s
+math-utils-typecheck	libs/math-utils	0	2s
+total 1090s
+===
+      1 @types/node@18.19.130
+      1 @types/node@22.19.19
+     39 @types/node@25.9.1
+workadventure@ /w/head
++-- @workadventure/eslint-config@1.0.0 -> ./libs/eslint-config
+| +-- eslint-plugin-svelte@3.18.0
+| | `-- svelte@5.57.3 deduped
+| `-- svelte-eslint-parser@1.6.1
+|   `-- svelte@5.57.3 deduped
++-- @workadventure/store-utils@1.0.0 -> ./libs/store-utils
+| +-- svelte-check@4.4.8
+| | `-- svelte@5.57.3 deduped
+| `-- svelte@5.57.3
++-- map-storage@1.0.0 -> ./map-storage
+| +-- @sveltejs/vite-plugin-svelte@7.1.2
+| | `-- svelte@5.57.3 deduped
+| +-- prettier-plugin-svelte@4.0.1
+| | `-- svelte@5.57.3 deduped
+| `-- svelte@5.57.3 deduped
+`-- workadventure-play@1.0.0 -> ./play
+  +-- @sentry/svelte@10.54.0
+  | `-- svelte@5.57.3 deduped
+  +-- phaser@4.2.0
+  +-- svelte-modals@2.0.1
+  | `-- svelte@5.57.3 deduped
+  +-- svelte-pan-zoom@0.0.13
+  | `-- svelte@5.57.3 deduped
+  +-- svelte@5.57.3 deduped
+  `-- unplugin-icons@23.0.1
+    `-- svelte@5.57.3 deduped
+

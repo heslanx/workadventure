@@ -1,0 +1,89 @@
+diff --git a/play/src/front/Stores/MediaStore.ts b/play/src/front/Stores/MediaStore.ts
+index d6a4443..0284c84 100644
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts
+@@ -811,8 +811,14 @@ async function runRawStreamUpdate(
+         });
+     }
+ 
+-    cameraAccessIssueStore.set(null);
+-    microphoneAccessIssueStore.set(null);
++    // Clear a device's access issue only when this run asks for that device. Each failure below that records an issue
++    // also turns its device off, which queues a run without that device, and that run must keep the issue.
++    if (constraints.video !== false) {
++        cameraAccessIssueStore.set(null);
++    }
++    if (constraints.audio !== false) {
++        microphoneAccessIssueStore.set(null);
++    }
+ 
+     const nextConstraints = {
+         video: constraints.video ?? false,
+diff --git a/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts b/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+index 710c4cf..611f7c9 100644
+--- a/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
++++ b/play/tests/front/Stores/MediaStoreGetUserMedia.test.ts
+@@ -283,7 +283,7 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
+         expect(requested(browser, 1)).toEqual({ video: false, audio: true });
+     });
+ 
+-    it("MD-03 (pinned): a camera the user denies turns the camera off, asks again for the microphone alone, and that retry erases the denial", async () => {
++    it("MD-03 (fixed): a camera the user denies turns the camera off, asks again for the microphone alone, and keeps the denial until the camera is asked for again", async () => {
+         m = await loadMediaStore();
+         browser.failNext(namedError("NotAllowedError"));
+         await enterRoom(m);
+@@ -293,9 +293,53 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
+         expect(requested(browser, 1)).toEqual({ video: false, audio: true });
+         expect(get(m.requestedCameraState)).toBe(false);
+         expect(get(m.requestedMicrophoneState)).toBe(true);
+-        expect(get(m.cameraAccessIssueStore)).toBe(null);
++        expect(get(m.cameraAccessIssueStore)).toBe("permission_denied");
++        expect(get(m.cameraButtonHelpContextStore)).toBe("permission");
+         expect(get(m.microphoneAccessIssueStore)).toBe(null);
+         expect(current(m)).toEqual([{ kind: "audio", id: "audio-0" }]);
++
++        m.requestedCameraState.enableWebcam();
++        await settle();
++
++        expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
++        expect(requested(browser, 2)).toEqual({ video: true, audio: false });
++        expect(get(m.cameraAccessIssueStore)).toBe(null);
++        expect(get(m.cameraButtonHelpContextStore)).toBe(null);
++        expect(current(m)).toEqual([
++            { kind: "audio", id: "audio-0" },
++            { kind: "video", id: "video-1" },
++        ]);
++    });
++
++    it("MD-03 (fixed): a microphone the user denies turns the microphone off and keeps the denial while the camera is asked for, until the microphone is asked for again", async () => {
++        m = await loadMediaStore();
++        browser.failNext(namedError("NotAllowedError"));
++        m.myMicrophoneStore.set(true);
++        await settle();
++
++        expect(browser.getUserMedia).toHaveBeenCalledTimes(1);
++        expect(requested(browser, 0)).toEqual({ video: false, audio: true });
++        expect(get(m.requestedMicrophoneState)).toBe(false);
++        expect(get(m.microphoneAccessIssueStore)).toBe("permission_denied");
++        expect(get(m.microphoneButtonHelpContextStore)).toBe("permission");
++
++        m.myCameraStore.set(true);
++        await settle();
++
++        expect(browser.getUserMedia).toHaveBeenCalledTimes(2);
++        expect(requested(browser, 1)).toEqual({ video: true, audio: false });
++        expect(get(m.microphoneAccessIssueStore)).toBe("permission_denied");
++
++        m.requestedMicrophoneState.enableMicrophone();
++        await settle();
++
++        expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
++        expect(requested(browser, 2)).toEqual({ video: false, audio: true });
++        expect(get(m.microphoneAccessIssueStore)).toBe(null);
++        expect(current(m)).toEqual([
++            { kind: "video", id: "video-0" },
++            { kind: "audio", id: "audio-1" },
++        ]);
+     });
+ 
+     it("MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone", async () => {

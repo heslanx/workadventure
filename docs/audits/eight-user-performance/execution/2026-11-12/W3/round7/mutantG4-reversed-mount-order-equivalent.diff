@@ -1,0 +1,11 @@
+--- a/back/src/Services/QuotaAwareCpuTracker.ts
++++ b/back/src/Services/QuotaAwareCpuTracker.ts
+@@ -239,7 +239,7 @@
+     const quotas = CGROUP_HIERARCHIES.flatMap((hierarchy) => {
+         const listedMounts = parseCgroupMounts(mountinfo, hierarchy.version);
+         const mounts =
+-            listedMounts.length > 0 ? listedMounts : [{ root: "/", mountPoint: hierarchy.defaultMountPoint }];
++            listedMounts.length > 0 ? [...listedMounts].reverse() : [{ root: "/", mountPoint: hierarchy.defaultMountPoint }];
+         // Without an entry in /proc/self/cgroup the process is taken to be at the namespace root.
+         const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "/";
+         return mounts.flatMap((mount) =>

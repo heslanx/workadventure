@@ -1,3 +1,7 @@
+import {
+    ObservabilityEnvironmentVariables,
+    PostHogEnvironmentVariables,
+} from "@workadventure/shared-utils/src/Observability/EnvironmentVariables";
 import { z } from "zod";
 import {
     AbsoluteOrRelativeUrl,
@@ -9,6 +13,8 @@ import {
 } from "@workadventure/shared-utils/src/EnvironmentVariables/EnvironmentVariableUtils";
 
 export const EnvironmentVariables = z.object({
+    ...ObservabilityEnvironmentVariables,
+    ...PostHogEnvironmentVariables,
     PLAY_URL: z.string().url().describe("Public URL of the play/frontend service"),
     MINIMUM_DISTANCE: PositiveIntAsString.optional()
         .transform((val) => toNumber(val, 64))

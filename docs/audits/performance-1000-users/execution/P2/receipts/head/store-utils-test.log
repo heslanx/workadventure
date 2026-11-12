@@ -1,0 +1,14 @@
+
+> @workadventure/store-utils@1.0.0 test
+> vitest run
+
+
+ RUN  v4.1.7 /work/libs/store-utils
+
+ ✓ tests/SearchableArrayStore.test.ts (12 tests) 11ms
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  00:16:31
+   Duration  320ms (transform 54ms, setup 0ms, import 166ms, tests 11ms, environment 0ms)
+

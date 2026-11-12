@@ -1,0 +1,49 @@
+0
+cp: target '/dev/null': Not a directory
+back typecheck exit=0 secs=15
+back lint exit=0 secs=32
+back test exit=0 secs=31
+map-storage typecheck exit=0 secs=10
+map-storage lint exit=0 secs=24
+map-storage test exit=0 secs=10
+libs/shared-utils typecheck exit=0 secs=8
+libs/shared-utils lint exit=0 secs=16
+libs/shared-utils test exit=0 secs=5
+libs/map-editor typecheck exit=0 secs=8
+libs/map-editor lint exit=0 secs=13
+libs/map-editor test exit=0 secs=6
+libs/store-utils typecheck exit=0 secs=3
+libs/store-utils lint exit=0 secs=6
+libs/store-utils test exit=0 secs=2
+libs/messages typecheck exit=0 secs=5
+play typecheck exit=0 secs=30
+play lint exit=0 secs=472
+play test exit=0 secs=465
+play svelte exit=0 secs=52
+back typecheck exit=0 secs=19
+back lint exit=0 secs=30
+back test exit=0 secs=31
+libs/map-editor lint exit=0 secs=16
+libs/map-editor test exit=0 secs=7
+map-storage typecheck exit=0 secs=9
+map-storage test exit=0 secs=11
+play lint exit=0 secs=457
+play test exit=0 secs=472
+play svelte exit=0 secs=58
+0001-B1-back-delete-empty-back-src-Services-Logger.ts.patch back typecheck exit=0 secs=14
+0002-B2-back-delete-unused-Identificable-interface-file.patch back typecheck exit=0 secs=13
+0003-B3-back-delete-unused-getCapabilities.patch back typecheck exit=0 secs=13
+0004-B4-back-delete-unused-IWebRTCCredentials-interface.patch back typecheck exit=0 secs=12
+0015-L2-CAUTION-map-editor-delete-unused-mis-typed-isSucc.patch libs/map-editor typecheck exit=0 secs=9
+0101-C3-map-editor-drop-MapValidator-s-duplicate-isFailur.patch libs/map-editor typecheck exit=0 secs=9
+0005-P-play-delete-unused-play-src-pusher-models-Websocke.patch play typecheck exit=0 secs=30
+0006-P-play-delete-unused-play-src-pusher-models-Websocke.patch play typecheck exit=0 secs=31
+0007-P-play-delete-unused-play-src-pusher-models-Websocke.patch play typecheck exit=0 secs=38
+0008-P-play-delete-unused-play-src-pusher-models-Websocke.patch play typecheck exit=0 secs=31
+0009-P-play-delete-unused-play-src-pusher-models-Movable..patch play typecheck exit=0 secs=33
+0010-P-play-delete-unused-play-src-pusher-models-Position.patch play typecheck exit=0 secs=29
+0011-P8-play-delete-unused-isFetchWorldChatMembers-schema.patch play typecheck exit=0 secs=34
+0012-P9-play-delete-unused-FetchMemberDataByUuidSuccessRe.patch play typecheck exit=0 secs=29
+0013-P10-play-delete-unused-SocketUpgradeFailed-type-and-.patch play typecheck exit=0 secs=28
+0014-P11-CAUTION-play-delete-unused-play-src-pusher-servi.patch play typecheck exit=0 secs=24
+0102-C1-play-drop-the-barrel-s-unused-re-exports-of-Defau.patch play typecheck exit=0 secs=25

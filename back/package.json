@@ -5,9 +5,9 @@
   "type": "module",
   "description": "",
   "scripts": {
-    "dev": "tsx watch --inspect=0.0.0.0:9229 src/server.ts",
-    "runprod": "tsx src/server.ts",
-    "profile": "node --prof --import tsx src/server.ts",
+    "dev": "tsx watch --inspect=0.0.0.0:9229 src/bootstrap.ts",
+    "runprod": "tsx src/bootstrap.ts",
+    "profile": "node --prof --import tsx src/bootstrap.ts",
     "typecheck": "tsc --noEmit",
     "test": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --config vitest.config.ts ",
     "test:coverage": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --config vitest.config.ts --coverage -- --verbose=true",

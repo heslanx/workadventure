@@ -1,0 +1,8 @@
+ ✓ tests/pusher/ArrayHelper.test.ts (3 tests) 97ms
+ ✓ tests/pusher/ClientIp.test.ts (2 tests) 93ms
+
+ Test Files  34 passed (34)
+      Tests  279 passed | 10 skipped (289)
+   Start at  02:45:09
+   Duration  1044.81s (transform 218.66s, setup 5.08s, import 516.91s, tests 13.13s, environment 379.25s)
+

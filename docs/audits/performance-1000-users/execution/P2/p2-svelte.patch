@@ -1,0 +1,33 @@
+--- a/libs/store-utils/package.json
++++ b/libs/store-utils/package.json
+@@ -25,7 +25,7 @@
+     "@workadventure/eslint-config": "1.0.0",
+     "eslint": "^9.39.4",
+     "lint-staged": "^17.0.5",
+-    "svelte": "^5.55.9",
++    "svelte": "^5.57.3",
+     "svelte-check": "^4.4.8",
+     "prettier": "^3.8.3",
+     "typescript": "^5.9.3",
+--- a/map-storage/package.json
++++ b/map-storage/package.json
+@@ -107,7 +107,7 @@
+     "prettier": "^3.8.3",
+     "prettier-plugin-svelte": "^4.0.1",
+     "source-map-support": "^0.5.21",
+-    "svelte": "^5.55.9",
++    "svelte": "^5.57.3",
+     "svelte-check": "^4.4.8",
+     "ts-loader": "^9.5.7",
+     "tsconfig-paths": "4.2.0",
+--- a/play/package.json
++++ b/play/package.json
+@@ -83,7 +83,7 @@
+     "patch-package": "^8.0.1",
+     "prettier": "^3.8.3",
+     "prettier-plugin-svelte": "^4.0.1",
+-    "svelte": "^5.55.9",
++    "svelte": "^5.57.3",
+     "svelte-check": "^4.4.8",
+     "svelte-eslint-parser": "^1.6.1",
+     "tailwindcss": "^4.3.0",

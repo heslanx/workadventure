@@ -1,0 +1,163 @@
+ms-test exit=0 secs=8
+ms-typecheck exit=0 secs=12
+ms-eslint exit=0 secs=19
+ms-prettier exit=0 secs=1
+back-test exit=0 secs=2
+back-typecheck exit=0 secs=17
+back-eslint exit=0 secs=16
+back-prettier exit=0 secs=1
+bench-test exit=0 secs=7
+bench-typecheck exit=0 secs=5
+bench-eslint exit=2 secs=0
+bench-prettier exit=1 secs=2
+pusher-test exit=0 secs=8
+pusher-eslint exit=0 secs=31
+pusher-prettier exit=0 secs=1
+chat-test exit=0 secs=4
+chat-eslint exit=0 secs=23
+chat-prettier exit=0 secs=2
+play-typecheck exit=0 secs=40
+play-svelte-check exit=0 secs=73
+DONE
+===== back-eslint.log (last 15 lines)
+===== back-prettier.log (last 15 lines)
+Checking formatting...
+All matched files use Prettier code style!
+===== back-test.log (last 15 lines)
+
+ RUN  v4.1.7 /work/back
+
+ ✓ tests/CpuTracker.test.ts (22 tests) 29ms
+
+ Test Files  1 passed (1)
+      Tests  22 passed (22)
+   Start at  02:06:40
+   Duration  459ms (transform 117ms, setup 0ms, import 199ms, tests 29ms, environment 0ms)
+
+===== back-typecheck.log (last 15 lines)
+
+> workadventureback@1.0.0 typecheck
+> tsc --noEmit
+
+===== bench-eslint.log (last 15 lines)
+Oops! Something went wrong! :(
+
+ESLint: 9.39.4
+
+ESLint couldn't find an eslint.config.(js|mjs|cjs) file.
+
+From ESLint v9.0.0, the default configuration file is now eslint.config.js.
+If you are using a .eslintrc.* file, please follow the migration guide
+to update your configuration file to the new format:
+
+https://eslint.org/docs/latest/use/configure/migration-guide
+
+If you still have problems after following the migration guide, please stop by
+https://eslint.org/chat/help to chat with the team.
+
+===== bench-prettier.log (last 15 lines)
+Checking formatting...
+[warn] index.ts
+[warn] src/config.ts
+[warn] src/protocol.ts
+[warn] src/runner.ts
+[warn] src/session.ts
+[warn] src/stats.ts
+[warn] tests/harness.test.ts
+[warn] Code style issues found in 7 files. Run Prettier with --write to fix.
+===== bench-test.log (last 15 lines)
+
+ RUN  v4.1.7 /work/benchmark
+
+ ✓ tests/harness.test.ts (15 tests) 4201ms
+     ✓ counts accepted room sessions per room and leaves with every socket and timer released  516ms
+     ✓ counts a refused connection as rejected and not as an accepted session  503ms
+     ✓ releases everything when stopped before the ramp completes  703ms
+     ✓ keeps a planned early leaver that has not started yet out of the room  1502ms
+     ✓ prints the summary of a run stopped by SIGINT once everything is released  962ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  02:07:16
+   Duration  6.25s (transform 1.64s, setup 0ms, import 1.82s, tests 4.20s, environment 0ms)
+
+===== bench-typecheck.log (last 15 lines)
+
+> workadventure-artillery@1.0.0 typecheck
+> tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node index.ts tests/harness.test.ts
+
+===== chat-eslint.log (last 15 lines)
+===== chat-prettier.log (last 15 lines)
+Checking formatting...
+All matched files use Prettier code style!
+===== chat-test.log (last 15 lines)
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.7 /work/play
+
+ ✓ src/front/Chat/Components/Room/RoomTimelineRenderItems.test.ts (4 tests) 5ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  02:08:11
+   Duration  1.43s (transform 205ms, setup 137ms, import 93ms, tests 5ms, environment 960ms)
+
+===== ms-eslint.log (last 15 lines)
+===== ms-prettier.log (last 15 lines)
+Checking formatting...
+All matched files use Prettier code style!
+===== ms-test.log (last 15 lines)
+
+ RUN  v4.1.7 /work/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts (16 tests) 86ms
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  02:06:02
+   Duration  4.98s (transform 2.72s, setup 0ms, import 4.10s, tests 86ms, environment 0ms)
+
+===== ms-typecheck.log (last 15 lines)
+
+> map-storage@1.0.0 typecheck
+> tsc --project tsconfig-node.json --noEmit
+
+===== play-svelte-check.log (last 15 lines)
+
+> workadventure-play@1.0.0 svelte-check
+> cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --compiler-warnings "a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore"
+
+Loading svelte-check in workspace: /work/play
+Getting Svelte diagnostics...
+
+svelte-check found 0 errors and 0 warnings
+===== play-typecheck.log (last 15 lines)
+
+> workadventure-play@1.0.0 typecheck
+> cross-env tsc --noEmit
+
+===== pusher-eslint.log (last 15 lines)
+===== pusher-prettier.log (last 15 lines)
+Checking formatting...
+All matched files use Prettier code style!
+===== pusher-test.log (last 15 lines)
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > moves the cropped window when an oversized viewport moves
+Oversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: 0, top: 0, right: 1000000, bottom: 1000000 }
+
+stderr | tests/pusher/PositionDispatcher.test.ts > PositionDispatcher > keeps the current zones when an invalid viewport follows a valid one
+Invalid viewport received:  { left: 0, top: 0, right: Infinity, bottom: 319 }
+Invalid viewport received:  { left: 639, top: 0, right: 0, bottom: 319 }
+
+ ✓ tests/pusher/PositionDispatcher.test.ts (25 tests) 98ms
+
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+   Start at  02:07:32
+   Duration  4.62s (transform 2.59s, setup 123ms, import 2.70s, tests 98ms, environment 1.43s)
+
+bench-prettier-repo-style (knc, baseline, --print-width 120 --tab-width 4 = play/.prettierrc.json style): exit=0, "All matched files use Prettier code style!"

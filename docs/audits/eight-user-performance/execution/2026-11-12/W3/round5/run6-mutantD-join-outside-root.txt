@@ -1,0 +1,86 @@
+# run 6: mutantD-join-outside-root (--cpus 0.5)
+# tracker override: mutantD-join-outside-root.ts; test file: CpuTracker.pin.test.ts
+# started 03:35:47 UTC
+# command: npx vitest --config vitest.config.ts --run tests/CpuTracker.test.ts --reporter=verbose
+f03db9f12e215a8026a2b871cbedf294d599502d864977d90eaeab2add763e28  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r5/stage/CpuTracker.pin.test.ts
+4ab1585dea5a38fc0fc2152e463ea975475ca7bb03308f81b46bce1421deeb99  /root/wa-jobs/wa-fable-20261112/src-cpu/back/src/Services/QuotaAwareCpuTracker.ts
+68d8a0b95ea334e72efd333a52de104615a660d49c2f1082f88f2175178e8cea  /root/wa-jobs/wa-fable-20261112/receipts-cpu-r5/stage/mutantD-join-outside-root.ts
+
+ RUN  v4.1.7 /work/back
+
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should read a quota as cores 7ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should treat max as unlimited 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2CpuMax > should reject malformed content 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should read a quota as cores 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should treat -1 as unlimited 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CfsQuota > should reject malformed content 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2Path > should read the cgroup v2 path of the process 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV2Path > should reject a missing entry or a path that is not plain absolute 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should read the path of the process in the hierarchy that holds the cpu controller 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupV1CpuPath > should reject a missing entry or a path that is not plain absolute 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the mount of the v1 cpu controller and its root 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > parseCgroupMount > should find the cgroup2 mount and decode octal escapes 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should prefer cgroup v2 over cgroup v1 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should read cpu.max of the process cgroup from /proc/self/cgroup before the root 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should fall back to the root cpu.max when the process cgroup has none 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cpu.max over the process cgroup and its ancestors 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should take the tightest cgroup v1 quota over the process cgroup and its ancestors 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should find the cgroup v1 cpu controller through /proc/self/mountinfo when it is mounted elsewhere 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should map a cgroup v1 path below the mount root to the directory under the mount point 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should read cgroup v1 when cpu.max is absent 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should report no quota when the files are missing 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readCgroupCpuQuotaCores > should warn about malformed content but not about an unlimited quota 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should resolve a private cgroup namespace (Docker default) 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should resolve --cgroupns host 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should resolve --cgroupns host with the host cgroupfs bound over /sys/fs/cgroup 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should resolve a private cgroup namespace with the host cgroupfs bound at /host-cgroup 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should resolve a private cgroup namespace with the host cgroupfs bound over /sys/fs/cgroup 0ms
+ × tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should not read the host cgroup that has the process path when the mount root is above the namespace root 7ms
+   → expected { cores: 0.2, …(1) } to deeply equal { cores: 1, …(1) }
+ ✓ tests/CpuTracker.test.ts > CpuTracker > cgroup v2 mount roots outside the process path > should not read the quota of a mount rooted at a sibling of the process cgroup 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > cgroup v2 mount roots outside the process path > should not read the quota of a mount whose root climbs out of the namespace root and descends again 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > cgroup v2 mount roots outside the process path > should read the quota of a mount whose root only climbs out of the namespace root (process "0::/\n") 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > cgroup v2 mount roots outside the process path > should read the quota of a mount whose root only climbs out of the namespace root (process "0::/system.slice/wa.service\n") 0ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readOptionalFile > should return undefined for a missing file without logging 71ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > readOptionalFile > should log a read failure other than a missing file 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.65-core cgroup v2 quota 4ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when the process fully consumes a 0.5-core cgroup v1 quota 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should overheat when a parent cgroup caps the process at 0.5 core 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should not overheat at 60 % of a 0.65-core quota 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota exceeds one core 1ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should keep the one-core reference when the quota is unlimited, missing or malformed 2ms
+ ✓ tests/CpuTracker.test.ts > CpuTracker > getCpuPercent and isOverHeating > should reject a capacity that is not a positive number of cores 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/CpuTracker.test.ts > CpuTracker > observed cgroup v2 layouts > should not read the host cgroup that has the process path when the mount root is above the namespace root
+AssertionError: expected { cores: 0.2, …(1) } to deeply equal { cores: 1, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "cores": 1,
+-   "source": "no cgroup CPU quota, one-core reference",
++   "cores": 0.2,
++   "source": "cgroup v2 /sys/fs/cgroup/system.slice/wa-back.service/cpu.max (quota 0.2 cores)",
+  }
+
+ ❯ tests/CpuTracker.test.ts:339:56
+    337|                 "/sys/fs/cgroup/system.slice/wa-back.service/cpu.max":…
+    338|             };
+    339|             expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_COR…
+       |                                                        ^
+    340|         });
+    341|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 40 passed (41)
+   Start at  03:35:49
+   Duration  1.10s (transform 394ms, setup 0ms, import 510ms, tests 182ms, environment 0ms)
+
+container_exit=1
+# finished 03:35:51 UTC

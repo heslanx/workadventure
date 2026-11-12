@@ -1,0 +1,18 @@
+label=static host=srv818933 start=2026-11-12T01:27:00Z
+container=wa-fable-r2-20261112-p4-impl-10 image=node:24-trixie --cpus 1 --memory 3g --network none
+9605481a64dcb9aa48a1b0f9e5e5aecd32c6def89df7c6748dd16de5645a4c7b  src/pusher/models/PositionDispatcher.ts
+0209e81e4a1170ea9f76c4f99f26ae73ed3db612960889acb78301e17c2d1027  tests/pusher/PositionDispatcher.test.ts
+--- npm run typecheck
+
+> workadventure-play@1.0.0 typecheck
+> cross-env tsc --noEmit
+
+typecheck_exit=0
+--- eslint
+eslint_exit=0
+--- prettier --check
+Checking formatting...
+All matched files use Prettier code style!
+prettier_exit=0
+docker_exit=0
+end=2026-11-12T01:28:18Z

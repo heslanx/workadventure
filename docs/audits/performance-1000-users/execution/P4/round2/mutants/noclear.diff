@@ -1,0 +1,11 @@
+--- a/play/src/pusher/models/PositionDispatcher.ts
++++ b/play/src/pusher/models/PositionDispatcher.ts
+@@ -175,7 +175,7 @@
+             lastRectangle = { reconciled: undefined };
+             this.lastZoneRectangles.set(socket, lastRectangle);
+         } else {
+-            lastRectangle.reconciled = undefined;
++            // mutant: not cleared
+         }
+ 
+         this.reconcileZones(socket, topLeft, bottomRight);

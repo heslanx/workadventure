@@ -1,0 +1,36 @@
+# m1: line 751
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts
+@@ -748,7 +748,7 @@
+         return "no_device";
+     }
+     if (name === "NotReadableError") {
+-        return "device_in_use";
++        return "no_device";
+     }
+     return null;
+ }
+# m2: line 1659
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts
+@@ -1656,7 +1656,7 @@
+             return "no_device" as const;
+         }
+         if (issue === "device_in_use") {
+-            return "device_in_use" as const;
++            return null;
+         }
+         if (!notLoaded && cameras !== undefined && cameras.length === 0) {
+             return "no_device" as const;
+# m3: line 1690
+--- a/play/src/front/Stores/MediaStore.ts
++++ b/play/src/front/Stores/MediaStore.ts
+@@ -1687,7 +1687,7 @@
+             return "no_device" as const;
+         }
+         if (issue === "device_in_use") {
+-            return "device_in_use" as const;
++            return "no_device" as const;
+         }
+         if (mics !== undefined && mics.length === 0) {
+             return "no_device" as const;

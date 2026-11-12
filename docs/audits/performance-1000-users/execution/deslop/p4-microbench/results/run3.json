@@ -1,0 +1,1931 @@
+{
+ "node": "v24.22.3",
+ "arch": "x64",
+ "platform": "linux",
+ "execArgv": [
+  "--require",
+  "/work/node_modules/tsx/dist/preflight.cjs",
+  "--import",
+  "file:///work/node_modules/tsx/dist/loader.mjs",
+  "--expose-gc",
+  "--min-semi-space-size=64",
+  "--max-semi-space-size=64"
+ ],
+ "newSpaceBytes": 134217728,
+ "reference": "A2",
+ "implementations": [
+  {
+   "label": "A2",
+   "path": "/work/docs/audits/performance-1000-users/execution/p4db/bench/PositionDispatcher.A2.ts"
+  },
+  {
+   "label": "B",
+   "path": "/work/docs/audits/performance-1000-users/execution/p4db/bench/PositionDispatcher.B.ts"
+  },
+  {
+   "label": "A",
+   "path": "/work/docs/audits/performance-1000-users/execution/p4db/bench/PositionDispatcher.A.ts"
+  }
+ ],
+ "warmupReplays": 5,
+ "scenarios": {
+  "stationary": {
+   "description": "One socket, 1080p viewport, the same viewport repeated",
+   "updatesPerReplay": 10000,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 2000,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 10000,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 54,
+      "traceSha256": "15bb0b23369beaf379401e3b5c09513512d71b620127748561a973a6e212e5df"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 32.4278,
+      "p10": 34.76457,
+      "median": 43.7572,
+      "p90": 189.8486400000001,
+      "max": 637.2582
+     },
+     "bytesPerUpdate": {
+      "min": 120.128,
+      "p10": 120.128,
+      "median": 120.128,
+      "p90": 121.9104,
+      "max": 121.968
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       637.3,
+       47.7,
+       39.2,
+       34,
+       40.6,
+       165.9,
+       68.3,
+       45.8,
+       183.1,
+       43.3,
+       42.1,
+       43.3,
+       50.8,
+       38.9,
+       37.9,
+       89.6,
+       43.7,
+       33.3,
+       47.3,
+       44.6,
+       32.4,
+       121.1,
+       36.9,
+       41,
+       250.7,
+       43.8,
+       301.4,
+       51,
+       34.9,
+       42.4
+      ],
+      "bytesPerUpdate": [
+       121.9,
+       122,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 10000,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 54,
+      "traceSha256": "15bb0b23369beaf379401e3b5c09513512d71b620127748561a973a6e212e5df"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 30.024,
+      "p10": 31.573150000000002,
+      "median": 46.200450000000004,
+      "p90": 61.45273,
+      "max": 378.6178
+     },
+     "bytesPerUpdate": {
+      "min": 120.128,
+      "p10": 120.128,
+      "median": 120.128,
+      "p90": 121.904,
+      "max": 121.904
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.06804478938050541,
+      "p10": 0.2788861365914663,
+      "median": 0.9346748509002909,
+      "p90": 1.5767901613293458,
+      "max": 3.3319276871512287
+     },
+     "raw": {
+      "nsPerUpdate": [
+       43.4,
+       46.3,
+       61.2,
+       32,
+       30.7,
+       49,
+       50.5,
+       152.5,
+       52.3,
+       49.2,
+       41.6,
+       30,
+       47.4,
+       55.7,
+       46.1,
+       47.8,
+       39.6,
+       31.7,
+       39.8,
+       38.5,
+       30.4,
+       378.6,
+       64,
+       40.1,
+       54.1,
+       49.8,
+       39.9,
+       38.1,
+       47.9,
+       37.9
+      ],
+      "bytesPerUpdate": [
+       121.9,
+       121.9,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 10000,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 54,
+      "traceSha256": "15bb0b23369beaf379401e3b5c09513512d71b620127748561a973a6e212e5df"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 27.2919,
+      "p10": 34.5193,
+      "median": 49.7682,
+      "p90": 74.25137000000021,
+      "max": 352.7839
+     },
+     "bytesPerUpdate": {
+      "min": 120.128,
+      "p10": 120.128,
+      "median": 120.128,
+      "p90": 121.9156,
+      "max": 122.02
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.0623259143624986,
+      "p10": 0.23507642670214968,
+      "median": 0.9718906963448859,
+      "p90": 1.6494025601424815,
+      "max": 8.068666848113223
+     },
+     "raw": {
+      "nsPerUpdate": [
+       39.7,
+       256.5,
+       50.3,
+       50.1,
+       27.3,
+       39.3,
+       37.6,
+       45,
+       59.5,
+       35.3,
+       43.2,
+       55.1,
+       51.8,
+       32.8,
+       31.3,
+       51,
+       352.8,
+       49.8,
+       45.5,
+       34.8,
+       53.3,
+       207.1,
+       52.7,
+       43.8,
+       54.2,
+       53.8,
+       50.1,
+       34.7,
+       49.7,
+       36.2
+      ],
+      "bytesPerUpdate": [
+       121.9,
+       122,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1
+      ]
+     }
+    }
+   }
+  },
+  "inside-bounds": {
+   "description": "One socket, 1080p viewport moving 4-5px per update without crossing a zone boundary",
+   "updatesPerReplay": 10000,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 2000,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 10000,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 54,
+      "traceSha256": "15bb0b23369beaf379401e3b5c09513512d71b620127748561a973a6e212e5df"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 31.275,
+      "p10": 33.13978,
+      "median": 50.057199999999995,
+      "p90": 359.5096500000001,
+      "max": 655.8672
+     },
+     "bytesPerUpdate": {
+      "min": 120.128,
+      "p10": 120.128,
+      "median": 120.128,
+      "p90": 120.128,
+      "max": 120.128
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       353.9,
+       655.9,
+       33.1,
+       43.3,
+       47.4,
+       35.1,
+       58.6,
+       353.3,
+       50.3,
+       51.3,
+       46.3,
+       515.9,
+       44.7,
+       40.5,
+       31.4,
+       410.2,
+       31.3,
+       43.4,
+       37.8,
+       336.2,
+       54.9,
+       51.7,
+       60.7,
+       54.5,
+       38.8,
+       53.2,
+       35.2,
+       51.3,
+       49.8,
+       33.1
+      ],
+      "bytesPerUpdate": [
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 10000,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 54,
+      "traceSha256": "15bb0b23369beaf379401e3b5c09513512d71b620127748561a973a6e212e5df"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 28.2765,
+      "p10": 33.72639,
+      "median": 51.9781,
+      "p90": 764.6384000000003,
+      "max": 1653.6598
+     },
+     "bytesPerUpdate": {
+      "min": 120.128,
+      "p10": 120.128,
+      "median": 120.128,
+      "p90": 120.128,
+      "max": 120.128
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.0837286219453899,
+      "p10": 0.1303163550869385,
+      "median": 1.1135882940537625,
+      "p90": 15.297528708827121,
+      "max": 28.21169951600328
+     },
+     "raw": {
+      "nsPerUpdate": [
+       46.9,
+       63.4,
+       28.3,
+       128.5,
+       346.6,
+       331.9,
+       1653.7,
+       39.1,
+       29.6,
+       493,
+       47.7,
+       43.2,
+       48.7,
+       40.7,
+       36.4,
+       314.9,
+       32.4,
+       58.8,
+       49.4,
+       52.1,
+       196.2,
+       51,
+       51.8,
+       1063.5,
+       331.6,
+       482.6,
+       40,
+       934.8,
+       745.7,
+       33.9
+      ],
+      "bytesPerUpdate": [
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 10000,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 54,
+      "traceSha256": "15bb0b23369beaf379401e3b5c09513512d71b620127748561a973a6e212e5df"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 32.8484,
+      "p10": 39.293929999999996,
+      "median": 50.08925,
+      "p90": 749.69023,
+      "max": 882.9902
+     },
+     "bytesPerUpdate": {
+      "min": 120.128,
+      "p10": 120.128,
+      "median": 120.128,
+      "p90": 120.128,
+      "max": 120.128
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.08026707617726868,
+      "p10": 0.1594095871859979,
+      "median": 0.9537525321733817,
+      "p90": 14.646626113051378,
+      "max": 17.26403180650428
+     },
+     "raw": {
+      "nsPerUpdate": [
+       49.9,
+       453.9,
+       44.3,
+       36.6,
+       41.5,
+       53.7,
+       40,
+       49.5,
+       52,
+       49.8,
+       42,
+       41.4,
+       52.8,
+       38.3,
+       39.4,
+       867.8,
+       69.4,
+       748.6,
+       49.9,
+       54.3,
+       51.5,
+       759.4,
+       50.5,
+       52.5,
+       568.7,
+       50.2,
+       32.8,
+       883,
+       40.1,
+       47.4
+      ],
+      "bytesPerUpdate": [
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1,
+       120.1
+      ]
+     }
+    }
+   }
+  },
+  "walk": {
+   "description": "One socket, 1080p viewport moving 26px per update along x (back and forth over 6500px)",
+   "updatesPerReplay": 10000,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 2000,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 8400,
+      "hitRatio": 0.84,
+      "subscribeCalls": 4800,
+      "unsubscribeCalls": 4854,
+      "traceSha256": "927d0200f6742c354c22920e9aaa21f6b40b2b8df73fa79514926c92b6066e1c"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 1707.5287,
+      "p10": 2231.29385,
+      "median": 2785.86125,
+      "p90": 3450.3598300000003,
+      "max": 4898.6677
+     },
+     "bytesPerUpdate": {
+      "min": 2032.288,
+      "p10": 2032.288,
+      "median": 2032.288,
+      "p90": 2035.4,
+      "max": 2035.4
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       3354.8,
+       3613.6,
+       3432.2,
+       3229.4,
+       4019,
+       2153.7,
+       2949.8,
+       3101.9,
+       2622.2,
+       2370.9,
+       2475.1,
+       2474.3,
+       3127.4,
+       2716.6,
+       3364.4,
+       3382.7,
+       2828.1,
+       2455.2,
+       1707.5,
+       2620,
+       2854.1,
+       3137.2,
+       2418.3,
+       3192.9,
+       2448.2,
+       2743.6,
+       4898.7,
+       2239.9,
+       2025.8,
+       2314.4
+      ],
+      "bytesPerUpdate": [
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2032.3,
+       2032.3
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 8400,
+      "hitRatio": 0.84,
+      "subscribeCalls": 4800,
+      "unsubscribeCalls": 4854,
+      "traceSha256": "927d0200f6742c354c22920e9aaa21f6b40b2b8df73fa79514926c92b6066e1c"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 1664.9708,
+      "p10": 1941.68419,
+      "median": 2473.0174500000003,
+      "p90": 4011.8147200000003,
+      "max": 5542.1433
+     },
+     "bytesPerUpdate": {
+      "min": 2032.288,
+      "p10": 2032.288,
+      "median": 2032.288,
+      "p90": 2035.4,
+      "max": 2035.4
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.4286593883475705,
+      "p10": 0.6092934002479165,
+      "median": 0.9531394399539992,
+      "p90": 1.2706904055864416,
+      "max": 1.7721014619842745
+     },
+     "raw": {
+      "nsPerUpdate": [
+       4522.4,
+       3495.2,
+       4060.4,
+       2190.7,
+       2143.4,
+       2650.9,
+       2534.5,
+       2222.9,
+       2606.3,
+       1948.9,
+       2541.5,
+       2089.1,
+       5542.1,
+       1665,
+       4006.4,
+       2276.4,
+       1876.4,
+       2399.7,
+       2315.3,
+       2877.9,
+       2614.8,
+       3114.1,
+       2808.2,
+       1841.9,
+       2298.9,
+       2411.6,
+       2099.9,
+       2687.9,
+       2556.8,
+       1962.1
+      ],
+      "bytesPerUpdate": [
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2032.3,
+       2032.3
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 8400,
+      "hitRatio": 0.84,
+      "subscribeCalls": 4800,
+      "unsubscribeCalls": 4854,
+      "traceSha256": "927d0200f6742c354c22920e9aaa21f6b40b2b8df73fa79514926c92b6066e1c"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 1561.1848,
+      "p10": 1794.99949,
+      "median": 2365.70975,
+      "p90": 3859.1024,
+      "max": 4805.2694
+     },
+     "bytesPerUpdate": {
+      "min": 2032.288,
+      "p10": 2032.288,
+      "median": 2032.288,
+      "p90": 2035.4,
+      "max": 2035.4
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.46151436184775096,
+      "p10": 0.5939258804107069,
+      "median": 0.8715437602737053,
+      "p90": 1.21210051604279,
+      "max": 1.8340735501268666
+     },
+     "raw": {
+      "nsPerUpdate": [
+       3844.1,
+       4340,
+       3993.8,
+       2054.6,
+       1878.8,
+       3400.2,
+       2404,
+       2577.9,
+       1798.1,
+       2293.3,
+       2474.2,
+       2534.7,
+       2353.8,
+       2033.5,
+       2930.4,
+       1561.2,
+       2647.7,
+       2081.9,
+       1766.8,
+       4805.3,
+       1728.6,
+       2211.2,
+       3172.3,
+       2784.4,
+       2034.2,
+       2201.8,
+       2392,
+       2373.3,
+       1934.6,
+       2358.1
+      ],
+      "bytesPerUpdate": [
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2035.4,
+       2032.3,
+       2032.3,
+       2032.3
+      ]
+     }
+    }
+   }
+  },
+  "cross-every-update": {
+   "description": "One socket, 1080p viewport moving one full zone (320px) per update: every update is a miss",
+   "updatesPerReplay": 10000,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 2000,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 0,
+      "hitRatio": 0,
+      "subscribeCalls": 60000,
+      "unsubscribeCalls": 60048,
+      "traceSha256": "f6ca1e19844f276ab31cbcb5bf6fd09552eeea3a3172411a05b11d9a69f421e8"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 14603.2134,
+      "p10": 16612.12189,
+      "median": 18750.5142,
+      "p90": 23061.50461,
+      "max": 26621.5327
+     },
+     "bytesPerUpdate": {
+      "min": 17496.888,
+      "p10": 17499.6888,
+      "median": 17500,
+      "p90": 17500,
+      "max": 17500
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       26621.5,
+       19372.8,
+       20926.9,
+       17945.6,
+       23241.9,
+       21159.7,
+       17871.7,
+       16935.1,
+       16941.3,
+       20299.7,
+       18949.7,
+       17077.4,
+       20536.9,
+       16387.9,
+       18061.9,
+       18417.1,
+       14603.2,
+       16637,
+       18028.3,
+       18991.7,
+       23041.5,
+       18856.2,
+       19186.6,
+       21783.6,
+       20627,
+       23845.5,
+       18104.9,
+       18117.3,
+       18644.8,
+       15806.5
+      ],
+      "bytesPerUpdate": [
+       17500,
+       17496.9,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 0,
+      "hitRatio": 0,
+      "subscribeCalls": 60000,
+      "unsubscribeCalls": 60048,
+      "traceSha256": "f6ca1e19844f276ab31cbcb5bf6fd09552eeea3a3172411a05b11d9a69f421e8"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 15910.4923,
+      "p10": 17424.56023,
+      "median": 20324.8748,
+      "p90": 23669.2056,
+      "max": 27997.3943
+     },
+     "bytesPerUpdate": {
+      "min": 17496.888,
+      "p10": 17499.6888,
+      "median": 17500,
+      "p90": 17500,
+      "max": 17500
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.6845617282932074,
+      "p10": 0.8560042092987152,
+      "median": 1.0947176737624469,
+      "p90": 1.3185257849533087,
+      "max": 1.477461291067253
+     },
+     "raw": {
+      "nsPerUpdate": [
+       22873.2,
+       20765.1,
+       24816.3,
+       18308.6,
+       15910.5,
+       17504.7,
+       17645.9,
+       20327.3,
+       18503.9,
+       22352.6,
+       27997.4,
+       22511.8,
+       21396.3,
+       21652.5,
+       22722.2,
+       18523.2,
+       19678.4,
+       18254.1,
+       20388,
+       17388.7,
+       20322.5,
+       21101.1,
+       17428.5,
+       24518.2,
+       23574.9,
+       16699.3,
+       17729.4,
+       19651.6,
+       20709.9,
+       18308.3
+      ],
+      "bytesPerUpdate": [
+       17500,
+       17496.9,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 10000,
+      "hits": 0,
+      "hitRatio": 0,
+      "subscribeCalls": 60000,
+      "unsubscribeCalls": 60048,
+      "traceSha256": "f6ca1e19844f276ab31cbcb5bf6fd09552eeea3a3172411a05b11d9a69f421e8"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 15148.1647,
+      "p10": 17257.000930000002,
+      "median": 20155.8882,
+      "p90": 24522.156540000004,
+      "max": 28774.3691
+     },
+     "bytesPerUpdate": {
+      "min": 17496.888,
+      "p10": 17499.6888,
+      "median": 17500,
+      "p90": 17500,
+      "max": 17500
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.8486939439504595,
+      "p10": 0.8948967166112242,
+      "median": 1.0957224016443186,
+      "p90": 1.243266816557711,
+      "max": 1.4702180554834772
+     },
+     "raw": {
+      "nsPerUpdate": [
+       28774.4,
+       23155.9,
+       20937.1,
+       20323,
+       20150.6,
+       24462.9,
+       19847.8,
+       16411.1,
+       19262.3,
+       19847,
+       22863.3,
+       19110.1,
+       17429.5,
+       20161.2,
+       20352.8,
+       25055.5,
+       15148.2,
+       18937.6,
+       18780.9,
+       16750.5,
+       20791.3,
+       21013.2,
+       17627.2,
+       19712.1,
+       19229,
+       21373.5,
+       20184.9,
+       25483.2,
+       17313.3,
+       23239
+      ],
+      "bytesPerUpdate": [
+       17500,
+       17496.9,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500,
+       17500
+      ]
+     }
+    }
+   }
+  },
+  "max-inside-bounds": {
+   "description": "One socket, 40x40 zones (the cap), moving 4px per update without crossing a zone boundary",
+   "updatesPerReplay": 400,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 80,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 400,
+      "hits": 400,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 1600,
+      "traceSha256": "27c18de17a27e46e5ae385221406adbb81fbd45c55385713927d277744d00a8f"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 48.4975,
+      "p10": 58.57975,
+      "median": 73.28375,
+      "p90": 101.8105,
+      "max": 210.8925
+     },
+     "bytesPerUpdate": {
+      "min": 123.2,
+      "p10": 123.2,
+      "median": 123.2,
+      "p90": 123.2,
+      "max": 123.2
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       73.3,
+       57.4,
+       70.8,
+       66.7,
+       100.7,
+       69.8,
+       59.6,
+       103.9,
+       69.5,
+       61.6,
+       48.5,
+       150.4,
+       62.7,
+       69.5,
+       210.9,
+       99.5,
+       74.5,
+       55.8,
+       101.6,
+       82.8,
+       95,
+       58.7,
+       77.4,
+       73.2,
+       69.1,
+       70.4,
+       73.4,
+       90,
+       84.2,
+       87.1
+      ],
+      "bytesPerUpdate": [
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 400,
+      "hits": 400,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 1600,
+      "traceSha256": "27c18de17a27e46e5ae385221406adbb81fbd45c55385713927d277744d00a8f"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 50.5,
+      "p10": 61.63975000000001,
+      "median": 78.65625,
+      "p90": 96.64775,
+      "max": 121.7325
+     },
+     "bytesPerUpdate": {
+      "min": 123.2,
+      "p10": 123.2,
+      "median": 123.2,
+      "p90": 123.2,
+      "max": 123.2
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.3371741527081333,
+      "p10": 0.7744240265988683,
+      "median": 1.0805235649345648,
+      "p90": 1.372402923110484,
+      "max": 1.4379816904407068
+     },
+     "raw": {
+      "nsPerUpdate": [
+       80.6,
+       67.9,
+       78.9,
+       75.3,
+       121.7,
+       99.1,
+       64.2,
+       68.9,
+       58.3,
+       66.8,
+       50.5,
+       61.6,
+       78.5,
+       80.7,
+       71.1,
+       87.4,
+       61.6,
+       77.9,
+       79.9,
+       87,
+       106.4,
+       84.4,
+       74.4,
+       78.8,
+       75.3,
+       96.4,
+       94.6,
+       85.5,
+       81.8,
+       76
+      ],
+      "bytesPerUpdate": [
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 400,
+      "hits": 400,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 1600,
+      "traceSha256": "27c18de17a27e46e5ae385221406adbb81fbd45c55385713927d277744d00a8f"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 49.15,
+      "p10": 58.0325,
+      "median": 71.06875,
+      "p90": 85.56725,
+      "max": 126.0425
+     },
+     "bytesPerUpdate": {
+      "min": 123.2,
+      "p10": 123.2,
+      "median": 123.2,
+      "p90": 123.2,
+      "max": 123.2
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.380501914482497,
+      "p10": 0.5891769699872065,
+      "median": 0.9352408503266656,
+      "p90": 1.2850112075334261,
+      "max": 1.7169663533578532
+     },
+     "raw": {
+      "nsPerUpdate": [
+       71.1,
+       68.7,
+       57.8,
+       61.9,
+       76.4,
+       65,
+       65.5,
+       55.8,
+       65.2,
+       49.2,
+       77.9,
+       70.9,
+       79.2,
+       83.3,
+       80.2,
+       84.6,
+       78.4,
+       66.8,
+       60.4,
+       75.6,
+       85.5,
+       66.2,
+       85.9,
+       85.5,
+       103,
+       67.9,
+       126,
+       82.1,
+       71,
+       58.1
+      ],
+      "bytesPerUpdate": [
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2,
+       123.2
+      ]
+     }
+    }
+   }
+  },
+  "max-cross-every-update": {
+   "description": "One socket, 40x40 zones (the cap), moving one full zone per update: every update is a miss",
+   "updatesPerReplay": 400,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 80,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 400,
+      "hits": 0,
+      "hitRatio": 0,
+      "subscribeCalls": 16000,
+      "unsubscribeCalls": 17600,
+      "traceSha256": "fdd32d3047bff3e813dae8499af33b92892b5d51fe87eb4c75689faa0e269ca9"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 271989.685,
+      "p10": 284021.15175,
+      "median": 322547.6375,
+      "p90": 379786.53500000003,
+      "max": 434748.2225
+     },
+     "bytesPerUpdate": {
+      "min": 265153.2,
+      "p10": 265153.2,
+      "median": 265153.2,
+      "p90": 267611.8,
+      "max": 267611.8
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       434748.2,
+       386205.9,
+       365804.2,
+       338415.1,
+       334602,
+       333014,
+       325299.8,
+       311988.1,
+       356040.1,
+       331336.1,
+       375265.5,
+       337995.9,
+       303896.7,
+       284620.7,
+       346993.3,
+       288167.4,
+       315781.3,
+       351128.3,
+       288441.4,
+       298023.8,
+       271989.7,
+       275780.8,
+       310045.1,
+       319795.4,
+       386413.7,
+       379073.3,
+       278625.6,
+       306360.5,
+       316684.9,
+       311929.8
+      ],
+      "bytesPerUpdate": [
+       265153.2,
+       265153.2,
+       265153.2,
+       267611.8,
+       265153.2,
+       267611.8,
+       265153.2,
+       267611.8,
+       265153.2,
+       265153.2
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 400,
+      "hits": 0,
+      "hitRatio": 0,
+      "subscribeCalls": 16000,
+      "unsubscribeCalls": 17600,
+      "traceSha256": "fdd32d3047bff3e813dae8499af33b92892b5d51fe87eb4c75689faa0e269ca9"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 281035.5475,
+      "p10": 299621.0115,
+      "median": 328655.97875,
+      "p90": 391989.35025,
+      "max": 452149.57
+     },
+     "bytesPerUpdate": {
+      "min": 265153.2,
+      "p10": 265153.2,
+      "median": 265153.2,
+      "p90": 267611.8,
+      "max": 267611.8
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.8714486581973981,
+      "p10": 0.9227974044002699,
+      "median": 1.010020715641533,
+      "p90": 1.2107556907211146,
+      "max": 1.4878396592026228
+     },
+     "raw": {
+      "nsPerUpdate": [
+       405033.5,
+       365880,
+       401796.8,
+       368840.5,
+       350140.4,
+       326435.5,
+       327363.9,
+       385487.7,
+       329948.1,
+       315282.6,
+       346530,
+       309989.1,
+       452149.6,
+       306758.5,
+       348417.7,
+       364910.9,
+       318444.1,
+       321321.7,
+       281035.5,
+       324469.3,
+       287139.5,
+       315114,
+       299479.3,
+       343279.5,
+       390899.6,
+       330342.9,
+       299636.8,
+       312628.6,
+       310991.2,
+       376810.2
+      ],
+      "bytesPerUpdate": [
+       265153.2,
+       265153.2,
+       265153.2,
+       267611.8,
+       265153.2,
+       267611.8,
+       265153.2,
+       267611.8,
+       265153.2,
+       265153.2
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 400,
+      "hits": 0,
+      "hitRatio": 0,
+      "subscribeCalls": 16000,
+      "unsubscribeCalls": 17600,
+      "traceSha256": "fdd32d3047bff3e813dae8499af33b92892b5d51fe87eb4c75689faa0e269ca9"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 256741.465,
+      "p10": 287469.0125,
+      "median": 325922.5925,
+      "p90": 373722.51725000003,
+      "max": 458617.9025
+     },
+     "bytesPerUpdate": {
+      "min": 265153.2,
+      "p10": 265153.2,
+      "median": 265153.2,
+      "p90": 267611.8,
+      "max": 267611.8
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.8045444544050957,
+      "p10": 0.8471174086514883,
+      "median": 1.0141073394131856,
+      "p90": 1.1596976455261483,
+      "max": 1.4340976586291148
+     },
+     "raw": {
+      "nsPerUpdate": [
+       368113,
+       414296.7,
+       349634.7,
+       372343.4,
+       330262.6,
+       334878.8,
+       287793.3,
+       361794.6,
+       372395,
+       307077,
+       301917.8,
+       291756.5,
+       256741.5,
+       351533.7,
+       350744.6,
+       314631.2,
+       284550.4,
+       297462.1,
+       334648.8,
+       312400.6,
+       310803.7,
+       305779.9,
+       337188.6,
+       458617.9,
+       358213.3,
+       385670.6,
+       321582.6,
+       275834.4,
+       306854.1,
+       321562.9
+      ],
+      "bytesPerUpdate": [
+       265153.2,
+       265153.2,
+       265153.2,
+       267611.8,
+       265153.2,
+       267611.8,
+       265153.2,
+       267611.8,
+       265153.2,
+       265153.2
+      ]
+     }
+    }
+   }
+  },
+  "oversized-cropped": {
+   "description": "One socket, 1,000,000px viewport cropped to the cap, the same viewport repeated",
+   "updatesPerReplay": 400,
+   "sockets": 1,
+   "timedReplays": 30,
+   "allocBatch": 80,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 400,
+      "hits": 400,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 1600,
+      "traceSha256": "6eeab25373c2760914f2002cdd29db335d94aa1d4310382e95641a87ff2ac938"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 59.965,
+      "p10": 85.18175,
+      "median": 125.66499999999999,
+      "p90": 170.03100000000003,
+      "max": 277.67
+     },
+     "bytesPerUpdate": {
+      "min": 203.2,
+      "p10": 203.2,
+      "median": 203.2,
+      "p90": 203.2,
+      "max": 203.2
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       183.7,
+       120.4,
+       169.3,
+       124.9,
+       116.9,
+       120.3,
+       106.7,
+       138.4,
+       115.5,
+       126.4,
+       176.3,
+       87.3,
+       127.2,
+       90.8,
+       149.1,
+       119,
+       138,
+       136.1,
+       135.3,
+       87.5,
+       137.9,
+       136,
+       131.1,
+       136.9,
+       277.7,
+       60,
+       66.1,
+       66.5,
+       107.9,
+       90.5
+      ],
+      "bytesPerUpdate": [
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 400,
+      "hits": 400,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 1600,
+      "traceSha256": "6eeab25373c2760914f2002cdd29db335d94aa1d4310382e95641a87ff2ac938"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 63.7475,
+      "p10": 89.16525,
+      "median": 127.79125,
+      "p90": 145.8675,
+      "max": 251.205
+     },
+     "bytesPerUpdate": {
+      "min": 203.2,
+      "p10": 203.2,
+      "median": 203.2,
+      "p90": 203.2,
+      "max": 203.2
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.5266786747770625,
+      "p10": 0.6454978478709862,
+      "median": 1.0120298885176404,
+      "p90": 1.4855138431156452,
+      "max": 1.562860899891373
+     },
+     "raw": {
+      "nsPerUpdate": [
+       124.9,
+       134.9,
+       89.2,
+       122.8,
+       131.7,
+       145.7,
+       127.7,
+       119.2,
+       141,
+       129.4,
+       114,
+       130.5,
+       127.9,
+       127.9,
+       91.4,
+       98.9,
+       136.1,
+       138.7,
+       112.5,
+       136.7,
+       147.4,
+       160.2,
+       125.6,
+       135.8,
+       251.2,
+       89,
+       63.7,
+       102.4,
+       68.4,
+       103.4
+      ],
+      "bytesPerUpdate": [
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 400,
+      "hits": 400,
+      "hitRatio": 1,
+      "subscribeCalls": 0,
+      "unsubscribeCalls": 1600,
+      "traceSha256": "6eeab25373c2760914f2002cdd29db335d94aa1d4310382e95641a87ff2ac938"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 91.6125,
+      "p10": 96.17474999999999,
+      "median": 124.4125,
+      "p90": 151.94525000000002,
+      "max": 2004.86
+     },
+     "bytesPerUpdate": {
+      "min": 203.2,
+      "p10": 203.2,
+      "median": 203.2,
+      "p90": 203.2,
+      "max": 203.2
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.5892801241306093,
+      "p10": 0.8140373101867543,
+      "median": 0.9511550685466813,
+      "p90": 1.4822775956885539,
+      "max": 16.647167500467067
+     },
+     "raw": {
+      "nsPerUpdate": [
+       108.2,
+       2004.9,
+       139.2,
+       124.3,
+       130.5,
+       151.6,
+       96,
+       123.8,
+       121,
+       155.5,
+       131,
+       128.6,
+       128.9,
+       133.6,
+       136.6,
+       98,
+       99,
+       123.9,
+       112.3,
+       124.5,
+       127.6,
+       123.4,
+       127.1,
+       127.7,
+       255,
+       96.2,
+       103.2,
+       91.6,
+       98.7,
+       92.5
+      ],
+      "bytesPerUpdate": [
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2,
+       203.2
+      ]
+     }
+    }
+   }
+  },
+  "crowd-walk": {
+   "description": "1,000 sockets in one room, 1080p viewports, each moving 26px per update, round-robin",
+   "updatesPerReplay": 40000,
+   "sockets": 1000,
+   "timedReplays": 12,
+   "allocBatch": 2000,
+   "allocReplays": 10,
+   "implementations": {
+    "A2": {
+     "behavior": {
+      "updates": 40000,
+      "hits": 33630,
+      "hitRatio": 0.84075,
+      "subscribeCalls": 146,
+      "unsubscribeCalls": 2537,
+      "traceSha256": "4c5a40ebcb2e7e1eaa1ef354cef394d7b8c650fcf601e2f7b07f2a93181e4510"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 2833.32325,
+      "p10": 2895.884815,
+      "median": 3376.480775,
+      "p90": 3754.11977,
+      "max": 3968.12115
+     },
+     "bytesPerUpdate": {
+      "min": 1628.244,
+      "p10": 1630.944,
+      "median": 1639.224,
+      "p90": 1680.864,
+      "max": 1738.824
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 1,
+      "p10": 1,
+      "median": 1,
+      "p90": 1,
+      "max": 1
+     },
+     "raw": {
+      "nsPerUpdate": [
+       3968.1,
+       2930.2,
+       3379.6,
+       2976.8,
+       2833.3,
+       3647.7,
+       3442.4,
+       3765.9,
+       3373.4,
+       2892.1,
+       3461.7,
+       3227.7
+      ],
+      "bytesPerUpdate": [
+       1647.8,
+       1674.4,
+       1631.2,
+       1738.8,
+       1640.6,
+       1635.8,
+       1628.2,
+       1640,
+       1638.5,
+       1637.1
+      ]
+     }
+    },
+    "B": {
+     "behavior": {
+      "updates": 40000,
+      "hits": 33630,
+      "hitRatio": 0.84075,
+      "subscribeCalls": 146,
+      "unsubscribeCalls": 2537,
+      "traceSha256": "4c5a40ebcb2e7e1eaa1ef354cef394d7b8c650fcf601e2f7b07f2a93181e4510"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 2577.8158,
+      "p10": 2901.0813775,
+      "median": 3505.4603125,
+      "p90": 3895.32524,
+      "max": 3950.6316
+     },
+     "bytesPerUpdate": {
+      "min": 1628.244,
+      "p10": 1630.944,
+      "median": 1639.224,
+      "p90": 1680.864,
+      "max": 1738.824
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.8797288323649837,
+      "p10": 0.8977813297628153,
+      "median": 1.0295026916870047,
+      "p90": 1.12603761043159,
+      "max": 1.25058370943026
+     },
+     "raw": {
+      "nsPerUpdate": [
+       3950.6,
+       2577.8,
+       3289.9,
+       2873.8,
+       3543.3,
+       3817.5,
+       3549.3,
+       3352.7,
+       3467.6,
+       3146.5,
+       3904,
+       3584
+      ],
+      "bytesPerUpdate": [
+       1647.8,
+       1674.4,
+       1631.2,
+       1738.8,
+       1640.6,
+       1635.8,
+       1628.2,
+       1640,
+       1638.5,
+       1637.1
+      ]
+     }
+    },
+    "A": {
+     "behavior": {
+      "updates": 40000,
+      "hits": 33630,
+      "hitRatio": 0.84075,
+      "subscribeCalls": 146,
+      "unsubscribeCalls": 2537,
+      "traceSha256": "4c5a40ebcb2e7e1eaa1ef354cef394d7b8c650fcf601e2f7b07f2a93181e4510"
+     },
+     "sameTraceAsReference": true,
+     "nsPerUpdate": {
+      "min": 3037.80305,
+      "p10": 3184.2856975,
+      "median": 3232.7157374999997,
+      "p90": 3844.6645049999997,
+      "max": 3913.279525
+     },
+     "bytesPerUpdate": {
+      "min": 1628.244,
+      "p10": 1630.944,
+      "median": 1639.224,
+      "p90": 1680.864,
+      "max": 1738.824
+     },
+     "pairedTimeRatioVsReference": {
+      "min": 0.8970800135074501,
+      "p10": 0.9397888741614235,
+      "median": 1.007639541794191,
+      "p90": 1.1318577833374843,
+      "max": 1.157919379045655
+     },
+     "raw": {
+      "nsPerUpdate": [
+       3847,
+       3205.9,
+       3913.3,
+       3183.5,
+       3215.9,
+       3272.3,
+       3234.6,
+       3823.3,
+       3230.8,
+       3191.3,
+       3461.8,
+       3037.8
+      ],
+      "bytesPerUpdate": [
+       1647.8,
+       1674.4,
+       1631.2,
+       1738.8,
+       1640.6,
+       1635.8,
+       1628.2,
+       1640,
+       1638.5,
+       1637.1
+      ]
+     }
+    }
+   }
+  }
+ }
+}

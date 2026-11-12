@@ -1,0 +1,32 @@
+6c51f25bf48a98f4bf6cec74776ff8b2813e753d  src-wa-fable-p5/map-storage/src/MapsManager.ts
+c0296d5a14871d2da70325c5fc123bfc5bd5cbb5  src-wa-fable-p5/map-storage/src/tests/MapsManagerAutosave.test.ts
+### npm test -- --run src/tests/MapStorageServer.test.ts src/tests/MapsManagerAutosave.test.ts
+
+> map-storage@1.0.0 test
+> vitest --run src/tests/MapStorageServer.test.ts src/tests/MapsManagerAutosave.test.ts
+
+
+ RUN  v4.1.7 /usr/src/app/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts (11 tests) 51ms
+ ✓ src/tests/MapStorageServer.test.ts (13 tests) 34ms
+
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  00:11:33
+   Duration  3.98s (transform 1.79s, setup 0ms, import 3.50s, tests 85ms, environment 0ms)
+
+### exit=0
+### npm run typecheck
+
+> map-storage@1.0.0 typecheck
+> tsc --project tsconfig-node.json --noEmit
+
+### exit=0
+### npx eslint src/MapsManager.ts src/tests/MapsManagerAutosave.test.ts
+### exit=0
+### npx prettier --check src/MapsManager.ts src/tests/MapsManagerAutosave.test.ts
+Checking formatting...
+All matched files use Prettier code style!
+### exit=0
+container_exit=0

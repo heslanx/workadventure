@@ -1,0 +1,12 @@
+# Thu Nov 12 02:38:37 UTC 2026 host=srv742000 load before: 5.94 5.84 5.13 3/1208 713212 nproc=4
+# other wa-fable containers before: wa-fable-ovw-11 wa-fable-clean-9 
+v24.22.3
+5791eb4fab0c19e3662dcce57729423c1ade960a24803bd90bc9f3d2a5d5993b  ../docs/audits/performance-1000-users/execution/p4db/bench/weakmap-op-cost.mjs
+sockets=1 ns/op median boxed=25.6 direct=87.5 delta=61.8 range boxed=17.4-34.3 direct=73.5-106.9 checksums equal=true
+sockets=1000 ns/op median boxed=28.3 direct=257.3 delta=229.0 range boxed=23.1-35.5 direct=224.6-295.4 checksums equal=true
+exit=0
+# load after: 6.49 5.96 5.17 10/1197 713832
+# Thu Nov 12 02:38:47 UTC 2026 done
+0
+
+[exited with code 0]

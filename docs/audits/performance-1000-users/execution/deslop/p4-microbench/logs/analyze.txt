@@ -1,0 +1,139 @@
+# results/run1.json node=v24.22.3 load order=A,A2,B
+# results/run2.json node=v24.22.3 load order=B,A,A2
+# results/run3.json node=v24.22.3 load order=A2,B,A
+# results/run4.json node=v24.22.3 load order=A,B,A2
+# results/run5.json node=v24.22.3 load order=B,A2,A
+# results/run6.json node=v24.22.3 load order=A2,A,B
+
+## stationary
+  run1 B/A=1.121 A2/A=0.997 B/A2=1.097  ns med A=49 A2=52 B=51  hit=100.0% trace=15bb0b23369b
+  run2 B/A=0.946 A2/A=1.048 B/A2=0.877  ns med A=51 A2=55 B=48  hit=100.0% trace=15bb0b23369b
+  run3 B/A=0.981 A2/A=1.029 B/A2=0.936  ns med A=50 A2=44 B=46  hit=100.0% trace=15bb0b23369b
+  run4 B/A=0.970 A2/A=1.020 B/A2=0.894  ns med A=51 A2=53 B=50  hit=100.0% trace=15bb0b23369b
+  run5 B/A=1.041 A2/A=1.072 B/A2=0.942  ns med A=49 A2=53 B=53  hit=100.0% trace=15bb0b23369b
+  run6 B/A=0.942 A2/A=1.015 B/A2=0.914  ns med A=48 A2=51 B=47  hit=100.0% trace=15bb0b23369b
+  B/A   per-run medians: median=0.975 min=0.942 max=1.121 | pooled replays n=180 median=0.977 p10=0.187 p90=4.698
+  A2/A  per-run medians: median=1.024 min=0.997 max=1.072 | pooled replays n=180 median=1.024 p10=0.209 p90=8.488
+  B/A2  per-run medians: median=0.925 min=0.877 max=1.097 | pooled replays n=180 median=0.945 p10=0.160 p90=3.147
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=0.984 2nd=0.994 3rd=1.021
+  rank-sum pooled B/A vs A2/A: z=-1.33 p=0.182
+  ns/update median of run medians: A=49 A2=52 B=49  B/update median: A=120 A2=120 B=120
+
+## inside-bounds
+  run1 B/A=0.907 A2/A=1.014 B/A2=0.954  ns med A=53 A2=54 B=52  hit=100.0% trace=15bb0b23369b
+  run2 B/A=1.023 A2/A=1.146 B/A2=0.926  ns med A=47 A2=52 B=48  hit=100.0% trace=15bb0b23369b
+  run3 B/A=1.008 A2/A=1.048 B/A2=1.113  ns med A=50 A2=50 B=52  hit=100.0% trace=15bb0b23369b
+  run4 B/A=0.822 A2/A=1.004 B/A2=0.935  ns med A=51 A2=51 B=46  hit=100.0% trace=15bb0b23369b
+  run5 B/A=1.068 A2/A=0.994 B/A2=1.021  ns med A=47 A2=49 B=47  hit=100.0% trace=15bb0b23369b
+  run6 B/A=1.032 A2/A=1.066 B/A2=0.992  ns med A=51 A2=54 B=52  hit=100.0% trace=15bb0b23369b
+  B/A   per-run medians: median=1.015 min=0.822 max=1.068 | pooled replays n=180 median=0.991 p10=0.152 p90=6.321
+  A2/A  per-run medians: median=1.031 min=0.994 max=1.146 | pooled replays n=180 median=1.041 p10=0.174 p90=5.974
+  B/A2  per-run medians: median=0.973 min=0.926 max=1.113 | pooled replays n=180 median=0.987 p10=0.119 p90=7.549
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=0.994 2nd=0.995 3rd=0.993
+  rank-sum pooled B/A vs A2/A: z=-1.23 p=0.220
+  ns/update median of run medians: A=50 A2=51 B=50  B/update median: A=120 A2=120 B=120
+
+## walk
+  run1 B/A=0.958 A2/A=0.973 B/A2=1.010  ns med A=3079 A2=3179 B=3036  hit=84.0% trace=927d0200f674
+  run2 B/A=1.036 A2/A=1.045 B/A2=1.033  ns med A=2333 A2=2353 B=2379  hit=84.0% trace=927d0200f674
+  run3 B/A=1.060 A2/A=1.147 B/A2=0.953  ns med A=2366 A2=2786 B=2473  hit=84.0% trace=927d0200f674
+  run4 B/A=0.994 A2/A=1.093 B/A2=0.911  ns med A=2302 A2=2421 B=2362  hit=84.0% trace=927d0200f674
+  run5 B/A=1.023 A2/A=0.943 B/A2=1.151  ns med A=3080 A2=2541 B=3197  hit=84.0% trace=927d0200f674
+  run6 B/A=0.963 A2/A=0.989 B/A2=0.909  ns med A=2275 A2=2344 B=2082  hit=84.0% trace=927d0200f674
+  B/A   per-run medians: median=1.008 min=0.958 max=1.060 | pooled replays n=180 median=1.011 p10=0.731 p90=1.447
+  A2/A  per-run medians: median=1.017 min=0.943 max=1.147 | pooled replays n=180 median=1.041 p10=0.627 p90=1.568
+  B/A2  per-run medians: median=0.982 min=0.909 max=1.151 | pooled replays n=180 median=0.995 p10=0.564 p90=1.514
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=1.030 2nd=0.995 3rd=0.990
+  rank-sum pooled B/A vs A2/A: z=-0.93 p=0.350
+  ns/update median of run medians: A=2349 A2=2481 B=2426  B/update median: A=2032 A2=2032 B=2032
+
+## cross-every-update
+  run1 B/A=1.016 A2/A=1.052 B/A2=0.985  ns med A=23348 A2=25384 B=23307  hit=0.0% trace=f6ca1e19844f
+  run2 B/A=0.960 A2/A=1.012 B/A2=1.003  ns med A=19787 A2=19176 B=19453  hit=0.0% trace=f6ca1e19844f
+  run3 B/A=0.996 A2/A=0.913 B/A2=1.095  ns med A=20156 A2=18751 B=20325  hit=0.0% trace=f6ca1e19844f
+  run4 B/A=0.978 A2/A=1.006 B/A2=0.976  ns med A=17072 A2=17488 B=16841  hit=0.0% trace=f6ca1e19844f
+  run5 B/A=0.998 A2/A=1.032 B/A2=0.974  ns med A=19416 A2=20135 B=19670  hit=0.0% trace=f6ca1e19844f
+  run6 B/A=1.014 A2/A=0.954 B/A2=1.012  ns med A=20555 A2=19204 B=19480  hit=0.0% trace=f6ca1e19844f
+  B/A   per-run medians: median=0.997 min=0.960 max=1.016 | pooled replays n=180 median=0.995 p10=0.816 p90=1.186
+  A2/A  per-run medians: median=1.009 min=0.913 max=1.052 | pooled replays n=180 median=0.993 p10=0.827 p90=1.180
+  B/A2  per-run medians: median=0.994 min=0.974 max=1.095 | pooled replays n=180 median=0.997 p10=0.796 p90=1.219
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=0.984 2nd=1.025 3rd=0.986
+  rank-sum pooled B/A vs A2/A: z=-0.08 p=0.939
+  ns/update median of run medians: A=19972 A2=19190 B=19575  B/update median: A=17500 A2=17500 B=17500
+
+## max-inside-bounds
+  run1 B/A=1.072 A2/A=1.043 B/A2=1.037  ns med A=73 A2=73 B=76  hit=100.0% trace=27c18de17a27
+  run2 B/A=0.876 A2/A=0.911 B/A2=0.917  ns med A=74 A2=70 B=63  hit=100.0% trace=27c18de17a27
+  run3 B/A=1.088 A2/A=1.070 B/A2=1.081  ns med A=71 A2=73 B=79  hit=100.0% trace=27c18de17a27
+  run4 B/A=0.989 A2/A=1.043 B/A2=0.992  ns med A=73 A2=73 B=70  hit=100.0% trace=27c18de17a27
+  run5 B/A=0.909 A2/A=1.059 B/A2=0.887  ns med A=72 A2=75 B=66  hit=100.0% trace=27c18de17a27
+  run6 B/A=0.868 A2/A=0.916 B/A2=0.948  ns med A=70 A2=61 B=62  hit=100.0% trace=27c18de17a27
+  B/A   per-run medians: median=0.949 min=0.868 max=1.088 | pooled replays n=180 median=0.972 p10=0.633 p90=1.384
+  A2/A  per-run medians: median=1.043 min=0.911 max=1.070 | pooled replays n=180 median=1.030 p10=0.650 p90=1.457
+  B/A2  per-run medians: median=0.970 min=0.887 max=1.081 | pooled replays n=180 median=0.981 p10=0.681 p90=1.400
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=0.965 2nd=1.059 3rd=1.014
+  rank-sum pooled B/A vs A2/A: z=-0.86 p=0.389
+  ns/update median of run medians: A=72 A2=73 B=68  B/update median: A=123 A2=123 B=123
+
+## max-cross-every-update
+  run1 B/A=0.966 A2/A=1.031 B/A2=1.011  ns med A=370275 A2=370546 B=364068  hit=0.0% trace=fdd32d3047bf
+  run2 B/A=0.890 A2/A=0.945 B/A2=0.903  ns med A=484670 A2=509430 B=461240  hit=0.0% trace=fdd32d3047bf
+  run3 B/A=1.035 A2/A=0.986 B/A2=1.010  ns med A=325923 A2=322548 B=328656  hit=0.0% trace=fdd32d3047bf
+  run4 B/A=0.957 A2/A=0.973 B/A2=1.014  ns med A=321880 A2=303030 B=304397  hit=0.0% trace=fdd32d3047bf
+  run5 B/A=1.028 A2/A=0.963 B/A2=0.984  ns med A=352654 A2=343636 B=346092  hit=0.0% trace=fdd32d3047bf
+  run6 B/A=0.982 A2/A=0.948 B/A2=1.025  ns med A=343627 A2=336089 B=334733  hit=0.0% trace=fdd32d3047bf
+  B/A   per-run medians: median=0.974 min=0.890 max=1.035 | pooled replays n=180 median=0.982 p10=0.767 p90=1.177
+  A2/A  per-run medians: median=0.968 min=0.945 max=1.031 | pooled replays n=180 median=0.972 p10=0.794 p90=1.243
+  B/A2  per-run medians: median=1.010 min=0.903 max=1.025 | pooled replays n=180 median=1.004 p10=0.801 p90=1.228
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=0.995 2nd=1.003 3rd=0.995
+  rank-sum pooled B/A vs A2/A: z=-0.03 p=0.974
+  ns/update median of run medians: A=348141 A2=339862 B=340413  B/update median: A=265153 A2=265153 B=265153
+
+## oversized-cropped
+  run1 B/A=0.986 A2/A=0.963 B/A2=1.045  ns med A=136 A2=130 B=135  hit=100.0% trace=6eeab25373c2
+  run2 B/A=0.948 A2/A=1.009 B/A2=0.928  ns med A=128 A2=131 B=124  hit=100.0% trace=6eeab25373c2
+  run3 B/A=0.997 A2/A=1.052 B/A2=1.012  ns med A=124 A2=126 B=128  hit=100.0% trace=6eeab25373c2
+  run4 B/A=1.038 A2/A=0.984 B/A2=1.106  ns med A=127 A2=128 B=131  hit=100.0% trace=6eeab25373c2
+  run5 B/A=0.982 A2/A=0.966 B/A2=1.011  ns med A=129 A2=128 B=129  hit=100.0% trace=6eeab25373c2
+  run6 B/A=0.940 A2/A=0.991 B/A2=0.945  ns med A=124 A2=121 B=122  hit=100.0% trace=6eeab25373c2
+  B/A   per-run medians: median=0.984 min=0.940 max=1.038 | pooled replays n=180 median=0.986 p10=0.655 p90=1.368
+  A2/A  per-run medians: median=0.987 min=0.963 max=1.052 | pooled replays n=180 median=0.987 p10=0.646 p90=1.349
+  B/A2  per-run medians: median=1.012 min=0.928 max=1.106 | pooled replays n=180 median=0.998 p10=0.664 p90=1.434
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=0.993 2nd=1.008 3rd=0.999
+  rank-sum pooled B/A vs A2/A: z=0.10 p=0.919
+  ns/update median of run medians: A=128 A2=128 B=128  B/update median: A=203 A2=203 B=203
+
+## crowd-walk
+  run1 B/A=1.001 A2/A=0.997 B/A2=0.948  ns med A=3950 A2=4046 B=3875  hit=84.1% trace=4c5a40ebcb2e
+  run2 B/A=1.044 A2/A=1.049 B/A2=1.054  ns med A=3989 A2=4162 B=4143  hit=84.1% trace=4c5a40ebcb2e
+  run3 B/A=1.050 A2/A=0.992 B/A2=1.029  ns med A=3233 A2=3376 B=3505  hit=84.1% trace=4c5a40ebcb2e
+  run4 B/A=0.947 A2/A=1.025 B/A2=0.996  ns med A=3979 A2=3947 B=3877  hit=84.1% trace=4c5a40ebcb2e
+  run5 B/A=0.899 A2/A=1.056 B/A2=0.907  ns med A=4605 A2=5011 B=4509  hit=84.1% trace=4c5a40ebcb2e
+  run6 B/A=1.076 A2/A=1.098 B/A2=0.953  ns med A=3890 A2=3786 B=3813  hit=84.1% trace=4c5a40ebcb2e
+  B/A   per-run medians: median=1.022 min=0.899 max=1.076 | pooled replays n=72 median=1.023 p10=0.826 p90=1.182
+  A2/A  per-run medians: median=1.037 min=0.992 max=1.098 | pooled replays n=72 median=1.036 p10=0.828 p90=1.219
+  B/A2  per-run medians: median=0.974 min=0.907 max=1.054 | pooled replays n=72 median=0.975 p10=0.786 p90=1.192
+  load position (label ns median / mean of the 3 labels, median over runs): 1st=1.000 2nd=1.019 3rd=0.987
+  rank-sum pooled B/A vs A2/A: z=-0.86 p=0.393
+  ns/update median of run medians: A=3964 A2=3997 B=3876  B/update median: A=1639 A2=1639 B=1639
+
+| Scenario | Pair | run 1 | run 2 | run 3 | run 4 | run 5 | run 6 | median | min to max |
+|---|---|---|---|---|---|---|---|---|---|
+| stationary | B/A | 1.121 | 0.946 | 0.981 | 0.970 | 1.041 | 0.942 | 0.975 | 0.942 to 1.121 |
+| stationary | A2/A | 0.997 | 1.048 | 1.029 | 1.020 | 1.072 | 1.015 | 1.024 | 0.997 to 1.072 |
+| inside-bounds | B/A | 0.907 | 1.023 | 1.008 | 0.822 | 1.068 | 1.032 | 1.015 | 0.822 to 1.068 |
+| inside-bounds | A2/A | 1.014 | 1.146 | 1.048 | 1.004 | 0.994 | 1.066 | 1.031 | 0.994 to 1.146 |
+| walk | B/A | 0.958 | 1.036 | 1.060 | 0.994 | 1.023 | 0.963 | 1.008 | 0.958 to 1.060 |
+| walk | A2/A | 0.973 | 1.045 | 1.147 | 1.093 | 0.943 | 0.989 | 1.017 | 0.943 to 1.147 |
+| cross-every-update | B/A | 1.016 | 0.960 | 0.996 | 0.978 | 0.998 | 1.014 | 0.997 | 0.960 to 1.016 |
+| cross-every-update | A2/A | 1.052 | 1.012 | 0.913 | 1.006 | 1.032 | 0.954 | 1.009 | 0.913 to 1.052 |
+| max-inside-bounds | B/A | 1.072 | 0.876 | 1.088 | 0.989 | 0.909 | 0.868 | 0.949 | 0.868 to 1.088 |
+| max-inside-bounds | A2/A | 1.043 | 0.911 | 1.070 | 1.043 | 1.059 | 0.916 | 1.043 | 0.911 to 1.070 |
+| max-cross-every-update | B/A | 0.966 | 0.890 | 1.035 | 0.957 | 1.028 | 0.982 | 0.974 | 0.890 to 1.035 |
+| max-cross-every-update | A2/A | 1.031 | 0.945 | 0.986 | 0.973 | 0.963 | 0.948 | 0.968 | 0.945 to 1.031 |
+| oversized-cropped | B/A | 0.986 | 0.948 | 0.997 | 1.038 | 0.982 | 0.940 | 0.984 | 0.940 to 1.038 |
+| oversized-cropped | A2/A | 0.963 | 1.009 | 1.052 | 0.984 | 0.966 | 0.991 | 0.987 | 0.963 to 1.052 |
+| crowd-walk | B/A | 1.001 | 1.044 | 1.050 | 0.947 | 0.899 | 1.076 | 1.022 | 0.899 to 1.076 |
+| crowd-walk | A2/A | 0.997 | 1.049 | 0.992 | 1.025 | 1.056 | 1.098 | 1.037 | 0.992 to 1.098 |
+
+traces and hit counts identical for A, A2, B in every scenario and run

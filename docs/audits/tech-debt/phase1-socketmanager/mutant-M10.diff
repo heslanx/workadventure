@@ -1,0 +1,4 @@
+271c271
+<             streamToBack = apiClient.connectToRoom();
+---
+>             streamToBack = ((this as any).__m10 ??= apiClient.connectToRoom());

@@ -1,0 +1,15 @@
+diff --git a/map-storage/src/tests/MapsManagerAutosave.test.ts b/map-storage/src/tests/MapsManagerAutosave.test.ts
+index 5d811d4..93cf8cc 100644
+--- a/map-storage/src/tests/MapsManagerAutosave.test.ts
++++ b/map-storage/src/tests/MapsManagerAutosave.test.ts
+@@ -358,8 +358,8 @@ describe("MapsManager autosave", () => {
+             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
+         });
+ 
+-        // Regression guard, it also passes on trunk: the held write fails, so this covers retries only. A held
+-        // write that succeeds after the replacement still overwrites it (see the PR description).
++        // The held write fails, so this covers retries only: a held write that succeeds after the replacement
++        // still overwrites it.
+         it("should not retry the abandoned state after the map was replaced by an upload", async () => {
+             await edit("cmd-1");
+             storage.writeMode = "hold";

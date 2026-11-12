@@ -1,0 +1,47 @@
+diff --git a/play/src/pusher/services/SocketManager.ts b/play/src/pusher/services/SocketManager.ts
+index f07b704..49ce66b 100644
+--- a/play/src/pusher/services/SocketManager.ts
++++ b/play/src/pusher/services/SocketManager.ts
+@@ -68,6 +68,7 @@ import type { AdminConnection, AdminSocketData } from "../models/Websocket/Admin
+ import { EMBEDDED_DOMAINS_WHITELIST, FRONT_URL, GRPC_MAX_MESSAGE_SIZE, SECRET_KEY } from "../enums/EnvironmentVariable";
+ import type { SpaceInterface } from "../models/Space";
+ import { Space } from "../models/Space";
++import type { SpaceConnectionInterface } from "../models/SpaceConnection";
+ import { SpaceConnection } from "../models/SpaceConnection";
+ import { ClientNotPartOfSpaceError, SpaceDestroyedError } from "../models/SpaceValidationErrors";
+ import { eventProcessor } from "../models/eventProcessorInit";
+@@ -111,7 +112,7 @@ export class SocketManager implements ZoneEventListener {
+     private creatingRooms: Map<string, Promise<PusherRoom>> = new Map<string, Promise<PusherRoom>>();
+     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
+ 
+-    constructor(private _spaceConnection = new SpaceConnection()) {
++    constructor(private _spaceConnection: SpaceConnectionInterface = new SpaceConnection()) {
+         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
+             gaugeManager.incNbClientPerRoomGauge(roomId);
+         });
+diff --git a/play/tests/pusher/SocketManagerRoomTraffic.test.ts b/play/tests/pusher/SocketManagerRoomTraffic.test.ts
+index 2250246..42a4ab3 100644
+--- a/play/tests/pusher/SocketManagerRoomTraffic.test.ts
++++ b/play/tests/pusher/SocketManagerRoomTraffic.test.ts
+@@ -16,7 +16,7 @@ import { SocketManager } from "../../src/pusher/services/SocketManager";
+ import { apiClientRepository } from "../../src/pusher/services/ApiClientRepository";
+ import { analyticsTimedEventTracker } from "../../src/pusher/services/AnalyticsTimedEventTracker";
+ import type { PusherWebSocket } from "../../src/pusher/services/PusherWebSocket";
+-import type { SpaceConnection, SpaceConnectionInterface } from "../../src/pusher/models/SpaceConnection";
++import type { SpaceConnectionInterface } from "../../src/pusher/models/SpaceConnection";
+ import type { SpaceForSpaceConnectionInterface } from "../../src/pusher/models/Space";
+ import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../src/common/WebSocketCloseCodes";
+ 
+@@ -433,11 +433,10 @@ describe("SocketManager room traffic", () => {
+             connectedSpace = space;
+             return Promise.resolve(spaceStream as unknown as SpaceStream);
+         });
+-        // The constructor parameter is typed as the class, though Space only needs SpaceConnectionInterface.
+         const manager = new SocketManager({
+             getSpaceStreamToBackPromise,
+             removeSpace: vi.fn(),
+-        } satisfies SpaceConnectionInterface as unknown as SpaceConnection);
++        });
+         const alice = fakeSocket("alice");
+         const bob = fakeSocket("bob");
+         const carol = fakeSocket("carol");

@@ -1,0 +1,33 @@
+# Rows to merge into docs/TESTING.md
+
+Source: Phase 2 (refactoring-patterns), pass on `play/src/front/Chat/Components/Room/RoomTimeline.svelte` (2026-11-12). Baseline `HEAD` = `40f7184b1`. Evidence: `docs/audits/tech-debt/phase2-roomtimeline/README.md`. Line numbers marked "after" are in the files after all three patches.
+
+## Test Strategy line (P1, replaces the RoomTimeline P1 bullet)
+
+- **P1: `buildRenderItems` (after `RoomTimelineRenderItems.ts:54-112`), called from `renderItems` (after `RoomTimeline.svelte:242-246`).** Every timeline change meets here. `buildRenderItems` inserts the day separators and their labels, and decides which message shows its sender header and which shows its time; `renderItems` hands the previous render's rows back for reuse. A test reads its effect as the rows, the separator labels, and the props each message row receives.
+
+## Test Strategy line (harness, replaces the "Harness" bullet's list of fakes)
+
+- Harness: as before, plus stand-ins for `PollCard.svelte`, `QuestionCard.svelte` and `MessageSystem.svelte`, so a test can put those rows in the list without their stores. The day-label tests fix the clock with `vi.setSystemTime` (Date only; the timers stay real) and `afterEach` restores it with `vi.useRealTimers()`.
+
+## Safety Net Map row (replaces the P1 row)
+
+| Module | Pinned behaviors | Test files | Gaps |
+|---|---|---|---|
+| `RoomTimeline.svelte`: rows (P1), built by `buildRenderItems` in `RoomTimelineRenderItems.ts` | One separator per local day. A sender's messages within 5 minutes share one header, and only the last of the run shows its time. A gap over 5 minutes or a new day starts a new run. A poll, a question or a system row ends a run even when its sender is the same: the message before it shows its time, and the message after it shows its header. Separator labels: "Today", "Yesterday", and an older day as `Intl.DateTimeFormat`'s short weekday, numeric day and short month in the runtime's locale ("Fri, Jan 2" in en-US). RT-05: the labels are computed when the timeline changes, not when the day does. | `play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts`, `RoomTimelineRowReuse.test.ts`, `RoomTimelineRenderItems.test.ts` | An item without a date (`date: null`: no separator, and it keeps the current day); a locale change while the room is open (RT-05's other half); the header and time flags of the poll, question and system rows themselves, which no card receives and only row reuse reads (always `true` by construction) |
+
+## Safety Net Map row (P6, Gaps column only)
+
+| Module | Gaps |
+|---|---|
+| `RoomTimeline.svelte`: focus requests (P6) | A request whose event cannot be loaded (RT-04); the highlight replay when the same message is focused twice (RT-09, needs a browser: jsdom runs no CSS animations) |
+
+## Characterization Backlog (new items)
+
+- [x] `RoomTimeline` day separator labels "Today", "Yesterday" and an older day, with a fixed clock; RT-05 pinned as it is (two tests, `01-characterize-day-labels-and-non-message-rows.patch`; mutants E1 to E4 killed)
+- [x] `RoomTimeline` poll, question and system rows inside a sender's run: the header and time of the messages around them (one test, same patch; mutant E5 killed)
+- [ ] RT-09 in a browser: focus the same message twice and check that `highlight-pulse` does not start again, before choosing a fix (risk low, P6)
+
+## CI Gates
+
+No new step. `RoomTimelineCharacterization.test.ts` now has 13 tests and runs inside `npm test`. The gate for `RoomTimeline.svelte`, `RoomTimelineRenderItems.ts` and `RoomTimelineNewMessages.ts` is unchanged, and it now covers the moved `buildRenderItems`.

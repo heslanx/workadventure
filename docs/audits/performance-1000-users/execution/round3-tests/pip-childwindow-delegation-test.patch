@@ -1,0 +1,44 @@
+diff --git a/play/src/front/Components/Video/PictureInPicture/childWindow.test.ts b/play/src/front/Components/Video/PictureInPicture/childWindow.test.ts
+index 3819efe..8e101db 100644
+--- a/play/src/front/Components/Video/PictureInPicture/childWindow.test.ts
++++ b/play/src/front/Components/Video/PictureInPicture/childWindow.test.ts
+@@ -1,5 +1,7 @@
+ import { afterEach, describe, expect, it, vi } from "vitest";
+-import { observeElementSize } from "./childWindow";
++import { flushSync, mount, unmount } from "svelte";
++import Button from "../../UI/Button.svelte";
++import { delegateSvelteEvents, observeElementSize } from "./childWindow";
+ 
+ afterEach(() => {
+     document.body.replaceChildren();
+@@ -43,3 +45,30 @@ describe("observeElementSize", () => {
+         expect(disconnect).toHaveBeenCalled();
+     });
+ });
++
++describe("delegateSvelteEvents", () => {
++    it("runs a Svelte onclick on DOM moved into another window's document", async () => {
++        const frame = document.createElement("iframe");
++        document.body.append(frame);
++        const child = frame.contentWindow;
++        if (!child) throw new Error("Missing child window");
++        const host = document.createElement("div");
++        document.body.append(host);
++        const onclick = vi.fn();
++        const app = mount(Button, { target: host, props: { onclick } });
++        flushSync();
++        const button = host.querySelector("button");
++        if (!button) throw new Error("Missing button");
++
++        const stop = delegateSvelteEvents(child);
++        child.document.body.append(button);
++        button.click();
++        stop();
++        button.click();
++
++        expect(button.ownerDocument).toBe(child.document);
++        // Once: the click after stop() shows nothing else forwards a child document's clicks to Svelte.
++        expect(onclick).toHaveBeenCalledTimes(1);
++        await unmount(app);
++    });
++});

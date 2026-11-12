@@ -1,0 +1,827 @@
+{
+ "files": [
+  "libs/room-api-clients/room-api-client-js/eslint.config.js",
+  "libs/room-api-clients/room-api-client-js/src/example_events.ts",
+  "libs/room-api-clients/room-api-client-js/src/example_variables.ts",
+  "map-storage/tests/assets/maps/empty.js",
+  "back/src/Services/Logger.ts",
+  "back/src/Model/Websocket/Identificable.ts",
+  "play/.dependency-cruiser.cjs",
+  "play/public/service-worker-prod.js",
+  "play/src/front/style/audio-range.css",
+  "play/src/front/style/chat.css",
+  "play/src/front/style/cowebsite.css",
+  "play/src/front/style/font.css",
+  "play/src/front/style/input.css",
+  "play/src/front/style/loader.css",
+  "play/src/front/style/map-editor.css",
+  "play/src/front/style/style.css",
+  "play/src/front/style/warning-toast.css",
+  "play/src/pusher/models/Movable.ts",
+  "play/src/pusher/models/PositionInterface.ts",
+  "play/src/pusher/services/CpuTracker.ts",
+  "play/src/front/style/cowebsite/_global.css",
+  "play/src/front/style/cowebsite/_short-screens.css",
+  "play/src/front/style/cowebsite/_wide-screens.css",
+  "play/src/front/style/wa-theme/action-menu-bar.css",
+  "play/src/front/style/wa-theme/video-ui.css",
+  "play/src/pusher/models/Websocket/ItemEventMessage.ts",
+  "play/src/pusher/models/Websocket/Point.ts",
+  "play/src/pusher/models/Websocket/PointInterface.ts",
+  "play/src/pusher/models/Websocket/ProtobufUtils.ts",
+  "libs/shared-utils/src/RandomDelay/RandomDelay.ts"
+ ],
+ "issues": [
+  {
+   "file": "map-storage/package.json",
+   "dependencies": [
+    "@grpc/proto-loader@53",
+    "busboy@63",
+    "google-protobuf@70",
+    "nodemon@74",
+    "npm-check-updates@75",
+    "reflect-metadata@80",
+    "rxjs@82",
+    "zod-to-json-schema@88"
+   ],
+   "devDependencies": [
+    "@total-typescript/ts-reset@92",
+    "source-map-support@109",
+    "ts-loader@112",
+    "tsconfig-paths@113"
+   ],
+   "binaries": [
+    "cross-env",
+    "svelte-kit"
+   ]
+  },
+  {
+   "file": "back/package.json",
+   "dependencies": [
+    "@grpc/proto-loader@47",
+    "busboy@55",
+    "google-protobuf@60",
+    "mkdirp@63",
+    "query-string@67",
+    "source-map-support@70",
+    "uuidv4@72"
+   ],
+   "devDependencies": [
+    "@types/busboy@77",
+    "@types/google-protobuf@79",
+    "@types/http-status-codes@80",
+    "@types/mkdirp@81"
+   ]
+  },
+  {
+   "file": "play/package.json",
+   "dependencies": [
+    "@16bits/nes.css@100",
+    "@fontsource/press-start-2p@105",
+    "@fontsource/roboto@106",
+    "@fontsource/roboto-condensed@107",
+    "@livekit/track-processors@110",
+    "@sentry/browser@112",
+    "@sveltejs/svelte-virtual-list@115",
+    "@tailwindcss/forms@116",
+    "buffer@132",
+    "google-protobuf@149",
+    "hyper-express@152",
+    "live-directory@155",
+    "livekit-server-sdk@157",
+    "qs@169",
+    "swagger-ui-dist@183",
+    "ts-proto-descriptors@185"
+   ],
+   "devDependencies": [
+    "@iconify-json/tabler@52",
+    "@rollup/plugin-inject@54",
+    "@types/dom-screen-wake-lock@63",
+    "@types/google-protobuf@65",
+    "@types/http-status-codes@66",
+    "@types/jsonwebtoken@67",
+    "@types/qs@70",
+    "@types/uuid@75",
+    "@types/xmpp__client@76",
+    "@types/xmpp__jid@77",
+    "eslint-plugin-svelte@79",
+    "globals@80",
+    "patch-package@83",
+    "tailwindcss@89",
+    "tslib@90",
+    "vitest-websocket-mock@97"
+   ]
+  },
+  {
+   "file": "libs/map-editor/package.json",
+   "dependencies": [
+    "@types/uuid@24"
+   ],
+   "unresolved": [
+    "tsconfig-paths/register"
+   ]
+  },
+  {
+   "file": "play/packages/iframe-api-typings/package.json",
+   "dependencies": [
+    "rxjs@17",
+    "zod@18"
+   ]
+  },
+  {
+   "file": "libs/eslint-config/package.json",
+   "dependencies": [
+    "@eslint/compat@9",
+    "@typescript-eslint/parser@12",
+    "eslint-import-resolver-typescript@13"
+   ]
+  },
+  {
+   "file": "libs/messages/package.json",
+   "dependencies": [
+    "google-protobuf@18",
+    "long@19",
+    "rxjs@21"
+   ]
+  },
+  {
+   "file": "libs/store-utils/package.json",
+   "devDependencies": [
+    "@types/debug@23"
+   ]
+  },
+  {
+   "file": "map-storage/vitest.config.ts",
+   "unlisted": [
+    "@vitest/coverage-v8"
+   ]
+  },
+  {
+   "file": "back/vitest.config.ts",
+   "unlisted": [
+    "@vitest/coverage-v8"
+   ]
+  },
+  {
+   "file": "play/vite.config.ts",
+   "unlisted": [
+    "@vitest/coverage-v8"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/vitest.config.ts",
+   "unlisted": [
+    "@vitest/coverage-v8"
+   ]
+  },
+  {
+   "file": "libs/map-editor/vitest.config.ts",
+   "unlisted": [
+    "@vitest/coverage-v8"
+   ]
+  },
+  {
+   "file": "libs/store-utils/vitest.config.ts",
+   "unlisted": [
+    "@vitest/coverage-v8"
+   ]
+  },
+  {
+   "file": "libs/room-api-clients/room-api-client-js/src/index.ts",
+   "unlisted": [
+    "nice-grpc@7"
+   ],
+   "unresolved": [
+    "./compiled_proto/room-api@1"
+   ]
+  },
+  {
+   "file": "map-storage/src/Upload/S3ClientWithMD5.ts",
+   "unlisted": [
+    "@smithy/types@11"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/src/ApiClientRepository.ts",
+   "unlisted": [
+    "@workadventure/messages@8"
+   ]
+  },
+  {
+   "file": "back/src/Model/AreaZoneTracker.ts",
+   "unlisted": [
+    "@workadventure/map-editor@1"
+   ]
+  },
+  {
+   "file": "back/src/Model/GameRoom.ts",
+   "unlisted": [
+    "@workadventure/map-editor@4"
+   ]
+  },
+  {
+   "file": "back/src/Model/Services/WamManager.ts",
+   "unlisted": [
+    "@workadventure/map-editor@1"
+   ],
+   "types": [
+    "AreaUpdatedEvent@17",
+    "AreaDeletedEvent@25"
+   ]
+  },
+  {
+   "file": "back/tests/AreaZoneTracker.test.ts",
+   "unlisted": [
+    "@workadventure/map-editor@1"
+   ]
+  },
+  {
+   "file": "back/tests/GameRoom.test.ts",
+   "unlisted": [
+    "@workadventure/map-editor@11"
+   ]
+  },
+  {
+   "file": "back/src/Model/AreaPropertyEvents/MaxUsersInAreaManager.ts",
+   "unlisted": [
+    "@workadventure/map-editor@2"
+   ]
+  },
+  {
+   "file": "back/tests/MaxUsersInAreaManager.test.ts",
+   "unlisted": [
+    "@workadventure/map-editor@1"
+   ]
+  },
+  {
+   "file": "back/src/Services/ModeratorTagFinder.ts",
+   "unlisted": [
+    "@workadventure/map-editor@1"
+   ]
+  },
+  {
+   "file": "back/tests/ModerationRights.test.ts",
+   "unlisted": [
+    "@workadventure/map-editor@2"
+   ]
+  },
+  {
+   "file": "back/src/SpaceManager.ts",
+   "unlisted": [
+    "uuid@2"
+   ]
+  },
+  {
+   "file": "back/tests/WamManager.test.ts",
+   "unlisted": [
+    "@workadventure/map-editor@3"
+   ]
+  },
+  {
+   "file": "back/src/Model/Strategies/WebRTCCommunicationStrategy.ts",
+   "unlisted": [
+    "uuid@3"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/src/SharedAdminApi.ts",
+   "unlisted": [
+    "@workadventure/messages@2"
+   ],
+   "exports": [
+    "AdminBannedData@7"
+   ]
+  },
+  {
+   "file": "back/src/Model/AreaPropertyEvents/LockableAreaManager.ts",
+   "unlisted": [
+    "@workadventure/map-editor@2"
+   ]
+  },
+  {
+   "file": "play/src/front/Components/MapEditor/MapEditorSideBar.svelte",
+   "unlisted": [
+    "svelte-popperjs@2"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/src/SpaceState/SpaceState.ts",
+   "unlisted": [
+    "@workadventure/messages@2"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/src/AnalyticsEventsQueue.ts",
+   "unlisted": [
+    "@workadventure/messages@2"
+   ]
+  },
+  {
+   "file": "package.json",
+   "binaries": [
+    "tsx"
+   ]
+  },
+  {
+   "file": ".github/workflows/build-and-release-desktop.yml",
+   "binaries": [
+    "electron-builder"
+   ]
+  },
+  {
+   "file": ".github/workflows/build-test-and-deploy.yml",
+   "binaries": [
+    "g"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/package.json",
+   "unresolved": [
+    "tsconfig-paths/register",
+    "tsx"
+   ]
+  },
+  {
+   "file": "play/src/front/Components/Icons.ts",
+   "unresolved": [
+    "~icons/tabler/check@2",
+    "~icons/tabler/checks@3",
+    "~icons/tabler/x@4",
+    "~icons/tabler/paperclip@5",
+    "~icons/tabler/corner-down-right@6",
+    "~icons/tabler/alert-triangle@7",
+    "~icons/tabler/help-circle@8",
+    "~icons/tabler/shield-lock-filled@9",
+    "~icons/tabler/loader@10",
+    "~icons/tabler/circle-x@11",
+    "~icons/tabler/shield-lock@12",
+    "~icons/tabler/chevron-down@13",
+    "~icons/tabler/chevron-right@14",
+    "~icons/tabler/file-download@15",
+    "~icons/tabler/square-plus@16",
+    "~icons/tabler/arrow-left@17",
+    "~icons/tabler/arrow-back-up@18",
+    "~icons/tabler/arrow-down@19",
+    "~icons/tabler/arrow-up@20",
+    "~icons/tabler/at@21",
+    "~icons/tabler/thumb-up@22",
+    "~icons/tabler/mood-smile@23",
+    "~icons/tabler/pencil@24",
+    "~icons/tabler/trash@25",
+    "~icons/tabler/send@26",
+    "~icons/tabler/photo-off@27",
+    "~icons/tabler/edit@28",
+    "~icons/tabler/key@29",
+    "~icons/tabler/chevron-left@30",
+    "~icons/tabler/deselect@31",
+    "~icons/tabler/cloud-upload@32",
+    "~icons/tabler/minus@33",
+    "~icons/tabler/info-circle@34",
+    "~icons/tabler/chevron-up@35",
+    "~icons/tabler/forbid@36",
+    "~icons/tabler/forbid2@37",
+    "~icons/tabler/cancel@38",
+    "~icons/tabler/dots-vertical@39",
+    "~icons/tabler/dots@40",
+    "~icons/tabler/grip-vertical@41",
+    "~icons/tabler/device-desktop-up@42",
+    "~icons/tabler/device-computer-camera@43",
+    "~icons/tabler/shield@44",
+    "~icons/tabler/user@45",
+    "~icons/tabler/list-check@46",
+    "~icons/tabler/users@47",
+    "~icons/tabler/userPlus@48",
+    "~icons/tabler/dotsCircleHorizontal@49",
+    "~icons/tabler/logout@50",
+    "~icons/tabler/message@51",
+    "~icons/tabler/folder@53",
+    "~icons/tabler/volume@54",
+    "~icons/tabler/volume3@55",
+    "~icons/tabler/restore@56",
+    "~icons/tabler/bell-off@57",
+    "~icons/tabler/search@58",
+    "~icons/tabler/mailbox@59",
+    "~icons/tabler/message-2-exclamation@60",
+    "~icons/tabler/cloud-lock@61",
+    "~icons/tabler/message-circle-2@62",
+    "~icons/tabler/rosetteDiscountCheck@63",
+    "~icons/tabler/user-edit@64",
+    "~icons/tabler/mail@65",
+    "~icons/tabler/clock@66",
+    "~icons/tabler/history@67",
+    "~icons/tabler/point@68",
+    "~icons/tabler/door-exit@69",
+    "~icons/tabler/user-minus@70",
+    "~icons/tabler/apps@72",
+    "~icons/tabler/app-window@73",
+    "~icons/tabler/refresh@74",
+    "~icons/tabler/repeat@75",
+    "~icons/tabler/notes@76",
+    "~icons/tabler/calendar@77",
+    "~icons/tabler/brand-teams@78",
+    "~icons/tabler/music@79",
+    "~icons/tabler/user-circle@80",
+    "~icons/tabler/share-3@81",
+    "~icons/tabler/star@82",
+    "~icons/tabler/star-filled@83",
+    "~icons/tabler/player-pause@84",
+    "~icons/tabler/player-pause-filled@85",
+    "~icons/tabler/player-play@86",
+    "~icons/tabler/player-play-filled@87",
+    "~icons/tabler/lock-cog@88",
+    "~icons/tabler/desk@89",
+    "~icons/tabler/zoom-in-area@91",
+    "~icons/tabler/photo-sensor@92",
+    "~icons/tabler/microphone-off@93",
+    "~icons/tabler/video@94",
+    "~icons/tabler/video-off@95",
+    "~icons/tabler/door-enter@97",
+    "~icons/tabler/file-music@98",
+    "~icons/tabler/world-www@99",
+    "~icons/tabler/tooltip@100",
+    "~icons/tabler/speakerphone@101",
+    "~icons/tabler/headphones-filled@102",
+    "~icons/tabler/file@103",
+    "~icons/tabler/map@104",
+    "~icons/tabler/plus@105",
+    "~icons/tabler/focus-centered@106",
+    "~icons/tabler/walk@107",
+    "~icons/tabler/eye@108",
+    "~icons/tabler/bug@109",
+    "~icons/tabler/reload@110",
+    "~icons/tabler/lock-cancel@111",
+    "~icons/tabler/ear@113",
+    "~icons/tabler/microphone-2@114",
+    "~icons/tabler/microphone@115",
+    "~icons/tabler/world-cog@116",
+    "~icons/tabler/map-search@117",
+    "~icons/tabler/users-group@118",
+    "~icons/tabler/lamp@119",
+    "~icons/tabler/texture@120",
+    "~icons/tabler/tools@121",
+    "~icons/tabler/message-2-share@122",
+    "~icons/tabler/music-share@123",
+    "~icons/tabler/table-options@124",
+    "~icons/tabler/lock@126",
+    "~icons/tabler/lock-open@127",
+    "~icons/tabler/world-search@129",
+    "~icons/tabler/message-circle@130",
+    "~icons/tabler/mood-wink-2@131",
+    "~icons/tabler/s-turn-down@132",
+    "~icons/tabler/share@133",
+    "~icons/tabler/adjustments-horizontal@134",
+    "~icons/tabler/screen-share@135",
+    "~icons/tabler/screen-share-off@136",
+    "~icons/tabler/arrows-minimize@137",
+    "~icons/tabler/arrows-maximize@138",
+    "~icons/tabler/copy@139",
+    "~icons/tabler/external-link@140",
+    "~icons/tabler/map-pin@141",
+    "~icons/tabler/camera-up@142",
+    "~icons/tabler/adjustments@143",
+    "~icons/tabler/language@144",
+    "~icons/tabler/antenna-bars-1@145",
+    "~icons/tabler/antenna-bars-3@146",
+    "~icons/tabler/antenna-bars-5@147",
+    "~icons/tabler/arrows-shuffle@148",
+    "~icons/tabler/camera-exclamation@149",
+    "~icons/tabler/map-pin-off@151",
+    "~icons/tabler/settings-filled@152",
+    "~icons/tabler/settings@153",
+    "~icons/tabler/link@154",
+    "~icons/tabler/augmented-reality@155",
+    "~icons/tabler/player-stop@156",
+    "~icons/tabler/network-off@157",
+    "~icons/tabler/layout-grid@158",
+    "~icons/tabler/list@159",
+    "~icons/tabler/photo@160",
+    "~icons/tabler/bell@162",
+    "~icons/tabler/stack-2@163",
+    "~icons/tabler/world@164",
+    "~icons/tabler/line@165",
+    "~icons/tabler/arrow-narrow-right@166",
+    "~icons/tabler/square@167",
+    "~icons/tabler/eraser@168",
+    "~icons/tabler/palette@169",
+    "~icons/tabler/pointer@171",
+    "~icons/tabler/arrow-forward-up@173",
+    "~icons/tabler/eye-off@175"
+   ]
+  },
+  {
+   "file": "play/src/front/Components/ActionBar/MenuIcons/ChangeLayoutMenuItem.svelte",
+   "unresolved": [
+    "../../../workadventure/play/src/i18n/i18n-svelte@5"
+   ]
+  },
+  {
+   "file": "libs/messages/src/ts-proto-generated/services.ts",
+   "exports": [
+    "protobufPackage@61"
+   ]
+  },
+  {
+   "file": "libs/messages/src/ts-proto-generated/google/protobuf/empty.ts",
+   "exports": [
+    "protobufPackage@10"
+   ],
+   "types": [
+    "DeepPartial@71",
+    "Exact@79",
+    "MessageFns@82"
+   ]
+  },
+  {
+   "file": "libs/map-editor/src/GameMap/MapValidator.ts",
+   "exports": [
+    "isSuccess@16",
+    "SectionType@22",
+    "ValidationError@25"
+   ],
+   "types": [
+    "WamValidation@10"
+   ]
+  },
+  {
+   "file": "back/src/Enum/EnvironmentVariable.ts",
+   "exports": [
+    "ENABLE_MAP_EDITOR@42"
+   ]
+  },
+  {
+   "file": "back/src/Services/SocketManager.ts",
+   "exports": [
+    "SocketManager@104"
+   ]
+  },
+  {
+   "file": "back/src/Services/Capabilities.ts",
+   "exports": [
+    "getCapabilities@5"
+   ]
+  },
+  {
+   "file": "back/src/Model/CommunicationManager.ts",
+   "exports": [
+    "DefaultInitialStateFactory@68"
+   ],
+   "types": [
+    "CommunicationManagerDependencies@87"
+   ]
+  },
+  {
+   "file": "libs/messages/src/ts-proto-generated/room-api.ts",
+   "exports": [
+    "protobufPackage@27"
+   ],
+   "types": [
+    "RoomApiClient@610",
+    "DeepPartial@683",
+    "Exact@691",
+    "MessageFns@698"
+   ]
+  },
+  {
+   "file": "play/src/pusher/enums/EnvironmentVariable.ts",
+   "exports": [
+    "ADMIN_BO_URL@36",
+    "CPU_OVERHEAT_THRESHOLD@41",
+    "FALLBACK_LOCALE@120",
+    "TURN_CREDENTIALS_RENEWAL_TIME@137",
+    "KLAXOON_CLIENT_ID@151",
+    "EXCALIDRAW_DOMAINS@159",
+    "GOOGLE_DRIVE_PICKER_API_KEY@166",
+    "GOOGLE_DRIVE_PICKER_APP_ID@167",
+    "LIVEKIT_PIXEL_DENSITY@185"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/AdminApi.ts",
+   "exports": [
+    "isFetchMemberDataByUuidSuccessResponse@36",
+    "isFetchWorldChatMembers@108"
+   ],
+   "types": [
+    "FetchMemberDataByUuidSuccessResponse@112",
+    "FetchWorldChatMembers@118"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/JWTTokenManager.ts",
+   "exports": [
+    "AccessTokenData@27"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/ClientEventsEmitter.ts",
+   "exports": [
+    "ClientEventsEmitter@8"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/FrontAssets.ts",
+   "exports": [
+    "extractApiVersion@28"
+   ]
+  },
+  {
+   "file": "play/src/i18n/i18n-util.sync.ts",
+   "exports": [
+    "loadAllLocales@53",
+    "loadFormatters@55"
+   ]
+  },
+  {
+   "file": "play/src/i18n/i18n-util.async.ts",
+   "exports": [
+    "importLocaleAsync@31",
+    "loadAllLocalesAsync@39",
+    "loadFormatters@41"
+   ]
+  },
+  {
+   "file": "play/src/i18n/i18n-util.ts",
+   "exports": [
+    "extendDictionary@39",
+    "i18nString@41",
+    "i18n@50",
+    "detectLocale@53"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/GenerateCustomColors.ts",
+   "exports": [
+    "getHslColor@7",
+    "getPalette@15"
+   ]
+  },
+  {
+   "file": "play/src/pusher/models/Websocket/Admin/AdminMessages.ts",
+   "exports": [
+    "isBannedUserInterface@4",
+    "isBannedAdminMessageInterface@9",
+    "isListenRoomsMessageInterface@16"
+   ]
+  },
+  {
+   "file": "play/src/pusher/models/SpaceNotificationStrategy/index.ts",
+   "exports": [
+    "DefaultNotificationStrategy@2",
+    "LiveStreamingNotificationStrategy@3"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/IceServersService.ts",
+   "exports": [
+    "IceServersService@8"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/WebRTCCredentialsService.ts",
+   "exports": [
+    "WebRTCCredentialsService@9"
+   ],
+   "types": [
+    "IWebRTCCredentials@4"
+   ]
+  },
+  {
+   "file": "libs/messages/src/ts-proto-generated/google/protobuf/field_mask.ts",
+   "exports": [
+    "protobufPackage@10"
+   ],
+   "types": [
+    "DeepPartial@289",
+    "Exact@297",
+    "MessageFns@300",
+    "FieldMaskWrapperFns@309"
+   ]
+  },
+  {
+   "file": "libs/messages/src/ts-proto-generated/google/protobuf/struct.ts",
+   "exports": [
+    "protobufPackage@10",
+    "nullValueFromJSON@24",
+    "nullValueToJSON@36"
+   ],
+   "types": [
+    "Struct@56",
+    "Struct_FieldsEntry@61",
+    "ListValue@103",
+    "DeepPartial@592",
+    "Exact@600",
+    "MessageFns@611",
+    "StructWrapperFns@620",
+    "AnyValueWrapperFns@625",
+    "ListValueWrapperFns@630"
+   ]
+  },
+  {
+   "file": "libs/messages/src/ts-proto-generated/google/protobuf/wrappers.ts",
+   "exports": [
+    "protobufPackage@10"
+   ],
+   "types": [
+    "DoubleValue@17",
+    "FloatValue@27",
+    "Int64Value@37",
+    "UInt64Value@47",
+    "BytesValue@97",
+    "DeepPartial@651",
+    "Exact@659",
+    "MessageFns@677"
+   ]
+  },
+  {
+   "file": "back/src/Model/AutoRecorder.ts",
+   "types": [
+    "ManifestWriter@30",
+    "AutoRecorderDependencies@88"
+   ]
+  },
+  {
+   "file": "back/src/Model/Types/CommunicationTypes.ts",
+   "types": [
+    "IWebRTCCredentials@7"
+   ]
+  },
+  {
+   "file": "back/src/Model/States/StateFactory.ts",
+   "types": [
+    "StateFactoryOptions@17"
+   ]
+  },
+  {
+   "file": "back/src/Services/AreaPropertyVariablesManager.ts",
+   "types": [
+    "AreaPropertyVariableKey@7"
+   ]
+  },
+  {
+   "file": "play/src/common/DesktopVersionPolicy.ts",
+   "types": [
+    "DesktopVersionPolicy@6",
+    "DesktopVersionStatus@33"
+   ]
+  },
+  {
+   "file": "play/src/pusher/models/Websocket/SocketData.ts",
+   "types": [
+    "BackSpaceConnection_@16"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/SocketManager.ts",
+   "types": [
+    "AdminSocket@88",
+    "SocketUpgradeFailed@89"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/DesktopAuthService.ts",
+   "types": [
+    "DesktopAuthPayload@7"
+   ]
+  },
+  {
+   "file": "play/src/pusher/services/DesktopOidcTransactionService.ts",
+   "types": [
+    "DesktopOidcTransactionPayload@6"
+   ]
+  },
+  {
+   "file": "play/src/i18n/i18n-types.ts",
+   "types": [
+    "BaseLocale@6"
+   ]
+  },
+  {
+   "file": "play/src/common/NoncedMessageStore.ts",
+   "types": [
+    "NoncedMessage@1"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/src/Events/UpdateWritingStatusChatListEvent.ts",
+   "types": [
+    "UpdateWritingStatusChatListEvent@12"
+   ]
+  },
+  {
+   "file": "libs/shared-utils/src/Events/ChatEvent.ts",
+   "enumMembers": [
+    "text@29",
+    "me@30",
+    "userIncoming@31",
+    "userOutcoming@32"
+   ]
+  },
+  {
+   "file": "libs/messages/src/JsonMessages/AnalyticsEventCatalog.ts",
+   "duplicates": [
+    "spaceKindSchema@29",
+    "meetingKindSchema@44"
+   ]
+  }
+ ]
+}

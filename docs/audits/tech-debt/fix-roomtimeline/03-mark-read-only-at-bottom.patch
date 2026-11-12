@@ -1,0 +1,96 @@
+diff --git a/play/src/front/Chat/Components/Room/RoomTimeline.svelte b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+index 5eb0dee..d9ca3b3 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimeline.svelte
++++ b/play/src/front/Chat/Components/Room/RoomTimeline.svelte
+@@ -391,7 +391,8 @@
+     }
+ 
+     // The read receipt clears the unread count and the "new messages" line: send one for what is on screen.
+-    // On opening, on every new message while the room stays open, and on coming back to a hidden tab.
++    // Only at the bottom of a visible list: on opening, on every new message there, on getting back to it,
++    // and on coming back to a hidden tab. Not while the user reads history: the jump button counts those as new.
+     let pageVisible = $state(document.visibilityState === "visible");
+     let lastRenderedKey = $derived(renderItems[renderItems.length - 1]?.key);
+ 
+@@ -408,7 +409,7 @@
+         return undefined;
+     });
+     $effect(() => {
+-        if ($initializationState === "ready" && pageVisible && lastRenderedKey !== undefined) {
++        if ($initializationState === "ready" && pageVisible && autoScroll && lastRenderedKey !== undefined) {
+             untrack(() => room.setTimelineAsRead());
+         }
+     });
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+index e1f3dd2..a0a5295 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
++++ b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+@@ -497,7 +497,7 @@ describe("RoomTimeline characterization", () => {
+         expect(jumpButton()).toBeNull();
+     });
+ 
+-    it("marks the room read when it opens and on each new last message, also while the user reads history, but not while the tab is hidden", async () => {
++    it("marks the room read when it opens and on each new last message at the bottom, but not while the tab is hidden or the user reads history", async () => {
+         const { room, timelineItems } = fakeRoom({ items: others(3) });
+         render(room);
+         await wait(10);
+@@ -507,23 +507,50 @@ describe("RoomTimeline characterization", () => {
+         await settle();
+         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
+ 
+-        // RT-02 (pinned): the 2 messages the jump button counts as new are reported read.
++        visibility = "hidden";
++        document.dispatchEvent(new Event("visibilitychange"));
++        timelineItems.update((items) => [...items, ...others(1, 4)]);
++        await settle();
++        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
++
++        visibility = "visible";
++        document.dispatchEvent(new Event("visibilitychange"));
++        await settle();
++        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
++
++        // RT-02 (fixed): the 2 messages the jump button counts as new are not reported read.
+         userScrollsToTop();
+-        timelineItems.update((items) => [...items, ...others(2, 4)]);
++        timelineItems.update((items) => [...items, ...others(2, 5)]);
+         await settle();
+         expect(jumpButton()?.textContent).toContain("2 new messages");
+         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
++    });
+ 
+-        visibility = "hidden";
+-        document.dispatchEvent(new Event("visibilitychange"));
+-        timelineItems.update((items) => [...items, ...others(1, 6)]);
++    it("RT-02 (fixed): marks the room read when the user gets back to the bottom, with the jump button or by scrolling", async () => {
++        const { room, timelineItems } = fakeRoom({ items: others(3) });
++        render(room);
++        await wait(10);
++        userScrollsToTop();
++        timelineItems.update((items) => [...items, ...others(2, 3)]);
+         await settle();
+-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
++        expect(jumpButton()?.textContent).toContain("2 new messages");
++        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+ 
+-        visibility = "visible";
+-        document.dispatchEvent(new Event("visibilitychange"));
++        jumpButton()?.click();
+         await settle();
+-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(4);
++        expect(jumpButton()).toBeNull();
++        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
++
++        userScrollsToTop();
++        timelineItems.update((items) => [...items, ...others(2, 5)]);
++        await settle();
++        expect(jumpButton()?.textContent).toContain("2 new messages");
++        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(2);
++
++        userScrollsTo(list.scrollHeight - list.clientHeight);
++        await settle();
++        expect(jumpButton()).toBeNull();
++        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(3);
+     });
+ 
+     it("RT-01 (fixed): a read receipt update hands its props again to the user's own message rows only", async () => {

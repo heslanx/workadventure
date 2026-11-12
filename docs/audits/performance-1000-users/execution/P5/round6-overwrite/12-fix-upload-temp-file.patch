@@ -1,0 +1,180 @@
+diff --git a/map-storage/src/Upload/UploadController.ts b/map-storage/src/Upload/UploadController.ts
+index aa596eb74..cec2cd70b 100644
+--- a/map-storage/src/Upload/UploadController.ts
++++ b/map-storage/src/Upload/UploadController.ts
+@@ -44,6 +44,19 @@ function rejectWhileMapIsSaving(res: Response): void {
+         .send("A map of this request is still being saved. Nothing was changed, retry later.");
+ }
+ 
++/** Deletes the temporary file Multer stored the upload in. */
++function removeUploadedFile(file: Request["file"]): void {
++    if (file === undefined) {
++        return;
++    }
++    fs.unlink(file.path, (err) => {
++        if (err) {
++            console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
++            Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
++        }
++    });
++}
++
+ const upload = multer({
+     storage: multer.diskStorage({}),
+     limits: {
+@@ -273,13 +286,6 @@ export class UploadController {
+                     }
+ 
+                     // No need to close the directory with unzipper
+-                    // Delete the uploaded ZIP file from the disk
+-                    fs.unlink(zipFile.path, (err) => {
+-                        if (err) {
+-                            console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
+-                            Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
+-                        }
+-                    });
+                     for (const wamUrl of wamToPurge) {
+                         uploadDetector.refresh(wamUrl).catch((err) => {
+                             console.error(`[${new Date().toISOString()}]`, err);
+@@ -294,7 +300,10 @@ export class UploadController {
+                 if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
+                     this.uploadLimiter.delete(virtualDirectory);
+                 }
+-            })().catch((e) => next(e));
++            })()
++                // Every exit, the rejected and failed ones included.
++                .finally(() => removeUploadedFile(req.file))
++                .catch((e) => next(e));
+         });
+     }
+ 
+@@ -435,16 +444,6 @@ export class UploadController {
+                             await this.fileSystem.writeStringAsFile(virtualPath, content);
+                         }
+ 
+-                        // Delete the uploaded file from the disk
+-                        if (file) {
+-                            fs.unlink(file.path, (err) => {
+-                                if (err) {
+-                                    console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
+-                                    Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
+-                                }
+-                            });
+-                        }
+-
+                         if (extension === ".wam" && wamFile) {
+                             uploadDetector.refresh(this.getFullUrlFromRequest(req)).catch((err) => {
+                                 console.error(`[${new Date().toISOString()}]`, err);
+@@ -459,11 +458,14 @@ export class UploadController {
+                     if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
+                         this.uploadLimiter.delete(virtualPath);
+                     }
+-                })().catch((e) => {
+-                    console.error(`[${new Date().toISOString()}]`, e);
+-                    Sentry.captureException(e);
+-                    next(e);
+-                });
++                })()
++                    // Every exit, the rejected and failed ones included.
++                    .finally(() => removeUploadedFile(req.file))
++                    .catch((e) => {
++                        console.error(`[${new Date().toISOString()}]`, e);
++                        Sentry.captureException(e);
++                        next(e);
++                    });
+             },
+         );
+     }
+diff --git a/map-storage/src/tests/UploadController.test.ts b/map-storage/src/tests/UploadController.test.ts
+index be869dabd..59d7a4f2d 100644
+--- a/map-storage/src/tests/UploadController.test.ts
++++ b/map-storage/src/tests/UploadController.test.ts
+@@ -235,16 +235,6 @@ async function until(condition: () => boolean): Promise<void> {
+     }
+ }
+ 
+-/** Lets real I/O progress for this many turns of the event loop. */
+-async function ioTurns(count: number): Promise<void> {
+-    for (let turn = 0; turn < count; turn++) {
+-        // eslint-disable-next-line no-await-in-loop
+-        await new Promise((resolve) => {
+-            setImmediate(resolve);
+-        });
+-    }
+-}
+-
+ describe("UploadController", () => {
+     beforeAll(async () => {
+         const app = express();
+@@ -450,7 +440,7 @@ describe("UploadController", () => {
+             await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+         }
+ 
+-        it("(known defect) should be kept when the zip upload answers 503", async () => {
++        it("should be deleted when the zip upload answers 503", async () => {
+             await holdAWriteOfA();
+             const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+ 
+@@ -458,13 +448,12 @@ describe("UploadController", () => {
+             await until(() => replacing.mock.calls.length > 0);
+             await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+             const response = await uploading;
+-            await ioTurns(100);
++            await until(() => readdirSync(uploads).length === 0);
+ 
+             expect(response.status).toBe(503);
+-            expect(readdirSync(uploads)).toHaveLength(1);
+         });
+ 
+-        it("(known defect) should be kept when the PUT of a map answers 503", async () => {
++        it("should be deleted when the PUT of a map answers 503", async () => {
+             await holdAWriteOfA();
+             const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+             const form = new FormData();
+@@ -474,34 +463,38 @@ describe("UploadController", () => {
+             await until(() => replacing.mock.calls.length > 0);
+             await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+             const response = await uploading;
+-            await ioTurns(100);
++            await until(() => readdirSync(uploads).length === 0);
+ 
+             expect(response.status).toBe(503);
+-            expect(readdirSync(uploads)).toHaveLength(1);
+         });
+ 
+-        it("(known defect) should be kept when the zip upload is rejected", async () => {
++        it("should be deleted when the zip upload succeeds", async () => {
++            const response = await uploadZip({ "a.wam": wam("a") });
++            await until(() => readdirSync(uploads).length === 0);
++
++            expect(response.status).toBe(200);
++        });
++
++        it("should be deleted when the zip upload is rejected", async () => {
+             const form = new FormData();
+             form.append("directory", "../elsewhere");
+             form.append("file", await zipOf({ "a.wam": wam("a") }), "maps.zip");
+ 
+             const response = await request("POST", "/upload", form);
+-            await ioTurns(100);
++            await until(() => readdirSync(uploads).length === 0);
+ 
+             expect(response.status).toBe(400);
+-            expect(readdirSync(uploads)).toHaveLength(1);
+         });
+ 
+-        it("(known defect) should be kept when the zip upload fails", async () => {
++        it("should be deleted when the zip upload fails", async () => {
+             const form = new FormData();
+             form.append("directory", directory);
+             form.append("file", new Blob(["not a zip"]), "maps.zip");
+ 
+             const response = await request("POST", "/upload", form);
+-            await ioTurns(100);
++            await until(() => readdirSync(uploads).length === 0);
+ 
+             expect(response.status).toBe(500);
+-            expect(readdirSync(uploads)).toHaveLength(1);
+         });
+     });
+ });

@@ -1,0 +1,28 @@
+removed 25
+  - node_modules/@16bits/nes.css 2.3.2
+  - node_modules/@livekit/track-processors 0.7.2
+  - node_modules/@livekit/track-processors/node_modules/@mediapipe/tasks-vision 0.10.14
+  - node_modules/@types/dom-mediacapture-transform 0.1.11
+  - node_modules/@types/dom-webcodecs 0.1.18
+  - node_modules/@types/google-protobuf 3.15.12
+  - node_modules/@types/http-status-codes 1.2.0
+  - node_modules/@types/jsonwebtoken 9.0.10
+  - node_modules/google-protobuf 4.0.2
+  - node_modules/http-status-codes 2.3.0
+  - node_modules/hyper-express 6.17.3
+  - node_modules/hyper-express/node_modules/cookie 1.1.1
+  - node_modules/hyper-express/node_modules/cookie-signature 1.2.2
+  - node_modules/hyper-express/node_modules/media-typer 0.3.0
+  - node_modules/hyper-express/node_modules/mime-db 1.52.0
+  - node_modules/hyper-express/node_modules/mime-types 2.1.35
+  - node_modules/hyper-express/node_modules/type-is 1.6.18
+  - node_modules/live-directory 2.3.2
+  - node_modules/loupe 3.2.1
+  - node_modules/mock-socket 9.3.1
+  - node_modules/ts-proto-descriptors 2.1.0
+  - node_modules/vitest-websocket-mock 0.5.0
+  - node_modules/vitest-websocket-mock/node_modules/@vitest/pretty-format 3.2.4
+  - node_modules/vitest-websocket-mock/node_modules/@vitest/utils 3.2.4
+  - node_modules/vitest-websocket-mock/node_modules/tinyrainbow 2.0.0
+added 0
+version-changed 0

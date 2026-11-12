@@ -7,6 +7,7 @@
     import AwaitLoaderPlugin from "phaser4-rex-plugins/plugins/awaitloader-plugin.js";
     import OutlineFilterPlugin from "phaser4-rex-plugins/plugins/outlinefilter-plugin.js";
     import type { Unsubscriber } from "svelte/store";
+    import { startPerformanceMonitoring } from "../Administration/PerformanceMonitoring";
     import {
         DEBUG_MODE,
         SENTRY_DSN_FRONT,
@@ -77,6 +78,22 @@
                     // Set to 1.0 to capture 100% of transactions.
                     tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE ?? 0.2,
                     attachStacktrace: true,
+                    beforeSend: (event, hint) => {
+                        // Unhandled errors are captured by PostHog itself. Forward handled errors only.
+                        if (
+                            hint.originalException &&
+                            !event.exception?.values?.some((value) => value.mechanism?.handled === false)
+                        ) {
+                            try {
+                                window.posthog?.captureException(hint.originalException, {
+                                    $sentry_event_id: event.event_id,
+                                });
+                            } catch {
+                                /* Keep Sentry and application error handling independent. */
+                            }
+                        }
+                        return event;
+                    },
                 };
 
                 Sentry.init(sentryOptions);
@@ -211,6 +228,7 @@
         };
 
         game = new Game(config);
+        stopPerformanceMonitoring = startPerformanceMonitoring(() => game?.loop.actualFps ?? 0);
 
         stopBootPump = startBackgroundBootPump(game);
 
@@ -257,6 +275,7 @@
 
     let canvasSizeUnsubscriber: Unsubscriber;
     let stopBootPump: (() => void) | undefined;
+    let stopPerformanceMonitoring: (() => void) | undefined;
     onMount(() => {
         canvasSizeUnsubscriber = canvasSize.subscribe(({ width, height }) => {
             if (width < 1 || height < 1) {
@@ -270,6 +289,7 @@
     onDestroy(() => {
         canvasSizeUnsubscriber?.();
         stopBootPump?.();
+        stopPerformanceMonitoring?.();
         if (canvas && handleCanvasClick) {
             canvas.removeEventListener("click", handleCanvasClick);
         }

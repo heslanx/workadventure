@@ -1,0 +1,56 @@
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+index 0acc54b..b7c9c8d 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
++++ b/play/src/front/Chat/Components/Room/RoomTimelineCharacterization.test.ts
+@@ -1,4 +1,4 @@
+-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
++import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+ import { flushSync, mount, tick, unmount } from "svelte";
+ import { readable, writable } from "svelte/store";
+ import type {
+@@ -367,7 +367,10 @@ describe("RoomTimeline characterization", () => {
+         });
+     });
+ 
+-    it("labels the day separators Today, Yesterday, and an older day by its weekday, day and month", async () => {
++    it("labels the day separators Today, Yesterday, and an older day by its weekday, day and month, all in the chat's language", async () => {
++        await loadLocaleAsync("fr-FR");
++        setLocale("fr-FR");
++        onTestFinished(() => setLocale("en-US"));
+         vi.setSystemTime(at(7, 12, 0));
+         const { room } = fakeRoom({
+             items: [
+@@ -379,9 +382,9 @@ describe("RoomTimeline characterization", () => {
+         render(room);
+         await settle();
+ 
+-        // Intl gets no locale: an older day follows the runtime's language ("Fri, Jan 2" in en-US), not the chat's.
+-        const olderDay = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short" });
+-        expect(separatorLabels()).toEqual([olderDay.format(at(2, 9, 0)), "Yesterday", "Today"]);
++        // RT-10 (fixed): an older day follows the chat's language too, not the runtime's ("Fri, Jan 2" in en-US).
++        const olderDay = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" });
++        expect(separatorLabels()).toEqual([olderDay.format(at(2, 9, 0)), "Hier", "Aujourd'hui"]);
+     });
+ 
+     it("RT-05 (pinned): computes the day labels when the timeline changes, not when the day does", async () => {
+diff --git a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts
+index 38bed7b..b2393ed 100644
+--- a/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts
++++ b/play/src/front/Chat/Components/Room/RoomTimelineRenderItems.ts
+@@ -1,6 +1,6 @@
+ import { get } from "svelte/store";
+ import type { ChatMessage, ChatTimelineItem } from "../../Connection/ChatConnection";
+-import LL from "../../../../i18n/i18n-svelte";
++import LL, { locale } from "../../../../i18n/i18n-svelte";
+ 
+ export type RoomTimelineRenderItem =
+     | { kind: "separator"; key: string; label: string }
+@@ -33,7 +33,7 @@ function dayLabel(d: Date): string {
+     if (isSameLocalDay(d, today)) return labels.chat.timeLine.today();
+     if (isSameLocalDay(d, yesterday)) return labels.chat.timeLine.yesterday();
+ 
+-    return new Intl.DateTimeFormat(undefined, {
++    return new Intl.DateTimeFormat(get(locale), {
+         weekday: "short",
+         day: "numeric",
+         month: "short",

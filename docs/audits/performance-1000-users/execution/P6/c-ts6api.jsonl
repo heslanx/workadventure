@@ -1,0 +1,17 @@
+{"label": "c-ts6api:back-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 12.609, "user_s": 13.779, "sys_s": 1.412, "peak_rss_kb": 917212, "utc": "2026-11-12T00:24:45Z"}
+{"label": "c-ts6api:map-storage-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 9.485, "user_s": 9.253, "sys_s": 0.954, "peak_rss_kb": 650104, "utc": "2026-11-12T00:24:54Z"}
+{"label": "c-ts6api:shared-utils-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 12.822, "user_s": 12.717, "sys_s": 1.394, "peak_rss_kb": 645940, "utc": "2026-11-12T00:25:07Z"}
+{"label": "c-ts6api:store-utils-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 2.837, "user_s": 3.26, "sys_s": 0.563, "peak_rss_kb": 342516, "utc": "2026-11-12T00:25:10Z"}
+{"label": "c-ts6api:store-utils-svelte-check", "command": "npm run -s svelte-check", "exit_code": 0, "wall_s": 3.427, "user_s": 3.967, "sys_s": 0.664, "peak_rss_kb": 437016, "utc": "2026-11-12T00:25:13Z"}
+{"label": "c-ts6api:map-editor-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 6.043, "user_s": 8.049, "sys_s": 0.832, "peak_rss_kb": 595476, "utc": "2026-11-12T00:25:20Z"}
+{"label": "c-ts6api:messages-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 4.014, "user_s": 5.322, "sys_s": 0.633, "peak_rss_kb": 426384, "utc": "2026-11-12T00:25:24Z"}
+{"label": "c-ts6api:e2e-report-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 1.388, "user_s": 1.501, "sys_s": 0.322, "peak_rss_kb": 212676, "utc": "2026-11-12T00:25:25Z"}
+{"label": "c-ts6api:play-typecheck", "command": "npm run -s typecheck", "exit_code": 0, "wall_s": 21.849, "user_s": 32.166, "sys_s": 2.421, "peak_rss_kb": 1572072, "utc": "2026-11-12T00:25:47Z"}
+{"label": "c-ts6api:play-svelte-check", "command": "npm run -s svelte-check", "exit_code": 0, "wall_s": 46.449, "user_s": 70.29, "sys_s": 3.623, "peak_rss_kb": 2125584, "utc": "2026-11-12T00:26:33Z"}
+{"label": "c-ts6api:lint-back", "command": "npx --no-install eslint src/Model/Errors.ts", "exit_code": 0, "wall_s": 6.802, "user_s": 9.82, "sys_s": 1.498, "peak_rss_kb": 770844, "utc": "2026-11-12T00:26:40Z"}
+{"label": "c-ts6api:lint-map-storage", "command": "npx --no-install eslint src/fileSystem.ts", "exit_code": 0, "wall_s": 6.006, "user_s": 8.918, "sys_s": 1.448, "peak_rss_kb": 694064, "utc": "2026-11-12T00:26:46Z"}
+{"label": "c-ts6api:lint-shared-utils", "command": "npx --no-install eslint src/Deferred.ts", "exit_code": 0, "wall_s": 4.402, "user_s": 6.182, "sys_s": 1.141, "peak_rss_kb": 568404, "utc": "2026-11-12T00:26:51Z"}
+{"label": "c-ts6api:lint-store-utils", "command": "npx --no-install eslint src/ForwardableStore.ts", "exit_code": 0, "wall_s": 3.818, "user_s": 5.326, "sys_s": 0.932, "peak_rss_kb": 497788, "utc": "2026-11-12T00:26:55Z"}
+{"label": "c-ts6api:lint-map-editor", "command": "npx --no-install eslint src/Commands/Command.ts", "exit_code": 0, "wall_s": 5.814, "user_s": 8.533, "sys_s": 1.323, "peak_rss_kb": 618192, "utc": "2026-11-12T00:27:00Z"}
+{"label": "c-ts6api:lint-play-ts", "command": "npx --no-install eslint src/front/Api/Events/AskPositionEvent.ts", "exit_code": 0, "wall_s": 13.031, "user_s": 18.243, "sys_s": 2.826, "peak_rss_kb": 1325588, "utc": "2026-11-12T00:27:14Z"}
+{"label": "c-ts6api:lint-play-svelte", "command": "npx --no-install eslint src/front/Chat/Components/Room/Message/MessageProximity.svelte", "exit_code": 0, "wall_s": 10.049, "user_s": 14.314, "sys_s": 2.114, "peak_rss_kb": 1265724, "utc": "2026-11-12T00:27:24Z"}

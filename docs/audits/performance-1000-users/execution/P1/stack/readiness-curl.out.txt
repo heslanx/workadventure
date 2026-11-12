@@ -1,0 +1,18 @@
+# captured: 2026-11-12T00:03:20Z host=sbh
+# command: docker run --rm --network wa-fable-net --name wa-fable-stack-probe --label owner=wa-fable-20261111 --cpus 0.5 --memory 512m --cpu-shares 512 -v /root/wa-jobs/wa-fable-20261111/stack/probe:/probe:ro node:24-trixie bash /probe/readiness-curl.sh
+GET  play:3000/ping             -> 200 time_total=0.003945s size=4B
+  body: pong
+GET  play:3000/ready            -> 200 time_total=0.003581s size=5B
+  body: ready
+GET  play:3000/ping-backs       -> 200 time_total=0.041767s size=4B
+  body: pong
+POST play:3000/anonymLogin      -> 200 time_total=0.004793s size=225B
+  body keys: authToken,userUuid authTokenLength=159
+GET  maps/starter/map.json      -> 200 time_total=0.003793s size=33251B
+GET  back:8080/ping             -> 200 time_total=0.005616s size=4B
+GET  back:9100/metrics          -> 200 time_total=0.005870s size=10076B
+  metric lines: 137
+GET  play:9100/metrics          -> 200 time_total=0.005406s size=9894B
+  metric lines: 134
+readiness_fail=0
+exit_code=0

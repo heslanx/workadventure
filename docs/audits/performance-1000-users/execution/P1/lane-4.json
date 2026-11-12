@@ -1,0 +1,43 @@
+{
+  "lane": 4,
+  "plan": "docs/audits/performance-1000-users/plans/upstream-pr-plan.md P1 lane 4",
+  "host": "sbh: x86_64 AMD EPYC 9354P (VM), 4 vCPU, 15 GB, shared with production services; Node 24.22.2, tsx 4.22.3, ws 8.21.0",
+  "stack": "wa-fable-stack (baseline ddbe245a8, dev mode): play/pusher capped 0.65 CPU / 1536 MB, back 0.65 CPU / 1536 MB, redis 0.10, maps nginx 0.10; generator container capped 1 CPU / 1 GB, all --cpu-shares 512",
+  "goal": "Ten sessions, unique ids, server-side membership equals accepted sessions.",
+  "runs": [
+    {
+      "run": "lane-4",
+      "command": "docker run --rm --name wa-fable-gen --label owner=wa-fable-20261111 --cpus 1 --cpu-shares 512 --memory 1g --network wa-fable-net --tmpfs /tmp -v ~/wa-jobs/wa-fable-20261111/src-wa-fable-stack:/work -v ~/wa-jobs/wa-fable-20261111/p1-live/out:/out -w /work/benchmark -e WA_PUSHER_URL=http://wa-fable-stack-play:3000 -e WA_WS_URL=ws://wa-fable-stack-play:3001 -e WA_ROOM_URLS=http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json -e WA_API_VERSION=dev -e WA_OUTPUT=/out/lane-4.json -e WA_SESSIONS=10 -e WA_RAMP_SECONDS=5 -e WA_DURATION_SECONDS=24 -e WA_MOVE_HZ=2 node:24-trixie /work/node_modules/.bin/tsx ./index.ts",
+      "exitCode": 0,
+      "stderr": "(empty)",
+      "summary": {
+        "schemaVersion": 1,
+        "notice": "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
+        "startedAt": "2026-11-12T00:38:59.350Z",
+        "wallSeconds": 24.007,
+        "stopReason": "completed",
+        "config": {"pusherUrl": "http://wa-fable-stack-play:3000", "wsUrl": "ws://wa-fable-stack-play:3001", "roomUrls": ["http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json"], "sessions": 10, "rampSeconds": 5, "durationSeconds": 24, "moveHz": 2, "joinTimeoutSeconds": 30, "closeTimeoutSeconds": 5, "auth": "anonymous", "apiVersion": "dev", "characterTextureId": "male1", "namePrefix": "bot", "disconnectFraction": 0, "disconnectAtSeconds": 12, "minAccepted": 1, "output": "/out/lane-4.json"},
+        "sessions": {"requested": 10, "started": 10, "neverStarted": 0, "accepted": 10, "acceptedAtStop": 10, "rejected": 0, "abortedBeforeJoin": 0, "unexpectedCloses": 0, "uniqueUserIds": 10},
+        "sockets": {"opened": 10, "openPeak": 10, "openAtStop": 10, "closed": 10},
+        "joinLatencyMs": {"count": 10, "p50": 29.1, "p95": 131.5, "max": 131.5},
+        "rooms": [{"roomUrl": "http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json", "started": 10, "accepted": 10, "rejected": 0, "uniqueUserIds": 10}],
+        "sent": {"joinRoomFrontMessage": 10, "viewportMessage": 10, "userMovesMessage": 425},
+        "received": {"frames": 456, "bytes": 36057, "eventsByType": {"roomConnectedMessage": 10, "roomJoinedMessage": 10, "userJoinedMessage": 99, "userMovedMessage": 500, "userLeftMessage": 83, "joinSpaceRequestMessage": 4, "groupUpdateMessage": 453, "groupDeleteMessage": 13}},
+        "rejections": {},
+        "errors": {},
+        "closeCodes": {"1000": 10},
+        "generator": {"cpuUserMs": 589.1, "cpuSystemMs": 171.7, "cpuPercentOfOneCore": 3.2, "rssPeakBytes": 150282240, "rssEndBytes": 149868544, "eventLoopLagMs": {"p50": 10.16, "p95": 11.7, "p99": 13.88, "max": 87.88}},
+        "cleanup": {"openSockets": 0, "activeTimers": 0},
+        "reconciled": true
+      }
+    }
+  ],
+  "serverSamples": {
+    "metricsBefore": ["back workadventure_nb_rooms 0", "back workadventure_nb_sockets 0", "play workadventure_nb_sockets 0", "sampledAt=00:38:58"],
+    "metricsDuring_t16s": ["back workadventure_nb_rooms 1", "back workadventure_nb_sockets 10", "back workadventure_nb_clients_per_room{room=\"http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json\"} 10", "play workadventure_nb_sockets 10", "play workadventure_nb_clients_per_room{room=\"http://wa-fable-stack-play:3000/_/global/wa-fable-stack-maps/starter/map.json\"} 10", "sampledAt=00:39:15"],
+    "dockerStatsDuring_t16s": ["wa-fable-stack-play cpu=3.29% mem=233MiB / 1.5GiB", "wa-fable-stack-back cpu=3.13% mem=219.7MiB / 1.5GiB", "wa-fable-gen cpu=1.77% mem=117.7MiB / 1GiB"],
+    "metricsAfter": ["back workadventure_nb_rooms 0", "back workadventure_nb_sockets 0", "play workadventure_nb_sockets 0", "sampledAt=00:39:40"]
+  },
+  "verdict": "PASS",
+  "evidence": ["accepted=10, uniqueUserIds=10 (distinct currentUserId from roomJoinedMessage)", "back workadventure_nb_clients_per_room=10 and pusher workadventure_nb_sockets=10 at t=16 s (all joined), 0 before and 0 after the run", "userMovesMessage sent 425 vs about 435 expected for 10 sessions at 2 Hz with start i*0.5 s over 24 s (first tick after the join)"]
+}

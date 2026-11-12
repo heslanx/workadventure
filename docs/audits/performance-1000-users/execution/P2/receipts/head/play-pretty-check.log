@@ -1,0 +1,6 @@
+
+> workadventure-play@1.0.0 pretty-check
+> prettier --check 'src/**/*.{ts,svelte}'
+
+Checking formatting...
+All matched files use Prettier code style!

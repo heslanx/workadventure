@@ -1,0 +1,66 @@
+container wa-fable-ovw4-82-e2-a-pin-on-b
+e23881e0577dfad602820851aaf24a62df2b7127bea7eade0dac3e043f56ddbf  src/MapsManager.ts
+253eb3b8c93f7b85b3b035d3e7e074edbb80d0a12fc10a635f60d8dc0a0d4313  src/Upload/UploadController.ts
+06635f0e61c3caa32de3207d061249aa59f5cbabcdc7a2eb9f4302a99bbd511f  src/tests/MapsManagerAutosave.test.ts
+
+ RUN  v4.1.7 /w/map-storage
+
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist the edited map and release it from memory 11ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a map edited once a single time 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should write a continuously edited map once per autosave interval 4ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > on healthy storage > should persist a change made by a command that only went through the command queue 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should persist the edit once storage recovers, without waiting for another edit 3ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should keep the unsaved edit in memory after its command history expired 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should report the failure, then give up and release the map past the retry horizon 20ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should measure the retry horizon from the newest edit, not the first one 16ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should log a failing save on its first attempt and then periodically, not on every attempt 4ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should still retry and report the handler error when logging the failure throws 3ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save fails > should stop retrying once the map was replaced or deleted 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should never run two writes of the same map at once 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should end with the newest edit stored when the first write is the last to finish 1ms
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should count a write that never settles as failed and retry it 7ms
+   → expected [ 'play.test/autosave-1.wam', …(4) ] to not include 'play.test/autosave-14.wam'
+ × src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > restores the older edit when a write past its timeout lands after its retry (known defect) 29ms
+   → expected 'cmd-2' to be 'cmd-1' // Object.is equality
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should persist that newer edit with a follow-up write 2ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when an edit lands while a save is in flight > should not retry the abandoned state after the map was replaced by an upload 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > recreates the deleted map when the write in flight lands after the delete (known defect) 1ms
+ ✓ src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when the map is deleted or replaced while its save is in flight > overwrites the uploaded map when the write in flight lands after the upload (known defect) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > should count a write that never settles as failed and retry it
+AssertionError: expected [ 'play.test/autosave-1.wam', …(4) ] to not include 'play.test/autosave-14.wam'
+ ❯ src/tests/MapsManagerAutosave.test.ts:362:53
+    360|
+    361|             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+    362|             expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
+       |                                                     ^
+    363|         });
+    364|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/tests/MapsManagerAutosave.test.ts > MapsManager autosave > when a save is slower than the autosave interval > restores the older edit when a write past its timeout lands after its retry (known defect)
+AssertionError: expected 'cmd-2' to be 'cmd-1' // Object.is equality
+
+Expected: "cmd-1"
+Received: "cmd-2"
+
+ ❯ src/tests/MapsManagerAutosave.test.ts:380:54
+    378|             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+    379|
+    380|             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+       |                                                      ^
+    381|         });
+    382|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  03:11:41
+   Duration  3.49s (transform 2.18s, setup 0ms, import 3.17s, tests 109ms, environment 0ms)
+
+EXIT=1

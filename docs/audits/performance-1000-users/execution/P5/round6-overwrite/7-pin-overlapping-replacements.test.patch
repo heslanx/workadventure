@@ -1,0 +1,25 @@
+diff --git a/map-storage/src/tests/MapsManagerAutosave.test.ts b/map-storage/src/tests/MapsManagerAutosave.test.ts
+index fd48ecc5e..3a6eb763d 100644
+--- a/map-storage/src/tests/MapsManagerAutosave.test.ts
++++ b/map-storage/src/tests/MapsManagerAutosave.test.ts
+@@ -582,4 +582,20 @@ describe("MapsManager autosave", () => {
+             expect(storage.files.has(mapKey)).toBe(false);
+         });
+     });
++
++    describe("when two replacements of a map overlap", () => {
++        it("(known defect) should run the later replacement while the earlier one runs, so the earlier one lands last", async () => {
++            storage.writeMode = "hold";
++            const first = mapsManager.replaceStoredMaps([mapKey], () => storage.writeStringAsFile(mapKey, "first"));
++            await vi.advanceTimersByTimeAsync(0);
++            storage.writeMode = "succeed";
++            const second = mapsManager.replaceStoredMaps([mapKey], () => storage.writeStringAsFile(mapKey, "second"));
++            await vi.advanceTimersByTimeAsync(0);
++
++            await releaseHeldWritesNewestFirst();
++            await Promise.all([first, second]);
++
++            expect(storage.files.get(mapKey)).toBe("first");
++        });
++    });
+ });

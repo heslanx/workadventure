@@ -1,0 +1,59 @@
+# Thu Nov 12 00:37:53 UTC 2026 host=knc container=wa-fable-p4-test (--cpus 2 --memory 3g --cpu-shares 512 --network none, snapshot src-wa-fable-p3 ro, checkout PositionDispatcher.ts + test file bind-mounted ro); tests against CHANGED code
+f2bcb3a425b0720a8154c2bf5616db42d812f5651b182e68eed1807925b3734e  src/pusher/models/PositionDispatcher.ts
+4ccf053672db7c8b2f9f419974f385b06b6d11e5edb3d99ca67587897dd9abb9  tests/pusher/PositionDispatcher.test.ts
+167161d762febba01684d393a3be517d9a388e2ed566bc19d65794606b2f6209  src/pusher/models/Zone.ts
+28ffdce7fb32d67c091b73c17229ab37959049e739473bfd31cadcd78a51346a  /bench/docs/audits/performance-1000-users/execution/P4/bench/viewport-bench.ts
+a70406802074ad65e7d5d6fda538f1a592f71cc0b09a79a82b91df7edc84a5d0  /bench/docs/audits/performance-1000-users/execution/P4/bench/PositionDispatcher.base.ts
+a70406802074ad65e7d5d6fda538f1a592f71cc0b09a79a82b91df7edc84a5d0  /bench/docs/audits/performance-1000-users/execution/P4/bench/PositionDispatcher.base2.ts
+
+> workadventure-play@1.0.0 test
+> PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --run tests/pusher/PositionDispatcher.test.ts
+
+Sentry plugin disabled
+12:37:55 AM [vite-plugin-svelte] no Svelte config found at /usr/src/app/play - using default configuration.
+12:37:55 AM [vite-plugin-svelte] The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/usr/src/app/play[39m
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mignores a viewport whose coordinates are inverted
+[22m[39mInvalid viewport received:  { left: [33m1000[39m, top: [33m0[39m, right: [33m0[39m, bottom: [33m1000[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mignores a viewport whose coordinates are not finite
+[22m[39mInvalid viewport received:  { left: [33m0[39m, top: [33m0[39m, right: [33mNaN[39m, bottom: [33m1000[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mcrops an oversized viewport around its center instead of subscribing to a huge number of zones
+[22m[39mOversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: [33m0[39m, top: [33m0[39m, right: [33m1000000[39m, bottom: [33m1000000[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mcrops an oversized viewport that is extremely elongated
+[22m[39mOversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 3126 zones requested (max 1600) { left: [33m0[39m, top: [33m0[39m, right: [33m1000000[39m, bottom: [33m0[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2monly reports the first oversized viewport of a room
+[22m[39mOversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: [33m0[39m, top: [33m0[39m, right: [33m1000000[39m, bottom: [33m1000000[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mdoes not touch the subscriptions when the same oversized square viewport is sent again
+[22m[39mOversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: [33m0[39m, top: [33m0[39m, right: [33m1000000[39m, bottom: [33m1000000[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mdoes not touch the subscriptions when the same oversized extremely elongated viewport is sent again
+[22m[39mOversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 3126 zones requested (max 1600) { left: [33m0[39m, top: [33m0[39m, right: [33m1000000[39m, bottom: [33m0[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mmoves the cropped window when an oversized viewport moves
+[22m[39mOversized viewport cropped in room http://play.workadventure.localhost/@/team/world/room: 9771876 zones requested (max 1600) { left: [33m0[39m, top: [33m0[39m, right: [33m1000000[39m, bottom: [33m1000000[39m }
+
+[90mstderr[2m | tests/pusher/PositionDispatcher.test.ts[2m > [22m[2mPositionDispatcher[2m > [22m[2mkeeps the current zones when an invalid viewport follows a valid one
+[22m[39mInvalid viewport received:  { left: [33m0[39m, top: [33m0[39m, right: [33mInfinity[39m, bottom: [33m319[39m }
+Invalid viewport received:  { left: [33m639[39m, top: [33m0[39m, right: [33m0[39m, bottom: [33m319[39m }
+
+ [32m✓[39m tests/pusher/PositionDispatcher.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 244[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m21 passed[39m[22m[90m (21)[39m
+[2m   Start at [22m 00:37:56
+[2m   Duration [22m 6.08s[2m (transform 4.16s, setup 105ms, import 4.53s, tests 244ms, environment 935ms)[22m
+
+exit=0
+Thu Nov 12 00:38:03 UTC 2026
