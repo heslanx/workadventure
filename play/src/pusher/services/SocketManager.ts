@@ -68,6 +68,7 @@ import type { AdminConnection, AdminSocketData } from "../models/Websocket/Admin
 import { EMBEDDED_DOMAINS_WHITELIST, FRONT_URL, GRPC_MAX_MESSAGE_SIZE, SECRET_KEY } from "../enums/EnvironmentVariable";
 import type { SpaceInterface } from "../models/Space";
 import { Space } from "../models/Space";
+import type { SpaceConnectionInterface } from "../models/SpaceConnection";
 import { SpaceConnection } from "../models/SpaceConnection";
 import { ClientNotPartOfSpaceError, SpaceDestroyedError } from "../models/SpaceValidationErrors";
 import { eventProcessor } from "../models/eventProcessorInit";
@@ -111,7 +112,7 @@ export class SocketManager implements ZoneEventListener {
     private creatingRooms: Map<string, Promise<PusherRoom>> = new Map<string, Promise<PusherRoom>>();
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
 
-    constructor(private _spaceConnection = new SpaceConnection()) {
+    constructor(private _spaceConnection: SpaceConnectionInterface = new SpaceConnection()) {
         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
             gaugeManager.incNbClientPerRoomGauge(roomId);
         });

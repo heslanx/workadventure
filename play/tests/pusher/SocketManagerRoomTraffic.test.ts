@@ -16,7 +16,7 @@ import { SocketManager } from "../../src/pusher/services/SocketManager";
 import { apiClientRepository } from "../../src/pusher/services/ApiClientRepository";
 import { analyticsTimedEventTracker } from "../../src/pusher/services/AnalyticsTimedEventTracker";
 import type { PusherWebSocket } from "../../src/pusher/services/PusherWebSocket";
-import type { SpaceConnection, SpaceConnectionInterface } from "../../src/pusher/models/SpaceConnection";
+import type { SpaceConnectionInterface } from "../../src/pusher/models/SpaceConnection";
 import type { SpaceForSpaceConnectionInterface } from "../../src/pusher/models/Space";
 import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../src/common/WebSocketCloseCodes";
 
@@ -433,11 +433,10 @@ describe("SocketManager room traffic", () => {
             connectedSpace = space;
             return Promise.resolve(spaceStream as unknown as SpaceStream);
         });
-        // The constructor parameter is typed as the class, though Space only needs SpaceConnectionInterface.
         const manager = new SocketManager({
             getSpaceStreamToBackPromise,
             removeSpace: vi.fn(),
-        } satisfies SpaceConnectionInterface as unknown as SpaceConnection);
+        });
         const alice = fakeSocket("alice");
         const bob = fakeSocket("bob");
         const carol = fakeSocket("carol");
