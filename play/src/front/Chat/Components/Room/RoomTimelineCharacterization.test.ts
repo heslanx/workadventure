@@ -450,6 +450,8 @@ describe("RoomTimeline characterization", () => {
         expect(divider?.closest("li")?.getAttribute("data-event-id")).toBe("old2");
         expect(scrollCalls).toEqual([]);
         expect(listElement().scrollTop).toBe(0);
+        // RT-11 (pinned): marked read at open, before the user has seen the messages below the line.
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 
     it("shows the load error when a history page fails, and its retry runs the whole open again", async () => {
@@ -702,6 +704,8 @@ describe("RoomTimeline characterization", () => {
         expect(scrolledIntoView).toEqual(["m1"]);
         expect(scrollCalls).toEqual([]);
         expect(target.querySelector("li[data-event-id='m1']")?.classList.contains("highlight-message")).toBe(true);
+        // RT-11 (pinned): marked read at open, though the list shows the focused message, not the bottom.
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
 
         roomTimelineFocusStore.set({ roomId: "!other:test", eventId: "m2", sequence: 2 });
         await wait(10);
@@ -736,5 +740,72 @@ describe("RoomTimeline characterization", () => {
         roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "m1", sequence: 2 });
         await wait(10);
         expect(highlight()).toEqual({ tinted: true, pulsing: true });
+    });
+
+    it("RT-11 (pinned): marks a room read at open while it fetches the message a pending focus request asks for", async () => {
+        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "older", sequence: 1 });
+        const { room, timelineItems } = fakeRoom({ items: others(4) });
+        const fetched = deferred();
+        room.ensureTimelineEventVisible.mockImplementation(async (eventId: string) => {
+            await fetched.promise;
+            timelineItems.update((items) => [item(message(eventId, bob, at(5, 7, 0))), ...items]);
+            return true;
+        });
+        render(room);
+        await wait(10);
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+
+        fetched.resolve();
+        await wait(10);
+        expect(scrolledIntoView).toEqual(["older"]);
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+    });
+
+    it("RT-11 (pinned): leaves the list unplaced when a focus request's message cannot be found at open, and marks the room read", async () => {
+        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "gone", sequence: 1 });
+        const { room } = fakeRoom({ items: others(4) });
+        render(room);
+        await wait(10);
+
+        expect(room.ensureTimelineEventVisible).toHaveBeenCalledWith("gone");
+        expect(scrolledIntoView).toEqual([]);
+        expect(scrollCalls).toEqual([]);
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+    });
+
+    it("RT-11 (pinned): marks a room with unread messages read at open when a focus request's message cannot be found", async () => {
+        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "gone", sequence: 1 });
+        const { room } = fakeRoom({
+            items: [item(message("old1", me, at(5, 7, 0))), ...others(6)],
+            readMarker: { eventId: "old1" },
+        });
+        render(room);
+        await wait(10);
+
+        expect(target.querySelector("[data-testid='unreadMessagesDivider']")).not.toBeNull();
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+    });
+
+    it("RT-11 (pinned): marks a room read while a retried history load renders, before the retry opens it on the New messages line", async () => {
+        const { room, timelineItems } = fakeRoom({ items: [], hasPrevious: true, readMarker: { eventId: "old1" } });
+        room.loadMorePreviousMessages.mockRejectedValueOnce(new Error("network"));
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        list.scrollHeight = 300;
+        render(room);
+        await wait(10);
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
+
+        // The retried page brings the read marker and six unread messages after it, more than a screen.
+        room.loadMorePreviousMessages.mockImplementation(() => {
+            timelineItems.set([item(message("old1", me, at(5, 7, 0))), ...others(6)]);
+            list.scrollHeight = 1000;
+            return Promise.resolve();
+        });
+        target.querySelector<HTMLButtonElement>("[data-testid='retryLoadingMessagesButton']")?.click();
+        await wait(10);
+
+        const divider = target.querySelector("[data-testid='unreadMessagesDivider']");
+        expect(divider?.closest("li")?.getAttribute("data-event-id")).toBe("m0");
+        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 });
