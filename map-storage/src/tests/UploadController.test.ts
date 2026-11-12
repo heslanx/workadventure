@@ -312,10 +312,24 @@ describe("UploadController", () => {
             expect(storage.files).toEqual(before);
         });
 
-        // KNOWN DEFECT, pinned: deleteFilesExceptWAM deletes the .wam files the zip does not keep, but their
-        // in-memory maps are not dropped. A loaded map with an unsaved edit is saved back after the upload.
-        // The fix flips this assertion.
-        it("recreates a map the zip deleted when it had an unsaved edit (known defect)", async () => {
+        it("should answer 503 and write nothing when a map the zip deletes has a write in flight", async () => {
+            storage.files.set(keyOf("a.wam"), wam("a"));
+            await edit(keyOf("a.wam"), "cmd-1");
+            storage.holdWrites();
+            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+            const before = new Map(storage.files);
+            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+
+            const uploading = uploadZip({ "b.wam": wam("b") });
+            await until(() => replacing.mock.calls.length > 0);
+            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+            const response = await uploading;
+
+            expect(response.status).toBe(503);
+            expect(storage.files).toEqual(before);
+        });
+
+        it("should keep a map the zip deleted deleted when it had an unsaved edit", async () => {
             storage.files.set(keyOf("a.wam"), wam("a"));
             await edit(keyOf("a.wam"), "cmd-1");
 
@@ -323,15 +337,13 @@ describe("UploadController", () => {
             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
 
             expect(response.status).toBe(200);
-            expect(storage.files.has(keyOf("a.wam"))).toBe(true);
+            expect(storage.files.has(keyOf("a.wam"))).toBe(false);
             expect(storage.files.get(keyOf("b.wam"))).toBe(wam("b"));
         });
     });
 
     describe("POST /move of a map", () => {
-        // KNOWN DEFECT, pinned: the source key stays loaded after the move. A loaded map with an unsaved edit
-        // is saved back at the old path. The fix flips this assertion.
-        it("recreates the moved map at its old path when it had an unsaved edit (known defect)", async () => {
+        it("should not recreate the moved map at its old path when it had an unsaved edit", async () => {
             storage.files.set(keyOf("a.wam"), wam("a"));
             await edit(keyOf("a.wam"), "cmd-1");
 
@@ -345,7 +357,7 @@ describe("UploadController", () => {
 
             expect(response.status).toBe(200);
             expect(storage.files.get(keyOf("b.wam"))).toBe(wam("a"));
-            expect(storage.files.has(keyOf("a.wam"))).toBe(true);
+            expect(storage.files.has(keyOf("a.wam"))).toBe(false);
         });
     });
 });

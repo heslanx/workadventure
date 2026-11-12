@@ -239,9 +239,12 @@ export class UploadController {
                     const wamFilesNames = zipEntries
                         .filter((zipEntry) => zipEntry.path.includes(".wam"))
                         .map((zipEntry) => path.parse(zipEntry.path).name);
-                    const replacedWamKeys = zipEntries
-                        .map((zipEntry) => mapPath(path.join(directory, zipEntry.path), req))
-                        .filter((key) => path.extname(key) === ".wam");
+                    const replacedWamKeys = [
+                        ...zipEntries
+                            .map((zipEntry) => mapPath(path.join(directory, zipEntry.path), req))
+                            .filter((key) => path.extname(key) === ".wam"),
+                        ...(await this.wamKeysDeletedByUpload(mapPath(directory, req), filesPathsFromZip)),
+                    ];
                     const outcome = await mapsManager.replaceStoredMaps(replacedWamKeys, async () => {
                         // Delete all files in the given filesystem (disk or s3) with the exception of some .wam files
                         await this.fileSystem.deleteFilesExceptWAM(mapPath(directory, req), filesPathsFromZip);
@@ -590,6 +593,24 @@ export class UploadController {
         });
     }
 
+    /**
+     * Storage keys of the .wam files that deleteFilesExceptWAM deletes in `virtualDirectory`: every one but
+     * those whose .tmj is in the zip while they are not.
+     */
+    private async wamKeysDeletedByUpload(virtualDirectory: string, filesPathsFromZip: string[]): Promise<string[]> {
+        const wamPaths = await this.fileSystem.listFiles(virtualDirectory, ".wam");
+        return wamPaths
+            .filter(
+                (wamPath) =>
+                    !wamPath.startsWith("..") &&
+                    !(
+                        filesPathsFromZip.includes(wamPath.replace(".wam", ".tmj")) &&
+                        !filesPathsFromZip.includes(wamPath)
+                    ),
+            )
+            .map((wamPath) => path.join(virtualDirectory, wamPath));
+    }
+
     private async createWAMFileIfMissing(tmjKey: string, zipEntry: File, zip: CentralDirectory): Promise<void> {
         const wamPath = tmjKey.slice().replace(".tmj", ".wam");
         if (!(await this.fileSystem.exist(wamPath))) {
@@ -857,7 +878,18 @@ export class UploadController {
                     return;
                 }
 
-                await this.fileSystem.move(virtualPath, newVirtualPath);
+                if (path.extname(virtualPath) === ".wam") {
+                    // Both keys: a copy loaded at either one would be saved back over the move.
+                    const outcome = await mapsManager.replaceStoredMaps([virtualPath, newVirtualPath], () =>
+                        this.fileSystem.move(virtualPath, newVirtualPath),
+                    );
+                    if (outcome === "writesInFlight") {
+                        rejectWhileMapIsSaving(res);
+                        return;
+                    }
+                } else {
+                    await this.fileSystem.move(virtualPath, newVirtualPath);
+                }
                 await this.mapListService.generateCacheFile(req.hostname);
                 res.sendStatus(200);
             })().catch((e) => {
