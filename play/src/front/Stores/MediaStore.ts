@@ -1759,12 +1759,25 @@ deviceListStore.subscribe((mediaDeviceInfos) => {
     }
 
     const thePreviousMediaDevices = previousMediaDevices;
+    // On the first read every device is new: no earlier list shows it was there when a request failed.
+    const newDevices = mediaDeviceInfos.filter(
+        (device) => thePreviousMediaDevices?.find((d) => d.deviceId === device.deviceId) === undefined,
+    );
+
+    // A device that appears answers only a missing device. It neither grants a denied permission nor frees a
+    // device another application holds, so those issues stay until the device is asked for again.
+    const cameraAppeared = newDevices.some((device) => device.kind === "videoinput");
+    const microphoneAppeared = newDevices.some((device) => device.kind === "audioinput");
+    if (cameraAppeared && get(cameraAccessIssueStore) === "no_device") {
+        cameraAccessIssueStore.set(null);
+    }
+    if (microphoneAppeared && get(microphoneAccessIssueStore) === "no_device") {
+        microphoneAccessIssueStore.set(null);
+    }
+
     // get all media that not exist in the list
     if (thePreviousMediaDevices !== undefined) {
         // set the last new media devices detected (new devices detection)
-        const newDevices = mediaDeviceInfos.filter(
-            (device) => thePreviousMediaDevices.find((d) => d.deviceId === device.deviceId) === undefined,
-        );
         lastNewMediaDeviceDetectedStore.set(newDevices);
 
         // Detect removed devices
