@@ -54,13 +54,14 @@ import type {
 } from "@workadventure/messages";
 import { AvailabilityStatus, noUndefined } from "@workadventure/messages";
 import { Metadata } from "@grpc/grpc-js";
+import type { RoomManagerClient } from "@workadventure/messages/src/ts-proto-generated/services";
 import * as Sentry from "@sentry/node";
 import type { AxiosResponse } from "axios";
 import axios, { isAxiosError } from "axios";
 import type { WebSocket } from "uWebSockets.js";
 import { AbortError } from "@workadventure/shared-utils/src/Abort/AbortError";
 import { PusherRoom } from "../models/PusherRoom";
-import type { BackConnection } from "../models/Websocket/SocketData";
+import type { BackConnection, SocketData } from "../models/Websocket/SocketData";
 
 import type { GroupDescriptor, UserDescriptor, ZoneEventListener } from "../models/Zone";
 import type { AdminConnection, AdminSocketData } from "../models/Websocket/AdminSocketData";
@@ -99,6 +100,9 @@ export function sameOriginJoinUrl(joinUrl: string, senderRoomUrl: string): strin
         return "";
     }
 }
+
+// Written by a socket's back-stream data handler, read by its end handler.
+type BackConnectionClose = { reason: string | undefined };
 
 export class SocketManager implements ZoneEventListener {
     private static readonly RECORDING_QUERY_TIMEOUT_MS = 60_000;
@@ -269,105 +273,16 @@ export class SocketManager implements ZoneEventListener {
             debug("Calling connectToRoom '" + socketData.roomId + "'");
             const apiClient = await apiClientRepository.getClient(socketData.roomId, GRPC_MAX_MESSAGE_SIZE);
             streamToBack = apiClient.connectToRoom();
-            let backConnectionCloseReason: string | undefined;
+            const backConnectionClose: BackConnectionClose = { reason: undefined };
 
             client.getUserData().backConnection = streamToBack;
 
             streamToBack
-                .on("data", (message: ServerToClientMessage) => {
-                    if (!message.message) {
-                        console.error("Empty message returned on streamToBack");
-                        return;
-                    }
-                    switch (message.message.$case) {
-                        case "roomJoinedMessage": {
-                            socketData.userId = message.message.roomJoinedMessage.currentUserId;
-                            socketData.spaceUserId =
-                                socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
-
-                            // If this is the first message sent, send back the viewport.
-                            this.handleViewport(client, client.getUserData().viewport);
-                            // A session is an interval like any other: the tracker
-                            // emits user.connected now and user.disconnected when it
-                            // closes. open() is idempotent on the handle, which is what
-                            // the separate "already tracked" flag used to provide.
-                            analyticsTimedEventTracker.open(
-                                CONNECTION_SESSION_HANDLE,
-                                "user.disconnected",
-                                { connectionId: socketData.tabId },
-                                socketData,
-                            );
-                            break;
-                        }
-                        case "refreshRoomMessage": {
-                            const refreshMessage = message.message.refreshRoomMessage;
-                            this.refreshRoomData(refreshMessage.roomId, refreshMessage.versionNumber);
-                            break;
-                        }
-                        case "backConnectionCloseReasonMessage": {
-                            backConnectionCloseReason = message.message.backConnectionCloseReasonMessage.reason;
-                            return;
-                        }
-                    }
-
-                    // Let's pass data over from the back to the client.
-                    if (!client.isDisconnecting()) {
-                        client.send(message);
-                    }
-                })
-                .on("end", () => {
-                    try {
-                        // Let's close the front connection if the back connection is closed. This way, we can retry connecting from the start.
-                        if (!client.isDisconnecting()) {
-                            const connectionCloseReason =
-                                backConnectionCloseReason ?? "No close reason received from back server.";
-                            const logMessage = `Connection lost to back server '${apiClient
-                                .getChannel()
-                                .getTarget()}' for room '${socketData.roomId}' and user '${socketData.userUuid}'/'${
-                                socketData.name
-                            }'. Reason: ${connectionCloseReason}`;
-                            if (client.isPermanentlyDisconnected()) {
-                                // Expected teardown: the client closed its WebSocket for good, so we ended the
-                                // back connection ourselves. Not a real "connection lost" event.
-                                debug(logMessage);
-                            } else {
-                                console.warn(logMessage);
-                            }
-                            this.closeWebsocketConnection(
-                                client,
-                                WS_CLOSE_CODE_SESSION_DESTROYED,
-                                `Back lost: ${connectionCloseReason}`,
-                            );
-                        }
-                    } catch (e: unknown) {
-                        console.error("Error while handling ended connection to back", e);
-                        Sentry.captureException(e);
-                    }
-                })
-                .on("error", (err: Error) => {
-                    try {
-                        const date = new Date();
-                        console.error(
-                            "Error in connection to back server '" +
-                                apiClient.getChannel().getTarget() +
-                                "' for room '" +
-                                socketData.roomId +
-                                "'at :" +
-                                date.toLocaleString("en-GB"),
-                            err,
-                        );
-                        if (!client.isDisconnecting()) {
-                            this.closeWebsocketConnection(
-                                client,
-                                WS_CLOSE_CODE_SESSION_DESTROYED,
-                                "Error while connecting to back server",
-                            );
-                        }
-                    } catch (e: unknown) {
-                        console.error("Error while handling error event in connection to back", e);
-                        Sentry.captureException(e);
-                    }
-                });
+                .on("data", (message: ServerToClientMessage) =>
+                    this.handleMessageFromBack(client, socketData, message, backConnectionClose),
+                )
+                .on("end", () => this.closeSocketWhenBackEnds(client, socketData, apiClient, backConnectionClose))
+                .on("error", (err: Error) => this.closeSocketWhenBackFails(client, socketData, apiClient, err));
 
             const pusherToBackMessage: PusherToBackMessage = {
                 message: {
@@ -400,6 +315,117 @@ export class SocketManager implements ZoneEventListener {
                 WS_CLOSE_CODE_SESSION_DESTROYED,
                 "Error while connecting to back server",
             );
+        }
+    }
+
+    private handleMessageFromBack(
+        client: PusherWebSocket,
+        socketData: SocketData,
+        message: ServerToClientMessage,
+        backConnectionClose: BackConnectionClose,
+    ): void {
+        if (!message.message) {
+            console.error("Empty message returned on streamToBack");
+            return;
+        }
+        switch (message.message.$case) {
+            case "roomJoinedMessage": {
+                socketData.userId = message.message.roomJoinedMessage.currentUserId;
+                socketData.spaceUserId = socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
+
+                // If this is the first message sent, send back the viewport.
+                this.handleViewport(client, client.getUserData().viewport);
+                // A session is an interval like any other: the tracker
+                // emits user.connected now and user.disconnected when it
+                // closes. open() is idempotent on the handle, which is what
+                // the separate "already tracked" flag used to provide.
+                analyticsTimedEventTracker.open(
+                    CONNECTION_SESSION_HANDLE,
+                    "user.disconnected",
+                    { connectionId: socketData.tabId },
+                    socketData,
+                );
+                break;
+            }
+            case "refreshRoomMessage": {
+                const refreshMessage = message.message.refreshRoomMessage;
+                this.refreshRoomData(refreshMessage.roomId, refreshMessage.versionNumber);
+                break;
+            }
+            case "backConnectionCloseReasonMessage": {
+                backConnectionClose.reason = message.message.backConnectionCloseReasonMessage.reason;
+                return;
+            }
+        }
+
+        // Let's pass data over from the back to the client.
+        if (!client.isDisconnecting()) {
+            client.send(message);
+        }
+    }
+
+    private closeSocketWhenBackEnds(
+        client: PusherWebSocket,
+        socketData: SocketData,
+        apiClient: RoomManagerClient,
+        backConnectionClose: BackConnectionClose,
+    ): void {
+        try {
+            // Let's close the front connection if the back connection is closed. This way, we can retry connecting from the start.
+            if (!client.isDisconnecting()) {
+                const connectionCloseReason =
+                    backConnectionClose.reason ?? "No close reason received from back server.";
+                const logMessage = `Connection lost to back server '${apiClient
+                    .getChannel()
+                    .getTarget()}' for room '${socketData.roomId}' and user '${socketData.userUuid}'/'${
+                    socketData.name
+                }'. Reason: ${connectionCloseReason}`;
+                if (client.isPermanentlyDisconnected()) {
+                    // Expected teardown: the client closed its WebSocket for good, so we ended the
+                    // back connection ourselves. Not a real "connection lost" event.
+                    debug(logMessage);
+                } else {
+                    console.warn(logMessage);
+                }
+                this.closeWebsocketConnection(
+                    client,
+                    WS_CLOSE_CODE_SESSION_DESTROYED,
+                    `Back lost: ${connectionCloseReason}`,
+                );
+            }
+        } catch (e: unknown) {
+            console.error("Error while handling ended connection to back", e);
+            Sentry.captureException(e);
+        }
+    }
+
+    private closeSocketWhenBackFails(
+        client: PusherWebSocket,
+        socketData: SocketData,
+        apiClient: RoomManagerClient,
+        err: Error,
+    ): void {
+        try {
+            const date = new Date();
+            console.error(
+                "Error in connection to back server '" +
+                    apiClient.getChannel().getTarget() +
+                    "' for room '" +
+                    socketData.roomId +
+                    "'at :" +
+                    date.toLocaleString("en-GB"),
+                err,
+            );
+            if (!client.isDisconnecting()) {
+                this.closeWebsocketConnection(
+                    client,
+                    WS_CLOSE_CODE_SESSION_DESTROYED,
+                    "Error while connecting to back server",
+                );
+            }
+        } catch (e: unknown) {
+            console.error("Error while handling error event in connection to back", e);
+            Sentry.captureException(e);
         }
     }
 
