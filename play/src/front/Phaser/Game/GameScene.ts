@@ -4363,6 +4363,11 @@ ${escapedMessage}
         this.createCollisionWithPlayer();
     }
 
+    /**
+     * Other clients draw each shared position over the next POSITION_DELAY and keep a walking Woka going the same way
+     * for up to MAX_EXTRAPOLATION_TIME after it (PlayerMovement). A straight walk needs no more than one share per
+     * POSITION_DELAY for that. A stop or a turn would be drawn wrong until the next share, so it goes at once.
+     */
     private pushPlayerPosition(event: HasPlayerMovedInterface) {
         if (this.lastMoveEventSent === event) {
             return;
@@ -4595,8 +4600,8 @@ ${escapedMessage}
             return;
         }
 
-        // We do not update the player position directly (because it is sent only every 200ms).
-        // Instead we use the PlayersPositionInterpolator that will do a smooth animation over the next 200ms.
+        // A walking player shares its position at most once per POSITION_DELAY, so the move is not drawn at once:
+        // the PlayersPositionInterpolator draws it from where the player is now over the next POSITION_DELAY.
         const playerMovement = new PlayerMovement(
             { x: player.x, y: player.y },
             this.currentTick,
