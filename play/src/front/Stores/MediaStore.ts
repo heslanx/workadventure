@@ -826,6 +826,46 @@ function handleGetUserMediaFailure(
     }
 }
 
+/**
+ * What a run does with each kind of track. The microphone track a run stops carries the constraints it was opened
+ * with, so that it can be kept warm.
+ */
+type TrackPlan = {
+    mustRequestNewVideo: boolean;
+    mustRequestNewAudio: boolean;
+    mustStopVideo: boolean;
+} & (
+    | { mustStopAudio: true; oldAudioConstraints: MediaTrackConstraints }
+    | { mustStopAudio: false; oldAudioConstraints: MediaTrackConstraints | false }
+);
+
+/**
+ * A kind this run asks for is requested again when its constraints changed or its track is no longer live, except the
+ * microphone when the warm track serves it. A kind is stopped when the previous run asked for it and this run does not.
+ */
+function planTracks(
+    oldConstraints: { video: MediaTrackConstraints | false; audio: MediaTrackConstraints | false },
+    constraints: MediaStreamConstraintsValue,
+    {
+        hasLiveVideoTrack,
+        hasLiveAudioTrack,
+        hasWarmAudioTrack,
+    }: { hasLiveVideoTrack: boolean; hasLiveAudioTrack: boolean; hasWarmAudioTrack: boolean },
+): TrackPlan {
+    const mustRequestNewVideo =
+        constraints.video !== false && (!deepEqual(oldConstraints.video, constraints.video) || !hasLiveVideoTrack);
+    const mustRequestNewAudio =
+        constraints.audio !== false &&
+        !hasWarmAudioTrack &&
+        (!deepEqual(oldConstraints.audio, constraints.audio) || !hasLiveAudioTrack);
+    const mustStopVideo = oldConstraints.video !== false && constraints.video === false;
+    const oldAudioConstraints = oldConstraints.audio;
+    if (oldAudioConstraints !== false && constraints.audio === false) {
+        return { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio: true, oldAudioConstraints };
+    }
+    return { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio: false, oldAudioConstraints };
+}
+
 async function runRawStreamUpdate(
     constraints: MediaStreamConstraintsValue,
     setIfCurrent: SetRawStreamIfCurrent,
@@ -887,18 +927,14 @@ async function runRawStreamUpdate(
 
     const hasLiveVideoTrack = currentStream ? hasLiveTrack(currentStream.getVideoTracks()) : false;
     const hasLiveAudioTrack = currentStream ? hasLiveTrack(currentStream.getAudioTracks()) : false;
-    const mustRequestNewVideo =
-        constraints.video !== false && (!deepEqual(oldConstraints.video, constraints.video) || !hasLiveVideoTrack);
-    const mustRequestNewAudio =
-        constraints.audio !== false &&
-        warmAudioTrack === undefined &&
-        (!deepEqual(oldConstraints.audio, constraints.audio) || !hasLiveAudioTrack);
+    const { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio, oldAudioConstraints } = planTracks(
+        oldConstraints,
+        constraints,
+        { hasLiveVideoTrack, hasLiveAudioTrack, hasWarmAudioTrack: warmAudioTrack !== undefined },
+    );
 
     if (currentStream) {
         const oldStream = currentStream;
-        const mustStopVideo = oldConstraints.video !== false && constraints.video === false;
-        const oldAudioConstraints = oldConstraints.audio;
-        const mustStopAudio = oldAudioConstraints !== false && constraints.audio === false;
 
         if (mustStopVideo) {
             oldStream.getVideoTracks().forEach((t) => {
