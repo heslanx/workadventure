@@ -340,6 +340,45 @@ describe("CpuTracker", () => {
         });
     });
 
+    describe("cgroup v2 mount roots outside the process path", () => {
+        const WA_SERVICE = "0::/system.slice/wa.service\n";
+        const mountRootedAt = (root: string): string =>
+            `1673 1627 0:28 ${root} /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw\n`;
+
+        it("should not read the quota of a mount rooted at a sibling of the process cgroup", () => {
+            const files = {
+                [PROC_SELF_CGROUP]: WA_SERVICE,
+                [PROC_SELF_MOUNTINFO]: mountRootedAt("/system.slice/other.service"),
+                [V2_CPU_MAX]: "20000 100000\n",
+            };
+            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
+        });
+
+        it("should not read the quota of a mount whose root climbs out of the namespace root and descends again", () => {
+            const files = {
+                [PROC_SELF_CGROUP]: WA_SERVICE,
+                [PROC_SELF_MOUNTINFO]: mountRootedAt("/../x"),
+                [V2_CPU_MAX]: "20000 100000\n",
+            };
+            expect(readCpuCapacity(fakeCgroup(files))).toEqual(ONE_CORE_REFERENCE);
+        });
+
+        it.each(["0::/\n", WA_SERVICE])(
+            "should read the quota of a mount whose root only climbs out of the namespace root (process %j)",
+            (procSelfCgroup) => {
+                const files = {
+                    [PROC_SELF_CGROUP]: procSelfCgroup,
+                    [PROC_SELF_MOUNTINFO]: mountRootedAt("/../.."),
+                    [V2_CPU_MAX]: "20000 100000\n",
+                };
+                expect(readCpuCapacity(fakeCgroup(files))).toEqual({
+                    cores: 0.2,
+                    source: `cgroup v2 ${V2_CPU_MAX} (quota 0.2 cores)`,
+                });
+            },
+        );
+    });
+
     describe("readOptionalFile", () => {
         it("should return undefined for a missing file without logging", () => {
             expect(readOptionalFile("/nonexistent/wa-cpu-tracker/cpu.max")).toBeUndefined();

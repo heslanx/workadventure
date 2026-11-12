@@ -127,14 +127,23 @@ export function parseCgroupMount(content: string, version: CgroupVersion): Cgrou
 
 /**
  * The directories of the process cgroup and its ancestors under the mount point, from the process cgroup up to the
- * mount point. A cgroup path outside the mounted root leaves only the mount point.
+ * mount point.
+ *
+ * The kernel renders the process path and the mount root relative to the namespace root of the reader. The mount root
+ * is an ancestor of the process cgroup when the process path is below it. It is also one when the root only climbs out
+ * of the namespace root ("/../.."): the mount point is then an ancestor, and the levels between it and the namespace
+ * root have no names, so only the mount point is known. Any other root (a sibling of the process cgroup, or a climb
+ * that descends again) names no ancestor, so no directory of that mount is read.
  */
 function cgroupDirectories(mount: CgroupMount, cgroupPath: string): string[] {
     const rootParts = mount.root.split("/").filter(Boolean);
     const pathParts = cgroupPath.split("/").filter(Boolean);
     const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
+    if (!isBelowRoot) {
+        return rootParts.every((part) => part === "..") ? [mount.mountPoint] : [];
+    }
     const directories = [mount.mountPoint];
-    for (const part of isBelowRoot ? pathParts.slice(rootParts.length) : []) {
+    for (const part of pathParts.slice(rootParts.length)) {
         directories.unshift(posix.join(directories[0], part));
     }
     return directories;
