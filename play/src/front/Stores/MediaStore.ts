@@ -811,8 +811,14 @@ async function runRawStreamUpdate(
         });
     }
 
-    cameraAccessIssueStore.set(null);
-    microphoneAccessIssueStore.set(null);
+    // Clear a device's access issue only when this run asks for that device. Each failure below that records an issue
+    // also turns its device off, which queues a run without that device, and that run must keep the issue.
+    if (constraints.video !== false) {
+        cameraAccessIssueStore.set(null);
+    }
+    if (constraints.audio !== false) {
+        microphoneAccessIssueStore.set(null);
+    }
 
     const nextConstraints = {
         video: constraints.video ?? false,
