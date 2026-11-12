@@ -2,6 +2,9 @@ import * as Phaser from "phaser";
 import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 import { Game } from "../../../../src/front/Phaser/Game/Game";
 
+const { captureException } = vi.hoisted(() => ({ captureException: vi.fn() }));
+vi.mock("@sentry/svelte", () => ({ captureException }));
+
 interface FakeEngine {
     events: { emit: Mock };
     scene: { update: Mock; render: Mock; isProcessing: boolean; scenes: unknown[] };
@@ -62,17 +65,63 @@ describe("Game.step", () => {
         expect(engine.renderer.postRender).toHaveBeenCalledTimes(1);
     });
 
-    it("GS-03 (pinned): stops the frame loop for good when a scene update throws", () => {
+    it("should keep the frame loop going when a scene update throws, and report the error", () => {
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        const error = new Error("boom");
         const { game, engine } = createGame(() => {
-            throw new Error("boom");
+            throw error;
         });
         const frames = startFrameLoop(game);
-        expect(frames).toHaveLength(1);
 
-        expect(() => frames[0](1000)).toThrow("boom");
+        expect(() => frames[0](1000)).not.toThrow();
 
+        expect(frames).toHaveLength(2);
         expect(engine.renderer.preRender).not.toHaveBeenCalled();
-        // Phaser schedules the next frame only after the callback returns, so the canvas freezes.
-        expect(frames).toHaveLength(1);
+        expect(engine.scene.isProcessing).toBe(false);
+        expect(consoleError).toHaveBeenCalledTimes(1);
+        expect(consoleError).toHaveBeenCalledWith(
+            expect.stringContaining("failed frames since the last report: 1"),
+            error,
+        );
+        expect(captureException).toHaveBeenCalledWith(error, { extra: { failedFramesSinceLastReport: 1 } });
+    });
+
+    it("should render the next frame after a failed one", () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        let failing = true;
+        const { game, engine } = createGame(() => {
+            if (failing) throw new Error("boom");
+        });
+
+        game.step(1000, 16);
+        failing = false;
+        game.markDirty();
+        game.step(1016, 16);
+
+        expect(engine.scene.update).toHaveBeenCalledTimes(2);
+        expect(engine.renderer.preRender).toHaveBeenCalledTimes(1);
+        expect(engine.scene.render).toHaveBeenCalledTimes(1);
+    });
+
+    it("should report a frame error that repeats every frame at most once every 10 s, with the failed frame count", () => {
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        captureException.mockClear();
+        const { game } = createGame(() => {
+            throw new Error("boom");
+        });
+
+        for (let time = 1000; time < 11_000; time += 16) {
+            game.step(time, 16);
+        }
+        expect(consoleError).toHaveBeenCalledTimes(1);
+
+        game.step(11_000, 16);
+
+        expect(consoleError).toHaveBeenCalledTimes(2);
+        // The frame at 1000 ms is reported. The 624 frames up to 10_984 ms are only counted, and the frame at 11_000 ms
+        // is reported with them.
+        expect(captureException).toHaveBeenLastCalledWith(expect.any(Error), {
+            extra: { failedFramesSinceLastReport: 625 },
+        });
     });
 });

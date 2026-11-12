@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import * as Phaser from "phaser";
+import * as Sentry from "@sentry/svelte";
 import { SKIP_RENDER_OPTIMIZATIONS } from "../../Enum/EnvironmentVariable";
 import { ResizableScene } from "../Login/ResizableScene";
+
+const FRAME_ERROR_REPORT_INTERVAL_MS = 10_000;
 
 /**
  * A specialization of the main Phaser Game scene.
@@ -13,6 +16,8 @@ import { ResizableScene } from "../Login/ResizableScene";
  */
 export class Game extends Phaser.Game {
     private _isDirty = false;
+    private lastFrameErrorReport = Number.NEGATIVE_INFINITY;
+    private frameErrorsSinceReport = 0;
 
     constructor(GameConfig: Phaser.Types.Core.GameConfig) {
         super(GameConfig);
@@ -27,6 +32,33 @@ export class Game extends Phaser.Game {
     }
 
     public step(time: number, delta: number) {
+        // Phaser schedules the next frame only after step() returns. An error thrown from a frame would stop the loop
+        // for good and freeze the canvas while the UI keeps working (GS-03), so the frame is dropped and reported.
+        try {
+            this.runFrame(time, delta);
+        } catch (error) {
+            // The scene manager clears this flag at the end of render(), which this frame never reached.
+            // @ts-ignore
+            this.scene.isProcessing = false;
+            this.reportFrameError(error, time);
+        }
+    }
+
+    private reportFrameError(error: unknown, time: number): void {
+        this.frameErrorsSinceReport++;
+        if (time - this.lastFrameErrorReport < FRAME_ERROR_REPORT_INTERVAL_MS) {
+            return;
+        }
+        console.error(
+            `A game frame failed (failed frames since the last report: ${this.frameErrorsSinceReport})`,
+            error,
+        );
+        Sentry.captureException(error, { extra: { failedFramesSinceLastReport: this.frameErrorsSinceReport } });
+        this.lastFrameErrorReport = time;
+        this.frameErrorsSinceReport = 0;
+    }
+
+    private runFrame(time: number, delta: number): void {
         // @ts-ignore
         if (this.pendingDestroy) {
             // @ts-ignore
