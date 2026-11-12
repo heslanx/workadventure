@@ -21,6 +21,11 @@ interface ZoneDescriptor {
     j: number;
 }
 
+interface ZoneRectangle {
+    topLeft: ZoneDescriptor;
+    bottomRight: ZoneDescriptor;
+}
+
 /**
  * Maximum number of zones a single viewport is allowed to cover.
  *
@@ -38,6 +43,11 @@ export const MAX_ZONES_PER_VIEWPORT = 1600;
 export class PositionDispatcher {
     private zones: Map<string, Zone> = new Map();
     private oversizedViewportsCropped = 0;
+    /**
+     * The rectangle of zones each socket is listening to, as left by its last reconciled viewport.
+     * An entry lives from the first setViewport() of a socket until removeViewport() (or the death of the socket).
+     */
+    private lastZoneRectangles = new WeakMap<PusherWebSocket, { reconciled: ZoneRectangle | undefined }>();
 
     constructor(
         public readonly roomId: string,
@@ -73,7 +83,7 @@ export class PositionDispatcher {
         topLeft: ZoneDescriptor,
         bottomRight: ZoneDescriptor,
         viewport: ViewportInterface,
-    ): { topLeft: ZoneDescriptor; bottomRight: ZoneDescriptor } {
+    ): ZoneRectangle {
         const width = bottomRight.i - topLeft.i + 1;
         const height = bottomRight.j - topLeft.j + 1;
         if (width * height <= MAX_ZONES_PER_VIEWPORT) {
@@ -146,6 +156,33 @@ export class PositionDispatcher {
             viewport,
         );
 
+        // A viewport usually moves a few pixels at a time and keeps covering the same zones: there is nothing to
+        // reconcile then.
+        let lastRectangle = this.lastZoneRectangles.get(socket);
+        const reconciled = lastRectangle?.reconciled;
+        if (
+            reconciled !== undefined &&
+            reconciled.topLeft.i === topLeft.i &&
+            reconciled.topLeft.j === topLeft.j &&
+            reconciled.bottomRight.i === bottomRight.i &&
+            reconciled.bottomRight.j === bottomRight.j
+        ) {
+            return;
+        }
+        // Forgotten until the zones are reconciled: if a subscription throws halfway, the next viewport must not
+        // be compared to a rectangle the socket is only partly listening to.
+        if (lastRectangle === undefined) {
+            lastRectangle = { reconciled: undefined };
+            this.lastZoneRectangles.set(socket, lastRectangle);
+        } else {
+            lastRectangle.reconciled = undefined;
+        }
+
+        this.reconcileZones(socket, topLeft, bottomRight);
+        lastRectangle.reconciled = { topLeft, bottomRight };
+    }
+
+    private reconcileZones(socket: PusherWebSocket, topLeft: ZoneDescriptor, bottomRight: ZoneDescriptor): void {
         const oldZones = socket.getUserData().listenedZones;
         const newZones = new Set<string>();
 
@@ -206,6 +243,7 @@ export class PositionDispatcher {
     }
 
     public removeViewport(socket: PusherWebSocket): void {
+        this.lastZoneRectangles.delete(socket);
         const listenedZones = socket.getUserData().listenedZones;
         if (listenedZones) {
             for (const zoneKey of [...listenedZones]) {
