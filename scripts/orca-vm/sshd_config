@@ -1,0 +1,21 @@
+Port 22
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+PermitRootLogin no
+PasswordAuthentication no
+PermitEmptyPasswords no
+KbdInteractiveAuthentication no
+UsePAM no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+AllowUsers node
+X11Forwarding no
+AllowAgentForwarding no
+# Local forwarding lets Orca forward WorkAdventure dev ports to the desktop.
+AllowTcpForwarding local
+GatewayPorts no
+PermitTunnel no
+PermitUserEnvironment no
+ClientAliveInterval 60
+ClientAliveCountMax 3
+Subsystem sftp internal-sftp
