@@ -58,34 +58,26 @@ export function parseCgroupV1CfsQuota(quotaContent: string, periodContent: strin
     return quotaToCores(quotaContent.trim(), periodContent.trim());
 }
 
-function plainAbsolutePath(path: string | undefined): string | undefined {
-    const trimmed = path?.trim();
-    if (trimmed === undefined || !trimmed.startsWith("/") || trimmed.split("/").includes("..")) {
-        return undefined;
-    }
-    return trimmed;
-}
-
 /**
- * Parses `/proc/self/cgroup` and returns the cgroup v2 path of the process ("0::<path>").
- * Returns undefined when there is no cgroup v2 entry or the path is not a plain absolute path.
+ * Parses `/proc/self/cgroup` and returns the cgroup v2 path of the process ("0::<path>"), as the file renders it.
+ * Returns undefined when there is no cgroup v2 entry.
  */
 export function parseCgroupV2Path(content: string): string | undefined {
     const line = content.split("\n").find((entry) => entry.startsWith("0::"));
-    return plainAbsolutePath(line?.slice("0::".length));
+    return line?.slice("0::".length).trim();
 }
 
 /**
  * Parses `/proc/self/cgroup` and returns the cgroup v1 path of the process in the hierarchy that holds the cpu
- * controller ("<id>:cpu,cpuacct:<path>").
- * Returns undefined when there is no such entry or the path is not a plain absolute path.
+ * controller ("<id>:cpu,cpuacct:<path>"), as the file renders it.
+ * Returns undefined when there is no such entry.
  */
 export function parseCgroupV1CpuPath(content: string): string | undefined {
     const entry = content
         .split("\n")
         .map((line) => /^\d+:([^:]+):(.*)$/.exec(line))
         .find((fields) => fields !== null && fields[1].split(",").includes("cpu"));
-    return plainAbsolutePath(entry?.[2]);
+    return entry?.[2].trim();
 }
 
 export type CgroupVersion = "v1" | "v2";
@@ -126,27 +118,52 @@ export function parseCgroupMount(content: string, version: CgroupVersion): Cgrou
 }
 
 /**
+ * A cgroup path as the kernel renders it relative to the namespace root of the reader: `ascent` levels above that root
+ * (one "/.." each), then the `names` below the level reached.
+ */
+interface CgroupPath {
+    ascent: number;
+    names: string[];
+}
+
+/**
+ * Returns undefined when the path is not absolute or has a ".." after a name, which the kernel never renders.
+ */
+function parseCgroupPath(path: string): CgroupPath | undefined {
+    const parts = path.split("/").filter(Boolean);
+    const firstName = parts.findIndex((part) => part !== "..");
+    const ascent = firstName === -1 ? parts.length : firstName;
+    const names = parts.slice(ascent);
+    return path.startsWith("/") && !names.includes("..") ? { ascent, names } : undefined;
+}
+
+/**
  * The directories of the process cgroup and its ancestors under the mount point, from the process cgroup up to the
  * mount point.
  *
- * The kernel renders the process path and the mount root relative to the namespace root of the reader. The mount root
- * is an ancestor of the process cgroup when the process path is below it. It is also one when the root only climbs out
- * of the namespace root ("/../.."): the mount point is then an ancestor, and the levels between it and the namespace
- * root have no names, so only the mount point is known. Any other root (a sibling of the process cgroup, or a climb
- * that descends again) names no ancestor, so no directory of that mount is read.
+ * The process path and the mount root are both rendered relative to the namespace root of the reader. The mount point
+ * is the cgroup "up a levels, then down the root names" and the process is "up b levels, then down its names":
+ * - When a = b and the root names are a prefix of the process names, the mount point is an ancestor and the process
+ *   cgroup is reached below it by the remaining names.
+ * - When a > b and the root has no names, the mount point is an ancestor, and the levels between it and the process
+ *   have no names, so only the mount point is known.
+ * - In any other layout, or when either path cannot be read, the mount point is not known to be an ancestor and no
+ *   directory is read.
  */
-function cgroupDirectories(mount: CgroupMount, cgroupPath: string): string[] {
-    const rootParts = mount.root.split("/").filter(Boolean);
-    const pathParts = cgroupPath.split("/").filter(Boolean);
-    const isBelowRoot = rootParts.every((part, index) => pathParts[index] === part);
-    if (!isBelowRoot) {
-        return rootParts.every((part) => part === "..") ? [mount.mountPoint] : [];
+function cgroupDirectories(mount: CgroupMount, processPath: string): string[] {
+    const root = parseCgroupPath(mount.root);
+    const own = parseCgroupPath(processPath);
+    if (root === undefined || own === undefined) {
+        return [];
     }
-    const directories = [mount.mountPoint];
-    for (const part of pathParts.slice(rootParts.length)) {
-        directories.unshift(posix.join(directories[0], part));
+    if (root.ascent === own.ascent && root.names.every((name, index) => own.names[index] === name)) {
+        const directories = [mount.mountPoint];
+        for (const name of own.names.slice(root.names.length)) {
+            directories.unshift(posix.join(directories[0], name));
+        }
+        return directories;
     }
-    return directories;
+    return root.ascent > own.ascent && root.names.length === 0 ? [mount.mountPoint] : [];
 }
 
 function isUnlimitedQuota(content: string): boolean {
@@ -221,7 +238,8 @@ export function readCgroupCpuQuota(readFile: ReadOptionalFile): CpuCapacity | un
             root: "/",
             mountPoint: hierarchy.defaultMountPoint,
         };
-        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? mount.root;
+        // Without an entry in /proc/self/cgroup the process is taken to be at the namespace root.
+        const cgroupPath = hierarchy.processPath(procSelfCgroup) ?? "/";
         return cgroupDirectories(mount, cgroupPath).flatMap(
             (directory) => hierarchy.readQuota(readFile, directory) ?? [],
         );
