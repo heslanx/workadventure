@@ -86,6 +86,13 @@
                     media: "",
                 };
             }
+            if (ctx === "device_in_use") {
+                return {
+                    title: $LL.camera.help.tooltip.deviceInUseTitle(),
+                    desc: $LL.camera.help.tooltip.deviceInUseDesc(),
+                    media: "",
+                };
+            }
             return { title: "", desc: "", media: "" };
         },
     );

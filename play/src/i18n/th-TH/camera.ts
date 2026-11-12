@@ -39,6 +39,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "ไม่พบกล้องที่ใช้งานได้",
             noDeviceDesc:
                 "เบราว์เซอร์ของคุณไม่พบกล้องที่สามารถใช้งานได้ ลองใช้เบราว์เซอร์อื่น ตรวจสอบว่ามีกล้องเชื่อมต่ออยู่ ตรวจสอบการตั้งค่าคอมพิวเตอร์ของคุณ (ความเป็นส่วนตัว อุปกรณ์) หรือรีสตาร์ตคอมพิวเตอร์หากอุปกรณ์ควรใช้งานได้",
+            deviceInUseTitle: "กล้องกำลังถูกใช้งาน",
+            deviceInUseDesc: "แอปพลิเคชันอื่นกำลังใช้กล้องของคุณอยู่ ปิดแอปพลิเคชันนั้น แล้วลองอีกครั้ง",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +56,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "ไม่พบไมโครโฟนที่ใช้งานได้",
             noDeviceDesc:
                 "เบราว์เซอร์ของคุณไม่พบไมโครโฟนที่สามารถใช้งานได้ ลองใช้เบราว์เซอร์อื่น ตรวจสอบว่ามีไมโครโฟนเชื่อมต่ออยู่ ตรวจสอบการตั้งค่าคอมพิวเตอร์ของคุณ (ความเป็นส่วนตัว อุปกรณ์) หรือรีสตาร์ตคอมพิวเตอร์หากอุปกรณ์ควรใช้งานได้",
+            deviceInUseTitle: "ไมโครโฟนกำลังถูกใช้งาน",
+            deviceInUseDesc: "แอปพลิเคชันอื่นกำลังใช้ไมโครโฟนของคุณอยู่ ปิดแอปพลิเคชันนั้น แล้วลองอีกครั้ง",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

@@ -39,6 +39,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "사용 가능한 카메라 없음",
             noDeviceDesc:
                 "브라우저가 사용할 수 있는 카메라를 찾지 못했습니다. 다른 브라우저를 시도하거나 카메라 연결을 확인하거나, 컴퓨터 설정(개인 정보 보호, 장치)을 확인하거나, 장치가 정상이라면 컴퓨터를 다시 시작해 보세요.",
+            deviceInUseTitle: "카메라 사용 중",
+            deviceInUseDesc:
+                "다른 애플리케이션이 카메라를 사용하고 있습니다. 해당 애플리케이션을 닫은 후 다시 시도해 보세요.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +57,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "사용 가능한 마이크 없음",
             noDeviceDesc:
                 "브라우저가 사용할 수 있는 마이크를 찾지 못했습니다. 다른 브라우저를 시도하거나 마이크 연결을 확인하거나, 컴퓨터 설정(개인 정보 보호, 장치)을 확인하거나, 장치가 정상이라면 컴퓨터를 다시 시작해 보세요.",
+            deviceInUseTitle: "마이크 사용 중",
+            deviceInUseDesc:
+                "다른 애플리케이션이 마이크를 사용하고 있습니다. 해당 애플리케이션을 닫은 후 다시 시도해 보세요.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

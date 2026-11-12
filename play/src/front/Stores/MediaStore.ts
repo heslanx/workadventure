@@ -65,7 +65,7 @@ import { browserNotificationStore } from "./BrowserNotificationStore";
 
 export const inBackgroundSettingsStore = writable<boolean>(false);
 
-export type MediaAccessIssue = "permission_denied" | "no_device";
+export type MediaAccessIssue = "permission_denied" | "no_device" | "device_in_use";
 type MediaDeviceAnalyticsKind = "camera" | "microphone" | "camera_microphone";
 
 /**
@@ -747,6 +747,9 @@ function classifyMediaAccessError(error: unknown): MediaAccessIssue | null {
     if (name === "NotFoundError" || name === "DevicesNotFoundError") {
         return "no_device";
     }
+    if (name === "NotReadableError") {
+        return "device_in_use";
+    }
     return null;
 }
 
@@ -775,8 +778,8 @@ function emitCurrentStreamOrError(setIfCurrent: SetRawStreamIfCurrent, error: un
 
 /**
  * After a failed getUserMedia: falls back to the default devices when a chosen one cannot be opened, or turns off
- * the device that failed and records its access issue, if the error maps to one (a camera another application holds
- * does not). Turning a device off queues a new run without it.
+ * the device that failed and records its access issue, if the error maps to one. Turning a device off queues a new run
+ * without it.
  */
 function handleGetUserMediaFailure(
     e: unknown,
@@ -1640,7 +1643,8 @@ export const cameraListStore = derived(deviceListStore, ($deviceListStore) => {
 });
 
 /**
- * Context for the camera action-bar tooltip when the camera is off: permission denied vs no usable device.
+ * Context for the camera action-bar tooltip when the camera is off: permission denied, no usable device, or a camera
+ * another application holds.
  */
 export const cameraButtonHelpContextStore = derived(
     [cameraAccessIssueStore, cameraListStore, devicesNotLoaded],
@@ -1650,6 +1654,9 @@ export const cameraButtonHelpContextStore = derived(
         }
         if (issue === "no_device") {
             return "no_device" as const;
+        }
+        if (issue === "device_in_use") {
+            return "device_in_use" as const;
         }
         if (!notLoaded && cameras !== undefined && cameras.length === 0) {
             return "no_device" as const;
@@ -1667,7 +1674,8 @@ export const microphoneListStore = derived(deviceListStore, ($deviceListStore) =
 });
 
 /**
- * Context for the microphone action-bar tooltip when the mic is off: permission denied vs no usable device.
+ * Context for the microphone action-bar tooltip when the mic is off: permission denied, no usable device, or a
+ * microphone another application holds.
  */
 export const microphoneButtonHelpContextStore = derived(
     [microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded],
@@ -1677,6 +1685,9 @@ export const microphoneButtonHelpContextStore = derived(
         }
         if (issue === "no_device") {
             return "no_device" as const;
+        }
+        if (issue === "device_in_use") {
+            return "device_in_use" as const;
         }
         if (mics !== undefined && mics.length === 0) {
             return "no_device" as const;

@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Ninguna cámara utilizable",
             noDeviceDesc:
                 "El navegador no detecta ninguna cámara utilizable. Prueba otro navegador, comprueba que la cámara esté conectada, revisa la configuración del equipo (privacidad, dispositivos) o reinicia el equipo si el dispositivo debería funcionar.",
+            deviceInUseTitle: "Cámara en uso",
+            deviceInUseDesc: "Otra aplicación está usando la cámara. Cierra esa aplicación y vuelve a intentarlo.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Ningún micrófono utilizable",
             noDeviceDesc:
                 "El navegador no detecta ningún micrófono utilizable. Prueba otro navegador, comprueba el micrófono, revisa la configuración del equipo (privacidad, dispositivos) o reinicia el equipo si el dispositivo debería funcionar.",
+            deviceInUseTitle: "Micrófono en uso",
+            deviceInUseDesc: "Otra aplicación está usando el micrófono. Cierra esa aplicación y vuelve a intentarlo.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

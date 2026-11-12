@@ -39,6 +39,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "没有可用的摄像头",
             noDeviceDesc:
                 "浏览器未检测到可用的摄像头。请尝试其他浏览器、检查摄像头是否已连接、检查计算机的配置（隐私、设备），或在设备正常时重启电脑。",
+            deviceInUseTitle: "摄像头已被占用",
+            deviceInUseDesc: "另一个应用程序正在使用摄像头。请关闭该应用程序，然后重试。",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +56,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "没有可用的麦克风",
             noDeviceDesc:
                 "浏览器未检测到可用的麦克风。请尝试其他浏览器、检查麦克风是否已连接、检查计算机的配置（隐私、设备），或在设备正常时重启电脑。",
+            deviceInUseTitle: "麦克风已被占用",
+            deviceInUseDesc: "另一个应用程序正在使用麦克风。请关闭该应用程序，然后重试。",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

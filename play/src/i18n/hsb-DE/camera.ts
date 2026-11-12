@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Žana wužiwajomna kamera",
             noDeviceDesc:
                 "Wobhladowak namaka žanu kameru, kotruž móžeće wužiwać. Spytajće druhi wobhladowak, překontrolujće zwjazanje kamery, přepruwujće konfiguraciju kompjutra (datowy škit, graty) abo startujće kompjuter znowa, jeli hardware měł fungować.",
+            deviceInUseTitle: "Kamera so wužiwa",
+            deviceInUseDesc: "Wašu kameru wužiwa druha aplikacija. Začińće tu aplikaciju a spytajće to potom znowa.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Žadyn wužiwajomny mikrofon",
             noDeviceDesc:
                 "Wobhladowak namaka žadyn mikrofon, kotryž móžeće wužiwać. Spytajće druhi wobhladowak, překontrolujće mikrofon, přepruwujće konfiguraciju kompjutra (datowy škit, graty) abo startujće kompjuter znowa, jeli hardware měł fungować.",
+            deviceInUseTitle: "Mikrofon so wužiwa",
+            deviceInUseDesc: "Waš mikrofon wužiwa druha aplikacija. Začińće tu aplikaciju a spytajće to potom znowa.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",

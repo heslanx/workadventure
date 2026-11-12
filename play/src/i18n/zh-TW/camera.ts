@@ -39,6 +39,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "沒有可用的攝影機",
             noDeviceDesc:
                 "瀏覽器未偵測到可用的攝影機。請嘗試其他瀏覽器、檢查攝影機是否已連接、檢查電腦的設定（隱私、裝置），或在裝置正常時重新啟動電腦。",
+            deviceInUseTitle: "攝影機使用中",
+            deviceInUseDesc: "另一個應用程式正在使用攝影機。請關閉該應用程式，然後再試一次。",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +56,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "沒有可用的麥克風",
             noDeviceDesc:
                 "瀏覽器未偵測到可用的麥克風。請嘗試其他瀏覽器、檢查麥克風是否已連接、檢查電腦的設定（隱私、裝置），或在裝置正常時重新啟動電腦。",
+            deviceInUseTitle: "麥克風使用中",
+            deviceInUseDesc: "另一個應用程式正在使用麥克風。請關閉該應用程式，然後再試一次。",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

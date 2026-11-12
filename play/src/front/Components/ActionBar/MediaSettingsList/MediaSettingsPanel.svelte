@@ -136,6 +136,9 @@
                 <div class="text-sm italic text-center">
                     {#if cameraDenied}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.permissionDeniedTitle()}</p>
+                    {:else if $cameraAccessIssueStore === "device_in_use"}
+                        <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.deviceInUseTitle()}</p>
+                        <span class="text-xs text-white/55">{$LL.camera.help.tooltip.deviceInUseDesc()}</span>
                     {:else if $cameraAccessIssueStore === "no_device" || (!$devicesNotLoaded && $cameraListStore !== undefined && $cameraListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.noDeviceTitle()}</p>
                         <span class="text-xs text-white/55">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
@@ -248,6 +251,9 @@
                 <div class="text-sm italic text-center">
                     {#if microphoneDenied}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.permissionDeniedTitle()}</p>
+                    {:else if $microphoneAccessIssueStore === "device_in_use"}
+                        <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.deviceInUseTitle()}</p>
+                        <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</span>
                     {:else if $microphoneAccessIssueStore === "no_device" || (!$devicesNotLoaded && $microphoneListStore !== undefined && $microphoneListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.noDeviceTitle()}</p>
                         <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>

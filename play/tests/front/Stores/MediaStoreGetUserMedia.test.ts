@@ -362,7 +362,7 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
         expect(current(m)).toEqual([{ kind: "audio", id: "audio-0" }]);
     });
 
-    it("a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off without recording an access issue, and keeps the microphone", async () => {
+    it("MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again", async () => {
         m = await loadMediaStore();
         browser.failNext(namedError("NotReadableError"));
         await enterRoom(m);
@@ -375,11 +375,57 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
         ]);
         expect(get(m.requestedCameraState)).toBe(false);
         expect(get(m.requestedMicrophoneState)).toBe(true);
-        expect(get(m.cameraAccessIssueStore)).toBe(null);
-        expect(get(m.cameraButtonHelpContextStore)).toBe(null);
+        expect(get(m.cameraAccessIssueStore)).toBe("device_in_use");
+        expect(get(m.cameraButtonHelpContextStore)).toBe("device_in_use");
         expect(get(m.microphoneAccessIssueStore)).toBe(null);
         expect(get(m.microphoneButtonHelpContextStore)).toBe(null);
         expect(current(m)).toEqual([{ kind: "audio", id: "audio-0" }]);
+
+        m.requestedCameraState.enableWebcam();
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
+        expect(requested(browser, 2)).toEqual({ video: true, audio: false });
+        expect(get(m.cameraAccessIssueStore)).toBe(null);
+        expect(get(m.cameraButtonHelpContextStore)).toBe(null);
+        expect(current(m)).toEqual([
+            { kind: "audio", id: "audio-0" },
+            { kind: "video", id: "video-1" },
+        ]);
+    });
+
+    it("MD-09 (fixed): a microphone the browser cannot read (NotReadableError) turns the microphone off and records device_in_use while the camera is asked for, until the microphone is asked for again", async () => {
+        m = await loadMediaStore();
+        browser.failNext(namedError("NotReadableError"));
+        m.myMicrophoneStore.set(true);
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(1);
+        expect(requested(browser, 0)).toEqual({ video: false, audio: true });
+        expect(get(m.requestedMicrophoneState)).toBe(false);
+        expect(get(m.microphoneAccessIssueStore)).toBe("device_in_use");
+        expect(get(m.microphoneButtonHelpContextStore)).toBe("device_in_use");
+
+        m.myCameraStore.set(true);
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(2);
+        expect(requested(browser, 1)).toEqual({ video: true, audio: false });
+        expect(get(m.microphoneAccessIssueStore)).toBe("device_in_use");
+        expect(get(m.microphoneButtonHelpContextStore)).toBe("device_in_use");
+        expect(get(m.cameraAccessIssueStore)).toBe(null);
+
+        m.requestedMicrophoneState.enableMicrophone();
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(3);
+        expect(requested(browser, 2)).toEqual({ video: false, audio: true });
+        expect(get(m.microphoneAccessIssueStore)).toBe(null);
+        expect(get(m.microphoneButtonHelpContextStore)).toBe(null);
+        expect(current(m)).toEqual([
+            { kind: "video", id: "video-0" },
+            { kind: "audio", id: "audio-1" },
+        ]);
     });
 
     it("MD-01 (pinned): a chosen camera the browser cannot open also drops the chosen microphone", async () => {

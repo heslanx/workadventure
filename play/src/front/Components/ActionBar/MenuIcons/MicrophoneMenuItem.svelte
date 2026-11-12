@@ -84,6 +84,13 @@
                     media: "",
                 };
             }
+            if (ctx === "device_in_use") {
+                return {
+                    title: $LL.camera.help.microphoneTooltip.deviceInUseTitle(),
+                    desc: $LL.camera.help.microphoneTooltip.deviceInUseDesc(),
+                    media: "",
+                };
+            }
             return { title: "", desc: "", media: "" };
         },
     );
