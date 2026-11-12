@@ -238,10 +238,17 @@ class MapsManager {
      * The maps stay loaded and editable while it waits. When an earlier replacement or a write is still in
      * flight REPLACEMENT_WAIT_MS after the call, `replace` does not run and the maps stay loaded: storage is
      * left unchanged, the next autosave stores their edits, and the caller must reject the request.
+     *
+     * Edits that no write carried when the maps are dropped are dropped with them. For a delete or an upload
+     * this is intended: the request is the later operation and supersedes them. A move keeps the edits of the
+     * moved map by naming it in `saveFirst`, one of `keys`: its unsaved edits are saved now rather than at
+     * the next autosave, and the maps are dropped only once it has none left. When that save fails, the
+     * request is rejected as above.
      */
     public async replaceStoredMaps(
         keys: readonly string[],
         replace: () => Promise<void>,
+        { saveFirst = [] }: { saveFirst?: readonly string[] } = {},
     ): Promise<"replaced" | "writesInFlight"> {
         const deadline = Date.now() + this.REPLACEMENT_WAIT_MS;
         const earlierReplacements = keys.flatMap((key) => [...(this.replacementsRequested.get(key) ?? [])]);
@@ -254,17 +261,19 @@ class MapsManager {
         }
         try {
             let ready = await settledBefore(earlierReplacements, deadline);
-            while (ready && keys.some((key) => this.writesInFlight.has(key))) {
+            while (
+                ready &&
+                (keys.some((key) => this.writesInFlight.has(key)) ||
+                    saveFirst.some((key) => this.mapSaveStates.has(key)))
+            ) {
                 // Checked again after each batch rather than trusting one snapshot: an edit made meanwhile can
-                // start a write. The last check and the drop below run in one synchronous block.
+                // start a write or leave an edit unsaved. The last check and the drop below run in one
+                // synchronous block.
                 // eslint-disable-next-line no-await-in-loop
-                ready = await settledBefore(
-                    keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]),
-                    deadline,
-                );
+                ready = await this.saveAndSettle(keys, saveFirst, deadline);
             }
             if (!ready) {
-                const message = `A write of map ${keys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms. The delete, upload or move is rejected, storage is left unchanged`;
+                const message = `A write of map ${keys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms, or failed. The delete, upload or move is rejected, storage is left unchanged`;
                 console.error(`[${new Date().toISOString()}] ${message}`);
                 Sentry.captureException(new Error(message), {
                     tags: { location: "replaceStoredMaps" },
@@ -282,6 +291,27 @@ class MapsManager {
         } finally {
             finish();
         }
+    }
+
+    /**
+     * Starts the save of the unsaved edits of `saveFirst` now, then waits for the writes of `keys`. Resolves
+     * false at the deadline, or at once when the last write of a map of `saveFirst` failed.
+     */
+    private saveAndSettle(keys: readonly string[], saveFirst: readonly string[], deadline: number): Promise<boolean> {
+        for (const key of saveFirst) {
+            const saveState = this.mapSaveStates.get(key);
+            if (saveState?.status === "retrying") {
+                return Promise.resolve(false);
+            }
+            if (saveState?.status === "dirty") {
+                clearTimeout(saveState.timer);
+                this.startSave(key, saveState);
+            }
+        }
+        return settledBefore(
+            keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]),
+            deadline,
+        );
     }
 
     public addCommandToQueue(mapKey: string, message: EditMapCommandMessage): void {

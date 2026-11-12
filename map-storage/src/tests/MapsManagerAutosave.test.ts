@@ -583,6 +583,35 @@ describe("MapsManager autosave", () => {
         });
     });
 
+    describe("when a replacement saves the edits of its map first, as a move does", () => {
+        it("should run the replacement once the edits are stored", async () => {
+            await edit("cmd-1");
+            const moveFile = vi.fn(() => Promise.resolve());
+
+            await expect(mapsManager.replaceStoredMaps([mapKey], moveFile, { saveFirst: [mapKey] })).resolves.toBe(
+                "replaced",
+            );
+
+            expect(moveFile).toHaveBeenCalledOnce();
+            expect(storedWam(mapKey)).toMatchObject({ lastCommandId: "cmd-1", metadata: { name: "edited by cmd-1" } });
+        });
+
+        it("should reject the replacement and keep the edit when its save fails", async () => {
+            await edit("cmd-1");
+            storage.writeMode = "fail";
+            const moveFile = vi.fn(() => Promise.resolve());
+
+            await expect(mapsManager.replaceStoredMaps([mapKey], moveFile, { saveFirst: [mapKey] })).resolves.toBe(
+                "writesInFlight",
+            );
+            storage.writeMode = "succeed";
+            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+
+            expect(moveFile).not.toHaveBeenCalled();
+            expect(storedWam(mapKey)).toMatchObject({ lastCommandId: "cmd-1", metadata: { name: "edited by cmd-1" } });
+        });
+    });
+
     describe("when two replacements of a map overlap", () => {
         it("should run the later replacement only once the earlier one finished", async () => {
             storage.writeMode = "hold";

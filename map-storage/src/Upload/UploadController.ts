@@ -879,9 +879,12 @@ export class UploadController {
                 }
 
                 if (path.extname(virtualPath) === ".wam") {
-                    // Both keys: a copy loaded at either one would be saved back over the move.
-                    const outcome = await mapsManager.replaceStoredMaps([virtualPath, newVirtualPath], () =>
-                        this.fileSystem.move(virtualPath, newVirtualPath),
+                    // Both keys: a copy loaded at either one would be saved back over the move. The source is
+                    // saved first, so the moved file has its edits.
+                    const outcome = await mapsManager.replaceStoredMaps(
+                        [virtualPath, newVirtualPath],
+                        () => this.fileSystem.move(virtualPath, newVirtualPath),
+                        { saveFirst: [virtualPath] },
                     );
                     if (outcome === "writesInFlight") {
                         rejectWhileMapIsSaving(res);

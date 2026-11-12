@@ -350,7 +350,7 @@ describe("UploadController", () => {
     });
 
     describe("POST /move of a map", () => {
-        it("should not recreate the moved map at its old path when it had an unsaved edit", async () => {
+        it("should move the map with its unsaved edit, and not recreate it at its old path", async () => {
             storage.files.set(keyOf("a.wam"), wam("a"));
             await edit(keyOf("a.wam"), "cmd-1");
 
@@ -363,11 +363,11 @@ describe("UploadController", () => {
             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
 
             expect(response.status).toBe(200);
-            expect(storage.files.get(keyOf("b.wam"))).toBe(wam("a"));
+            expect(storedName("b.wam")).toBe("edited by cmd-1");
             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
         });
 
-        it("(known defect) should lose an edit made while the write of an earlier edit was in flight", async () => {
+        it("should move the map with an edit made while the write of an earlier edit was in flight", async () => {
             storage.files.set(keyOf("a.wam"), wam("a"));
             await edit(keyOf("a.wam"), "cmd-1");
             storage.holdWrites();
@@ -387,8 +387,31 @@ describe("UploadController", () => {
             await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
 
             expect(response.status).toBe(200);
-            expect(storedName("b.wam")).toBe("edited by cmd-1");
+            expect(storedName("b.wam")).toBe("edited by cmd-2");
             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+        });
+
+        it("should answer 503 and keep the map and its edit when the save of the edit does not settle in time", async () => {
+            storage.files.set(keyOf("a.wam"), wam("a"));
+            await edit(keyOf("a.wam"), "cmd-1");
+            storage.holdWrites();
+            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+
+            const moving = request(
+                "POST",
+                "/move",
+                JSON.stringify({ source: `${directory}/a.wam`, destination: `${directory}/b.wam` }),
+                "application/json",
+            );
+            await until(() => replacing.mock.calls.length > 0);
+            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+            const response = await moving;
+            storage.releaseHeldWrites();
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(response.status).toBe(503);
+            expect(storedName("a.wam")).toBe("edited by cmd-1");
+            expect(storage.files.has(keyOf("b.wam"))).toBe(false);
         });
     });
 });
