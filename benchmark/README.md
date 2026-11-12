@@ -89,7 +89,9 @@ membership; compare `sessions.accepted` with the back and pusher connection gaug
 
 Discard a run whose `generator.cpuPercentOfOneCore` approaches 100 or whose `generator.eventLoopLagMs.p99`
 grows: the generator, not the server, was the bottleneck. Spread the population over several generator
-processes instead, each with its own `--name-prefix` and `--output`, and add their summaries. Session indexes
+processes instead, each with its own `--name-prefix` and `--output`. Add their counters (sessions, sockets,
+frames, bytes, events, errors), but not their percentiles: a combined p95 needs every sample, so report each
+process's latency and lag percentiles separately, or take the worst of them as an upper bound. Session indexes
 restart at 0 in every process, so processes with the same room list follow the same movement paths.
 `benchmark_multi_core.sh` predates this harness (it starts four identical processes with yarn) and does not do
 this.
