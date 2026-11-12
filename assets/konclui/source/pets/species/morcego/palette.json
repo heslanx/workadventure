@@ -1,0 +1,55 @@
+{
+ "key": {
+  "fur_out": "#15131c",
+  "fur_shd": "#2a2a3c",
+  "fur": "#3a3b52",
+  "fur_lit": "#4a4c68",
+  "fur_hi": "#5c5e80",
+  "wrap_shd": "#2e2d42",
+  "wrap": "#46465e",
+  "wrap_lit": "#5a5a78",
+  "ear": "#b090c8",
+  "ear_shd": "#8a6aa6",
+  "mem_out": "#3a2f50",
+  "mem_shd": "#6a5a84",
+  "mem": "#9880b0",
+  "mem_lit": "#b0a0c8",
+  "bone": "#584868",
+  "eye": "#fbf8ff",
+  "pupil": "#120f18",
+  "fang": "#f4f0e6",
+  "mouth": "#c0506e",
+  "claw": "#cfc6dc",
+  "glint": "#e6def2"
+ },
+ "variants": [
+  {
+   "id": "preto",
+   "name": "Preto",
+   "colors": {}
+  },
+  {
+   "id": "marrom",
+   "name": "Marrom",
+   "colors": {
+    "fur_out": "#24160f",
+    "fur_shd": "#3e281c",
+    "fur": "#573a28",
+    "fur_lit": "#6c4a34",
+    "fur_hi": "#845c42",
+    "wrap_shd": "#3a2618",
+    "wrap": "#5e4232",
+    "wrap_lit": "#76563f",
+    "ear": "#e0aa8a",
+    "ear_shd": "#b88066",
+    "mem_out": "#4a2c1e",
+    "mem_shd": "#946450",
+    "mem": "#c08c6c",
+    "mem_lit": "#dcb092",
+    "bone": "#6e4a36",
+    "glint": "#f2e6da",
+    "claw": "#e8d8c8"
+   }
+  }
+ ]
+}

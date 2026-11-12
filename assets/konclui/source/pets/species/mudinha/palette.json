@@ -1,0 +1,49 @@
+{
+ "key": {
+  "out": "#3a2216",
+  "leaf_out": "#1f4a24",
+  "leaf_shd": "#3f8a3a",
+  "leaf": "#64b44c",
+  "leaf_lit": "#9ad46a",
+  "stem": "#4c9a3e",
+  "bud": "#7cc456",
+  "bud_shd": "#3e8a36",
+  "soil": "#4a2e1e",
+  "pot_shd": "#b0582e",
+  "pot": "#d8743c",
+  "pot_lit": "#f09a5a",
+  "rim": "#e88a4a",
+  "eye": "#2a1610",
+  "blush": "#f4a08a",
+  "flower": "#ff7aa8",
+  "flower_c": "#ffd84a"
+ },
+ "variants": [
+  {
+   "id": "verde",
+   "name": "Verde",
+   "colors": {}
+  },
+  {
+   "id": "suculenta",
+   "name": "Suculenta azulada",
+   "colors": {
+    "leaf_out": "#1f3f4a",
+    "leaf_shd": "#4a8a96",
+    "leaf": "#78b8b8",
+    "leaf_lit": "#a8dcd4",
+    "stem": "#5a9a9a",
+    "bud": "#8cc8c4",
+    "bud_shd": "#5a9a9a"
+   }
+  },
+  {
+   "id": "florida",
+   "name": "Florida com flor rosa",
+   "colors": {
+    "bud": "#ff8ab0",
+    "bud_shd": "#d85a86"
+   }
+  }
+ ]
+}

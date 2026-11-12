@@ -1,0 +1,165 @@
+{
+ "species": "carpa",
+ "name": "Carpa",
+ "family": "sede",
+ "plan": "floater",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  12,
+  3
+ ],
+ "temperament": "curious",
+ "notes": "Floater: a koi in a floating water bubble; the runtime lifts it, adds the bob and draws the shadow. The koi is always in profile: facing left or right, tilted nose-down going down and nose-up going up (down faces left and up faces right, each clip one way, so the picker never flips). idle-right and move-right are drawn: the runtime uses them instead of mirroring, so the highlight stays top-left. idle-down swims an ellipse (right along the bottom, nose-up on the right, left along the top a pixel smaller and paler, nose-down on the left). happy-down is a leap with a tail flick. sleep-down rests at the bottom with the eye shut, an air bubble rising. special-down (6 frames, once): the bubble stretches, bursts into rim arcs with a flash, the koi flails nose-up among the drops, falls belly-up, a small bubble forms, the full bubble returns. Extra clips: idle-right, move-right, blink-down (1 frame), look-down (2 frames: left, right).",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    4,
+    5,
+    4,
+    6
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "idle-right": {
+   "frames": [
+    7,
+    8,
+    7,
+    9
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    10,
+    11,
+    10,
+    12
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "move-down": {
+   "frames": [
+    13,
+    14,
+    15,
+    14
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "move-left": {
+   "frames": [
+    5,
+    4,
+    6,
+    4
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "move-right": {
+   "frames": [
+    8,
+    7,
+    9,
+    7
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "move-up": {
+   "frames": [
+    11,
+    10,
+    12,
+    10
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "happy-down": {
+   "frames": [
+    16,
+    17,
+    18,
+    19
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "sleep-down": {
+   "frames": [
+    20,
+    21
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "special-down": {
+   "frames": [
+    22,
+    23,
+    24,
+    25,
+    26,
+    4
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "blink-down": {
+   "frames": [
+    27
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "look-down": {
+   "frames": [
+    4,
+    7
+   ],
+   "fps": 1,
+   "loop": true
+  }
+ },
+ "picker": {
+  "down": [
+   13,
+   4,
+   15
+  ],
+  "left": [
+   5,
+   4,
+   6
+  ],
+  "right": [
+   8,
+   7,
+   9
+  ],
+  "up": [
+   11,
+   10,
+   12
+  ]
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "key": {
+  "out": "#4a4870",
+  "shd": "#b6bbdb",
+  "body": "#e6e9f7",
+  "lit": "#fbfcff",
+  "eye": "#2b2442",
+  "glint": "#ffffff",
+  "blush": "#f5a6bb",
+  "mouth": "#7a3352",
+  "tongue": "#e8728f"
+ },
+ "variants": [
+  {"id": "branco", "name": "Branco", "colors": {}},
+  {"id": "menta", "name": "Menta", "colors": {
+   "out": "#2c5a52", "shd": "#93d3bd", "body": "#cdf2e3", "lit": "#effff8", "blush": "#f4a2a8"}},
+  {"id": "lilas", "name": "Lilás", "colors": {
+   "out": "#4a3670", "shd": "#b29ddc", "body": "#ddd0f6", "lit": "#f6f0ff", "blush": "#f39fc6"}}
+ ]
+}

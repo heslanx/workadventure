@@ -1,0 +1,74 @@
+{
+ "key": {
+  "outline": "#0A2E37",
+  "body_sh": "#0B525C",
+  "body": "#116B76",
+  "body_li": "#1A7F8B",
+  "disc_sh": "#2A97A1",
+  "disc": "#36A6AF",
+  "disc_li": "#6CCBD1",
+  "belly": "#25858F",
+  "eye": "#F7FBFA",
+  "pupil": "#06343D",
+  "beak": "#F6AA48",
+  "beak_sh": "#B8622C",
+  "mouth": "#96282A",
+  "tongue": "#E8737A",
+  "glint": "#9FE3E6"
+ },
+ "variants": [
+  {
+   "id": "turquesa",
+   "name": "Turquesa",
+   "colors": {}
+  },
+  {
+   "id": "menta",
+   "name": "Menta",
+   "colors": {
+    "outline": "#0B3B31",
+    "body_sh": "#0C5E4C",
+    "body": "#12806A",
+    "body_li": "#1C957C",
+    "disc_sh": "#2BB894",
+    "disc": "#45D3AE",
+    "disc_li": "#8CEBD0",
+    "belly": "#2A9C82",
+    "pupil": "#0E5E4C",
+    "glint": "#B5F3E0"
+   }
+  },
+  {
+   "id": "lilas",
+   "name": "Lilás",
+   "colors": {
+    "outline": "#2A1F4F",
+    "body_sh": "#4C3A86",
+    "body": "#6A54A6",
+    "body_li": "#7D66B8",
+    "disc_sh": "#8A76CA",
+    "disc": "#9886D4",
+    "disc_li": "#C8BAF0",
+    "belly": "#8670C0",
+    "pupil": "#3E2F72",
+    "glint": "#E6DEFB"
+   }
+  },
+  {
+   "id": "ambar",
+   "name": "Âmbar",
+   "colors": {
+    "outline": "#3E2008",
+    "body_sh": "#7A4210",
+    "body": "#A35A16",
+    "body_li": "#B86C20",
+    "disc_sh": "#A86A2E",
+    "disc": "#BE7D3C",
+    "disc_li": "#D9A266",
+    "belly": "#CD8A3C",
+    "pupil": "#4A2408",
+    "glint": "#FBE3B0"
+   }
+  }
+ ]
+}

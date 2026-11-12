@@ -1,0 +1,332 @@
+/* Koncluí overlay for WorkAdventure v1.34.1 (work.konclui.com). One stylesheet, loaded after the WA stylesheets.
+   Platform dark tokens (ux-audit/02 section 2), mint accent #53FFC8 with text #1A1F1E, green #10B981 only for success.
+   WA utilities live in @layer components/utilities, so unlayered rules here win without !important; !important is
+   kept for inline styles (WA writes background-color and width inline) and for scoped Svelte rules.
+   Nothing here targets the Phaser canvas. Everything motion collapses under prefers-reduced-motion and html.k-leve.
+   Three materials only: the page (--k-bg), the chrome over the map (--k-surface: bar, menus, panels, tool groups, zoom,
+   tooltips) and the cards of a scene or dialog (--k-card: name, Woka, settings). Radius, duration and curve come from the
+   tokens below, which mirror konclui-platform packages/ui/src/styles/globals.css. */
+
+@font-face{font-family:'Urbanist';font-style:normal;font-weight:400 800;font-display:swap;
+  src:url('/konclui-theme/fonts/urbanist-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+/* ---- 0. Tokens ---- */
+:root{
+  --k-bg:#03051a; --k-surface:#03051a; --k-card:#0e2236; --k-elevated:#182c41; --k-hover:#1f3349;
+  --k-border:#3e4858; --k-border-subtle:#2d3746; --k-border-strong:#768395;
+  --k-fg:#f0f5fb; --k-fg-2:#b4bdcc; --k-fg-muted:#98a3b3;
+  --k-accent:#53ffc8; --k-accent-hover:#3dffc0; --k-accent-active:#00e6a8; --k-on-accent:#1a1f1e;
+  --k-danger:#c62f26; --k-danger-hover:#9b2e25; --k-on-danger:#fff; --k-error:#e8594e;
+  --k-success:#10b981; --k-teal:#2a5c65;
+  --k-font:'Urbanist',-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;
+  /* platform motion: --ease-out-expo, --ease-out-quint (sheets), --duration-fast/normal/settle/moderate; press 160 ms */
+  --k-ease-out:cubic-bezier(.16,1,.3,1); --k-ease-sheet:cubic-bezier(.22,1,.36,1);
+  --k-dur-press:160ms; --k-dur-fast:150ms; --k-dur-normal:200ms; --k-dur-settle:280ms; --k-dur-moderate:300ms;
+  /* platform radius scale (md 6, lg 8, xl 12, 2xl 16): rows, inner hover areas, menus and fields, chrome surfaces */
+  --k-radius-row:6px; --k-radius-inner:8px; --k-radius-menu:12px; --k-radius-surface:16px; --k-radius-pill:9999px;
+  --k-shadow:0 8px 32px rgba(0,0,0,.32);
+}
+
+/* WA reads its palette as HSL triplets (hsl(var(--secondary))). The server writes --secondary-* and --contrast-* in a
+   :root block after <body> (index.html:226, cssVariablesOverride); html:root is more specific, so this wins. */
+html:root{
+  --secondary:160.8 100% 66.3%; --secondary-600:161.2 100% 61.2%; --secondary-700:163.9 100% 45.1%;
+  --secondary-800:163.9 100% 45.1%; --secondary-900:163.9 100% 36%;
+  --contrast:209.6 59.2% 13.3%; --contrast-600:209.6 59.2% 11%; --contrast-700:235 79% 6%; --contrast-800:235 79% 6%;
+  --contrast-900:244 89% 4.5%; --contrast-1000:235 79% 6%; --contrast-1100:235 79% 5%;
+  --danger:3.5 68% 46.5%; --danger-600:5.2 61% 37.5%;
+  --success:160.4 84.1% 39.4%; --success-600:160.4 84.1% 32%;
+}
+
+/* ---- 1. Base ---- */
+/* WA dims secondary text with white at 30 to 60 percent (HeaderMenuItem.svelte:9, chat timestamps, tabs); on the dark surfaces
+   that measures 2 to 3.7:1. One rule moves them to the muted token (6.3:1 on the card, 8.1:1 on the bar). */
+:is(.text-white\/30,.text-white\/40,.text-white\/50,.text-white\/60,.text-gray-500,.text-gray-400){color:var(--k-fg-muted)}
+:is(.text-white\/70,.text-white\/80){color:var(--k-fg-2)}
+html,body{background-color:var(--k-bg)}
+/* index.html:211 inline body style is rewritten by nginx to #03051a; this keeps the same value if the rewrite is absent */
+html body, html body button, html body input, html body select, html body textarea{font-family:var(--k-font)}
+html body :is(h1,h2,h3,h4,p,span,div,label,a,li){font-family:var(--k-font)}
+/* headings in sentence case (platform DESIGN.md, "caixa alta nunca acompanha tipografia de heading", [TRAVADO]); WA sets
+   its h3 uppercase (the map editor's "EXPLORAR A SALA") */
+:is(h1,h2,h3,h4){text-transform:none}
+
+/* Focus ring: WA sets outline-none on almost every control (ActionBarButton.svelte:130, Button.svelte:56).
+   An outline survives overflow:hidden parents better than a shadow and is still visible on every surface. */
+:is(button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"]),summary,[role="button"]):focus-visible{
+  outline:2px solid var(--k-accent); outline-offset:2px; box-shadow:none}
+
+/* Nothing blurs: backdrop-filter and filter blur are the costly part on slow computers (U2) */
+[class*="backdrop-blur"], .backdrop-blur{-webkit-backdrop-filter:none; backdrop-filter:none}
+/* The blur also made WA's map-editor sidebar the containing block of its fixed entity card ("Colors", "Positions");
+   without it the card spanned the whole window over the map (owner, 18/10/2026: "Atrapalhando muito"). Layout
+   containment keeps the card inside the sidebar, with no blur. */
+#map-editor-right > .sidebar{contain:layout}
+
+/* Primary action: accent surface, dark text (04a C01 to C04). WA: UI/Button.svelte:8,56 (.btn-secondary) */
+.btn.btn-secondary,.bg-secondary:is(button,a){background-color:var(--k-accent); color:var(--k-on-accent); border-radius:var(--k-radius-pill);
+  font-weight:600; fill:currentColor; stroke:currentColor;
+  transition-property:transform,background-color; transition-duration:var(--k-dur-press); transition-timing-function:var(--k-ease-out)}
+.btn.btn-secondary .btn-label,.bg-secondary:is(button,a) .btn-label{color:inherit}
+.btn.btn-secondary:hover:not(:disabled),.bg-secondary:is(button,a):hover:not(:disabled){background-color:var(--k-accent-hover)}
+.btn.btn-secondary:active:not(:disabled),.bg-secondary:is(button,a):active:not(:disabled){background-color:var(--k-accent-active);
+  transform:scale(.97)}
+.btn.btn-secondary:disabled{background-color:var(--k-accent); color:var(--k-on-accent)}
+
+/* Secondary (outline) buttons. WA: UI/Button.svelte:8 (.btn-light.btn-border), WokaSelectScene.svelte:290, WokaCustomizeScene.svelte:400 */
+.btn.btn-light.btn-border{background-color:var(--k-card); border:1px solid var(--k-border-strong); color:var(--k-fg);
+  border-radius:var(--k-radius-pill); fill:currentColor; stroke:currentColor}
+.btn.btn-light.btn-border:hover{background-color:var(--k-hover)}
+.btn.btn-light.btn-border .btn-label,.btn.btn-light.btn-border svg{color:var(--k-fg)}
+
+/* Danger buttons (Modal close uses variant="danger", Modal.svelte:108-117) */
+.btn.btn-danger{background-color:var(--k-danger); color:var(--k-on-danger); border-radius:var(--k-radius-menu)}
+.btn.btn-danger:hover{background-color:var(--k-danger-hover)}
+
+/* ---- 2. Entry: LoginScene.svelte:100-197 ---- */
+.main-logo{width:min(160px,44vw) !important; max-height:none; object-fit:contain; margin-top:32px}
+.loginScene section > span.text-white{color:var(--k-fg); font:700 24px/1.2 var(--k-font); letter-spacing:-.01em}
+.loginScene section:has(> input[data-testid="loginSceneNameInput"]){position:relative; padding-bottom:28px}
+.loginScene input[data-testid="loginSceneNameInput"]{height:48px; background-color:var(--k-card);
+  border:1px solid var(--k-border-strong); border-radius:var(--k-radius-menu); color:var(--k-fg); font-size:16px; margin-top:16px}
+.loginScene input[data-testid="loginSceneNameInput"]::placeholder{color:var(--k-fg-muted); opacity:1}
+.loginScene input[data-testid="loginSceneNameInput"]:focus-visible{border-color:var(--k-accent); outline-offset:1px}
+.loginScene input[data-testid="loginSceneNameInput"].border-danger{border-color:var(--k-error)}
+.loginScene p.err{position:absolute; left:0; right:0; bottom:0; margin:0; padding:0; color:var(--k-error);
+  font:500 13px/1.5 var(--k-font); font-style:normal}
+.loginScene p.terms,.loginScene .terms-and-conditions p{color:var(--k-fg-muted); opacity:1; font-style:normal}
+.loginScene .loginSceneFormSubmit{height:48px; font-size:16px; margin-top:0}
+/* backdrop layers (LoginScene.svelte:176-181): the engine's example map (inline background-image, so !important) gives
+   way to the brand's navy with two still aurora glows in the accent; the dimming layer it needed is no longer drawn */
+.loginScene ~ div.bg-cover{background-image:
+  radial-gradient(60% 55% at 15% 10%, color-mix(in srgb, var(--k-accent) 16%, transparent), transparent 70%),
+  radial-gradient(55% 50% at 88% 92%, color-mix(in srgb, var(--k-accent) 10%, transparent), transparent 70%),
+  linear-gradient(165deg, var(--k-card) 0%, var(--k-bg) 60%) !important; background-color:var(--k-bg)}
+.loginScene ~ div.bg-contrast.opacity-80{background-color:var(--k-bg) !important; opacity:0}
+
+/* ---- 3. Woka select and customize: WokaSelectScene.svelte:205-298, WokaCustomizeScene.svelte:300-412 ---- */
+.mobile-webkit.bg-contrast{background-color:var(--k-bg)}
+/* the scene wrapper has no background of its own, so the canvas colour (#06141F) showed above and below the card (md:!mt-[15vh]) */
+#game > div.absolute.h-dvh.w-dvw:has(> .mobile-webkit){background-color:var(--k-bg)}
+.mobile-webkit.rounded-lg{background-color:var(--k-card); border:1px solid var(--k-border); border-radius:var(--k-radius-surface)}
+.mobile-webkit .woka-preview > div{background-color:var(--k-elevated); border-radius:var(--k-radius-surface)}
+.mobile-webkit button[aria-label="Rotate avatar"]{background-color:var(--k-hover); color:var(--k-fg)}
+.mobile-webkit h3{font:700 20px/1.25 var(--k-font); letter-spacing:-.01em; color:var(--k-fg); text-transform:none}
+.mobile-webkit p.text-gray-500{color:var(--k-fg-muted); font:600 12px/1.5 var(--k-font)}
+.mobile-webkit button:is([id^="woka-"],[id^="texture-"]){background-color:var(--k-elevated); border:2px solid transparent; border-radius:var(--k-radius-menu)}
+.mobile-webkit button:is([id^="woka-"],[id^="texture-"]):hover{background-color:var(--k-hover)}
+.mobile-webkit button:is([id^="woka-"],[id^="texture-"]).border-white{background-color:var(--k-hover); border-color:var(--k-accent)}
+.mobile-webkit .border-t-2{border-top-color:var(--k-border-subtle) !important}
+.mobile-webkit button.bg-white\/10:not([id]):not([aria-label]){background-color:var(--k-card); border:1px solid var(--k-border-strong);
+  color:var(--k-fg); border-radius:var(--k-radius-pill); font-weight:600}
+.mobile-webkit button.bg-white\/10:not([id]):not([aria-label]):hover{background-color:var(--k-hover)}
+.mobile-webkit .selectCharacterSceneFormSubmit{color:var(--k-on-accent); border-radius:var(--k-radius-pill); font-weight:600}
+.mobile-webkit button.capitalize{color:var(--k-fg-2)}
+.mobile-webkit button.capitalize.border-white{color:var(--k-fg); border-bottom-color:var(--k-accent)}
+.mobile-webkit button.capitalize.border-b-2:not(.border-white){border-bottom-color:var(--k-border-subtle)}
+.mobile-webkit button.capitalize svg *{stroke:currentColor}
+
+/* ---- 4. Loader: LoaderScene.svelte:17-43. The boot screen (theme/boot.html) covers it while it is up, so the office
+   has one loading screen. Its own logo, bar and text stay hidden: a second logo at another size was the "three versions"
+   seen while loading. Only its background shows, the page colour, for the frame before the boot screen is on top. ---- */
+.z-50.h-dvh.w-dvw{background-color:var(--k-bg)}
+.z-50.h-dvh.w-dvw > *{visibility:hidden; filter:none}
+
+/* ---- 5. Chrome over the map: WA paints every floating surface with bg-contrast/50, /80 or /90 (bar groups, menus, chat,
+   map editor panel and tools, zoom controls, tooltips). One material for all of them, opaque, and one hover. Scene cards and
+   the settings dialog keep --k-card through their own, more specific rules (sections 3 and 8). ---- */
+:is(.bg-contrast\/50,.bg-contrast\/80,.bg-contrast\/90,.hover\:bg-contrast\/100:hover){background-color:var(--k-surface)}
+:is(.hover\:bg-white\/10,.hover\:bg-white\/30):hover,.group:hover > .group-hover\:bg-white\/10{background-color:var(--k-hover)}
+
+/* ---- 6. HUD action bar: ActionBar.svelte:51-163, ActionBarButton.svelte:99-132, MapSubMenu.svelte:54, ProfileMenu.svelte:76 ---- */
+.bp-menu button{color:var(--k-fg)}
+.bp-menu button.bg-secondary{background-color:var(--k-accent); color:var(--k-on-accent)}
+.bp-menu button.bg-secondary:hover{background-color:var(--k-accent-hover)}
+.bp-menu button.bg-secondary svg,.bp-menu button.bg-secondary svg *{stroke:var(--k-on-accent)}
+.bp-menu button.bg-danger{background-color:var(--k-danger)}
+.bp-menu button.bg-danger:hover{background-color:var(--k-danger-hover)}
+.bp-menu button.bg-success{background-color:var(--k-success); color:var(--k-on-accent)}
+.bp-menu button.bg-success svg,.bp-menu button.bg-success svg *{stroke:var(--k-on-accent)}
+/* Bar geometry, one rule for every surface (checked by tests/theme_preview.py --check, BAR_JS): separate surfaces 8 px
+   apart, joined only inside a WA group (chat and people, reactions and apps, mic and camera); content as far from the
+   side edges as the icon is from the top (16 px, 20 px on the large bar below); inside a group 24 px (32 px) from one
+   icon to the next; hover areas 8 px round (16 minus the 8 px inset); labels at one weight, 600 (the platform button). WA spaces the right side with ps-2/pe-2 on the map menu, me-*
+   on the last script button and gap-1 to gap-4 by container size, and lets the labelled buttons shrink, so their content
+   spilled out of the padding (Avisos sat 8 px from one edge and 12 px from the other). The ids keep these ahead of the
+   component styles, which load after this file. */
+#action-wrapper{gap:8px}
+/* buttons keep their size; what does not fit overflows left, where VisibilityChecker.svelte moves it into the menu */
+#action-wrapper > div:first-child{justify-content:flex-end}
+#action-wrapper .group\/visibilitychecker{flex-shrink:0}
+#action-wrapper .group\/visibilitychecker:has(> *) ~ .group\/visibilitychecker:has(> *){margin-inline-start:8px}
+#action-wrapper .group\/visibilitychecker > .relative.bg-contrast\/80{border-radius:var(--k-radius-surface); margin-inline-end:0; padding-inline:8px}
+#action-wrapper .group\/visibilitychecker > .relative.bg-contrast\/80 > button{padding-inline:8px}
+#action-wrapper [data-testid="map-menu"]{padding-inline:0}
+#action-wrapper [data-testid="map-menu"] .h-full.pl-4{padding-inline:8px; border-radius:var(--k-radius-inner)}
+#action-wrapper [data-testid="action-user"] .profile-menu-full{padding-inline-end:8px; border-radius:var(--k-radius-inner)}
+/* the large bar (container "actions" under 640 px or from 1280 px: @sm and @xl in WA's Tailwind) has 48 px buttons, so the
+   icon sits 20 px from the surface edge; the labelled buttons follow */
+@container actions (width<640px){#action-wrapper .group\/visibilitychecker > .relative.bg-contrast\/80 > button,
+  #action-wrapper [data-testid="map-menu"] .h-full.pl-4{padding-inline:12px} #action-wrapper [data-testid="action-user"] .profile-menu-full{padding-inline-end:12px}}
+@container actions (width>=1280px){#action-wrapper .group\/visibilitychecker > .relative.bg-contrast\/80 > button,
+  #action-wrapper [data-testid="map-menu"] .h-full.pl-4{padding-inline:12px} #action-wrapper [data-testid="action-user"] .profile-menu-full{padding-inline-end:12px}}
+#action-wrapper .group\/visibilitychecker > .relative.bg-contrast\/80 > button span,#action-wrapper [data-testid="map-menu"] .font-bold,
+#action-wrapper [data-testid="action-user"] .font-bold{font-weight:600}
+/* the status line under the name (ProfileMenu.svelte, "text-xxs bold") is a caption: lighter than the name */
+#action-wrapper [data-testid="action-user"] .text-xxs{font-weight:500}
+.bp-menu .main-action > .flex{gap:8px; margin-inline:8px}
+/* WA gives the chat surface no end padding when the people button follows (ActionBar.svelte:55-58); alone on a small
+   bar it is the last of its group and keeps the 8 px */
+.bp-menu .bg-contrast\/80:has([data-testid="chat-btn"]):not(:last-child){padding-inline-end:4px}
+/* press feedback (animate skill: 100 to 160 ms, ease-out, named properties instead of WA's transition-all): the transition
+   lives on the resting state, so the release eases back too instead of snapping. Mapa and the profile card are divs with
+   their own hover area: that area presses the same way as the buttons. */
+.bp-menu button,#action-wrapper [data-testid="map-menu"] .h-full.pl-4,#action-wrapper [data-testid="action-user"] .profile-menu-full{
+  transition-property:transform,background-color,color,opacity; transition-duration:var(--k-dur-press); transition-timing-function:var(--k-ease-out)}
+.bp-menu button:active:not(:disabled),#action-wrapper [data-testid="map-menu"] .h-full.pl-4:active,
+#action-wrapper [data-testid="action-user"] .profile-menu-full:active{transform:scale(.97)}
+.bp-menu button .text-white,.bp-menu [data-testid="map-menu"] .text-white,.bp-menu [data-testid="action-user"] .text-white{color:var(--k-fg)}
+
+/* ---- 7. Menus: ProfileMenuContent.svelte:156-260, HeaderMenuItem.svelte:9, MapSubMenu.svelte:80, the media panel ---- */
+/* the chrome material with a border to stand off the map; no shadow: the opening morph (section 12) clips it anyway */
+:is([data-testid="profile-menu"],[data-testid="map-sub-menu"],[data-testid="media-settings-panel"]){background-color:var(--k-surface);
+  border:1px solid var(--k-border); border-radius:var(--k-radius-menu); color:var(--k-fg)}
+:is([data-testid="profile-menu"],[data-testid="map-sub-menu"]) button:hover{background-color:var(--k-hover)}
+[data-testid="profile-menu"] .text-white\/50,[data-testid="profile-menu"] .text-xxs{color:var(--k-fg-muted); letter-spacing:.05em; font-weight:500}
+/* Rows follow the platform menu contract (konclui-platform packages/ui/src/lib/menu-surface.ts: MENU_PANEL, MENU_ROW_BASE,
+   MENU_LABEL): panel padding 6 px, row radius 6 px (12 minus 6), rows 44 px tall with 10 px sides and an 8 px gap, one
+   24 px icon column so every label starts at the same x, item text at the body weight, section labels 12 px caps.
+   WA mixed two rows: status 25 px tall, weight 400, a 12 px dot (AvailabilityStatusList.svelte:43-56), and the others
+   40 px plus a 4 px margin, bold (ProfileMenuContent.svelte:231-271). The menu scrolls when the window is short (:157). */
+[data-testid="profile-menu"]{padding:6px}
+[data-testid="profile-menu"] button{min-height:44px; margin:0; padding:8px 10px; gap:8px; border-radius:var(--k-radius-row);
+  font-weight:400; color:var(--k-fg)}
+[data-testid="profile-menu"] button .text-start{font-weight:400}
+[data-testid="profile-menu"] button .text-white{color:var(--k-fg)}
+[data-testid="profile-menu"] .status-button > div:first-child{flex:0 0 24px; display:flex; justify-content:center}
+[data-testid="profile-menu"] .text-xxs.uppercase{font-size:12px; padding:8px 10px 4px}
+[data-testid="profile-menu"] .status-button .opacity-50{opacity:1; color:var(--k-fg)}
+[data-testid="profile-menu"] .circle{filter:none}
+[data-testid="profile-menu"] .animate-ping{animation:none}
+/* one help only: hides the WA tutorial entry "Ajuda e dicas" (ProfileMenuContent.svelte:248-259), the Koru guide stays */
+[data-testid="profile-menu"] button:has(path[d^="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0m9 4v.01"]){display:none}
+
+/* ---- 8. Modals and settings: Modal.svelte:67-130, Menu.svelte:158-240. A side modal is a sheet (chrome material, like the
+   chat); a centred one is a dialog (card). ---- */
+.menu-container > .w-full.h-full{background-color:var(--k-card); border:1px solid var(--k-border); border-radius:var(--k-radius-menu);
+  box-shadow:var(--k-shadow)}
+.menu-container:is(.right,.left) > .w-full.h-full{background-color:var(--k-surface)}
+/* side modals (position right or left, wide screens): Modal.svelte:74 hangs the control box outside the panel at top-0, which is
+   the action bar row (y 16 to 80 px at wide widths, p-4 plus h-16). It starts 16 px below the bar. Full-screen and phone modals
+   (class mobile or fullscreened) cover the bar and keep the controls at top-4 right-4. */
+.menu-container:is(.right,.left):not(.fullscreened) div:has(> [data-testid="close-modal-button"]){top:96px}
+/* the close button sits in a parent with opacity-25 hover:opacity-100 (Modal.svelte:81): the fix goes on the parent */
+.menu-container div:has(> [data-testid="close-modal-button"]){opacity:1; background-color:var(--k-card);
+  border:1px solid var(--k-border-strong); border-radius:var(--k-radius-menu); z-index:60}
+button.btn[data-testid="close-modal-button"]{background-color:var(--k-card); color:var(--k-fg); border-radius:var(--k-radius-inner); width:40px; height:40px}
+button.btn[data-testid="close-modal-button"]:hover{background-color:var(--k-hover)}
+[data-testid="close-modal-button"] svg{color:var(--k-fg); stroke:var(--k-fg)}
+.menu-nav-sidebar,.menu-submenu-container{background-color:var(--k-card); border:1px solid var(--k-border); border-radius:var(--k-radius-menu)}
+.menu-nav-sidebar ~ div.bg-contrast\/80,.right-menu-side-bar > div,.menu-nav-sidebar + div{background-color:var(--k-card)}
+.menu-item-container{opacity:1; color:var(--k-fg-2)}
+.menu-item-container .menu-item{color:var(--k-fg-2)}
+.menu-item-container.active{background-color:var(--k-elevated)}
+.menu-item-container.active .menu-item{color:var(--k-fg)}
+.menu-submenu-container span.absolute{color:var(--k-fg-2)}
+.menu-submenu-container li.opacity-50{opacity:1; color:var(--k-fg-2)}
+.menu-submenu-container em,.menu-submenu-container .italic{font-style:normal}
+.menu-submenu-container input.peer + label{opacity:1; color:var(--k-fg-2); border-color:var(--k-border-strong); background-color:transparent}
+.menu-submenu-container input.peer:checked + label{color:var(--k-fg); border-color:var(--k-accent); background-color:var(--k-elevated)}
+.menu-nav-sidebar nav > div:nth-child(4):last-child{display:none}
+/* Popups over the map (MainLayout.svelte:352-358) and WA's help popups (HelpSettings/HelpCameraSettingsPopup.svelte:91-128,
+   HelpNotificationSettingPopup.svelte:67-90, HelpWebRtcSettingsPopup.svelte:84-104; the last two sit outside .popups).
+   .btn is white-space:nowrap and a flex item never shrinks below its label, so two w-full buttons with long labels
+   ("Continuar sem webcam e microfone") overflowed the 380 px form and its overflow-hidden cut both ends (owner, 11/11/2026).
+   The row wraps: buttons sit side by side while both labels fit (width:auto, so w-full stops forcing a line each), stack
+   when they do not, and a label wraps inside its button before it is ever cut. */
+:is(.popups,.helpCameraSettings,.helpNotificationSettings) :is(.row,.flex-row):has(> .btn){flex-wrap:wrap; gap:8px}
+:is(.popups,.helpCameraSettings,.helpNotificationSettings) :is(.row,.flex-row):has(> .btn) > .btn{flex:1 1 auto; width:auto; min-width:0; margin:0;
+  height:auto; white-space:normal; overflow-wrap:break-word}
+/* the popups' host is w-max, held to 98vw only by WA's mobile: variant, which also needs a coarse pointer: a narrow window
+   with a mouse grew it to its content and pushed the popup off screen. 100% is the map area, right of the HUD rail. */
+@media (width<768px){#main-layout-main > div:has(> .popups){max-width:calc(100% - 16px)}}
+
+/* ---- 9. Chat panel (Chat/, style/chat.css): a sheet in the chrome material; secondary text through section 1 ---- */
+section#chat{background-color:var(--k-surface); border-right:1px solid var(--k-border)}
+#chat .opacity-50{color:var(--k-fg-muted)}
+
+/* ---- 10. Map editor (MapEditor/) and zoom controls (actions-explorer): the same chrome as the bar ---- */
+#map-editor-right > .sidebar{border-left:1px solid var(--k-border)}
+#map-editor-container .side-bar-container button{border-radius:var(--k-radius-inner)}
+.fixed.bottom-2.pointer-events-auto.bg-contrast\/80{padding:8px; border-radius:var(--k-radius-surface)}
+.fixed.bottom-2.pointer-events-auto.bg-contrast\/80 .group{padding:8px; border-radius:var(--k-radius-inner)}
+/* panel heading: the platform type-heading (20 px, 600); the count pill was mint on white, now the elevated surface */
+#map-editor-container .header-container h3{font:600 20px/1.25 var(--k-font); letter-spacing:-.01em; color:var(--k-fg)}
+#map-editor-container span.bg-white.text-secondary{background-color:var(--k-elevated); color:var(--k-accent)}
+
+/* ---- 11. Error screen: UI/ErrorScreen.svelte:60-110 ---- */
+main.errorScreen{background-color:var(--k-bg) !important; color:var(--k-fg)}
+main.errorScreen .logo{display:none}
+main.errorScreen .icon{margin-bottom:0}
+main.errorScreen .icon img{height:auto !important; width:min(160px,48vw); max-width:100%}
+main.errorScreen h2{font:700 24px/1.25 var(--k-font); letter-spacing:-.01em; text-transform:none; margin-top:32px}
+main.errorScreen p{color:var(--k-fg-2)}
+main.errorScreen p.code{color:var(--k-fg-muted) !important; opacity:1 !important}
+main.errorScreen:not([data-testid="reconnecting-error-screen"]) h2{font-size:0; line-height:0; visibility:hidden; margin-bottom:12px}
+main.errorScreen:not([data-testid="reconnecting-error-screen"]) h2::after{content:"Não conseguimos abrir o escritório"; display:block; visibility:visible;
+  font:700 24px/1.25 var(--k-font); letter-spacing:-.01em; color:var(--k-fg)}
+
+/* ---- 12. Motion: nothing appears from nowhere. The platform contract (konclui-platform globals.css --animate-*,
+   lib/menu-motion.ts, ui/sheet.tsx, ui/dialog.tsx), applied when WA inserts the element:
+   - menu: revealed by clipping from the point that opened it, 200 ms (platform menu-morph-in; clip-path, not scale,
+     so the text never blurs);
+   - sheet (side modal): slides in from its edge, 300 ms ease-out-quint;
+   - dialog (settings, centred modal): fade and 95 to 100 percent, 300 ms (the scale property, so it adds to WA's fade);
+   - scrim: fade, 200 ms.
+   Fill mode backwards: once in, nothing stays behind (a lingering transform would become the containing block of
+   the fixed elements inside a panel, a lingering clip-path would cut a submenu off).
+   WA removes these elements at once, so CSS cannot animate the exit; it stays instant. ---- */
+@keyframes k-rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+@keyframes k-fade{from{opacity:0}}
+@keyframes k-menu-in{from{opacity:0; clip-path:inset(calc(var(--k-oy,0px) - 8px) calc(100% - var(--k-ox,50%) - 8px)
+  calc(100% - var(--k-oy,0px) - 8px) calc(var(--k-ox,50%) - 8px) round 10px)}
+  to{opacity:1; clip-path:inset(0 round var(--k-radius-menu))}}
+@keyframes k-sheet-left{from{transform:translateX(-100%)}}
+@keyframes k-sheet-right{from{transform:translateX(100%)}}
+@keyframes k-dialog-in{from{opacity:0; scale:.95}}
+.loginScene section:has(> input){animation:k-rise var(--k-dur-normal) var(--k-ease-out) 400ms both}
+.loginScene section.action{animation:k-rise var(--k-dur-normal) var(--k-ease-out) 440ms both}
+.mobile-webkit.rounded-lg{animation:k-rise var(--k-dur-settle) var(--k-ease-out) both}
+/* menus: the profile menu opens from the card at its top right, the others from the button above their middle */
+:is([data-testid="profile-menu"],[data-testid="map-sub-menu"],[data-testid="media-settings-panel"],
+  .bp-menu .main-action .hidden.items-center > .absolute){animation:k-menu-in var(--k-dur-normal) var(--k-ease-out) backwards}
+[data-testid="profile-menu"]{--k-ox:calc(100% - 48px)}
+/* side modals and their scrim (the chat and the map editor slide in and out with WA's own transition, below) */
+.menu-container.left > .w-full.h-full{animation:k-sheet-left var(--k-dur-moderate) var(--k-ease-sheet) backwards}
+.menu-container.right > .w-full.h-full{animation:k-sheet-right var(--k-dur-moderate) var(--k-ease-sheet) backwards}
+.fixed.bg-black\/60{animation:k-fade var(--k-dur-normal) var(--k-ease-out) backwards}
+/* dialogs */
+.menu-container:not(.right):not(.left) > .w-full.h-full,#main-layout-main > :has(.menu-nav-sidebar){
+  animation:k-dialog-in var(--k-dur-moderate) var(--k-ease-out) backwards}
+/* WA's own Svelte transitions run as Web Animations (svelte transitions.js: element.animate, fill forwards), which an
+   !important declaration outranks. Kept where the movement is already right: the chat and the map editor slide from their
+   edge (200 and 250 ms), the bar's help card rises 40 px (150 ms). Their fade in and out stays everywhere; what is off the
+   brand goes: the 10 px blur of every modal (a paint per frame on slow computers) and the long flights, which become that
+   fade (settings 1000 px up, its items 200 px with 75 ms between them, notifications 210 px, error screen 200 px, popups
+   1000 px). None of these elements uses transform to sit in place. */
+.menu-container > .w-full.h-full{filter:none !important}
+#main-layout-main > :has(.menu-nav-sidebar),.menu-item-container,.notification-playing,main.errorScreen,
+div.rounded-3xl.bg-contrast\/75{transform:none !important}
+/* the editor and zoom tooltips are always there and fade with WA's transition-all, which also flew the zoom ones in by
+   animating right (a layout per frame): opacity only */
+#map-editor-container .tooltip,.fixed.bottom-2.pointer-events-auto .group > .absolute{transition-property:opacity,visibility;
+  transition-duration:var(--k-dur-normal); transition-timing-function:var(--k-ease-out)}
+
+/* ---- 13. Reduced motion and the Leve profile (html.k-leve, set later by the map script): no movement, same end state ---- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-delay:0s !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important}
+}
+html.k-leve *,html.k-leve *::before,html.k-leve *::after{animation-duration:.01ms !important; animation-delay:0s !important;
+  animation-iteration-count:1 !important; transition-duration:.01ms !important}

@@ -1,0 +1,115 @@
+{
+ "key": {
+  "b_out": "#0e3020",
+  "b_shd": "#22704a",
+  "b_base": "#38a868",
+  "b_lit": "#7ad890",
+  "g_out": "#5a1408",
+  "g_shd": "#b8341a",
+  "g_base": "#ee6a2a",
+  "g_lit": "#ffa860",
+  "w_out": "#4a4a52",
+  "w_shd": "#b4b8c0",
+  "w_base": "#e6e8ea",
+  "d_out": "#241a34",
+  "d_shd": "#4a3c64",
+  "d_base": "#74689a",
+  "d_lit": "#a49ac4",
+  "t_out": "#0a1424",
+  "t_shd": "#1c3050",
+  "t_base": "#2e4c78",
+  "k_out": "#121218",
+  "k_base": "#34343e",
+  "eye": "#101018",
+  "glint": "#ffffff",
+  "f_base": "#3a3036",
+  "fan_out": "#6f9f90",
+  "fan_shd": "#a9d3c4",
+  "fan_base": "#cfe9df",
+  "fan_lit": "#eef8f4"
+ },
+ "variants": [
+  {
+   "id": "verde-esmeralda",
+   "name": "Beija-flor verde-esmeralda",
+   "colors": {
+    "g_out": "#08403a",
+    "g_shd": "#14907a",
+    "g_base": "#28c8a2",
+    "g_lit": "#7aeccc",
+    "d_out": "#1e2228",
+    "d_shd": "#3a404a",
+    "d_base": "#5a6270",
+    "d_lit": "#8a94a2",
+    "t_out": "#0a2024",
+    "t_shd": "#163c44",
+    "t_base": "#225a64"
+   }
+  },
+  {
+   "id": "tesoura",
+   "name": "Beija-flor-tesoura",
+   "colors": {
+    "b_out": "#1a1250",
+    "b_shd": "#3a32a0",
+    "b_base": "#5a52d8",
+    "b_lit": "#8a86f0",
+    "g_out": "#200c50",
+    "g_shd": "#4a26a8",
+    "g_base": "#7a4ae0",
+    "g_lit": "#ac88f8",
+    "w_out": "#4a4470",
+    "w_shd": "#aaa4c8",
+    "w_base": "#d6d2ea",
+    "d_out": "#1a1a26",
+    "d_shd": "#34344a",
+    "d_base": "#52526c",
+    "d_lit": "#7c7c98",
+    "t_out": "#080a20",
+    "t_shd": "#141a40",
+    "t_base": "#222c64",
+    "fan_out": "#7a72a8",
+    "fan_shd": "#b8b0dc",
+    "fan_base": "#ddd8f0",
+    "fan_lit": "#f2f0fa"
+   }
+  },
+  {
+   "id": "rubi",
+   "name": "Beija-flor-rubi",
+   "colors": {
+    "b_out": "#2e1c0c",
+    "b_shd": "#5a3a1e",
+    "b_base": "#7a5026",
+    "b_lit": "#a0703a",
+    "g_out": "#4a0414",
+    "g_shd": "#a01030",
+    "g_base": "#e02448",
+    "g_lit": "#ff6a84",
+    "w_out": "#4a4038",
+    "w_shd": "#b8b2ac",
+    "w_base": "#ece9e6",
+    "d_out": "#22201c",
+    "d_shd": "#403c34",
+    "d_base": "#625c50",
+    "d_lit": "#8c8676",
+    "t_out": "#3a1408",
+    "t_shd": "#8a3a14",
+    "t_base": "#c06424",
+    "fan_out": "#8c929c",
+    "fan_shd": "#c2c8d0",
+    "fan_base": "#e2e6ea",
+    "fan_lit": "#f4f6f8"
+   }
+  }
+ ],
+ "derived": [
+  "fan_out",
+  "fan_shd",
+  "fan_base",
+  "fan_lit"
+ ],
+ "feet_groups": [
+  "f"
+ ]
+}

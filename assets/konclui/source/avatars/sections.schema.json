@@ -1,0 +1,110 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "sections.schema.json",
+ "title": "Avatar customization sections",
+ "description": "Where every avatar choice appears: per part (layer), the ordered sections with their pt-BR names and the members that put each texture in exactly one section. Consumers: avatars/native_export.py (local customizer list, accessories.json), avatars/sections.py (admin-api/woka.json and admin-api/companions.json). Rules a schema cannot express are enforced by avatars/sections.py and tests/test_avatar_sections.py: every texture of a list matches exactly one member of its part; every member matches at least one texture; names and ids are unique within a part and never reserved; an empty section resolves to one fully transparent texture; the first section of each part exists in every list (it is the engine's default and the only pool its Randomizar draws from); accessory sections follow the catalog draw order, and sections sharing a group hold one piece at a time.",
+ "type": "object",
+ "required": ["version", "reservedNames", "legacyPieces", "parts"],
+ "additionalProperties": false,
+ "properties": {
+  "$schema": {"type": "string"},
+  "version": {"const": 1},
+  "reservedNames": {
+   "description": "Section names added at runtime by other code (theme/avatars/bridge.js adds the visitor's own Koncluí avatar to the ready-made characters). The customizer keys sections by name, so no section may use them.",
+   "type": "array",
+   "items": {"type": "string", "minLength": 1}
+  },
+  "legacyPieces": {
+   "description": "Koncluí pieces drawn before the v3 catalog (art/build_woka.py). They are in production and in the local customizer; this list is their only definition of part, name and URLs.",
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": ["id", "part", "name", "file", "url"],
+    "additionalProperties": false,
+    "properties": {
+     "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+     "part": {"enum": ["clothes", "hat", "companion"]},
+     "name": {"type": "string", "minLength": 1},
+     "file": {"description": "Repository path of the 96x128 sheet.", "type": "string", "pattern": "^art/out/"},
+     "url": {"description": "Where production serves it.", "type": "string", "pattern": "^https://work\\.konclui\\.com/"}
+    }
+   }
+  },
+  "parts": {
+   "type": "object",
+   "required": ["woka", "body", "eyes", "hair", "clothes", "hat", "accessory", "companion"],
+   "additionalProperties": false,
+   "properties": {
+    "woka": {"$ref": "#/$defs/screenPart"},
+    "body": {"$ref": "#/$defs/customizerPart"},
+    "eyes": {"$ref": "#/$defs/customizerPart"},
+    "hair": {"$ref": "#/$defs/customizerPart"},
+    "clothes": {"$ref": "#/$defs/customizerPart"},
+    "hat": {"$ref": "#/$defs/customizerPart"},
+    "accessory": {"$ref": "#/$defs/accessoryPart"},
+    "companion": {"$ref": "#/$defs/screenPart"}
+   }
+  }
+ },
+ "$defs": {
+  "name": {"type": "string", "minLength": 1, "maxLength": 40},
+  "member": {
+   "description": "A texture id, a glob over texture ids ('*' only, e.g. kc-hair-short-*) or a catalog collection (option.collection in avatars/catalog.json). Order is display order; a glob or collection keeps source order (engine list, then catalog, then legacyPieces).",
+   "oneOf": [
+    {"type": "string", "pattern": "^[A-Za-z0-9_*-]+$"},
+    {"type": "object", "required": ["collection"], "additionalProperties": false,
+     "properties": {"collection": {"type": "string", "minLength": 1}}}
+   ]
+  },
+  "section": {
+   "type": "object",
+   "required": ["id", "name", "members"],
+   "properties": {
+    "id": {"description": "Stable machine id, unique within the part.", "type": "string", "pattern": "^[a-z0-9-]+$"},
+    "name": {"description": "What players read (pt-BR), unique within the part.", "$ref": "#/$defs/name"},
+    "empty": {"description": "The 'nothing' choice of an optional part.", "const": true},
+    "members": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/member"}}
+   }
+  },
+  "plainSection": {"$ref": "#/$defs/section", "unevaluatedProperties": false},
+  "accessorySection": {
+   "$ref": "#/$defs/section",
+   "properties": {
+    "group": {"description": "Exclusivity group of local-wa/accessories.js: one piece per group. Required unless the section is empty.", "type": "string", "pattern": "^[a-z]+$"}
+   },
+   "if": {"not": {"required": ["empty"]}},
+   "then": {"required": ["group"]},
+   "unevaluatedProperties": false
+  },
+  "screenPart": {
+   "type": "object",
+   "required": ["label", "sections"],
+   "additionalProperties": false,
+   "properties": {
+    "label": {"$ref": "#/$defs/name"},
+    "sections": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/plainSection"}}
+   }
+  },
+  "customizerPart": {
+   "description": "A tab of the native customizer; label and heading replace the engine's English tab text and '<part> Options' heading.",
+   "type": "object",
+   "required": ["label", "heading", "sections"],
+   "additionalProperties": false,
+   "properties": {
+    "label": {"$ref": "#/$defs/name"},
+    "heading": {"$ref": "#/$defs/name"},
+    "sections": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/plainSection"}}
+   }
+  },
+  "accessoryPart": {
+   "type": "object",
+   "required": ["label", "heading", "sections"],
+   "additionalProperties": false,
+   "properties": {
+    "label": {"$ref": "#/$defs/name"},
+    "heading": {"$ref": "#/$defs/name"},
+    "sections": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/accessorySection"}}
+   }
+  }
+ }
+}

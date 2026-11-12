@@ -1,0 +1,43 @@
+{
+ "key": {
+  "down_out": "#3a1606",
+  "down_line": "#9a5e14",
+  "down_shd": "#eab02c",
+  "down": "#ffd94a",
+  "down_lit": "#fff3a6",
+  "bill_out": "#93360c",
+  "bill_shd": "#e8701c",
+  "bill": "#ff9c2c",
+  "sclera": "#ffffff",
+  "pupil": "#2b1a10",
+  "mouth": "#c4463a",
+  "water": "#8fe3d4",
+  "water_shd": "#1f6f78",
+  "drop": "#2898a0",
+  "drop_lit": "#e8fbff",
+  "glint": "#cfeaf8",
+  "glint_hi": "#fffffe",
+  "eye_ring": "#ffd94b"
+ },
+ "variants": [
+  {
+   "id": "amarelo",
+   "name": "Amarelo",
+   "colors": {}
+  },
+  {
+   "id": "branco",
+   "name": "Branco",
+   "colors": {
+    "down_out": "#2e3446",
+    "down_line": "#8a92a8",
+    "down_shd": "#cfd6e4",
+    "down": "#eef1f6",
+    "down_lit": "#ffffff",
+    "sclera": "#ffffff",
+    "glint": "#ffffff",
+    "eye_ring": "#c2cbdc"
+   }
+  }
+ ]
+}

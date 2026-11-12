@@ -1,0 +1,134 @@
+{
+ "species": "robo",
+ "name": "Robô",
+ "family": "sede",
+ "plan": "roller",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  16,
+  3
+ ],
+ "temperament": "curious",
+ "notes": "Roller: a round robot vacuum. idle blinks its status LED; move-* spins the side brush at its front-left foot (4 frames). curl-left is its spin: turning in place from facing you to facing left (3 frames, once; reverse it to turn back). happy-down shows a heart on the visor; sleep-down closes its eyes and the LED goes off, settling a pixel. Extra clips for the runtime: bump-left (4 frames, once: it hits something on its left, the bumper gives, it backs off a pixel and stops; play it when a move is blocked) and dock-down (4 frames, loops: the visor shows a charging bar filling; play it while it rests near its owner or a desk).",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "move-down": {
+   "frames": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "move-left": {
+   "frames": [
+    10,
+    11,
+    12,
+    13
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "move-up": {
+   "frames": [
+    14,
+    15,
+    16,
+    17
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "curl-left": {
+   "frames": [
+    0,
+    18,
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "happy-down": {
+   "frames": [
+    19,
+    20
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "sleep-down": {
+   "frames": [
+    21,
+    22
+   ],
+   "fps": 0.5,
+   "loop": true
+  },
+  "bump-left": {
+   "frames": [
+    2,
+    23,
+    24,
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "dock-down": {
+   "frames": [
+    25,
+    26,
+    27,
+    28
+   ],
+   "fps": 2,
+   "loop": true
+  }
+ },
+ "picker": {
+  "down": [
+   6,
+   0,
+   8
+  ],
+  "left": [
+   10,
+   2,
+   12
+  ],
+  "up": [
+   14,
+   4,
+   16
+  ]
+ }
+}

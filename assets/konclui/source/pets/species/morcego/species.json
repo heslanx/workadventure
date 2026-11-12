@@ -1,0 +1,264 @@
+{
+ "species": "morcego",
+ "name": "Morcego",
+ "family": "fantasia",
+ "plan": "bird",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  11,
+  3
+ ],
+ "temperament": "lazy",
+ "perch": {
+  "owner": false,
+  "rest": "hang",
+  "hangAnchor": [
+   16,
+   8
+  ]
+ },
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "hop-down": {
+   "frames": [
+    6,
+    7,
+    1,
+    0
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "hop-left": {
+   "frames": [
+    8,
+    9,
+    10,
+    8
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "hop-up": {
+   "frames": [
+    5,
+    11,
+    5,
+    4
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "fly-down": {
+   "frames": [
+    12,
+    13,
+    14,
+    15
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "fly-left": {
+   "frames": [
+    16,
+    17,
+    18,
+    19
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "fly-up": {
+   "frames": [
+    20,
+    21,
+    22,
+    23
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "perch-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "perch-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "perch-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "takeoff-left": {
+   "frames": [
+    8,
+    10,
+    24,
+    25
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "land-left": {
+   "frames": [
+    25,
+    24,
+    10,
+    8,
+    2
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "glide-left": {
+   "frames": [
+    17,
+    26
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "look-down": {
+   "frames": [
+    27,
+    28
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    29
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "sleep-down": {
+   "frames": [
+    29,
+    30
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "preen-left": {
+   "frames": [
+    31,
+    32
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "happy-down": {
+   "frames": [
+    33,
+    34
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "celebrate-down": {
+   "frames": [
+    12,
+    13,
+    15
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "hang-down": {
+   "frames": [
+    35,
+    36
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "hang-sleep-down": {
+   "frames": [
+    37,
+    38
+   ],
+   "fps": 0.8,
+   "loop": true
+  },
+  "unhang-down": {
+   "frames": [
+    35,
+    39,
+    40,
+    14
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "rehang-down": {
+   "frames": [
+    12,
+    40,
+    39,
+    35
+   ],
+   "fps": 8,
+   "loop": false
+  }
+ },
+ "picker": {
+  "down": [
+   12,
+   13,
+   14
+  ],
+  "left": [
+   16,
+   17,
+   18
+  ],
+  "up": [
+   20,
+   21,
+   22
+  ]
+ },
+ "notes": "The bat rests hanging under furniture or flies behind its owner; it does not sit on the owner. Hero clips: hang-down, hang-sleep-down, fly-*, glide-left, and two extra clips into and out of the hang: unhang-down (4 frames, once: lets go and drops 3 px, tumbles a quarter turn, opens upright on a downstroke) and rehang-down (4 frames, once: the reverse, rising 3 px into the grip). In the hang clips the toes are the top row, on cell row 8 (perch.hangAnchor); the runtime puts that row against the underside of a table edge or shelf instead of using the anchor. unhang/rehang are drawn in the same hang frame (place them like hang-*); their upright frame is the fly-down cell itself, so fly-* takes over at the flight position. All identity poses are hand-drawn (hand.txt): one head per view (front, side, back; the hang has its face upside down under the wrapped wings), and one wing design at four angles for each view (the back shows the front wings' darker upper side). The picker rows are the flight frames. idle/perch/look/blink/sleep/happy are kept for the contract (a wrapped bell under the round-7 sitting head); land-left is the take-off played backwards."
+}

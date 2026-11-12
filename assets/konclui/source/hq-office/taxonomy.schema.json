@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "konclui-hq-office/taxonomy.schema.json",
+  "title": "Object list of the HQ office's map editor",
+  "description": "Shape of taxonomy.json. The semantic rules a schema cannot express (category order equals the editor's sort, every rule points at a known category and is used, every piece gets exactly one category, left-out pieces are exact duplicates) are checked by test_taxonomy.py.",
+  "type": "object",
+  "required": ["version", "categories", "sources", "derived", "renamed", "left_out"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"type": "string"},
+    "version": {"const": 1},
+    "about": {"type": "string"},
+    "categories": {
+      "description": "In the order the editor lists them.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "about"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+          "name": {"description": "The tag the editor shows (Portuguese).", "type": "string", "minLength": 1, "pattern": "^[^a-z:]"},
+          "about": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9-]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["collections", "match", "key", "rules"],
+        "additionalProperties": false,
+        "properties": {
+          "collections": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "match": {"enum": ["path", "glob"]},
+          "key": {"type": "string", "minLength": 1},
+          "rules": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}
+          }
+        }
+      }
+    },
+    "derived": {
+      "type": "object",
+      "required": ["recolour", "supported"],
+      "additionalProperties": false,
+      "properties": {
+        "recolour": {"$ref": "#/$defs/derived"},
+        "supported": {"$ref": "#/$defs/derived"}
+      }
+    },
+    "renamed": {
+      "type": "object",
+      "additionalProperties": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}}
+    },
+    "left_out": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "name", "same_as"],
+        "additionalProperties": false,
+        "properties": {
+          "source": {"type": "string"},
+          "name": {"type": "string", "minLength": 1},
+          "same_as": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "derived": {
+      "type": "object",
+      "required": ["suffix", "about"],
+      "additionalProperties": false,
+      "properties": {
+        "suffix": {"type": "string", "pattern": "^ \\(.+\\)$"},
+        "about": {"type": "string"}
+      }
+    }
+  }
+}

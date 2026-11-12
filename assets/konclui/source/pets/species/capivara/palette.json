@@ -1,0 +1,69 @@
+{
+ "key": {
+  "coat.out": "#3b2316",
+  "coat.shadow": "#8c5533",
+  "coat.base": "#b47649",
+  "coat.light": "#d29a63",
+  "snout.shadow": "#4f301d",
+  "snout.base": "#6b4329",
+  "snout.light": "#86573a",
+  "belly.base": "#c99060",
+  "belly.light": "#e0b07e",
+  "ear": "#7d4c30",
+  "feet": "#5a3720",
+  "eye": "#1a100b",
+  "glint": "#fff4e2",
+  "tongue": "#e0727c",
+  "water": "#49c8bb",
+  "water.dark": "#073f4c",
+  "foam": "#d8f4ee"
+ },
+ "variants": [
+  {
+   "id": "natural",
+   "name": "Natural",
+   "colors": {
+    "coat.out": "#3b2316",
+    "coat.shadow": "#8c5533",
+    "coat.base": "#b47649",
+    "coat.light": "#d29a63",
+    "snout.shadow": "#4f301d",
+    "snout.base": "#6b4329",
+    "snout.light": "#86573a",
+    "belly.base": "#c99060",
+    "belly.light": "#e0b07e",
+    "ear": "#7d4c30",
+    "feet": "#5a3720",
+    "eye": "#1a100b",
+    "glint": "#fff4e2",
+    "tongue": "#e0727c",
+    "water": "#49c8bb",
+    "water.dark": "#073f4c",
+    "foam": "#d8f4ee"
+   }
+  },
+  {
+   "id": "dourada",
+   "name": "Dourada",
+   "colors": {
+    "coat.out": "#46300f",
+    "coat.shadow": "#b07a2c",
+    "coat.base": "#d6a344",
+    "coat.light": "#efc56c",
+    "snout.shadow": "#6a4719",
+    "snout.base": "#8a6024",
+    "snout.light": "#a87a34",
+    "belly.base": "#f0cf8a",
+    "belly.light": "#fbe4b0",
+    "ear": "#9a6a2c",
+    "feet": "#74501e",
+    "eye": "#1a100b",
+    "glint": "#fff4e2",
+    "tongue": "#e0727c",
+    "water": "#49c8bb",
+    "water.dark": "#073f4c",
+    "foam": "#d8f4ee"
+   }
+  }
+ ]
+}

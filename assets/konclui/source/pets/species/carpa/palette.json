@@ -1,0 +1,55 @@
+{
+ "key": {
+  "rim": "#155a78",
+  "water": "#8fdcf2",
+  "water_shd": "#5cc2e2",
+  "hi": "#ffffff",
+  "air": "#d2f4fb",
+  "koi_out": "#8e3424",
+  "koi_edge": "#c4705a",
+  "koi": "#fbf3e8",
+  "koi_shd": "#dccbbd",
+  "red": "#e2522a",
+  "red_shd": "#a8341c",
+  "red_lit": "#ff8a5a",
+  "sumi": "#f6ede1",
+  "fin": "#f2a587",
+  "koi_eye": "#1c1214",
+  "koi_glint": "#fffffe"
+ },
+ "variants": [
+  {
+   "id": "kohaku",
+   "name": "Kohaku",
+   "colors": {}
+  },
+  {
+   "id": "ogon",
+   "name": "Ogon",
+   "colors": {
+    "koi_out": "#6e4510",
+    "koi_edge": "#b07a22",
+    "koi": "#f2b632",
+    "koi_shd": "#c98a1e",
+    "red": "#f2b632",
+    "red_shd": "#c98a1e",
+    "red_lit": "#fff1a8",
+    "sumi": "#eaae2e",
+    "fin": "#ffe08a"
+   }
+  },
+  {
+   "id": "showa",
+   "name": "Showa",
+   "colors": {
+    "koi_out": "#54444a",
+    "koi_edge": "#8a7a80",
+    "sumi": "#2a2630",
+    "red": "#e2502a",
+    "red_shd": "#a8341a",
+    "red_lit": "#ff7a50",
+    "fin": "#e9a58c"
+   }
+  }
+ ]
+}

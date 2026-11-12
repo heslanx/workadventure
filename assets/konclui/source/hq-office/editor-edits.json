@@ -1,0 +1,341 @@
+{
+  "_": "What the owner did in the map editor, kept across builds (README, \"Edições no editor\"); capture_edits.py writes it from the served room. Plan key -> {x, y} in px of the piece, or {\"deleted\": true}. \"_added\": objects created in the editor, uuid -> the entity as the served WAM holds it. \"_areas\": areas changed or created in the editor, id -> the area as served, or {\"deleted\": true}. Pool plants moved by the owner start from the owner's spot and are then planted on the nearest bank edge (owner, 18/10/2026).",
+  "meeting_01/w": {
+    "x": 296,
+    "y": 1074
+  },
+  "meeting_01/e": {
+    "x": 508,
+    "y": 1077
+  },
+  "meeting_02/w": {
+    "x": 293,
+    "y": 1366
+  },
+  "meeting_02/e": {
+    "x": 508,
+    "y": 1364
+  },
+  "pool/fern-40-23": {
+    "x": 1287,
+    "y": 725
+  },
+  "pool/fern-40-23/e": {
+    "x": 1463,
+    "y": 729
+  },
+  "lawn/flowers0": {
+    "deleted": true
+  },
+  "lawn/flowers0/e": {
+    "deleted": true
+  },
+  "_added": {
+    "e0fc128e-c422-4e8f-b228-88708d538039": {
+      "x": 2048,
+      "y": 1280,
+      "properties": [
+        {
+          "id": "9ff89356-70f6-45e2-a3db-edda5d886186",
+          "type": "entityDescriptionProperties",
+          "description": "",
+          "searchable": false
+        },
+        {
+          "id": "fe406e9a-55d9-47be-a28a-e0b8c78e9344",
+          "type": "entityDescriptionProperties",
+          "description": "",
+          "searchable": false
+        }
+      ],
+      "prefabRef": {
+        "collectionName": "Estantes e livros",
+        "id": "bookshelves-005"
+      }
+    },
+    "de3c4fb2-7a45-4fd8-975b-8879bb57c64d": {
+      "x": 608,
+      "y": 224,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Estantes e livros",
+        "id": "bookshelves-011"
+      }
+    },
+    "b35aab2e-1450-4f6a-8fa1-418ebe0734b8": {
+      "x": 1664,
+      "y": 289,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Escritório moderno",
+        "id": "mo-164"
+      }
+    },
+    "4820bbba-b1a8-404a-bfdf-9e79e1347639": {
+      "x": 1827,
+      "y": 286,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Escritório moderno",
+        "id": "mo-160"
+      }
+    },
+    "fde64cec-c0c4-4f61-9a3c-56d59eac5c88": {
+      "x": 2320,
+      "y": 239,
+      "properties": [
+        {
+          "id": "f053ce62-bdd4-4e3a-a1c7-82cc01f15780",
+          "type": "entityDescriptionProperties",
+          "description": "",
+          "searchable": false
+        }
+      ],
+      "prefabRef": {
+        "collectionName": "LPC",
+        "id": "lpc-interior-052"
+      }
+    },
+    "e475ea3f-283a-46e8-bcdc-6974e2e5a788": {
+      "x": 2112,
+      "y": 224,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Estantes e livros",
+        "id": "bookshelves-011"
+      }
+    },
+    "29dfd826-c127-4ba6-a27c-b51e6f6fe3e6": {
+      "x": 97,
+      "y": 615,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Mobília",
+        "id": "mob-03f657fd-a27e-4517-a4c4-e03bf5d96c87"
+      }
+    },
+    "956b2168-107d-4859-9890-4c9fd0d3599e": {
+      "x": 97,
+      "y": 351,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Mobília",
+        "id": "mob-03f657fd-a27e-4517-a4c4-e03bf5d96c87"
+      }
+    },
+    "5c2c9ad2-bf18-4f45-9e7f-85fc5f3e4644": {
+      "x": 737,
+      "y": 715,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Escritório moderno",
+        "id": "mo-320"
+      }
+    },
+    "578bc597-cc77-4330-aad2-a047edd2616e": {
+      "x": 672,
+      "y": 1280,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Estantes e livros",
+        "id": "bookshelves-005"
+      }
+    },
+    "4c41dd7c-93fe-4db1-b879-68e4f58302b3": {
+      "x": 2208,
+      "y": 384,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Mobília",
+        "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+      }
+    },
+    "103ef70d-1fe4-4dc3-8fc6-b13068282a8b": {
+      "x": 1151,
+      "y": 1281,
+      "properties": [],
+      "prefabRef": {
+        "collectionName": "Mobília",
+        "id": "mob-86fcec6a-3b67-498d-be33-125a2c69a7ba"
+      }
+    }
+  },
+  "pool/fern-36-24": {
+    "x": 1218,
+    "y": 735
+  },
+  "pool/echinacea-36-30": {
+    "x": 1164,
+    "y": 961
+  },
+  "pool/fern-35-33": {
+    "x": 1154,
+    "y": 1060
+  },
+  "pool/hosta-38-23": {
+    "x": 1165,
+    "y": 763
+  },
+  "room_01/credenza": {
+    "deleted": true
+  },
+  "room_01/printer": {
+    "deleted": true
+  },
+  "room_02/credenza": {
+    "deleted": true
+  },
+  "room_02/printer": {
+    "deleted": true
+  },
+  "aud/plant1": {
+    "x": 580,
+    "y": 480
+  },
+  "lounge/table": {
+    "x": 800,
+    "y": 1408
+  },
+  "lounge/table/e": {
+    "x": 1920,
+    "y": 1408
+  },
+  "lounge/table-plant": {
+    "x": 829,
+    "y": 1397
+  },
+  "lounge/table-plant/e": {
+    "x": 1925,
+    "y": 1398
+  },
+  "lounge/table-sprout": {
+    "x": 807,
+    "y": 1397
+  },
+  "lounge/table-sprout/e": {
+    "x": 1946,
+    "y": 1399
+  },
+  "room_01/corner": {
+    "x": 630,
+    "y": 206
+  },
+  "_areas": {
+    "6caa5e5a-c0d7-5c8d-b759-0d48decb9202": {
+      "x": 1360,
+      "y": 1658,
+      "width": 64,
+      "height": 64,
+      "id": "6caa5e5a-c0d7-5c8d-b759-0d48decb9202",
+      "visible": true,
+      "name": "",
+      "properties": [
+        {
+          "id": "d017b268-86ec-57dc-9d75-e935fe559399",
+          "type": "start",
+          "isDefault": true
+        },
+        {
+          "id": "c14e303e-c5c4-4ed5-8f45-d3d71ae72ed3",
+          "type": "areaDescriptionProperties",
+          "description": "Entrada do escritório e acesso aos espaços da equipe.",
+          "searchable": true
+        }
+      ]
+    },
+    "5c7d434f-6e99-5f24-95e6-2c6cfb6613f1": {
+      "x": 962,
+      "y": 256,
+      "width": 352,
+      "height": 288,
+      "id": "5c7d434f-6e99-5f24-95e6-2c6cfb6613f1",
+      "visible": true,
+      "name": "Sala 02",
+      "properties": [
+        {
+          "id": "8e53bfc4-ad66-5246-8c96-21647a965a29",
+          "type": "livekitRoomProperty",
+          "roomName": "konclui-sede-room_02",
+          "livekitRoomConfig": {
+            "startWithAudioMuted": true,
+            "startWithVideoMuted": true,
+            "disableChat": false,
+            "raiseHandEnabled": true
+          }
+        },
+        {
+          "id": "ee2b8ee0-81c0-5572-ad73-087a9c3975d8",
+          "type": "maxUsersInAreaPropertyData",
+          "maxUsers": 12
+        },
+        {
+          "id": "c9e1ff65-48b5-5f7e-b67e-944b86a1f1a5",
+          "type": "areaDescriptionProperties",
+          "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+          "searchable": true
+        }
+      ]
+    },
+    "02caf6e6-5964-5cc2-a51c-d0ed7f3d242b": {
+      "x": 1631,
+      "y": 928,
+      "width": 512,
+      "height": 352,
+      "id": "02caf6e6-5964-5cc2-a51c-d0ed7f3d242b",
+      "visible": true,
+      "name": "Estações de trabalho — leste",
+      "properties": [
+        {
+          "id": "aed84d9f-6f7c-5229-ad74-3ae07619531b",
+          "type": "areaDescriptionProperties",
+          "description": "Postos de trabalho e conversas por proximidade.",
+          "searchable": true
+        }
+      ]
+    },
+    "fd022fe8-a4bc-53dc-9ab6-5d7670fa3d47": {
+      "x": 1152,
+      "y": 607,
+      "width": 480,
+      "height": 672,
+      "id": "fd022fe8-a4bc-53dc-9ab6-5d7670fa3d47",
+      "visible": true,
+      "name": "Lago das carpas",
+      "properties": [
+        {
+          "id": "cc151ec6-7a93-5c6d-86f5-b1d0da4cdbc6",
+          "type": "areaDescriptionProperties",
+          "description": "Canal da fonte da Koru e lago com o K. Clique na água para alimentar.",
+          "searchable": true
+        }
+      ]
+    }
+  },
+  "room_01/credenza/e": {
+    "deleted": true
+  },
+  "room_01/printer/e": {
+    "deleted": true
+  },
+  "room_02/credenza/e": {
+    "deleted": true
+  },
+  "room_02/printer/e": {
+    "deleted": true
+  },
+  "room_01/corner/e": {
+    "x": 2053,
+    "y": 213
+  },
+  "room_02/corner": {
+    "x": 929,
+    "y": 212
+  },
+  "room_02/corner/e": {
+    "x": 1791,
+    "y": 211
+  },
+  "reception/lamp": {
+    "deleted": true
+  }
+}

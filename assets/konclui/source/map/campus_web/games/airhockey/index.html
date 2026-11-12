@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Air hockey</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<script src="../game-kit.js"></script>
+<style>
+.kg-stage { outline:none; }
+.court { position:relative; display:flex; }
+.kg-stage canvas { background:#09182B; border-radius:var(--radius); box-shadow:0 0 0 1px var(--border-subtle); }
+.kg-stage canvas.hide-cursor { cursor:none; }
+.kg-side { overflow-y:auto; min-height:0; }
+.modes { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.modes button { padding:8px 6px; font-size:14px; }
+.modes button[aria-pressed="true"] { background:color-mix(in srgb, var(--accent) 16%, transparent); border-color:var(--accent); color:var(--accent); }
+.scoreline { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 8px; align-items:baseline; }
+.scoreline .who { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--accent); }
+.scoreline .who + .who { color:#F79730; text-align:right; }
+.scoreline .nums { grid-column:1 / -1; display:flex; justify-content:center; align-items:baseline; gap:12px; }
+.scoreline b { font-size:34px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+.scoreline .x { color:var(--muted); }
+.stats p { margin:8px 0 0; color:var(--fg2); }
+.kg-side .kg-btn { align-self:stretch; padding:10px 18px; }
+
+/* veil over the court: start, pause and end of game */
+.kg-over { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(3,5,26,.72); z-index:5;
+  border-radius:var(--radius); }
+.kg-over[hidden] { display:none; }
+.kg-over > div { background:var(--card); border:1px solid var(--border-subtle); border-radius:var(--radius); padding:20px 24px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:8px; max-width:320px; }
+.kg-over h2 { margin:0; font-size:26px; font-weight:800; }
+.kg-over p { margin:0; color:var(--fg2); text-wrap:balance; }
+.kg-over .kg-rank { color:var(--accent); font-weight:700; }
+.kg-over .kg-btn { margin-top:6px; }
+@media (max-width: 720px) {
+  .kg-side { flex-direction:row; flex-wrap:wrap; max-height:40%; }
+  .kg-side .board-card { display:none; }
+  .kg-side .kg-btn { align-self:center; }
+  .kg-side .stats, .kg-side .mode-card { flex:1; }
+}
+</style>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage" id="stage" tabindex="0" aria-label="Mesa de air hockey">
+    <div class="court">
+      <canvas id="canvas"></canvas>
+      <div class="kg-over" id="over">
+        <div>
+          <h2 id="over-title">Air hockey</h2>
+          <p id="over-text"></p>
+          <p class="kg-rank" id="rank" role="status"></p>
+          <button type="button" class="kg-btn" id="over-btn">Jogar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="kg-side">
+    <div class="kg-card mode-card">
+      <h2>Modo</h2>
+      <div class="modes" role="group" aria-label="Modo de jogo">
+        <button type="button" class="kg-btn kg-ghost" id="mode-koru" aria-pressed="true">Contra a Koru</button>
+        <button type="button" class="kg-btn kg-ghost" id="mode-duo" aria-pressed="false">2 jogadores</button>
+      </div>
+    </div>
+    <div class="kg-card stats">
+      <h2>Placar</h2>
+      <div class="scoreline" aria-live="polite">
+        <span class="who" id="name-0">Você</span><span class="who" id="name-1">Koru</span>
+        <div class="nums"><b id="s-0">0</b><span class="x">×</span><b id="s-1">0</b></div>
+      </div>
+      <p>Primeiro a 7 gols.</p>
+    </div>
+    <div class="kg-card board-card">
+      <h2>Recordes do escritório</h2>
+      <div id="board"></div>
+      <p class="kg-muted" style="margin-top:8px" id="board-note">Saldo de gols numa vitória contra a Koru.</p>
+    </div>
+    <button type="button" class="kg-btn kg-ghost" id="pause" disabled>Pausar</button>
+    <button type="button" class="kg-btn" id="again">Jogar</button>
+  </aside>
+</main>
+<script src="airhockey.js"></script>
+<script>
+// Glue: the table + the campus top 10 (room variable recordesAirHockey) + test hooks.
+(async () => {
+  "use strict";
+  const me = await KG.ready();
+
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const chrome = KG.chrome({
+    title: "Air hockey",
+    help: "Mova o seu rebatedor (verde, à esquerda) com W A S D ou as setas, com o mouse ou arrastando o dedo; ele não passa da linha do meio. Empurre o disco para o gol da Koru (laranja, à direita) e defenda o seu. Quem fizer 7 gols primeiro ganha. No modo 2 jogadores, no mesmo aparelho, o Jogador 1 usa W A S D e o Jogador 2 usa as setas (no toque, cada um arrasta o dedo na sua metade). Espaço começa e continua, P ou Esc pausa. A vitória contra a Koru entra nos recordes do escritório pelo saldo de gols.",
+  });
+  const board = KG.board("recordesAirHockey");
+  const boardEl = document.getElementById("board");
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("canvas");
+  const over = document.getElementById("over");
+  const overTitle = document.getElementById("over-title");
+  const overText = document.getElementById("over-text");
+  const rankEl = document.getElementById("rank");
+  const overBtn = document.getElementById("over-btn");
+  const again = document.getElementById("again");
+  const pauseBtn = document.getElementById("pause");
+  const modeBtns = { koru: document.getElementById("mode-koru"), duo: document.getElementById("mode-duo") };
+  const boardCard = document.querySelector(".board-card");
+  let mine = null; // "quando" of the row I just saved, to keep it highlighted
+
+  // The canvas keeps the table's proportions (CW x CH units) inside the stage.
+  const { CW, CH } = AirHockey;
+  function fit() {
+    const scale = Math.max(0.3, Math.min(stage.clientWidth / CW, stage.clientHeight / CH));
+    canvas.style.width = `${Math.floor(CW * scale)}px`;
+    canvas.style.height = `${Math.floor(CH * scale)}px`;
+  }
+  fit();
+
+  const renderBoard = (rows = board.load(), highlight = -1) => board.render(boardEl, rows, highlight);
+  const refreshBoard = () => {
+    const rows = board.load();
+    renderBoard(rows, mine ? rows.findIndex((r) => r.quando === mine) : -1);
+  };
+
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  function rankText(diff, result) {
+    if (result.rank !== -1) return `Você entrou em ${result.rank + 1}º lugar!`;
+    const missing = result.rows[result.rows.length - 1].pontos - diff + 1;
+    if (diff + missing > 7) return "O top 10 já está cheio de goleadas de 7 a 0.";
+    return `${missing === 1 ? "Faltou" : "Faltaram"} ${plural(missing, "gol", "gols")} de saldo para o top 10.`;
+  }
+
+  function showOver(title, text, button) {
+    overTitle.textContent = title;
+    overText.textContent = text;
+    overBtn.textContent = button;
+    over.hidden = false;
+  }
+
+  const idleText = () => (hockey.mode === "koru"
+    ? `Você contra a Koru, a coruja da Koncluí. ${touch ? "Toque em Jogar." : "Aperte Espaço para jogar."}`
+    : `Dois jogadores no mesmo aparelho: W A S D e setas. ${touch ? "Toque em Jogar." : "Aperte Espaço para jogar."}`);
+
+  function setNames() {
+    document.getElementById("name-0").textContent = hockey.names[0];
+    document.getElementById("name-1").textContent = hockey.names[1];
+  }
+
+  const hockey = AirHockey.create(canvas, {
+    onplay() {
+      over.hidden = true;
+      rankEl.textContent = "";
+      mine = null;
+      refreshBoard();
+      setNames();
+      again.textContent = "Jogar de novo";
+      pauseBtn.disabled = false;
+      canvas.classList.add("hide-cursor");
+      stage.focus({ preventScroll: true });
+    },
+    onscore(scores) {
+      document.getElementById("s-0").textContent = scores[0];
+      document.getElementById("s-1").textContent = scores[1];
+      if (hockey.phase === "play" || hockey.phase === "goal") chrome.status(`Jogando: ${scores[0]} × ${scores[1]}`);
+    },
+    onpause(paused) {
+      if (paused) showOver("Pausado", touch ? "Toque em Continuar." : "Aperte P ou Espaço para continuar.", "Continuar");
+      else over.hidden = true;
+      pauseBtn.textContent = paused ? "Continuar" : "Pausar";
+      canvas.classList.toggle("hide-cursor", !paused);
+      chrome.status(paused ? "Pausado" : `Jogando: ${hockey.scores[0]} × ${hockey.scores[1]}`);
+      stage.focus({ preventScroll: true });
+    },
+    async ongameover(a, b) {
+      const label = `${a} × ${b}`;
+      const koru = hockey.mode === "koru";
+      const won = a > b;
+      const title = koru ? (won ? "Você venceu!" : "A Koru venceu") : `${hockey.names[won ? 0 : 1]} venceu!`;
+      pauseBtn.disabled = true;
+      pauseBtn.textContent = "Pausar";
+      canvas.classList.remove("hide-cursor");
+      showOver(title, koru && !won ? `${label}. Revanche?` : `${label}. Boa partida!`, "Jogar de novo");
+      chrome.status(`Fim de jogo: ${label}`);
+      stage.focus({ preventScroll: true });
+      if (!koru || !won) return;
+      const result = await board.submit(a - b);
+      mine = result.rank !== -1 ? result.rows[result.rank].quando : null;
+      renderBoard(result.rows, result.rank);
+      rankEl.textContent = rankText(a - b, result);
+    },
+  });
+
+  function setMode(mode) {
+    hockey.reset(mode);
+    for (const [key, btn] of Object.entries(modeBtns)) btn.setAttribute("aria-pressed", String(key === mode));
+    boardCard.querySelector("#board-note").textContent = mode === "koru" ? "Saldo de gols numa vitória contra a Koru." : "Os recordes valem só contra a Koru.";
+    setNames();
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = "Pausar";
+    again.textContent = "Jogar";
+    canvas.classList.remove("hide-cursor");
+    showOver("Air hockey", idleText(), "Jogar");
+    chrome.status("Pronto para jogar");
+  }
+  modeBtns.koru.addEventListener("click", () => setMode("koru"));
+  modeBtns.duo.addEventListener("click", () => setMode("duo"));
+  overBtn.addEventListener("click", () => (hockey.paused ? hockey.pause() : hockey.start()));
+  again.addEventListener("click", () => hockey.start());
+  pauseBtn.addEventListener("click", () => hockey.pause());
+
+  // Pointer: against the Koru the mouse and every finger move your rebatedor; with two players each pointer moves the one on its half.
+  const fingers = new Map(); // pointerId -> side (two players, touch)
+  function aim(e) {
+    const p = hockey.point(e.clientX, e.clientY);
+    if (hockey.mode === "koru") return hockey.aim(0, p.x, p.y);
+    if (e.pointerType !== "touch") return hockey.aim(-1, p.x, p.y);
+    if (e.type === "pointerdown" || !fingers.has(e.pointerId)) fingers.set(e.pointerId, p.x < AirHockey.W / 2 ? 0 : 1);
+    hockey.aim(fingers.get(e.pointerId), p.x, p.y);
+  }
+  const release = (e) => fingers.delete(e.pointerId);
+  canvas.addEventListener("pointerdown", aim);
+  canvas.addEventListener("pointermove", aim);
+  canvas.addEventListener("pointerup", release);
+  canvas.addEventListener("pointercancel", release);
+
+  document.fonts.load("800 20px Urbanist").then(() => { if (!hockey.running) hockey.draw(); });
+  new ResizeObserver(() => { fit(); hockey.resize(); }).observe(stage);
+  KG.state.on("recordesAirHockey", refreshBoard);
+  hockey.resize();
+  refreshBoard();
+  setMode("koru");
+  window.focus();
+  stage.focus({ preventScroll: true });
+
+  window.__game = {
+    ready: true,
+    mode: () => hockey.mode,
+    state: () => (hockey.phase === "play" || hockey.phase === "goal" ? (hockey.paused ? "paused" : "playing") : "idle"), // idle | playing | paused
+    running: () => hockey.running, // is the frame loop alive?
+    score: () => [...hockey.scores],
+    mallet: (side = 0) => ({ ...hockey.mallets[side] }),
+    puck: () => ({ x: hockey.puck.x, y: hockey.puck.y, vx: hockey.puck.vx, vy: hockey.puck.vy }),
+    table: () => ({ w: AirHockey.W, h: AirHockey.H, css: canvas.clientWidth }),
+    setMode,
+    simulate: (seconds) => hockey.simulate(seconds), // test hook: advance the game without waiting for frames
+    leftBot: (level) => hockey.setLeftBot(level), // test hook: the left rebatedor plays by itself (0..8, null = you)
+    park: (x, y) => hockey.park(x, y), // test hook: leave the puck still somewhere, away from the action
+    forceGameOver: (a, b) => hockey.force(a, b),
+  };
+})();
+</script>
+</body>
+</html>

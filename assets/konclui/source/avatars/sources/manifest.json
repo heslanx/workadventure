@@ -1,0 +1,77 @@
+[
+  {
+    "id": "body3",
+    "url": "resources/customisation/character_color/character_color2.png",
+    "sha256": "7a015d601be897f6864bd26256e87e760dbe087e42f2562ef7166e3bd731f4f6"
+  },
+  {
+    "id": "clothes13",
+    "url": "resources/customisation/character_clothes/character_clothes12.png",
+    "sha256": "0c5c91e86af46844ed1331b301bf647899c71269fbc7c525c8899f50f1da1de9"
+  },
+  {
+    "id": "clothes17",
+    "url": "resources/customisation/character_clothes/character_clothes16.png",
+    "sha256": "2b7549912a1c65dbf562af4d088e6494b7c628d89573dd1bc61564c0d5081181"
+  },
+  {
+    "id": "clothes19",
+    "url": "resources/customisation/character_clothes/character_clothes18.png",
+    "sha256": "aac88841cf943c4bd3f4c02c47304af2bac7597d15386dc4fff1e981ca3d5102"
+  },
+  {
+    "id": "clothes20",
+    "url": "resources/customisation/character_clothes/character_clothes19.png",
+    "sha256": "b2a59981af88cb3a3abfbc76f1909954b0a0cbe3c5e993b1a0c0fb7c4b1949f0"
+  },
+  {
+    "id": "eyes1",
+    "url": "resources/customisation/character_eyes/character_eyes1.png",
+    "sha256": "7c30d65d8a82a39d0f28dbaa1b09e36e828060a4bca63b99de34b649858ec890"
+  },
+  {
+    "id": "eyes2",
+    "url": "resources/customisation/character_eyes/character_eyes2.png",
+    "sha256": "ce09349c51874923a209f205a5c68af1bd8f18b7f7b9d18a7531c1c7ac0886ee"
+  },
+  {
+    "id": "hair12",
+    "url": "resources/customisation/character_hairs/character_hairs11.png",
+    "sha256": "4995ed72820f701f56332c860800feb3ec00cafdc239f09dcf69ab0cb0571ccf"
+  },
+  {
+    "id": "hair16",
+    "url": "resources/customisation/character_hairs/character_hairs15.png",
+    "sha256": "ad1951895e3213927a960bc282f5f19431afe0ea95abf37e1d9b90f227e43168"
+  },
+  {
+    "id": "hair20",
+    "url": "resources/customisation/character_hairs/character_hairs19.png",
+    "sha256": "ddcf35d941312942c118bbf6a0605b0629d2f8eaa7cd8cefcd440dae60124817"
+  },
+  {
+    "id": "hair3",
+    "url": "resources/customisation/character_hairs/character_hairs2.png",
+    "sha256": "9f5993b74923423694150e3ac0b7f7b309fb8a5571c5f68255d82cba8344c9db"
+  },
+  {
+    "id": "hair8",
+    "url": "resources/customisation/character_hairs/character_hairs7.png",
+    "sha256": "da7bdf0907a683d2e3d4b9e32426b5d6dbc77966207daf4720088e1f4ff3d468"
+  },
+  {
+    "id": "hat12",
+    "url": "resources/customisation/character_hats/character_hats12.png",
+    "sha256": "195e5ab64d475a89471474a1fa3a3f6a921e48aa5a7095979801270f4b5887f9"
+  },
+  {
+    "id": "hat17",
+    "url": "resources/customisation/character_hats/character_hats17.png",
+    "sha256": "6106d68738cdde7c1e10cf350f6bc5c391e43a181428bb7e9afe8bb68e55d9da"
+  },
+  {
+    "id": "koru",
+    "url": "art/out/companions/koru.png",
+    "sha256": "183f7d84da05a69333dd96089aa5916319f2869bf7603603f9ccfa24686007d1"
+  }
+]

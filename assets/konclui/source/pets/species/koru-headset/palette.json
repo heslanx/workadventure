@@ -1,0 +1,62 @@
+{
+ "key": {
+  "outline": "#0A2E37",
+  "body_sh": "#0B525C",
+  "body": "#116B76",
+  "body_li": "#1A7F8B",
+  "disc_sh": "#2A97A1",
+  "disc": "#36A6AF",
+  "disc_li": "#6CCBD1",
+  "belly": "#25858F",
+  "eye": "#F7FBFA",
+  "pupil": "#06343D",
+  "beak": "#F6AA48",
+  "beak_sh": "#B8622C",
+  "mouth": "#96282A",
+  "tongue": "#E8737A",
+  "glint": "#9FE3E6",
+  "band_ol": "#3A4048",
+  "band": "#9AA1A8",
+  "cup": "#53FFC8",
+  "cup_sh": "#1FBF8F"
+ },
+ "variants": [
+  {
+   "id": "turquesa",
+   "name": "Turquesa",
+   "colors": {}
+  },
+  {
+   "id": "lilas",
+   "name": "Lilás",
+   "colors": {
+    "outline": "#2A1F4F",
+    "body_sh": "#4C3A86",
+    "body": "#6A54A6",
+    "body_li": "#7D66B8",
+    "disc_sh": "#8A76CA",
+    "disc": "#9886D4",
+    "disc_li": "#C8BAF0",
+    "belly": "#8670C0",
+    "pupil": "#3E2F72",
+    "glint": "#E6DEFB"
+   }
+  },
+  {
+   "id": "noite",
+   "name": "Noite",
+   "colors": {
+    "outline": "#070A26",
+    "body_sh": "#121B4A",
+    "body": "#1D2B6B",
+    "body_li": "#283A85",
+    "disc_sh": "#2F4593",
+    "disc": "#3F5BB3",
+    "disc_li": "#6F8BD6",
+    "belly": "#34489A",
+    "pupil": "#1A2766",
+    "glint": "#A9BCF0"
+   }
+  }
+ ]
+}

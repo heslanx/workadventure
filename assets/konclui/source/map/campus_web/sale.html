@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Sino da venda</title>
+<style>
+  /* the office font (theme/theme.css): same origin, already cached by the theme */
+  @font-face { font-family:'Urbanist'; font-style:normal; font-weight:400 800; font-display:swap; src:url('/konclui-theme/fonts/urbanist-latin.woff2') format('woff2'); }
+  /* Platform dark tokens, ux-audit/02-design-system-platform.md section 2 (G = packages/ui/src/styles/globals.css):
+     card G:3135 and G:3308, surface-elevated G:3143, foreground G:3136, muted-foreground G:3176, border G:3227.
+     Accent #53FFC8 (G:128) with text #1A1F1E (G:129) is the office accent; the sale card keeps semantic tones instead:
+     new sale = green #10B981 (stays, marketing success), renewal = text-link #60A5FA (G:3302, 5.6:1 as text on the card,
+     the info #3B82F6 of G:472 measures only 3.9:1), manual bell = warning #D4953A (G:254, 5.5:1). Ease G:1090.
+     Font: Urbanist (G:813-815), served by the theme at /konclui-theme/fonts/urbanist-latin.woff2 (200 since the theme service). */
+  :root { --card:#0E2236; --elevated:#182C41; --fg:#F0F5FB; --muted:#98A3B3; --border:#3E4858; --accent-fg:#1A1F1E;
+    --sale:#10B981; --renewal:#60A5FA; --bell:#D4953A; }
+  /* WorkAdventure runs with color-scheme: dark; a different scheme makes Chrome paint the iframe opaque white. */
+  html { color-scheme:dark; }
+  html, body { margin:0; height:100%; background:transparent; overflow:hidden; }
+  body { font: 14px/1.35 'Urbanist', -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--fg); }
+  .card { box-sizing:border-box; height:calc(100% - 8px); margin:4px; display:flex; gap:14px; padding:14px 16px 14px 14px;
+    background:linear-gradient(135deg, var(--elevated), var(--card)); border:1px solid var(--border); border-radius:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.45); position:relative; overflow:hidden;
+    animation: enter .55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .card::before { content:""; position:absolute; inset:0 auto 0 0; width:5px; background:var(--tone); }
+  .bell { flex:none; width:46px; height:46px; border-radius:12px; display:grid; place-items:center; background:var(--tone);
+    color:var(--accent-fg); animation: swing 1.2s cubic-bezier(0.36, 0, 0.66, -0.56) .25s 2; transform-origin:50% 8px; }
+  .body { min-width:0; flex:1; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .tag { font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--tone); text-transform:uppercase; }
+  .time { font-size:11px; color:var(--muted); }
+  .value { font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1.15; }
+  .who { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .line { color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .line b { color:var(--fg); font-weight:600; }
+  @keyframes enter { from { transform:translateX(110%); opacity:0; } to { transform:none; opacity:1; } }
+  @keyframes swing { 0%,100% { transform:rotate(0); } 20% { transform:rotate(14deg); } 40% { transform:rotate(-12deg); }
+    60% { transform:rotate(8deg); } 80% { transform:rotate(-4deg); } }
+  @media (prefers-reduced-motion: reduce) { .card, .bell { animation:none; } }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="bell" aria-hidden="true">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1.5 1.5 0 0 1 1.5 1.5v.6A6.5 6.5 0 0 1 18.5 10.5v3.6l1.7 2.6a1 1 0 0 1-.8 1.6H4.6a1 1 0 0 1-.8-1.6l1.7-2.6v-3.6A6.5 6.5 0 0 1 10.5 4.1v-.6A1.5 1.5 0 0 1 12 2Zm-2.5 17.3h5a2.5 2.5 0 0 1-5 0Z"/></svg>
+  </div>
+  <div class="body">
+    <div class="top"><span class="tag" id="tag"></span><span class="time" id="time"></span></div>
+    <div class="value" id="value"></div>
+    <div class="who" id="who"></div>
+    <div class="line" id="l1"></div>
+    <div class="line" id="l2"></div>
+  </div>
+</div>
+<script>
+  // Everything below is set with textContent: the card data comes from the URL fragment.
+  let c = {};
+  try { c = JSON.parse(decodeURIComponent(location.hash.slice(1))) || {}; } catch { c = {}; }
+  const str = (v, n = 60) => (typeof v === "string" ? v.slice(0, n) : "");
+  const set = (id, text) => { document.getElementById(id).textContent = text; };
+  const card = document.getElementById("card");
+  const brl = (n) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  if (c.manual) {
+    card.style.setProperty("--tone", "var(--bell)");
+    set("tag", "Sino da venda");
+    set("value", "Toca o sino!");
+    set("who", `${str(c.nome, 40) || "Alguém"} tocou o sino da venda`);
+  } else {
+    const nova = c.tipo !== "renovacao";
+    card.style.setProperty("--tone", nova ? "var(--sale)" : "var(--renewal)");
+    set("tag", (c.teste ? "Teste: " : "") + (nova ? "Venda nova" : "Renovação"));
+    set("value", Number.isFinite(c.valor) && c.valor > 0 ? brl(c.valor) : "Venda aprovada");
+    set("who", str(c.cliente) || "Cliente Koncluí");
+    const onde = [str(c.cidade, 40), str(c.uf, 4)].filter(Boolean).join(", ");
+    const plano = str(c.plano);
+    document.getElementById("l1").replaceChildren(...[onde, plano ? `Plano ${plano}` : ""].filter(Boolean)
+      .flatMap((t, i) => (i ? [document.createTextNode("  |  "), document.createTextNode(t)] : [document.createTextNode(t)])));
+    const vend = str(c.vendedor, 40), squad = str(c.squad, 30);
+    if (vend || squad) {
+      const l2 = document.getElementById("l2");
+      l2.append("Vendido por ");
+      const b = document.createElement("b"); b.textContent = vend || "o time"; l2.append(b);
+      if (squad) l2.append(`, squad ${squad}`);
+    }
+    const t = c.quando ? new Date(c.quando) : null;
+    if (t && !isNaN(t)) set("time", t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+  }
+</script>
+</body>
+</html>

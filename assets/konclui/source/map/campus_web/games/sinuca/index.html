@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sinuca</title>
+<link rel="icon" href="data:,">
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<script src="../game-kit.js"></script>
+<style>
+.sn-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.sn-table { display:block; border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.5); cursor:crosshair; }
+.sn-table.sn-idle { cursor:default; }
+.sn-table:focus { outline:none; }
+.sn-table.sn-kbd:focus-visible { box-shadow:var(--ring); }
+.sn-meter { height:6px; border-radius:999px; background:var(--muted-bg); overflow:hidden; opacity:0; transition:opacity 120ms var(--ease); }
+.sn-meter.sn-on { opacity:1; }
+.sn-meter i { display:block; height:100%; width:0; background:var(--accent); }
+.sn-hint { text-align:center; min-height:1.5em; font-size:13px; }
+.sn-actions { display:flex; flex-direction:column; gap:8px; }
+.sn-actions .kg-btn { width:100%; }
+.sn-who { flex:1; min-width:0; }
+.sn-who b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }
+.sn-who span { color:var(--muted); font-size:13px; }
+.sn-avatar { width:22px; height:21px; flex:none; }
+.sn-select { font:inherit; background:var(--card); color:var(--fg); border:1px solid var(--border); border-radius:999px; padding:7px 14px; }
+@media (max-width: 720px) { .kg-main { overflow:auto; } .kg-stage { flex:none; } }
+</style>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage" id="stage">
+    <div class="sn-wrap">
+      <canvas id="mesa" class="sn-table" tabindex="0" aria-label="Mesa de sinuca"></canvas>
+      <div class="sn-meter" id="meter" aria-hidden="true"><i></i></div>
+      <p class="kg-muted sn-hint" id="hint"></p>
+    </div>
+  </div>
+  <aside class="kg-side">
+    <section class="kg-card"><h2>Jogadores</h2><div class="kg-players" id="players"></div></section>
+    <section class="kg-card"><h2>Última tacada</h2><p class="kg-muted" id="log"></p></section>
+    <div class="sn-actions">
+      <button class="kg-btn" id="sit" hidden>Sentar para jogar</button>
+      <button class="kg-btn kg-ghost" id="resign" hidden>Desistir</button>
+      <button class="kg-btn" id="wo" hidden>Reivindicar vitória (W.O.)</button>
+      <button class="kg-btn" id="again" hidden>Nova partida</button>
+      <button class="kg-btn kg-ghost" id="repos" hidden>Reposicionar a branca</button>
+      <select class="sn-select" id="level" aria-label="Nível da Koru" hidden>
+        <option value="30" data-jitter="3">Koru: fácil</option>
+        <option value="50" data-jitter="1" selected>Koru: médio</option>
+        <option value="100" data-jitter="0">Koru: difícil</option>
+      </select>
+      <button class="kg-btn kg-ghost" id="train">Treinar contra a Koru</button>
+      <button class="kg-btn kg-ghost" id="back" hidden>Voltar para a mesa</button>
+    </div>
+  </aside>
+</main>
+
+<script src="vendor/script/geom/Vector2.js"></script>
+<script src="vendor/script/system/Color.js"></script>
+<script src="vendor/script/Global.js"></script>
+<script src="vendor/script/game_objects/Ball.js"></script>
+<script src="vendor/script/GamePolicy.js"></script>
+<script src="vendor/script/GameWorld.js"></script>
+<script src="vendor/script/AI/Opponent.js"></script>
+<script src="vendor/script/AI/AIPolicy.js"></script>
+<script src="vendor/script/AI/AITrainer.js"></script>
+<script>
+// Glue: ties the upstream physics (vendor/) to the Koncluí game kit. See VENDOR.md.
+var sprites = {}; // global on purpose: the upstream Ball.js picks its colour from it
+
+(function () {
+  "use strict";
+
+  // ---------------------------------------------------------------- constants
+  const Q = 10;                 // the shared state keeps positions in tenths of a pixel
+  const W = TABLE_W, H = TABLE_H;
+  const MAX_POWER = 75;         // the upstream stick power range
+  const MIN_POWER = 3;          // below this a drag is a cancel, not a shot
+  const PULL_MAX = 260;         // table pixels of drag for full power
+  const KEY_CHARGE_MS = 1400;   // holding Space from zero to full power
+  const STEP = 1 / 60;          // 60 physics steps a second: the pace of the upstream at 60 fps
+  const MAX_STEPS = 6000;       // hard stop for a simulation (100 s of table time)
+  const EVENT = "sinuca:tacada";
+  const MINT = "#53FFC8";
+  const GROUP_NAME = ["", "vermelhas", "amarelas"];
+  const GROUP_COLOR = ["#768395", "#D83A45", "#F5B800"];
+  const FOUL = ["", "a branca caiu", "nenhuma bola foi tocada", "a primeira bola tocada não era a certa"];
+  const REASON = {
+    "preta": "encaçapou a preta",
+    "preta antes da hora": "a preta caiu antes da hora",
+    "falta na preta": "falta ao encaçapar a preta",
+    "desistência": "desistência",
+    "W.O.": "W.O.",
+  };
+  const $ = (id) => document.getElementById(id);
+
+  const SPRITES = { ball: "spr_ball2.png", redBall: "spr_redBall2.png", yellowBall: "spr_yellowBall2.png", blackBall: "spr_blackBall2.png" };
+  for (const [key, file] of Object.entries(SPRITES)) {
+    const img = new Image();
+    img.src = `vendor/assets/sprites/${file}`;
+    sprites[key] = img;
+  }
+
+  // The upstream world is the source of the rack, the geometry and the group of each ball id.
+  const proto = new GameWorld();
+  const RACK = proto.balls.map((b) => [Math.round(b.initPos.x * Q), Math.round(b.initPos.y * Q)]);
+  const GROUP = proto.balls.map((b) => (b.color === Color.red ? 1 : b.color === Color.yellow ? 2 : 0));
+  const POCKETS = [proto.policy.topLeftHolePos, proto.policy.topCenterHolePos, proto.policy.topRightHolePos,
+    proto.policy.bottomLeftHolePos, proto.policy.bottomCenterHolePos, proto.policy.bottomRightHolePos];
+
+  const view = new GameWorld();  // what the canvas shows
+  const sim = new GameWorld();   // headless: the result of a shot, and the Koru's candidate shots
+
+  // ---------------------------------------------------------------- shared state
+  // { b: 16 x ([x, y] in 0.1 px | 0 when pocketed), g: [group of seat 0, of seat 1] (0 open, 1 red, 2 yellow),
+  //   h: 1 when the player in turn has the cue ball in hand (then b[15] is 0), l: log of the last shot | 0,
+  //   s: the last shot { a: angle in 1e-4 rad, p: power in 0.1, c: cue ball start | 0 } | 0 }
+  const rackState = () => ({ b: RACK.map((p) => p.slice()), g: [0, 0], h: 0, l: 0, s: 0 });
+
+  const posOk = (p) => Array.isArray(p) && p.length === 2 && Number.isInteger(p[0]) && Number.isInteger(p[1]) &&
+    p[0] >= 800 && p[0] <= 14200 && p[1] >= 800 && p[1] <= 7450;
+  const shotOk = (s) => !!s && typeof s === "object" && Number.isInteger(s.a) && Math.abs(s.a) <= 31500 &&
+    Number.isInteger(s.p) && s.p >= 0 && s.p <= 750 && (s.c === 0 || posOk(s.c));
+
+  function validState(st) {
+    try {
+      if (!st || typeof st !== "object" || Object.keys(st).length !== 5) return false;
+      if (!Array.isArray(st.b) || st.b.length !== 16 || !st.b.every((p) => p === 0 || posOk(p))) return false;
+      if (!Array.isArray(st.g) || st.g.length !== 2 || !st.g.every((x) => x === 0 || x === 1 || x === 2)) return false;
+      if (!(st.g[0] === 0 && st.g[1] === 0) && !(st.g[0] + st.g[1] === 3 && st.g[0] * st.g[1] === 2)) return false;
+      if ((st.h !== 0 && st.h !== 1) || (st.h === 1) !== (st.b[WHITE_ID] === 0)) return false;
+      const l = st.l;
+      if (l !== 0 && !(l && (l.w === 0 || l.w === 1) && Array.isArray(l.p) && l.p.length <= 15 &&
+        l.p.every((id) => Number.isInteger(id) && id >= 0 && id <= 14) && Number.isInteger(l.f) && l.f >= 0 && l.f <= 3)) return false;
+      return st.s === 0 || shotOk(st.s);
+    } catch {
+      return false;
+    }
+  }
+
+  const decode = (b) => b.map((p) => (p ? [p[0] / Q, p[1] / Q] : null));
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const quantPos = (p) => [Math.round(p[0] * Q), Math.round(p[1] * Q)];
+  const quantShot = (angle, power, c) => ({
+    a: Math.round(Math.atan2(Math.sin(angle), Math.cos(angle)) * 1e4),
+    p: Math.round(clamp(power, 0, MAX_POWER) * Q),
+    c,
+  });
+
+  const remaining = (st, group) => GROUP.reduce((n, g, id) => n + (g === group && st.b[id] !== 0 ? 1 : 0), 0);
+
+  // ---------------------------------------------------------------- rules (simplified 8-ball)
+  // before: state at rest, seat: who shot, log: { first, pots } recorded by the physics.
+  function judge(before, seat, log) {
+    const mine = before.g[seat];
+    const cleared = mine !== 0 && remaining(before, mine) === 0;
+    let foul = 0;
+    if (log.pots.includes(WHITE_ID)) foul = 1;
+    else if (log.first === -1) foul = 2;
+    else if (mine !== 0 && (cleared ? log.first !== BLACK_ID : GROUP[log.first] !== mine)) foul = 3;
+
+    const g = before.g.slice();
+    if (log.pots.includes(BLACK_ID)) {
+      const won = !foul && cleared;
+      return { over: true, won, foul, g, h: 0, keep: false, own: 0, reason: won ? "preta" : foul ? "falta na preta" : "preta antes da hora" };
+    }
+    if (mine === 0 && !foul) {
+      const first = log.pots.find((id) => GROUP[id] !== 0);
+      if (first !== undefined) {
+        g[seat] = GROUP[first];
+        g[1 - seat] = 3 - GROUP[first];
+      }
+    }
+    const own = g[seat] === 0 ? 0 : log.pots.filter((id) => GROUP[id] === g[seat]).length;
+    return { over: false, won: false, foul, g, h: foul ? 1 : 0, keep: !foul && own > 0, own, reason: "" };
+  }
+
+  function loadShot(world, before, shot) {
+    world.place(decode(before.b));
+    if (shot.c !== 0) {
+      const white = world.whiteBall;
+      white.position = new Vector2(shot.c[0] / Q, shot.c[1] / Q);
+      white.inHole = false;
+      white.visible = true;
+    }
+    world.shoot(shot.p / Q, shot.a / 1e4);
+  }
+
+  // Plays the shot to rest on the headless world (milliseconds, no drawing) and judges it.
+  function runShot(before, seat, shot) {
+    loadShot(sim, before, shot);
+    let n = 0;
+    while (sim.ballsMoving() && n++ < MAX_STEPS) sim.update(DELTA);
+    const log = { first: sim.policy.first, pots: sim.policy.pots.slice() };
+    return { log, res: judge(before, seat, log) };
+  }
+
+  // The state to save after runShot(): the sim world still holds the positions at rest.
+  function buildOutcome(seat, shot, out) {
+    const b = sim.snapshot().map((p) => (p ? quantPos(p) : 0));
+    const h = out.res.h === 1 || b[WHITE_ID] === 0 ? 1 : 0;
+    if (h) b[WHITE_ID] = 0;
+    const state = { b, g: out.res.g, h, l: { w: seat, p: out.log.pots.filter((id) => id !== WHITE_ID), f: out.res.foul },
+      s: { a: shot.a, p: shot.p, c: shot.c } };
+    return { state, keep: out.res.keep, winner: out.res.over ? (out.res.won ? seat : 1 - seat) : null, reason: out.res.reason };
+  }
+
+  function logText(st, names) {
+    const l = st.l;
+    if (!l) return "Mesa pronta. Quem começa dá a tacada de abertura.";
+    const who = names[l.w] || "Alguém";
+    const red = l.p.filter((id) => GROUP[id] === 1).length;
+    const yellow = l.p.filter((id) => GROUP[id] === 2).length;
+    const parts = [];
+    if (red) parts.push(red === 1 ? "1 vermelha" : `${red} vermelhas`);
+    if (yellow) parts.push(yellow === 1 ? "1 amarela" : `${yellow} amarelas`);
+    if (l.p.includes(BLACK_ID)) parts.push("a preta");
+    let text = parts.length ? `${who} encaçapou ${parts.join(" e ")}.` : `${who} não encaçapou nada.`;
+    if (l.f) text += ` Falta: ${FOUL[l.f]}.`;
+    return text;
+  }
+
+  // ---------------------------------------------------------------- display model
+  let mode = "mesa";                 // "mesa" (the shared table) | "treino" (against the Koru, local only)
+  let shown = { id: null, seq: -1, state: rackState() }; // resting positions on the canvas
+  let anim = null;                   // the shot in flight on the canvas
+  let busy = false;                  // my shot is being saved
+  let placed = null;                 // cue ball position chosen with the ball in hand
+  let ghost = null;                  // where the cue ball would go, under the pointer
+  let drag = null;                   // pointer gesture in progress
+  let charging = 0;                  // when Space started charging (ms), 0 = not charging
+  let previewTimer = 0;
+  let toastText = "", toastTimer = 0;
+  let train = null;                  // { state, turn, over, winner, reason }
+  let planToken = 0;
+  let resignArmed = false;
+  const aim = { angle: 0, power: 0 };
+  const animated = new Set();        // seqs whose shot already played on this page
+
+  const chrome = KG.chrome({
+    title: "Sinuca",
+    help: "Arraste na mesa para trás da direção em que quer tacar: quanto mais longe, mais força. Solte para tacar. " +
+      "No teclado, use as setas para mirar e segure Espaço para dar força. Encaçape todas as bolas do seu grupo " +
+      "(vermelhas ou amarelas) e depois a preta. Falta (a branca cair ou nenhuma bola ser tocada) dá a branca na mão para o " +
+      "adversário, e a preta antes da hora perde o jogo.",
+  });
+  const table = KG.table("mesaSinuca", { game: "sinuca", initial: rackState, validState });
+
+  const canvas = $("mesa");
+  const ctx = canvas.getContext("2d");
+  let k = 1;
+  let tableLayer = null;
+
+  // ---------------------------------------------------------------- table art (drawn, not a bitmap)
+  function roundedPath(t, x, y, w, h, r) {
+    t.beginPath();
+    t.moveTo(x + r, y);
+    t.arcTo(x + w, y, x + w, y + h, r);
+    t.arcTo(x + w, y + h, x, y + h, r);
+    t.arcTo(x, y + h, x, y, r);
+    t.arcTo(x, y, x + w, y, r);
+    t.closePath();
+  }
+
+  function grain() {
+    const g = document.createElement("canvas");
+    g.width = g.height = 96;
+    const c = g.getContext("2d");
+    const d = c.createImageData(96, 96);
+    for (let i = 0; i < d.data.length; i += 4) {
+      d.data[i] = d.data[i + 1] = d.data[i + 2] = (Math.random() * 255) | 0;
+      d.data[i + 3] = 9;
+    }
+    c.putImageData(d, 0, 0);
+    return g;
+  }
+
+  function renderTable(pw, ph) {
+    const c = document.createElement("canvas");
+    c.width = pw;
+    c.height = ph;
+    const t = c.getContext("2d");
+    t.scale(pw / W, ph / H);
+
+    roundedPath(t, 0, 0, W, H, 44);
+    const rail = t.createLinearGradient(0, 0, 0, H);
+    rail.addColorStop(0, "#22405f");
+    rail.addColorStop(1, "#0b1b2e");
+    t.fillStyle = rail;
+    t.fill();
+    t.lineWidth = 3;
+    t.strokeStyle = "#3E4858";
+    t.stroke();
+    roundedPath(t, 9, 9, W - 18, H - 18, 36);
+    t.lineWidth = 2;
+    t.strokeStyle = "rgba(255,255,255,.08)";
+    t.stroke();
+
+    t.fillStyle = "rgba(180,189,204,.55)";
+    const diamond = (x, y) => {
+      t.beginPath();
+      t.moveTo(x, y - 8);
+      t.lineTo(x + 5, y);
+      t.lineTo(x, y + 8);
+      t.lineTo(x - 5, y);
+      t.closePath();
+      t.fill();
+    };
+    for (let i = 1; i <= 3; i++) {
+      for (const x of [62 + (750 - 62) * i / 4, 750 + (1435 - 750) * i / 4]) {
+        diamond(x, 28);
+        diamond(x, H - 28);
+      }
+      const y = 62 + (762 - 62) * i / 4;
+      diamond(28, y);
+      diamond(W - 28, y);
+    }
+
+    const fx = BORDER_SIZE, fy = BORDER_SIZE, fw = W - 2 * BORDER_SIZE, fh = H - 2 * BORDER_SIZE;
+    const felt = t.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, W * 0.55);
+    felt.addColorStop(0, "#0f6a76");
+    felt.addColorStop(1, "#08414d");
+    t.fillStyle = felt;
+    t.fillRect(fx, fy, fw, fh);
+    if (KG.profile !== "leve") {
+      t.fillStyle = t.createPattern(grain(), "repeat");
+      t.fillRect(fx, fy, fw, fh);
+    }
+    t.lineWidth = 10;
+    t.strokeStyle = "rgba(0,0,0,.28)";
+    t.strokeRect(fx + 5, fy + 5, fw - 10, fh - 10);
+
+    t.strokeStyle = "rgba(255,255,255,.14)";
+    t.lineWidth = 2;
+    t.beginPath();
+    t.moveTo(proto.whiteBallStartingPosition.x, fy + 6);
+    t.lineTo(proto.whiteBallStartingPosition.x, fy + fh - 6);
+    t.stroke();
+    t.fillStyle = "rgba(255,255,255,.22)";
+    for (const [x, y] of [[proto.whiteBallStartingPosition.x, 413], [1090, 413]]) {
+      t.beginPath();
+      t.arc(x, y, 4, 0, Math.PI * 2);
+      t.fill();
+    }
+
+    for (const p of POCKETS) {
+      const side = p.x === 750;
+      const cy = side ? (p.y < H / 2 ? 38 : H - 38) : p.y;
+      const r = side ? 34 : 38;
+      const hole = t.createRadialGradient(p.x, cy, 4, p.x, cy, r);
+      hole.addColorStop(0, "#010409");
+      hole.addColorStop(0.8, "#050d18");
+      hole.addColorStop(1, "#0a1829");
+      t.fillStyle = hole;
+      t.beginPath();
+      t.arc(p.x, cy, r, 0, Math.PI * 2);
+      t.fill();
+      t.lineWidth = 5;
+      t.strokeStyle = "#3E4858";
+      t.stroke();
+    }
+    return c;
+  }
+
+  function resize() {
+    const avail = $("stage").getBoundingClientRect();
+    const narrow = window.innerWidth <= 720; // stacked layout: the page scrolls, so only the width limits the table
+    const w = Math.max(240, narrow ? avail.width : Math.min(avail.width, (avail.height - 44) * W / H));
+    canvas.style.width = `${Math.floor(w)}px`;
+    canvas.style.height = `${Math.floor(w * H / W)}px`;
+    $("meter").style.width = $("hint").style.width = canvas.style.width;
+    const dpr = KG.profile === "leve" ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    const pw = Math.min(W, Math.round(w * dpr));
+    canvas.width = pw;
+    canvas.height = Math.round(pw * H / W);
+    k = pw / W;
+    tableLayer = renderTable(canvas.width, canvas.height);
+    redraw();
+  }
+
+  // ---------------------------------------------------------------- drawing
+  // First thing the cue ball would touch along `angle`: { t: distance, hit: ball id | -1 }.
+  function castAim(angle) {
+    const o = view.whiteBall.position, dx = Math.cos(angle), dy = Math.sin(angle);
+    const p = view.policy, r = view.whiteBall.origin.x;
+    let t = Infinity, hit = -1;
+    if (dx > 1e-9) t = Math.min(t, (p.rightBorderX - r - o.x) / dx);
+    else if (dx < -1e-9) t = Math.min(t, (p.leftBorderX + r - o.x) / dx);
+    if (dy > 1e-9) t = Math.min(t, (p.bottomBorderY - r - o.y) / dy);
+    else if (dy < -1e-9) t = Math.min(t, (p.topBorderY + r - o.y) / dy);
+    for (const b of view.balls) {
+      if (b.id === WHITE_ID || b.inHole) continue;
+      const rx = b.position.x - o.x, ry = b.position.y - o.y;
+      const proj = rx * dx + ry * dy;
+      const perp2 = rx * rx + ry * ry - proj * proj;
+      if (proj <= 0 || perp2 >= BALL_SIZE * BALL_SIZE) continue;
+      const tt = proj - Math.sqrt(BALL_SIZE * BALL_SIZE - perp2);
+      if (tt < t) {
+        t = tt;
+        hit = b.id;
+      }
+    }
+    return { t, hit };
+  }
+
+  function drawGuide() {
+    const o = view.whiteBall.position, dx = Math.cos(aim.angle), dy = Math.sin(aim.angle);
+    const { t, hit } = castAim(aim.angle);
+    const ex = o.x + dx * t, ey = o.y + dy * t;
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(83,255,200,.8)";
+    ctx.setLineDash([12, 10]);
+    ctx.beginPath();
+    ctx.moveTo(o.x + dx * 24, o.y + dy * 24);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(ex, ey, BALL_SIZE / 2, 0, Math.PI * 2);
+    ctx.stroke();
+    if (hit !== -1) {
+      const target = view.balls[hit].position;
+      const tx = target.x - ex, ty = target.y - ey, len = Math.hypot(tx, ty) || 1;
+      ctx.strokeStyle = "rgba(240,245,251,.55)";
+      ctx.beginPath();
+      ctx.moveTo(target.x, target.y);
+      ctx.lineTo(target.x + tx / len * 80, target.y + ty / len * 80);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawStick() {
+    const o = view.whiteBall.position;
+    const gap = 24 + aim.power / MAX_POWER * 130;
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.rotate(aim.angle + Math.PI);
+    const body = ctx.createLinearGradient(gap, 0, gap + 720, 0);
+    body.addColorStop(0, "#ecd3a0");
+    body.addColorStop(0.5, "#b9773a");
+    body.addColorStop(1, "#2b1d14");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(gap + 8, -3.5);
+    ctx.lineTo(gap + 720, -8);
+    ctx.lineTo(gap + 720, 8);
+    ctx.lineTo(gap + 8, 3.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#F0F5FB";
+    ctx.fillRect(gap + 4, -3.6, 8, 7.2);
+    ctx.fillStyle = MINT;
+    ctx.fillRect(gap, -3.4, 5, 6.8);
+    ctx.restore();
+  }
+
+  function draw() {
+    if (!tableLayer) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(tableLayer, 0, 0);
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    view.draw(ctx);
+    if (isPlacing()) {
+      const at = ghost || defaultSpot();
+      const ok = view.canPlaceWhite(new Vector2(at[0], at[1]));
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(sprites.ball, at[0] - 25, at[1] - 25, 50, 50);
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = ok ? MINT : "#E8594E";
+      ctx.beginPath();
+      ctx.arc(at[0], at[1], BALL_SIZE / 2 + 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else if (canAct() && !isPlacing()) {
+      drawGuide();
+      drawStick();
+    }
+    canvas.classList.toggle("sn-idle", !canAct());
+  }
+
+  const redraw = draw;
+
+  // ---------------------------------------------------------------- frame loop (asleep while nothing moves)
+  let loop = null;
+  const wake = () => {
+    if (!loop) loop = KG.loop(frame);
+  };
+
+  function frame(dt) {
+    if (anim) advance(dt);
+    if (charging) {
+      aim.power = Math.min(MAX_POWER, (performance.now() - charging) / KEY_CHARGE_MS * MAX_POWER);
+      meter();
+    }
+    draw();
+    if (!anim && !charging && !drag) {
+      loop.stop();
+      loop = null;
+    }
+  }
+
+  function meter() {
+    const on = (drag && drag.type === "aim") || charging;
+    $("meter").classList.toggle("sn-on", !!on);
+    $("meter").firstElementChild.style.width = `${aim.power / MAX_POWER * 100}%`;
+  }
+
+  // ---------------------------------------------------------------- shot animation
+  function startAnim(before, shot, { mine = false, replayOf = 0, onDone }) {
+    stopAnim();
+    clearTimeout(previewTimer);
+    loadShot(view, before, shot);
+    placed = ghost = drag = null;
+    charging = 0;
+    aim.power = 0;
+    meter();
+    anim = { acc: 0, settle: 0, mine, replayOf, onDone };
+    if (document.hidden) completeAnim();
+    else wake();
+    renderPanel();
+  }
+
+  function stopAnim() {
+    if (anim && anim.mine) busy = false;
+    anim = null;
+  }
+
+  function advance(dt) {
+    anim.acc += dt;
+    let ticks = 0;
+    while (anim.acc >= STEP && ticks++ < 6) {
+      anim.acc -= STEP;
+      const burst = view.maxSpeed() < 150 ? 3 : 1; // the slow tail runs faster; the physics steps are the same
+      for (let i = 0; i < burst; i++) {
+        view.update(DELTA);
+        if (!view.ballsMoving()) anim.settle++;
+      }
+    }
+    if (anim.settle >= SINK_STEPS) finishAnim();
+  }
+
+  // Tab hidden: no frames, so run the same steps at once.
+  function completeAnim() {
+    let n = 0;
+    while (view.ballsMoving() && n++ < MAX_STEPS) view.update(DELTA);
+    for (let i = 0; i < SINK_STEPS; i++) view.update(DELTA);
+    finishAnim();
+  }
+
+  function finishAnim() {
+    const done = anim.onDone;
+    anim = null;
+    done();
+    redraw();
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && anim) completeAnim();
+  });
+
+  // ---------------------------------------------------------------- what the canvas shows
+  function showState(state, id, seq) {
+    stopAnim();
+    clearTimeout(previewTimer);
+    shown = { id, seq, state };
+    spot = null;
+    view.place(decode(state.b));
+    placed = ghost = drag = null;
+    charging = 0;
+    aim.power = 0;
+    meter();
+    redraw();
+    renderPanel();
+  }
+
+  function effectiveSession() {
+    const s = table.session;
+    return s && (s.status === "done" || table.role !== "livre") ? s : null;
+  }
+
+  // Follows the shared table: snaps to the saved state, or replays the last shot when it was missed live.
+  function syncTable() {
+    if (mode !== "mesa") return renderPanel();
+    const s = effectiveSession();
+    if (!s) {
+      if (shown.id !== null) showState(rackState(), null, -1);
+      return renderPanel();
+    }
+    if (anim && anim.replayOf === s.seq && shown.id === s.id) return;
+    if (s.id === shown.id && s.seq === shown.seq) return renderPanel();
+    if (s.id !== shown.id) animated.clear();
+    const replay = s.id === shown.id && s.seq === shown.seq + 1 && s.state.s !== 0 && !animated.has(s.seq) && !busy && !anim;
+    if (replay) {
+      animated.add(s.seq);
+      const target = s;
+      startAnim(shown.state, s.state.s, { replayOf: s.seq, onDone: () => showState(target.state, target.id, target.seq) });
+    } else {
+      showState(s.state, s.id, s.seq);
+    }
+  }
+
+  function resync() {
+    shown = { id: undefined, seq: -2, state: shown.state };
+    syncTable();
+  }
+
+  table.onChange((s, prev) => {
+    if (mode === "treino" && prev && prev.status === "waiting" && s && s.status === "playing" && table.seat !== -1) {
+      leaveTraining();
+      toast("Seu adversário chegou. Boa partida!");
+      return;
+    }
+    syncTable();
+  });
+
+  KG.event.on(EVENT, (d, meta) => {
+    if (meta.mine || mode !== "mesa" || anim || busy) return;
+    const s = effectiveSession();
+    if (!s || !d || typeof d.id !== "string" || !Number.isInteger(d.seq) || !shotOk({ a: d.a, p: d.p, c: d.c })) return;
+    if (s.id !== d.id || s.seq !== d.seq || shown.id !== s.id || shown.seq !== s.seq || (shown.state.h === 1) !== (d.c !== 0)) return;
+    animated.add(d.seq + 1);
+    startAnim(shown.state, { a: d.a, p: d.p, c: d.c }, {
+      // the saved state snaps the board when it arrives; without it the preview is dropped
+      onDone: () => {
+        previewTimer = setTimeout(() => showState(shown.state, shown.id, shown.seq), 5000);
+      },
+    });
+  });
+
+  // ---------------------------------------------------------------- my turn
+  function canAct() {
+    if (anim || busy) return false;
+    if (mode === "treino") return !!train && !train.over && train.turn === 0;
+    const s = table.session;
+    return !!s && table.myTurn() && s.id === shown.id && s.seq === shown.seq;
+  }
+
+  const isPlacing = () => canAct() && shown.state.h === 1 && !placed;
+
+  function findSpot(px, py) {
+    let best = null, bestD = Infinity;
+    for (let x = 90; x <= 1410; x += 12) {
+      for (let y = 90; y <= 735; y += 12) {
+        const d = Math.hypot(x - px, y - py);
+        if (d < bestD && view.canPlaceWhite(new Vector2(x, y))) {
+          best = [x, y];
+          bestD = d;
+        }
+      }
+    }
+    return best || [px, py];
+  }
+
+  // Where the cue ball goes when nobody points: the free spot closest to the head spot (Enter takes it).
+  let spot = null;
+  const defaultSpot = () => (spot = spot || findSpot(proto.whiteBallStartingPosition.x, proto.whiteBallStartingPosition.y));
+
+  function placeCue(pos) {
+    placed = pos;
+    const white = view.whiteBall;
+    white.position = new Vector2(pos[0], pos[1]);
+    white.inHole = false;
+    white.visible = true;
+    white.sunk = 0;
+    aim.power = 0;
+  }
+
+  // angle in radians, power 0..75. Returns false when it is not my turn or the shot is not valid.
+  function requestShot(angle, power, cue) {
+    if (!canAct() || !Number.isFinite(angle) || !Number.isFinite(power)) return false;
+    let c = 0;
+    if (shown.state.h === 1) {
+      const at = cue || placed || defaultSpot();
+      if (!view.canPlaceWhite(new Vector2(at[0], at[1]))) return false;
+      c = quantPos(at);
+    }
+    const shot = quantShot(angle, power, c);
+    if (shot.p < MIN_POWER * Q) return false;
+    if (mode === "treino") fireTraining(shot, 0);
+    else fireTable(shot);
+    return true;
+  }
+
+  function fireTable(shot) {
+    const s = table.session, before = s.state, seat = table.seat;
+    const out = runShot(before, seat, shot);
+    const next = buildOutcome(seat, shot, out);
+    if (!validState(next.state)) return toast("Não deu para registrar essa tacada.");
+    busy = true;
+    animated.add(s.seq + 1);
+    Promise.resolve(KG.event.send(EVENT, { id: s.id, seq: s.seq, a: shot.a, p: shot.p, c: shot.c })).catch(() => {});
+    startAnim(before, shot, {
+      mine: true,
+      onDone: () => {
+        showState(next.state, s.id, s.seq); // my result is the truth until the saved state echoes back
+        table.play(next.state, { next: !next.keep, winner: next.winner, reason: next.reason }).then((ok) => {
+          busy = false;
+          if (!ok) {
+            toast("A jogada não foi salva: a mesa mudou.");
+            resync();
+          } else renderPanel();
+        }, () => {
+          busy = false;
+          toast("A jogada não foi salva. Tente de novo.");
+          resync();
+        });
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------- training against the Koru
+  function fireTraining(shot, seat) {
+    const before = train.state;
+    const out = runShot(before, seat, shot);
+    const next = buildOutcome(seat, shot, out);
+    startAnim(before, shot, {
+      onDone: () => {
+        train.state = next.state;
+        showState(next.state, "treino", shown.seq + 1);
+        if (next.winner !== null) {
+          Object.assign(train, { over: true, winner: next.winner, reason: next.reason });
+        } else {
+          train.turn = next.keep ? seat : 1 - seat;
+          if (train.turn === 1) koruTurn();
+        }
+        renderPanel();
+      },
+    });
+  }
+
+  // The upstream AI: searches a shot for `seat` from `before` (a few milliseconds per slice), then done({a, p, c}).
+  function planShot(before, seat, alive, done) {
+    const c = before.h === 1 ? quantPos(defaultSpot()) : 0;
+    TRAIN_ITER = Number($("level").value);
+    AI.init((power, rotation) => {
+      const out = runShot(before, seat, quantShot(rotation, power, c));
+      return AI.AIPolicy.evaluate(sim, { contact: out.log.first !== -1, own: out.res.own, over: out.res.over, won: out.res.won, foul: out.res.foul });
+    });
+    const pump = () => {
+      if (!alive()) return;
+      if (!AI.train(8)) {
+        setTimeout(pump, 0);
+        return;
+      }
+      const best = AI.best();
+      done(quantShot(best.rotation, best.power, c));
+    };
+    pump();
+  }
+
+  function koruTurn() {
+    const token = ++planToken;
+    setTimeout(() => planShot(train.state, 1, () => token === planToken, (shot) => {
+      // the upstream AI plays a perfect simulation; the easier levels miss the aim a little
+      const jitter = Number($("level").selectedOptions[0].dataset.jitter) || 0;
+      fireTraining(quantShot(shot.a / 1e4 + (Math.random() * 2 - 1) * jitter * Math.PI / 180, shot.p / Q, shot.c), 1);
+    }), 500);
+    renderPanel();
+  }
+
+  function enterTraining() {
+    planToken++;
+    stopAnim();
+    mode = "treino";
+    train = { state: rackState(), turn: 0, over: false, winner: null, reason: "" };
+    showState(train.state, "treino", 0);
+  }
+
+  function leaveTraining() {
+    planToken++;
+    stopAnim();
+    mode = "mesa";
+    train = null;
+    resync();
+  }
+
+  // ---------------------------------------------------------------- input: drag to aim and shoot, keys as a fallback
+  function toTable(e) {
+    const r = canvas.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H];
+  }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || !canAct()) return;
+    canvas.classList.remove("sn-kbd");
+    canvas.focus();
+    canvas.setPointerCapture(e.pointerId);
+    const p = toTable(e);
+    if (isPlacing()) {
+      ghost = p;
+      drag = { type: "place" };
+    } else drag = { type: "aim", ox: p[0], oy: p[1] };
+    wake();
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!canAct()) return;
+    const p = toTable(e);
+    if (drag && drag.type === "aim") {
+      const dx = p[0] - drag.ox, dy = p[1] - drag.oy, len = Math.hypot(dx, dy);
+      if (len > 8) {
+        aim.angle = Math.atan2(-dy, -dx);
+        aim.power = clamp((len - 8) / (PULL_MAX - 8), 0, 1) * MAX_POWER;
+        meter();
+      }
+      wake();
+    } else if (isPlacing() && (drag || e.pointerType === "mouse")) {
+      ghost = p;
+      wake();
+    }
+  });
+
+  function endDrag(cancel) {
+    const d = drag;
+    drag = null;
+    if (!d) return;
+    if (d.type === "place") {
+      if (!cancel && ghost && view.canPlaceWhite(new Vector2(ghost[0], ghost[1]))) placeCue(ghost);
+      ghost = null;
+    } else if (!cancel && aim.power >= MIN_POWER) {
+      requestShot(aim.angle, aim.power);
+    }
+    aim.power = 0;
+    meter();
+    renderPanel();
+    wake();
+  }
+
+  canvas.addEventListener("pointerup", () => endDrag(false));
+  canvas.addEventListener("pointercancel", () => endDrag(true));
+
+  canvas.addEventListener("keydown", (e) => {
+    canvas.classList.add("sn-kbd");
+    if (!canAct()) return;
+    if (isPlacing()) {
+      if (e.key === "Enter") {
+        placeCue(defaultSpot());
+        e.preventDefault();
+        redraw();
+        renderPanel();
+      }
+      return;
+    }
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      aim.angle += (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 0.1 : 1) * Math.PI / 180;
+      e.preventDefault();
+      redraw();
+    } else if (e.key === " " && !e.repeat && !charging) {
+      charging = performance.now();
+      e.preventDefault();
+      wake();
+    } else if (e.key === "Escape" && charging) {
+      charging = 0;
+      aim.power = 0;
+      meter();
+      redraw();
+    }
+  });
+
+  canvas.addEventListener("blur", () => {
+    if (!charging) return;
+    charging = 0;
+    aim.power = 0;
+    meter();
+    redraw();
+  });
+
+  canvas.addEventListener("keyup", (e) => {
+    if (e.key === " " && charging) {
+      const power = aim.power;
+      charging = 0;
+      aim.power = 0;
+      meter();
+      if (power >= MIN_POWER) requestShot(aim.angle, power);
+      e.preventDefault();
+    }
+  });
+
+  // ---------------------------------------------------------------- side panel
+  function toast(text) {
+    toastText = text;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastText = "";
+      renderPanel();
+    }, 4000);
+    renderPanel();
+  }
+
+  function seatNames() {
+    const s = table.session;
+    return [0, 1].map((i) => (s && s.seats[i] ? KG.clean(s.seats[i].name, 24) || "Jogador" : ""));
+  }
+
+  function standing(st, seat) {
+    const g = st.g[seat];
+    if (g === 0) return "Mesa aberta";
+    const left = remaining(st, g);
+    return `${GROUP_NAME[g]}: ${left ? `restam ${left}` : "falta a preta"}`;
+  }
+
+  function playerRow({ name, sub, color, turn, avatar }) {
+    const row = document.createElement("div");
+    row.className = turn ? "kg-player kg-turn" : "kg-player";
+    const dot = document.createElement("span");
+    dot.className = "kg-dot";
+    dot.style.background = color;
+    row.append(dot);
+    if (avatar) {
+      const img = new Image();
+      img.className = "sn-avatar";
+      img.alt = "";
+      img.src = KG.asset("koru.png");
+      row.append(img);
+    }
+    const who = document.createElement("div");
+    who.className = "sn-who";
+    const b = document.createElement("b");
+    b.textContent = name;
+    const span = document.createElement("span");
+    span.textContent = sub;
+    who.append(b, span);
+    row.append(who);
+    return row;
+  }
+
+  function resultText(winnerName, reason) {
+    const why = Object.prototype.hasOwnProperty.call(REASON, reason) ? REASON[reason] : "";
+    return `${winnerName} venceu${why ? ` (${why})` : ""}`;
+  }
+
+  function renderPanel() {
+    const st = shown.state;
+    const mine = canAct();
+    let status, hint = "", rows, names = seatNames();
+    const show = { sit: false, resign: false, wo: false, again: false, train: false, back: false, level: false };
+
+    if (mode === "treino") {
+      const turn = train.over ? -1 : train.turn;
+      rows = [{ name: "Você", sub: standing(st, 0), color: GROUP_COLOR[st.g[0]], turn: turn === 0 },
+        { name: "Koru", sub: standing(st, 1), color: GROUP_COLOR[st.g[1]], turn: turn === 1, avatar: true }];
+      names = ["Você", "A Koru"];
+      if (anim) status = "Tacada em andamento";
+      else if (train.over) status = train.winner === 0 ? "Você venceu a Koru!" : `A Koru venceu (${REASON[train.reason] || "boa jogada"})`;
+      else status = train.turn === 0 ? "Sua vez" : "A Koru está pensando…";
+      show.again = show.back = show.level = true;
+    } else {
+      const s = effectiveSession(), seat = table.seat;
+      if (!s) {
+        status = "Mesa livre";
+        hint = "Sente para jogar ou treine contra a Koru.";
+        rows = [0, 1].map(() => ({ name: "Vaga livre", sub: "Ninguém na mesa", color: GROUP_COLOR[0], turn: false }));
+        show.sit = true;
+      } else {
+        const turn = s.status === "playing" ? s.turn : -1;
+        rows = [0, 1].map((i) => ({
+          name: names[i] ? (seat === i ? `${names[i]} (você)` : names[i]) : "Vaga livre",
+          sub: !names[i] ? "Ninguém na mesa" : s.status === "waiting" ? "Aguardando o início" : standing(st, i),
+          color: GROUP_COLOR[st.g[i]], turn: turn === i,
+        }));
+        if (s.status === "waiting") {
+          status = seat === -1 ? "Mesa aguardando o segundo jogador" : "Aguardando o adversário…";
+          show.sit = seat === -1;
+        } else if (s.status === "playing") {
+          if (anim || busy) status = `Tacada de ${names[s.turn]}`;
+          else if (mine) status = isPlacing() ? "Sua vez: posicione a branca" : "Sua vez";
+          else status = seat === -1 ? `Vez de ${names[s.turn]} (você assiste)` : `Vez de ${names[s.turn]}`;
+          show.resign = seat !== -1;
+          show.wo = table.canClaimWO();
+        } else {
+          status = s.winner === 0 || s.winner === 1 ? resultText(names[s.winner] || "Alguém", s.reason) : "Partida encerrada";
+          show.again = true;
+        }
+      }
+      show.train = !(s && s.status === "playing" && seat !== -1);
+    }
+
+    if (toastText) hint = toastText;
+    else if (anim || busy) hint = "Tacada em andamento…";
+    else if (mine) hint = isPlacing()
+      ? "Toque ou clique na mesa para posicionar a branca. Enter coloca no melhor lugar."
+      : "Arraste para trás da direção da tacada e solte. Setas e Espaço também servem.";
+
+    chrome.status(status);
+    $("hint").textContent = hint;
+    $("log").textContent = logText(st, names);
+    $("players").replaceChildren(...rows.map(playerRow));
+    $("sit").hidden = !show.sit;
+    $("resign").hidden = !show.resign;
+    $("resign").textContent = resignArmed ? "Confirmar desistência" : "Desistir";
+    $("wo").hidden = !show.wo;
+    $("again").hidden = !show.again;
+    $("repos").hidden = !(mine && placed && shown.state.h === 1);
+    $("level").hidden = !show.level;
+    $("train").hidden = !show.train;
+    $("back").hidden = !show.back;
+  }
+
+  // An action that talks to the room variable: failures become a message, never an unhandled rejection.
+  function act(fn) {
+    return async () => {
+      try {
+        await fn();
+      } catch (err) {
+        console.warn("sinuca action", err);
+        toast("Não foi possível concluir a ação. Tente de novo.");
+      }
+      renderPanel();
+    };
+  }
+
+  $("sit").onclick = act(() => table.join());
+  $("wo").onclick = act(() => table.claimWO());
+  $("resign").onclick = act(async () => {
+    if (!resignArmed) {
+      resignArmed = true;
+      setTimeout(() => {
+        resignArmed = false;
+        renderPanel();
+      }, 4000);
+      return;
+    }
+    resignArmed = false;
+    await table.resign();
+  });
+  $("again").onclick = act(async () => {
+    if (mode === "treino") return enterTraining();
+    if (await table.reset()) await table.join();
+  });
+  $("train").onclick = act(() => enterTraining());
+  $("back").onclick = act(() => leaveTraining());
+  $("repos").onclick = act(() => {
+    placed = null;
+    view.whiteBall.inHole = true;
+    view.whiteBall.visible = false;
+    redraw();
+  });
+
+  // ---------------------------------------------------------------- start
+  (async () => {
+    await Promise.all(Object.values(sprites).map((img) => img.decode()));
+    await KG.ready();
+    view.place(decode(shown.state.b));
+    new ResizeObserver(resize).observe($("stage"));
+    resize();
+    syncTable();
+    setInterval(() => mode === "mesa" && syncTable(), 5000); // time-based changes: W.O. window, stale tables
+    window.__game = {
+      ready: true,
+      state() {
+        const s = table.session;
+        return {
+          mode, seat: table.seat, role: table.role, myTurn: canAct(), moving: !!anim || busy,
+          turn: s ? s.turn : -1, seq: s ? s.seq : -1, status: s ? s.status : "none",
+          balls: view.snapshot(), groups: shown.state.g, hand: shown.state.h,
+        };
+      },
+      shoot: (angle, power, cue) => requestShot(angle, power, cue),
+      // the best shot the upstream AI finds for the player in turn (to drive a whole game in tests)
+      plan: () => new Promise((resolve) => planShot(shown.state, table.session ? table.session.turn : 0, () => true, resolve)),
+      join: () => table.join(),
+    };
+  })();
+})();
+</script>
+</body>
+</html>

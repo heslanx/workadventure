@@ -1,0 +1,75 @@
+{
+ "key": {
+  "b_out": "#0f3a14",
+  "b_shd": "#2c7a2a",
+  "b_base": "#44a83a",
+  "b_lit": "#7ed05a",
+  "h_out": "#0c2e5e",
+  "h_shd": "#2a6cc0",
+  "h_base": "#46a0ea",
+  "h_lit": "#8ad0f8",
+  "y_out": "#6a4a08",
+  "y_shd": "#d8a818",
+  "y_base": "#f6dc30",
+  "y_lit": "#fff48a",
+  "r_out": "#5a0c14",
+  "r_shd": "#b0202a",
+  "r_base": "#e8443a",
+  "p_out": "#140c46",
+  "p_shd": "#2c2490",
+  "p_base": "#4a40c4",
+  "p_lit": "#7066e0",
+  "ring": "#f2f2ec",
+  "k_out": "#16161c",
+  "k_shd": "#2e3038",
+  "k_base": "#4a4d58",
+  "k_lit": "#727684",
+  "eye": "#2a1408",
+  "glint": "#ffffff",
+  "t_out": "#2f2622",
+  "t_base": "#6e5f58",
+  "mouth": "#7a1830",
+  "tongue": "#e0607a",
+  "ring_shd": "#c4c8c0"
+ },
+ "variants": [
+  {
+   "id": "verdadeiro",
+   "name": "Papagaio-verdadeiro",
+   "colors": {
+    "t_out": "#26262e",
+    "t_base": "#6a6c78",
+    "ring_shd": "#c4c8c0"
+   }
+  },
+  {
+   "id": "azul",
+   "name": "Papagaio azul",
+   "colors": {
+    "b_out": "#0c2450",
+    "b_shd": "#22569e",
+    "b_base": "#3a7ccc",
+    "b_lit": "#6aa8ea",
+    "h_out": "#1a3a6a",
+    "h_shd": "#4f8cc8",
+    "h_base": "#7fb6e6",
+    "h_lit": "#b8daf4",
+    "y_out": "#3a4a60",
+    "y_shd": "#c2ccd8",
+    "y_base": "#e8eef4",
+    "y_lit": "#f6f8fa",
+    "r_out": "#5a3a4a",
+    "r_shd": "#c8a0b0",
+    "r_base": "#f0d4dc",
+    "p_out": "#0c1440",
+    "p_shd": "#1c2a80",
+    "p_base": "#2c40b0",
+    "p_lit": "#4c62d0",
+    "t_out": "#26262e",
+    "t_base": "#6a6c78",
+    "ring": "#c4ccd6",
+    "ring_shd": "#9aa4b2"
+   }
+  }
+ ]
+}

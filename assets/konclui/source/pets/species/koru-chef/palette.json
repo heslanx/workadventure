@@ -1,0 +1,63 @@
+{
+ "key": {
+  "outline": "#0A2E37",
+  "body_sh": "#0B525C",
+  "body": "#116B76",
+  "body_li": "#1A7F8B",
+  "disc_sh": "#2A97A1",
+  "disc": "#36A6AF",
+  "disc_li": "#6CCBD1",
+  "belly": "#25858F",
+  "eye": "#F7FBFA",
+  "pupil": "#06343D",
+  "beak": "#F6AA48",
+  "beak_sh": "#B8622C",
+  "mouth": "#96282A",
+  "tongue": "#E8737A",
+  "glint": "#9FE3E6",
+  "hat_ol": "#2D3741",
+  "hat_sh": "#C9D5DE",
+  "hat": "#FFFFFF"
+ },
+ "variants": [
+  {
+   "id": "turquesa",
+   "name": "Turquesa",
+   "colors": {}
+  },
+  {
+   "id": "coral",
+   "name": "Coral",
+   "colors": {
+    "outline": "#4A1A1E",
+    "body_sh": "#8E3236",
+    "body": "#B84B47",
+    "body_li": "#CC5F58",
+    "disc_sh": "#D4867C",
+    "disc": "#E8968C",
+    "disc_li": "#F5BDB3",
+    "belly": "#D9786C",
+    "pupil": "#7A2A2E",
+    "glint": "#FFF0EB",
+    "beak": "#C8601A",
+    "beak_sh": "#7E3510"
+   }
+  },
+  {
+   "id": "noite",
+   "name": "Noite",
+   "colors": {
+    "outline": "#070A26",
+    "body_sh": "#121B4A",
+    "body": "#1D2B6B",
+    "body_li": "#283A85",
+    "disc_sh": "#2F4593",
+    "disc": "#3F5BB3",
+    "disc_li": "#6F8BD6",
+    "belly": "#34489A",
+    "pupil": "#1A2766",
+    "glint": "#A9BCF0"
+   }
+  }
+ ]
+}

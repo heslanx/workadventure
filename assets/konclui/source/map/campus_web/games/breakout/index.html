@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Breakout</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<script src="../game-kit.js"></script>
+<style>
+.kg-stage { outline:none; }
+.court { position:relative; display:flex; }
+.kg-stage canvas { background:#09182B; border-radius:var(--radius); box-shadow:0 0 0 1px var(--border-subtle); cursor:none; }
+.kg-side { overflow-y:auto; min-height:0; }
+.big { font-size:34px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+.stats p { margin:6px 0 0; color:var(--fg2); }
+.stats b { color:var(--fg); font-variant-numeric:tabular-nums; }
+.kg-side .kg-btn { align-self:stretch; padding:10px 18px; }
+
+/* veil over the court: start, pause and end of game */
+.kg-over { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(3,5,26,.72); z-index:5;
+  border-radius:var(--radius); }
+.kg-over[hidden] { display:none; }
+.kg-over > div { background:var(--card); border:1px solid var(--border-subtle); border-radius:var(--radius); padding:20px 24px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:8px; max-width:300px; }
+.kg-over h2 { margin:0; font-size:26px; font-weight:800; }
+.kg-over p { margin:0; color:var(--fg2); }
+.kg-over .kg-rank { color:var(--accent); font-weight:700; text-wrap:balance; }
+.kg-over .kg-btn { margin-top:6px; }
+@media (max-width: 720px) {
+  .kg-side { flex-direction:row; flex-wrap:wrap; max-height:34%; }
+  .kg-side .board-card { display:none; }
+  .kg-side .kg-btn { align-self:center; }
+  .kg-side .stats { flex:1; }
+}
+</style>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage" id="stage" tabindex="0" aria-label="Quadra do Breakout">
+    <div class="court">
+      <canvas id="canvas"></canvas>
+      <div class="kg-over" id="over">
+        <div>
+          <h2 id="over-title">Breakout</h2>
+          <p id="over-text"></p>
+          <p class="kg-rank" id="rank" role="status"></p>
+          <button type="button" class="kg-btn" id="over-btn">Jogar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="kg-side">
+    <div class="kg-card stats">
+      <h2>Pontos</h2>
+      <div class="big" id="score">0</div>
+      <p>Fase <b id="level">1</b></p>
+    </div>
+    <div class="kg-card board-card">
+      <h2>Recordes do escritório</h2>
+      <div id="board"></div>
+    </div>
+    <button type="button" class="kg-btn" id="again">Jogar</button>
+  </aside>
+</main>
+<script src="vendor/game.js"></script>
+<script src="vendor/breakout.js"></script>
+<script src="vendor/levels.js"></script>
+<script>
+// Glue: the original game + the campus top 10 (room variable recordesBreakout) + test hooks.
+(async () => {
+  "use strict";
+  await KG.ready();
+
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const chrome = KG.chrome({
+    title: "Breakout",
+    help: "Mova a raquete com as setas (ou A e D), com o mouse ou arrastando o dedo. Espaço lança a bola na hora; P ou Esc pausa. Rebata a bola e quebre todos os blocos para passar de fase. Você começa com 3 vidas e ganha uma a cada fase. Sua pontuação entra nos recordes do escritório quando a partida termina.",
+  });
+  const board = KG.board("recordesBreakout");
+  const boardEl = document.getElementById("board");
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("canvas");
+  const over = document.getElementById("over");
+  const overTitle = document.getElementById("over-title");
+  const overText = document.getElementById("over-text");
+  const rankEl = document.getElementById("rank");
+  const overBtn = document.getElementById("over-btn");
+  const again = document.getElementById("again");
+  let mine = null; // "quando" of the row I just saved, to keep it highlighted
+
+  // The canvas is a 32 x 29 chunk court (30 x 25 plus walls and the score bar): one chunk is a whole number of CSS px.
+  function fit() {
+    const chunk = Math.max(8, Math.floor(Math.min(stage.clientWidth / 32, stage.clientHeight / 29)));
+    canvas.style.width = `${chunk * 32}px`;
+    canvas.style.height = `${chunk * 29}px`;
+  }
+  fit();
+
+  const renderBoard = (rows = board.load(), highlight = -1) => board.render(boardEl, rows, highlight);
+  const refreshBoard = () => {
+    const rows = board.load();
+    renderBoard(rows, mine ? rows.findIndex((r) => r.quando === mine) : -1);
+    game.setRecord(rows.length ? rows[0].pontos : 0);
+  };
+
+  function rankText(score, result) {
+    if (result.rank !== -1) return `Você entrou em ${result.rank + 1}º lugar!`;
+    const missing = result.rows[result.rows.length - 1].pontos - score + 1;
+    return missing === 1 ? "Faltou 1 ponto para o top 10." : `Faltaram ${missing.toLocaleString("pt-BR")} pontos para o top 10.`;
+  }
+
+  function showOver(title, text, button) {
+    overTitle.textContent = title;
+    overText.textContent = text;
+    overBtn.textContent = button;
+    over.hidden = false;
+  }
+
+  const game = Game.start("canvas", Breakout);
+  game.onscore = (points) => { document.getElementById("score").textContent = points.toLocaleString("pt-BR"); };
+  game.onlevel = (level) => { document.getElementById("level").textContent = level; };
+  game.onplay = () => {
+    over.hidden = true;
+    rankEl.textContent = "";
+    mine = null;
+    refreshBoard();
+    again.textContent = "Jogar de novo";
+    chrome.status("Jogando");
+    stage.focus({ preventScroll: true });
+  };
+  game.onpause = (paused) => {
+    if (paused) showOver("Pausado", touch ? "Toque em Continuar." : "Aperte P ou Espaço para continuar.", "Continuar");
+    else over.hidden = true;
+    chrome.status(paused ? "Pausado" : "Jogando");
+    stage.focus({ preventScroll: true });
+  };
+  game.onGameOver = async (score) => {
+    const label = `${score.toLocaleString("pt-BR")} pontos`;
+    showOver("Fim de jogo", label, "Jogar de novo");
+    chrome.status(`Fim de jogo: ${label}`);
+    stage.focus({ preventScroll: true });
+    if (score <= 0) return;
+    const result = await board.submit(score);
+    mine = result.rank !== -1 ? result.rows[result.rank].quando : null;
+    renderBoard(result.rows, result.rank);
+    rankEl.textContent = rankText(score, result);
+  };
+
+  overBtn.addEventListener("click", () => (game.paused ? game.pause() : game.restart()));
+  again.addEventListener("click", () => game.restart());
+
+  document.fonts.load("800 20px Urbanist").then(() => game.refont());
+  new ResizeObserver(() => { fit(); game.runner.resize(); }).observe(stage);
+  KG.state.on("recordesBreakout", refreshBoard);
+  refreshBoard();
+  showOver("Breakout", touch ? "Toque em Jogar para começar." : "Aperte Espaço para jogar.", "Jogar");
+  chrome.status("Pronto para jogar");
+  window.focus();
+  stage.focus({ preventScroll: true });
+
+  window.__game = {
+    ready: true,
+    score: () => game.score.score,
+    lives: () => game.score.lives,
+    level: () => game.level + 1,
+    state: () => (game.is("game") ? (game.paused ? "paused" : "playing") : "idle"), // idle | playing | paused
+    running: () => !!game.runner.handle, // is the frame loop alive?
+    ballMoving: () => game.ball.moving,
+    paddle: () => ({ x: game.paddle.x, w: game.paddle.w, min: game.paddle.minX, max: game.paddle.maxX }),
+    court: () => ({ w: canvas.width, h: canvas.height, chunk: game.court.chunk }),
+    record: () => game.score.highscore,
+    forceGameOver(score) {
+      if (!game.is("game")) game.play();
+      game.score.set(score);
+      game.lose();
+    },
+  };
+})();
+</script>
+</body>
+</html>
