@@ -59,12 +59,13 @@ Every flag is also an environment variable (`--ramp-seconds` is `WA_RAMP_SECONDS
 | `--api-version` | `apiVersionHash` of this checkout | Must equal the pusher's `apiVersionHash`, else it answers `NEW_VERSION` |
 | `--character-texture` | `male1` | Woka texture id |
 | `--name-prefix` | `bot` | Player name is `<prefix>-<index>` |
-| `--disconnect-fraction` | `0` | Share of sessions (lowest indexes) that leave early |
+| `--disconnect-fraction` | `0` | Share of sessions (lowest indexes) that leave early; one not started by then never starts |
 | `--disconnect-at-seconds` | half the duration | When they leave |
 | `--min-accepted` | `1` | Fewer accepted sessions makes the run invalid |
 | `--output` | none | Also write the JSON summary to this file |
 
-`SIGINT`/`SIGTERM` stop the run early; the summary is still printed after every socket and timer is released.
+`SIGINT`/`SIGTERM` stop the run early; the summary is still printed after every socket and timer is released
+(`stopReason: "aborted"`, covered by a test that interrupts the CLI process).
 
 Exit codes: `0` run valid, `1` configuration or fatal error, `2` run finished but invalid (counters do not
 reconcile, cleanup incomplete, or fewer than `--min-accepted` sessions accepted).
@@ -72,13 +73,26 @@ reconcile, cleanup incomplete, or fewer than `--min-accepted` sessions accepted)
 ## Summary
 
 One JSON document on stdout: `sessions` (requested, started, neverStarted, accepted, rejected,
-abortedBeforeJoin, unexpectedCloses, uniqueUserIds), `sockets` (opened, openPeak, openAtStop, closed),
+abortedBeforeJoin, unexpectedCloses, uniqueUserIds), `earlyLeave` (planned, fired, and the state of each planned
+leaver when the leave fired: `accepted` left the room, `connecting` aborted its join, `idle` never started,
+`rejected`, `leaving` and `closed` were already out of the room),
+`sockets` (opened, openPeak, openAtStop, closed),
 `joinLatencyMs` (p50, p95, max; `null` without samples), `rooms`, `sent`, `received.eventsByType`, `rejections`,
 `errors`, `closeCodes`, `generator` (CPU, RSS, event-loop lag), `cleanup` and `reconciled`.
 
+`generator.eventLoopLagMs` is the delay beyond the 10 ms sampling interval (`resolutionMs`): an idle generator
+reads about 0, not 10.
+
+`reconciled` checks the generator's own bookkeeping: every started session is accepted, rejected or aborted
+before its join, every opened socket closed, and no socket or timer is left. It cannot see the server's room
+membership; compare `sessions.accepted` with the back and pusher connection gauges for that.
+
 Discard a run whose `generator.cpuPercentOfOneCore` approaches 100 or whose `generator.eventLoopLagMs.p99`
-grows: the generator, not the server, was the bottleneck. Spread the population over several processes instead
-(`benchmark_multi_core.sh`).
+grows: the generator, not the server, was the bottleneck. Spread the population over several generator
+processes instead, each with its own `--name-prefix` and `--output`, and add their summaries. Session indexes
+restart at 0 in every process, so processes with the same room list follow the same movement paths.
+`benchmark_multi_core.sh` predates this harness (it starts four identical processes with yarn) and does not do
+this.
 
 ## Checks
 

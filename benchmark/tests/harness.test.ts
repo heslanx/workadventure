@@ -1,5 +1,7 @@
+import { spawn } from "node:child_process";
 import { type Server, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocketServer } from "ws";
 import {
@@ -14,7 +16,7 @@ import { ConfigError, type LoadConfig, parseConfig } from "../src/config";
 import { buildRoomSocketUrl, decodeServerFrame, encodeClientFrame, userMovesMessage } from "../src/protocol";
 import { runLoad } from "../src/runner";
 import { nextState } from "../src/session";
-import { percentile } from "../src/stats";
+import { eventLoopLagMs, percentile } from "../src/stats";
 
 type ServerMessage = NonNullable<ServerToClientMessage["message"]>;
 
@@ -31,7 +33,8 @@ async function startFakePusher(mode: "accept" | "reject") {
         closeCodes: [] as number[],
     };
     let issuedTokens = 0;
-    let lastUserId = 0;
+    // Like the back, every room numbers its users from 1.
+    const lastUserIdByRoom = new Map<string | null, number>();
     const http: Server = createServer((request, response) => {
         if (request.method === "POST" && request.url === "/anonymLogin") {
             issuedTokens += 1;
@@ -45,7 +48,8 @@ async function startFakePusher(mode: "accept" | "reject") {
     const sockets = new WebSocketServer({ server: http, path: "/ws/room" });
     sockets.on("connection", (socket, request) => {
         observed.tokens.push(request.headers["sec-websocket-protocol"]);
-        observed.roomIds.push(new URL(request.url ?? "", "http://fake").searchParams.get("roomId"));
+        const roomId = new URL(request.url ?? "", "http://fake").searchParams.get("roomId");
+        observed.roomIds.push(roomId);
         socket.on("close", (code) => observed.closeCodes.push(code));
         if (mode === "reject") {
             const error = ErrorScreenMessage.fromPartial({ type: "retry", code: "NEW_VERSION" });
@@ -54,14 +58,18 @@ async function startFakePusher(mode: "accept" | "reject") {
             return;
         }
         socket.send(
-            serverFrame(1, { $case: "roomConnectedMessage", roomConnectedMessage: RoomConnectedMessage.fromPartial({}) }),
+            serverFrame(1, {
+                $case: "roomConnectedMessage",
+                roomConnectedMessage: RoomConnectedMessage.fromPartial({}),
+            }),
         );
         socket.on("message", (data: Buffer) => {
             const message = FrontToPusherWebSocketMessage.decode(data).message?.message;
             observed.clientMessages.push(message?.$case ?? "empty");
             if (message?.$case === "joinRoomFrontMessage") {
-                lastUserId += 1;
-                const joined = RoomJoinedMessage.fromPartial({ currentUserId: lastUserId });
+                const userId = (lastUserIdByRoom.get(roomId) ?? 0) + 1;
+                lastUserIdByRoom.set(roomId, userId);
+                const joined = RoomJoinedMessage.fromPartial({ currentUserId: userId });
                 socket.send(serverFrame(2, { $case: "roomJoinedMessage", roomJoinedMessage: joined }));
             }
         });
@@ -191,11 +199,15 @@ describe("load run", () => {
 
         const summary = await runLoad(configFor(pusher.url));
 
+        // Room a hands out ids 1 and 2, room b id 1 again: still three distinct users.
         expect(summary.sessions).toMatchObject({ started: 3, accepted: 3, rejected: 0, uniqueUserIds: 3 });
         expect(summary.sockets).toMatchObject({ opened: 3, openPeak: 3, closed: 3 });
         expect(summary.rooms.map((room) => room.accepted)).toEqual([2, 1]);
         expect(summary.joinLatencyMs.count).toBe(3);
         expect(summary.sent.userMovesMessage).toBeGreaterThan(0);
+        // The raw histogram never reads below its 10 ms interval; the reported lag excludes it.
+        expect(summary.generator.eventLoopLagMs.resolutionMs).toBe(10);
+        expect(summary.generator.eventLoopLagMs.p50).toBeLessThan(10);
         expect(summary.cleanup).toEqual({ openSockets: 0, activeTimers: 0 });
         expect(summary.reconciled).toBe(true);
         expect(pusher.observed.tokens).toEqual(["token-1", "token-2", "token-3"]);
@@ -233,6 +245,77 @@ describe("load run", () => {
         expect(summary.reconciled).toBe(true);
         await expect.poll(() => pusher?.openSockets()).toBe(0);
     });
+
+    it("keeps a planned early leaver that has not started yet out of the room", async () => {
+        pusher = await startFakePusher("accept");
+        // Sessions start at 0, 0.6, 1.2 and 1.8 s; all of them are due to leave at 0.4 s.
+        const config = configFor(pusher.url, {
+            sessions: 4,
+            rampSeconds: 2.4,
+            durationSeconds: 1.5,
+            disconnectFraction: 1,
+            disconnectAtSeconds: 0.4,
+        });
+
+        const summary = await runLoad(config);
+
+        expect(summary.earlyLeave).toEqual({ planned: 4, fired: true, stateAtLeave: { accepted: 1, idle: 3 } });
+        expect(summary.sessions).toMatchObject({ started: 1, neverStarted: 3, accepted: 1 });
+        expect(summary.cleanup).toEqual({ openSockets: 0, activeTimers: 0 });
+        expect(summary.reconciled).toBe(true);
+    });
+
+    it("prints the summary of a run stopped by SIGINT once everything is released", async () => {
+        pusher = await startFakePusher("accept");
+        const child = spawn(
+            process.execPath,
+            [
+                "--import",
+                "tsx",
+                "index.ts",
+                `--pusher-url=${pusher.url}`,
+                "--room-urls=http://play.test/_/global/maps.test/a.json",
+                "--sessions=2",
+                "--ramp-seconds=0.05",
+                "--duration-seconds=60",
+            ],
+            { cwd: fileURLToPath(new URL("..", import.meta.url)) },
+        );
+        let stdout = "";
+        let stderr = "";
+        child.stdout.on("data", (chunk: Buffer) => {
+            stdout += chunk.toString();
+        });
+        child.stderr.on("data", (chunk: Buffer) => {
+            stderr += chunk.toString();
+        });
+        const exited = new Promise<number | null>((resolve) => child.on("close", (code) => resolve(code)));
+        try {
+            await expect
+                .poll(() => pusher?.observed.clientMessages.filter((message) => message === "viewportMessage").length, {
+                    timeout: 15_000,
+                })
+                .toBe(2);
+
+            child.kill("SIGINT");
+
+            expect(await exited).toBe(0);
+            const summary = JSON.parse(stdout) as Awaited<ReturnType<typeof runLoad>>;
+            expect(summary.stopReason).toBe("aborted");
+            expect(summary.sessions).toMatchObject({ started: 2, accepted: 2 });
+            expect(summary.cleanup).toEqual({ openSockets: 0, activeTimers: 0 });
+            expect(summary.reconciled).toBe(true);
+            await expect.poll(() => pusher?.observed.closeCodes).toEqual([1000, 1000]);
+        } catch (error) {
+            throw new Error(`SIGINT run failed. CLI stderr:\n${stderr}`, { cause: error });
+        } finally {
+            // A failed wait must not leave the CLI running for its whole 60 s duration.
+            if (child.exitCode === null && child.signalCode === null) {
+                child.kill("SIGKILL");
+                await exited;
+            }
+        }
+    }, 30_000);
 });
 
 describe("configuration", () => {
@@ -249,6 +332,14 @@ describe("configuration", () => {
 
     it("refuses to start without a room", () => {
         expect(() => parseConfig([], { WA_PUSHER_URL: "http://play.test", WA_SESSIONS: "1" })).toThrow(ConfigError);
+    });
+});
+
+describe("event-loop lag", () => {
+    it("reports only the delay beyond the sampling interval", () => {
+        expect(eventLoopLagMs(11.2e6, 10)).toBeCloseTo(1.2);
+        expect(eventLoopLagMs(9.3e6, 10)).toBe(0);
+        expect(eventLoopLagMs(63.6e6, 10)).toBeCloseTo(53.6);
     });
 });
 

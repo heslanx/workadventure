@@ -1,11 +1,11 @@
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import type { LoadConfig } from "./config";
 import { RoomSession } from "./session";
-import { RunStats, TimerRegistry, percentile } from "./stats";
+import { type Counter, RunStats, TimerRegistry, eventLoopLagMs, increment, percentile } from "./stats";
 
 export type StopReason = "completed" | "aborted";
 
-const NANOSECONDS_PER_MILLISECOND = 1e6;
+const EVENT_LOOP_RESOLUTION_MS = 10;
 const RSS_SAMPLE_INTERVAL_MS = 1000;
 
 function round(value: number | null, digits = 1): number | null {
@@ -20,10 +20,11 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     const stats = new RunStats();
     const timers = new TimerRegistry();
     const sessions: RoomSession[] = [];
+    const rampStarts: NodeJS.Timeout[] = [];
     const startedAt = new Date();
     const startedAtMs = performance.now();
     const cpuAtStart = process.cpuUsage();
-    const eventLoopDelay = monitorEventLoopDelay({ resolution: 10 });
+    const eventLoopDelay = monitorEventLoopDelay({ resolution: EVENT_LOOP_RESOLUTION_MS });
     eventLoopDelay.enable();
     let rssPeakBytes = process.memoryUsage.rss();
     const runTimers = [
@@ -51,16 +52,25 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
             timers,
         );
         sessions.push(session);
-        runTimers.push(
+        rampStarts.push(
             timers.setTimeout(() => session.start(), (index * config.rampSeconds * 1000) / config.sessions),
         );
     }
+    runTimers.push(...rampStarts);
 
     const earlyLeavers = Math.round(config.disconnectFraction * config.sessions);
+    // State of each planned leaver when the leave fires: "accepted" left the room, "connecting" aborted its join,
+    // "idle" had not started yet and never starts; "rejected", "leaving" and "closed" were already out of the room.
+    // Every planned leaver is out of the room from then on.
+    const earlyLeaveStates: Counter = {};
+    let earlyLeaveFired = false;
     if (earlyLeavers > 0) {
         runTimers.push(
             timers.setTimeout(() => {
-                for (const session of sessions.slice(0, earlyLeavers)) {
+                earlyLeaveFired = true;
+                for (const [index, session] of sessions.slice(0, earlyLeavers).entries()) {
+                    increment(earlyLeaveStates, session.state);
+                    timers.clear(rampStarts[index]);
                     session.leave();
                 }
             }, config.disconnectAtSeconds * 1000),
@@ -98,7 +108,7 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     const cleanup = { openSockets: stats.socketsOpen, activeTimers: timers.activeCount };
 
     return {
-        schemaVersion: 1,
+        schemaVersion: 2,
         notice: "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
         startedAt: startedAt.toISOString(),
         wallSeconds: round(wallMs / 1000, 3),
@@ -115,6 +125,7 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
             unexpectedCloses: stats.unexpectedCloses,
             uniqueUserIds,
         },
+        earlyLeave: { planned: earlyLeavers, fired: earlyLeaveFired, stateAtLeave: earlyLeaveStates },
         sockets: {
             opened: stats.socketsOpened,
             openPeak: stats.socketsOpenPeak,
@@ -145,14 +156,18 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
             cpuPercentOfOneCore: round(((cpu.user + cpu.system) / 1000 / wallMs) * 100),
             rssPeakBytes: Math.max(rssPeakBytes, rssEndBytes),
             rssEndBytes,
+            // Delay beyond the sampling interval, which the raw histogram includes.
             eventLoopLagMs: {
-                p50: round(eventLoopDelay.percentile(50) / NANOSECONDS_PER_MILLISECOND, 2),
-                p95: round(eventLoopDelay.percentile(95) / NANOSECONDS_PER_MILLISECOND, 2),
-                p99: round(eventLoopDelay.percentile(99) / NANOSECONDS_PER_MILLISECOND, 2),
-                max: round(eventLoopDelay.max / NANOSECONDS_PER_MILLISECOND, 2),
+                resolutionMs: EVENT_LOOP_RESOLUTION_MS,
+                p50: round(eventLoopLagMs(eventLoopDelay.percentile(50), EVENT_LOOP_RESOLUTION_MS), 2),
+                p95: round(eventLoopLagMs(eventLoopDelay.percentile(95), EVENT_LOOP_RESOLUTION_MS), 2),
+                p99: round(eventLoopLagMs(eventLoopDelay.percentile(99), EVENT_LOOP_RESOLUTION_MS), 2),
+                max: round(eventLoopLagMs(eventLoopDelay.max, EVENT_LOOP_RESOLUTION_MS), 2),
             },
         },
         cleanup,
+        // Client-side bookkeeping only: session buckets, sockets and timers. It cannot see the server's room
+        // membership, which comes from the back/pusher gauges.
         reconciled:
             stats.started === stats.accepted + stats.rejected + stats.abortedBeforeJoin &&
             stats.socketsOpened === stats.socketsClosed &&

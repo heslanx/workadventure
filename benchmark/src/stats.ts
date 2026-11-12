@@ -14,6 +14,14 @@ export function percentile(samples: readonly number[], fraction: number): number
     return sorted[rank - 1];
 }
 
+/**
+ * monitorEventLoopDelay times a timer that is due every `resolutionMs`, so an idle loop reads about the resolution.
+ * The lag is what exceeds it; a timer that fired early is no lag.
+ */
+export function eventLoopLagMs(delayNanoseconds: number, resolutionMs: number): number {
+    return Math.max(0, delayNanoseconds / 1e6 - resolutionMs);
+}
+
 /** Tracks every timer the harness owns, so a stop can prove none is left behind. */
 export class TimerRegistry {
     private readonly timeouts = new Set<NodeJS.Timeout>();
