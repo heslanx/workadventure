@@ -1013,12 +1013,13 @@
                         {:else if item.timelineItem.kind === "question"}
                             <QuestionCard question={item.timelineItem.question} />
                         {:else}
+                            <!-- Only my messages show receipts: the others' rows must not update on every receipt. -->
                             <Message
                                 message={item.timelineItem.message}
                                 showHeader={item.showHeader}
                                 membersForMessageAvatars={room.membersForMessageAvatars}
                                 showThreadSummary={room.conversationKind === "room"}
-                                readReceipts={$readReceipts}
+                                readReceipts={item.timelineItem.message.isMyMessage ? $readReceipts : undefined}
                                 showReaders={$roomType === "multiple" &&
                                     item.timelineItem.message.id === lastOwnMessageId}
                                 isDirect={$roomType === "direct"}

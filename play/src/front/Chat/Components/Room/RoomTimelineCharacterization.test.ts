@@ -440,7 +440,7 @@ describe("RoomTimeline characterization", () => {
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(4);
     });
 
-    it("RT-01 (pinned): a read receipt update hands its props again to every message row, not only to the user's own", async () => {
+    it("RT-01 (fixed): a read receipt update hands its props again to the user's own message rows only", async () => {
         const readReceipts = writable<unknown>({ version: 1 });
         const items = others(18);
         items.splice(5, 0, item(message("mine1", me, at(5, 9, 0))));
@@ -455,9 +455,9 @@ describe("RoomTimeline characterization", () => {
 
         const updated = [...rows.reads].filter(([id, reads]) => reads !== before.get(id)).map(([id]) => id);
         expect(rows.reads.size).toBe(20);
-        expect(updated).toHaveLength(20);
+        expect(updated).toEqual(["mine1", "mine2"]);
         expect(rows.props.get("mine1")?.readReceipts).toEqual({ version: 2 });
-        expect(rows.props.get("m0")?.readReceipts).toEqual({ version: 2 });
+        expect(rows.props.get("m0")?.readReceipts).toBeUndefined();
     });
 
     it("fetches one older page 100 ms after the user scrolls near the top, and never a second one while it is pending", async () => {
