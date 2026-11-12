@@ -62,6 +62,7 @@ import { buildMicrophoneAudioConstraints, isVoiceIsolationSupported } from "./Mi
 import { speakerSelectedStore, speakerSelectionSupported } from "./AudioOutputStore";
 import { audioPlaybackStore } from "./AudioPlaybackStore";
 import { browserNotificationStore } from "./BrowserNotificationStore";
+import { cameraPermissionStateStore, microphonePermissionStateStore } from "./MediaStatusStore";
 
 export const inBackgroundSettingsStore = writable<boolean>(false);
 
@@ -1644,12 +1645,12 @@ export const cameraListStore = derived(deviceListStore, ($deviceListStore) => {
 
 /**
  * Context for the camera action-bar tooltip when the camera is off: permission denied, no usable device, or a camera
- * another application holds.
+ * another application holds. The browser's live "denied" wins over a stored issue, as in the media settings panel.
  */
 export const cameraButtonHelpContextStore = derived(
-    [cameraAccessIssueStore, cameraListStore, devicesNotLoaded],
-    ([issue, cameras, notLoaded]) => {
-        if (issue === "permission_denied") {
+    [cameraAccessIssueStore, cameraListStore, devicesNotLoaded, cameraPermissionStateStore],
+    ([issue, cameras, notLoaded, permission]) => {
+        if (permission === "denied" || issue === "permission_denied") {
             return "permission" as const;
         }
         if (issue === "no_device") {
@@ -1675,12 +1676,13 @@ export const microphoneListStore = derived(deviceListStore, ($deviceListStore) =
 
 /**
  * Context for the microphone action-bar tooltip when the mic is off: permission denied, no usable device, or a
- * microphone another application holds.
+ * microphone another application holds. The browser's live "denied" wins over a stored issue, as in the media settings
+ * panel.
  */
 export const microphoneButtonHelpContextStore = derived(
-    [microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded],
-    ([issue, mics, notLoaded]) => {
-        if (issue === "permission_denied") {
+    [microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded, microphonePermissionStateStore],
+    ([issue, mics, notLoaded, permission]) => {
+        if (permission === "denied" || issue === "permission_denied") {
             return "permission" as const;
         }
         if (issue === "no_device") {

@@ -98,15 +98,15 @@ describe("MediaSettingsPanel", () => {
     });
 
     it.each([
-        ["camera", "device_in_use", "device_in_use"],
-        ["camera", "no_device", "no_device"],
-        ["camera", null, null],
-        ["microphone", "device_in_use", "device_in_use"],
-        ["microphone", "no_device", "no_device"],
-        ["microphone", null, null],
+        ["camera", "device_in_use"],
+        ["camera", "no_device"],
+        ["camera", null],
+        ["microphone", "device_in_use"],
+        ["microphone", "no_device"],
+        ["microphone", null],
     ] as const)(
-        "panel precedence (pinned): with the browser's %s permission denied and a stored issue of %s, the panel says access is blocked and the help context returns %s",
-        (device, issue, helpContext) => {
+        "panel precedence (fixed): with the browser's %s permission denied and a stored issue of %s, the panel and the help context both say access is blocked",
+        (device, issue) => {
             if (device === "camera") {
                 requestedCameraState.disableWebcam();
             } else {
@@ -126,7 +126,7 @@ describe("MediaSettingsPanel", () => {
             const text = renderedText();
 
             expect(text).toContain(blockedTitle);
-            expect(get(helpContextStore)).toBe(helpContext);
+            expect(get(helpContextStore)).toBe("permission");
         },
     );
 });
