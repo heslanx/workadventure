@@ -88,6 +88,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "@smithy/types": "^4.14.2",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/cors": "^2.8.19",
