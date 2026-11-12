@@ -1,0 +1,125 @@
+{
+ "key": {
+  "outline": "#0A2E37",
+  "body_sh": "#0B525C",
+  "body": "#116B76",
+  "body_li": "#1A7F8B",
+  "disc_sh": "#2A97A1",
+  "disc": "#36A6AF",
+  "disc_li": "#6CCBD1",
+  "belly": "#25858F",
+  "eye": "#F7FBFA",
+  "pupil": "#06343D",
+  "beak": "#F6AA48",
+  "beak_sh": "#B8622C",
+  "mouth": "#96282A",
+  "tongue": "#E8737A",
+  "glint": "#9FE3E6"
+ },
+ "variants": [
+  {
+   "id": "turquesa",
+   "name": "Turquesa",
+   "colors": {}
+  },
+  {
+   "id": "menta",
+   "name": "Menta",
+   "colors": {
+    "outline": "#0B3B31",
+    "body_sh": "#0C5E4C",
+    "body": "#12806A",
+    "body_li": "#1C957C",
+    "disc_sh": "#2BB894",
+    "disc": "#45D3AE",
+    "disc_li": "#8CEBD0",
+    "belly": "#2A9C82",
+    "pupil": "#0E5E4C",
+    "glint": "#B5F3E0"
+   }
+  },
+  {
+   "id": "coral",
+   "name": "Coral",
+   "colors": {
+    "outline": "#4A1A1E",
+    "body_sh": "#8E3236",
+    "body": "#B84B47",
+    "body_li": "#CC5F58",
+    "disc_sh": "#D4867C",
+    "disc": "#E8968C",
+    "disc_li": "#F5BDB3",
+    "belly": "#D9786C",
+    "pupil": "#7A2A2E",
+    "glint": "#FFF0EB",
+    "beak": "#C8601A",
+    "beak_sh": "#7E3510"
+   }
+  },
+  {
+   "id": "lilas",
+   "name": "Lilás",
+   "colors": {
+    "outline": "#2A1F4F",
+    "body_sh": "#4C3A86",
+    "body": "#6A54A6",
+    "body_li": "#7D66B8",
+    "disc_sh": "#8A76CA",
+    "disc": "#9886D4",
+    "disc_li": "#C8BAF0",
+    "belly": "#8670C0",
+    "pupil": "#3E2F72",
+    "glint": "#E6DEFB"
+   }
+  },
+  {
+   "id": "ambar",
+   "name": "Âmbar",
+   "colors": {
+    "outline": "#3E2008",
+    "body_sh": "#7A4210",
+    "body": "#A35A16",
+    "body_li": "#B86C20",
+    "disc_sh": "#A86A2E",
+    "disc": "#BE7D3C",
+    "disc_li": "#D9A266",
+    "belly": "#CD8A3C",
+    "pupil": "#4A2408",
+    "glint": "#FBE3B0"
+   }
+  },
+  {
+   "id": "noite",
+   "name": "Noite",
+   "colors": {
+    "outline": "#070A26",
+    "body_sh": "#121B4A",
+    "body": "#1D2B6B",
+    "body_li": "#283A85",
+    "disc_sh": "#2F4593",
+    "disc": "#3F5BB3",
+    "disc_li": "#6F8BD6",
+    "belly": "#34489A",
+    "pupil": "#1A2766",
+    "glint": "#A9BCF0"
+   }
+  },
+  {
+   "id": "neve",
+   "name": "Neve",
+   "colors": {
+    "outline": "#3E4C5A",
+    "body_sh": "#A9BAC6",
+    "body": "#CCD9E2",
+    "body_li": "#E3ECF2",
+    "disc_sh": "#DCE6EC",
+    "disc": "#F0F5F8",
+    "disc_li": "#FFFFFF",
+    "belly": "#E6EEF3",
+    "pupil": "#1E2630",
+    "glint": "#FFF6C8",
+    "eye": "#FFD84D"
+   }
+  }
+ ]
+}

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flappy Koru</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<script src="../game-kit.js"></script>
+<style>
+.kg-stage { outline:none; }
+.sky { position:relative; display:flex; }
+.kg-stage canvas { background:#0A142E; border-radius:var(--radius); box-shadow:0 0 0 1px var(--border-subtle); cursor:pointer; }
+.kg-side { overflow-y:auto; min-height:0; }
+.big { font-size:34px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+.stats p { margin:6px 0 0; color:var(--fg2); }
+.stats b { color:var(--fg); font-variant-numeric:tabular-nums; }
+.kg-side .kg-btn { align-self:stretch; padding:10px 18px; }
+
+/* veil over the sky: start, pause and end of game */
+.kg-over { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(3,5,26,.6); z-index:5;
+  border-radius:var(--radius); }
+.kg-over[hidden] { display:none; }
+.kg-over.low { align-items:flex-end; padding-bottom:8%; } /* before the first flight: the Koru waits in plain sight above it */
+.kg-over > div { background:var(--card); border:1px solid var(--border-subtle); border-radius:var(--radius); padding:20px 24px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:8px; max-width:250px; margin:0 12px; }
+.kg-over h2 { margin:0; font-size:26px; font-weight:800; }
+.kg-over p { margin:0; color:var(--fg2); text-wrap:balance; }
+.kg-over .kg-rank { color:var(--accent); font-weight:700; }
+.kg-over .kg-btn { margin-top:6px; }
+@media (max-width: 720px) {
+  .kg-side { flex-direction:row; flex-wrap:wrap; max-height:30%; }
+  .kg-side .board-card { display:none; }
+  .kg-side .kg-btn { align-self:center; }
+  .kg-side .stats { flex:1; }
+}
+</style>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage" id="stage" tabindex="0" aria-label="Céu do Flappy Koru">
+    <div class="sky">
+      <canvas id="canvas"></canvas>
+      <div class="kg-over" id="over">
+        <div>
+          <h2 id="over-title">Flappy Koru</h2>
+          <p id="over-text"></p>
+          <p class="kg-rank" id="rank" role="status"></p>
+          <button type="button" class="kg-btn" id="over-btn">Jogar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="kg-side">
+    <div class="kg-card stats">
+      <h2>Pontos</h2>
+      <div class="big" id="score">0</div>
+      <p>Recorde <b id="record">0</b></p>
+    </div>
+    <div class="kg-card board-card">
+      <h2>Recordes do escritório</h2>
+      <div id="board"></div>
+    </div>
+    <button type="button" class="kg-btn" id="again">Jogar</button>
+  </aside>
+</main>
+<script src="flappy.js"></script>
+<script>
+// Glue: the Flappy Koru game + the campus top 10 (room variable recordesFlappy) + test hooks.
+(async () => {
+  "use strict";
+  await KG.ready();
+
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const chrome = KG.chrome({
+    title: "Flappy Koru",
+    help: "Aperte Espaço (ou a seta para cima, ou W), clique ou toque no céu para a Koru bater as asas. Passe pelo vão entre os canos sem encostar neles nem no chão: cada cano vale 1 ponto. P ou Esc pausa. Sua pontuação entra nos recordes do escritório quando a partida termina.",
+  });
+  const board = KG.board("recordesFlappy");
+  const boardEl = document.getElementById("board");
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("canvas");
+  const over = document.getElementById("over");
+  const overTitle = document.getElementById("over-title");
+  const overText = document.getElementById("over-text");
+  const rankEl = document.getElementById("rank");
+  const overBtn = document.getElementById("over-btn");
+  const again = document.getElementById("again");
+  let mine = null; // "quando" of the row I just saved, to keep it highlighted
+
+  // The canvas keeps the world's proportions (288 x 512 points) inside the stage.
+  const { W, H } = FlappyKoru;
+  function fit() {
+    const scale = Math.max(0.3, Math.min(stage.clientWidth / W, stage.clientHeight / H));
+    canvas.style.width = `${Math.floor(W * scale)}px`;
+    canvas.style.height = `${Math.floor(H * scale)}px`;
+  }
+  fit();
+
+  const renderBoard = (rows = board.load(), highlight = -1) => board.render(boardEl, rows, highlight);
+  const refreshBoard = () => {
+    const rows = board.load();
+    renderBoard(rows, mine ? rows.findIndex((r) => r.quando === mine) : -1);
+    document.getElementById("record").textContent = (rows.length ? rows[0].pontos : 0).toLocaleString("pt-BR");
+  };
+
+  const points = (n) => `${n.toLocaleString("pt-BR")} ${n === 1 ? "ponto" : "pontos"}`;
+  function rankText(score, result) {
+    if (result.rank !== -1) return `Você entrou em ${result.rank + 1}º lugar!`;
+    const missing = result.rows[result.rows.length - 1].pontos - score + 1;
+    return `${missing === 1 ? "Faltou" : "Faltaram"} ${points(missing)} para o top 10.`;
+  }
+
+  function showOver(title, text, button, low = false) {
+    overTitle.textContent = title;
+    overText.textContent = text;
+    overBtn.textContent = button;
+    over.classList.toggle("low", low);
+    over.hidden = false;
+  }
+
+  const game = FlappyKoru.create(canvas, {
+    onplay() {
+      over.hidden = true;
+      rankEl.textContent = "";
+      mine = null;
+      refreshBoard();
+      again.textContent = "Jogar de novo";
+      chrome.status("Voando");
+      stage.focus({ preventScroll: true });
+    },
+    onscore(score) {
+      document.getElementById("score").textContent = score.toLocaleString("pt-BR");
+    },
+    onpause(paused) {
+      if (paused) showOver("Pausado", touch ? "Toque em Continuar." : "Aperte P ou Espaço para continuar.", "Continuar");
+      else over.hidden = true;
+      chrome.status(paused ? "Pausado" : "Voando");
+      stage.focus({ preventScroll: true });
+    },
+    onhit() {
+      chrome.status("A Koru bateu!");
+    },
+    async ongameover(score) {
+      showOver("Fim de jogo", score ? `A Koru passou por ${score === 1 ? "1 cano" : `${score.toLocaleString("pt-BR")} canos`}.` : "A Koru não passou de nenhum cano. Tente de novo!", "Jogar de novo");
+      chrome.status(`Fim de jogo: ${points(score)}`);
+      stage.focus({ preventScroll: true });
+      if (score <= 0) return;
+      const result = await board.submit(score);
+      mine = result.rank !== -1 ? result.rows[result.rank].quando : null;
+      renderBoard(result.rows, result.rank);
+      rankEl.textContent = rankText(score, result);
+    },
+  });
+
+  overBtn.addEventListener("click", () => (game.paused ? game.pause() : game.start()));
+  again.addEventListener("click", () => game.start());
+  // A press anywhere on the sky flaps (mouse, pen, touch); the veil and its button cover it when the game is not flying.
+  canvas.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    game.flap();
+  });
+  // Leaving the game pauses it: she would crash while nobody is looking.
+  const away = () => { if (game.phase === "play" && !game.paused) game.pause(); };
+  window.addEventListener("blur", away);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) away(); });
+
+  document.fonts.load("800 20px Urbanist").then(() => { if (!game.running) game.draw(); });
+  new ResizeObserver(() => { fit(); game.resize(); }).observe(stage);
+  KG.state.on("recordesFlappy", refreshBoard);
+  game.resize();
+  refreshBoard();
+  showOver("Flappy Koru", touch ? "Toque em Jogar e depois no céu para a Koru voar." : "Aperte Espaço para voar.", "Jogar", true);
+  chrome.status("Pronto para voar");
+  window.focus();
+  stage.focus({ preventScroll: true });
+
+  window.__game = {
+    ready: true,
+    state: () => ({ ready: "idle", play: game.paused ? "paused" : "playing", fall: "falling", over: "over" })[game.phase],
+    running: () => game.running,
+    score: () => game.score,
+    koru: () => game.koru,
+    pipes: () => game.pipes,
+    world: () => ({ w: W, h: H, ground: FlappyKoru.GROUND }),
+    canvas: () => ({ w: canvas.width, h: canvas.height, cssW: canvas.clientWidth, cssH: canvas.clientHeight }),
+    artLoaded: () => game.artLoaded,
+    record: () => Number(document.getElementById("record").textContent.replace(/\D/g, "")),
+    autopilot(on = true) { game.autopilot = on; },
+    forceGameOver(score) { game.crash(score); },
+  };
+})();
+</script>
+</body>
+</html>

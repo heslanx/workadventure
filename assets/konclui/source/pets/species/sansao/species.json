@@ -1,0 +1,136 @@
+{
+ "species": "sansao",
+ "name": "Sansão",
+ "family": "fantasia",
+ "plan": "hopper",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  16,
+  4
+ ],
+ "temperament": "loyal",
+ "notes": "Hopper: Mônica's blue plush bunny (pairs with the avatar piece kc-handheld-tmsansao: cream eye whites, long ears). Hops squash and stretch at the sides, never through the face; the ears lag a frame (pressed short on the launch, streaming tall on the landing); every hop rises 4 px at the top (hopper rule). happy-down: arms up and open, then a hug across the belly, eyes closed in arcs. sit-down: one ear flopped (one shape from the head top to a curled tip, hanging clear of the cheek), eyes half-lidded, a row lower. sleep-any: a plush toy asleep sitting up, slumped two rows lower, both ears drooped down its sides, eyes closed in arcs, the nose kept. hop-left is a real leap (the back stretched, front paws reaching, hind legs pushing off). Extra clip: blink-down (1 frame).",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "hop-down": {
+   "frames": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    0
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "hop-left": {
+   "frames": [
+    11,
+    12,
+    13,
+    14,
+    11,
+    2
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "hop-up": {
+   "frames": [
+    15,
+    16,
+    17,
+    18,
+    19,
+    4
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "sit-down": {
+   "frames": [
+    20,
+    21
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "sleep-any": {
+   "frames": [
+    22,
+    23
+   ],
+   "fps": 0.8,
+   "loop": true
+  },
+  "happy-down": {
+   "frames": [
+    24,
+    25,
+    26,
+    26
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "look-down": {
+   "frames": [
+    27,
+    28
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    29
+   ],
+   "fps": 8,
+   "loop": false
+  }
+ },
+ "picker": {
+  "down": [
+   7,
+   0,
+   8
+  ],
+  "left": [
+   12,
+   2,
+   13
+  ],
+  "up": [
+   16,
+   4,
+   17
+  ]
+ }
+}

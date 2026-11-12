@@ -1,0 +1,49 @@
+{
+ "key": {
+  "b_out": "#121218",
+  "b_shd": "#24242e",
+  "b_base": "#363642",
+  "b_lit": "#54546a",
+  "r_out": "#4a0a10",
+  "r_shd": "#a81820",
+  "r_base": "#e2302a",
+  "r_lit": "#ff7050",
+  "w_shd": "#c2c6d0",
+  "w_base": "#f4f4f0",
+  "u_shd": "#b49456",
+  "u_base": "#e4ca8c",
+  "k_shd": "#6a7286",
+  "k_base": "#9ca4b6",
+  "k_lit": "#cad2de",
+  "eye": "#0a0a0e",
+  "glint": "#ffffff",
+  "mouth": "#7a1830",
+  "tongue": "#e0607a"
+ },
+ "variants": [
+  {
+   "id": "banda-branca",
+   "name": "Pica-pau-de-banda-branca",
+   "colors": {}
+  },
+  {
+   "id": "classico",
+   "name": "Pica-pau cl\u00e1ssico",
+   "colors": {
+    "b_out": "#0c1640",
+    "b_shd": "#1c3274",
+    "b_base": "#2a4aa4",
+    "b_lit": "#4a6cc8",
+    "r_out": "#5a1404",
+    "r_shd": "#a81e18",
+    "r_base": "#e23a26",
+    "r_lit": "#ff7a52",
+    "u_shd": "#d2c8b4",
+    "u_base": "#f6f0e2",
+    "k_shd": "#c8780a",
+    "k_base": "#f4b020",
+    "k_lit": "#ffd860"
+   }
+  }
+ ]
+}

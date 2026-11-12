@@ -1,0 +1,20 @@
+{
+ "key": {
+  "out": "#3a281c",
+  "shd": "#6e5240",
+  "shell": "#9c7c60",
+  "lit": "#c4a282",
+  "band": "#5a4232",
+  "skin_out": "#5a3428",
+  "skin_shd": "#b07a66",
+  "skin": "#dcaa92",
+  "ear": "#ecb8a6",
+  "eye": "#1a120e",
+  "glint": "#ffffff"
+ },
+ "variants": [
+  {"id": "natural", "name": "Natural", "colors": {}},
+  {"id": "areia", "name": "Areia", "colors": {
+   "out": "#4a3622", "shd": "#9a7c56", "shell": "#c8aa7c", "lit": "#e6d0a6", "band": "#82663e"}}
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "key": {
+  "out": "#b0640f",
+  "shd": "#f0b030",
+  "body": "#ffdc50",
+  "lit": "#fff6c8",
+  "eye": "#4a2a0c",
+  "glint": "#ffffff",
+  "blush": "#f7899a",
+  "mouth": "#8a3414",
+  "drop": "#4aa2e0",
+  "drop_lit": "#c8ecff",
+  "tongue": "#f06a7a"
+ },
+ "variants": [
+  {
+   "id": "dourada",
+   "name": "Dourada",
+   "colors": {}
+  },
+  {
+   "id": "branca",
+   "name": "Branca",
+   "colors": {
+    "out": "#56628a",
+    "shd": "#b9c5df",
+    "body": "#e6ecf8",
+    "lit": "#ffffff",
+    "blush": "#f4a2b4",
+    "glint": "#a9d6ff",
+    "eye": "#2b3150",
+    "mouth": "#7a3352"
+   }
+  }
+ ]
+}

@@ -1,0 +1,162 @@
+{
+ "species": "tatu-bola",
+ "name": "Tatu-bola",
+ "family": "brasil",
+ "plan": "roller",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  14,
+  3
+ ],
+ "temperament": "lazy",
+ "notes": "Roller: standing it is the walking armadillo; move-* is the curled ball rolling (its band lines turn round going sideways, scroll going toward or away). curl-left is the walk-to-ball transition (3 frames, once); play it reversed to uncurl. sleep-down is the ball, breathing. Extra clips: walk-down, walk-left, walk-up (the uncurled walk, 4 frames), sniff-down (the head bobs as it sniffs) and dig-down (nose down, paws in turn).",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "move-down": {
+   "frames": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "move-left": {
+   "frames": [
+    6,
+    10,
+    11,
+    12
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "move-up": {
+   "frames": [
+    6,
+    9,
+    8,
+    7
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "curl-left": {
+   "frames": [
+    2,
+    13,
+    6
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "happy-down": {
+   "frames": [
+    14,
+    15
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "sleep-down": {
+   "frames": [
+    6,
+    16
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "walk-down": {
+   "frames": [
+    17,
+    0,
+    18,
+    0
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "walk-left": {
+   "frames": [
+    19,
+    2,
+    20,
+    2
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "walk-up": {
+   "frames": [
+    21,
+    4,
+    22,
+    4
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "sniff-down": {
+   "frames": [
+    0,
+    23,
+    0,
+    24
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "dig-down": {
+   "frames": [
+    25,
+    26
+   ],
+   "fps": 6,
+   "loop": true
+  }
+ },
+ "picker": {
+  "down": [
+   17,
+   0,
+   18
+  ],
+  "left": [
+   19,
+   2,
+   20
+  ],
+  "up": [
+   21,
+   4,
+   22
+  ]
+ }
+}

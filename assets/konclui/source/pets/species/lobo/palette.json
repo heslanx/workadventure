@@ -1,0 +1,60 @@
+{
+ "key": {
+  "coat.out": "#3d475c",
+  "coat.shadow": "#bdc8d8",
+  "coat.base": "#e6ecf4",
+  "coat.light": "#ffffff",
+  "chest.shadow": "#d3dbe7",
+  "chest.light": "#fbfcff",
+  "ear.pink": "#eba7b3",
+  "ear.shadow": "#c47c8c",
+  "iris": "#d8283a",
+  "pupil": "#4a0d16",
+  "glint": "#fff6f2",
+  "nose": "#2a2d36",
+  "mouth": "#6a2430",
+  "tongue": "#e8707e"
+ },
+ "variants": [
+  {
+   "id": "branco",
+   "name": "Branco",
+   "colors": {
+    "coat.out": "#3d475c",
+    "coat.shadow": "#bdc8d8",
+    "coat.base": "#e6ecf4",
+    "coat.light": "#ffffff",
+    "chest.shadow": "#d3dbe7",
+    "chest.light": "#fbfcff",
+    "ear.pink": "#eba7b3",
+    "ear.shadow": "#c47c8c",
+    "iris": "#d8283a",
+    "pupil": "#4a0d16",
+    "glint": "#fff6f2",
+    "nose": "#2a2d36",
+    "mouth": "#6a2430",
+    "tongue": "#e8707e"
+   }
+  },
+  {
+   "id": "cinza",
+   "name": "Cinza",
+   "colors": {
+    "coat.out": "#2a2f3b",
+    "coat.shadow": "#6c7586",
+    "coat.base": "#959fae",
+    "coat.light": "#bcc4d1",
+    "chest.shadow": "#b9c1cd",
+    "chest.light": "#e6ecf4",
+    "ear.pink": "#d99aa6",
+    "ear.shadow": "#a26c7a",
+    "iris": "#d9c27a",
+    "pupil": "#4a3a10",
+    "glint": "#fff6f2",
+    "nose": "#2a2d36",
+    "mouth": "#6a2430",
+    "tongue": "#e8707e"
+   }
+  }
+ ]
+}

@@ -1,0 +1,292 @@
+{
+ "species": "caramelo",
+ "name": "Caramelo",
+ "family": "brasil",
+ "plan": "quadruped",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  16,
+  4
+ ],
+ "temperament": "loyal",
+ "notes": "A vira-lata caramelo: slim build, medium drop ears, slim muzzle, light chest, sickle tail curled over the back. Every clip is built from keyframes drawn by hand at native size in pets/species/caramelo/keys/*.txt. look-up-left is the target pose: sitting, muzzle raised toward the person, ear hanging back, tail curled over the back (use it when the owner is near). Loops are one keyframe plus what moves: the side walk alternates two strides with a passing frame where the body rises 1 px, the front and back walks lift the legs in turn, resting poses breathe, happy and wag move only the tail, look-down slides the eyes, beg raises the paws, the run goes reach, flight, gather, contact. Coat patterns are regions of their own: ear and earpatch (malhado carries one caramel ear, the same ear from every side), patch (malhado saddle and hip), tan (brows and lower legs of the preto-caramelo), blaze (the caramelo forehead stripe, tail tip and belly). Extra clips: wag-down, run-left, carry-left (jaw open, the runtime draws the ball at the muzzle), sniff-left, sniff-down, beg-down, bark-down, blink-down. One-shots (loop false): stretch-left (play bow), pounce-left, yawn-down, blink-down. happy-down is the petting reaction.",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "sit-down": {
+   "frames": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "happy-down": {
+   "frames": [
+    3,
+    4,
+    3,
+    4
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "yawn-down": {
+   "frames": [
+    0,
+    5,
+    6,
+    5
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "look-down": {
+   "frames": [
+    7,
+    8
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "wag-down": {
+   "frames": [
+    0,
+    9,
+    0,
+    9
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "bark-down": {
+   "frames": [
+    0,
+    10,
+    0,
+    10
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "beg-down": {
+   "frames": [
+    11,
+    12,
+    11,
+    12
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "sniff-down": {
+   "frames": [
+    13,
+    14,
+    13,
+    14
+   ],
+   "fps": 5,
+   "loop": true
+  },
+  "walk-down": {
+   "frames": [
+    15,
+    16,
+    15,
+    17
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    18,
+    18,
+    19,
+    19
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "walk-up": {
+   "frames": [
+    18,
+    20,
+    18,
+    21
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    22,
+    22,
+    23,
+    23
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "walk-left": {
+   "frames": [
+    24,
+    25,
+    26,
+    25
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "carry-left": {
+   "frames": [
+    27,
+    28,
+    29,
+    28
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "sniff-left": {
+   "frames": [
+    30,
+    31,
+    30,
+    31
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "run-left": {
+   "frames": [
+    32,
+    33,
+    34,
+    35
+   ],
+   "fps": 12,
+   "loop": true
+  },
+  "pounce-left": {
+   "frames": [
+    36,
+    37,
+    38,
+    38,
+    36,
+    22
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "stretch-left": {
+   "frames": [
+    22,
+    39,
+    39,
+    22
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "sit-left": {
+   "frames": [
+    40,
+    40,
+    41,
+    41
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "groom-left": {
+   "frames": [
+    42,
+    43,
+    42,
+    43
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "look-up-left": {
+   "frames": [
+    44,
+    44,
+    45,
+    45
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "lie-left": {
+   "frames": [
+    46,
+    46,
+    47,
+    47
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "sleep-any": {
+   "frames": [
+    48,
+    48,
+    49,
+    49
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "bellyup-any": {
+   "frames": [
+    50,
+    51,
+    50,
+    52
+   ],
+   "fps": 4,
+   "loop": true
+  }
+ },
+ "picker": {
+  "down": [
+   16,
+   15,
+   17
+  ],
+  "left": [
+   24,
+   25,
+   26
+  ],
+  "up": [
+   20,
+   18,
+   21
+  ]
+ }
+}

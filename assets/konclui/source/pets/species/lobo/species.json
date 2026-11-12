@@ -1,0 +1,233 @@
+{
+ "species": "lobo",
+ "name": "Lobo",
+ "family": "fantasia",
+ "plan": "quadruped",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  18,
+  4
+ ],
+ "temperament": "loyal",
+ "label": "Fantasma",
+ "notes": "White direwolf pup, the fantasy-collection pairing. The down-facing clips are a 3/4 front view (head turned about 30 degrees to the left, muzzle in profile); the runtime mirrors left for right as usual. Extra clips: run-left (12 fps, the plume streaming back), sniff-down (head down to the floor), blink-down, howl-left (seated, the muzzle raised, the jaw opening and closing) and howl-down (3/4 seated howl, the mouth opening and closing). idle-down stands with the plume swaying; sit-down is the noble seated pose with the plume round the paws. One-shots (loop false): stretch-left (play bow), pounce-left (crouch, leap with the plume streaming back, landing), yawn-down, howl-left, howl-down, blink-down. happy-down is the petting reaction (closed happy eyes, tongue out, the plume swinging).",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "walk-down": {
+   "frames": [
+    6,
+    1,
+    7,
+    0
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "walk-left": {
+   "frames": [
+    8,
+    9,
+    10,
+    9
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "walk-up": {
+   "frames": [
+    11,
+    12,
+    13,
+    12
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "run-left": {
+   "frames": [
+    14,
+    15,
+    16,
+    17
+   ],
+   "fps": 12,
+   "loop": true
+  },
+  "sit-down": {
+   "frames": [
+    18,
+    19
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "sit-left": {
+   "frames": [
+    20,
+    21
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "lie-left": {
+   "frames": [
+    22,
+    23
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "sleep-any": {
+   "frames": [
+    24,
+    25
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "bellyup-any": {
+   "frames": [
+    26,
+    27
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "groom-left": {
+   "frames": [
+    20,
+    28,
+    29,
+    28
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "stretch-left": {
+   "frames": [
+    2,
+    30,
+    31,
+    2
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "pounce-left": {
+   "frames": [
+    32,
+    33,
+    31,
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "happy-down": {
+   "frames": [
+    34,
+    35
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "yawn-down": {
+   "frames": [
+    36,
+    37,
+    38,
+    0
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "look-down": {
+   "frames": [
+    39,
+    40
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    36
+   ],
+   "fps": 1,
+   "loop": false
+  },
+  "howl-left": {
+   "frames": [
+    20,
+    41,
+    42,
+    41
+   ],
+   "fps": 3,
+   "loop": false
+  },
+  "howl-down": {
+   "frames": [
+    18,
+    43,
+    44,
+    43
+   ],
+   "fps": 3,
+   "loop": false
+  },
+  "sniff-down": {
+   "frames": [
+    45,
+    46,
+    45,
+    46
+   ],
+   "fps": 5,
+   "loop": true
+  }
+ },
+ "picker": {
+  "down": [
+   6,
+   0,
+   7
+  ],
+  "left": [
+   8,
+   2,
+   10
+  ],
+  "up": [
+   11,
+   4,
+   13
+  ]
+ }
+}

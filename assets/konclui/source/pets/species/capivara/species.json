@@ -1,0 +1,232 @@
+{
+ "species": "capivara",
+ "name": "Capivara",
+ "family": "brasil",
+ "plan": "quadruped",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  18,
+  4
+ ],
+ "temperament": "calm",
+ "notes": "Extra clips: swim-left, swim-down, swim-up (head and the back's hump above water) and soak-down (sitting in water, content closed eyes): the waterline is the body's last row, lapped by light ripples (\"water\") at irregular columns that run 1 px past each flank, with ripple arcs under the flanks, one foam speck (\"foam\") and a dark reflection line (\"water.dark\") 1 row under the body; there is no water fill, so the lake shows through. swim-left has a bow wave at the snout. The runtime should hide the shadow. loaf-down (lying as a loaf, muzzle on the floor, eyes shut), blink-down. sleep-any is the side profile lying flat with the muzzle on the floor. groom-left stands and lifts the near foreleg: the paw comes up in front of the chest, to the muzzle (tongue out) and to the cheek. pounce-left is a small hop. stretch-left, pounce-left and yawn-down are one-shots.",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "walk-down": {
+   "frames": [
+    6,
+    7,
+    8,
+    7
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "walk-left": {
+   "frames": [
+    9,
+    10,
+    11,
+    10
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "walk-up": {
+   "frames": [
+    12,
+    13,
+    14,
+    13
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "sit-down": {
+   "frames": [
+    15,
+    16
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "sit-left": {
+   "frames": [
+    17,
+    18
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "lie-left": {
+   "frames": [
+    19,
+    20
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "sleep-any": {
+   "frames": [
+    21,
+    22
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "loaf-down": {
+   "frames": [
+    23,
+    24
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "bellyup-any": {
+   "frames": [
+    25,
+    26
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "groom-left": {
+   "frames": [
+    2,
+    27,
+    28,
+    29
+   ],
+   "fps": 5,
+   "loop": true
+  },
+  "stretch-left": {
+   "frames": [
+    2,
+    30,
+    31,
+    2
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "pounce-left": {
+   "frames": [
+    32,
+    33,
+    34,
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "happy-down": {
+   "frames": [
+    35,
+    36
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "yawn-down": {
+   "frames": [
+    37,
+    38,
+    39,
+    0
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "look-down": {
+   "frames": [
+    40,
+    41
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    42
+   ],
+   "fps": 1,
+   "loop": false
+  },
+  "swim-left": {
+   "frames": [
+    43,
+    44
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "swim-down": {
+   "frames": [
+    45,
+    46
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "swim-up": {
+   "frames": [
+    47,
+    48
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "soak-down": {
+   "frames": [
+    49,
+    50
+   ],
+   "fps": 1,
+   "loop": true
+  }
+ },
+ "picker": {
+  "down": [
+   6,
+   0,
+   8
+  ],
+  "left": [
+   9,
+   2,
+   11
+  ],
+  "up": [
+   12,
+   4,
+   14
+  ]
+ }
+}

@@ -1,0 +1,52 @@
+{
+ "key": {
+  "out": "#1e2228",
+  "shd": "#3e4550",
+  "body": "#59616e",
+  "lit": "#7b8492",
+  "plate": "#4a515c",
+  "bumper": "#2c3138",
+  "bumper_lit": "#454c56",
+  "visor": "#141820",
+  "eye": "#5ff0d0",
+  "led": "#7dffb0",
+  "brush": "#c8ccd4",
+  "heart": "#ff6f8f"
+ },
+ "variants": [
+  {
+   "id": "grafite",
+   "name": "Grafite",
+   "colors": {}
+  },
+  {
+   "id": "branco",
+   "name": "Branco",
+   "colors": {
+    "out": "#3c4250",
+    "shd": "#b4bccb",
+    "body": "#dfe4ec",
+    "lit": "#f7f9fc",
+    "plate": "#cdd3de",
+    "bumper": "#6b7384",
+    "bumper_lit": "#8c95a6",
+    "brush": "#7b8492"
+   }
+  },
+  {
+   "id": "menta",
+   "name": "Menta Koncluí",
+   "colors": {
+    "out": "#123a32",
+    "shd": "#2f8a74",
+    "body": "#4cc6a4",
+    "lit": "#86e6c8",
+    "plate": "#3fae90",
+    "bumper": "#1d5a4c",
+    "bumper_lit": "#2c7462",
+    "brush": "#d8f4ec",
+    "led": "#ffffff"
+   }
+  }
+ ]
+}

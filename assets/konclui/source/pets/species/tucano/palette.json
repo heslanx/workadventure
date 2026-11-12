@@ -1,0 +1,54 @@
+{
+ "key": {
+  "body_out": "#0e0e13",
+  "body_shd": "#1a1b22",
+  "body": "#24252e",
+  "body_lit": "#363a48",
+  "wing_lit": "#4f546a",
+  "bib_shd": "#d9cfbb",
+  "bib": "#fbf7ec",
+  "beak_out": "#7a2e10",
+  "beak_stripe": "#e0562a",
+  "beak": "#f8a330",
+  "beak_lit": "#ffd660",
+  "beak_shd": "#e8862a",
+  "tip_out": "#0f0f14",
+  "tip": "#1c1d25",
+  "tip_lit": "#50556c",
+  "ring": "#4aa7ec",
+  "ring_shd": "#2b6dbb",
+  "catch": "#ffffff",
+  "feet_out": "#273952",
+  "feet": "#6c89ab",
+  "vent_shd": "#a0253a",
+  "vent": "#e0413c",
+  "berry_out": "#6e1426",
+  "berry": "#d42f4f",
+  "berry_lit": "#ff8a9a",
+  "mouth": "#b0303a"
+ },
+ "variants": [
+  {
+   "id": "toco",
+   "name": "Toco",
+   "colors": {}
+  },
+  {
+   "id": "bico-verde",
+   "name": "Bico-verde",
+   "colors": {
+    "beak_out": "#2c5520",
+    "beak_stripe": "#5e9a34",
+    "beak_shd": "#86b84a",
+    "beak": "#acd257",
+    "beak_lit": "#def08c",
+    "tip": "#3c6a26",
+    "tip_lit": "#6a9a40",
+    "bib_shd": "#f0a336",
+    "bib": "#ffd95c",
+    "ring": "#ef5a3c",
+    "ring_shd": "#b02e2a"
+   }
+  }
+ ]
+}

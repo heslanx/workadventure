@@ -1,0 +1,121 @@
+{
+ "$schema": "./sections.schema.json",
+ "version": 1,
+ "reservedNames": ["Meu avatar Koncluí"],
+ "legacyPieces": [
+  {"id": "konclui-camiseta-ciano", "part": "clothes", "name": "Camiseta Koncluí ciano", "file": "art/out/wokas/konclui-camiseta-ciano.png", "url": "https://work.konclui.com/map-storage/campus/wokas/konclui-camiseta-ciano.png"},
+  {"id": "konclui-camiseta-navy", "part": "clothes", "name": "Camiseta Koncluí marinho", "file": "art/out/wokas/konclui-camiseta-navy.png", "url": "https://work.konclui.com/map-storage/campus/wokas/konclui-camiseta-navy.png"},
+  {"id": "konclui-dolma", "part": "clothes", "name": "Dólmã de chef", "file": "art/out/wokas/konclui-dolma.png", "url": "https://work.konclui.com/map-storage/campus/wokas/konclui-dolma.png"},
+  {"id": "konclui-chapeu-chef", "part": "hat", "name": "Chapéu de chef", "file": "art/out/wokas/konclui-chapeu-chef.png", "url": "https://work.konclui.com/map-storage/campus/wokas/konclui-chapeu-chef.png"},
+  {"id": "konclui-bone", "part": "hat", "name": "Boné Koncluí", "file": "art/out/wokas/konclui-bone.png", "url": "https://work.konclui.com/map-storage/campus/wokas/konclui-bone.png"},
+  {"id": "koru", "part": "companion", "name": "Koru", "file": "art/out/companions/koru.png", "url": "https://work.konclui.com/map-storage/campus/companions/koru.png"}
+ ],
+ "parts": {
+  "woka": {
+   "label": "Personagem pronto",
+   "sections": [
+    {"id": "everyday", "name": "Dia a dia", "members": ["male11", "female11", "male12", "female12", "male5", "female6", "female7", "female8"]},
+    {"id": "medieval", "name": "Aventura medieval", "members": ["male1", "female1", "male2", "female2", "male3", "female3", "male4", "male6", "male7", "male8", "male9", "male10", "female4", "female5", "female9", "female10"]}
+   ]
+  },
+  "body": {
+   "label": "Corpo",
+   "heading": "Opções de corpo",
+   "sections": [
+    {"id": "skin", "name": "Tons de pele", "members": ["body4", "body24", "body9", "body30", "body3", "body23", "body8", "body29", "body5", "body25", "body10", "body31", "body6", "body26", "body11", "body32", "kc-body-classic-f5d6bd", "kc-body-classic-e8bb97", "kc-body-classic-d9a477", "kc-body-classic-b67352", "kc-body-classic-8b563b", "kc-body-classic-603d2d"]},
+    {"id": "elves", "name": "Elfos", "members": ["kc-body-elf-*"]},
+    {"id": "orcs", "name": "Orcs", "members": ["kc-body-orc-*"]},
+    {"id": "fantasy-colours", "name": "Cores fantasia", "members": ["body2", "body22", "body7", "body28", "body1", "body27", "body12", "body33", "kc-body-classic-78a653", "kc-body-classic-a59acb", "kc-body-classic-76b8ca"]},
+    {"id": "spooky", "name": "Terror amigável", "members": ["body13", "body14", "body15", "body16", "body17", "body18", "body19", "body20", "body21"]}
+   ]
+  },
+  "eyes": {
+   "label": "Olhos",
+   "heading": "Opções de olhos",
+   "sections": [
+    {"id": "eyes", "name": "Olhos", "members": ["eyes1", "eyes6", "eyes2", "eyes3", "eyes8", "eyes7", "eyes4", "eyes5", "eyes10", "eyes20", "eyes23", "eyes24", "kc-eyes-*"]},
+    {"id": "expressions", "name": "Expressões", "members": ["eyes22", "eyes21", "eyes9", "eyes17", "eyes19"]},
+    {"id": "glasses", "name": "Óculos e viseiras", "members": ["eyes25", "eyes26", "eyes27", "eyes28", "eyes29", "eyes30", "eyes11", "eyes12", "eyes13"]},
+    {"id": "spooky", "name": "Terror amigável", "members": ["eyes14", "eyes15", "eyes16", "eyes18"]}
+   ]
+  },
+  "hair": {
+   "label": "Cabelo",
+   "heading": "Opções de cabelo",
+   "sections": [
+    {"id": "short", "name": "Curtos", "members": ["hair5", "hair6", "hair19", "hair20", "hair21", "hair23", "hair26", "hair27", "hair28", "hair29", "hair40", "hair41", "hair42", "hair43", "hair44", "hair45", "hair46", "hair47", "hair54", "hair55", "hair56", "hair57", "hair60", "hair61", "kc-hair-short-*", "kc-hair-fringe-*", "kc-hair-side-*"]},
+    {"id": "shaved", "name": "Raspados, calvos e moicanos", "members": ["hair22", "hair68", "kc-hair-buzz-*", "kc-hair-balding-*", "kc-hair-mohawk-*"]},
+    {"id": "none", "name": "Sem cabelo", "empty": true, "members": ["hair1"]},
+    {"id": "medium", "name": "Médios", "members": ["hair9", "hair10", "hair13", "hair14", "hair24", "hair25", "hair30", "hair31", "hair34", "hair35", "hair36", "hair37", "hair66", "hair67", "kc-hair-bob-*"]},
+    {"id": "long", "name": "Longos", "members": ["hair15", "hair16", "hair38", "hair39", "kc-hair-long-*"]},
+    {"id": "textured", "name": "Cacheados e crespos", "members": ["kc-hair-curls-*", "kc-hair-afro-*", "kc-hair-dreadlocks-*"]},
+    {"id": "tied", "name": "Presos e tranças", "members": ["hair2", "hair3", "hair4", "hair7", "hair8", "hair11", "hair12", "hair64", "hair65", "hair17", "hair18", "hair32", "hair33", "kc-hair-bun-*", "kc-hair-ponytail-*", "kc-hair-braids-*"]},
+    {"id": "spiky", "name": "Espetados", "members": ["hair48", "hair49", "hair50", "hair51", "hair52", "hair53", "hair58", "hair59", "hair62", "hair63"]},
+    {"id": "loose-locks", "name": "Mechas avulsas", "members": ["hair69", "hair70", "hair71", "hair72", "hair73", "hair74"]},
+    {"id": "anime", "name": "Anime", "members": [{"collection": "Dragon Ball"}, {"collection": "One Piece"}]},
+    {"id": "chaves-monica", "name": "Chaves e Turma da Mônica", "members": [{"collection": "Chaves e Chapolin"}, {"collection": "Turma da Mônica"}]}
+   ]
+  },
+  "clothes": {
+   "label": "Roupa",
+   "heading": "Opções de roupa",
+   "sections": [
+    {"id": "konclui", "name": "Koncluí", "members": ["kc-outfit-essencial", "kc-outfit-conecta", "kc-outfit-estudio", "kc-outfit-lab", "kc-outfit-cozinha", "kc-outfit-koru", "konclui-camiseta-ciano", "konclui-camiseta-navy", "konclui-dolma"]},
+    {"id": "everyday", "name": "Dia a dia", "members": ["clothes16", "clothes17", "clothes18", "clothes_black_hoodie", "clothes_white_hoodie", "clothes_engelbert", "clothes_pride_shirt", "clothes32", "clothes33", "clothes66", "clothes67"]},
+    {"id": "office", "name": "Social e escritório", "members": ["clothes10", "clothes11", "clothes12", "clothes13", "clothes14", "clothes15", "clothes50", "clothes51", "clothes52"]},
+    {"id": "uniforms", "name": "Uniformes e escola", "members": ["clothes19", "clothes20", "clothes21", "clothes44", "clothes45", "clothes46", "clothes47", "clothes48", "clothes49", "clothes38", "clothes53", "clothes54", "clothes55"]},
+    {"id": "dresses", "name": "Vestidos", "members": ["clothes34", "clothes35", "clothes36", "clothes39"]},
+    {"id": "beach", "name": "Praia e banho", "members": ["clothes22", "clothes23", "clothes24", "clothes2", "clothes8", "clothes64", "clothes65", "clothes1", "clothes3", "clothes4", "clothes5", "clothes6", "clothes7", "clothes41", "clothes42", "clothes43", "clothes57", "clothes58", "clothes59", "clothes60", "clothes61", "clothes62"]},
+    {"id": "medieval", "name": "Aventura medieval", "members": ["clothes28", "clothes37", "clothes68", "clothes69", "clothes70", "clothes29", "clothes27", "clothes25", "clothes40", "clothes26", "clothes30", "clothes31", "clothes63"]},
+    {"id": "jokes", "name": "Brincadeiras", "members": ["clothes9", "clothes56"]},
+    {"id": "superheroes", "name": "Super-heróis", "members": [{"collection": "Batman"}, {"collection": "Batgirl"}, {"collection": "Robin"}, {"collection": "Mulher-Maravilha"}, {"collection": "Superman"}]},
+    {"id": "fantasy-film-tv", "name": "Fantasia, filmes e séries", "members": [{"collection": "Jon Snow"}, {"collection": "Tyrion"}, {"collection": "Mago viajante"}, {"collection": "Mágico"}, {"collection": "Woody"}]},
+    {"id": "anime", "name": "Anime", "members": [{"collection": "Dragon Ball"}, {"collection": "One Piece"}, {"collection": "Naruto"}, {"collection": "Cavaleiros do Zodíaco"}, {"collection": "Yu-Gi-Oh!"}, {"collection": "Totoro"}]},
+    {"id": "chaves-monica", "name": "Chaves e Turma da Mônica", "members": [{"collection": "Chaves e Chapolin"}, {"collection": "Turma da Mônica"}]},
+    {"id": "spooky", "name": "Terror amigável", "members": [{"collection": "Terror amigável"}]}
+   ]
+  },
+  "hat": {
+   "label": "Chapéu",
+   "heading": "Opções de chapéu",
+   "sections": [
+    {"id": "none", "name": "Sem chapéu", "empty": true, "members": ["hat1"]},
+    {"id": "konclui", "name": "Koncluí", "members": ["kc-hat-koru-owl", "konclui-bone", "konclui-chapeu-chef"]},
+    {"id": "caps-hats", "name": "Bonés e chapéus", "members": ["kc-hat-cap", "kc-hat-beret", "hat17", "hat9", "hat10", "hat11", "hat12", "kc-hat-italian-chef"]},
+    {"id": "bows-crowns", "name": "Laços, tiaras e coroas", "members": ["hat18", "hat19", "hat20", "hat21", "hat22", "hat23", "hat24", "hat25", "hat26", "hat13", "hat14", "hat8", "hat6", "hat7", "hat5", "hat4"]},
+    {"id": "medieval", "name": "Aventura medieval", "members": ["hat2", "hat3"]},
+    {"id": "world", "name": "Pelo mundo", "members": ["kc-hat-greek-laurel", "kc-hat-egyptian-nemes", "kc-hat-mexican-sombrero", "kc-hat-brazilian-cangaceiro"]},
+    {"id": "games-cartoons", "name": "Games e desenhos", "members": ["kc-hat-pikachu", "kc-hat-mario", "kc-hat-luigi", "kc-hat-mickey", "kc-hat-minnie"]},
+    {"id": "jokes", "name": "Brincadeiras", "members": ["tinfoil_hat1", "hat15"]},
+    {"id": "superheroes", "name": "Super-heróis", "members": ["kc-hat-wonder-woman", {"collection": "Batman"}, {"collection": "Batgirl"}]},
+    {"id": "fantasy-film-tv", "name": "Fantasia, filmes e séries", "members": [{"collection": "Mago viajante"}, {"collection": "Mágico"}, {"collection": "Woody"}]},
+    {"id": "anime", "name": "Anime", "members": [{"collection": "One Piece"}, {"collection": "Naruto"}, {"collection": "Yu-Gi-Oh!"}, {"collection": "Cavaleiros do Zodíaco"}, {"collection": "Totoro"}]},
+    {"id": "chaves-monica", "name": "Chaves e Turma da Mônica", "members": [{"collection": "Chaves e Chapolin"}]},
+    {"id": "spooky", "name": "Terror amigável", "members": ["hat16", {"collection": "Terror amigável"}]}
+   ]
+  },
+  "accessory": {
+   "label": "Acessório",
+   "heading": "Opções de acessório",
+   "sections": [
+    {"id": "none", "name": "Sem acessório", "empty": true, "members": ["accessory1"]},
+    {"id": "capes", "name": "Capas e mochilas", "group": "capes", "members": ["kc-cape-*"]},
+    {"id": "gloves", "name": "Luvas e braceletes", "group": "gloves", "members": ["kc-gloves-*"]},
+    {"id": "beard", "name": "Barba", "group": "beard", "members": ["kc-beard-*"]},
+    {"id": "face", "name": "Óculos e máscaras", "group": "face", "members": ["kc-glasses-*", "accessory_mask"]},
+    {"id": "headset", "name": "Headset", "group": "headset", "members": ["kc-headset-*"]},
+    {"id": "halo", "name": "Auréola", "group": "halo", "members": ["kc-aura-*"]},
+    {"id": "held", "name": "Na mão", "group": "hands", "members": ["kc-handheld-*", "accessory_mate_bottle"]},
+    {"id": "weapons", "name": "Armas e escudos", "group": "hands", "members": ["accessory8", "accessory12", "accessory10", "accessory14", "accessory26", "accessory27", "accessory28", "accessory29", "accessory30", "accessory31", "accessory32", "accessory5", "accessory7", "accessory4", "accessory6", "accessory2", "accessory3", "accessory22", "accessory23", "accessory24", "accessory25", "accessory9", "accessory11", "accessory13", "accessory15", "accessory16", "accessory17", "accessory18", "accessory19", "accessory20", "accessory21"]}
+   ]
+  },
+  "companion": {
+   "label": "Companheiro",
+   "sections": [
+    {"id": "konclui", "name": "Koncluí", "members": ["koru"]},
+    {"id": "dogs", "name": "Cachorros", "members": ["dog1", "dog2", "dog3"]},
+    {"id": "cats", "name": "Gatos", "members": ["cat1", "cat2", "cat3"]}
+   ]
+  }
+ }
+}

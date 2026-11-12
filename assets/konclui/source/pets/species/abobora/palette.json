@@ -1,0 +1,43 @@
+{
+ "key": {
+  "out": "#5a220e",
+  "shd": "#c8521a",
+  "body": "#f07a22",
+  "lit": "#ffa646",
+  "rib": "#b84a16",
+  "glow": "#ffd23f",
+  "glow_hi": "#fff2a8",
+  "hollow": "#9a3a0c",
+  "stem": "#7a5426",
+  "stem_dk": "#4a3214",
+  "leaf": "#5c9a30",
+  "leaf_dk": "#2e5a18",
+  "leaf_lit": "#8cc24a",
+  "pupil": "#4a1606",
+  "blush": "#ffb08a"
+ },
+ "variants": [
+  {
+   "id": "laranja",
+   "name": "Laranja",
+   "colors": {}
+  },
+  {
+   "id": "verde",
+   "name": "Verde",
+   "colors": {
+    "out": "#1f3a14",
+    "shd": "#4c7a2a",
+    "body": "#6ea43a",
+    "lit": "#9ccc58",
+    "rib": "#3c6a22",
+    "hollow": "#2c4a16",
+    "leaf": "#2f7a5a",
+    "leaf_dk": "#174a36",
+    "leaf_lit": "#56a884",
+    "blush": "#ffb08a",
+    "pupil": "#1c3010"
+   }
+  }
+ ]
+}

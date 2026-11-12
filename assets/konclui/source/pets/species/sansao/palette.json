@@ -1,0 +1,37 @@
+{
+ "key": {
+  "out": "#1f2a48",
+  "shd": "#35679f",
+  "body": "#4a88c4",
+  "lit": "#66a8e2",
+  "ear": "#9ec8f0",
+  "belly": "#c4e0f8",
+  "belly_shd": "#93bfe8",
+  "stitch": "#e8f4ff",
+  "white": "#f1f1e0",
+  "eye": "#121626",
+  "tooth": "#fbfaf2",
+  "tail": "#f6f6fa"
+ },
+ "variants": [
+  {
+   "id": "azul",
+   "name": "Azul",
+   "colors": {}
+  },
+  {
+   "id": "rosa",
+   "name": "Rosa",
+   "colors": {
+    "out": "#5a1a3a",
+    "shd": "#bc4c7c",
+    "body": "#e27aa6",
+    "lit": "#f6a6c8",
+    "ear": "#f7bcd6",
+    "belly": "#fbd9ea",
+    "belly_shd": "#eaa6c6",
+    "stitch": "#fff0f6"
+   }
+  }
+ ]
+}

@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lig 4</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<style id="a11y-styles"></style>
+<style>
+  [hidden] { display:none !important; }
+
+  /* the board: a navy frame with holes; discs are menta (seat 0) and gold (seat 1) */
+  #board { --cell:clamp(34px, min((100vh - 150px) / 6, (100vw - 340px) / 7), 84px); --pitch:calc(var(--cell) + 4px);
+    border-collapse:separate; border-spacing:4px 4px; padding:8px; background:#13406A; border:1px solid #2A5D8F; border-radius:18px;
+    box-shadow:0 14px 36px rgba(0,0,0,.5); }
+  @media (max-width:720px) { #board { --cell:clamp(30px, calc((100vw - 64px) / 7), 56px); } }
+  #board td { padding:0; }
+  #board button { display:block; position:relative; width:var(--cell); height:var(--cell); margin:0; padding:0; border:0; border-radius:50%;
+    background:#061427; box-shadow:inset 0 3px 8px rgba(0,0,0,.65); cursor:default; touch-action:manipulation; }
+  #board[data-active="true"] button { cursor:pointer; }
+  #board button.hot { background:#0B2744; }
+  #board button:focus { border:0 !important; outline:none; }
+  #board button:focus-visible { box-shadow:var(--ring); }
+  #board button.d0, #board button.ghost.d0 { background:radial-gradient(circle at 35% 30%, #B8FFEA, #53FFC8 45%, #00C894); }
+  #board button.d1, #board button.ghost.d1 { background:radial-gradient(circle at 35% 30%, #FFDFA0, #E8A33F 45%, #B5772A); }
+  #board button.d0, #board button.d1 { box-shadow:inset 0 -4px 8px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.4); }
+  #board button.d1::after { content:""; position:absolute; inset:24%; border-radius:50%; border:3px solid rgba(70,35,0,.32); }
+  #board button.last::before { content:""; position:absolute; inset:41%; border-radius:50%; background:rgba(3,5,26,.55); z-index:1; }
+  #board button.ghost { opacity:.32; }
+  #board button.new { z-index:2; animation:drop .4s cubic-bezier(.4,0,.9,.6); }
+  #board button.win { z-index:1; box-shadow:0 0 0 3px #F0F5FB, 0 0 20px 5px rgba(240,245,251,.55); animation:glow .9s ease-in-out infinite alternate; }
+  @keyframes drop { from { transform:translateY(calc(var(--drop) * var(--pitch) * -1)); } }
+  @keyframes glow { from { box-shadow:0 0 0 3px #F0F5FB, 0 0 8px 2px rgba(240,245,251,.35); } to { box-shadow:0 0 0 3px #F0F5FB, 0 0 24px 7px rgba(240,245,251,.7); } }
+
+  /* side panel */
+  .pl-row { display:flex; align-items:center; gap:10px; min-width:0; }
+  .pl-text { display:flex; flex-direction:column; min-width:0; }
+  .pl-name { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pl-sub { font-size:12px; color:var(--muted); }
+  .kg-dot { width:14px; height:14px; }
+  .kg-dot.d0 { background:#53FFC8; }
+  .kg-dot.d1 { background:#E8A33F; }
+  .pl-avatar { width:32px; height:32px; flex:none; border-radius:50%; background:var(--muted-bg); object-fit:contain; }
+  #last-move { margin-top:10px; }
+  .stack { display:flex; flex-direction:column; gap:8px; }
+  .stack .kg-btn { width:100%; }
+  .stack.footer { margin-top:auto; } /* fixed at the bottom: the buttons above come and go with the table state */
+  .levels { display:flex; gap:6px; }
+  .levels .kg-btn { flex:1; padding:8px 4px; font-size:14px; }
+  .levels .kg-btn[aria-pressed="true"] { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+</style>
+<script src="../game-kit.js"></script>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage">
+    <table id="board" class="board" aria-label="Tabuleiro do Lig 4, 7 colunas por 6 linhas"><tbody></tbody></table>
+  </div>
+  <aside class="kg-side">
+    <section class="kg-card">
+      <h2 id="side-title">Mesa</h2>
+      <div class="kg-players" id="players"></div>
+      <p class="kg-muted" id="last-move"></p>
+    </section>
+    <div class="stack" id="actions">
+      <button class="kg-btn" id="btn-join" hidden>Sentar para jogar</button>
+      <button class="kg-btn" id="btn-new" hidden>Nova partida</button>
+      <button class="kg-btn kg-ghost" id="btn-resign" hidden>Desistir</button>
+      <button class="kg-btn kg-ghost" id="btn-wo" hidden>Reivindicar vitória (W.O.)</button>
+      <div class="levels" id="levels" role="group" aria-label="Nível da Koru" hidden></div>
+    </div>
+    <div class="stack footer">
+      <button class="kg-btn kg-ghost" id="btn-mode">Treinar contra a Koru</button>
+    </div>
+  </aside>
+</main>
+<script src="vendor/connect-four/vars.js"></script>
+<script src="vendor/connect-four/functions.js"></script>
+<script src="vendor/connect-four/accessibility.js"></script>
+<script type="module">
+const COLS = 7, ROWS = 6, EMPTY = ".".repeat(COLS * ROWS);
+const idx = (r, c) => r * COLS + c; // r = 0 is the top row
+const SEAT_COLOR = ["menta", "dourado"];
+const LEVELS = {
+  facil: { label: "Fácil", depth: 2, random: 0.3 },
+  medio: { label: "Médio", depth: 4, random: 0 },
+  dificil: { label: "Difícil", depth: 6, random: 0 },
+};
+
+// ------------------------------------------------------------------ rules
+// The verdict is the vendored connect-four rules (Game.check.*), loaded with the position. It names players "black"
+// (seat 0) and "red" (seat 1). Returns "win" (the player who just moved won), "draw" or null.
+function rulesVerdict(cells) {
+  for (let r = 0; r < ROWS; r += 1) {
+    for (let c = 0; c < COLS; c += 1) {
+      const ch = cells[idx(r, c)];
+      Game.board[r][c] = ch === "." ? 0 : ch === "0" ? "black" : "red";
+    }
+  }
+  if (Game.check.isVerticalWin() || Game.check.isHorizontalWin() || Game.check.isDiagonalWin()) return "win";
+  return Game.check.isGameADraw() ? "draw" : null;
+}
+
+// Cells of every four in a row of `ch`: to light them up, and to refuse a shared state where both players have one.
+function fours(cells, ch) {
+  const hit = new Set();
+  for (let r = 0; r < ROWS; r += 1) {
+    for (let c = 0; c < COLS; c += 1) {
+      for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+        const run = [0, 1, 2, 3].map((k) => [r + k * dr, c + k * dc]);
+        if (run.every(([y, x]) => y >= 0 && y < ROWS && x >= 0 && x < COLS && cells[idx(y, x)] === ch)) run.forEach(([y, x]) => hit.add(idx(y, x)));
+      }
+    }
+  }
+  return hit;
+}
+
+const lowestEmpty = (cells, c) => {
+  for (let r = ROWS - 1; r >= 0; r -= 1) if (cells[idx(r, c)] === ".") return r;
+  return -1;
+};
+const count = (cells, ch) => [...cells].filter((x) => x === ch).length;
+
+// Anyone in the office can write the room variable: accept only a reachable position.
+function validState(s) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return false;
+  if (Object.keys(s).some((k) => k !== "cells" && k !== "last")) return false;
+  const { cells, last } = s;
+  if (typeof cells !== "string" || !/^[.01]{42}$/.test(cells)) return false;
+  if (last !== null && last !== undefined && !(Number.isInteger(last) && last >= 0 && last < COLS && cells[idx(ROWS - 1, last)] !== ".")) return false;
+  for (let c = 0; c < COLS; c += 1) {
+    let floor = true; // walking up from the bottom: once a hole shows, nothing may sit above it
+    for (let r = ROWS - 1; r >= 0; r -= 1) {
+      if (cells[idx(r, c)] === ".") floor = false;
+      else if (!floor) return false;
+    }
+  }
+  const lead = count(cells, "0") - count(cells, "1"); // seat 0 moves first
+  if (lead !== 0 && lead !== 1) return false;
+  return !(fours(cells, "0").size && fours(cells, "1").size);
+}
+
+// ------------------------------------------------------------------ page
+const $ = (id) => document.getElementById(id);
+const chrome = KG.chrome({
+  title: "Lig 4",
+  help: "Sente na mesa para jogar 1 contra 1: quem senta primeiro joga com as peças menta e começa. Clique ou toque numa coluna para soltar a peça, ou use as setas e Enter no teclado. Quem alinhar quatro peças na horizontal, na vertical ou na diagonal vence, e se o tabuleiro encher dá empate. Quem não está jogando assiste ao vivo. Se a outra pessoa sumir por 2 minutos, você pode reivindicar a vitória por W.O. Para treinar sem ocupar a mesa, jogue contra a Koru.",
+});
+await KG.ready();
+
+const mesa = KG.table("mesaLig4", { game: "lig4", initial: () => ({ cells: EMPTY, last: null }), validState });
+const view = { mode: "mesa", hot: -1 };
+const solo = { cells: EMPTY, last: null, thinking: false, over: "", level: "medio" }; // you are seat 0 (menta), Koru seat 1
+let notice = "";
+let resignArmed = false;
+let worker = null;
+let painted = null; // the cells of the last paint (null: nothing on screen yet, so nothing to animate)
+
+// the grid: the vendored markup, a table of buttons, one per cell (accessibility.js walks it with the arrow keys)
+const buttons = [];
+for (let r = 0; r < ROWS; r += 1) {
+  const tr = $("board").tBodies[0].insertRow();
+  for (let c = 0; c < COLS; c += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.col = String(c);
+    button.dataset.row = String(r);
+    tr.insertCell().append(button);
+    button.addEventListener("animationend", (e) => {
+      if (e.animationName === "drop") {
+        delete button.dataset.falling;
+        button.classList.remove("new");
+      }
+    });
+    buttons.push(button);
+  }
+}
+// accessibility.js moves the focus on arrow keys for any focused <button>; keep it to the board's own buttons
+for (const el of document.querySelectorAll(".kg-side, .kg-bar")) el.addEventListener("keydown", (e) => e.key.startsWith("Arrow") && e.stopPropagation());
+
+// ------------------------------------------------------------------ the two models the panel and the board paint
+function mesaModel() {
+  const s = mesa.session;
+  const done = !!s && s.status === "done";
+  const shown = s && (done || mesa.role !== "livre") ? s : null;
+  const me = shown ? mesa.seat : -1;
+  const cells = shown ? shown.state.cells : EMPTY;
+  const playing = !!shown && shown.status === "playing";
+  const consistent = !playing || shown.turn === (count(cells, "0") > count(cells, "1") ? 1 : 0);
+  const name = (i) => KG.clean(shown?.seats[i]?.name, 24) || "Vaga";
+  const players = [0, 1].map((i) => ({
+    name: name(i),
+    color: `d${i}`,
+    sub: [SEAT_COLOR[i], me === i && "você", playing && shown.turn === i && "vez", done && shown.winner === i && "venceu", done && shown.winner === "empate" && "empate"]
+      .filter(Boolean).join(", "),
+    turn: playing && shown.turn === i,
+  }));
+  let status;
+  if (!shown) status = "Mesa livre. Sente para jogar.";
+  else if (shown.status === "waiting") status = me !== -1 ? "Aguardando adversário…" : `${KG.clean(shown.seats.find(Boolean)?.name, 24)} espera um adversário.`;
+  else if (!consistent) status = "Mesa com estado inválido. Peça uma nova partida.";
+  else if (playing) status = shown.turn === me ? `Sua vez (${SEAT_COLOR[me]}).` : `Vez de ${name(shown.turn)} (${SEAT_COLOR[shown.turn]}).`;
+  else if (shown.winner === "empate") status = `Empate (${shown.reason}).`;
+  else status = `${me === shown.winner ? "Você venceu" : `${name(shown.winner)} venceu`} (${shown.reason}).`;
+  return {
+    title: "Mesa",
+    cells,
+    last: shown ? shown.state.last : null,
+    players,
+    status,
+    input: playing && consistent && mesa.myTurn() ? me : null,
+    buttons: {
+      join: !shown || done || (shown.status === "waiting" && me === -1 && shown.seats.some((x) => !x)),
+      newGame: done || (shown?.status === "waiting" && me !== -1) || (playing && !consistent && me !== -1),
+      resign: playing && me !== -1,
+      wo: mesa.canClaimWO(),
+    },
+  };
+}
+
+function soloModel() {
+  const koruTurn = count(solo.cells, "0") > count(solo.cells, "1");
+  return {
+    title: "Treino",
+    cells: solo.cells,
+    last: solo.last,
+    players: [
+      { name: "Você", color: "d0", sub: SEAT_COLOR[0], turn: !solo.over && !koruTurn },
+      { name: `Koru (${LEVELS[solo.level].label})`, color: "d1", sub: SEAT_COLOR[1], turn: !solo.over && koruTurn, avatar: true },
+    ],
+    status: solo.over || (solo.thinking ? "A Koru está pensando…" : koruTurn ? "Vez da Koru." : "Sua vez (menta)."),
+    input: !solo.over && !solo.thinking && !koruTurn ? 0 : null,
+    buttons: { newGame: true },
+  };
+}
+
+const model = () => (view.mode === "mesa" ? mesaModel() : soloModel());
+
+// ------------------------------------------------------------------ painting
+const koruAvatar = new Image();
+koruAvatar.className = "pl-avatar";
+koruAvatar.alt = "";
+koruAvatar.src = KG.asset("koru.png");
+
+function playerRow(p) {
+  const row = document.createElement("div");
+  row.className = `kg-player pl-row${p.turn ? " kg-turn" : ""}`;
+  if (p.avatar) row.append(koruAvatar);
+  else {
+    const dot = document.createElement("span");
+    dot.className = `kg-dot ${p.color}`;
+    row.append(dot);
+  }
+  const text = document.createElement("span");
+  text.className = "pl-text";
+  const name = document.createElement("span");
+  name.className = "pl-name";
+  name.textContent = p.name;
+  const sub = document.createElement("span");
+  sub.className = "pl-sub";
+  sub.textContent = p.sub;
+  text.append(name, sub);
+  row.append(text);
+  return row;
+}
+
+// Discs, the winning four, the last move and the preview of where a drop would land.
+function paintBoard(m) {
+  const wins = new Set([...fours(m.cells, "0"), ...fours(m.cells, "1")]);
+  const lastRow = m.last === null || m.last === undefined ? -1 : [...Array(ROWS).keys()].find((r) => m.cells[idx(r, m.last)] !== ".");
+  const open = m.input !== null && view.hot >= 0 ? lowestEmpty(m.cells, view.hot) : -1;
+  // a single new disc drops; a whole new position (another game, the first paint) just appears
+  const arrivals = painted === null ? [] : [...m.cells].flatMap((ch, i) => (ch !== "." && painted[i] === "." ? [i] : []));
+  buttons.forEach((button, i) => {
+    const r = Math.floor(i / COLS), c = i % COLS, ch = m.cells[i];
+    if (arrivals.length === 1 && arrivals[0] === i) {
+      button.dataset.falling = "1";
+      button.style.setProperty("--drop", String(r));
+    } else if (ch === ".") delete button.dataset.falling;
+    const classes = [];
+    if (ch !== ".") classes.push(`d${ch}`);
+    if (wins.has(i)) classes.push("win");
+    if (c === m.last && r === lastRow) classes.push("last");
+    if (c === view.hot && m.input !== null) classes.push("hot");
+    if (c === view.hot && r === open) classes.push("ghost", `d${m.input}`);
+    if (button.dataset.falling) classes.push("new");
+    button.className = classes.join(" ");
+    button.setAttribute("aria-label", `Coluna ${c + 1}, linha ${ROWS - r}: ${ch === "." ? "vazia" : `peça ${SEAT_COLOR[Number(ch)]}`}`);
+  });
+  painted = m.cells;
+  $("board").dataset.active = String(m.input !== null);
+}
+
+function render() {
+  const m = model();
+  $("side-title").textContent = m.title;
+  $("players").replaceChildren(...m.players.map(playerRow));
+  $("last-move").textContent = m.last === null || m.last === undefined ? "Nenhum lance ainda." : `Último lance: coluna ${m.last + 1}`;
+  chrome.status(notice || m.status);
+  const b = m.buttons;
+  $("btn-join").hidden = view.mode !== "mesa" || !b.join;
+  $("btn-new").hidden = !b.newGame;
+  $("btn-resign").hidden = view.mode !== "mesa" || !b.resign;
+  $("btn-resign").textContent = resignArmed ? "Confirmar desistência" : "Desistir";
+  $("btn-wo").hidden = view.mode !== "mesa" || !b.wo;
+  $("levels").hidden = view.mode !== "solo";
+  for (const btn of $("levels").children) btn.setAttribute("aria-pressed", String(btn.dataset.level === solo.level));
+  $("btn-mode").textContent = view.mode === "mesa" ? "Treinar contra a Koru" : "Voltar para a mesa";
+  paintBoard(m);
+}
+
+function flash(text) {
+  notice = text;
+  render();
+  setTimeout(() => {
+    if (notice === text) {
+      notice = "";
+      render();
+    }
+  }, 4000);
+}
+
+// ------------------------------------------------------------------ moves: the same path for the board and the test hooks
+const place = (cells, row, col, seat) => cells.slice(0, idx(row, col)) + seat + cells.slice(idx(row, col) + 1);
+
+async function drop(col) {
+  const m = model();
+  if (m.input === null || !Number.isInteger(col) || col < 0 || col >= COLS) return false;
+  const row = lowestEmpty(m.cells, col);
+  if (row < 0) return false;
+  const seat = m.input;
+  const next = place(m.cells, row, col, seat);
+  const verdict = rulesVerdict(next);
+  if (view.mode === "solo") {
+    Object.assign(solo, { cells: next, last: col });
+    if (verdict === "win") solo.over = "Quatro em linha! Você venceu a Koru.";
+    else if (verdict === "draw") solo.over = "Empate (tabuleiro cheio).";
+    render();
+    if (!solo.over) askKoru();
+    return true;
+  }
+  const end = verdict === "win" ? { winner: seat, reason: "quatro em linha" } : verdict === "draw" ? { winner: "empate", reason: "tabuleiro cheio" } : {};
+  const ok = await mesa.play({ cells: next, last: col }, end);
+  if (!ok) render(); // lost a race: the shared state wins
+  return ok;
+}
+
+$("board").addEventListener("click", (e) => {
+  const button = e.target.closest("button");
+  if (button) drop(Number(button.dataset.col));
+});
+function heat(col) {
+  if (view.hot === col) return;
+  view.hot = col;
+  paintBoard(model());
+}
+$("board").addEventListener("mouseover", (e) => {
+  const button = e.target.closest("button");
+  if (button) heat(Number(button.dataset.col));
+});
+$("board").addEventListener("mouseleave", () => heat(-1));
+$("board").addEventListener("focusin", (e) => {
+  const button = e.target.closest("button");
+  if (button) heat(Number(button.dataset.col));
+});
+$("board").addEventListener("focusout", () => heat(-1));
+
+// ------------------------------------------------------------------ Koru
+const pending = new Map(); // request id -> resolve
+let requestId = 0;
+
+function getWorker() {
+  if (!worker) {
+    worker = new Worker("ai-worker.js");
+    worker.onmessage = (e) => {
+      const resolve = pending.get(e.data.id);
+      pending.delete(e.data.id);
+      if (resolve) resolve(e.data.error ? null : e.data.col);
+    };
+    worker.onerror = () => {
+      for (const resolve of pending.values()) resolve(null); // askKoru falls back to any open column
+      pending.clear();
+    };
+  }
+  return worker;
+}
+
+function koruColumn(cells, level) {
+  return new Promise((resolve) => {
+    const id = ++requestId;
+    pending.set(id, resolve);
+    getWorker().postMessage({ id, cells, who: 1, depth: level.depth, random: level.random });
+  });
+}
+
+async function askKoru() {
+  solo.thinking = true;
+  render();
+  const cells = solo.cells;
+  const t0 = performance.now();
+  const reply = await koruColumn(cells, LEVELS[solo.level]);
+  if (cells !== solo.cells) return; // a new game started meanwhile
+  await new Promise((r) => setTimeout(r, Math.max(0, 450 - (performance.now() - t0)))); // let the answer breathe
+  if (cells !== solo.cells) return;
+  const open = [...Array(COLS).keys()].filter((c) => lowestEmpty(cells, c) >= 0);
+  const col = Number.isInteger(reply) && open.includes(reply) ? reply : open[Math.floor(Math.random() * open.length)];
+  const next = place(cells, lowestEmpty(cells, col), col, 1);
+  const verdict = rulesVerdict(next);
+  Object.assign(solo, { cells: next, last: col, thinking: false });
+  if (verdict === "win") solo.over = "Quatro em linha. A Koru venceu.";
+  else if (verdict === "draw") solo.over = "Empate (tabuleiro cheio).";
+  render();
+}
+
+function newSolo() {
+  Object.assign(solo, { cells: EMPTY, last: null, thinking: false, over: "" });
+  render();
+}
+
+// ------------------------------------------------------------------ controls
+$("btn-join").onclick = async () => {
+  const seat = await mesa.join();
+  if (seat === -1) flash("A mesa está ocupada. Você assiste ao vivo.");
+  render();
+};
+$("btn-new").onclick = async () => {
+  if (view.mode === "solo") return newSolo();
+  if (!(await mesa.reset())) flash("A mesa mudou enquanto você clicava. Tente de novo.");
+  return render();
+};
+$("btn-resign").onclick = async () => {
+  if (!resignArmed) {
+    resignArmed = true;
+    render();
+    setTimeout(() => {
+      resignArmed = false;
+      render();
+    }, 3000);
+    return;
+  }
+  resignArmed = false;
+  await mesa.resign();
+  render();
+};
+$("btn-wo").onclick = async () => {
+  await mesa.claimWO();
+  render();
+};
+$("btn-mode").onclick = () => {
+  view.mode = view.mode === "mesa" ? "solo" : "mesa";
+  notice = "";
+  painted = null; // another game is on the board now
+  render();
+};
+for (const [key, level] of Object.entries(LEVELS)) {
+  const btn = document.createElement("button");
+  btn.className = "kg-btn kg-ghost";
+  btn.textContent = level.label;
+  btn.dataset.level = key;
+  btn.onclick = () => {
+    solo.level = key;
+    render();
+  };
+  $("levels").append(btn);
+}
+
+mesa.onChange(render);
+setInterval(() => view.mode === "mesa" && mesa.session?.status === "playing" && render(), 5000); // W.O. is a clock, not an event
+render();
+
+// Test hooks (the game itself never reads them): the same paths the buttons and the board use.
+window.__game = {
+  ready: true,
+  state() {
+    const s = mesa.session;
+    const m = model();
+    return {
+      mode: view.mode, role: mesa.role, seat: mesa.seat, status: s?.status ?? null, turn: s?.turn ?? null, winner: s?.winner ?? null,
+      reason: s?.reason ?? "", names: (s?.seats ?? []).map((x) => x && x.name), cells: m.cells, last: m.last,
+      wins: buttons.flatMap((b, i) => (b.classList.contains("win") ? [i] : [])), inputEnabled: m.input !== null,
+      statusText: document.querySelector(".kg-status").textContent, soloThinking: solo.thinking, soloOver: solo.over, soloLevel: solo.level,
+    };
+  },
+  join: () => mesa.join(),
+  resign: () => mesa.resign(),
+  reset: () => mesa.reset(),
+  drop,
+  validState,
+  // the vendored rules and the highlight on any position: { verdict, four: [cell indexes of every four, either player] }
+  rules: (cells) => ({ verdict: rulesVerdict(cells), four: [...fours(cells, "0"), ...fours(cells, "1")].sort((a, b) => a - b) }),
+  // solo only: start from any position (a full board, a threat) without playing the game to get there
+  soloCells(cells) {
+    Object.assign(solo, { cells, last: null, thinking: false, over: "" });
+    view.mode = "solo";
+    painted = null;
+    render();
+    if (count(cells, "0") > count(cells, "1")) askKoru(); // Koru is the one to move
+  },
+};
+</script>
+</body>
+</html>

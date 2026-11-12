@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2048</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<script src="../game-kit.js"></script>
+<style>
+/* 2048: our look over the original markup (grid-container, tile-container, tile-N, tile-position-X-Y).
+   The board is a square sized by the stage; everything inside is sized in container query units of the board. */
+.kg-stage { container-type:size; outline:none; }
+.kg-side { overflow-y:auto; min-height:0; }
+.game-container { --gap:3cqw; --cell:21.25cqw; --step:24.25cqw; position:relative; width:min(100cqw, 100cqh, 600px); aspect-ratio:1;
+  container-type:inline-size; background:var(--card); border:1px solid var(--border-subtle); border-radius:var(--radius);
+  touch-action:none; -webkit-user-select:none; user-select:none; flex:none; overflow:hidden; }
+.grid-container { position:absolute; inset:var(--gap); display:grid; grid-template:repeat(4, 1fr) / repeat(4, 1fr); gap:var(--gap); }
+.grid-row { display:contents; }
+.grid-cell { border-radius:8px; background:var(--elevated); }
+.tile-container { position:absolute; inset:0; }
+
+.tile { position:absolute; left:var(--gap); top:var(--gap); width:var(--cell); height:var(--cell);
+  transform:translate(calc(var(--tx) * var(--step)), calc(var(--ty) * var(--step))); transition:transform 100ms ease-in-out; }
+.tile-position-1-1 { --tx:0; --ty:0; } .tile-position-2-1 { --tx:1; --ty:0; } .tile-position-3-1 { --tx:2; --ty:0; } .tile-position-4-1 { --tx:3; --ty:0; }
+.tile-position-1-2 { --tx:0; --ty:1; } .tile-position-2-2 { --tx:1; --ty:1; } .tile-position-3-2 { --tx:2; --ty:1; } .tile-position-4-2 { --tx:3; --ty:1; }
+.tile-position-1-3 { --tx:0; --ty:2; } .tile-position-2-3 { --tx:1; --ty:2; } .tile-position-3-3 { --tx:2; --ty:2; } .tile-position-4-3 { --tx:3; --ty:2; }
+.tile-position-1-4 { --tx:0; --ty:3; } .tile-position-2-4 { --tx:1; --ty:3; } .tile-position-3-4 { --tx:2; --ty:3; } .tile-position-4-4 { --tx:3; --ty:3; }
+.tile-inner { width:100%; height:100%; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800;
+  font-size:9cqw; line-height:1; font-variant-numeric:tabular-nums; z-index:10; --bg:#1A3B4F; --fg:#D5E4EE; background:var(--bg); color:var(--fg); }
+
+/* dark teal to mint: the value climbs the brand ramp, mint (#53FFC8) only from 256 up */
+.tile-2    .tile-inner { --bg:#1A3B4F; --fg:#D5E4EE; }
+.tile-4    .tile-inner { --bg:#1D4C5E; --fg:#DDEFF0; }
+.tile-8    .tile-inner { --bg:#11616A; --fg:#E8FBF7; }
+.tile-16   .tile-inner { --bg:#0E7C78; --fg:#EFFFFB; }
+.tile-32   .tile-inner { --bg:#13987F; --fg:#F4FFFC; }
+.tile-64   .tile-inner { --bg:#20B58B; --fg:#04211A; }
+.tile-128  .tile-inner { --bg:#3BD1A0; --fg:#04211A; font-size:7.4cqw; box-shadow:0 0 12px 0 rgba(83,255,200,.16); }
+.tile-256  .tile-inner { --bg:#53FFC8; --fg:#04211A; font-size:7.4cqw; box-shadow:0 0 14px 1px rgba(83,255,200,.28); }
+.tile-512  .tile-inner { --bg:#7DFFD6; --fg:#04211A; font-size:7.4cqw; box-shadow:0 0 16px 2px rgba(83,255,200,.34); }
+.tile-1024 .tile-inner { --bg:#A8FFE5; --fg:#04211A; font-size:5.8cqw; box-shadow:0 0 18px 3px rgba(83,255,200,.40); }
+.tile-2048 .tile-inner { --bg:#D9FFF4; --fg:#04211A; font-size:5.8cqw; box-shadow:0 0 20px 4px rgba(83,255,200,.46); }
+.tile-super .tile-inner { --bg:#FFFFFF; --fg:#04211A; font-size:4.6cqw; box-shadow:0 0 20px 4px rgba(83,255,200,.46); }
+
+.tile-new .tile-inner { animation:appear 200ms ease 100ms both; }
+.tile-merged .tile-inner { z-index:20; animation:pop 200ms ease 100ms both; }
+@keyframes appear { from { opacity:0; transform:scale(0); } to { opacity:1; transform:scale(1); } }
+@keyframes pop { 0% { transform:scale(0); } 50% { transform:scale(1.15); } 100% { transform:scale(1); } }
+
+/* end of run: dark veil over the board with the result and the rank */
+.game-message { display:none; position:absolute; inset:0; z-index:100; border-radius:var(--radius); text-align:center;
+  background:rgba(3,5,26,.9); flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:16px; }
+.game-message.game-over, .game-message.game-won { display:flex; animation:fade-in 400ms ease 400ms both; }
+.game-message > p { margin:0; font-size:clamp(20px, 7cqw, 40px); font-weight:800; }
+.game-message .kg-rank { margin:0; min-height:1.5em; color:var(--accent); font-size:clamp(14px, 3.4cqw, 18px); font-weight:700; }
+.game-message .lower { display:flex; gap:10px; margin-top:6px; }
+.keep-playing-button { display:none; } .game-won .keep-playing-button { display:inline-block; }
+@keyframes fade-in { from { opacity:0; } to { opacity:1; } }
+html.leve .tile, html.leve .tile-inner, html.leve .game-message, html.leve .score-addition { transition:none !important; animation:none !important; }
+
+/* side panel */
+.score-container { position:relative; display:inline-block; font-size:34px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+.score-addition { position:absolute; left:100%; margin-left:10px; top:6px; font-size:18px; color:var(--accent); font-weight:800;
+  animation:move-up 600ms ease-in both; pointer-events:none; }
+@keyframes move-up { from { transform:translateY(8px); opacity:1; } to { transform:translateY(-28px); opacity:0; } }
+.best { margin-top:4px; }
+.best-container { color:var(--fg2); font-weight:700; font-variant-numeric:tabular-nums; }
+.kg-side .kg-btn { align-self:stretch; padding:10px 18px; }
+@media (max-width: 720px) {
+  .kg-side { flex-direction:row; flex-wrap:wrap; max-height:34%; }
+  .kg-side .board-card { display:none; }
+  .kg-side .kg-btn { align-self:center; }
+  .kg-side .score-card { flex:1; }
+}
+</style>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage" id="stage" tabindex="0" aria-label="Tabuleiro do 2048">
+    <div class="game-container">
+      <div class="game-message" role="status">
+        <p></p>
+        <p class="kg-rank" id="rank"></p>
+        <div class="lower">
+          <button type="button" class="kg-btn keep-playing-button">Continuar</button>
+          <button type="button" class="kg-btn kg-ghost retry-button">Jogar de novo</button>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+        <div class="grid-row"><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div></div>
+      </div>
+
+      <div class="tile-container"></div>
+    </div>
+  </div>
+  <aside class="kg-side">
+    <div class="kg-card score-card">
+      <h2>Pontos</h2>
+      <div class="score-container">0</div>
+      <p class="kg-muted best">Seu melhor: <span class="best-container">0</span></p>
+    </div>
+    <div class="kg-card board-card">
+      <h2>Recordes do escritório</h2>
+      <div id="board"></div>
+    </div>
+    <button type="button" class="kg-btn restart-button">Jogar de novo</button>
+  </aside>
+</main>
+<script src="vendor/js/tile.js"></script>
+<script src="vendor/js/grid.js"></script>
+<script src="vendor/js/keyboard_input_manager.js"></script>
+<script src="vendor/js/html_actuator.js"></script>
+<script src="vendor/js/local_storage_manager.js"></script>
+<script src="vendor/js/game_manager.js"></script>
+<script>
+// Glue: the original game + the campus top 10 (room variable recordes2048) + test hooks.
+(async () => {
+  "use strict";
+  await KG.ready();
+  if (KG.profile === "leve") document.documentElement.classList.add("leve");
+
+  const chrome = KG.chrome({
+    title: "2048",
+    help: "Use as setas do teclado (ou W, A, S, D) para deslizar as peças. Quando duas peças com o mesmo número se encontram, elas viram uma só. Chegue ao 2048! No celular, deslize o dedo sobre o tabuleiro. Sua pontuação entra nos recordes do escritório quando a partida termina.",
+  });
+  const board = KG.board("recordes2048");
+  const boardEl = document.getElementById("board");
+  const rankEl = document.getElementById("rank");
+  const stage = document.getElementById("stage");
+  const restart = document.querySelector(".restart-button");
+  let mine = null; // "quando" of the row I just saved, to keep it highlighted
+
+  function renderBoard(rows = board.load(), highlight = -1) {
+    board.render(boardEl, rows, highlight);
+  }
+  const refreshBoard = () => {
+    const rows = board.load();
+    renderBoard(rows, mine ? rows.findIndex((r) => r.quando === mine) : -1);
+  };
+
+  function rankText(score, result) {
+    if (result.rank !== -1) return `Você entrou em ${result.rank + 1}º lugar!`;
+    const missing = result.rows[result.rows.length - 1].pontos - score + 1;
+    return missing === 1 ? "Faltou 1 ponto para o top 10." : `Faltaram ${missing.toLocaleString("pt-BR")} pontos para o top 10.`;
+  }
+
+  const gm = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
+  gm.onEnd = async (score) => {
+    chrome.status(`Fim de jogo: ${score.toLocaleString("pt-BR")} pontos`);
+    if (score <= 0) return;
+    const result = await board.submit(score);
+    mine = result.rank !== -1 ? result.rows[result.rank].quando : null;
+    renderBoard(result.rows, result.rank);
+    rankEl.textContent = rankText(score, result);
+  };
+
+  // A new run clears the rank line and the highlight; focus goes back to the board so the arrows keep working.
+  const reset = () => {
+    mine = null;
+    rankEl.textContent = "";
+    chrome.status("Junte as peças iguais.");
+    refreshBoard();
+    stage.focus({ preventScroll: true });
+  };
+  gm.inputManager.on("restart", reset);
+  restart.addEventListener("click", () => stage.focus({ preventScroll: true }));
+  document.querySelector(".keep-playing-button").addEventListener("click", () => stage.focus({ preventScroll: true }));
+
+  KG.state.on("recordes2048", refreshBoard);
+  renderBoard();
+  chrome.status("Junte as peças iguais.");
+  window.focus();
+  stage.focus({ preventScroll: true });
+
+  window.__game = {
+    ready: true,
+    score: () => gm.score,
+    over: () => gm.over,
+    move: (dir) => gm.move(dir), // 0 up, 1 right, 2 down, 3 left
+    tiles: () => gm.grid.cells.flat().filter(Boolean).map((t) => t.value),
+    // 16 values, row by row (0 = empty): sets the board to exactly that layout
+    layout(values) {
+      gm.grid = new Grid(4);
+      values.forEach((v, i) => v && gm.grid.insertTile(new Tile({ x: i % 4, y: Math.floor(i / 4) }, v)));
+      gm.actuate();
+    },
+    forceGameOver(score) {
+      gm.score = score;
+      gm.over = true;
+      gm.actuate();
+    },
+  };
+})();
+</script>
+</body>
+</html>

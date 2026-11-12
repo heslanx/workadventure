@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xadrez</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<link rel="stylesheet" href="vendor/cm-chessboard/assets/chessboard.css">
+<link rel="stylesheet" href="vendor/cm-chessboard/assets/extensions/markers/markers.css">
+<link rel="stylesheet" href="vendor/cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css">
+<style>
+  [hidden] { display:none !important; }
+
+  /* the board: a square that fits the stage, in the campus dark */
+  #board { width:min(100%, calc(100vh - 100px)); aspect-ratio:1; border-radius:var(--radius); overflow:hidden;
+    box-shadow:0 0 0 1px var(--border-subtle), 0 14px 36px rgba(0,0,0,.5); }
+  .cm-chessboard.konclui .board .square.white { fill:#D3DDE9; }
+  .cm-chessboard.konclui .board .square.black { fill:#5A7898; }
+  .cm-chessboard.konclui.border-type-none .board .border { stroke-width:0; fill:#5A7898; }
+  .cm-chessboard.konclui .coordinates .coordinate { font-size:6.5px; font-weight:700; }
+  .cm-chessboard.konclui .coordinates .coordinate.white { fill:#5A7898; }
+  .cm-chessboard.konclui .coordinates .coordinate.black { fill:#D3DDE9; }
+  .cm-chessboard .markers .marker.marker-frame { stroke:#53FFC8; stroke-width:2.4px; opacity:.95; }
+  .cm-chessboard .markers .marker.marker-dot, .cm-chessboard .markers .marker.marker-bevel { fill:#03051A; opacity:.3; }
+  .cm-chessboard .markers .marker.marker-last { fill:#53FFC8; opacity:.4; }
+  .cm-chessboard .markers .marker.marker-check { fill:#E8594E; opacity:.7; }
+  .cm-chessboard .keyboard-focus-indicator .keyboard-focus { stroke:#53FFC8; }
+  .cm-chessboard .keyboard-focus-indicator .keyboard-from-square { fill:rgba(83,255,200,.3); stroke:#53FFC8; }
+  .cm-chessboard:focus { outline:2px solid #53FFC8; outline-offset:2px; }
+  .cm-chessboard:focus:not(:focus-visible) { outline:none; } /* a mouse click focuses the board too: keep the ring for the keyboard */
+  .cm-chessboard:not(:focus-visible) .keyboard-focus-indicator { display:none; }
+  svg.cm-chessboard .promotion-dialog-group .promotion-dialog { fill:#F0F5FB; fill-opacity:.92; }
+
+  /* side panel */
+  .pl-row { display:flex; align-items:center; gap:10px; min-width:0; }
+  .pl-text { display:flex; flex-direction:column; min-width:0; }
+  .pl-name { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pl-sub { font-size:12px; color:var(--muted); }
+  .kg-dot.w { background:#F0F5FB; box-shadow:0 0 0 1px var(--border-strong); }
+  .kg-dot.b { background:#0B1424; box-shadow:0 0 0 1px var(--border-strong); }
+  .pl-avatar { width:32px; height:32px; flex:none; border-radius:50%; background:var(--muted-bg); object-fit:contain; }
+  #last-move { margin-top:10px; }
+  .stack { display:flex; flex-direction:column; gap:8px; }
+  .credit { font-size:11px; text-align:center; }
+  .stack.footer { margin-top:auto; } /* fixed at the bottom: the buttons above come and go with the table state */
+  .stack .kg-btn { width:100%; }
+  .levels { display:flex; gap:6px; }
+  .levels .kg-btn { flex:1; padding:8px 4px; font-size:14px; }
+  .levels .kg-btn[aria-pressed="true"] { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+</style>
+<script src="../game-kit.js"></script>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage"><div id="board"></div></div>
+  <aside class="kg-side">
+    <section class="kg-card">
+      <h2 id="side-title">Mesa</h2>
+      <div class="kg-players" id="players"></div>
+      <p class="kg-muted" id="last-move"></p>
+    </section>
+    <div class="stack" id="actions">
+      <button class="kg-btn" id="btn-join" hidden>Sentar para jogar</button>
+      <button class="kg-btn" id="btn-new" hidden>Nova partida</button>
+      <button class="kg-btn kg-ghost" id="btn-resign" hidden>Desistir</button>
+      <button class="kg-btn kg-ghost" id="btn-wo" hidden>Reivindicar vitória (W.O.)</button>
+      <div class="levels" id="levels" role="group" aria-label="Nível da Koru" hidden></div>
+    </div>
+    <div class="stack footer">
+      <button class="kg-btn kg-ghost" id="btn-flip">Virar tabuleiro</button>
+      <button class="kg-btn kg-ghost" id="btn-mode">Treinar contra a Koru</button>
+      <p class="kg-muted credit">Peças: Cburnett, CC BY-SA 3.0</p>
+    </div>
+  </aside>
+</main>
+<script type="module">
+import { Chess } from "./vendor/chess.js/chess.js";
+import { Chessboard, COLOR, INPUT_EVENT_TYPE, BORDER_TYPE } from "./vendor/cm-chessboard/src/Chessboard.js";
+import { Markers, MARKER_TYPE } from "./vendor/cm-chessboard/src/extensions/markers/Markers.js";
+import { PromotionDialog, PROMOTION_DIALOG_RESULT_TYPE } from "./vendor/cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
+import { Accessibility } from "./vendor/cm-chessboard/src/extensions/accessibility/Accessibility.js";
+
+const START = new Chess().fen();
+const SQUARE = /^[a-h][1-8]$/;
+const PIECE_NAME = { q: "Dama", r: "Torre", b: "Bispo", n: "Cavalo" };
+// Koru's levels: js-chess-engine level (1-5) plus how many centipawns it may stray from its best move.
+const LEVELS = {
+  facil: { label: "Fácil", level: 1, randomness: 80 },
+  medio: { label: "Médio", level: 3, randomness: 30 },
+  dificil: { label: "Difícil", level: 5, randomness: 0 },
+};
+const LAST_MARKER = { class: "marker-last", slice: "markerSquare" };
+const CHECK_MARKER = { class: "marker-check", slice: "markerSquare" };
+
+// Anyone in the office can write the room variable: accept only a short { fen, last? } the rules engine can load.
+function validState(s) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return false;
+  if (Object.keys(s).some((k) => k !== "fen" && k !== "last")) return false;
+  if (typeof s.fen !== "string" || s.fen.length > 100 || JSON.stringify(s).length > 1000) return false;
+  const l = s.last;
+  if (l !== null && l !== undefined) {
+    if (typeof l !== "object" || Array.isArray(l) || Object.keys(l).some((k) => !["from", "to", "promotion"].includes(k))) return false;
+    if (!SQUARE.test(l.from) || !SQUARE.test(l.to) || (l.promotion !== undefined && !/^[qrbn]$/.test(l.promotion))) return false;
+  }
+  try {
+    new Chess(s.fen);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const $ = (id) => document.getElementById(id);
+const chrome = KG.chrome({
+  title: "Xadrez",
+  help: "Sente na mesa para jogar uma partida 1 contra 1: quem senta primeiro joga com as brancas. Arraste a peça, ou toque nela e depois na casa de destino; no teclado, use as setas e Enter. Só os lances legais são aceitos, e quem não está jogando assiste ao vivo. Se a outra pessoa sumir por 2 minutos, você pode reivindicar a vitória por W.O. Para treinar sem ocupar a mesa, jogue contra a Koru.",
+});
+await KG.ready();
+
+const mesa = KG.table("mesaXadrez", { game: "xadrez", initial: () => ({ fen: START, last: null }), validState });
+const view = { mode: "mesa", flip: false };
+const solo = { chess: new Chess(), color: "w", level: "medio", thinking: false, over: "", last: null };
+let tc = new Chess(); // the table's game, replayed from the shared state so draw rules (repetition) see the history
+let notice = "";
+let resignArmed = false;
+let engine = null;
+
+const board = new Chessboard($("board"), {
+  position: START,
+  assetsUrl: "vendor/cm-chessboard/assets/",
+  style: {
+    cssClass: "konclui",
+    showCoordinates: true,
+    borderType: BORDER_TYPE.none,
+    pieces: { file: "pieces/standard.svg" },
+    animationDuration: KG.profile === "leve" ? 0 : 220,
+  },
+  extensions: [
+    { class: Markers, props: { autoMarkers: { ...MARKER_TYPE.frame } } },
+    { class: PromotionDialog, props: { language: "pt" } },
+    { class: Accessibility, props: { language: "pt", keyboardMoveInput: true, movePieceForm: false, boardAsTable: false, piecesAsList: false, brailleNotationInAlt: false } },
+  ],
+});
+
+// ------------------------------------------------------------------ rules helpers
+const lastOf = (mv) => (mv.promotion ? { from: mv.from, to: mv.to, promotion: mv.promotion } : { from: mv.from, to: mv.to });
+
+// { winner, reason } when the game ended with the move just played; {} otherwise. winner: seat index or "empate".
+function outcome(chess, seat) {
+  if (chess.isCheckmate()) return { winner: seat, reason: "xeque-mate" };
+  if (chess.isStalemate()) return { winner: "empate", reason: "afogamento" };
+  if (chess.isInsufficientMaterial()) return { winner: "empate", reason: "material insuficiente" };
+  if (chess.isThreefoldRepetition()) return { winner: "empate", reason: "repetição tripla" };
+  if (chess.isDrawByFiftyMoves()) return { winner: "empate", reason: "regra dos 50 lances" };
+  return {};
+}
+
+function kingSquare(chess, color) {
+  for (const row of chess.board()) for (const sq of row) if (sq && sq.type === "k" && sq.color === color) return sq.square;
+  return null;
+}
+
+// Keep tc in step with the shared state: replay the announced move (keeps the history) or load the position.
+function followTable(s) {
+  const target = s ? s.state.fen : START;
+  if (tc.fen() === target) return;
+  const last = s && s.state.last;
+  if (last) {
+    try {
+      tc.move(last);
+    } catch {
+      /* not playable from here: reload below */
+    }
+  }
+  if (tc.fen() !== target) tc = new Chess(target);
+}
+
+// ------------------------------------------------------------------ the two models the panel and the board paint
+function mesaModel() {
+  const s = mesa.session;
+  const done = !!s && s.status === "done";
+  const shown = s && (done || mesa.role !== "livre") ? s : null;
+  const me = shown ? mesa.seat : -1;
+  followTable(shown);
+  const playing = !!shown && shown.status === "playing";
+  const consistent = !playing || (shown.turn === 0) === (tc.turn() === "w"); // seat 0 = white
+  const name = (i) => KG.clean(shown?.seats[i]?.name, 24) || "Vaga";
+  const sides = ["brancas", "pretas"];
+  const players = [0, 1].map((i) => ({
+    name: name(i),
+    color: i === 0 ? "w" : "b",
+    sub: [sides[i], me === i && "você", playing && shown.turn === i && "vez", done && shown.winner === i && "venceu", done && shown.winner === "empate" && "empate"]
+      .filter(Boolean).join(", "),
+    turn: playing && shown.turn === i,
+  }));
+  let status;
+  if (!shown) status = "Mesa livre. Sente para jogar.";
+  else if (shown.status === "waiting") status = me !== -1 ? "Aguardando adversário…" : `${KG.clean(shown.seats.find(Boolean)?.name, 24)} espera um adversário.`;
+  else if (!consistent) status = "Mesa com estado inválido. Peça uma nova partida.";
+  else if (playing) {
+    const check = tc.isCheck() ? " Xeque!" : "";
+    status = shown.turn === me ? `Sua vez (${sides[me]}).${check}` : `Vez de ${name(shown.turn)} (${sides[shown.turn]}).${check}`;
+  } else if (shown.winner === "empate") status = `Empate (${shown.reason}).`;
+  else status = `${me === shown.winner ? "Você venceu" : `${name(shown.winner)} venceu`} (${shown.reason}).`;
+  return {
+    title: "Mesa",
+    chess: tc,
+    last: shown ? shown.state.last : null,
+    players,
+    status,
+    orient: me === 1 ? "b" : "w",
+    input: playing && consistent && mesa.myTurn() ? (me === 0 ? "w" : "b") : null,
+    buttons: {
+      join: !shown || done || (shown.status === "waiting" && me === -1 && shown.seats.some((x) => !x)),
+      newGame: done || (shown?.status === "waiting" && me !== -1) || (playing && !consistent && me !== -1),
+      resign: playing && me !== -1,
+      wo: mesa.canClaimWO(),
+    },
+  };
+}
+
+function soloModel() {
+  const k = LEVELS[solo.level];
+  const turnSide = solo.chess.turn() === "w" ? "brancas" : "pretas";
+  let status = solo.over || (solo.thinking ? "A Koru está pensando…" : `Sua vez (${turnSide}).`);
+  if (!solo.over && solo.chess.isCheck()) status += " Xeque!";
+  return {
+    title: "Treino",
+    chess: solo.chess,
+    last: solo.last,
+    players: [
+      { name: "Você", color: solo.color, sub: solo.color === "w" ? "brancas" : "pretas", turn: !solo.over && !solo.thinking },
+      { name: `Koru (${k.label})`, color: solo.color === "w" ? "b" : "w", sub: solo.color === "w" ? "pretas" : "brancas", turn: !solo.over && solo.thinking, avatar: true },
+    ],
+    status,
+    orient: solo.color,
+    input: !solo.over && !solo.thinking && solo.chess.turn() === solo.color ? solo.color : null,
+    buttons: { newGame: true },
+  };
+}
+
+// ------------------------------------------------------------------ painting
+let currentInput = null;
+function setInput(color) {
+  if (color === currentInput) return;
+  currentInput = color;
+  board.disableMoveInput(); // enabling twice throws; this also drops a half-made keyboard selection
+  if (color) board.enableMoveInput(onInput, color);
+}
+
+function drawMarkers(chess, last) {
+  board.removeMarkers(LAST_MARKER);
+  board.removeMarkers(CHECK_MARKER);
+  if (last) {
+    board.addMarker(LAST_MARKER, last.from);
+    board.addMarker(LAST_MARKER, last.to);
+  }
+  if (chess.isCheck()) {
+    const sq = kingSquare(chess, chess.turn());
+    if (sq) board.addMarker(CHECK_MARKER, sq);
+  }
+}
+
+const koruAvatar = new Image();
+koruAvatar.className = "pl-avatar";
+koruAvatar.alt = "";
+koruAvatar.src = KG.asset("koru.png");
+
+function playerRow(p) {
+  const row = document.createElement("div");
+  row.className = `kg-player pl-row${p.turn ? " kg-turn" : ""}`;
+  if (p.avatar) {
+    row.append(koruAvatar);
+  } else {
+    const dot = document.createElement("span");
+    dot.className = `kg-dot ${p.color}`;
+    row.append(dot);
+  }
+  const text = document.createElement("span");
+  text.className = "pl-text";
+  const name = document.createElement("span");
+  name.className = "pl-name";
+  name.textContent = p.name;
+  const sub = document.createElement("span");
+  sub.className = "pl-sub";
+  sub.textContent = p.sub;
+  text.append(name, sub);
+  row.append(text);
+  return row;
+}
+
+function render() {
+  const m = view.mode === "mesa" ? mesaModel() : soloModel();
+  // panel
+  $("side-title").textContent = m.title;
+  $("players").replaceChildren(...m.players.map(playerRow));
+  $("last-move").textContent = m.last
+    ? `Último lance: ${m.last.from} → ${m.last.to}${m.last.promotion ? ` (${PIECE_NAME[m.last.promotion]})` : ""}`
+    : "Nenhum lance ainda.";
+  chrome.status(notice || m.status);
+  const b = m.buttons;
+  $("btn-join").hidden = view.mode !== "mesa" || !b.join;
+  $("btn-new").hidden = !b.newGame;
+  $("btn-resign").hidden = view.mode !== "mesa" || !b.resign;
+  $("btn-resign").textContent = resignArmed ? "Confirmar desistência" : "Desistir";
+  $("btn-wo").hidden = view.mode !== "mesa" || !b.wo;
+  $("levels").hidden = view.mode !== "solo";
+  for (const btn of $("levels").children) btn.setAttribute("aria-pressed", String(btn.dataset.level === solo.level));
+  $("btn-mode").textContent = view.mode === "mesa" ? "Treinar contra a Koru" : "Voltar para a mesa";
+  // board
+  board.setPosition(m.chess.fen(), true);
+  drawMarkers(m.chess, m.last);
+  const orient = view.flip ? (m.orient === "w" ? "b" : "w") : m.orient;
+  if (board.getOrientation() !== orient && !board.boardTurning) board.setOrientation(orient, true);
+  setInput(m.input);
+}
+
+function flash(text) {
+  notice = text;
+  render();
+  setTimeout(() => {
+    if (notice === text) {
+      notice = "";
+      render();
+    }
+  }, 4000);
+}
+
+// ------------------------------------------------------------------ moves: the same path for the board and the test hooks
+const activeChess = () => (view.mode === "mesa" ? tc : solo.chess);
+const myColor = () => (view.mode === "mesa" ? (mesa.seat === 1 ? "b" : "w") : solo.color);
+const canMove = () => (view.mode === "mesa" ? mesa.myTurn() && mesaModel().input !== null : soloModel().input !== null);
+
+async function commit(from, to, promotion) {
+  if (!canMove()) return false;
+  const chess = activeChess();
+  let mv;
+  try {
+    mv = chess.move({ from, to, promotion });
+  } catch {
+    return false;
+  }
+  if (view.mode === "solo") {
+    solo.last = lastOf(mv);
+    const end = outcome(chess, 0);
+    if (end.winner === 0) solo.over = "Xeque-mate! Você venceu a Koru.";
+    else if (end.winner === "empate") solo.over = `Empate (${end.reason}).`;
+    render();
+    if (!solo.over) askKoru();
+    return true;
+  }
+  const ok = await mesa.play({ fen: chess.fen(), last: lastOf(mv) }, outcome(chess, mesa.seat));
+  if (!ok) render(); // lost a race: the shared state wins
+  return ok;
+}
+
+// Legal move for the person at the board, in tc / solo.chess, to square `to` (promotion piece defaults to the queen).
+function legalMove(chess, from, to, promotion) {
+  return chess.moves({ square: from, verbose: true }).find((m) => m.to === to && (!m.promotion || m.promotion === (promotion || "q")));
+}
+
+function onInput(ev) {
+  if (ev.type === INPUT_EVENT_TYPE.movingOverSquare) return undefined;
+  if (ev.type !== INPUT_EVENT_TYPE.moveInputFinished) ev.chessboard.removeLegalMovesMarkers();
+  const chess = activeChess();
+  if (ev.type === INPUT_EVENT_TYPE.moveInputStarted) {
+    const moves = chess.moves({ square: ev.squareFrom, verbose: true });
+    ev.chessboard.addLegalMovesMarkers(moves);
+    return moves.length > 0;
+  }
+  if (ev.type !== INPUT_EVENT_TYPE.validateMoveInput) return undefined;
+  const { squareFrom: from, squareTo: to } = ev;
+  const move = legalMove(chess, from, to);
+  if (!move || !canMove()) return false;
+  if (move.promotion) {
+    ev.chessboard.showPromotionDialog(to, ev.piece.charAt(0), (res) => {
+      if (res.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) commit(from, to, res.piece.charAt(1));
+      else {
+        board.setPosition(chess.fen(), true); // put the pawn back
+        currentInput = null;
+        render();
+      }
+    });
+  } else {
+    // after the board has applied the move itself; committing earlier would repaint under it
+    setTimeout(() => commit(from, to), 0);
+  }
+  return true;
+}
+
+// ------------------------------------------------------------------ Koru
+const pending = new Map(); // request id -> resolve
+let requestId = 0;
+
+function getEngine() {
+  if (!engine) {
+    engine = new Worker("engine-worker.js");
+    engine.onmessage = (e) => {
+      const resolve = pending.get(e.data.id);
+      pending.delete(e.data.id);
+      if (resolve) resolve(e.data.error ? null : e.data);
+    };
+    engine.onerror = () => {
+      for (const resolve of pending.values()) resolve(null); // askKoru falls back to a legal move
+      pending.clear();
+    };
+  }
+  return engine;
+}
+
+// Resolves with { from, to } or null when the engine failed.
+function engineMove(fen, k) {
+  return new Promise((resolve) => {
+    const id = ++requestId;
+    pending.set(id, resolve);
+    getEngine().postMessage({ id, fen, level: k.level, randomness: k.randomness });
+  });
+}
+
+async function askKoru() {
+  solo.thinking = true;
+  render();
+  const game = solo.chess;
+  const t0 = performance.now();
+  const reply = await engineMove(game.fen(), LEVELS[solo.level]);
+  if (game !== solo.chess) return; // a new game started meanwhile
+  await new Promise((r) => setTimeout(r, Math.max(0, 450 - (performance.now() - t0)))); // let the answer breathe
+  if (game !== solo.chess) return;
+  const options = game.moves({ verbose: true });
+  const pick = options.find((m) => reply && m.from === reply.from && m.to === reply.to && (!m.promotion || m.promotion === "q"))
+    || options[Math.floor(Math.random() * options.length)]; // the engine failed: any legal move beats a frozen game
+  const mv = game.move({ from: pick.from, to: pick.to, promotion: pick.promotion });
+  solo.last = lastOf(mv);
+  solo.thinking = false;
+  const end = outcome(game, 1);
+  if (end.winner === 1) solo.over = "Xeque-mate. A Koru venceu.";
+  else if (end.winner === "empate") solo.over = `Empate (${end.reason}).`;
+  render();
+}
+
+function newSolo() {
+  Object.assign(solo, { chess: new Chess(), thinking: false, over: "", last: null });
+  render();
+}
+
+// ------------------------------------------------------------------ controls
+$("btn-join").onclick = async () => {
+  view.flip = false;
+  const seat = await mesa.join();
+  if (seat === -1) flash("A mesa está ocupada. Você assiste ao vivo.");
+  render();
+};
+$("btn-new").onclick = async () => {
+  if (view.mode === "solo") return newSolo();
+  view.flip = false;
+  if (!(await mesa.reset())) flash("A mesa mudou enquanto você clicava. Tente de novo.");
+  return render();
+};
+$("btn-resign").onclick = async () => {
+  if (!resignArmed) {
+    resignArmed = true;
+    render();
+    setTimeout(() => {
+      resignArmed = false;
+      render();
+    }, 3000);
+    return;
+  }
+  resignArmed = false;
+  await mesa.resign();
+  render();
+};
+$("btn-wo").onclick = async () => {
+  await mesa.claimWO();
+  render();
+};
+$("btn-flip").onclick = () => {
+  view.flip = !view.flip;
+  render();
+};
+$("btn-mode").onclick = () => {
+  view.mode = view.mode === "mesa" ? "solo" : "mesa";
+  view.flip = false;
+  notice = "";
+  currentInput = null; // the move handler works on a different game now
+  render();
+};
+for (const [key, k] of Object.entries(LEVELS)) {
+  const btn = document.createElement("button");
+  btn.className = "kg-btn kg-ghost";
+  btn.textContent = k.label;
+  btn.dataset.level = key;
+  btn.onclick = () => {
+    solo.level = key;
+    render();
+  };
+  $("levels").append(btn);
+}
+
+mesa.onChange(render);
+setInterval(() => view.mode === "mesa" && mesa.session?.status === "playing" && render(), 5000); // W.O. is a clock, not an event
+render();
+
+// the piece sprite arrives by XHR: wait for it so the first paint is not an empty board
+await new Promise((resolve) => {
+  const t0 = performance.now();
+  (function wait() {
+    const sprite = document.getElementById("cm-chessboard-sprite");
+    if ((sprite && sprite.firstChild) || performance.now() - t0 > 4000) resolve();
+    else setTimeout(wait, 30);
+  })();
+});
+
+// Test hooks (the game itself never reads them): the same paths the buttons and the board use.
+window.__game = {
+  ready: true,
+  state() {
+    const s = mesa.session;
+    return {
+      mode: view.mode, role: mesa.role, seat: mesa.seat, status: s?.status ?? null, turn: s?.turn ?? null, winner: s?.winner ?? null,
+      reason: s?.reason ?? "", names: (s?.seats ?? []).map((x) => x && x.name), fen: activeChess().fen(), boardFen: board.getPosition(),
+      orientation: board.getOrientation(), inputEnabled: board.isMoveInputEnabled(), statusText: document.querySelector(".kg-status").textContent,
+      soloThinking: solo.thinking, soloOver: solo.over, soloLevel: solo.level,
+    };
+  },
+  join: () => mesa.join(),
+  resign: () => mesa.resign(),
+  reset: () => mesa.reset(),
+  move: (from, to, promotion) => (legalMove(activeChess(), from, to, promotion) ? commit(from, to, promotion) : Promise.resolve(false)),
+  validState,
+  // solo only: start from any position (promotion, endgames) without playing the game to get there
+  soloFen(fen, color) {
+    Object.assign(solo, { chess: new Chess(fen), thinking: false, over: "", last: null, color: color || solo.chess.turn() });
+    view.mode = "solo";
+    currentInput = null;
+    render();
+  },
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+{
+ "species": "tucano",
+ "name": "Tucano",
+ "family": "brasil",
+ "plan": "bird",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  11,
+  3
+ ],
+ "temperament": "playful",
+ "notes": "Extra clips: beak-clack-down (2 frames, loops: beak snapping, the playful idle) and eat-down (5 frames, once: holds a berry, tosses it up, catches it, swallows happily). There is no wave-down. fly-* sit 2-3 px above the anchor; the runtime adds the real flight height. fly-down and celebrate-down use the symmetric front face (beak pointing at the viewer).",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    1
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    3
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    5
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "hop-down": {
+   "frames": [
+    6,
+    7,
+    6,
+    0
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "hop-left": {
+   "frames": [
+    8,
+    9,
+    10,
+    8,
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "hop-up": {
+   "frames": [
+    11,
+    12,
+    11,
+    4
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "fly-down": {
+   "frames": [
+    13,
+    14,
+    15,
+    16
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "fly-left": {
+   "frames": [
+    17,
+    18,
+    19,
+    20
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "fly-up": {
+   "frames": [
+    21,
+    22,
+    23,
+    24
+   ],
+   "fps": 10,
+   "loop": true
+  },
+  "perch-down": {
+   "frames": [
+    25,
+    26
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "perch-left": {
+   "frames": [
+    27,
+    28
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "perch-up": {
+   "frames": [
+    29,
+    30
+   ],
+   "fps": 1.5,
+   "loop": true
+  },
+  "takeoff-left": {
+   "frames": [
+    8,
+    31,
+    32,
+    33
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "land-left": {
+   "frames": [
+    34,
+    35,
+    36,
+    8,
+    2
+   ],
+   "fps": 10,
+   "loop": false
+  },
+  "glide-left": {
+   "frames": [
+    18,
+    37
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "look-down": {
+   "frames": [
+    38,
+    39
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    40
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "sleep-down": {
+   "frames": [
+    41,
+    42
+   ],
+   "fps": 1,
+   "loop": true
+  },
+  "preen-left": {
+   "frames": [
+    43,
+    44,
+    44,
+    43
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "happy-down": {
+   "frames": [
+    45,
+    46
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "celebrate-down": {
+   "frames": [
+    47,
+    48
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "beak-clack-down": {
+   "frames": [
+    0,
+    49
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "eat-down": {
+   "frames": [
+    50,
+    51,
+    52,
+    53,
+    54
+   ],
+   "fps": 5,
+   "loop": false
+  }
+ },
+ "picker": {
+  "down": [
+   6,
+   0,
+   7
+  ],
+  "left": [
+   8,
+   2,
+   9
+  ],
+  "up": [
+   11,
+   4,
+   12
+  ]
+ }
+}

@@ -1,0 +1,302 @@
+{
+ "species": "gato",
+ "name": "Gato",
+ "family": "brasil",
+ "plan": "quadruped",
+ "anchor": [
+  16,
+  28
+ ],
+ "shadow": [
+  14,
+  4
+ ],
+ "temperament": "curious",
+ "notes": "Every clip is built from keyframes hand-finished at native size in pets/species/gato/keys/*.txt (the GPT sprite-gen run in .dream-loop/pets/gato/sprite-gen is only the reference): front sit, front stand, back, side stand, side sit, groom, sniff (front and side), scratch, bat, loaf, lie, belly-up, curled sleep, stretch (arch and play-bow), crouch, leap and run. Every loop is one keyframe plus what moves: walks lift the legs in turn (each leg keeps its outline), resting poses breathe by widening the chest or raising the back 1 px, happy swishes the tail, look-down moves only the pupils, blink/yawn/knead change only eyes, mouth or paws, scratch drags only the raised forepaws. carry-left is the walk with a 3x2 open jaw (the runtime draws the ball there). The default cinza wears the Koncluí collar: a teal band and one bright tag. Extra clips beyond the quadruped set: run-left, carry-left, bat-left, sniff-down, sniff-left, scratch-left, knead-down, loaf-down, blink-down, roll-any. One-shots (loop false): stretch-left, pounce-left, yawn-down, roll-any, blink-down. happy-down is the petting reaction.",
+ "clips": {
+  "idle-down": {
+   "frames": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "idle-left": {
+   "frames": [
+    2,
+    2,
+    3,
+    3
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "idle-up": {
+   "frames": [
+    4,
+    4,
+    5,
+    5
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "walk-down": {
+   "frames": [
+    6,
+    7,
+    6,
+    8
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "walk-left": {
+   "frames": [
+    2,
+    9,
+    2,
+    10
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "walk-up": {
+   "frames": [
+    4,
+    11,
+    4,
+    12
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "sit-down": {
+   "frames": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "sit-left": {
+   "frames": [
+    13,
+    13,
+    14,
+    14
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "lie-left": {
+   "frames": [
+    15,
+    15,
+    16,
+    16
+   ],
+   "fps": 3,
+   "loop": true
+  },
+  "sleep-any": {
+   "frames": [
+    17,
+    17,
+    18,
+    18
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "bellyup-any": {
+   "frames": [
+    19,
+    19,
+    20,
+    20
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "groom-left": {
+   "frames": [
+    21,
+    22,
+    21,
+    22
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "stretch-left": {
+   "frames": [
+    23,
+    24,
+    24,
+    2
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "pounce-left": {
+   "frames": [
+    25,
+    26,
+    27,
+    27,
+    25,
+    2
+   ],
+   "fps": 8,
+   "loop": false
+  },
+  "happy-down": {
+   "frames": [
+    28,
+    29,
+    28,
+    29
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "yawn-down": {
+   "frames": [
+    0,
+    30,
+    31,
+    30
+   ],
+   "fps": 4,
+   "loop": false
+  },
+  "look-down": {
+   "frames": [
+    32,
+    33
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "blink-down": {
+   "frames": [
+    34
+   ],
+   "fps": 1,
+   "loop": false
+  },
+  "run-left": {
+   "frames": [
+    35,
+    2,
+    36,
+    2
+   ],
+   "fps": 12,
+   "loop": true
+  },
+  "carry-left": {
+   "frames": [
+    37,
+    38,
+    37,
+    39
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "bat-left": {
+   "frames": [
+    2,
+    40,
+    41,
+    2
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "sniff-down": {
+   "frames": [
+    42,
+    43,
+    42,
+    43
+   ],
+   "fps": 5,
+   "loop": true
+  },
+  "sniff-left": {
+   "frames": [
+    44,
+    45,
+    44,
+    46
+   ],
+   "fps": 4,
+   "loop": true
+  },
+  "scratch-left": {
+   "frames": [
+    47,
+    48,
+    49,
+    48
+   ],
+   "fps": 6,
+   "loop": true
+  },
+  "knead-down": {
+   "frames": [
+    34,
+    50,
+    34,
+    51
+   ],
+   "fps": 5,
+   "loop": true
+  },
+  "loaf-down": {
+   "frames": [
+    52,
+    52,
+    53,
+    53
+   ],
+   "fps": 2,
+   "loop": true
+  },
+  "roll-any": {
+   "frames": [
+    15,
+    54,
+    20,
+    19
+   ],
+   "fps": 6,
+   "loop": false
+  }
+ },
+ "picker": {
+  "down": [
+   6,
+   0,
+   6
+  ],
+  "left": [
+   2,
+   2,
+   2
+  ],
+  "up": [
+   4,
+   4,
+   4
+  ]
+ }
+}

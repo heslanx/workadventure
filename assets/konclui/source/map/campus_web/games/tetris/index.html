@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tetris</title>
+<script src="https://work.konclui.com/iframe_api.js"></script>
+<link rel="stylesheet" href="../kit.css">
+<script src="../game-kit.js"></script>
+<style>
+.kg-stage { outline:none; }
+.court { position:relative; display:flex; }
+.kg-stage canvas { background:#09182B; border-radius:0; box-shadow:0 0 0 1px var(--border-subtle); }
+.kg-side { overflow-y:auto; min-height:0; }
+.big { font-size:34px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+.stats { display:flex; gap:12px; justify-content:space-between; align-items:flex-start; }
+.stats p { margin:6px 0 0; color:var(--fg2); }
+.stats b { color:var(--fg); font-variant-numeric:tabular-nums; }
+#upcoming { width:84px; height:84px; flex:none; border-radius:8px; background:var(--bg); }
+.kg-side .kg-btn { align-self:stretch; padding:10px 18px; }
+
+/* veil over the court: start, pause and end of game */
+.kg-over { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(3,5,26,.72); z-index:5; }
+.kg-over[hidden] { display:none; }
+.kg-over > div { background:var(--card); border:1px solid var(--border-subtle); border-radius:var(--radius); padding:20px 24px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:8px; max-width:280px; }
+.kg-over h2 { margin:0; font-size:26px; font-weight:800; }
+.kg-over p { margin:0; color:var(--fg2); }
+.kg-over .kg-rank { color:var(--accent); font-weight:700; text-wrap:balance; }
+.kg-over .kg-btn { margin-top:6px; }
+
+.kg-pad button { user-select:none; -webkit-user-select:none; }
+@media (max-width: 720px) {
+  .kg-side { flex-direction:row; flex-wrap:wrap; max-height:34%; }
+  .kg-side .board-card { display:none; }
+  .kg-side .kg-btn { align-self:center; }
+  .kg-side .stats { flex:1; }
+}
+</style>
+</head>
+<body>
+<main class="kg-main">
+  <div class="kg-stage" id="stage" tabindex="0" aria-label="Quadra do Tetris">
+    <div class="court">
+      <canvas id="canvas"></canvas>
+      <div class="kg-over" id="over">
+        <div>
+          <h2 id="over-title">Tetris</h2>
+          <p id="over-text"></p>
+          <p class="kg-rank" id="rank" role="status"></p>
+          <button type="button" class="kg-btn" id="over-btn">Jogar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="kg-side">
+    <div class="kg-card stats">
+      <div>
+        <h2>Pontos</h2>
+        <div class="big" id="score">0</div>
+        <p>Linhas <b id="rows">0</b></p>
+      </div>
+      <div>
+        <h2>Próxima</h2>
+        <canvas id="upcoming" aria-label="Próxima peça"></canvas>
+      </div>
+    </div>
+    <div class="kg-card board-card">
+      <h2>Recordes do escritório</h2>
+      <div id="board"></div>
+    </div>
+    <button type="button" class="kg-btn" id="again">Jogar</button>
+  </aside>
+</main>
+<div class="kg-pad" id="pad">
+  <button type="button" data-act="LEFT" aria-label="Esquerda">←</button>
+  <button type="button" data-act="UP" aria-label="Girar">↻</button>
+  <button type="button" data-act="RIGHT" aria-label="Direita">→</button>
+  <button type="button" data-act="DOWN" aria-label="Descer">↓</button>
+</div>
+<script src="vendor/tetris.js"></script>
+<script>
+// Glue: the original game + the campus top 10 (room variable recordesTetris) + touch + test hooks.
+(async () => {
+  "use strict";
+  await KG.ready();
+
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const chrome = KG.chrome({
+    title: "Tetris",
+    help: "Use as setas do teclado: esquerda e direita movem a peça, para cima gira e para baixo desce. P ou Esc pausa. Complete linhas para pontuar: quanto mais linhas de uma vez, mais pontos. No celular, use os botões ou deslize o dedo sobre a quadra (um toque gira). Sua pontuação entra nos recordes do escritório quando a partida termina.",
+  });
+  const board = KG.board("recordesTetris");
+  const boardEl = document.getElementById("board");
+  const stage = document.getElementById("stage");
+  const over = document.getElementById("over");
+  const overTitle = document.getElementById("over-title");
+  const overText = document.getElementById("over-text");
+  const rankEl = document.getElementById("rank");
+  const overBtn = document.getElementById("over-btn");
+  const again = document.getElementById("again");
+  let mine = null; // "quando" of the row I just saved, to keep it highlighted
+
+  const renderBoard = (rows = board.load(), highlight = -1) => board.render(boardEl, rows, highlight);
+  const refreshBoard = () => {
+    const rows = board.load();
+    renderBoard(rows, mine ? rows.findIndex((r) => r.quando === mine) : -1);
+  };
+
+  function rankText(score, result) {
+    if (result.rank !== -1) return `Você entrou em ${result.rank + 1}º lugar!`;
+    const missing = result.rows[result.rows.length - 1].pontos - score + 1;
+    return missing === 1 ? "Faltou 1 ponto para o top 10." : `Faltaram ${missing.toLocaleString("pt-BR")} pontos para o top 10.`;
+  }
+
+  function showOver(title, text, button) {
+    overTitle.textContent = title;
+    overText.textContent = text;
+    overBtn.textContent = button;
+    over.hidden = false;
+  }
+
+  // Page state follows the game: a veil for idle, paused and over; nothing while playing.
+  Tetris.hooks.onState = (state) => {
+    if (state === "playing") {
+      over.hidden = true;
+      rankEl.textContent = "";
+      mine = null;
+      refreshBoard();
+      again.textContent = "Jogar de novo";
+      chrome.status("Jogando");
+    } else if (state === "paused") {
+      showOver("Pausado", touch ? "Toque em Continuar." : "Aperte P ou Espaço para continuar.", "Continuar");
+      chrome.status("Pausado");
+    }
+    stage.focus({ preventScroll: true });
+  };
+  Tetris.hooks.onEnd = async (score) => {
+    const label = `${score.toLocaleString("pt-BR")} pontos`;
+    showOver("Fim de jogo", label, "Jogar de novo");
+    chrome.status(`Fim de jogo: ${label}`);
+    if (score <= 0) return;
+    const result = await board.submit(score);
+    mine = result.rank !== -1 ? result.rows[result.rank].quando : null;
+    renderBoard(result.rows, result.rank);
+    rankEl.textContent = rankText(score, result);
+  };
+
+  const start = () => (Tetris.state() === "paused" ? Tetris.resume() : Tetris.play());
+  overBtn.addEventListener("click", start);
+  again.addEventListener("click", () => Tetris.play());
+
+  // Pad: one action per press; left, right and down repeat while held.
+  for (const button of document.querySelectorAll("#pad button")) {
+    const dir = Tetris.DIR[button.dataset.act];
+    let delay = 0, timer = 0;
+    const stop = () => { clearTimeout(delay); clearInterval(timer); };
+    button.addEventListener("pointerdown", () => {
+      Tetris.act(dir);
+      stop();
+      if (dir !== Tetris.DIR.UP) delay = setTimeout(() => (timer = setInterval(() => Tetris.act(dir), 70)), 220);
+    });
+    for (const type of ["pointerup", "pointercancel", "pointerleave"]) button.addEventListener(type, stop);
+  }
+
+  // Swipes on the court (touch only): a tap turns, dragging sideways or down moves one block per block of travel.
+  const canvas = document.getElementById("canvas");
+  let from = null;
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse") from = { x: e.clientX, y: e.clientY, moved: false };
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!from) return;
+    const block = canvas.clientWidth / 10;
+    for (const [axis, plus, minus] of [["x", Tetris.DIR.RIGHT, Tetris.DIR.LEFT], ["y", Tetris.DIR.DOWN, null]]) {
+      const delta = e[`client${axis.toUpperCase()}`] - from[axis];
+      if (Math.abs(delta) < block || (delta < 0 && minus === null)) continue;
+      Tetris.act(delta > 0 ? plus : minus);
+      from[axis] += Math.sign(delta) * block;
+      from.moved = true;
+    }
+  });
+  canvas.addEventListener("pointerup", () => {
+    if (from && !from.moved) Tetris.act(Tetris.DIR.UP);
+    from = null;
+  });
+  canvas.addEventListener("pointercancel", () => { from = null; });
+
+  new ResizeObserver(() => Tetris.resize()).observe(stage);
+  KG.state.on("recordesTetris", refreshBoard);
+  renderBoard();
+  showOver("Tetris", touch ? "Toque em Jogar para começar." : "Aperte Espaço para jogar.", "Jogar");
+  chrome.status("Pronto para jogar");
+  window.focus();
+  stage.focus({ preventScroll: true });
+
+  window.__game = {
+    ready: true,
+    score: () => Tetris.score(),
+    rows: () => Tetris.rows(),
+    state: () => Tetris.state(), // idle | playing | paused
+    running: () => Tetris.running(), // is the frame loop alive?
+    piece: () => Tetris.piece(),
+    court: () => Tetris.court(),
+    forceGameOver: (score) => Tetris.forceLose(score),
+  };
+})();
+</script>
+</body>
+</html>
