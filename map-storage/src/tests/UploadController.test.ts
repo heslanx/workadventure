@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import ZipStream from "zip-stream";
 import type { File } from "unzipper";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { WAMFileFormat } from "@workadventure/map-editor";
 import type { FileSystemInterface } from "../Upload/FileSystemInterface";
 import type { MapListService } from "../Services/MapListService";
 
@@ -215,6 +216,12 @@ async function edit(key: string, commandId: string): Promise<void> {
     });
 }
 
+/** The name an edit gave to the stored map, if any. */
+function storedName(fileName: string): string | null | undefined {
+    const file = storage.files.get(keyOf(fileName));
+    return file === undefined ? undefined : (JSON.parse(file) as WAMFileFormat).metadata?.name;
+}
+
 /** Lets real I/O (the loopback request) progress while the autosave timers stay frozen. */
 async function until(condition: () => boolean): Promise<void> {
     while (!condition()) {
@@ -357,6 +364,30 @@ describe("UploadController", () => {
 
             expect(response.status).toBe(200);
             expect(storage.files.get(keyOf("b.wam"))).toBe(wam("a"));
+            expect(storage.files.has(keyOf("a.wam"))).toBe(false);
+        });
+
+        it("(known defect) should lose an edit made while the write of an earlier edit was in flight", async () => {
+            storage.files.set(keyOf("a.wam"), wam("a"));
+            await edit(keyOf("a.wam"), "cmd-1");
+            storage.holdWrites();
+            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+            await edit(keyOf("a.wam"), "cmd-2");
+            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+
+            const moving = request(
+                "POST",
+                "/move",
+                JSON.stringify({ source: `${directory}/a.wam`, destination: `${directory}/b.wam` }),
+                "application/json",
+            );
+            await until(() => replacing.mock.calls.length > 0);
+            storage.releaseHeldWrites();
+            const response = await moving;
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(response.status).toBe(200);
+            expect(storedName("b.wam")).toBe("edited by cmd-1");
             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
         });
     });
