@@ -1,0 +1,108 @@
+name: konclui-native-baseline
+
+services:
+  reverse-proxy:
+    image: traefik:v3.6.1
+    command:
+      - --log.level=WARN
+      - --ping=true
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.constraints=Label(`com.docker.compose.project`,`konclui-native-baseline`)
+      - --entryPoints.web.address=:80
+    ports:
+      - "127.0.0.1:8093:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: [CMD, traefik, healthcheck, --ping]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  play:
+    image: thecodingmachine/workadventure-play:v1.34.5
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?}
+      API_URL: back:50051
+      PUSHER_URL: http://localhost:8093/
+      FRONT_URL: /
+      INTERNAL_MAP_STORAGE_URL: http://map-storage:3000
+      PUBLIC_MAP_STORAGE_URL: http://localhost:8093/map-storage
+      MAP_STORAGE_API_TOKEN: ${MAP_STORAGE_API_TOKEN:?}
+      START_ROOM_URL: /~/baseline/office.wam
+      REDIS_HOST: redis
+      ENABLE_MAP_EDITOR: "true"
+      MAP_EDITOR_ALLOW_ALL_USERS: "true"
+      DISABLE_ANONYMOUS: "false"
+      ICON_URL: /icon
+      UPLOADER_URL: /uploader
+      ENABLE_CHAT_UPLOAD: "false"
+      ENABLE_TUTORIAL: "false"
+      ENABLE_OPENAPI_ENDPOINT: "false"
+    volumes:
+      - ../../.local/konclui/front:/usr/src/play/dist/public:ro
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.native-play.rule: PathPrefix(`/`)
+      traefik.http.routers.native-play.priority: "1"
+      traefik.http.routers.native-play.service: native-play
+      traefik.http.services.native-play.loadbalancer.server.port: "3000"
+      traefik.http.routers.native-ws.rule: PathPrefix(`/ws/`)
+      traefik.http.routers.native-ws.priority: "20"
+      traefik.http.routers.native-ws.service: native-ws
+      traefik.http.services.native-ws.loadbalancer.server.port: "3001"
+    depends_on:
+      - back
+      - redis
+
+  back:
+    image: thecodingmachine/workadventure-back:v1.34.5
+    environment:
+      PLAY_URL: http://localhost:8093
+      SECRET_KEY: ${SECRET_KEY:?}
+      REDIS_HOST: redis
+      ENABLE_MAP_EDITOR: "true"
+      MAP_STORAGE_URL: map-storage:50053
+      INTERNAL_MAP_STORAGE_URL: http://map-storage:3000
+      PUBLIC_MAP_STORAGE_URL: http://localhost:8093/map-storage
+      ENABLE_TELEMETRY: "false"
+    depends_on:
+      - redis
+
+  map-storage:
+    image: thecodingmachine/workadventure-map-storage:v1.34.5
+    environment:
+      API_URL: back:50051
+      SECRET_KEY: ${SECRET_KEY:?}
+      MAP_STORAGE_API_TOKEN: ${MAP_STORAGE_API_TOKEN:?}
+      ENABLE_BEARER_AUTHENTICATION: "true"
+      AUTHENTICATION_TOKEN: ${MAP_STORAGE_AUTHENTICATION_TOKEN:?}
+      PATH_PREFIX: /map-storage
+      PUSHER_URL: http://localhost:8093/
+    volumes:
+      - native-map-data:/maps
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.native-map-storage.rule: PathPrefix(`/map-storage`)
+      traefik.http.routers.native-map-storage.priority: "20"
+      traefik.http.routers.native-map-storage.middlewares: native-strip-map-storage
+      traefik.http.middlewares.native-strip-map-storage.stripprefix.prefixes: /map-storage
+      traefik.http.services.native-map-storage.loadbalancer.server.port: "3000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  seed:
+    image: node:24-trixie-slim@sha256:0820eaa85e07d0490446dd01d14707e17e6108a36988cf374899cd057eb3812d
+    command: [node, /seed/seed-map.mjs]
+    volumes:
+      - ./seed-map.mjs:/seed/seed-map.mjs:ro
+      - ../../maps:/source:ro
+      - native-map-data:/maps
+
+  redis:
+    image: redis:6-alpine
+
+volumes:
+  native-map-data:

@@ -1,0 +1,24 @@
+{
+  "commit": "38c808924267157fb3bd3f7a943de35f026e4773",
+  "protocolHash": "f4cfe455",
+  "requests": [
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/assets/main-CTjQvFbx.js",
+      "status": 200,
+      "cacheControl": "public, max-age=31536000, immutable",
+      "sha256": "94de83d7f7e8c468f4cc81a8f83dd52b00962179fde9230cf538c89a19fdb122"
+    },
+    {
+      "path": "/resources/customisation/character_accessories/character_accessories1.png",
+      "status": 200,
+      "cacheControl": "public, max-age=86400",
+      "conditionalStatus": 304
+    }
+  ],
+  "map": "upstream empty E2E map served through isolated map storage",
+  "scope": "HTTP and build provenance only; player texture reuse and movement require a browser"
+}

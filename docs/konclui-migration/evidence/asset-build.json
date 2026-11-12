@@ -1,0 +1,143 @@
+{
+  "status": "passed",
+  "scope": "Standalone generated assets, not engine or visual certification",
+  "receiptSha256": "80f8bc1334d7d08c4961eadc49a1fa0893cb27c9a1a628d2e791224ee6444e01",
+  "sourceInputCount": 12026,
+  "sourceInputsUnchanged": true,
+  "outputFiles": 13228,
+  "outputBytes": 14467560,
+  "map": {
+    "size": [
+      86,
+      56
+    ],
+    "objects": 664,
+    "seats": 201,
+    "areas": 27,
+    "wall_faces": 488,
+    "thin_wall_tiles": 408,
+    "pool_tiles": 235,
+    "animated_tiles": 8,
+    "reachable_tiles": 3775,
+    "konclui_prefabs": 169,
+    "lawn": {
+      "cells": 1730,
+      "decor": 327,
+      "swaying": 179
+    },
+    "water": {
+      "surface": 146,
+      "glints_and_ripples": 80
+    },
+    "koi_overlays": [
+      "lake",
+      "canal"
+    ],
+    "fx": {
+      "lights": 169,
+      "rooms": 6,
+      "water": [
+        1152,
+        192,
+        480,
+        1024
+      ]
+    },
+    "tiles": {
+      "Collision": 1,
+      "Konclui_Floor": 576,
+      "Konclui_Decor": 160,
+      "Konclui_Walls": 128,
+      "Konclui_Doors": 64,
+      "ThinWalls": 15,
+      "Konclui_Light": 224
+    },
+    "errors": [],
+    "warnings": [
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 24,
+        "y": 17
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 25,
+        "y": 18
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 35,
+        "y": 17
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 36,
+        "y": 18
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 50,
+        "y": 17
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 51,
+        "y": 18
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 61,
+        "y": 17
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 62,
+        "y": 18
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 42,
+        "y": 48
+      },
+      {
+        "code": "DOOR_AT_CORNER",
+        "message": "the door touches a corner or a junction: keep a plain wall cell between",
+        "x": 44,
+        "y": 49
+      }
+    ]
+  },
+  "characters": {
+    "petSpecies": 24,
+    "addedAvatarLayers": {
+      "woka": 0,
+      "body": 27,
+      "eyes": 25,
+      "hair": 89,
+      "clothes": 42,
+      "hat": 36,
+      "accessory": 49
+    },
+    "verifiedCustomPickers": 337,
+    "companions": 75
+  },
+  "whiteboardNamespace": "konclui-native-local/konclui-office/",
+  "verifiedIsolatedWhiteboards": 2,
+  "preservedWhiteboardEntityIds": [
+    "0b956fcc-bbd6-532d-b494-dd687f92b45e",
+    "f714c593-3c32-54e5-bed2-aaa02e440898"
+  ],
+  "python": "3.14.6",
+  "numpy": "2.5.3",
+  "Pillow": "12.3.0",
+  "rsvg": "rsvg-convert version 2.63.2"
+}

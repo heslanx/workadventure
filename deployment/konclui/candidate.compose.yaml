@@ -1,0 +1,103 @@
+# Requires Docker Compose >= 2.24.4 for !override. Combine with compose.yaml.
+name: konclui-native-candidate
+
+services:
+  reverse-proxy:
+    command:
+      - --log.level=WARN
+      - --ping=true
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.constraints=Label(`com.docker.compose.project`,`konclui-native-candidate`)
+      - --entryPoints.web.address=:80
+    ports: !override
+      - "127.0.0.1:8094:80"
+
+  play:
+    image: ${CANDIDATE_PLAY_IMAGE:?Run prepare-candidate.py with verified service images}
+    pull_policy: never
+    environment:
+      PUSHER_URL: http://localhost:8094/
+      PUBLIC_MAP_STORAGE_URL: http://localhost:8094/map-storage
+      START_ROOM_URL: /~/konclui-office/office.wam
+    volumes: !override
+      - type: bind
+        source: ${CANDIDATE_FRONT:?Run prepare-candidate.py first}
+        target: /usr/src/play/dist/public
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CANDIDATE_ASSETS:?}/resources/konclui
+        target: /usr/src/play/dist/public/resources/konclui
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CANDIDATE_ASSETS:?}/resources/konclui-pets
+        target: /usr/src/play/dist/public/resources/konclui-pets
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CANDIDATE_ASSETS:?}/catalogues/woka.json
+        target: /usr/src/play/src/pusher/data/woka.json
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CANDIDATE_ASSETS:?}/catalogues/companions.json
+        target: /usr/src/play/src/pusher/data/companions.json
+        read_only: true
+        bind: {create_host_path: false}
+    labels:
+      traefik.http.routers.candidate-resources.rule: PathPrefix(`/resources/konclui/`) || PathPrefix(`/resources/konclui-pets/`)
+      traefik.http.routers.candidate-resources.priority: "30"
+      traefik.http.routers.candidate-resources.service: native-play
+      traefik.http.routers.candidate-resources.middlewares: candidate-revalidate
+      traefik.http.middlewares.candidate-revalidate.headers.customresponseheaders.Cache-Control: public, max-age=0, must-revalidate
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  back:
+    image: ${CANDIDATE_BACK_IMAGE:?}
+    pull_policy: never
+    environment:
+      PLAY_URL: http://localhost:8094
+      PUBLIC_MAP_STORAGE_URL: http://localhost:8094/map-storage
+
+  map-storage:
+    image: ${CANDIDATE_MAP_STORAGE_IMAGE:?}
+    pull_policy: never
+    environment:
+      PUSHER_URL: http://localhost:8094/
+    labels:
+      traefik.http.routers.native-map-storage.middlewares: native-strip-map-storage,candidate-revalidate
+
+  seed:
+    command: [node, /seed/seed-candidate.mjs]
+    volumes: !override
+      - type: bind
+        source: ./seed-candidate.mjs
+        target: /seed/seed-candidate.mjs
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ../../.local/konclui/candidate/prepared.json
+        target: /input/prepared.json
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CANDIDATE_ASSETS:?}
+        target: /input/assets
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${CANDIDATE_FRONT:?}
+        target: /input/front
+        read_only: true
+        bind: {create_host_path: false}
+      - native-map-data:/maps
+
+volumes:
+  native-map-data:
+    name: konclui-native-candidate-map-data
+    labels:
+      konclui.owner: konclui-native-candidate
