@@ -2,6 +2,10 @@ import fs from "fs";
 import process from "process";
 import * as Sentry from "@sentry/node";
 import { Server, ServerCredentials } from "@grpc/grpc-js";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { resourceFromAttributes } from "@opentelemetry/resources";
+import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import { PostHog } from "posthog-node";
 import { RoomApiService } from "@workadventure/messages/src/ts-proto-generated/room-api";
 import { setErrorHandler } from "@workadventure/shared-utils";
 import { runDrains } from "@workadventure/shared-utils";
@@ -18,14 +22,78 @@ import {
     SENTRY_ENVIRONMENT,
     PUSHER_WS_PORT,
     DRAIN_TIMEOUT_MS,
+    POSTHOG_API_KEY,
+    POSTHOG_URL,
 } from "./pusher/enums/EnvironmentVariable";
 import RoomApiServer from "./room-api/RoomApiServer";
 import { analyticsTimedEventTracker } from "./pusher/services/AnalyticsTimedEventTracker";
+import { sanitizePostHogException } from "./pusher/services/PostHogPrivacy";
 
 // In production, the current working directory is "dist".
 if (fs.existsSync("dist") && !fs.existsSync("src")) {
     process.chdir("dist");
 }
+
+const missingPostHogVariables = [!POSTHOG_API_KEY && "POSTHOG_API_KEY", !POSTHOG_URL && "POSTHOG_URL"].filter(
+    (variable): variable is string => Boolean(variable),
+);
+
+const posthog =
+    missingPostHogVariables.length === 0
+        ? new PostHog(POSTHOG_API_KEY as string, {
+              host: POSTHOG_URL,
+              enableExceptionAutocapture: true,
+              before_send: sanitizePostHogException,
+          })
+        : undefined;
+
+const posthogLogProvider =
+    missingPostHogVariables.length === 0
+        ? new LoggerProvider({
+              resource: resourceFromAttributes({
+                  "service.name": "workadventure-pusher",
+              }),
+              processors: [
+                  new BatchLogRecordProcessor({
+                      exporter: new OTLPLogExporter({
+                          url: new URL("/i/v1/logs", POSTHOG_URL).toString(),
+                          headers: {
+                              Authorization: `Bearer ${POSTHOG_API_KEY}`,
+                          },
+                      }),
+                  }),
+              ],
+          })
+        : undefined;
+const posthogLog = posthogLogProvider?.getLogger("workadventure.posthog.lifecycle");
+
+const shutdownPostHogLogs = async (): Promise<void> => {
+    if (!posthogLogProvider) {
+        return;
+    }
+
+    await Promise.race([
+        posthogLogProvider.shutdown(),
+        new Promise<void>((resolve) => {
+            const timeout = setTimeout(resolve, 3000);
+            timeout.unref();
+        }),
+    ]).catch((error: unknown) => console.error("Error shutting down PostHog logs", error));
+};
+
+if (missingPostHogVariables.length > 0 && process.env.NODE_ENV !== "production") {
+    for (const variable of missingPostHogVariables) {
+        console.warn(
+            `${variable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${variable} is configured`,
+        );
+    }
+}
+
+setErrorHandler((error: Error) => {
+    console.error(error);
+    Sentry.captureException(error);
+    posthog?.captureException(error, "server");
+});
 
 // Sentry integration
 if (SENTRY_DSN != undefined) {
@@ -40,11 +108,6 @@ if (SENTRY_DSN != undefined) {
 
         Sentry.init(sentryOptions);
 
-        setErrorHandler((error: Error) => {
-            console.error(error);
-            Sentry.captureException(error);
-        });
-
         console.info("Sentry initialized");
     } catch (e) {
         console.error("Error while initializing Sentry", e);
@@ -53,19 +116,24 @@ if (SENTRY_DSN != undefined) {
 
 (async () => {
     await app.init();
+    posthogLog?.emit({ severityText: "INFO", body: "pusher_application_initialized" });
 
     await Promise.race([
-        app
-            .listenWebServer(PUSHER_HTTP_PORT)
-            .then(() => console.info(`WorkAdventure Pusher web-server started on port ${PUSHER_HTTP_PORT}!`)),
-        app
-            .listenWebSocket(PUSHER_WS_PORT)
-            .then(() => console.info(`WorkAdventure Pusher web-socket server started on port ${PUSHER_WS_PORT}!`)),
+        app.listenWebServer(PUSHER_HTTP_PORT).then(() => {
+            console.info(`WorkAdventure Pusher web-server started on port ${PUSHER_HTTP_PORT}!`);
+            posthogLog?.emit({ severityText: "INFO", body: "pusher_http_server_listening" });
+        }),
+        app.listenWebSocket(PUSHER_WS_PORT).then(() => {
+            console.info(`WorkAdventure Pusher web-socket server started on port ${PUSHER_WS_PORT}!`);
+            posthogLog?.emit({ severityText: "INFO", body: "pusher_websocket_server_listening" });
+        }),
         app.listenPrometheusPort(),
     ]);
 })().catch((e) => {
     console.error(e);
     Sentry.captureException(e);
+    posthog?.captureException(e, "server");
+    posthogLog?.emit({ severityText: "ERROR", body: "pusher_application_start_failed" });
 });
 
 // Graceful shutdown: close what is still open, then drain the analytics queues, so
@@ -98,6 +166,11 @@ const shutdown = (reason: string, endReason: "pusher_shutdown" | "pusher_crashed
     console.info(
         `${reason}: closed ${closedTimedEvents} timed event(s), sessions included, draining analytics queues before exit…`,
     );
+    posthogLog?.emit({
+        severityText: "INFO",
+        body: "pusher_shutdown_started",
+        attributes: { shutdown_reason: endReason },
+    });
 
     // Both arms exit, on purpose. runDrains already inspects every result and logs
     // the failures by name, so the rejection arm should be unreachable — but this is
@@ -105,7 +178,11 @@ const shutdown = (reason: string, endReason: "pusher_shutdown" | "pusher_crashed
     // is a replica that never exits and gets SIGKILLed with its sockets still open.
     // The version this replaces had a .catch() on a Promise.allSettled, which cannot
     // reject: it read as this guarantee without being one.
-    runDrains(DRAIN_TIMEOUT_MS).then(
+    Promise.all([
+        runDrains(DRAIN_TIMEOUT_MS),
+        posthog?.shutdown(3000).catch((error: unknown) => console.error("Error shutting down PostHog", error)),
+        shutdownPostHogLogs(),
+    ]).then(
         () => process.exit(exitCode),
         (error: unknown) => {
             console.error("Unexpected error while draining during shutdown", error);

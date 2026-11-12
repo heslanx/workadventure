@@ -112,6 +112,8 @@ class ConnectionManager {
      * Logout
      */
     public logout() {
+        analyticsClient.resetUser();
+
         // save the current token to use it in the redirect logout url
         const tokenTmp = localUserStore.getAuthToken();
         //remove token in localstorage

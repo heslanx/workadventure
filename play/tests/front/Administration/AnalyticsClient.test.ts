@@ -1,6 +1,83 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyticsClient } from "../../../src/front/Administration/AnalyticsClient";
 import { meetingEnded, meetingStarted } from "../../../src/front/Administration/CurrentMeeting";
+import { joinMeeting } from "../../../src/front/Components/Calendar/joinMeeting";
+const { openTab } = vi.hoisted(() => ({ openTab: vi.fn() }));
+
+vi.mock("../../../src/front/Api/ScriptUtils", () => ({ scriptUtils: { openTab } }));
+vi.mock("../../../src/front/Stores/CalendarStore", () => ({ isCalendarVisibleStore: { set: vi.fn() } }));
+vi.mock("../../../src/front/Utils/JoinUrl", () => ({ goToJoinUrl: vi.fn(), moveTargetOf: vi.fn() }));
+
+describe("AnalyticsClient SDK failure isolation", () => {
+    afterEach(() => {
+        delete window.posthog;
+        analyticsClient.resetUser();
+        analyticsClient.setAdminAnalyticsSender(undefined);
+        window.capabilities = {};
+        vi.restoreAllMocks();
+    });
+
+    it("opens the meeting when the SDK throws during capture", () => {
+        window.posthog = {
+            capture: () => {
+                throw new Error("Synthetic SDK failure");
+            },
+        } as never;
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        joinMeeting({
+            id: "meeting",
+            title: "Meeting",
+            description: "",
+            start: new Date("2026-01-01T10:00:00Z"),
+            end: new Date("2026-01-01T11:00:00Z"),
+            resource: { onlineMeeting: { joinUrl: "https://meeting.example.test/join", isWorkAdventure: false } },
+        });
+
+        expect(openTab).toHaveBeenCalledWith("https://meeting.example.test/join");
+    });
+
+    it("clears room history even when the SDK throws during reset", () => {
+        const capture = vi.fn();
+        const sendAdmin = vi.fn();
+        window.capabilities = { "api/analytics/events-batch": "v1" };
+        analyticsClient.setAdminAnalyticsSender(sendAdmin);
+        window.posthog = {
+            capture,
+            reset: () => {
+                throw new Error("Synthetic SDK failure");
+            },
+        } as never;
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        analyticsClient.enteredRoom("previous-user-room", null);
+
+        expect(() => analyticsClient.resetUser()).not.toThrow();
+        sendAdmin.mockClear();
+        analyticsClient.enteredRoom("next-user-room", null);
+
+        expect(sendAdmin).toHaveBeenCalledOnce();
+        expect(sendAdmin).toHaveBeenCalledWith({
+            events: [
+                expect.objectContaining({
+                    eventName: "room.visited",
+                    properties: { roomId: "next-user-room", roomGroup: null },
+                }),
+            ],
+        });
+    });
+
+    it("captures and resets normally when the SDK is available", () => {
+        const capture = vi.fn();
+        const reset = vi.fn();
+        window.posthog = { capture, reset } as never;
+
+        analyticsClient.capture("calendar_meeting_joined", { meeting_type: "external" });
+        analyticsClient.resetUser();
+
+        expect(capture).toHaveBeenCalledWith("calendar_meeting_joined", { meeting_type: "external" });
+        expect(reset).toHaveBeenCalledOnce();
+    });
+});
 
 describe("AnalyticsClient admin analytics sink", () => {
     beforeEach(() => {

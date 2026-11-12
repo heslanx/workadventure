@@ -102,6 +102,14 @@ class AnalyticsClient {
         this.flushPendingAdminEvents();
     }
 
+    public capture(eventName: string, properties: Record<string, unknown> = {}): void {
+        try {
+            this.posthog?.capture(eventName, properties);
+        } catch {
+            console.warn("PostHog event capture failed");
+        }
+    }
+
     /**
      * The single choke point every analytics event goes through — both sinks.
      *
@@ -259,8 +267,21 @@ class AnalyticsClient {
     }
 
     identifyUser(uuid: string, email: string | null, roomId: string | null): void {
-        this.posthog?.identify(uuid, { uuid, email, wa: true, roomId });
+        if (!uuid) {
+            return;
+        }
+
+        this.posthog?.identify(uuid, { email, wa: true, roomId });
         this.trackAdminEvent("auth.user_identified", { roomId });
+    }
+
+    resetUser(): void {
+        try {
+            this.posthog?.reset();
+        } catch {
+            console.warn("PostHog user reset failed");
+        }
+        this.previousRoomId = undefined;
     }
 
     enteredRoom(roomId: string, roomGroup: string | null): void {
