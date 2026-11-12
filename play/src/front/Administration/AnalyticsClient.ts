@@ -122,6 +122,11 @@ class AnalyticsClient {
      * keyed by event cannot express, so they capture on their own line; keeping them
      * here is what keeps `posthog.capture("wa_…")` out of the call sites.
      */
+    /** Capture a PostHog-only product event that has no matching admin analytics contract. */
+    public capture(eventName: string, properties: Record<string, unknown> = {}): void {
+        this.posthog?.capture(eventName, properties);
+    }
+
     public trackAdminEvent<N extends AnalyticsEventName>(eventName: N, ...args: AnalyticsEventArgs<N>): void {
         const [given = {}] = args;
 
@@ -259,8 +264,17 @@ class AnalyticsClient {
     }
 
     identifyUser(uuid: string, email: string | null, roomId: string | null): void {
-        this.posthog?.identify(uuid, { uuid, email, wa: true, roomId });
+        if (!uuid) {
+            return;
+        }
+
+        this.posthog?.identify(uuid, { email, wa: true, roomId });
         this.trackAdminEvent("auth.user_identified", { roomId });
+    }
+
+    resetUser(): void {
+        this.posthog?.reset();
+        this.previousRoomId = undefined;
     }
 
     enteredRoom(roomId: string, roomGroup: string | null): void {

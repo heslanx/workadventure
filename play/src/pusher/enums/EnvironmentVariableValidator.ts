@@ -423,12 +423,7 @@ export const EnvironmentVariables = z.object({
     NODE_ENV: z.string().optional().describe("Node.js environment: 'development', 'production', or 'test'"),
     CONTACT_URL: AbsoluteOrRelativeUrl.optional().describe("URL for users to contact support or administrators"),
     POSTHOG_API_KEY: z.string().optional().describe("PostHog API key for analytics tracking"),
-    POSTHOG_URL: z
-        .string()
-        .url()
-        .optional()
-        .or(z.literal(""))
-        .describe("PostHog server URL for analytics. Defaults to PostHog cloud"),
+    POSTHOG_URL: z.string().optional().describe("PostHog server URL for analytics. Defaults to PostHog cloud"),
     FALLBACK_LOCALE: z
         .string()
         .optional()
