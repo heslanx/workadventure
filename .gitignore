@@ -29,3 +29,7 @@ play/src/i18n/ko-KR/*.backup
 
 # Orca per-workspace environment: repo-local SSH key
 .orca-vm/
+
+# Local migration evidence and build outputs.
+/.audit/
+/.local/
