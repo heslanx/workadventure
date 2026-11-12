@@ -86,6 +86,60 @@ The retry uses the cached Node 24 build image with Git, pinned by its image ID i
 `local-resource.json`, with two CPUs, 5 GiB memory, and 5 GiB total memory plus swap
 (no additional swap allowance). A and C execute serially. Each stage records its
 exit status and log independently; A is archived before C replaces the frontend.
-The run is pending; source checks and successful packaging alone are not build or
-browser acceptance. The worker owns the exact container recorded in the receipt
-and will remove it after the last diagnostic/build consumer finishes.
+The frozen run completed successfully on Node 24.22.2, Linux ARM64. All 13 stages
+exited zero: source verification, Git preflight, locked install, A production
+build/artifact/typecheck/Svelte, overlay verification, and C tests/typecheck/Svelte/
+production build/artifact. The focused C suite passed 49 tests across six files.
+
+Both generated protocol hashes are `f4cfe455`. Each frontend contains 1178 files;
+every archived file was rehashed against its corresponding frontend manifest.
+`artifact-verification.json` records archive hashes and counts. Preserve A and C as
+separate artifacts; the local retry's C source fingerprint is
+`a76507c822b4ae412334bab3854cfc6a480a35b41ea065692d2530f9a423763a`.
+Later source edits or a new Git HEAD do not change this frozen artifact identity.
+
+The coordinator requested retention of the exact build container for the named
+ProfileMenu ownership and Pathfinding documentation follow-up. Its only remaining
+process is `sleep`; no npm/build watcher remains. It retains approximately 1.3 GiB
+of root dependencies and 212 MiB of message dependencies. `local-resource.json`
+records container ID, execution session, limits, owner, and exact stop/remove
+commands. The original verification exit code is preserved in
+`local-run-exit-code`; retention does not turn a failed stage into success.
+Release the container after the follow-up's final consumer.
+
+These results certify the frozen frontend build and listed static/focused checks.
+Browser, media, sprite reuse, and performance/scale acceptance are separate gates;
+this build report does not claim those passed.
+
+## Baseline live verification (2026-11-12)
+
+The coordinator completed baseline HTTP/provenance/cache checks in
+`.audit/konclui-runtime/http-verification.json` and the real-browser check in
+`.audit/konclui-baseline-browser-20261112-short-names/report.json`. The browser
+observed six initial sprite HTTP 200 responses, each fetched once; reappearance
+triggered no new sprite requests, and reload produced six disk-cache hits. Remote
+movement changed the observed x coordinate from 16 to 85 while binary WebSocket
+frames were present. The browser reported zero page errors.
+
+Two earlier attempts stopped at name entry because `CacheObserver` and
+`CacheVisitor` exceeded the default name limit. The corrected `CacheA`/`CacheB`
+probe records failure captures and bounds the initialization wait. Those failed
+attempts remain diagnostic evidence, not passes. The baseline has no media backend:
+its Connecting state does not certify calls. These observations certify the
+baseline scenario only, not candidate visual parity or 1000-user scale.
+
+## Refined candidate check (2026-11-12)
+
+`candidate-refined-20261112` freezes 26 Play files, including the explicit
+ProfileMenu visibility prop, at source fingerprint
+`4928b39e5b47d93cec07d97314cf87d4ceac02194590da8f9326600ea9608ff7`.
+Its 49 focused tests, TypeScript, Svelte, and production build passed. Its pinned
+format check failed for ThinWallsController, SeatedPoseController, and
+PathfindingManager, so the overall result remains failed. The formatter output
+was subsequently applied only to those three authorized files. It adjusts line
+wrapping and optional trailing commas; this is not claimed as whitespace-only.
+
+The next freeze is held for the independently diagnosed People/chat toggle state
+fix and its behavior test. No passing claim transfers automatically to that source
+change. The retained container is idle and available for the final frozen build;
+the previous artifact and failed formatting evidence remain separately labeled.

@@ -1,0 +1,186 @@
+{
+  "url": "http://localhost:8093/~/baseline/office.wam",
+  "sourceHead": "2d19d5834d0d028a853019f521810b2ff862810d",
+  "claim": "Functional sprite request reuse and remote movement, not a performance comparison",
+  "runCount": 1,
+  "devicePermissions": "Camera and microphone denied through CDP before navigation; synthetic device fallback only",
+  "fixture": "Named visitors with saved texture and completed device-selection preferences",
+  "renderer": "Chromium headless; no physical GPU performance claim",
+  "errors": [],
+  "phases": {
+    "firstAppearance": {
+      "member": [
+        {
+          "id": 3,
+          "position": {
+            "x": 16,
+            "y": 144
+          }
+        }
+      ],
+      "requests": [
+        {
+          "path": "/resources/customisation/character_eyes/character_eyes1.png",
+          "status": 200,
+          "diskCache": false,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_hats/character_hats1.png",
+          "status": 200,
+          "diskCache": false,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_hairs/character_hairs0.png",
+          "status": 200,
+          "diskCache": false,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_color/character_color0.png",
+          "status": 200,
+          "diskCache": false,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_clothes/character_clothes0.png",
+          "status": 200,
+          "diskCache": false,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_accessories/character_accessories1.png",
+          "status": 200,
+          "diskCache": false,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        }
+      ]
+    },
+    "movement": {
+      "before": [
+        {
+          "id": 3,
+          "position": {
+            "x": 16,
+            "y": 144
+          }
+        }
+      ],
+      "after": [
+        {
+          "id": 3,
+          "position": {
+            "x": 85,
+            "y": 144
+          }
+        }
+      ],
+      "sentFrames": [
+        {
+          "time": 138492.827753083,
+          "bytes": 25,
+          "binary": true
+        },
+        {
+          "time": 138493.035917791,
+          "bytes": 25,
+          "binary": true
+        },
+        {
+          "time": 138493.225462458,
+          "bytes": 25,
+          "binary": true
+        }
+      ],
+      "scope": "Payload bodies are not logged. These counts do not certify decoded movement fields or tick timing."
+    },
+    "reappearance": {
+      "member": [
+        {
+          "id": 4,
+          "position": {
+            "x": 16,
+            "y": 144
+          }
+        }
+      ],
+      "requests": []
+    },
+    "reload": {
+      "requests": [
+        {
+          "path": "/resources/customisation/character_color/character_color0.png",
+          "status": 200,
+          "diskCache": true,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_eyes/character_eyes1.png",
+          "status": 200,
+          "diskCache": true,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_hairs/character_hairs0.png",
+          "status": 200,
+          "diskCache": true,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_clothes/character_clothes0.png",
+          "status": 200,
+          "diskCache": true,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_hats/character_hats1.png",
+          "status": 200,
+          "diskCache": true,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        },
+        {
+          "path": "/resources/customisation/character_accessories/character_accessories1.png",
+          "status": 200,
+          "diskCache": true,
+          "memoryCache": false,
+          "serviceWorker": false,
+          "cacheControl": "public, max-age=86400"
+        }
+      ]
+    }
+  },
+  "builtSource": {
+    "commit": "38c808924267157fb3bd3f7a943de35f026e4773",
+    "tree": "d52cebe59fd23281d02c3e792a741ac50f9073da",
+    "sourceMode": "commit",
+    "sourceFingerprint": "c991a0c244320de1ad50e2b79d7213f247fe7c3a1a864ae66066bdec5e92e641",
+    "protocolHash": "f4cfe455",
+    "nodeVersion": "v24.22.2",
+    "platform": "linux",
+    "arch": "arm64"
+  },
+  "result": "PASS"
+}

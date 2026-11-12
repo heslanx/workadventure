@@ -66,7 +66,7 @@ Registry source: `local-wa/hot-reload/server.mjs`, lines 106-119. All 12 source 
 
 ## Verification gates
 
-- Baseline runtime and live cache/movement proof: open.
+- Baseline runtime and live cache/movement proof: passed for official A; see [browser receipt](konclui-migration/evidence/baseline-browser.json) and [HTTP receipt](konclui-migration/evidence/baseline-http.json). Custom Konclui cache and native product gates remain open.
 - Native first slice and all product rows: open.
 - Reference-to-candidate visual parity and independent review: open.
 - Equivalent production-build performance comparison and 1000-client scale: open.
@@ -74,4 +74,4 @@ Registry source: `local-wa/hot-reload/server.mjs`, lines 106-119. All 12 source 
 
 Detailed source characterization for U05–U11, U15, and U18 is in [UI contracts](konclui-migration/ui-contracts.md). In the inspected source, simplified rendering uses a 5 fps cap, custom emotes use Unicode-tag encoding, and mixed battery/slow restoration remains unverified. These observations do not close their runtime gates.
 
-Current execution (2026-11-12 09:28 Europe/Rome): the external jobs have not returned evidence. A bounded local retry built the pinned A frontend successfully (1,178 files; generated protocol f4cfe455). The isolated baseline services are starting; first HTTP request returned 404 before readiness. C checks/build and the full asset rebuild are active. Browser and first-slice acceptance remain open.
+Current execution (2026-11-12): local A/C production builds, typechecks and Svelte checks passed; C49focusedtests passed. A browser cache/movement passed after fixing invalid test usernames. Standalone all-assets rebuild passed. Refined C is rebuilding after a reviewed ProfileMenu ownership improvement. Native first-slice browser, visual, media and scale acceptance remain open.

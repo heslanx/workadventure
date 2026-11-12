@@ -1,0 +1,58 @@
+{
+  "statuses": [
+    {
+      "step": "verify-inputs",
+      "status": "0"
+    },
+    {
+      "step": "git-preflight",
+      "status": "0"
+    },
+    {
+      "step": "install-locked-dependencies",
+      "status": "0"
+    },
+    {
+      "step": "baseline-build",
+      "status": "0"
+    },
+    {
+      "step": "baseline-artifact",
+      "status": "0"
+    },
+    {
+      "step": "baseline-typecheck",
+      "status": "0"
+    },
+    {
+      "step": "baseline-svelte-check",
+      "status": "0"
+    },
+    {
+      "step": "apply-candidate",
+      "status": "0"
+    },
+    {
+      "step": "candidate-tests",
+      "status": "0"
+    },
+    {
+      "step": "candidate-typecheck",
+      "status": "0"
+    },
+    {
+      "step": "candidate-svelte-check",
+      "status": "0"
+    },
+    {
+      "step": "candidate-build",
+      "status": "0"
+    },
+    {
+      "step": "candidate-artifact",
+      "status": "0"
+    }
+  ],
+  "complete": true,
+  "scope": "Production frontend build and static/focused checks only. Browser, media and performance gates are not exercised."
+}
