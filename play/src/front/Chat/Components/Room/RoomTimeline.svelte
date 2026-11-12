@@ -109,6 +109,8 @@
     let messageInputBarRef: MessageInputBar | undefined = $state();
     let lastTimelineFocusSequence = $state(0);
     let initialMessagesLoaded = $state(false);
+    /** The open or its retry has placed the list (bottom, "New messages" line, focused message): no receipt before. */
+    let positionedOnOpen = $state(false);
     /** The room opened but its history did not come: the list is empty for that reason, not because the room is. */
     let historyLoadFailed = $state(false);
     /** Messages from others that arrived while the user was reading history (autoScroll off). */
@@ -126,7 +128,7 @@
     let anchorIdleReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     let anchorHardReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     let lastSeenLastItemKey: string | undefined;
-    let focusingSequence: number | undefined;
+    let focusing: { sequence: number; done: Promise<boolean> } | undefined;
     let contentResizeObserver: ResizeObserver | undefined;
     const observedItems = new WeakSet<Element>();
 
@@ -272,7 +274,10 @@
 
         initMessages()
             .catch((error) => console.error(error))
-            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)));
+            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)))
+            .finally(() => {
+                positionedOnOpen = true;
+            });
 
         return () => contentResizeObserver?.disconnect();
     });
@@ -348,9 +353,13 @@
 
     // Reruns the whole open: initMessages() retries the initialization too, then fetches the first pages.
     function retryLoading() {
+        positionedOnOpen = false;
         initMessages()
             .catch((error) => console.error(error))
-            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)));
+            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)))
+            .finally(() => {
+                positionedOnOpen = true;
+            });
     }
 
     function hasPendingTimelineFocusRequest(
@@ -362,8 +371,8 @@
     async function focusPendingTimelineRequestOrScrollToBottom() {
         const pendingFocusRequest = get(roomTimelineFocusStore);
 
-        if (hasPendingTimelineFocusRequest(pendingFocusRequest)) {
-            await focusTimelineEvent(pendingFocusRequest);
+        // A message that cannot be found leaves the list where it was: the open places it as without the request.
+        if (hasPendingTimelineFocusRequest(pendingFocusRequest) && (await focusTimelineEvent(pendingFocusRequest))) {
             return;
         }
 
@@ -417,6 +426,7 @@
         if (
             $initializationState === "ready" &&
             pageVisible &&
+            positionedOnOpen &&
             autoScroll &&
             lastRenderedKey !== undefined &&
             (lastRenderedKey !== lastMarkedKey || untrack(() => get(room.hasUnreadMessages)))
@@ -657,17 +667,20 @@
     }
 
     // A request pending at open is asked for twice, by the open and by the $roomTimelineFocusStore effect.
-    function focusTimelineEvent(request: RoomTimelineFocusRequest): Promise<void> {
-        if (request.sequence === focusingSequence) return Promise.resolve();
-        focusingSequence = request.sequence;
-        return scrollToTimelineEvent(request).finally(() => {
-            focusingSequence = undefined;
+    // The second ask waits for the first: the open has not placed the list until the focus has.
+    function focusTimelineEvent(request: RoomTimelineFocusRequest): Promise<boolean> {
+        if (focusing && focusing.sequence === request.sequence) return focusing.done;
+        const done = scrollToTimelineEvent(request).finally(() => {
+            focusing = undefined;
         });
+        focusing = { sequence: request.sequence, done };
+        return done;
     }
 
-    async function scrollToTimelineEvent(request: RoomTimelineFocusRequest) {
+    /** True when the list now shows the requested message. */
+    async function scrollToTimelineEvent(request: RoomTimelineFocusRequest): Promise<boolean> {
         if (!hasPendingTimelineFocusRequest(request)) {
-            return;
+            return false;
         }
 
         await tick();
@@ -687,7 +700,7 @@
         }
 
         if (!target) {
-            return;
+            return false;
         }
 
         lastTimelineFocusSequence = request.sequence;
@@ -698,6 +711,7 @@
         beginProgrammaticScroll("resync");
         target.scrollIntoView({ block: "center", behavior: "smooth" });
         target.classList.add("highlight-message", "highlight-message-pulse");
+        return true;
     }
 
     /** The pulse plays when its class is added: it goes when it ends, so the next focus plays it again. */

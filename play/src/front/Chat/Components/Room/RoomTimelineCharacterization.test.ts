@@ -450,7 +450,10 @@ describe("RoomTimeline characterization", () => {
         expect(divider?.closest("li")?.getAttribute("data-event-id")).toBe("old2");
         expect(scrollCalls).toEqual([]);
         expect(listElement().scrollTop).toBe(0);
-        // RT-11 (pinned): marked read at open, before the user has seen the messages below the line.
+        // RT-11 (fixed): not marked read at open, only once the user reaches the bottom.
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 
@@ -704,8 +707,8 @@ describe("RoomTimeline characterization", () => {
         expect(scrolledIntoView).toEqual(["m1"]);
         expect(scrollCalls).toEqual([]);
         expect(target.querySelector("li[data-event-id='m1']")?.classList.contains("highlight-message")).toBe(true);
-        // RT-11 (pinned): marked read at open, though the list shows the focused message, not the bottom.
-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+        // RT-11 (fixed): not marked read at open: the list shows the focused message, not the bottom.
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
 
         roomTimelineFocusStore.set({ roomId: "!other:test", eventId: "m2", sequence: 2 });
         await wait(10);
@@ -742,7 +745,7 @@ describe("RoomTimeline characterization", () => {
         expect(highlight()).toEqual({ tinted: true, pulsing: true });
     });
 
-    it("RT-11 (pinned): marks a room read at open while it fetches the message a pending focus request asks for", async () => {
+    it("RT-11 (fixed): does not mark a room read at open while it fetches the message a pending focus request asks for, only at the bottom", async () => {
         roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "older", sequence: 1 });
         const { room, timelineItems } = fakeRoom({ items: others(4) });
         const fetched = deferred();
@@ -753,15 +756,19 @@ describe("RoomTimeline characterization", () => {
         });
         render(room);
         await wait(10);
-        expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
 
         fetched.resolve();
         await wait(10);
         expect(scrolledIntoView).toEqual(["older"]);
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
+
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 
-    it("RT-11 (pinned): leaves the list unplaced when a focus request's message cannot be found at open, and marks the room read", async () => {
+    it("RT-11 (fixed): opens at the bottom when a focus request's message cannot be found, and marks the room read there", async () => {
         roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "gone", sequence: 1 });
         const { room } = fakeRoom({ items: others(4) });
         render(room);
@@ -769,11 +776,11 @@ describe("RoomTimeline characterization", () => {
 
         expect(room.ensureTimelineEventVisible).toHaveBeenCalledWith("gone");
         expect(scrolledIntoView).toEqual([]);
-        expect(scrollCalls).toEqual([]);
+        expect(scrollCalls).toEqual([{ top: 1000, behavior: "auto" }]);
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 
-    it("RT-11 (pinned): marks a room with unread messages read at open when a focus request's message cannot be found", async () => {
+    it("RT-11 (fixed): opens on the New messages line when a focus request's message cannot be found, and marks the room read only at the bottom", async () => {
         roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "gone", sequence: 1 });
         const { room } = fakeRoom({
             items: [item(message("old1", me, at(5, 7, 0))), ...others(6)],
@@ -783,10 +790,13 @@ describe("RoomTimeline characterization", () => {
         await wait(10);
 
         expect(target.querySelector("[data-testid='unreadMessagesDivider']")).not.toBeNull();
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 
-    it("RT-11 (pinned): marks a room read while a retried history load renders, before the retry opens it on the New messages line", async () => {
+    it("RT-11 (fixed): does not mark a room read while a retried history load renders, only once the user reaches the bottom", async () => {
         const { room, timelineItems } = fakeRoom({ items: [], hasPrevious: true, readMarker: { eventId: "old1" } });
         room.loadMorePreviousMessages.mockRejectedValueOnce(new Error("network"));
         vi.spyOn(console, "error").mockImplementation(() => {});
@@ -806,6 +816,9 @@ describe("RoomTimeline characterization", () => {
 
         const divider = target.querySelector("[data-testid='unreadMessagesDivider']");
         expect(divider?.closest("li")?.getAttribute("data-event-id")).toBe("m0");
+        expect(room.setTimelineAsRead).not.toHaveBeenCalled();
+        userScrollsTo(list.scrollHeight - list.clientHeight);
+        await settle();
         expect(room.setTimelineAsRead).toHaveBeenCalledTimes(1);
     });
 });
