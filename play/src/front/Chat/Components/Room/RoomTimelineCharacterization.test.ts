@@ -627,4 +627,29 @@ describe("RoomTimeline characterization", () => {
         expect(room.ensureTimelineEventVisible).toHaveBeenCalledWith("older");
         expect(scrolledIntoView).toEqual(["m1", "older"]);
     });
+
+    it("RT-09 (fixed): keeps a focused message tinted after its pulse, and plays the pulse again when it is focused again", async () => {
+        const { room } = fakeRoom({ items: others(4) });
+        render(room);
+        await wait(10);
+        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "m1", sequence: 1 });
+        await wait(10);
+        const row = target.querySelector("li[data-event-id='m1']");
+        if (!row) throw new Error("no row m1");
+        const highlight = () => ({
+            tinted: row.classList.contains("highlight-message"),
+            pulsing: row.classList.contains("highlight-message-pulse"),
+        });
+        expect(highlight()).toEqual({ tinted: true, pulsing: true });
+
+        // jsdom runs no CSS animation, so the test ends them. One inside the message is not the pulse.
+        row.appendChild(document.createElement("span")).dispatchEvent(new Event("animationend", { bubbles: true }));
+        expect(highlight()).toEqual({ tinted: true, pulsing: true });
+        row.dispatchEvent(new Event("animationend", { bubbles: true }));
+        expect(highlight()).toEqual({ tinted: true, pulsing: false });
+
+        roomTimelineFocusStore.set({ roomId: ROOM_ID, eventId: "m1", sequence: 2 });
+        await wait(10);
+        expect(highlight()).toEqual({ tinted: true, pulsing: true });
+    });
 });

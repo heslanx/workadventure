@@ -684,8 +684,13 @@
         releaseScrollAnchor();
         beginProgrammaticScroll("resync");
         target.scrollIntoView({ block: "center", behavior: "smooth" });
-        target.classList.remove("highlight-message");
-        target.classList.add("highlight-message");
+        target.classList.add("highlight-message", "highlight-message-pulse");
+    }
+
+    /** The pulse plays when its class is added: it goes when it ends, so the next focus plays it again. */
+    function endHighlightPulse(event: AnimationEvent) {
+        // Only the row carries the class: an animation ending inside a message leaves the pulse alone.
+        if (event.target instanceof Element) event.target.classList.remove("highlight-message-pulse");
     }
 </script>
 
@@ -840,6 +845,7 @@
             onscroll={handleScroll}
             onwheel={cancelProgrammaticScroll}
             ontouchstart={cancelProgrammaticScroll}
+            onanimationend={endHighlightPulse}
         >
             <ul
                 class="list-none p-0 flex-1 min-w-0 flex flex-col max-h-full pt-10 gap-1 {$timelineItems.length === 0
@@ -995,6 +1001,10 @@
     :global(li.highlight-message) {
         background-color: rgba(255, 255, 255, 0.1);
         border-radius: 8px;
+    }
+
+    /* A class of its own, so the next focus can play it again: it ends on the tint, which stays. */
+    :global(li.highlight-message-pulse) {
         animation: highlight-pulse 2s ease-out;
     }
 
