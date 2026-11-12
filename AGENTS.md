@@ -20,6 +20,8 @@ WorkAdventure is a TypeScript monorepo (npm workspaces) for building collaborati
 
 ## Shared guidance
 
+For Konclui migration work, read `docs/konclui-migration/README.md` for product contracts, isolated runtime, verification, and ownership. Preserve the upstream guides below.
+
 - `docs/agent/dev-setup.md`
 - `docs/agent/lint-format.md`
 - `docs/agent/testing-vitest.md`
