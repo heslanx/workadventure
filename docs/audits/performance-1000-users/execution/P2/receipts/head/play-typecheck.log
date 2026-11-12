@@ -1,4 +1,0 @@
-
-> workadventure-play@1.0.0 typecheck
-> cross-env tsc --noEmit
-

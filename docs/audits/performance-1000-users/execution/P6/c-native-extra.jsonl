@@ -1,3 +1,0 @@
-{"label": "c-native-extra:math-utils-tsc-noemit", "command": "npx --no-install tsc --noEmit", "exit_code": 0, "wall_s": 0.455, "user_s": 0.409, "sys_s": 0.175, "peak_rss_kb": 94492, "utc": "2026-11-12T00:27:24Z"}
-{"label": "c-native-extra:play-pusher-tsc-noemit", "command": "npx --no-install tsc --project tsconfig-pusher.json --noEmit", "exit_code": 0, "wall_s": 4.16, "user_s": 6.421, "sys_s": 1.314, "peak_rss_kb": 789480, "utc": "2026-11-12T00:27:29Z"}
-{"label": "c-native-extra:play-iframe-typings-noemit", "command": "npx --no-install tsc --project tsconfig-for-iframe-api-typings.json --noEmit", "exit_code": 0, "wall_s": 3.695, "user_s": 5.823, "sys_s": 1.057, "peak_rss_kb": 644804, "utc": "2026-11-12T00:27:32Z"}

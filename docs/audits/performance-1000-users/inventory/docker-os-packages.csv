@@ -1,6 +1,0 @@
-source,line,declaration
-back/Dockerfile,14,RUN apt-get update && apt-get install -y git curl
-map-storage/Dockerfile,20,RUN apt-get update && apt-get install -y git curl
-map-storage/Dockerfile,42,RUN apt-get update && apt-get install -y git curl
-play/Dockerfile,18,RUN apt-get update && apt-get install -y git
-play/Dockerfile,76,RUN apt-get update && apt-get install -y git curl

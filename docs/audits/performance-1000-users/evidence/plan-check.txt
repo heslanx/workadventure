@@ -1,7 +1,0 @@
-Restore a headless room load generator (P1)  boxes=21  files=1 build=2 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=2
-Update Svelte and verify component lifecycle (P2)  boxes=21  files=1 build=2 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=2
-Contribute replay evidence to upstream PR 6688 (P3)  boxes=21  files=1 build=2 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=2
-Skip unchanged effective viewport zone reconciliation (P4)  boxes=21  files=1 build=2 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=2
-Keep map autosave recoverable without overlapping writes (P5)  boxes=22  files=1 build=3 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=2
-Pilot the stable native TypeScript compiler (P6)  boxes=21  files=1 build=2 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=2
-6 PR sections, 0 problems

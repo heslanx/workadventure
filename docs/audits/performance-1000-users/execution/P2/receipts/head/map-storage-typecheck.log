@@ -1,4 +1,0 @@
-
-> map-storage@1.0.0 typecheck
-> tsc --project tsconfig-node.json --noEmit
-

@@ -1,7 +1,0 @@
---- a/back/src/Services/QuotaAwareCpuTracker.ts
-+++ b/back/src/Services/QuotaAwareCpuTracker.ts
-@@ -165,3 +165,3 @@
-     }
--    return root.ascent > own.ascent && root.names.length === 0 ? [mount.mountPoint] : [];
-+    return root.ascent > own.ascent && own.ascent === 0 && root.names.length === 0 ? [mount.mountPoint] : [];
- }

@@ -1,1 +1,0 @@
-{"ok":true,"result":{"messageId":"msg_cb975a6b2cc9","warnings":["term_12b57763-67f8-40fd-9909-f5b9199d94c7 is a live terminal-only mailbox. Delivery is not durable after that terminal closes; prefer run:<id> or dispatch:<id>."]}}

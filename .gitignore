@@ -29,3 +29,6 @@ play/src/i18n/ko-KR/*.backup
 
 # Orca per-workspace environment: repo-local SSH key
 .orca-vm/
+
+# Local audit scratch (handoff receipts, screenshots)
+/.audit/

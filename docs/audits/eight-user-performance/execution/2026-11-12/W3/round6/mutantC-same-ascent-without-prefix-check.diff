@@ -1,7 +1,0 @@
---- a/back/src/Services/QuotaAwareCpuTracker.ts
-+++ b/back/src/Services/QuotaAwareCpuTracker.ts
-@@ -158,3 +158,3 @@
-     }
--    if (root.ascent === own.ascent && root.names.every((name, index) => own.names[index] === name)) {
-+    if (root.ascent === own.ascent) {
-         const directories = [mount.mountPoint];

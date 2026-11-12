@@ -1,5 +1,0 @@
-
-> workadventure-play@1.0.0 typecheck
-> cross-env tsc --noEmit
-
-PLAY_TYPECHECK_EXIT=0

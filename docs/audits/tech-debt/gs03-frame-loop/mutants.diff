@@ -1,8 +1,0 @@
-42d41
-<             this.scene.isProcessing = false;
-49,51d48
-<         if (time - this.lastFrameErrorReport < FRAME_ERROR_REPORT_INTERVAL_MS) {
-<             return;
-<         }
-58d57
-<         this.frameErrorsSinceReport = 0;

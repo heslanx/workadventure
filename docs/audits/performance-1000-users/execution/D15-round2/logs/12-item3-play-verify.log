@@ -1,7 +1,0 @@
-
-> workadventure-play@1.0.0 typecheck
-> cross-env tsc --noEmit
-
-PLAY_TYPECHECK_EXIT=0
-TESTS=tests/front/Phaser/Game/CameraManualPan.test.ts tests/front/Phaser/Components/WalkDestinationMarker.test.ts src/front/Space/tests/SpaceRegistry.test.ts src/front/Space/tests/SpaceWatcherSocket.test.ts src/front/Space/tests/SpaceFilter.test.ts src/front/Space/tests/SpaceIntegration.test.ts src/front/Space/tests/Space.test.ts src/front/Chat/Connection/Proximity/tests/ProximityChatRoomJoinEvents.test.ts
-PHASER_TESTS_EXIT=134

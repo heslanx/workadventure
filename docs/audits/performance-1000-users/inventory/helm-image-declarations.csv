@@ -1,8 +1,0 @@
-source,line,declaration
-contrib/helm/templates/play-deployment.yaml,48,"image: ""{{ .Values.play.image.repository }}:{{ .Values.play.image.tag | default .Values.appVersion }}"""
-contrib/helm/templates/icon-deployment.yaml,40,"image: ""{{ .Values.icon.image.repository }}:{{ .Values.icon.image.tag | default .Values.appVersion }}"""
-contrib/helm/templates/back-statefulset.yaml,60,"image: ""{{ .Values.back.image.repository }}:{{ .Values.back.image.tag | default .Values.appVersion }}"""
-contrib/helm/templates/maps-deployment.yaml,48,"image: ""{{ .Values.maps.image.repository }}:{{ .Values.maps.image.tag | default .Values.appVersion }}"""
-contrib/helm/templates/mapstorage-deployment.yaml,56,image: busybox
-contrib/helm/templates/mapstorage-deployment.yaml,70,"image: ""{{ .Values.mapstorage.image.repository }}:{{ .Values.mapstorage.image.tag | default .Values.appVersion }}"""
-contrib/helm/templates/front-deployment.yaml,45,"image: ""{{ .Values.front.image.repository }}:{{ .Values.front.image.tag | default .Values.appVersion }}"""
