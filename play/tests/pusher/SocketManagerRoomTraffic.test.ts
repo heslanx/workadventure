@@ -383,9 +383,9 @@ describe("SocketManager room traffic", () => {
         expect(manager.getRooms().has(ROOM)).toBe(false);
     });
 
-    // SM-02: the back answers a join that was in flight when the pusher closed the socket. Only the relay to the
-    // client checks the socket; the viewport is still subscribed, so the room keeps a zone nobody will release.
-    it("SM-02 (pinned): a join the back confirms after the socket closed still takes zones, and the room outlives its last socket", async () => {
+    // SM-02: the back answers a join that was in flight when the pusher closed the socket. A socket that left its
+    // room takes no zone, so nothing keeps the room open after its last socket.
+    it("SM-02 (fixed): a join the back confirms after the socket closed takes no zone, and the room closes with its last socket", async () => {
         const back = fakeBack();
         const manager = new SocketManager();
         const alice = fakeSocket("alice", { viewport: FAR_ZONE });
@@ -400,9 +400,9 @@ describe("SocketManager room traffic", () => {
         manager.cleanupSocket(bob.socket);
 
         expect(alice.sent).toEqual([]);
-        expect(roomStream.written.slice(1)).toEqual([subscribe(0, 0), subscribe(10, 10), unsubscribe(0, 0)]);
-        expect(roomStream.cancel).not.toHaveBeenCalled();
-        expect(manager.getRooms().has(ROOM)).toBe(true);
+        expect(roomStream.written.slice(1)).toEqual([subscribe(0, 0), unsubscribe(0, 0)]);
+        expect(roomStream.cancel).toHaveBeenCalledTimes(1);
+        expect(manager.getRooms().has(ROOM)).toBe(false);
     });
 
     it("creates one space per name, shares it between sockets, and sends each join to the space back", async () => {
