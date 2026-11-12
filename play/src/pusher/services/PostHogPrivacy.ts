@@ -10,11 +10,15 @@ function redactDiagnosticText(text: string): string {
                 return "[url]";
             }
         })
+        .replace(
+            /(["']?(?:(?:proxy-)?authorization|(?:set-)?cookie)["']?[ \t]*[:=][ \t]*)[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*/gi,
+            "$1[redacted]",
+        )
         .replace(/\bBearer\s+[^\s,;"']+/gi, "Bearer [redacted]")
         .replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, "[token]")
         .replace(/\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b/gi, "[email]")
         .replace(
-            /(["']?(?:[\w.-]*(?:token|password|secret)|authorization|cookie|api[_-]?key)["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}\]]+)/gi,
+            /(["']?(?:[\w.-]*(?:token|password|secret)|api[_-]?key)["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}\]]+)/gi,
             "$1[redacted]",
         );
 }
