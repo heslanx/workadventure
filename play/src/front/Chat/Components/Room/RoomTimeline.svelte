@@ -45,6 +45,7 @@
     import RoomTimelineLoading from "./RoomTimelineLoading.svelte";
     import { shouldReserveFloatingCloseButtonSpace, shouldShowBackToRoomList } from "./RoomTimelineHeaderLayout";
     import { countIncomingMessagesAfter, findFirstUnreadKey, isReadMarkerLoaded } from "./RoomTimelineNewMessages";
+    import { reuseUnchangedRenderItems, type RoomTimelineRenderItem } from "./RoomTimelineRenderItems";
     import {
         IconArrowDown,
         IconChevronLeft,
@@ -235,9 +236,8 @@
         }
     });
 
-    type RenderItem =
-        | { kind: "separator"; key: string; label: string }
-        | { kind: "item"; key: string; timelineItem: ChatTimelineItem; showHeader: boolean; showTime: boolean };
+    /** Rows of the last render, read only to reuse them in the next one: deliberately not $state. */
+    let previousRenderItems: readonly RoomTimelineRenderItem[] = [];
 
     function isValidDate(d: Date) {
         return d instanceof Date && !Number.isNaN(d.getTime());
@@ -279,7 +279,7 @@
     }
 
     let renderItems = $derived.by(() => {
-        const out: RenderItem[] = [];
+        const out: RoomTimelineRenderItem[] = [];
         let lastDayKey: string | null = null;
         let previousMessage: ChatMessage | undefined = undefined;
         const currentTimelineItems = $timelineItems ?? [];
@@ -336,7 +336,8 @@
             }
         });
 
-        return out;
+        previousRenderItems = reuseUnchangedRenderItems(out, previousRenderItems);
+        return previousRenderItems;
     });
 
     const MAX_INITIAL_FILL_ROUNDS = 5;
