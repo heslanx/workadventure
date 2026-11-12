@@ -32,3 +32,19 @@ export function readObservabilityConfiguration(
         release: env.OBSERVABILITY_RELEASE || "unknown",
     };
 }
+
+export function readPostHogConfiguration(
+    apiKey: string | undefined,
+    host: string | undefined,
+): { apiKey: string; host: string } | undefined {
+    if (!apiKey || !host || apiKey.startsWith("phx_")) return undefined;
+    try {
+        const url = new URL(host);
+        if (!["https:", "http:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
+            return undefined;
+        }
+    } catch {
+        return undefined;
+    }
+    return { apiKey, host };
+}

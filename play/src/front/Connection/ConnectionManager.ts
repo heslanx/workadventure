@@ -113,11 +113,8 @@ class ConnectionManager {
      * Logout
      */
     public logout() {
-        try {
-            window.posthog?.reset();
-        } catch {
-            // A telemetry failure must not prevent logout.
-        }
+        analyticsClient.resetUser();
+
         // save the current token to use it in the redirect logout url
         const tokenTmp = localUserStore.getAuthToken();
         //remove token in localstorage

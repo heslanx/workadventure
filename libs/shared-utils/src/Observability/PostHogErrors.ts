@@ -3,24 +3,15 @@ import { context, trace } from "@opentelemetry/api";
 import { PostHog } from "posthog-node";
 import { asError } from "catch-unknown";
 import { registerDrainableService } from "../ShutdownDrains";
-import { redactTelemetryText } from "./Privacy";
+import { sanitizePostHogException } from "./PostHogPrivacy";
+import { readPostHogConfiguration } from "./Configuration";
 
 let client: PostHog | undefined;
 let serviceName = "unknown";
 const captured = new WeakSet<object>();
 
-// The SDK enriches stacks with source code after captureException; scrub at the final boundary too.
-function sanitizeExceptionProperty(value: unknown): unknown {
-    if (typeof value === "string") return redactTelemetryText(value);
-    if (Array.isArray(value)) return value.map(sanitizeExceptionProperty);
-    if (value && typeof value === "object") {
-        return Object.fromEntries(
-            Object.entries(value)
-                .filter(([key]) => !["pre_context", "post_context", "context_line"].includes(key))
-                .map(([key, child]) => [key, sanitizeExceptionProperty(child)]),
-        );
-    }
-    return value;
+export function isPostHogErrorsActive(): boolean {
+    return client !== undefined;
 }
 
 export function captureBackendException(error: unknown): void {
@@ -31,11 +22,8 @@ export function captureBackendException(error: unknown): void {
     }
     try {
         const original = asError(error);
-        const safe = new Error(redactTelemetryText(original.message));
-        safe.name = original.name;
-        safe.stack = original.stack ? redactTelemetryText(original.stack) : undefined;
         const span = trace.getSpan(context.active())?.spanContext();
-        client.captureException(safe, randomUUID(), {
+        client.captureException(original, randomUUID(), {
             $process_person_profile: false,
             service: serviceName,
             environment: process.env.OBSERVABILITY_ENVIRONMENT || process.env.NODE_ENV || "development",
@@ -49,37 +37,24 @@ export function captureBackendException(error: unknown): void {
 }
 
 export function startPostHogErrors(service: string): void {
-    if (client || !process.env.POSTHOG_API_KEY || !process.env.POSTHOG_URL) return;
-    try {
-        const host = new URL(process.env.POSTHOG_URL);
-        if (
-            !["https:", "http:"].includes(host.protocol) ||
-            host.username ||
-            host.password ||
-            host.search ||
-            host.hash ||
-            process.env.POSTHOG_API_KEY.startsWith("phx_")
-        )
-            return;
-    } catch {
-        console.warn(JSON.stringify({ event: "posthog_configuration_invalid", service, level: "warn" }));
+    if (client) return;
+    const config = readPostHogConfiguration(process.env.POSTHOG_API_KEY, process.env.POSTHOG_URL);
+    if (!config) {
+        if (process.env.POSTHOG_API_KEY || process.env.POSTHOG_URL) {
+            console.warn(JSON.stringify({ event: "posthog_configuration_invalid", service, level: "warn" }));
+        }
         return;
     }
     serviceName = service;
-    client = new PostHog(process.env.POSTHOG_API_KEY, {
-        host: process.env.POSTHOG_URL,
+    client = new PostHog(config.apiKey, {
+        host: config.host,
         flushAt: 20,
         flushInterval: 10_000,
         requestTimeout: 3000,
         // Observe fatal errors without changing Node's exit/rejection semantics.
         enableExceptionAutocapture: false,
         disableGeoip: true,
-        before_send: (event) => ({
-            ...event,
-            properties: Object.fromEntries(
-                Object.entries(event.properties ?? {}).map(([key, value]) => [key, sanitizeExceptionProperty(value)]),
-            ),
-        }),
+        before_send: sanitizePostHogException,
     });
     client.on("error", () => console.warn(JSON.stringify({ event: "posthog_export_failed", service, level: "warn" })));
     process.on("uncaughtExceptionMonitor", captureBackendException);

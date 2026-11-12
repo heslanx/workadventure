@@ -128,6 +128,9 @@ export const SENTRY_ENVIRONMENT: string | undefined = env.SENTRY_ENVIRONMENT;
 export const SENTRY_RELEASE: string | undefined = env.SENTRY_RELEASE;
 export const SENTRY_TRACES_SAMPLE_RATE: number | undefined = env.SENTRY_TRACES_SAMPLE_RATE;
 
+export const POSTHOG_API_KEY: string | undefined = env.POSTHOG_API_KEY;
+export const POSTHOG_URL: string | undefined = env.POSTHOG_URL;
+
 // TURN config
 export const STUN_SERVER: string | undefined = env.STUN_SERVER;
 export const TURN_SERVER: string | undefined = env.TURN_SERVER;

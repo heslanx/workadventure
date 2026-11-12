@@ -1,5 +1,6 @@
 import type { CalendarEventInterface } from "@workadventure/shared-utils";
 import { scriptUtils } from "../../Api/ScriptUtils";
+import { analyticsClient } from "../../Administration/AnalyticsClient";
 import { isCalendarVisibleStore } from "../../Stores/CalendarStore";
 import { goToJoinUrl, moveTargetOf } from "../../Utils/JoinUrl";
 
@@ -21,6 +22,11 @@ export function goToWorkAdventureMeeting(url: URL): boolean {
 export function joinMeeting(event: CalendarEventInterface): void {
     const meeting = event.resource?.onlineMeeting;
     if (!meeting?.joinUrl) return;
+
+    analyticsClient.capture("calendar_meeting_joined", {
+        meeting_type: meeting.isWorkAdventure ? "workadventure" : "external",
+    });
+
     if (!meeting.isWorkAdventure) {
         // The way a website set to open in a new tab opens (map areas, chat links, WA.nav.openTab).
         scriptUtils.openTab(meeting.joinUrl);
