@@ -34,7 +34,7 @@ The work has two tracks. Phases 1 to 4 run per module, one module at a time, in 
 |---|---|---|---|---|
 | 1 | working-with-legacy-code | done: all four modules pinned, landed and gated by CI | TESTING.md + TECH-DEBT.md | 2026-11-12 |
 | 2 | refactoring-patterns | done: first pass landed for all four modules (pinned code only); CI run 10 green | TECH-DEBT.md | 2026-11-12 |
-| 3 | clean-code | in-progress: GameScene.ts running | TECH-DEBT.md | |
+| 3 | clean-code | in-progress: GameScene.ts done; SocketManager.ts next | TECH-DEBT.md | |
 | 4 | software-design-philosophy | pending | TECH-DEBT.md | |
 | 5 | clean-architecture | pending | ARCHITECTURE.md | |
 | 6 | pragmatic-programmer | pending | TECH-DEBT.md | |
@@ -47,7 +47,7 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 
 | Module | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
 |---|---|---|---|---|
-| `GameScene.ts` | done | first pass done (pinned code only) | in-progress | pending |
+| `GameScene.ts` | done | first pass done (pinned code only) | first pass done (pinned code only) | pending |
 | `SocketManager.ts` | done | first pass done (pinned code only) | pending | pending |
 | `MediaStore.ts` | done | first pass done (pinned code only) | pending | pending |
 | `RoomTimeline.svelte` | done | first pass done (pinned code only) | pending | pending |
@@ -119,8 +119,12 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: <reas
 - [ ] MD-12 (a stored denial still shows in the tooltip after the user allows the device): one shared "access denied" rule for the panel and both help contexts, pinned then fixed (coordinator, P4).
 - [x] Phase 2, `RoomTimeline.svelte` first pass: day labels and non-message rows pinned (`4ab34f19d`), `renderItems` moved into `buildRenderItems` (`3141350f2`, script 788 to 692 lines), commented-out reflow removed (`5deb37fd5`); each equal to its reviewed patch; verdict PASS (coordinator, 2026-11-12). Evidence: `docs/audits/tech-debt/phase2-roomtimeline/`. CI run 10 on `5deb37fd5`: 30 of 30 exit 0, play production build OK; per-suite counts not captured (collector bug, fixed). Evidence: `docs/audits/performance-1000-users/execution/combined-ci/run10/head-raw.txt`.
 - [x] CI run 11 on `fe5d9408e` (the user's snapshot on top of `c007401b5`), the first on the `ci` host, with i18n types generated after `npm ci` as the upstream CI does: 31 of 31 exit 0; play 261 files, 1,687 passed, 10 skipped; back 382 passed; map-storage 114 passed; play production build OK (coordinator, 2026-11-12). Evidence: `docs/audits/performance-1000-users/execution/combined-ci/run11/head-raw.txt`.
+- [x] CI run 12 on `af397a4ea` (the RoomTimeline round 3 stack landed): 31 of 31 exit 0; play 261 files, 1,694 passed, 10 skipped; back 382 passed; map-storage 114 passed; play production build OK (coordinator, 2026-11-12). Evidence: `docs/audits/performance-1000-users/execution/combined-ci/run12/head-raw.txt`.
+- [x] CI run 13 on `529cf0536` (the MD-09 round 3 stack landed): 31 of 31 exit 0; play 262 files, 1,712 passed, 10 skipped; back 382 passed; map-storage 114 passed; play production build OK (coordinator, 2026-11-12). Evidence: `docs/audits/performance-1000-users/execution/combined-ci/run13/head-raw.txt`.
 - [x] RT-10 (day labels mix the chat and browser locales): fixed in `da0645b3e`, the pin flips (coordinator, 2026-11-12).
 - [x] RT-09 (highlight does not replay on a second focus): fixed in `d4d892e43` with its own pulse class and a jsdom `animationend` test; a browser check of the pulse stays open (coordinator, 2026-11-12).
 - [ ] RT-13 (thread unread state keeps the room flag up, so a main-timeline receipt cannot clear it) and RT-05 (separators do not follow a locale change while the room is open): the next RoomTimeline unit; RT-13's fix belongs in `MatrixChatRoom` (coordinator, P3).
-- [ ] Phase 3 (clean-code), `GameScene.ts`: audit and behavior-free legibility patches in pinned code; the first worker ended with the session at the 15:48 UTC reboot before writing anything; restarted on the `ci` host, evidence in `docs/audits/tech-debt/phase3-gamescene/` (coordinator, P2). Then `SocketManager.ts`, `MediaStore.ts`, `RoomTimeline.svelte`.
+- [x] Phase 3 (clean-code), `GameScene.ts` first pass: audit (names 5, functions 2, comments 5, error handling 4, tests 3, smells 3; top ten and an error-handling table in the README) and five behavior-free patches in pinned code, `4ca9ab46d` to `5be50db60`, each equal to its reviewed patch; 12 of 12 mutants killed; play suite 259 files, 1,682 passed; verdict PASS, no finding (coordinator, 2026-11-12). Evidence: `docs/audits/tech-debt/phase3-gamescene/`. New ledger rows GS-10 to GS-12 and 17 Smell Inventory rows.
+- [ ] GS-10 (a throwing extension `onPlayerMovementEnded` callback stops the frame on every walking step, P2), GS-11 (a throw for an interpolation whose player is gone drops about 300 ms of frames), GS-12 (remote-player drift never reaches Sentry): each pinned then fixed; worker `fixgs10` running to 21:30 UTC, evidence in `docs/audits/tech-debt/fix-gs10-12/` (coordinator, P2).
+- [ ] Phase 3 (clean-code), `SocketManager.ts`, then `MediaStore.ts`, then `RoomTimeline.svelte`: same shape as GameScene's pass; SocketManager starts when the `ci` host has room (coordinator, P2).
 - [x] Unused and undeclared dependencies (DEP-01, DEP-02): 42 removed and 4 declared in 8 single-package commits, `b03e2c1c5` to `7f9c1a86d`, each equal to its reviewed patch; real `npm ci` and every workspace check on the stack exit 0; verdict PASS_WITH_NITS, its finding fixed in v2 (coordinator, 2026-11-12). Evidence: `docs/audits/tech-debt/deps-cleanup/README.md`. `tsconfig-paths` stays (decided 2026-11-12).
