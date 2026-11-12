@@ -882,10 +882,7 @@ export class SocketManager implements ZoneEventListener {
                         // connection to the back.
                         debug("Could not find the GameRoom the user is leaving: %s", socketData.roomId);
                     }
-                    //user leave previous room
-                    //Client.leave(Client.roomId);
                 } finally {
-                    //delete Client.roomId;
                     if (socketData.joinedRoom) {
                         socketData.joinedRoom = false;
                         clientEventsEmitter.emitClientLeave(socketData.userUuid, socketData.roomId);
@@ -1339,7 +1336,6 @@ export class SocketManager implements ZoneEventListener {
     ) {
         const oldFilter = removeSpaceFilterMessage.spaceFilterMessage;
         // We don't check that the client is part of the space here, because we could stop watching a space after leaving it.
-        //await this.checkClientIsPartOfSpace(client, oldFilter.spaceName);
         const space = this.spaces.get(oldFilter.spaceName);
         if (space) {
             space.handleUnwatch(client);
@@ -1347,10 +1343,6 @@ export class SocketManager implements ZoneEventListener {
             // This function is called when the userStore of a space in front is unsubscribed.
             // This could happen after we leave the space. Therefore, we don't display an error here.
             // When leaving the space, we take care of removing the filters anyway.
-            /*console.error(`Remove space filter called on a space (${oldFilter.spaceName}) that does not exist`);
-            Sentry.captureException(
-                new Error(`Remove space filter called on a space (${oldFilter.spaceName}) that does not exist`)
-            );*/
         }
     }
 
