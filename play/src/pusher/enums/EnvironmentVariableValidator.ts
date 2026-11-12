@@ -1,3 +1,7 @@
+import {
+    ObservabilityEnvironmentVariables,
+    PostHogEnvironmentVariables,
+} from "@workadventure/shared-utils/src/Observability/EnvironmentVariables";
 import { OpidWokaNamePolicy } from "@workadventure/messages";
 import { z } from "zod";
 import {
@@ -20,6 +24,8 @@ const desktopRelease = z
     .transform(emptyStringToUndefined);
 
 export const EnvironmentVariables = z.object({
+    ...ObservabilityEnvironmentVariables,
+    ...PostHogEnvironmentVariables,
     DESKTOP_APP_RECOMMENDED_VERSION: desktopRelease.describe(
         "Desktop release validated for this instance (exact X.Y.Z).",
     ),
@@ -422,13 +428,19 @@ export const EnvironmentVariables = z.object({
         ),
     NODE_ENV: z.string().optional().describe("Node.js environment: 'development', 'production', or 'test'"),
     CONTACT_URL: AbsoluteOrRelativeUrl.optional().describe("URL for users to contact support or administrators"),
-    POSTHOG_API_KEY: z.string().optional().describe("PostHog API key for analytics tracking"),
-    POSTHOG_URL: z
+    POSTHOG_REPLAY_ENABLED: BoolAsString.optional()
+        .transform((val) => toBool(val, true))
+        .describe(
+            "Allow masked PostHog session replay. Defaults to true; project replay settings must also enable it.",
+        ),
+    POSTHOG_REPLAY_SAMPLE_RATE: z
         .string()
-        .url()
         .optional()
-        .or(z.literal(""))
-        .describe("PostHog server URL for analytics. Defaults to PostHog cloud"),
+        .transform((value) => {
+            const rate = Number(value || "0.1");
+            return Number.isFinite(rate) && rate >= 0 && rate <= 1 ? rate : 0.1;
+        })
+        .describe("Fraction of eligible browser sessions recorded, from 0 to 1. Defaults to 0.1."),
     FALLBACK_LOCALE: z
         .string()
         .optional()

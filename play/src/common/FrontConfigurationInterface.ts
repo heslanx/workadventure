@@ -21,6 +21,8 @@ export interface FrontConfigurationInterface {
     LIVEKIT_PIXEL_DENSITY: number;
     CONTACT_URL: string | undefined;
     POSTHOG_API_KEY: string | undefined;
+    POSTHOG_REPLAY_ENABLED?: boolean;
+    POSTHOG_REPLAY_SAMPLE_RATE?: number;
     POSTHOG_URL: string | undefined;
     DISABLE_ANONYMOUS: boolean;
     ENABLE_OPENID: boolean;

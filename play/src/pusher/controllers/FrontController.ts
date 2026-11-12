@@ -271,6 +271,13 @@ export class FrontController extends BaseHttpController {
                 script: await this.getScript(),
                 posthogApiKey: FRONT_ENVIRONMENT_VARIABLES.POSTHOG_API_KEY,
                 posthogUrl: FRONT_ENVIRONMENT_VARIABLES.POSTHOG_URL,
+                posthogReplayDisabled: !FRONT_ENVIRONMENT_VARIABLES.POSTHOG_REPLAY_ENABLED,
+                posthogReplaySampleRate: FRONT_ENVIRONMENT_VARIABLES.POSTHOG_REPLAY_SAMPLE_RATE,
+                posthogContext: JSON.stringify({
+                    service: "browser",
+                    environment: process.env.OBSERVABILITY_ENVIRONMENT || process.env.NODE_ENV || "development",
+                    release: process.env.OBSERVABILITY_RELEASE || "unknown",
+                }).replace(/</g, "\\u003c"),
                 authToken: authToken,
                 googleDrivePickerClientId: GOOGLE_DRIVE_PICKER_CLIENT_ID,
                 // The background-effect worker is a blob: wrapper that statically imports its script from the

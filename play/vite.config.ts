@@ -4,6 +4,7 @@ import type { Plugin } from "vite";
 import { defineConfig, loadEnv } from "vite";
 import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import posthog from "@posthog/rollup-plugin";
 import { noiseSuppressionAudioWorkletVitePlugin } from "@workadventure/noise-suppression/vite";
 import tailwindcss from "@tailwindcss/vite";
 import Icons from "unplugin-icons/vite";
@@ -172,6 +173,23 @@ export default defineConfig(({ mode }) => {
         );
     } else {
         console.info("Sentry plugin disabled");
+    }
+    if (env.POSTHOG_PERSONAL_API_KEY && env.POSTHOG_PROJECT_ID && env.POSTHOG_HOST) {
+        // PostHog supports Rolldown at runtime; its published types still use Rollup's PluginContext.
+        config.plugins.push(
+            posthog({
+                personalApiKey: env.POSTHOG_PERSONAL_API_KEY,
+                projectId: env.POSTHOG_PROJECT_ID,
+                host: env.POSTHOG_HOST,
+                sourcemaps: {
+                    enabled: true,
+                    releaseName: "workadventure-play",
+                    releaseVersion: env.OBSERVABILITY_RELEASE || env.SENTRY_RELEASE,
+                    // Sentry may upload the same maps; artifact removal belongs to deployment.
+                    deleteAfterUpload: false,
+                },
+            }) as Plugin,
+        );
     }
     return config;
 });
