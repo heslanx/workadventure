@@ -1,7 +1,13 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { flushSync, mount, tick, unmount } from "svelte";
 import { readable, writable } from "svelte/store";
-import type { ChatMessage, ChatReadMarker, ChatTimelineItem } from "../../Connection/ChatConnection";
+import type {
+    ChatMessage,
+    ChatPollItem,
+    ChatQuestionItem,
+    ChatReadMarker,
+    ChatTimelineItem,
+} from "../../Connection/ChatConnection";
 import { roomTimelineFocusStore } from "../../Stores/RoomSidePanelStore";
 import { loadLocaleAsync } from "../../../../i18n/i18n-util.async";
 import { setLocale } from "../../../../i18n/i18n-svelte";
@@ -31,6 +37,9 @@ vi.mock("./MessageInputBar.svelte", () => ({ default: () => ({}) }));
 vi.mock("./ChatMessageBanner.svelte", () => ({ default: () => ({}) }));
 vi.mock("./TypingUsers.svelte", () => ({ default: () => ({}) }));
 vi.mock("./EnteredZoneBanner.svelte", () => ({ default: () => ({}) }));
+vi.mock("./PollCard.svelte", () => ({ default: () => ({}) }));
+vi.mock("./QuestionCard.svelte", () => ({ default: () => ({}) }));
+vi.mock("./MessageSystem.svelte", () => ({ default: () => ({}) }));
 // Each message row records the props it is handed, and how many times it is handed them again.
 vi.mock("./Message.svelte", async () => {
     const { toStore } = await import("svelte/store");
@@ -185,6 +194,10 @@ function eventIds(): (string | null)[] {
     return [...target.querySelectorAll("ul > li")].map((row) => row.getAttribute("data-event-id"));
 }
 
+function separatorLabels(): (string | undefined)[] {
+    return [...target.querySelectorAll("ul > li:not([data-event-id])")].map((row) => row.textContent?.trim());
+}
+
 function jumpButton(): HTMLElement | null {
     return target.querySelector<HTMLElement>("[data-testid='jumpToLatestMessages']");
 }
@@ -288,6 +301,7 @@ afterEach(async () => {
     document.body.replaceChildren();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.useRealTimers();
 });
 
 describe("RoomTimeline characterization", () => {
@@ -315,6 +329,75 @@ describe("RoomTimeline characterization", () => {
             b2: { showHeader: true, showTime: true },
             b3: { showHeader: true, showTime: true },
         });
+    });
+
+    it("ends a sender's run at a poll, a question or a system row: the message before it shows its time, the one after its header", async () => {
+        const { room } = fakeRoom({
+            items: [
+                item(message("a1", alice, at(5, 8, 0))),
+                {
+                    kind: "poll",
+                    id: "p1",
+                    date: at(5, 8, 1),
+                    poll: { id: "p1", sender: alice } as unknown as ChatPollItem,
+                },
+                item(message("a2", alice, at(5, 8, 2))),
+                {
+                    kind: "question",
+                    id: "q1",
+                    date: at(5, 8, 3),
+                    question: { id: "q1", sender: alice } as unknown as ChatQuestionItem,
+                },
+                item(message("a3", alice, at(5, 8, 4))),
+                { kind: "system", id: "s1", date: at(5, 8, 5), message: message("s1", alice, at(5, 8, 5)) },
+                item(message("a4", alice, at(5, 8, 6))),
+                item(message("a5", alice, at(5, 8, 7))),
+            ],
+        });
+        render(room);
+        await settle();
+
+        expect(eventIds()).toEqual([null, "a1", "p1", "a2", "q1", "a3", "s1", "a4", "a5"]);
+        expect(Object.fromEntries(rows.props)).toEqual({
+            a1: { showHeader: true, showTime: true },
+            a2: { showHeader: true, showTime: true },
+            a3: { showHeader: true, showTime: true },
+            a4: { showHeader: true, showTime: false },
+            a5: { showHeader: false, showTime: true },
+        });
+    });
+
+    it("labels the day separators Today, Yesterday, and an older day by its weekday, day and month", async () => {
+        vi.setSystemTime(at(7, 12, 0));
+        const { room } = fakeRoom({
+            items: [
+                item(message("a1", alice, at(2, 9, 0))),
+                item(message("a2", alice, at(6, 9, 0))),
+                item(message("a3", alice, at(7, 9, 0))),
+            ],
+        });
+        render(room);
+        await settle();
+
+        // Intl gets no locale: an older day follows the runtime's language ("Fri, Jan 2" in en-US), not the chat's.
+        const olderDay = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short" });
+        expect(separatorLabels()).toEqual([olderDay.format(at(2, 9, 0)), "Yesterday", "Today"]);
+    });
+
+    it("RT-05 (pinned): computes the day labels when the timeline changes, not when the day does", async () => {
+        vi.setSystemTime(at(7, 23, 59));
+        const { room, timelineItems } = fakeRoom({ items: [item(message("a1", alice, at(7, 23, 58)))] });
+        render(room);
+        await settle();
+        expect(separatorLabels()).toEqual(["Today"]);
+
+        vi.setSystemTime(at(8, 0, 1));
+        await wait(10);
+        expect(separatorLabels()).toEqual(["Today"]);
+
+        timelineItems.update((items) => [...items, item(message("b1", bob, at(8, 0, 1)))]);
+        await settle();
+        expect(separatorLabels()).toEqual(["Yesterday", "Today"]);
     });
 
     it("opens by initializing the timeline, then fetches older pages while the list does not overflow, five at most", async () => {
