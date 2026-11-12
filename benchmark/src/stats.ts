@@ -1,7 +1,7 @@
 export type Counter = Record<string, number>;
 
-export function increment(counter: Counter, key: string, by = 1): void {
-    counter[key] = (counter[key] ?? 0) + by;
+export function increment(counter: Counter, key: string): void {
+    counter[key] = (counter[key] ?? 0) + 1;
 }
 
 /** Nearest-rank percentile; null when there is no sample, so an empty run cannot report a latency of 0. */
@@ -54,12 +54,6 @@ export class TimerRegistry {
         clearInterval(handle);
         this.timeouts.delete(handle);
         this.intervals.delete(handle);
-    }
-
-    public clearAll(): void {
-        for (const handle of [...this.timeouts, ...this.intervals]) {
-            this.clear(handle);
-        }
     }
 }
 
