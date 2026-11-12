@@ -477,6 +477,22 @@ describe("MapsManager autosave", () => {
             );
         });
 
+        // KNOWN DEFECT, pinned: replaceStoredMaps drops the map before it waits. When the wait times out, the
+        // delete is rejected and storage keeps the map, but the edit that no write carried yet is gone. The fix
+        // flips this assertion.
+        it("loses the edit made after the write in flight began when the delete is rejected (known defect)", async () => {
+            await editAndHoldItsWrite("cmd-1");
+            await edit("cmd-2");
+            const deleting = mapsManager.replaceStoredMaps([mapKey], () => storage.deleteFiles(mapKey));
+
+            await vi.advanceTimersByTimeAsync(REPLACEMENT_WAIT_MS);
+            await expect(deleting).resolves.toBe("writesInFlight");
+            await releaseHeldWritesNewestFirst();
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+        });
+
         it("should load the map only once its replacement finished", async () => {
             await editAndHoldItsWrite("cmd-1");
             const uploading = mapsManager.replaceStoredMaps([mapKey], () =>
