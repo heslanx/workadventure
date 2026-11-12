@@ -102,6 +102,7 @@ const DOMAIN = "play.test";
 const AUTOSAVE_INTERVAL_MS = 15_000;
 const LONG_AFTER_LAST_EDIT_MS = 5 * 60_000;
 const RETRY_HORIZON_MS = 60 * 60_000;
+const WRITE_TIMEOUT_MS = 5 * 60_000;
 
 // mapsManager is a process singleton: every test edits its own map.
 let mapCount = 0;
@@ -125,6 +126,10 @@ async function edit(commandId: string): Promise<void> {
         });
         mapsManager.addCommandToQueue(mapKey, { id: commandId, editMapMessage: undefined });
     });
+}
+
+function errorLogsAboutMap(key: string): number {
+    return vi.mocked(console.error).mock.calls.filter(([message]) => String(message).includes(key)).length;
 }
 
 /** Lets the held writes succeed, most recently started first, and stops holding the following ones. */
@@ -191,6 +196,22 @@ describe("MapsManager autosave", () => {
             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-at-60s");
             expect(storage.writesStarted).toBe(5);
         });
+
+        it("should persist a change made by a command that only went through the command queue", async () => {
+            // Custom entity commands mutate the WAM outside mapsManager.executeCommand, then get queued.
+            await mapsManager.waitForLock(mapKey, async () => {
+                const wamFile = await mapsManager.getOrLoadWamFile(mapKey);
+                wamFile.getWam().metadata = { name: "edited by entity-cmd" };
+                mapsManager.addCommandToQueue(mapKey, { id: "entity-cmd", editMapMessage: undefined });
+            });
+
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(storedWam(mapKey)).toMatchObject({
+                lastCommandId: "entity-cmd",
+                metadata: { name: "edited by entity-cmd" },
+            });
+        });
     });
 
     describe("when a save fails", () => {
@@ -225,6 +246,50 @@ describe("MapsManager autosave", () => {
             expect(console.error).toHaveBeenCalledWith(expect.stringContaining(mapKey), expect.any(Error));
             expect(storage.writesStarted).toBe(attemptsWithinHorizon);
             expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
+        });
+
+        it("should measure the retry horizon from the newest edit, not the first one", async () => {
+            await edit("cmd-1");
+            storage.writeMode = "fail";
+            await vi.advanceTimersByTimeAsync(RETRY_HORIZON_MS - 10_000);
+            await edit("cmd-2");
+            await vi.advanceTimersByTimeAsync(60_000);
+            storage.writeMode = "succeed";
+
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
+        });
+
+        it("should log a failing save on its first attempt and then periodically, not on every attempt", async () => {
+            await edit("cmd-1");
+            storage.writeMode = "fail";
+
+            await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+            expect(storage.writesStarted).toBe(40);
+            expect(errorLogsAboutMap(mapKey)).toBeGreaterThanOrEqual(1);
+            expect(errorLogsAboutMap(mapKey)).toBeLessThanOrEqual(3);
+        });
+
+        it("should still retry and report the handler error when logging the failure throws", async () => {
+            vi.mocked(console.error).mockImplementation((message: unknown) => {
+                if (String(message).includes("failed (attempt 1")) {
+                    throw new Error("Logger unavailable");
+                }
+            });
+            await edit("cmd-1");
+            storage.writeMode = "fail";
+            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+            storage.writeMode = "succeed";
+
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+            expect(console.error).toHaveBeenCalledWith(
+                expect.stringContaining(`Error while handling the save of map ${mapKey}`),
+                expect.objectContaining({ message: "Logger unavailable" }),
+            );
         });
 
         it("should stop retrying once the map was replaced or deleted", async () => {
@@ -265,6 +330,18 @@ describe("MapsManager autosave", () => {
 
             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
         });
+
+        it("should count a write that never settles as failed and retry it", async () => {
+            await edit("cmd-1");
+            storage.writeMode = "hold";
+            await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
+            storage.writeMode = "succeed";
+
+            await vi.advanceTimersByTimeAsync(WRITE_TIMEOUT_MS + 2 * AUTOSAVE_INTERVAL_MS);
+
+            expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-1");
+            expect(mapsManager.getLoadedMaps()).not.toContain(mapKey);
+        });
     });
 
     describe("when an edit lands while a save is in flight", () => {
@@ -281,7 +358,9 @@ describe("MapsManager autosave", () => {
             expect(storedWam(mapKey)?.lastCommandId).toBe("cmd-2");
         });
 
-        it("should not write the abandoned state after the map was replaced by an upload", async () => {
+        // Regression guard, it also passes on trunk: the held write fails, so this covers retries only. A held
+        // write that succeeds after the replacement still overwrites it (see the PR description).
+        it("should not retry the abandoned state after the map was replaced by an upload", async () => {
             await edit("cmd-1");
             storage.writeMode = "hold";
             await vi.advanceTimersByTimeAsync(AUTOSAVE_INTERVAL_MS);
