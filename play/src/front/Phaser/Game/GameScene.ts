@@ -4373,12 +4373,14 @@ ${escapedMessage}
             return;
         }
 
-        if (event.direction !== this.lastMoveEventSent.direction) {
+        const hasTurnedSinceLastShare = event.direction !== this.lastMoveEventSent.direction;
+        if (hasTurnedSinceLastShare) {
             this.doPushPlayerPosition(event);
             return;
         }
 
-        if (this.currentTick - this.lastSentTick >= POSITION_DELAY) {
+        const timeSinceLastShare = this.currentTick - this.lastSentTick;
+        if (timeSinceLastShare >= POSITION_DELAY) {
             this.doPushPlayerPosition(event);
             return;
         }
