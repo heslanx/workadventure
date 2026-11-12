@@ -1505,16 +1505,16 @@ export class GameScene extends DirtyScene {
     }
 
     private drawRemotePlayersAtInterpolatedPositions(time: number): Set<ConversationBubble> {
-        const updatedPlayersPositions = this.playersPositionInterpolator.getUpdatedPositions(time);
+        const interpolatedPositions = this.playersPositionInterpolator.getUpdatedPositions(time);
         const conversationBubblesToUpdate = new Set<ConversationBubble>();
-        updatedPlayersPositions.forEach((moveEvent: HasPlayerMovedInterface, userId: number) => {
+        interpolatedPositions.forEach((interpolatedPosition: HasPlayerMovedInterface, userId: number) => {
             this.dirty = true;
             const player: RemotePlayer | undefined = this.MapPlayersByKey.get(userId);
             if (player === undefined) {
                 throw new Error('Cannot find player with ID "' + userId + '"');
             }
             const previousPosition = { x: player.x, y: player.y };
-            player.updatePosition(moveEvent);
+            player.updatePosition(interpolatedPosition);
             this.addConversationBubblesAffectedByPlayerMove(
                 userId,
                 previousPosition,
