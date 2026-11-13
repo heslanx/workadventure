@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { flushSync, mount, unmount } from "svelte";
 import { get } from "svelte/store";
+import type { Readable } from "svelte/store";
 import { loadLocale } from "../../../../src/i18n/i18n-util.sync";
 import { setLocale } from "../../../../src/i18n/i18n-svelte";
 import {
@@ -37,6 +38,18 @@ const browserPermissions = vi.hoisted(() => {
     });
     return statuses;
 });
+
+// Subscribes until the test ends, as the mounted action-bar tooltip does, and returns every value the store gave. The
+// browser permission state under the help contexts follows the browser only while something subscribes to it, and
+// get() subscribes only for the read. The wait lets the browser answer the query that a first subscriber starts.
+async function valuesUntilTestEnds<T>(store: Readable<T>): Promise<T[]> {
+    const values: T[] = [];
+    onTestFinished(store.subscribe((value) => values.push(value)));
+    await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+    });
+    return values;
+}
 
 describe("MediaSettingsPanel", () => {
     let target: HTMLElement;
@@ -127,6 +140,33 @@ describe("MediaSettingsPanel", () => {
 
             expect(text).toContain(blockedTitle);
             expect(get(helpContextStore)).toBe("permission");
+        },
+    );
+
+    it.each(["camera", "microphone"] as const)(
+        "MD-12 (pinned): with a stored permission_denied and the browser's %s permission granted since, the panel no longer says access is blocked but the help context still says permission",
+        async (device) => {
+            if (device === "camera") {
+                requestedCameraState.disableWebcam();
+            } else {
+                requestedMicrophoneState.disableMicrophone();
+            }
+            const [accessIssueStore, helpContextStore, blockedTitle] =
+                device === "camera"
+                    ? ([cameraAccessIssueStore, cameraButtonHelpContextStore, "Camera access blocked"] as const)
+                    : ([
+                          microphoneAccessIssueStore,
+                          microphoneButtonHelpContextStore,
+                          "Microphone access blocked",
+                      ] as const);
+            const helpContexts = await valuesUntilTestEnds(helpContextStore);
+            accessIssueStore.set("permission_denied");
+            browserPermissions[device].change("granted");
+
+            const text = renderedText();
+
+            expect(text).not.toContain(blockedTitle);
+            expect(helpContexts.at(-1)).toBe("permission");
         },
     );
 });
