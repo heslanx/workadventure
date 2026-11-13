@@ -177,13 +177,14 @@ async function enterRoom(m: Loaded): Promise<void> {
 }
 
 // What differs between the camera and the microphone in a row that runs for either: the stores, the first request,
-// where the microphone fails alone and the camera then opens the stream that reads the first device list, and what it
-// takes for MediaStore to see "granted" for every device that request asks for. The camera's first request asks for the
-// microphone too.
+// where the microphone fails alone and the camera then opens the stream that reads the first device list, what it
+// takes for MediaStore to see "granted" for every device that request asks for, and the request the user makes for a
+// device that a failure turned off. The camera's first request asks for the microphone too.
 function deviceUnderTest(m: Loaded, device: "camera" | "microphone") {
     if (device === "camera") {
         return {
             issueStore: m.cameraAccessIssueStore,
+            accessDeniedStore: m.cameraAccessDeniedStore,
             helpContextStore: m.cameraButtonHelpContextStore,
             requestedState: m.requestedCameraState,
             askForTheFirstTime: () => enterRoom(m),
@@ -194,10 +195,15 @@ function deviceUnderTest(m: Loaded, device: "camera" | "microphone") {
                 permissions.camera.change("granted");
                 permissions.microphone.change("granted");
             },
+            askAgain: async () => {
+                m.requestedCameraState.enableWebcam();
+                await settle();
+            },
         };
     }
     return {
         issueStore: m.microphoneAccessIssueStore,
+        accessDeniedStore: m.microphoneAccessDeniedStore,
         helpContextStore: m.microphoneButtonHelpContextStore,
         requestedState: m.requestedMicrophoneState,
         askForTheFirstTime: async () => {
@@ -208,6 +214,10 @@ function deviceUnderTest(m: Loaded, device: "camera" | "microphone") {
         },
         haveMediaStoreSeeGrantedForFirstRequest: (permissions: ReturnType<typeof fakePermissions>) => {
             permissions.microphone.change("granted");
+        },
+        askAgain: async () => {
+            m.requestedMicrophoneState.enableMicrophone();
+            await settle();
         },
     };
 }
@@ -608,28 +618,28 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
     });
 
     it.each<["camera" | "microphone", string, "permission" | "no_device" | null, Array<[MediaDeviceKind, string]>]>([
-        ["camera", "no camera listed", "permission", [["audioinput", "mic-1"]]],
+        ["camera", "no camera listed", "no_device", [["audioinput", "mic-1"]]],
         [
             "camera",
             "a camera listed",
-            "permission",
+            null,
             [
                 ["videoinput", "cam-1"],
                 ["audioinput", "mic-1"],
             ],
         ],
-        ["microphone", "no microphone listed", "permission", [["videoinput", "cam-1"]]],
+        ["microphone", "no microphone listed", "no_device", [["videoinput", "cam-1"]]],
         [
             "microphone",
             "a microphone listed",
-            "permission",
+            null,
             [
                 ["videoinput", "cam-1"],
                 ["audioinput", "mic-1"],
             ],
         ],
     ])(
-        "MD-12 (pinned): a %s the user denied, then allowed in the browser, with %s, keeps the denial, stays off, and the help context is %s",
+        "MD-12 (fixed): a %s the user denied, then allowed in the browser, with %s, keeps the denial, stays off, and the help context falls back to the device list: %s",
         async (device, _listed, helpContext, devices) => {
             const permissions = fakePermissions();
             browser.setDevices(devices);
@@ -653,18 +663,21 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
     );
 
     it.each(["camera", "microphone"] as const)(
-        "MD-12: a %s request the browser denies while it reports every device the request asks for as granted records the denial, turns the device off, and the help context says permission",
+        "MD-12: a %s request the browser denies while it reports every device the request asks for as granted records the denial, turns the device off, and the help context says permission, as the panel's rule does, until the device is asked for again",
         async (device) => {
             const permissions = fakePermissions();
             m = await loadMediaStore();
             const {
                 issueStore,
+                accessDeniedStore,
                 helpContextStore,
                 requestedState,
                 askForTheFirstTime,
                 haveMediaStoreSeeGrantedForFirstRequest,
+                askAgain,
             } = deviceUnderTest(m, device);
             const helpContexts = valuesUntilTestEnds(helpContextStore);
+            const accessDenied = valuesUntilTestEnds(accessDeniedStore);
             haveMediaStoreSeeGrantedForFirstRequest(permissions);
             await settle();
             browser.failNext(namedError("NotAllowedError"));
@@ -673,13 +686,80 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
             expect(get(issueStore)).toBe("permission_denied");
             expect(get(requestedState)).toBe(false);
             expect(helpContexts.at(-1)).toBe("permission");
+            expect(accessDenied.at(-1)).toBe(true);
+
+            await askAgain();
+
+            expect(helpContexts.at(-1)).toBe(null);
+            expect(accessDenied.at(-1)).toBe(false);
         },
     );
 
-    it("MD-12 (pinned): one request for both devices that the browser denies while it reports the camera as granted and the microphone as prompt, then a denied retry for the microphone alone, records the denial against the camera, turns the camera off, and the camera help context says permission", async () => {
+    it.each(["camera", "microphone"] as const)(
+        "MD-12 (fixed): a %s denied while the browser reported granted, then denied again while it reports prompt, falls back to the device list once the browser reports granted",
+        async (device) => {
+            const permissions = fakePermissions();
+            m = await loadMediaStore();
+            const {
+                issueStore,
+                helpContextStore,
+                askForTheFirstTime,
+                haveMediaStoreSeeGrantedForFirstRequest,
+                askAgain,
+            } = deviceUnderTest(m, device);
+            const helpContexts = valuesUntilTestEnds(helpContextStore);
+            haveMediaStoreSeeGrantedForFirstRequest(permissions);
+            await settle();
+            browser.failNext(namedError("NotAllowedError"));
+            await askForTheFirstTime();
+            expect(helpContexts.at(-1)).toBe("permission");
+            permissions[device].change("prompt");
+            browser.failNext(namedError("NotAllowedError"));
+            await askAgain();
+            expect(get(issueStore)).toBe("permission_denied");
+            expect(helpContexts.at(-1)).toBe("permission");
+
+            permissions[device].change("granted");
+
+            expect(get(issueStore)).toBe("permission_denied");
+            expect(helpContexts.at(-1)).toBe(null);
+        },
+    );
+
+    it.each(["camera", "microphone"] as const)(
+        "MD-12 (fixed): a %s denied while the browser reported granted is shown as blocked only until it is asked for again: when that request fails with NotReadableError, the help context says device_in_use",
+        async (device) => {
+            const permissions = fakePermissions();
+            m = await loadMediaStore();
+            const {
+                accessDeniedStore,
+                helpContextStore,
+                askForTheFirstTime,
+                haveMediaStoreSeeGrantedForFirstRequest,
+                askAgain,
+            } = deviceUnderTest(m, device);
+            const helpContexts = valuesUntilTestEnds(helpContextStore);
+            const accessDenied = valuesUntilTestEnds(accessDeniedStore);
+            haveMediaStoreSeeGrantedForFirstRequest(permissions);
+            await settle();
+            browser.failNext(namedError("NotAllowedError"));
+            await askForTheFirstTime();
+            expect(accessDenied.at(-1)).toBe(true);
+            browser.failNext(namedError("NotReadableError"));
+            await askAgain();
+
+            expect(accessDenied.at(-1)).toBe(false);
+            expect(helpContexts.at(-1)).toBe("device_in_use");
+        },
+    );
+
+    it("MD-12 (fixed): one request for both devices that the browser denies while it reports the camera as granted and the microphone as prompt, then a denied retry for the microphone alone, records the denial against the camera, turns the camera off, and says access is blocked for the microphone, not for the camera", async () => {
         const permissions = fakePermissions();
         m = await loadMediaStore();
         const cameraHelpContexts = valuesUntilTestEnds(m.cameraButtonHelpContextStore);
+        const cameraAccessDenied = valuesUntilTestEnds(m.cameraAccessDeniedStore);
+        const microphoneHelpContexts = valuesUntilTestEnds(m.microphoneButtonHelpContextStore);
+        const microphoneAccessDenied = valuesUntilTestEnds(m.microphoneAccessDeniedStore);
         permissions.camera.change("granted");
         await settle();
         browser.failNext(namedError("NotAllowedError"));
@@ -688,7 +768,29 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
 
         expect(get(m.cameraAccessIssueStore)).toBe("permission_denied");
         expect(get(m.requestedCameraState)).toBe(false);
+        expect(cameraHelpContexts.at(-1)).toBe(null);
+        expect(cameraAccessDenied.at(-1)).toBe(false);
+        expect(get(m.microphoneAccessIssueStore)).toBe("permission_denied");
+        expect(microphoneAccessDenied.at(-1)).toBe(true);
+        expect(microphoneHelpContexts.at(-1)).toBe("permission");
+    });
+
+    it("MD-12 (fixed): a request for the camera alone that the browser denies while it reports the camera as granted and the microphone as prompt says access is blocked for the camera, not for the microphone", async () => {
+        const permissions = fakePermissions();
+        m = await loadMediaStore();
+        const cameraHelpContexts = valuesUntilTestEnds(m.cameraButtonHelpContextStore);
+        const cameraAccessDenied = valuesUntilTestEnds(m.cameraAccessDeniedStore);
+        const microphoneAccessDenied = valuesUntilTestEnds(m.microphoneAccessDeniedStore);
+        permissions.camera.change("granted");
+        await settle();
+        browser.failNext(namedError("NotAllowedError"));
+        m.myCameraStore.set(true);
+        await settle();
+
+        expect(get(m.cameraAccessIssueStore)).toBe("permission_denied");
+        expect(cameraAccessDenied.at(-1)).toBe(true);
         expect(cameraHelpContexts.at(-1)).toBe("permission");
+        expect(microphoneAccessDenied.at(-1)).toBe(false);
     });
 
     it("MD-09 (fixed): a camera the browser cannot read (NotReadableError, taken by another application) turns the camera off, keeps the microphone, and records device_in_use until the camera is asked for again", async () => {

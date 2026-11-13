@@ -144,7 +144,7 @@ describe("MediaSettingsPanel", () => {
     );
 
     it.each(["camera", "microphone"] as const)(
-        "MD-12 (pinned): with a stored permission_denied and the browser's %s permission granted since, the panel no longer says access is blocked but the help context still says permission",
+        "MD-12 (fixed): with a stored permission_denied and the browser's %s permission granted since, neither the panel nor the help context says access is blocked",
         async (device) => {
             if (device === "camera") {
                 requestedCameraState.disableWebcam();
@@ -166,7 +166,7 @@ describe("MediaSettingsPanel", () => {
             const text = renderedText();
 
             expect(text).not.toContain(blockedTitle);
-            expect(helpContexts.at(-1)).toBe("permission");
+            expect(helpContexts.at(-1)).toBe(null);
         },
     );
 });

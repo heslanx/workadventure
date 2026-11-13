@@ -87,29 +87,55 @@ export const cameraAccessIssueStore = writable<MediaAccessIssue | null>(null);
  */
 export const microphoneAccessIssueStore = writable<MediaAccessIssue | null>(null);
 
+/**
+ * Whether the browser reported "granted" for every device of the last failed request recorded against the camera, at
+ * the moment that request failed: the camera, and also the microphone if the request asked for both. The failure
+ * handler writes it each time it writes the camera's issue, and cameraAccessDeniedStore counts it only while that
+ * issue is "permission_denied". A denial the browser gives while it reports "granted" is not one the user has lifted
+ * since, so the rule keeps it while the browser reports "granted". A request for both that is denied while the
+ * microphone is not "granted" may have been refused for the microphone, so it does not count. A permission state
+ * nobody subscribes to reads null, and the denial then counts as one that a later "granted" hides.
+ */
+const cameraFailedWhileGrantedStore = writable(false);
+
+/**
+ * The microphone's counterpart of cameraFailedWhileGrantedStore. A failure is recorded against the microphone only for
+ * a request that asked for no new camera, so this record reads the microphone's permission alone.
+ */
+const microphoneFailedWhileGrantedStore = writable(false);
+
 function createAccessDeniedStore(
     permissionStateStore: Readable<BrowserMediaPermissionState>,
     accessIssueStore: Readable<MediaAccessIssue | null>,
+    failedWhileGrantedStore: Readable<boolean>,
 ): Readable<boolean> {
     return derived(
-        [permissionStateStore, accessIssueStore],
-        ([permission, issue]) => permission === "denied" || (issue === "permission_denied" && permission !== "granted"),
+        [permissionStateStore, accessIssueStore, failedWhileGrantedStore],
+        ([permission, issue, failedWhileGranted]) =>
+            permission === "denied" ||
+            (issue === "permission_denied" && (permission !== "granted" || failedWhileGranted)),
     );
 }
 
 /**
  * Whether camera access is blocked: the browser reports "denied", or a request for the camera was denied and the
- * browser does not report "granted".
+ * browser either does not report "granted" or already reported it, for every device the request asked for, when it
+ * denied the request.
  */
-export const cameraAccessDeniedStore = createAccessDeniedStore(cameraPermissionStateStore, cameraAccessIssueStore);
+export const cameraAccessDeniedStore = createAccessDeniedStore(
+    cameraPermissionStateStore,
+    cameraAccessIssueStore,
+    cameraFailedWhileGrantedStore,
+);
 
 /**
  * Whether microphone access is blocked: the browser reports "denied", or a request for the microphone was denied and
- * the browser does not report "granted".
+ * the browser either does not report "granted" or already reported it when it denied the request.
  */
 export const microphoneAccessDeniedStore = createAccessDeniedStore(
     microphonePermissionStateStore,
     microphoneAccessIssueStore,
+    microphoneFailedWhileGrantedStore,
 );
 
 /**
@@ -844,6 +870,10 @@ function handleGetUserMediaFailure(
         // its own turn if it fails too. A camera taken by another application (NotReadableError on Windows)
         // must not cost the microphone.
         requestedCameraState.disableWebcam();
+        const everyAskedDeviceGranted =
+            get(cameraPermissionStateStore) === "granted" &&
+            (!mustRequestNewAudio || get(microphonePermissionStateStore) === "granted");
+        cameraFailedWhileGrantedStore.set(everyAskedDeviceGranted);
         cameraAccessIssueStore.set(classified);
     } else if (!constraints.video && !constraints.audio) {
         console.error("Error. getUserMedia called with no audio and no video.");
@@ -857,6 +887,7 @@ function handleGetUserMediaFailure(
         if (mustRequestNewAudio) {
             trackMediaAccessIssue("microphone", classifyMediaAccessError(e));
             requestedMicrophoneState.disableMicrophone();
+            microphoneFailedWhileGrantedStore.set(get(microphonePermissionStateStore) === "granted");
             microphoneAccessIssueStore.set(classifyMediaAccessError(e));
         }
     }
@@ -1680,9 +1711,9 @@ export const cameraListStore = derived(deviceListStore, ($deviceListStore) => {
  * another application holds. The browser's live "denied" wins over a stored issue, as in the media settings panel.
  */
 export const cameraButtonHelpContextStore = derived(
-    [cameraAccessIssueStore, cameraListStore, devicesNotLoaded, cameraPermissionStateStore],
-    ([issue, cameras, notLoaded, permission]) => {
-        if (permission === "denied" || issue === "permission_denied") {
+    [cameraAccessDeniedStore, cameraAccessIssueStore, cameraListStore, devicesNotLoaded],
+    ([denied, issue, cameras, notLoaded]) => {
+        if (denied) {
             return "permission" as const;
         }
         if (issue === "no_device") {
@@ -1712,9 +1743,9 @@ export const microphoneListStore = derived(deviceListStore, ($deviceListStore) =
  * panel.
  */
 export const microphoneButtonHelpContextStore = derived(
-    [microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded, microphonePermissionStateStore],
-    ([issue, mics, notLoaded, permission]) => {
-        if (permission === "denied" || issue === "permission_denied") {
+    [microphoneAccessDeniedStore, microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded],
+    ([denied, issue, mics, notLoaded]) => {
+        if (denied) {
             return "permission" as const;
         }
         if (issue === "no_device") {
