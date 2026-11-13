@@ -479,9 +479,9 @@ describe("SocketManager room traffic", () => {
             expect(analyticsTimedEventTracker.closeAll()).toBe(0);
         });
 
-        // SM-02, remainder: the cleanup already closed the socket's intervals, so nothing closes a session that a
-        // late join opens. It stays open until the pusher stops, when server.ts closes every interval.
-        it("SM-02 (pinned): a join the back confirms after the pusher closed the socket opens a session that stays open", async () => {
+        // SM-02, remainder: the cleanup already closed the socket's intervals, so nothing would close a session
+        // that a late join opened before the pusher stops, when server.ts closes every interval.
+        it("SM-02 (fixed): a join the back confirms after the pusher closed the socket opens no session", async () => {
             const back = fakeBack();
             const manager = new SocketManager();
             const alice = fakeSocket("alice");
@@ -494,13 +494,13 @@ describe("SocketManager room traffic", () => {
             aliceStream.emit("data", roomJoined(1));
             aliceStream.emit("end");
 
-            expect(sessionRows).toEqual([["user.connected", "tab-alice"]]);
-            expect(analyticsTimedEventTracker.closeAll()).toBe(1);
+            expect(sessionRows).toEqual([]);
+            expect(analyticsTimedEventTracker.closeAll()).toBe(0);
         });
 
-        // SM-02, remainder: here the second cleanup (SM-03), run when the back stream ends, closes the late
-        // session. The two rows report a connection for a user who had already left.
-        it("SM-02 (pinned): a join the back confirms after the browser closed the socket reports a session", async () => {
+        // SM-02, remainder: here the second cleanup (SM-03), run when the back stream ends, would close a late
+        // session, and its two rows would report a connection for a user who had already left.
+        it("SM-02 (fixed): a join the back confirms after the browser closed the socket opens no session", async () => {
             const back = fakeBack();
             const manager = new SocketManager();
             const alice = fakeSocket("alice");
@@ -512,10 +512,7 @@ describe("SocketManager room traffic", () => {
             aliceStream.emit("data", roomJoined(1));
             aliceStream.emit("end");
 
-            expect(sessionRows).toEqual([
-                ["user.connected", "tab-alice"],
-                ["user.disconnected", "tab-alice"],
-            ]);
+            expect(sessionRows).toEqual([]);
             expect(analyticsTimedEventTracker.closeAll()).toBe(0);
         });
     });

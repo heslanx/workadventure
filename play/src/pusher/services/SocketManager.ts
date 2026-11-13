@@ -341,12 +341,16 @@ export class SocketManager implements ZoneEventListener {
                 // emits user.connected now and user.disconnected when it
                 // closes. open() is idempotent on the handle, which is what
                 // the separate "already tracked" flag used to provide.
-                analyticsTimedEventTracker.open(
-                    CONNECTION_SESSION_HANDLE,
-                    "user.disconnected",
-                    { connectionId: socketData.tabId },
-                    socketData,
-                );
+                // A socket that is closing or closed was already cleaned up. A session opened now would count a
+                // user who left, and if the pusher closed the socket nothing would end it before the pusher stops.
+                if (!client.isDisconnecting() && !client.isPermanentlyDisconnected()) {
+                    analyticsTimedEventTracker.open(
+                        CONNECTION_SESSION_HANDLE,
+                        "user.disconnected",
+                        { connectionId: socketData.tabId },
+                        socketData,
+                    );
+                }
                 break;
             }
             case "refreshRoomMessage": {
