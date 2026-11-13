@@ -359,7 +359,6 @@ export class SocketManager implements ZoneEventListener {
             }
         }
 
-        // Let's pass data over from the back to the client.
         if (!client.isDisconnecting()) {
             client.send(message);
         }
@@ -507,7 +506,6 @@ export class SocketManager implements ZoneEventListener {
                 Sentry.captureException(emitErr);
             }
 
-            // Let's close the websocket connection with an error code
             this.closeWebsocketConnection(
                 client,
                 WS_CLOSE_CODE_SESSION_DESTROYED,
@@ -604,7 +602,6 @@ export class SocketManager implements ZoneEventListener {
 
         await joinPromise;
 
-        // We are done joining the space
         // We could still receive an abort message afterwards (because the client could send the abort while we
         // are sending the answer). In this case, we will just leave the space in the abort handler.
         options.signal.addEventListener("abort", () => {
@@ -711,7 +708,6 @@ export class SocketManager implements ZoneEventListener {
             throw new Error("Missing viewport in UserMovesMessage");
         }
 
-        // Now, we need to listen to the correct viewport.
         this.handleViewport(client, viewport);
     }
 
@@ -865,12 +861,10 @@ export class SocketManager implements ZoneEventListener {
     }
 
     leaveRoom(socket: PusherWebSocket): void {
-        // leave previous room and world
         const socketData = socket.getUserData();
         try {
             if (socketData.roomId) {
                 try {
-                    //user leaves room
                     const room: PusherRoom | undefined = this.rooms.get(socketData.roomId);
                     if (room) {
                         debug("Leaving room %s.", socketData.roomId);
