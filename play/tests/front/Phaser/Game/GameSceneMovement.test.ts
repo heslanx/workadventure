@@ -1,3 +1,4 @@
+import * as Phaser from "phaser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock, MockInstance } from "vitest";
 import { PositionMessage_Direction } from "@workadventure/messages";
@@ -8,7 +9,14 @@ import { iframeListener } from "../../../../src/front/Api/IframeListener";
 import type { Room } from "../../../../src/front/Connection/Room";
 import type { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
 import type { RemotePlayersRepository } from "../../../../src/front/Phaser/Game/RemotePlayersRepository";
+import { hasMovedEventName } from "../../../../src/front/Phaser/Player/Player";
 import { biggestAvailableAreaStore } from "../../../../src/front/Stores/BiggestAvailableAreaStore";
+
+const { captureException } = vi.hoisted(() => ({ captureException: vi.fn() }));
+vi.mock("@sentry/svelte", async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    captureException,
+}));
 
 // Characterization tests: they pin what GameScene does today, quirks included (see docs/TECH-DEBT.md).
 // GameScene is too heavy to boot in a unit test, so each test builds it with its real constructor (real field
@@ -40,6 +48,9 @@ interface FakeRemotePlayer {
 interface GameSceneInternals {
     currentTick: number;
     connection: unknown;
+    hasJoinedRoom: boolean;
+    CurrentPlayer: unknown;
+    userInputManager: unknown;
     activatablesManager: unknown;
     gameMapFrontWrapper: unknown;
     actionableItems: Map<number, unknown>;
@@ -94,6 +105,36 @@ function move(x: number, direction: PositionMessage_Direction, moving = true): H
     return { x, y: 100, direction, moving };
 }
 
+/**
+ * Joins the room with a local player that walks right 10 px on each frame while `walking` is set. Like Player.moveUser,
+ * its moveUser emits the move synchronously inside update(), and the scene listens to it first, as connect() does.
+ */
+function joinWithLocalPlayer(internals: GameSceneInternals) {
+    const localPlayer = Object.assign(new Phaser.Events.EventEmitter(), {
+        x: 0,
+        y: 100,
+        walking: false,
+        moveUser() {
+            if (localPlayer.walking) {
+                localPlayer.x += 10;
+                localPlayer.emit(hasMovedEventName, move(localPlayer.x, PositionMessage_Direction.RIGHT));
+            }
+        },
+    });
+    localPlayer.on(hasMovedEventName, (event: HasPlayerMovedInterface) =>
+        internals.handleCurrentPlayerHasMovedEvent(event),
+    );
+    internals.CurrentPlayer = localPlayer;
+    internals.hasJoinedRoom = true;
+    internals.userInputManager = { getEventListForGameTick: () => ({ get: () => false }) };
+    internals.activatablesManager = {
+        updateActivatableObjectsDistances: vi.fn(),
+        deduceSelectedActivatableObjectByDistance: vi.fn(),
+    };
+    internals.gameMapFrontWrapper = { setPosition: vi.fn(), getActivatableEntities: () => [] };
+    return localPlayer;
+}
+
 function joined(userId: number, x: number, y: number): UserJoined {
     return {
         userId,
@@ -114,6 +155,7 @@ beforeEach(() => {
     vi.spyOn(biggestAvailableAreaStore, "consumePendingRecompute").mockReturnValue(false);
     hasPlayerMoved = vi.spyOn(iframeListener, "hasPlayerMoved").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    captureException.mockClear();
 });
 
 afterEach(() => {
@@ -282,5 +324,41 @@ describe("GameScene local move (handleCurrentPlayerHasMovedEvent)", () => {
             [6, 100],
         ]);
         expect(shared()).toEqual([{ x: 5, direction: PositionMessage_Direction.LEFT, moving: true }]);
+    });
+});
+
+describe("GameScene extension-module move callbacks (onPlayerMovementEnded)", () => {
+    // GS-10: the callbacks run inline in the local player's move event, inside update(). A callback that throws ends
+    // the frame on every walking frame: the next callbacks, the move listeners after the scene's (entity audio, the
+    // camera, the say bubbles) and the remote players all miss it, and only the frame-loop guard reports it.
+    it("GS-10: a throwing callback ends every walking frame before the next callback and the remote players", () => {
+        const { scene, internals, shared, remotePlayers } = createScene();
+        const localPlayer = joinWithLocalPlayer(internals);
+        const laterMoveListener = vi.fn();
+        localPlayer.on(hasMovedEventName, laterMoveListener);
+        const callbackError = new Error("extension module bug");
+        const nextCallback = vi.fn();
+        scene.onPlayerMovementEnded(() => {
+            throw callbackError;
+        });
+        scene.onPlayerMovementEnded(nextCallback);
+        const repository = scene.getRemotePlayersRepository();
+        repository.addPlayer(joined(7, 100, 200));
+        scene.update(1_000, 16);
+        repository.movePlayer(moved(7, 300, 200));
+
+        localPlayer.walking = true;
+        expect(() => scene.update(2_000, 16)).toThrow(callbackError);
+        expect(() => scene.update(2_200, 16)).toThrow(callbackError);
+
+        expect(nextCallback).not.toHaveBeenCalled();
+        expect(laterMoveListener).not.toHaveBeenCalled();
+        // The scene shares the move before it runs the callbacks.
+        expect(shared()).toEqual([
+            { x: 10, direction: PositionMessage_Direction.RIGHT, moving: true },
+            { x: 20, direction: PositionMessage_Direction.RIGHT, moving: true },
+        ]);
+        expect(remotePlayers.get(7)?.positions).toEqual([]);
+        expect(captureException).not.toHaveBeenCalled();
     });
 });
