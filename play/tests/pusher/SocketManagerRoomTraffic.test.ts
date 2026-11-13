@@ -15,6 +15,7 @@ vi.mock("../../src/pusher/enums/EnvironmentVariable", () => import("./mocks/push
 import { SocketManager } from "../../src/pusher/services/SocketManager";
 import { apiClientRepository } from "../../src/pusher/services/ApiClientRepository";
 import { analyticsTimedEventTracker } from "../../src/pusher/services/AnalyticsTimedEventTracker";
+import { analyticsEventsQueue } from "../../src/pusher/services/AnalyticsEventsQueue";
 import type { PusherWebSocket } from "../../src/pusher/services/PusherWebSocket";
 import type { SpaceConnectionInterface } from "../../src/pusher/models/SpaceConnection";
 import type { SpaceForSpaceConnectionInterface } from "../../src/pusher/models/Space";
@@ -65,6 +66,7 @@ function fakeBack() {
 
 function fakeSocket(name: string, overrides: { viewport?: typeof ZONE_0; tags?: string[] } = {}) {
     let disconnecting = false;
+    let permanentlyDisconnected = false;
     const sent: ServerToClientMessage[] = [];
     const batched: BatchedMessage[] = [];
     const ended: [number | undefined, string | undefined][] = [];
@@ -85,6 +87,7 @@ function fakeSocket(name: string, overrides: { viewport?: typeof ZONE_0; tags?: 
         joinSpacesPromise: new Map<string, Promise<void>>(),
         listenedZones: new Set<string>(),
         currentChatRoomArea: [] as string[],
+        lastActivityAtMs: Date.now(),
     };
     const socket = {
         getUserData: () => userData,
@@ -95,7 +98,10 @@ function fakeSocket(name: string, overrides: { viewport?: typeof ZONE_0; tags?: 
             batched.push(message);
         },
         isDisconnecting: () => disconnecting,
-        isPermanentlyDisconnected: () => false,
+        isPermanentlyDisconnected: () => permanentlyDisconnected,
+        markPermanentlyDisconnected: () => {
+            permanentlyDisconnected = true;
+        },
         end: (code?: number, reason?: string) => {
             disconnecting = true;
             ended.push([code, reason]);
@@ -164,6 +170,13 @@ function userMovesInZone(userId: number): SubToPusherRoomMessage["message"] {
 
 function cases(socket: FakeSocket): string[] {
     return socket.batched.map(({ message }) => message?.$case ?? "");
+}
+
+// What PusherRoomSocketController's close handler does when the browser closes the socket for good (codes 1000
+// and 1001): unlike a close the pusher starts, nothing calls end(), so isDisconnecting() stays false.
+function closeByBrowser(manager: SocketManager, socket: FakeSocket): void {
+    socket.socket.markPermanentlyDisconnected();
+    manager.cleanupSocket(socket.socket);
 }
 
 /**
@@ -423,6 +436,88 @@ describe("SocketManager room traffic", () => {
         expect(roomStream.written.slice(1)).toEqual([subscribe(0, 0), unsubscribe(0, 0)]);
         expect(roomStream.cancel).toHaveBeenCalledTimes(1);
         expect(manager.getRooms().has(ROOM)).toBe(false);
+    });
+
+    /**
+     * A connection session is two analytics rows: "user.connected" when the back confirms the join and
+     * "user.disconnected" when the socket is cleaned up. The real tracker runs here; the rows are read from its queue.
+     */
+    describe("connection session", () => {
+        let sessionRows: [string, unknown][];
+
+        beforeEach(() => {
+            // The outer beforeEach stubs open(); spying again returns that stub, which is then removed.
+            vi.spyOn(analyticsTimedEventTracker, "open").mockRestore();
+            sessionRows = [];
+            vi.spyOn(analyticsEventsQueue, "enqueueEvent").mockImplementation((event) => {
+                const connectionId: unknown =
+                    "connectionId" in event.properties ? event.properties.connectionId : undefined;
+                sessionRows.push([event.eventName, connectionId]);
+            });
+        });
+
+        // The tracker is a module singleton: a session that a failed test left open would show up in the next one.
+        afterEach(() => {
+            analyticsTimedEventTracker.closeAll();
+        });
+
+        it("opens a session when the back confirms the join, and closes it when the socket is cleaned up", async () => {
+            const back = fakeBack();
+            const manager = new SocketManager();
+            const alice = fakeSocket("alice");
+
+            await connectAndJoin(manager, back, alice, 1);
+
+            expect(sessionRows).toEqual([["user.connected", "tab-alice"]]);
+
+            manager.cleanupSocket(alice.socket);
+
+            expect(sessionRows).toEqual([
+                ["user.connected", "tab-alice"],
+                ["user.disconnected", "tab-alice"],
+            ]);
+            expect(analyticsTimedEventTracker.closeAll()).toBe(0);
+        });
+
+        // SM-02, remainder: the cleanup already closed the socket's intervals, so nothing closes a session that a
+        // late join opens. It stays open until the pusher stops, when server.ts closes every interval.
+        it("SM-02 (pinned): a join the back confirms after the pusher closed the socket opens a session that stays open", async () => {
+            const back = fakeBack();
+            const manager = new SocketManager();
+            const alice = fakeSocket("alice");
+            const bob = fakeSocket("bob");
+            const aliceStream = await connect(manager, back, alice);
+            await connect(manager, back, bob);
+
+            manager.cleanupSocket(alice.socket);
+            alice.socket.end(1008, "Room no longer exists");
+            aliceStream.emit("data", roomJoined(1));
+            aliceStream.emit("end");
+
+            expect(sessionRows).toEqual([["user.connected", "tab-alice"]]);
+            expect(analyticsTimedEventTracker.closeAll()).toBe(1);
+        });
+
+        // SM-02, remainder: here the second cleanup (SM-03), run when the back stream ends, closes the late
+        // session. The two rows report a connection for a user who had already left.
+        it("SM-02 (pinned): a join the back confirms after the browser closed the socket reports a session", async () => {
+            const back = fakeBack();
+            const manager = new SocketManager();
+            const alice = fakeSocket("alice");
+            const bob = fakeSocket("bob");
+            const aliceStream = await connect(manager, back, alice);
+            await connect(manager, back, bob);
+
+            closeByBrowser(manager, alice);
+            aliceStream.emit("data", roomJoined(1));
+            aliceStream.emit("end");
+
+            expect(sessionRows).toEqual([
+                ["user.connected", "tab-alice"],
+                ["user.disconnected", "tab-alice"],
+            ]);
+            expect(analyticsTimedEventTracker.closeAll()).toBe(0);
+        });
     });
 
     it("creates one space per name, shares it between sockets, and sends each join to the space back", async () => {
