@@ -120,7 +120,7 @@ function createAccessDeniedStore(
 /**
  * Whether camera access is blocked: the browser reports "denied", or a request for the camera was denied and the
  * browser either does not report "granted" or already reported it, for every device the request asked for, when it
- * denied the request.
+ * denied the request. The media settings panel and the camera tooltip both read it, so they agree.
  */
 export const cameraAccessDeniedStore = createAccessDeniedStore(
     cameraPermissionStateStore,
@@ -130,7 +130,8 @@ export const cameraAccessDeniedStore = createAccessDeniedStore(
 
 /**
  * Whether microphone access is blocked: the browser reports "denied", or a request for the microphone was denied and
- * the browser either does not report "granted" or already reported it when it denied the request.
+ * the browser either does not report "granted" or already reported it when it denied the request. The media settings
+ * panel and the microphone tooltip both read it, so they agree.
  */
 export const microphoneAccessDeniedStore = createAccessDeniedStore(
     microphonePermissionStateStore,
@@ -1707,8 +1708,8 @@ export const cameraListStore = derived(deviceListStore, ($deviceListStore) => {
 });
 
 /**
- * Context for the camera action-bar tooltip when the camera is off: permission denied, no usable device, or a camera
- * another application holds. The browser's live "denied" wins over a stored issue, as in the media settings panel.
+ * Context for the camera action-bar tooltip: access blocked (cameraAccessDeniedStore, the rule the media settings
+ * panel reads), no usable device, or a camera another application holds. Blocked access wins over a stored issue.
  */
 export const cameraButtonHelpContextStore = derived(
     [cameraAccessDeniedStore, cameraAccessIssueStore, cameraListStore, devicesNotLoaded],
@@ -1738,9 +1739,9 @@ export const microphoneListStore = derived(deviceListStore, ($deviceListStore) =
 });
 
 /**
- * Context for the microphone action-bar tooltip when the mic is off: permission denied, no usable device, or a
- * microphone another application holds. The browser's live "denied" wins over a stored issue, as in the media settings
- * panel.
+ * Context for the microphone action-bar tooltip: access blocked (microphoneAccessDeniedStore, the rule the media
+ * settings panel reads), no usable device, or a microphone another application holds. Blocked access wins over a
+ * stored issue.
  */
 export const microphoneButtonHelpContextStore = derived(
     [microphoneAccessDeniedStore, microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded],
