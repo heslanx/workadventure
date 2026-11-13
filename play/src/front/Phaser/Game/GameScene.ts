@@ -302,6 +302,10 @@ const debug = Debug("GameScene");
 // Safety cap for moveTo() reroutes when the collision grid keeps changing while the path is followed.
 const MAX_PATH_REROUTES = 5;
 
+// The least frame time between two failure reports of one onPlayerMovementEnded callback. It mirrors the frame guard's
+// FRAME_ERROR_REPORT_INTERVAL_MS in Game.ts.
+const MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS = 10_000;
+
 export class GameScene extends DirtyScene {
     Terrains: Array<Tileset>;
     CurrentPlayer!: Player;
@@ -444,6 +448,10 @@ export class GameScene extends DirtyScene {
     public extensionModule: ExtensionModule | undefined = undefined;
     public landingAreas: AreaData[] = [];
     private onPlayerMovementEndedCallbacks: Array<(event: HasPlayerMovedInterface) => void> = [];
+    private readonly playerMovementEndedFailures = new WeakMap<
+        (event: HasPlayerMovedInterface) => void,
+        { lastReportTick: number; sinceLastReport: number }
+    >();
 
     private enterLeaveScriptingService: EnterLeaveScriptingService | undefined;
 
@@ -4289,10 +4297,42 @@ ${escapedMessage}
         ]);
         this.activatablesManager.deduceSelectedActivatableObjectByDistance();
 
+        // A throwing extension-module callback must not stop the other callbacks, the later move listeners and, when
+        // the move comes inside update(), the rest of the frame. A callback that fails tends to fail on every walking
+        // frame, so each callback is reported at most once per MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS of frame
+        // time, with the number of its failures since its last report. The frame guard in Game.ts uses the same
+        // interval and count, as one limit for all frame errors. Here each callback has its own.
         for (const cb of this.onPlayerMovementEndedCallbacks) {
-            cb(event);
+            try {
+                cb(event);
+            } catch (error) {
+                this.reportPlayerMovementEndedFailure(cb, error);
+            }
         }
         this.hasMovedThisFrame = true;
+    }
+
+    private reportPlayerMovementEndedFailure(callback: (event: HasPlayerMovedInterface) => void, error: unknown): void {
+        // A move can come outside update(), as from Player.teleportTo, and then before the scene's first frame, when
+        // currentTick is not set yet. Every failure before the first frame counts as one at frame time 0.
+        const frameTime = this.currentTick ?? 0;
+        let state = this.playerMovementEndedFailures.get(callback);
+        if (state === undefined) {
+            state = { lastReportTick: Number.NEGATIVE_INFINITY, sinceLastReport: 0 };
+            this.playerMovementEndedFailures.set(callback, state);
+        }
+        state.sinceLastReport++;
+        if (frameTime - state.lastReportTick < MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS) {
+            return;
+        }
+        const cause = asError(error);
+        console.error(
+            `An onPlayerMovementEnded callback failed (failures since the last report: ${state.sinceLastReport})`,
+            cause,
+        );
+        Sentry.captureException(cause, { extra: { failuresSinceLastReport: state.sinceLastReport } });
+        state.lastReportTick = frameTime;
+        state.sinceLastReport = 0;
     }
 
     private createCollisionWithPlayer() {

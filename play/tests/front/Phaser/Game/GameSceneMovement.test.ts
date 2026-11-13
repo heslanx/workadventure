@@ -328,10 +328,15 @@ describe("GameScene local move (handleCurrentPlayerHasMovedEvent)", () => {
 });
 
 describe("GameScene extension-module move callbacks (onPlayerMovementEnded)", () => {
-    // GS-10: the callbacks run inline in the local player's move event, inside update(). A callback that throws ends
-    // the frame on every walking frame: the next callbacks, the move listeners after the scene's (entity audio, the
-    // camera, the say bubbles) and the remote players all miss it, and only the frame-loop guard reports it.
-    it("GS-10: a throwing callback ends every walking frame before the next callback and the remote players", () => {
+    const failureMessage = (failuresSinceLastReport: number) =>
+        `An onPlayerMovementEnded callback failed (failures since the last report: ${failuresSinceLastReport})`;
+    // The local player of joinWithLocalPlayer walks 10 px per frame.
+    const isFirstWalkingFrame = (event: HasPlayerMovedInterface) => event.x === 10;
+
+    // GS-10 (fixed): the callbacks run inline in the local player's move event, inside update(). A callback that threw
+    // ended the frame on every walking frame: the next callbacks, the move listeners after the scene's (entity audio,
+    // the camera, the say bubbles) and the remote players all missed it, and only the frame-loop guard reported it.
+    it("GS-10: reports a throwing callback and still runs the next callback and draws the remote players", () => {
         const { scene, internals, shared, remotePlayers } = createScene();
         const localPlayer = joinWithLocalPlayer(internals);
         const laterMoveListener = vi.fn();
@@ -348,17 +353,148 @@ describe("GameScene extension-module move callbacks (onPlayerMovementEnded)", ()
         repository.movePlayer(moved(7, 300, 200));
 
         localPlayer.walking = true;
-        expect(() => scene.update(2_000, 16)).toThrow(callbackError);
-        expect(() => scene.update(2_200, 16)).toThrow(callbackError);
+        expect(() => scene.update(2_000, 16)).not.toThrow();
+        expect(() => scene.update(2_200, 16)).not.toThrow();
 
-        expect(nextCallback).not.toHaveBeenCalled();
-        expect(laterMoveListener).not.toHaveBeenCalled();
-        // The scene shares the move before it runs the callbacks.
+        expect(nextCallback.mock.calls).toEqual([
+            [move(10, PositionMessage_Direction.RIGHT)],
+            [move(20, PositionMessage_Direction.RIGHT)],
+        ]);
+        expect(laterMoveListener).toHaveBeenCalledTimes(2);
         expect(shared()).toEqual([
             { x: 10, direction: PositionMessage_Direction.RIGHT, moving: true },
             { x: 20, direction: PositionMessage_Direction.RIGHT, moving: true },
         ]);
-        expect(remotePlayers.get(7)?.positions).toEqual([]);
-        expect(captureException).not.toHaveBeenCalled();
+        expect(remotePlayers.get(7)?.positions.map(({ x }) => x)).toEqual([100, 300]);
+        // The failure of the second frame comes 200 ms after the report of the first one, so it is only counted.
+        expect(vi.mocked(console.error).mock.calls).toEqual([[failureMessage(1), callbackError]]);
+        expect(captureException.mock.calls).toEqual([[callbackError, { extra: { failuresSinceLastReport: 1 } }]]);
+    });
+
+    // The message embeds the position, so every failure is a different error.
+    it("GS-10: reports a callback that keeps failing once per 10 s of frame time, with its failure count", () => {
+        const { scene, internals } = createScene();
+        const localPlayer = joinWithLocalPlayer(internals);
+        const failingCallback = vi.fn((event: HasPlayerMovedInterface) => {
+            throw new Error(`No zone at ${event.x}`);
+        });
+        const nextCallback = vi.fn();
+        scene.onPlayerMovementEnded(failingCallback);
+        scene.onPlayerMovementEnded(nextCallback);
+
+        localPlayer.walking = true;
+        for (const frameTime of [2_000, 2_016, 2_032, 11_999, 12_000, 12_016, 22_000]) {
+            expect(() => scene.update(frameTime, 16)).not.toThrow();
+        }
+
+        expect(failingCallback).toHaveBeenCalledTimes(7);
+        expect(nextCallback).toHaveBeenCalledTimes(7);
+        // The first failure, at 2 000, is reported at once. The failure at 11 999 is 1 ms short of the interval. The
+        // reports at 12 000 and 22 000 carry the error of their own frame and count the failures since the last report.
+        const reports = [
+            { error: new Error("No zone at 10"), failuresSinceLastReport: 1 },
+            { error: new Error("No zone at 50"), failuresSinceLastReport: 4 },
+            { error: new Error("No zone at 70"), failuresSinceLastReport: 2 },
+        ];
+        expect(vi.mocked(console.error).mock.calls).toEqual(
+            reports.map(({ error, failuresSinceLastReport }) => [failureMessage(failuresSinceLastReport), error]),
+        );
+        expect(captureException.mock.calls).toEqual(
+            reports.map(({ error, failuresSinceLastReport }) => [error, { extra: { failuresSinceLastReport } }]),
+        );
+    });
+
+    it("GS-10: limits each callback on its own", () => {
+        const { scene, internals } = createScene();
+        const localPlayer = joinWithLocalPlayer(internals);
+        const firstError = new Error("bug of a module");
+        const otherError = new Error("bug of another module");
+        scene.onPlayerMovementEnded(() => {
+            throw firstError;
+        });
+        scene.onPlayerMovementEnded((event) => {
+            if (!isFirstWalkingFrame(event)) {
+                throw otherError;
+            }
+        });
+
+        localPlayer.walking = true;
+        for (const frameTime of [2_000, 2_016, 2_032, 12_000, 12_016]) {
+            expect(() => scene.update(frameTime, 16)).not.toThrow();
+        }
+
+        // The second callback's first failure, at 2 016, is reported 16 ms after the first callback's report. At
+        // 12 000 the first callback's interval is over and the second one's, which started at 2 016, is not.
+        expect(vi.mocked(console.error).mock.calls).toEqual([
+            [failureMessage(1), firstError],
+            [failureMessage(1), otherError],
+            [failureMessage(3), firstError],
+            [failureMessage(3), otherError],
+        ]);
+        expect(captureException.mock.calls).toEqual([
+            [firstError, { extra: { failuresSinceLastReport: 1 } }],
+            [otherError, { extra: { failuresSinceLastReport: 1 } }],
+            [firstError, { extra: { failuresSinceLastReport: 3 } }],
+            [otherError, { extra: { failuresSinceLastReport: 3 } }],
+        ]);
+    });
+
+    it("GS-10: reports a callback's later error after the interval", () => {
+        const { scene, internals } = createScene();
+        const localPlayer = joinWithLocalPlayer(internals);
+        const firstError = new Error("first bug of a module");
+        const laterError = new Error("later bug of the same module");
+        scene.onPlayerMovementEnded((event) => {
+            throw isFirstWalkingFrame(event) ? firstError : laterError;
+        });
+
+        localPlayer.walking = true;
+        for (const frameTime of [2_000, 2_016, 12_000]) {
+            expect(() => scene.update(frameTime, 16)).not.toThrow();
+        }
+
+        // The later error first comes at 2 016, inside the interval, where it is only counted.
+        expect(vi.mocked(console.error).mock.calls).toEqual([
+            [failureMessage(1), firstError],
+            [failureMessage(2), laterError],
+        ]);
+        expect(captureException.mock.calls).toEqual([
+            [firstError, { extra: { failuresSinceLastReport: 1 } }],
+            [laterError, { extra: { failuresSinceLastReport: 2 } }],
+        ]);
+    });
+
+    // GS-10 (fixed): a move also comes outside update(), as when Player.teleportTo emits it for WA.player.teleport.
+    // The callback's error used to leave that emit, and the teleport's query rejected. Such a move can come before
+    // the scene's first frame, when the scene has no frame time yet.
+    it("GS-10: limits a callback that fails on moves before the scene's first frame", () => {
+        const { scene, internals } = createScene();
+        const localPlayer = joinWithLocalPlayer(internals);
+        const callbackError = new Error("extension module bug");
+        scene.onPlayerMovementEnded(() => {
+            throw callbackError;
+        });
+        const laterMoveListener = vi.fn();
+        localPlayer.on(hasMovedEventName, laterMoveListener);
+        const teleport = (x: number) =>
+            localPlayer.emit(hasMovedEventName, move(x, PositionMessage_Direction.DOWN, false));
+
+        expect(() => teleport(40)).not.toThrow();
+        expect(() => teleport(80)).not.toThrow();
+        localPlayer.walking = true;
+        scene.update(2_000, 16);
+        scene.update(10_000, 16);
+
+        expect(laterMoveListener).toHaveBeenCalledTimes(4);
+        // Both teleports count as frame time 0. The second one's failure and the failure of the frame at 2 000 are
+        // inside the interval, so they are only counted, and the report at 10 000 states them with its own.
+        expect(vi.mocked(console.error).mock.calls).toEqual([
+            [failureMessage(1), callbackError],
+            [failureMessage(3), callbackError],
+        ]);
+        expect(captureException.mock.calls).toEqual([
+            [callbackError, { extra: { failuresSinceLastReport: 1 } }],
+            [callbackError, { extra: { failuresSinceLastReport: 3 } }],
+        ]);
     });
 });
