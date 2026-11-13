@@ -62,6 +62,7 @@ import { buildMicrophoneAudioConstraints, isVoiceIsolationSupported } from "./Mi
 import { speakerSelectedStore, speakerSelectionSupported } from "./AudioOutputStore";
 import { audioPlaybackStore } from "./AudioPlaybackStore";
 import { browserNotificationStore } from "./BrowserNotificationStore";
+import type { BrowserMediaPermissionState } from "./MediaStatusStore";
 import { cameraPermissionStateStore, microphonePermissionStateStore } from "./MediaStatusStore";
 
 export const inBackgroundSettingsStore = writable<boolean>(false);
@@ -85,6 +86,31 @@ export const cameraAccessIssueStore = writable<MediaAccessIssue | null>(null);
  * in the device list or is in the first list read.
  */
 export const microphoneAccessIssueStore = writable<MediaAccessIssue | null>(null);
+
+function createAccessDeniedStore(
+    permissionStateStore: Readable<BrowserMediaPermissionState>,
+    accessIssueStore: Readable<MediaAccessIssue | null>,
+): Readable<boolean> {
+    return derived(
+        [permissionStateStore, accessIssueStore],
+        ([permission, issue]) => permission === "denied" || (issue === "permission_denied" && permission !== "granted"),
+    );
+}
+
+/**
+ * Whether camera access is blocked: the browser reports "denied", or a request for the camera was denied and the
+ * browser does not report "granted".
+ */
+export const cameraAccessDeniedStore = createAccessDeniedStore(cameraPermissionStateStore, cameraAccessIssueStore);
+
+/**
+ * Whether microphone access is blocked: the browser reports "denied", or a request for the microphone was denied and
+ * the browser does not report "granted".
+ */
+export const microphoneAccessDeniedStore = createAccessDeniedStore(
+    microphonePermissionStateStore,
+    microphoneAccessIssueStore,
+);
 
 /**
  * A store that contains the camera state requested by the user (on or off).
