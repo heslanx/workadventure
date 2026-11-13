@@ -288,6 +288,31 @@ describe("GameScene remote players, once per frame (update)", () => {
         expect(remotePlayers.get(7)?.destroy).toHaveBeenCalledTimes(1);
     });
 
+    // GS-11: a moving player that the scene's map lost but the interpolator still holds throws in the frame: the
+    // players after it are not drawn, and its move stays until it is outdated, so a new avatar with its id follows it.
+    it("GS-11: a moving player the scene lost ends the frame before the next players are drawn", () => {
+        const { scene, internals, remotePlayers } = createScene();
+        const repository = scene.getRemotePlayersRepository();
+        repository.addPlayer(joined(7, 100, 200));
+        repository.addPlayer(joined(8, 100, 400));
+        scene.update(1_000, 16);
+        repository.movePlayer(moved(7, 300, 200));
+        repository.movePlayer(moved(8, 300, 400));
+        scene.update(2_000, 16);
+        scene.MapPlayersByKey.delete(7);
+
+        expect(() => scene.update(2_100, 16)).toThrow('Cannot find player with ID "7"');
+        const back = fakeRemotePlayer(7, 500, 500);
+        internals.MapPlayersByKey.set(7, back);
+        scene.update(2_150, 16);
+
+        expect(remotePlayers.get(8)?.positions.map(({ x }) => x)).toEqual([100, 250]);
+        expect(back.positions.map(({ x }) => x)).toEqual([250]);
+        expect(vi.mocked(console.error).mock.calls.map(([message]) => message)).toEqual([
+            "The scene and the repository have a different number of remote players",
+        ]);
+    });
+
     // GS-02 (fixed): removeAllRemotePlayers used to keep the interpolations of the players it removed. The next frame
     // threw from update(), and a throw there ends Phaser's requestAnimationFrame loop: the canvas stopped for good.
     it("GS-02: keeps drawing frames when the players are removed while one is still moving", () => {
