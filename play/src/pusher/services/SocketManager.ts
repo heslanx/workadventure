@@ -639,7 +639,9 @@ export class SocketManager implements ZoneEventListener {
 
     public cleanupSocket(client: PusherWebSocket): void {
         if (client.isDisconnecting()) {
-            // Cleanup already called
+            // Already cleaned up. The pusher cleans a socket up before it calls end(), which sets this flag. A
+            // transport that closes without end() (the client leaving, a connection lost for good) leaves the flag
+            // unset, so that socket is cleaned up again when its back stream ends (SM-03).
             return;
         }
 
