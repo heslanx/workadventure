@@ -1,7 +1,7 @@
 # WorkAdventure observability
 
-The EU PostHog project is **WorkAdventure** (347225). Start with the
-[errors and performance dashboard](https://eu.posthog.com/project/347225/dashboard/1109810).
+The EU PostHog project is **WorkAdventure** (347272), in the separate **Koncluí - Work** organization.
+Start with the [errors and performance dashboard](https://eu.posthog.com/project/347272/dashboard/1109915).
 It contains exceptions, connection outcomes, connection duration p50/p95/p99, and FPS distributions.
 
 ## Signals and questions
@@ -49,7 +49,7 @@ PostHog token. Collector authentication must be supplied outside this implementa
 The Vite upload plugin is configured but needs these **build-only** variables:
 
 ```dotenv
-POSTHOG_PROJECT_ID=347225
+POSTHOG_PROJECT_ID=347272
 POSTHOG_HOST=https://eu.posthog.com
 POSTHOG_PERSONAL_API_KEY=
 OBSERVABILITY_RELEASE=<deployed-git-sha>
@@ -119,8 +119,8 @@ metrics, including removal of request secrets. A separate test verifies sanitize
 deduplication and shutdown flush. Browser tests execute the rendered initialization and check masking and events.
 
 Live setup verification on 2026-11-12 confirmed synthetic exceptions, four structured logs, nine metric names
-and a six-span HTTP/gRPC trace in project 347225:
-[verification trace](https://eu.posthog.com/project/347225/tracing?trace=c697e4d00b4c519eac76854e5688ec27).
+and a six-span HTTP/gRPC trace in project 347272:
+[verification trace](https://eu.posthog.com/project/347272/tracing?trace=53d16cf2a2e2149a946034946d559d07).
 This is transport verification, not a production load test or a real-browser replay validation.
 
 References: [PostHog Node tracing](https://posthog.com/docs/distributed-tracing/installation/nodejs),
