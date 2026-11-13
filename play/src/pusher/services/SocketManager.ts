@@ -334,7 +334,8 @@ export class SocketManager implements ZoneEventListener {
                 socketData.userId = message.message.roomJoinedMessage.currentUserId;
                 socketData.spaceUserId = socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
 
-                // If this is the first message sent, send back the viewport.
+                // handleJoinRoom only stored the viewport. Zones skip a socket's own user by its userId, set
+                // just above, so subscribing them earlier could send the user its own userJoinedMessage.
                 this.handleViewport(client, client.getUserData().viewport);
                 // A session is an interval like any other: the tracker
                 // emits user.connected now and user.disconnected when it
