@@ -1532,7 +1532,12 @@ export class GameScene extends DirtyScene {
             this.dirty = true;
             const player: RemotePlayer | undefined = this.MapPlayersByKey.get(userId);
             if (player === undefined) {
-                throw new Error('Cannot find player with ID "' + userId + '"');
+                this.reportRemotePlayerDrift(
+                    "Cannot draw an interpolated remote player that is not in the scene",
+                    userId,
+                );
+                this.playersPositionInterpolator.removePlayer(userId);
+                return;
             }
             const previousPosition = { x: player.x, y: player.y };
             player.updatePosition(interpolatedPosition);
@@ -3946,7 +3951,7 @@ ${escapedMessage}
             if (player.companion) {
                 player.companion.destroy();
             }
-            // update() throws for an interpolation whose player is gone.
+            // An interpolation left for a removed player would be reported as a drift and dropped on the next frame.
             this.playersPositionInterpolator.removePlayer(player.userId);
         });
         this.MapPlayersByKey.clear();

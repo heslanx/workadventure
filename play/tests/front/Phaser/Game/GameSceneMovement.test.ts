@@ -288,9 +288,10 @@ describe("GameScene remote players, once per frame (update)", () => {
         expect(remotePlayers.get(7)?.destroy).toHaveBeenCalledTimes(1);
     });
 
-    // GS-11: a moving player that the scene's map lost but the interpolator still holds throws in the frame: the
-    // players after it are not drawn, and its move stays until it is outdated, so a new avatar with its id follows it.
-    it("GS-11: a moving player the scene lost ends the frame before the next players are drawn", () => {
+    // GS-11 (fixed): a moving player that the scene's map lost but the interpolator still held threw in the frame:
+    // the players after it were not drawn, and its move stayed until it was outdated, so a new avatar with its id
+    // followed it.
+    it("GS-11: drops and reports the move of a player the scene lost, and draws the next players", () => {
         const { scene, internals, remotePlayers } = createScene();
         const repository = scene.getRemotePlayersRepository();
         repository.addPlayer(joined(7, 100, 200));
@@ -301,15 +302,17 @@ describe("GameScene remote players, once per frame (update)", () => {
         scene.update(2_000, 16);
         scene.MapPlayersByKey.delete(7);
 
-        expect(() => scene.update(2_100, 16)).toThrow('Cannot find player with ID "7"');
+        expect(() => scene.update(2_100, 16)).not.toThrow();
         const back = fakeRemotePlayer(7, 500, 500);
         internals.MapPlayersByKey.set(7, back);
         scene.update(2_150, 16);
 
-        expect(remotePlayers.get(8)?.positions.map(({ x }) => x)).toEqual([100, 250]);
-        expect(back.positions.map(({ x }) => x)).toEqual([250]);
-        expect(vi.mocked(console.error).mock.calls.map(([message]) => message)).toEqual([
-            "The scene and the repository have a different number of remote players",
+        expect(remotePlayers.get(8)?.positions.map(({ x }) => x)).toEqual([100, 200, 250]);
+        expect(back.positions).toEqual([]);
+        const sizes = { repositoryPlayers: 2, scenePlayers: 1, spatialIndexPlayers: 2, interpolatedPlayers: 2 };
+        expectDriftReports([
+            ["The scene and the repository have a different number of remote players", { userId: undefined, ...sizes }],
+            ["Cannot draw an interpolated remote player that is not in the scene", { userId: 7, ...sizes }],
         ]);
     });
 
@@ -333,6 +336,12 @@ describe("GameScene remote players, once per frame (update)", () => {
         repository.movePlayer(moved(8, 500, 400));
         scene.update(2_300, 16);
         expect(remotePlayers.get(8)?.positions).toHaveLength(1);
+        // The test removes the players behind the repository's back, so the count mismatch is expected. An
+        // interpolation left for player 7 would be reported as a second drift.
+        const sizes = { repositoryPlayers: 1, scenePlayers: 0, spatialIndexPlayers: 0, interpolatedPlayers: 0 };
+        expectDriftReports([
+            ["The scene and the repository have a different number of remote players", { userId: undefined, ...sizes }],
+        ]);
     });
 });
 
