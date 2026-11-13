@@ -306,6 +306,9 @@ const MAX_PATH_REROUTES = 5;
 // FRAME_ERROR_REPORT_INTERVAL_MS in Game.ts.
 const MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS = 10_000;
 
+// How many players the scene reports for one remote-player drift message.
+const MAX_REPORTED_PLAYERS_PER_DRIFT = 10;
+
 export class GameScene extends DirtyScene {
     Terrains: Array<Tileset>;
     CurrentPlayer!: Player;
@@ -417,7 +420,7 @@ export class GameScene extends DirtyScene {
     private throttledSendViewportToServer_!: throttle<() => void>;
     private lastSentViewport: ViewportInterface | undefined;
     private serverViewportDebugGraphics: Graphics | undefined;
-    private playersDebugLogAlreadyDisplayed = false;
+    private readonly reportedRemotePlayerDrifts = new Map<string, Set<number | undefined>>();
     private hideTimeout: ReturnType<typeof setTimeout> | undefined;
     // The promise that will resolve to the current player textures. This will be available only after connection is established.
     private currentPlayerTexturesResolve!: (value: string[]) => void;
@@ -1489,27 +1492,37 @@ export class GameScene extends DirtyScene {
             debugRemovePlayer("Player has been removed from GameScene", removedPlayerId);
         }
 
-        if (
-            !this.playersDebugLogAlreadyDisplayed &&
-            this.remotePlayersRepository.getPlayers().size !== this.MapPlayersByKey.size
-        ) {
-            console.error(
-                "Not the same count of players",
-                this.remotePlayersRepository.getPlayers(),
-                this.MapPlayersByKey,
-                "Added players:",
-                this.remotePlayersRepository.getAddedPlayers(),
-                "Moved players:",
-                this.remotePlayersRepository.getMovedPlayers(),
-                "Updated players:",
-                this.remotePlayersRepository.getUpdatedPlayers(),
-                "Removed players:",
-                this.remotePlayersRepository.getRemovedPlayers(),
-            );
-            this.playersDebugLogAlreadyDisplayed = true;
+        if (this.remotePlayersRepository.getPlayers().size !== this.MapPlayersByKey.size) {
+            this.reportRemotePlayerDrift("The scene and the repository have a different number of remote players");
         }
 
         this.remotePlayersRepository.reset();
+    }
+
+    /**
+     * The repository, MapPlayersByKey and the spatial index each hold the remote players, and the interpolator holds
+     * only those whose last move it is still interpolating. They drift apart when one of them misses an update. A
+     * drifted player's moves keep arriving several times a second while it walks, so each message is reported once
+     * per player. Players join and leave for as long as the scene lives, so each message reports at most
+     * MAX_REPORTED_PLAYERS_PER_DRIFT players. The limit is per message, so that a flood of one drift cannot hide
+     * another kind. The count mismatch has no player and is reported once.
+     */
+    private reportRemotePlayerDrift(message: string, userId?: number): void {
+        const reportedPlayers = this.reportedRemotePlayerDrifts.get(message) ?? new Set<number | undefined>();
+        if (reportedPlayers.has(userId) || reportedPlayers.size >= MAX_REPORTED_PLAYERS_PER_DRIFT) {
+            return;
+        }
+        reportedPlayers.add(userId);
+        this.reportedRemotePlayerDrifts.set(message, reportedPlayers);
+        const state = {
+            userId,
+            repositoryPlayers: this.remotePlayersRepository.getPlayers().size,
+            scenePlayers: this.MapPlayersByKey.size,
+            spatialIndexPlayers: this.remotePlayersSpatialIndex.size,
+            interpolatedPlayers: this.playersPositionInterpolator.playerMovements.size,
+        };
+        console.error(message, state);
+        Sentry.captureException(new Error(message), { extra: state });
     }
 
     private drawRemotePlayersAtInterpolatedPositions(time: number): Set<ConversationBubble> {
@@ -4479,22 +4492,13 @@ ${escapedMessage}
     }
 
     private doAddPlayer(addPlayerData: AddPlayerInterface): void {
-        //check if exist player, if exist, move position
-        // Can this really happen? yes..
+        // The pusher lists a zone as listened before the back has subscribed to it. A player who crosses into that
+        // zone in the gap can be sent as joined a second time (read in the pusher and the back, not observed; GS-13).
+        // The scene keeps the avatar it has.
         if (this.MapPlayersByKey.has(addPlayerData.userId)) {
-            console.warn("Got instructed to add a player that already exists: ", addPlayerData.userId);
-            console.error(
-                "Players status",
-                this.remotePlayersRepository.getPlayers(),
-                this.MapPlayersByKey,
-                "Added players:",
-                this.remotePlayersRepository.getAddedPlayers(),
-                "Moved players:",
-                this.remotePlayersRepository.getMovedPlayers(),
-                "Updated players:",
-                this.remotePlayersRepository.getUpdatedPlayers(),
-                "Removed players:",
-                this.remotePlayersRepository.getRemovedPlayers(),
+            this.reportRemotePlayerDrift(
+                "Cannot add a remote player that is already in the scene",
+                addPlayerData.userId,
             );
             return;
         }
@@ -4606,7 +4610,7 @@ ${escapedMessage}
     private doRemovePlayer(userId: number) {
         const player = this.MapPlayersByKey.get(userId);
         if (player === undefined) {
-            console.error("Cannot find user with id ", userId);
+            this.reportRemotePlayerDrift("Cannot remove a remote player that is not in the scene", userId);
         } else {
             player.destroy();
 
@@ -4636,7 +4640,7 @@ ${escapedMessage}
     private doUpdatePlayerPosition(message: MessageUserMovedInterface): void {
         const player: RemotePlayer | undefined = this.MapPlayersByKey.get(message.userId);
         if (player === undefined) {
-            console.error('Cannot update position of player with ID "' + message.userId + '": player not found');
+            this.reportRemotePlayerDrift("Cannot move a remote player that is not in the scene", message.userId);
             return;
         }
 

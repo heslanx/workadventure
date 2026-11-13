@@ -1,8 +1,10 @@
 import * as Phaser from "phaser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock, MockInstance } from "vitest";
+import { NEVER } from "rxjs";
 import { PositionMessage_Direction } from "@workadventure/messages";
 import type { PositionMessage } from "@workadventure/messages";
+import type { Movable, SpatialMap } from "@workadventure/shared-utils";
 import { GameScene } from "../../../../src/front/Phaser/Game/GameScene";
 import type { HasPlayerMovedInterface } from "../../../../src/front/Api/Events/HasPlayerMovedInterface";
 import { iframeListener } from "../../../../src/front/Api/IframeListener";
@@ -34,7 +36,7 @@ type SharePosition = (
     viewport: unknown,
 ) => void;
 
-interface FakeRemotePlayer {
+interface FakeRemotePlayer extends Movable {
     userId: number;
     x: number;
     y: number;
@@ -56,6 +58,7 @@ interface GameSceneInternals {
     activatablesManager: unknown;
     gameMapFrontWrapper: unknown;
     actionableItems: Map<number, unknown>;
+    remotePlayersSpatialIndex: SpatialMap<number, Movable>;
     getViewport(): typeof VIEWPORT;
     doAddPlayer(data: { userId: number; position: PositionMessage }): void;
     pushPlayerPosition(event: HasPlayerMovedInterface): void;
@@ -76,6 +79,9 @@ function fakeRemotePlayer(userId: number, x: number, y: number): FakeRemotePlaye
             player.y = position.y;
         },
         destroy: vi.fn(),
+        getPosition: () => ({ x: player.x, y: player.y }),
+        // No test reads the index by position, so the fake never announces a move.
+        moved$: NEVER,
     };
     return player;
 }
@@ -91,8 +97,9 @@ function createScene() {
     internals.doAddPlayer = (data) => {
         const player = fakeRemotePlayer(data.userId, data.position.x, data.position.y);
         remotePlayers.set(data.userId, player);
-        // The spatial index only serves conversation bubbles, which these tests leave out.
+        // The stub keeps MapPlayersByKey and the spatial index in step, as the real doAddPlayer does.
         scene.MapPlayersByKey.set(data.userId, player as unknown as RemotePlayer);
+        internals.remotePlayersSpatialIndex.set(data.userId, player);
     };
     const shared = () =>
         sharePosition.mock.calls.map(([x, , direction, moving]) => ({
@@ -149,6 +156,16 @@ function moved(userId: number, x: number, y: number): UserMoved {
         userId,
         position: { x, y, direction: PositionMessage_Direction.RIGHT, moving: true },
     };
+}
+
+type DriftReport = [message: string, state: Record<string, number | undefined>];
+
+/** Each drift report goes to the console and to Sentry with the same message and state. */
+function expectDriftReports(reports: DriftReport[]): void {
+    expect(vi.mocked(console.error).mock.calls).toEqual(reports);
+    expect(captureException.mock.calls).toEqual(
+        reports.map(([message, state]) => [new Error(message), { extra: state }]),
+    );
 }
 
 let hasPlayerMoved: MockInstance<typeof iframeListener.hasPlayerMoved>;
@@ -502,10 +519,10 @@ describe("GameScene extension-module move callbacks (onPlayerMovementEnded)", ()
 });
 
 describe("GameScene remote-player drift", () => {
-    // GS-12: the scene's remote players drift from the repository's when one of them misses an update, as in GS-02.
-    // Each drift is logged its own way: the count mismatch and the duplicate add dump whole collections, the move and
-    // the removal give only the id. Sentry received none of those logs.
-    it("GS-12: logs each move and the removal of a player the scene lost, and the count mismatch once", () => {
+    // GS-12 (fixed): the scene's remote players drift from the repository's when one of them misses an update, as in
+    // GS-02. Each drift used to be logged its own way: the count mismatch and the duplicate add dumped whole
+    // collections, the move and the removal gave only the id. Sentry received none of those logs.
+    it("GS-12: reports a move and the removal of a player the scene lost, and the count mismatch, once each", () => {
         const { scene } = createScene();
         const repository = scene.getRemotePlayersRepository();
         repository.addPlayer(joined(7, 100, 200));
@@ -518,16 +535,25 @@ describe("GameScene remote-player drift", () => {
         repository.removePlayer(7);
         scene.update(2_200, 16);
 
-        expect(vi.mocked(console.error).mock.calls.map(([message]) => message)).toEqual([
-            'Cannot update position of player with ID "7": player not found',
-            "Not the same count of players",
-            'Cannot update position of player with ID "7": player not found',
-            "Cannot find user with id ",
+        // Only MapPlayersByKey lost player 7. The spatial index holds it until the removal, which reports first.
+        const sizes = { spatialIndexPlayers: 1, interpolatedPlayers: 0 };
+        expectDriftReports([
+            [
+                "Cannot move a remote player that is not in the scene",
+                { userId: 7, repositoryPlayers: 1, scenePlayers: 0, ...sizes },
+            ],
+            [
+                "The scene and the repository have a different number of remote players",
+                { userId: undefined, repositoryPlayers: 1, scenePlayers: 0, ...sizes },
+            ],
+            [
+                "Cannot remove a remote player that is not in the scene",
+                { userId: 7, repositoryPlayers: 0, scenePlayers: 0, ...sizes },
+            ],
         ]);
-        expect(captureException).not.toHaveBeenCalled();
     });
 
-    it("GS-12: logs an add for a player the scene already has", () => {
+    it("GS-12: reports an add for a player the scene already has", () => {
         const { scene, internals } = createScene();
         // The real doAddPlayer: it looks for the player before it builds a sprite.
         Reflect.deleteProperty(internals, "doAddPlayer");
@@ -536,8 +562,45 @@ describe("GameScene remote-player drift", () => {
         scene.getRemotePlayersRepository().addPlayer(joined(8, 0, 0));
         scene.update(1_000, 16);
 
-        expect(consoleWarn.mock.calls).toEqual([["Got instructed to add a player that already exists: ", 8]]);
-        expect(vi.mocked(console.error).mock.calls.map(([message]) => message)).toEqual(["Players status"]);
-        expect(captureException).not.toHaveBeenCalled();
+        expect(consoleWarn).not.toHaveBeenCalled();
+        expectDriftReports([
+            [
+                "Cannot add a remote player that is already in the scene",
+                { userId: 8, repositoryPlayers: 1, scenePlayers: 1, spatialIndexPlayers: 0, interpolatedPlayers: 0 },
+            ],
+        ]);
+    });
+
+    // Players join and leave for as long as the scene lives, so each message reports ten players at most. The limit
+    // is per message: a flood of one drift does not hide another kind.
+    it("GS-12: reports the first ten players of one drift, and still reports another drift", () => {
+        const { scene } = createScene();
+        const repository = scene.getRemotePlayersRepository();
+        for (let userId = 1; userId <= 11; userId++) {
+            repository.addPlayer(joined(userId, userId * 10, 0));
+        }
+        scene.update(1_000, 16);
+        scene.MapPlayersByKey.clear();
+        for (let userId = 1; userId <= 11; userId++) {
+            repository.movePlayer(moved(userId, userId * 10 + 100, 0));
+        }
+        scene.update(2_000, 16);
+        repository.removePlayer(11);
+        scene.update(2_100, 16);
+
+        const sizes = { scenePlayers: 0, spatialIndexPlayers: 11, interpolatedPlayers: 0 };
+        expectDriftReports([
+            ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
+                (userId): DriftReport => [
+                    "Cannot move a remote player that is not in the scene",
+                    { userId, repositoryPlayers: 11, ...sizes },
+                ],
+            ),
+            [
+                "The scene and the repository have a different number of remote players",
+                { userId: undefined, repositoryPlayers: 11, ...sizes },
+            ],
+            ["Cannot remove a remote player that is not in the scene", { userId: 11, repositoryPlayers: 10, ...sizes }],
+        ]);
     });
 });

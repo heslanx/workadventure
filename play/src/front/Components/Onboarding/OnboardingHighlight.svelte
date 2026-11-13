@@ -344,8 +344,8 @@
 
             newSimulatedPlayer.setVisible(false);
 
-            // Note: We don't add the simulated player to MapPlayersByKey to avoid
-            // the "Not the same count of players" error, as it's not in the remotePlayersRepository
+            // Note: We don't add the simulated player to MapPlayersByKey: it is not in the remotePlayersRepository,
+            // so the scene would report "The scene and the repository have a different number of remote players".
             // The player will still be rendered as it's added to the Phaser scene via RemotePlayer constructor
 
             // Assign to shared variable immediately to avoid race condition
