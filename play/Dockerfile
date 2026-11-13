@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y git
 COPY package.json package-lock.json ./
 # The root postinstall runs patch-package during the npm ci below; it needs the
 # patch files present in the build context, otherwise the play build bundles an
-# unpatched phaser (patches/phaser+4.2.0.patch fixes TilemapGPULayer rendering).
+# unpatched phaser (patches/phaser+4.2.1.patch fixes TilemapGPULayer rendering).
 COPY patches ./patches
 COPY play/package.json play/package.json
 COPY play/packages/iframe-api-typings/package.json play/packages/iframe-api-typings/package.json

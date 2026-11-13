@@ -1,0 +1,120 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PusherToFrontWebSocketMessage, type SubMessage } from "@workadventure/messages";
+
+vi.mock("../../src/pusher/enums/EnvironmentVariable", () => import("./mocks/pusherEnvironmentVariableMock"));
+
+import { PusherWebSocket, type RawSocket } from "../../src/pusher/services/PusherWebSocket";
+
+function createSocket(): { socket: PusherWebSocket; sentBatches: () => SubMessage[][] } {
+    const sent: Uint8Array[] = [];
+    const raw = {
+        send: vi.fn((payload: Uint8Array) => {
+            sent.push(payload);
+            return 1;
+        }),
+        ping: vi.fn().mockReturnValue(1),
+        end: vi.fn(),
+        getBufferedAmount: vi.fn().mockReturnValue(0),
+        getUserData: vi.fn().mockReturnValue({}),
+    } as unknown as RawSocket;
+    return {
+        socket: new PusherWebSocket(raw),
+        sentBatches: () =>
+            sent.map((bytes) => {
+                const message = PusherToFrontWebSocketMessage.decode(bytes).message?.message;
+                if (message?.$case !== "batchMessage") {
+                    throw new Error(`expected a batch, got ${message?.$case}`);
+                }
+                return message.batchMessage.payload;
+            }),
+    };
+}
+
+function groupUpdate(groupId: number, x: number, userIds: number[]): SubMessage {
+    return {
+        message: {
+            $case: "groupUpdateMessage",
+            groupUpdateMessage: { groupId, position: { x, y: 10 }, groupSize: userIds.length, locked: false, userIds },
+        },
+    };
+}
+
+function groupDelete(groupId: number): SubMessage {
+    return { message: { $case: "groupDeleteMessage", groupDeleteMessage: { groupId } } };
+}
+
+function groupUsersUpdate(groupId: number, userIds: number[]): SubMessage {
+    return { message: { $case: "groupUsersUpdateMessage", groupUsersUpdateMessage: { groupId, userIds } } };
+}
+
+function userLeft(userId: number): SubMessage {
+    return { message: { $case: "userLeftMessage", userLeftMessage: { userId } } };
+}
+
+describe("PusherWebSocket batch", () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("sends only the latest state of a group updated several times within one batch, where its first update was", () => {
+        const { socket, sentBatches } = createSocket();
+
+        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
+        socket.emitInBatch(userLeft(3));
+        socket.emitInBatch(groupUpdate(7, 120, [1, 2]));
+        socket.emitInBatch(groupUpdate(7, 140, [1, 2, 4]));
+        vi.advanceTimersByTime(100);
+
+        expect(sentBatches()).toEqual([[groupUpdate(7, 140, [1, 2, 4]), userLeft(3)]]);
+    });
+
+    it("keeps the updates of different groups apart", () => {
+        const { socket, sentBatches } = createSocket();
+
+        socket.emitInBatch(groupUpdate(1, 100, [1, 2]));
+        socket.emitInBatch(groupUpdate(2, 300, [3, 4]));
+        socket.emitInBatch(groupUpdate(1, 110, [1, 2]));
+        socket.flushBatch();
+
+        expect(sentBatches()).toEqual([[groupUpdate(1, 110, [1, 2]), groupUpdate(2, 300, [3, 4])]]);
+    });
+
+    it("keeps an update that follows a delete of the same group, so a group that leaves and re-enters the viewport is shown", () => {
+        const { socket, sentBatches } = createSocket();
+
+        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
+        socket.emitInBatch(groupDelete(7));
+        socket.emitInBatch(groupUpdate(7, 120, [1, 2]));
+        socket.flushBatch();
+
+        expect(sentBatches()).toEqual([[groupUpdate(7, 100, [1, 2]), groupDelete(7), groupUpdate(7, 120, [1, 2])]]);
+    });
+
+    it("keeps an update that follows a users update of the same group, so the latest user list is applied last", () => {
+        const { socket, sentBatches } = createSocket();
+
+        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
+        socket.emitInBatch(groupUsersUpdate(7, [1]));
+        socket.emitInBatch(groupUpdate(7, 120, [1]));
+        socket.flushBatch();
+
+        expect(sentBatches()).toEqual([
+            [groupUpdate(7, 100, [1, 2]), groupUsersUpdate(7, [1]), groupUpdate(7, 120, [1])],
+        ]);
+    });
+
+    it("does not merge a group update into a batch that was already sent", () => {
+        const { socket, sentBatches } = createSocket();
+
+        socket.emitInBatch(groupUpdate(7, 100, [1, 2]));
+        socket.flushBatch();
+        socket.emitInBatch(groupUpdate(7, 120, [1, 2]));
+        socket.flushBatch();
+
+        expect(sentBatches()).toEqual([[groupUpdate(7, 100, [1, 2])], [groupUpdate(7, 120, [1, 2])]]);
+    });
+});

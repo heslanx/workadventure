@@ -38,6 +38,10 @@ export class PusherRoom {
         if (this.isClosing) {
             throw new Error(`Cannot set viewport in room ${this.roomUrl}, connection is closing`);
         }
+        // A late message for a socket that already left would give it zones that no leave() releases (SM-02).
+        if (!this.listeners.has(socket)) {
+            return;
+        }
         this.positionNotifier.setViewport(socket, viewport);
     }
 

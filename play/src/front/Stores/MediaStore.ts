@@ -62,23 +62,82 @@ import { buildMicrophoneAudioConstraints, isVoiceIsolationSupported } from "./Mi
 import { speakerSelectedStore, speakerSelectionSupported } from "./AudioOutputStore";
 import { audioPlaybackStore } from "./AudioPlaybackStore";
 import { browserNotificationStore } from "./BrowserNotificationStore";
+import type { BrowserMediaPermissionState } from "./MediaStatusStore";
+import { cameraPermissionStateStore, microphonePermissionStateStore } from "./MediaStatusStore";
 
 export const inBackgroundSettingsStore = writable<boolean>(false);
 
-export type MediaAccessIssue = "permission_denied" | "no_device";
+export type MediaAccessIssue = "permission_denied" | "no_device" | "device_in_use";
 type MediaDeviceAnalyticsKind = "camera" | "microphone" | "camera_microphone";
 
 /**
- * Last camera access failure, or no videoinput reported by the browser.
- * Cleared when the user turns the camera off manually, when a video track is obtained, or when a camera appears.
+ * Why the camera was turned off, as classifyMediaAccessError names the error of a failed request. Set when a request
+ * that asks for the camera fails with an error that maps to an issue. Cleared by each run that asks for the camera (a
+ * failure in that run sets it again only if its error maps to an issue), and a "no_device" issue also when a camera
+ * appears in the device list or is in the first list read.
  */
 export const cameraAccessIssueStore = writable<MediaAccessIssue | null>(null);
 
 /**
- * Last microphone access failure, or no audioinput reported by the browser.
- * Cleared when the user turns the microphone off manually, when an audio track is obtained, or when a microphone appears.
+ * Why the microphone was turned off, as classifyMediaAccessError names the error of a failed request. Set when a
+ * request that asks for the microphone, and not for a new camera, fails with an error that maps to an issue (a request
+ * for both records the failure against the camera). Cleared by each run that asks for the microphone (a failure in
+ * that run sets it again only if its error maps to an issue), and a "no_device" issue also when a microphone appears
+ * in the device list or is in the first list read.
  */
 export const microphoneAccessIssueStore = writable<MediaAccessIssue | null>(null);
+
+/**
+ * Whether the browser reported "granted" for every device of the last failed request recorded against the camera, at
+ * the moment that request failed: the camera, and also the microphone if the request asked for both. The failure
+ * handler writes it each time it writes the camera's issue, and cameraAccessDeniedStore counts it only while that
+ * issue is "permission_denied". A denial the browser gives while it reports "granted" is not one the user has lifted
+ * since, so the rule keeps it while the browser reports "granted". A request for both that is denied while the
+ * microphone is not "granted" may have been refused for the microphone, so it does not count. A permission state
+ * nobody subscribes to reads null, and the denial then counts as one that a later "granted" hides.
+ */
+const cameraFailedWhileGrantedStore = writable(false);
+
+/**
+ * The microphone's counterpart of cameraFailedWhileGrantedStore. A failure is recorded against the microphone only for
+ * a request that asked for no new camera, so this record reads the microphone's permission alone.
+ */
+const microphoneFailedWhileGrantedStore = writable(false);
+
+function createAccessDeniedStore(
+    permissionStateStore: Readable<BrowserMediaPermissionState>,
+    accessIssueStore: Readable<MediaAccessIssue | null>,
+    failedWhileGrantedStore: Readable<boolean>,
+): Readable<boolean> {
+    return derived(
+        [permissionStateStore, accessIssueStore, failedWhileGrantedStore],
+        ([permission, issue, failedWhileGranted]) =>
+            permission === "denied" ||
+            (issue === "permission_denied" && (permission !== "granted" || failedWhileGranted)),
+    );
+}
+
+/**
+ * Whether camera access is blocked: the browser reports "denied", or a request for the camera was denied and the
+ * browser either does not report "granted" or already reported it, for every device the request asked for, when it
+ * denied the request. The media settings panel and the camera tooltip both read it, so they agree.
+ */
+export const cameraAccessDeniedStore = createAccessDeniedStore(
+    cameraPermissionStateStore,
+    cameraAccessIssueStore,
+    cameraFailedWhileGrantedStore,
+);
+
+/**
+ * Whether microphone access is blocked: the browser reports "denied", or a request for the microphone was denied and
+ * the browser either does not report "granted" or already reported it when it denied the request. The media settings
+ * panel and the microphone tooltip both read it, so they agree.
+ */
+export const microphoneAccessDeniedStore = createAccessDeniedStore(
+    microphonePermissionStateStore,
+    microphoneAccessIssueStore,
+    microphoneFailedWhileGrantedStore,
+);
 
 /**
  * A store that contains the camera state requested by the user (on or off).
@@ -747,6 +806,9 @@ function classifyMediaAccessError(error: unknown): MediaAccessIssue | null {
     if (name === "NotFoundError" || name === "DevicesNotFoundError") {
         return "no_device";
     }
+    if (name === "NotReadableError") {
+        return "device_in_use";
+    }
     return null;
 }
 
@@ -771,6 +833,105 @@ function emitCurrentStreamOrError(setIfCurrent: SetRawStreamIfCurrent, error: un
         type: "error",
         error: error instanceof Error ? error : new Error("An unknown error happened"),
     });
+}
+
+/**
+ * After a failed getUserMedia: falls back to the default devices when a chosen one cannot be opened. Otherwise a request
+ * that asked for a new camera turns the camera off, whichever device failed, and one that asked only for a new
+ * microphone turns the microphone off; either records the access issue the error maps to, if any. Turning a device off
+ * queues a new run without it.
+ */
+function handleGetUserMediaFailure(
+    e: unknown,
+    constraints: MediaStreamConstraintsValue,
+    newConstraints: MediaStreamConstraints,
+    { mustRequestNewVideo, mustRequestNewAudio }: { mustRequestNewVideo: boolean; mustRequestNewAudio: boolean },
+    setIfCurrent: SetRawStreamIfCurrent,
+): void {
+    if (isOverConstrainedError(e) && e.constraint === "deviceId") {
+        analyticsClient.trackAdminEvent("media.device_error", {
+            kind: "camera_microphone",
+            reason: "device_constraint",
+        });
+        console.info(
+            "Could not access the requested microphone or webcam. Falling back to default microphone and webcam",
+            newConstraints,
+            e,
+        );
+        batchGetUserMediaStore.startBatch();
+        requestedCameraDeviceIdStore.set(undefined);
+        requestedMicrophoneDeviceIdStore.set(undefined);
+        batchGetUserMediaStore.commitChanges();
+    } else if (mustRequestNewVideo) {
+        console.info("Error. Unable to get microphone and/or camera access. Trying audio only.", newConstraints, e);
+        emitCurrentStreamOrError(setIfCurrent, e);
+        const classified = classifyMediaAccessError(e);
+        trackMediaAccessIssue(mustRequestNewAudio ? "camera_microphone" : "camera", classified);
+        // Only the camera: turning it off asks for the microphone alone, which turns the microphone off in
+        // its own turn if it fails too. A camera taken by another application (NotReadableError on Windows)
+        // must not cost the microphone.
+        requestedCameraState.disableWebcam();
+        const everyAskedDeviceGranted =
+            get(cameraPermissionStateStore) === "granted" &&
+            (!mustRequestNewAudio || get(microphonePermissionStateStore) === "granted");
+        cameraFailedWhileGrantedStore.set(everyAskedDeviceGranted);
+        cameraAccessIssueStore.set(classified);
+    } else if (!constraints.video && !constraints.audio) {
+        console.error("Error. getUserMedia called with no audio and no video.");
+        setIfCurrent({
+            type: "error",
+            error: new MediaStreamConstraintsError(),
+        });
+    } else {
+        console.info("Error. Unable to get microphone and/or camera access.", newConstraints, e);
+        emitCurrentStreamOrError(setIfCurrent, e);
+        if (mustRequestNewAudio) {
+            trackMediaAccessIssue("microphone", classifyMediaAccessError(e));
+            requestedMicrophoneState.disableMicrophone();
+            microphoneFailedWhileGrantedStore.set(get(microphonePermissionStateStore) === "granted");
+            microphoneAccessIssueStore.set(classifyMediaAccessError(e));
+        }
+    }
+}
+
+/**
+ * What a run does with each kind of track. The microphone track a run stops carries the constraints it was opened
+ * with, so that it can be kept warm.
+ */
+type TrackPlan = {
+    mustRequestNewVideo: boolean;
+    mustRequestNewAudio: boolean;
+    mustStopVideo: boolean;
+} & (
+    | { mustStopAudio: true; oldAudioConstraints: MediaTrackConstraints }
+    | { mustStopAudio: false; oldAudioConstraints: MediaTrackConstraints | false }
+);
+
+/**
+ * A kind this run asks for is requested again when its constraints changed or its track is no longer live, except the
+ * microphone when the warm track serves it. A kind is stopped when the previous run asked for it and this run does not.
+ */
+function planTracks(
+    oldConstraints: { video: MediaTrackConstraints | false; audio: MediaTrackConstraints | false },
+    constraints: MediaStreamConstraintsValue,
+    {
+        hasLiveVideoTrack,
+        hasLiveAudioTrack,
+        hasWarmAudioTrack,
+    }: { hasLiveVideoTrack: boolean; hasLiveAudioTrack: boolean; hasWarmAudioTrack: boolean },
+): TrackPlan {
+    const mustRequestNewVideo =
+        constraints.video !== false && (!deepEqual(oldConstraints.video, constraints.video) || !hasLiveVideoTrack);
+    const mustRequestNewAudio =
+        constraints.audio !== false &&
+        !hasWarmAudioTrack &&
+        (!deepEqual(oldConstraints.audio, constraints.audio) || !hasLiveAudioTrack);
+    const mustStopVideo = oldConstraints.video !== false && constraints.video === false;
+    const oldAudioConstraints = oldConstraints.audio;
+    if (oldAudioConstraints !== false && constraints.audio === false) {
+        return { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio: true, oldAudioConstraints };
+    }
+    return { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio: false, oldAudioConstraints };
 }
 
 async function runRawStreamUpdate(
@@ -811,8 +972,14 @@ async function runRawStreamUpdate(
         });
     }
 
-    cameraAccessIssueStore.set(null);
-    microphoneAccessIssueStore.set(null);
+    // A run clears a device's access issue only when it asks for that device. Each failure below that records an issue
+    // also turns its device off, which queues a run without that device, and that run must keep the issue.
+    if (constraints.video !== false) {
+        cameraAccessIssueStore.set(null);
+    }
+    if (constraints.audio !== false) {
+        microphoneAccessIssueStore.set(null);
+    }
 
     const nextConstraints = {
         video: constraints.video ?? false,
@@ -828,18 +995,14 @@ async function runRawStreamUpdate(
 
     const hasLiveVideoTrack = currentStream ? hasLiveTrack(currentStream.getVideoTracks()) : false;
     const hasLiveAudioTrack = currentStream ? hasLiveTrack(currentStream.getAudioTracks()) : false;
-    const mustRequestNewVideo =
-        constraints.video !== false && (!deepEqual(oldConstraints.video, constraints.video) || !hasLiveVideoTrack);
-    const mustRequestNewAudio =
-        constraints.audio !== false &&
-        warmAudioTrack === undefined &&
-        (!deepEqual(oldConstraints.audio, constraints.audio) || !hasLiveAudioTrack);
+    const { mustRequestNewVideo, mustRequestNewAudio, mustStopVideo, mustStopAudio, oldAudioConstraints } = planTracks(
+        oldConstraints,
+        constraints,
+        { hasLiveVideoTrack, hasLiveAudioTrack, hasWarmAudioTrack: warmAudioTrack !== undefined },
+    );
 
     if (currentStream) {
         const oldStream = currentStream;
-        const mustStopVideo = oldConstraints.video !== false && constraints.video === false;
-        const oldAudioConstraints = oldConstraints.audio;
-        const mustStopAudio = oldAudioConstraints !== false && constraints.audio === false;
 
         if (mustStopVideo) {
             oldStream.getVideoTracks().forEach((t) => {
@@ -949,49 +1112,13 @@ async function runRawStreamUpdate(
             batchGetUserMediaStore.commitChanges();
             hideHelpCameraSettings();
         } catch (e) {
-            if (isOverConstrainedError(e) && e.constraint === "deviceId") {
-                analyticsClient.trackAdminEvent("media.device_error", {
-                    kind: "camera_microphone",
-                    reason: "device_constraint",
-                });
-                console.info(
-                    "Could not access the requested microphone or webcam. Falling back to default microphone and webcam",
-                    newConstraints,
-                    e,
-                );
-                batchGetUserMediaStore.startBatch();
-                requestedCameraDeviceIdStore.set(undefined);
-                requestedMicrophoneDeviceIdStore.set(undefined);
-                batchGetUserMediaStore.commitChanges();
-            } else if (mustRequestNewVideo) {
-                console.info(
-                    "Error. Unable to get microphone and/or camera access. Trying audio only.",
-                    newConstraints,
-                    e,
-                );
-                emitCurrentStreamOrError(setIfCurrent, e);
-                const classified = classifyMediaAccessError(e);
-                trackMediaAccessIssue(mustRequestNewAudio ? "camera_microphone" : "camera", classified);
-                // Only the camera: turning it off asks for the microphone alone, which turns the microphone off in
-                // its own turn if it fails too. A camera taken by another application (NotReadableError on Windows)
-                // must not cost the microphone.
-                requestedCameraState.disableWebcam();
-                cameraAccessIssueStore.set(classified);
-            } else if (!constraints.video && !constraints.audio) {
-                console.error("Error. getUserMedia called with no audio and no video.");
-                setIfCurrent({
-                    type: "error",
-                    error: new MediaStreamConstraintsError(),
-                });
-            } else {
-                console.info("Error. Unable to get microphone and/or camera access.", newConstraints, e);
-                emitCurrentStreamOrError(setIfCurrent, e);
-                if (mustRequestNewAudio) {
-                    trackMediaAccessIssue("microphone", classifyMediaAccessError(e));
-                    requestedMicrophoneState.disableMicrophone();
-                    microphoneAccessIssueStore.set(classifyMediaAccessError(e));
-                }
-            }
+            handleGetUserMediaFailure(
+                e,
+                constraints,
+                newConstraints,
+                { mustRequestNewVideo, mustRequestNewAudio },
+                setIfCurrent,
+            );
         }
     }
 
@@ -1495,20 +1622,22 @@ const openMicrophoneDwell = (): void => {
         ),
     );
 
-    // Same reasoning one level down: subscribing is what starts the SoundMeter, so
-    // it runs only while there is actually something to hear.
+    // Subscribing is what starts the SoundMeter, so it runs only while there is
+    // actually something to hear.
     unsubscribeVoiceIndicator ??= localVoiceIndicatorStore.subscribe((speaking: boolean) =>
         speechIntervals.set(speaking),
     );
 };
 
-// Nothing here may be watched from module scope. `effectiveMicrophoneStateStore` is
-// derived off the getUserMedia chain, so subscribing to it is what STARTS that chain:
-// doing it at import time reaches for the microphone before the user has even reached
-// a room, which changes when permission is asked for and when devices are held.
-// `gameSceneIsLoadedStore` is a plain writable and costs nothing to watch, and it is
-// true exactly while the user is in a room — which is also the only time an analytics
-// row has a room to belong to.
+// `effectiveMicrophoneStateStore` is derived off the getUserMedia chain. That chain
+// already runs from import: the module-scope subscriptions to `speakerListStore` and
+// `deviceListStore` below start `deviceListStore`, which subscribes to
+// `localStreamStore`, and the one to `localStreamStore` starts it directly. Nothing is
+// requested at import only because `myCameraStore` and `myMicrophoneStore` start
+// `false`. The microphone is watched only while `gameSceneIsLoadedStore` is true,
+// which is exactly while the user is in a room, the only time an analytics row has a
+// room to belong to. `gameSceneIsLoadedStore` is a plain writable and costs nothing
+// to watch.
 // eslint-disable-next-line svelte/no-ignored-unsubscribe
 gameSceneIsLoadedStore.subscribe((inRoom: boolean) => {
     if (!inRoom) {
@@ -1579,16 +1708,20 @@ export const cameraListStore = derived(deviceListStore, ($deviceListStore) => {
 });
 
 /**
- * Context for the camera action-bar tooltip when the camera is off: permission denied vs no usable device.
+ * Context for the camera action-bar tooltip: access blocked (cameraAccessDeniedStore, the rule the media settings
+ * panel reads), no usable device, or a camera another application holds. Blocked access wins over a stored issue.
  */
 export const cameraButtonHelpContextStore = derived(
-    [cameraAccessIssueStore, cameraListStore, devicesNotLoaded],
-    ([issue, cameras, notLoaded]) => {
-        if (issue === "permission_denied") {
+    [cameraAccessDeniedStore, cameraAccessIssueStore, cameraListStore, devicesNotLoaded],
+    ([denied, issue, cameras, notLoaded]) => {
+        if (denied) {
             return "permission" as const;
         }
         if (issue === "no_device") {
             return "no_device" as const;
+        }
+        if (issue === "device_in_use") {
+            return "device_in_use" as const;
         }
         if (!notLoaded && cameras !== undefined && cameras.length === 0) {
             return "no_device" as const;
@@ -1606,16 +1739,21 @@ export const microphoneListStore = derived(deviceListStore, ($deviceListStore) =
 });
 
 /**
- * Context for the microphone action-bar tooltip when the mic is off: permission denied vs no usable device.
+ * Context for the microphone action-bar tooltip: access blocked (microphoneAccessDeniedStore, the rule the media
+ * settings panel reads), no usable device, or a microphone another application holds. Blocked access wins over a
+ * stored issue.
  */
 export const microphoneButtonHelpContextStore = derived(
-    [microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded],
-    ([issue, mics, notLoaded]) => {
-        if (issue === "permission_denied") {
+    [microphoneAccessDeniedStore, microphoneAccessIssueStore, microphoneListStore, devicesNotLoaded],
+    ([denied, issue, mics, notLoaded]) => {
+        if (denied) {
             return "permission" as const;
         }
         if (issue === "no_device") {
             return "no_device" as const;
+        }
+        if (issue === "device_in_use") {
+            return "device_in_use" as const;
         }
         if (mics !== undefined && mics.length === 0) {
             return "no_device" as const;
@@ -1687,12 +1825,25 @@ deviceListStore.subscribe((mediaDeviceInfos) => {
     }
 
     const thePreviousMediaDevices = previousMediaDevices;
+    // On the first read every device is new: no earlier list shows it was there when a request failed.
+    const newDevices = mediaDeviceInfos.filter(
+        (device) => thePreviousMediaDevices?.find((d) => d.deviceId === device.deviceId) === undefined,
+    );
+
+    // A device that appears answers only a missing device. It neither grants a denied permission nor frees a
+    // device another application holds, so those issues stay until the device is asked for again.
+    const cameraAppeared = newDevices.some((device) => device.kind === "videoinput");
+    const microphoneAppeared = newDevices.some((device) => device.kind === "audioinput");
+    if (cameraAppeared && get(cameraAccessIssueStore) === "no_device") {
+        cameraAccessIssueStore.set(null);
+    }
+    if (microphoneAppeared && get(microphoneAccessIssueStore) === "no_device") {
+        microphoneAccessIssueStore.set(null);
+    }
+
     // get all media that not exist in the list
     if (thePreviousMediaDevices !== undefined) {
         // set the last new media devices detected (new devices detection)
-        const newDevices = mediaDeviceInfos.filter(
-            (device) => thePreviousMediaDevices.find((d) => d.deviceId === device.deviceId) === undefined,
-        );
         lastNewMediaDeviceDetectedStore.set(newDevices);
 
         // Detect removed devices

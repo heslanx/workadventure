@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Không có camera khả dụng",
             noDeviceDesc:
                 "Trình duyệt của bạn không tìm thấy camera nào có thể dùng. Hãy thử trình duyệt khác, kiểm tra camera đã được kết nối chưa, kiểm tra cài đặt máy tính (quyền riêng tư, thiết bị), hoặc khởi động lại máy nếu thiết bị lẽ ra phải hoạt động.",
+            deviceInUseTitle: "Camera đang được sử dụng",
+            deviceInUseDesc: "Một ứng dụng khác đang sử dụng camera của bạn. Hãy đóng ứng dụng đó rồi thử lại.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Không có micrô khả dụng",
             noDeviceDesc:
                 "Trình duyệt của bạn không tìm thấy micrô nào có thể dùng. Hãy thử trình duyệt khác, kiểm tra micrô đã được kết nối chưa, kiểm tra cài đặt máy tính (quyền riêng tư, thiết bị), hoặc khởi động lại máy nếu thiết bị lẽ ra phải hoạt động.",
+            deviceInUseTitle: "Micrô đang được sử dụng",
+            deviceInUseDesc: "Một ứng dụng khác đang sử dụng micrô của bạn. Hãy đóng ứng dụng đó rồi thử lại.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

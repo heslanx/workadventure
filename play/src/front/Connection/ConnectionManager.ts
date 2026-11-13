@@ -7,6 +7,7 @@ import { Subject } from "rxjs";
 import { asError } from "catch-unknown";
 import { v4 as uuidv4 } from "uuid";
 import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from "axios-retry";
+import { startRoomConnectionMonitoring } from "../Administration/PerformanceMonitoring";
 import { analyticsClient } from "../Administration/AnalyticsClient";
 import { userIsConnected, warningBannerStore } from "../Stores/MenuStore";
 import { loginSceneVisibleIframeStore } from "../Stores/LoginSceneStore";
@@ -387,6 +388,7 @@ class ConnectionManager {
         lastCommandId?: string,
         retryAttempt = 0,
     ): Promise<OnConnectInterface> {
+        const reportConnection = startRoomConnectionMonitoring(retryAttempt);
         Sentry.setTag("roomId", roomUrl);
         let pendingConnection: RoomConnection | undefined;
         return new Promise<OnConnectInterface>((resolve, reject) => {
@@ -404,11 +406,13 @@ class ConnectionManager {
             //eslint-disable-next-line rxjs/no-ignored-subscription, svelte/no-ignored-unsubscribe
             connection.websocketErrorStream.subscribe((error: Event) => {
                 console.info("onConnectError => An error occurred while connecting to socket server. Retrying", error);
+                reportConnection("error");
                 reject(asError(error));
             });
 
             connection.roomConnectedPromise
                 .then((connect) => {
+                    reportConnection("connected");
                     // Set the default application integration for the room
 
                     this.bindWebsocketReconnectingToast(connection);
@@ -423,6 +427,7 @@ class ConnectionManager {
                     resolve(connect);
                 })
                 .catch((err: unknown) => {
+                    reportConnection("error");
                     if (!(err instanceof CloseEvent)) {
                         console.error("An unknown error occurred while connecting to socket server", err);
                         Sentry.captureException(err);

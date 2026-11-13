@@ -13,6 +13,8 @@
         usedMicrophoneDeviceIdStore,
         cameraAccessIssueStore,
         microphoneAccessIssueStore,
+        cameraAccessDeniedStore,
+        microphoneAccessDeniedStore,
         devicesNotLoaded,
         rawLocalStreamStore,
         mediaStreamConstraintsStore,
@@ -88,15 +90,6 @@
         $noiseSuppressionStateStore.status === "error" || $noiseSuppressionStateStore.status === "unsupported",
     );
 
-    let cameraDenied = $derived(
-        $cameraPermissionStateStore === "denied" ||
-            ($cameraAccessIssueStore === "permission_denied" && $cameraPermissionStateStore !== "granted"),
-    );
-    let microphoneDenied = $derived(
-        $microphonePermissionStateStore === "denied" ||
-            ($microphoneAccessIssueStore === "permission_denied" && $microphonePermissionStateStore !== "granted"),
-    );
-
     let cameraLoaded = $derived(
         ($rawLocalStreamStore.type === "success" &&
             $rawLocalStreamStore.stream &&
@@ -134,8 +127,11 @@
         {:else}
             <div class="group flex items-center relative z-10 px-2 font-sm justify-center">
                 <div class="text-sm italic text-center">
-                    {#if cameraDenied}
+                    {#if $cameraAccessDeniedStore}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.permissionDeniedTitle()}</p>
+                    {:else if $cameraAccessIssueStore === "device_in_use"}
+                        <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.deviceInUseTitle()}</p>
+                        <span class="text-xs text-white/55">{$LL.camera.help.tooltip.deviceInUseDesc()}</span>
                     {:else if $cameraAccessIssueStore === "no_device" || (!$devicesNotLoaded && $cameraListStore !== undefined && $cameraListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.noDeviceTitle()}</p>
                         <span class="text-xs text-white/55">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
@@ -153,7 +149,7 @@
             </div>
             {#if $silentStore == false}
                 <div class="group flex items-center relative z-10 py-1 px-2 overflow-hidden">
-                    {#if cameraDenied}
+                    {#if $cameraAccessDeniedStore}
                         <Button variant="danger" size="sm" class="w-full" onclick={showHelpCameraSettings}>
                             {$LL.actionbar.microphone.openSettings()}
                         </Button>
@@ -246,8 +242,11 @@
         {:else}
             <div class="group flex items-center relative z-10 py-1 px-2 font-sm justify-center">
                 <div class="text-sm italic text-center">
-                    {#if microphoneDenied}
+                    {#if $microphoneAccessDeniedStore}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.permissionDeniedTitle()}</p>
+                    {:else if $microphoneAccessIssueStore === "device_in_use"}
+                        <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.deviceInUseTitle()}</p>
+                        <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</span>
                     {:else if $microphoneAccessIssueStore === "no_device" || (!$devicesNotLoaded && $microphoneListStore !== undefined && $microphoneListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.noDeviceTitle()}</p>
                         <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>
@@ -265,7 +264,7 @@
             </div>
             {#if $silentStore == false}
                 <div class="group flex items-center relative z-10 py-1 px-2 overflow-hidden">
-                    {#if microphoneDenied}
+                    {#if $microphoneAccessDeniedStore}
                         <Button variant="danger" size="sm" class="w-full" onclick={showHelpCameraSettings}>
                             {$LL.actionbar.microphone.openSettings()}
                         </Button>

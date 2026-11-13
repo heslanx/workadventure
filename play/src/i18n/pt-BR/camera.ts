@@ -39,6 +39,8 @@ const camera: BaseTranslation = {
             noDeviceTitle: "Nenhuma câmera utilizável",
             noDeviceDesc:
                 "O navegador não detecta nenhuma câmera utilizável. Tente outro navegador, verifique se a câmera está conectada, verifique as configurações do computador (privacidade, dispositivos) ou reinicie o computador se o dispositivo deveria funcionar.",
+            deviceInUseTitle: "Câmera em uso",
+            deviceInUseDesc: "Outro aplicativo está usando a câmera. Feche esse aplicativo e tente novamente.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +56,8 @@ const camera: BaseTranslation = {
             noDeviceTitle: "Nenhum microfone utilizável",
             noDeviceDesc:
                 "O navegador não detecta nenhum microfone utilizável. Tente outro navegador, verifique o microfone, verifique as configurações do computador (privacidade, dispositivos) ou reinicie o computador se o dispositivo deveria funcionar.",
+            deviceInUseTitle: "Microfone em uso",
+            deviceInUseDesc: "Outro aplicativo está usando o microfone. Feche esse aplicativo e tente novamente.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

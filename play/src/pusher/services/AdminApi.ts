@@ -105,17 +105,9 @@ export const isFetchMemberDataByUuidSuccessResponse = z.object({
     }),
 });
 
-export const isFetchWorldChatMembers = z.object({
-    total: z.number().positive(),
-    members: z.array(isFetchMemberDataByUuidSuccessResponse),
-});
-export type FetchMemberDataByUuidSuccessResponse = z.infer<typeof isFetchMemberDataByUuidSuccessResponse>;
-
 export const isFetchMemberDataByUuidResponse = z.union([isFetchMemberDataByUuidSuccessResponse, ErrorApiData]);
 
 export type FetchMemberDataByUuidResponse = z.infer<typeof isFetchMemberDataByUuidResponse>;
-
-export type FetchWorldChatMembers = z.infer<typeof isFetchWorldChatMembers>;
 
 class AdminApi implements AdminInterface {
     private capabilities: Capabilities = {};

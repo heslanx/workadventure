@@ -39,6 +39,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "لا توجد كاميرا صالحة للاستخدام",
             noDeviceDesc:
                 "المتصفح لا يكتشف أي كاميرا يمكن استخدامها. جرّب متصفحًا آخر، أو تحقق من توصيل الكاميرا، أو تحقق من إعدادات الجهاز (الخصوصية، الأجهزة)، أو أعد تشغيل الجهاز إذا كان يفترض أن يعمل.",
+            deviceInUseTitle: "الكاميرا قيد الاستخدام",
+            deviceInUseDesc: "تطبيق آخر يستخدم الكاميرا. أغلق ذلك التطبيق، ثم حاول مرة أخرى.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +56,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "لا يوجد ميكروفون صالح للاستخدام",
             noDeviceDesc:
                 "المتصفح لا يكتشف أي ميكروفون يمكن استخدامه. جرّب متصفحًا آخر، أو تحقق من توصيل الميكروفون، أو تحقق من إعدادات الجهاز (الخصوصية، الأجهزة)، أو أعد تشغيل الجهاز إذا كان يفترض أن يعمل.",
+            deviceInUseTitle: "الميكروفون قيد الاستخدام",
+            deviceInUseDesc: "تطبيق آخر يستخدم الميكروفون. أغلق ذلك التطبيق، ثم حاول مرة أخرى.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

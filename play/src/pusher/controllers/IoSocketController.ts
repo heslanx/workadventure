@@ -3,6 +3,7 @@ import type { AnswerMessage, CompanionDetail, ErrorApiData, WokaDetail } from "@
 import { apiVersionHash, noUndefined } from "@workadventure/messages";
 import { errors } from "jose";
 import * as Sentry from "@sentry/node";
+import { captureBackendException } from "@workadventure/shared-utils/src/Observability/PostHogErrors";
 import type { TemplatedApp, WebSocket } from "uWebSockets.js";
 import { asError } from "catch-unknown";
 import Debug from "debug";
@@ -72,6 +73,7 @@ export class IoSocketController {
         process.on("unhandledRejection", (reason, promise) => {
             console.error("Unhandled Rejection at:", promise, "reason:", reason);
             Sentry.captureException(reason);
+            captureBackendException(reason);
         });
 
         this.roomSocketController = new PusherRoomSocketController(this.app);
@@ -450,6 +452,7 @@ export class IoSocketController {
                         spaceUserId: "",
                         backConnection: undefined,
                         joinedRoom: false,
+                        analyticsIntervalsClosed: false,
                         listenedZones: new Set<string>(),
                         pusherRoom: undefined,
                         spaces: new Set<SpaceName>(),

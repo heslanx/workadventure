@@ -2,20 +2,12 @@ import { ITiledMap } from "@workadventure/tiled-map-type-guard";
 import type { ZodError } from "zod";
 import { z } from "zod";
 import { EntityData, WAMFileFormat } from "../types";
-import type { Failure, Result } from "../FunctionalTypes/Result";
+import type { Result } from "../FunctionalTypes/Result";
 import { wamFileMigration } from "../Migrations/WamFileMigration";
 import type { FileFetcherInterface } from "./Validator/FileFetcherInterface";
 
 export type MapValidation = Result<ITiledMap, Partial<OrganizedErrors>>;
 export type WamValidation = Result<WAMFileFormat, Partial<ZodError>>;
-
-export const isFailure = <T, E>(Y: Result<T, E>): Y is Failure<E> => {
-    return !Y.ok;
-};
-
-export const isSuccess = <T, E>(Y: Result<T, E>): Y is Failure<E> => {
-    return Y.ok;
-};
 
 export const ErrorType = z.enum(["error", "warning", "info"]);
 export type ErrorType = z.infer<typeof ErrorType>;

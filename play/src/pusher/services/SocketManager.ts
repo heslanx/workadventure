@@ -52,24 +52,26 @@ import type {
     WorldUser,
     WorldUsersAnswer,
 } from "@workadventure/messages";
-import { AvailabilityStatus, noUndefined } from "@workadventure/messages";
+import { AvailabilityStatus, filterTypeToJSON, noUndefined } from "@workadventure/messages";
 import { Metadata } from "@grpc/grpc-js";
+import type { RoomManagerClient } from "@workadventure/messages/src/ts-proto-generated/services";
 import * as Sentry from "@sentry/node";
+import { asError } from "catch-unknown";
 import type { AxiosResponse } from "axios";
 import axios, { isAxiosError } from "axios";
 import type { WebSocket } from "uWebSockets.js";
 import { AbortError } from "@workadventure/shared-utils/src/Abort/AbortError";
 import { PusherRoom } from "../models/PusherRoom";
-import type { BackConnection } from "../models/Websocket/SocketData";
+import type { BackConnection, SocketData } from "../models/Websocket/SocketData";
 
 import type { GroupDescriptor, UserDescriptor, ZoneEventListener } from "../models/Zone";
 import type { AdminConnection, AdminSocketData } from "../models/Websocket/AdminSocketData";
 import { EMBEDDED_DOMAINS_WHITELIST, FRONT_URL, GRPC_MAX_MESSAGE_SIZE, SECRET_KEY } from "../enums/EnvironmentVariable";
 import type { SpaceInterface } from "../models/Space";
 import { Space } from "../models/Space";
+import type { SpaceConnectionInterface } from "../models/SpaceConnection";
 import { SpaceConnection } from "../models/SpaceConnection";
 import { ClientNotPartOfSpaceError, SpaceDestroyedError } from "../models/SpaceValidationErrors";
-import type { UpgradeFailedData } from "../controllers/IoSocketController";
 import { eventProcessor } from "../models/eventProcessorInit";
 import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../common/WebSocketCloseCodes";
 import { clientEventsEmitter } from "./ClientEventsEmitter";
@@ -86,7 +88,6 @@ import { isFrameable } from "./EmbeddableHeaders";
 const debug = Debug("socket");
 
 export type AdminSocket = WebSocket<AdminSocketData>;
-export type SocketUpgradeFailed = WebSocket<UpgradeFailedData>;
 
 /**
  * The place an announcement leads to, as an absolute URL, if it stays on the sender's origin; "" otherwise.
@@ -102,6 +103,9 @@ export function sameOriginJoinUrl(joinUrl: string, senderRoomUrl: string): strin
     }
 }
 
+// Written by a socket's back-stream data handler, read by its end handler.
+type BackConnectionClose = { reason: string | undefined };
+
 export class SocketManager implements ZoneEventListener {
     private static readonly RECORDING_QUERY_TIMEOUT_MS = 60_000;
     private rooms: Map<string, PusherRoom> = new Map<string, PusherRoom>();
@@ -109,7 +113,7 @@ export class SocketManager implements ZoneEventListener {
     private creatingRooms: Map<string, Promise<PusherRoom>> = new Map<string, Promise<PusherRoom>>();
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
 
-    constructor(private _spaceConnection = new SpaceConnection()) {
+    constructor(private _spaceConnection: SpaceConnectionInterface = new SpaceConnection()) {
         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
             gaugeManager.incNbClientPerRoomGauge(roomId);
         });
@@ -271,105 +275,16 @@ export class SocketManager implements ZoneEventListener {
             debug("Calling connectToRoom '" + socketData.roomId + "'");
             const apiClient = await apiClientRepository.getClient(socketData.roomId, GRPC_MAX_MESSAGE_SIZE);
             streamToBack = apiClient.connectToRoom();
-            let backConnectionCloseReason: string | undefined;
+            const backConnectionClose: BackConnectionClose = { reason: undefined };
 
             client.getUserData().backConnection = streamToBack;
 
             streamToBack
-                .on("data", (message: ServerToClientMessage) => {
-                    if (!message.message) {
-                        console.error("Empty message returned on streamToBack");
-                        return;
-                    }
-                    switch (message.message.$case) {
-                        case "roomJoinedMessage": {
-                            socketData.userId = message.message.roomJoinedMessage.currentUserId;
-                            socketData.spaceUserId =
-                                socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
-
-                            // If this is the first message sent, send back the viewport.
-                            this.handleViewport(client, client.getUserData().viewport);
-                            // A session is an interval like any other: the tracker
-                            // emits user.connected now and user.disconnected when it
-                            // closes. open() is idempotent on the handle, which is what
-                            // the separate "already tracked" flag used to provide.
-                            analyticsTimedEventTracker.open(
-                                CONNECTION_SESSION_HANDLE,
-                                "user.disconnected",
-                                { connectionId: socketData.tabId },
-                                socketData,
-                            );
-                            break;
-                        }
-                        case "refreshRoomMessage": {
-                            const refreshMessage = message.message.refreshRoomMessage;
-                            this.refreshRoomData(refreshMessage.roomId, refreshMessage.versionNumber);
-                            break;
-                        }
-                        case "backConnectionCloseReasonMessage": {
-                            backConnectionCloseReason = message.message.backConnectionCloseReasonMessage.reason;
-                            return;
-                        }
-                    }
-
-                    // Let's pass data over from the back to the client.
-                    if (!client.isDisconnecting()) {
-                        client.send(message);
-                    }
-                })
-                .on("end", () => {
-                    try {
-                        // Let's close the front connection if the back connection is closed. This way, we can retry connecting from the start.
-                        if (!client.isDisconnecting()) {
-                            const connectionCloseReason =
-                                backConnectionCloseReason ?? "No close reason received from back server.";
-                            const logMessage = `Connection lost to back server '${apiClient
-                                .getChannel()
-                                .getTarget()}' for room '${socketData.roomId}' and user '${socketData.userUuid}'/'${
-                                socketData.name
-                            }'. Reason: ${connectionCloseReason}`;
-                            if (client.isPermanentlyDisconnected()) {
-                                // Expected teardown: the client closed its WebSocket for good, so we ended the
-                                // back connection ourselves. Not a real "connection lost" event.
-                                debug(logMessage);
-                            } else {
-                                console.warn(logMessage);
-                            }
-                            this.closeWebsocketConnection(
-                                client,
-                                WS_CLOSE_CODE_SESSION_DESTROYED,
-                                `Back lost: ${connectionCloseReason}`,
-                            );
-                        }
-                    } catch (e: unknown) {
-                        console.error("Error while handling ended connection to back", e);
-                        Sentry.captureException(e);
-                    }
-                })
-                .on("error", (err: Error) => {
-                    try {
-                        const date = new Date();
-                        console.error(
-                            "Error in connection to back server '" +
-                                apiClient.getChannel().getTarget() +
-                                "' for room '" +
-                                socketData.roomId +
-                                "'at :" +
-                                date.toLocaleString("en-GB"),
-                            err,
-                        );
-                        if (!client.isDisconnecting()) {
-                            this.closeWebsocketConnection(
-                                client,
-                                WS_CLOSE_CODE_SESSION_DESTROYED,
-                                "Error while connecting to back server",
-                            );
-                        }
-                    } catch (e: unknown) {
-                        console.error("Error while handling error event in connection to back", e);
-                        Sentry.captureException(e);
-                    }
-                });
+                .on("data", (message: ServerToClientMessage) =>
+                    this.handleMessageFromBack(client, socketData, message, backConnectionClose),
+                )
+                .on("end", () => this.closeSocketWhenBackEnds(client, socketData, apiClient, backConnectionClose))
+                .on("error", (err: Error) => this.closeSocketWhenBackFails(client, socketData, apiClient, err));
 
             const pusherToBackMessage: PusherToBackMessage = {
                 message: {
@@ -405,6 +320,121 @@ export class SocketManager implements ZoneEventListener {
         }
     }
 
+    private handleMessageFromBack(
+        client: PusherWebSocket,
+        socketData: SocketData,
+        message: ServerToClientMessage,
+        backConnectionClose: BackConnectionClose,
+    ): void {
+        if (!message.message) {
+            console.error("Empty message returned on streamToBack");
+            return;
+        }
+        switch (message.message.$case) {
+            case "roomJoinedMessage": {
+                socketData.userId = message.message.roomJoinedMessage.currentUserId;
+                socketData.spaceUserId = socketData.roomId + "_" + message.message.roomJoinedMessage.currentUserId;
+
+                // handleJoinRoom only stored the viewport. Zones skip a socket's own user by its userId, set
+                // just above, so subscribing them earlier could send the user its own userJoinedMessage.
+                this.handleViewport(client, client.getUserData().viewport);
+                // A session is an interval like any other: the tracker
+                // emits user.connected now and user.disconnected when it
+                // closes. open() is idempotent on the handle, which is what
+                // the separate "already tracked" flag used to provide.
+                // A socket that is closing or closed was already cleaned up. A session opened now would count a
+                // user who left, and if the pusher closed the socket nothing would end it before the pusher stops.
+                if (!client.isDisconnecting() && !client.isPermanentlyDisconnected()) {
+                    analyticsTimedEventTracker.open(
+                        CONNECTION_SESSION_HANDLE,
+                        "user.disconnected",
+                        { connectionId: socketData.tabId },
+                        socketData,
+                    );
+                }
+                break;
+            }
+            case "refreshRoomMessage": {
+                const refreshMessage = message.message.refreshRoomMessage;
+                this.refreshRoomData(refreshMessage.roomId, refreshMessage.versionNumber);
+                break;
+            }
+            case "backConnectionCloseReasonMessage": {
+                backConnectionClose.reason = message.message.backConnectionCloseReasonMessage.reason;
+                return;
+            }
+        }
+
+        if (!client.isDisconnecting()) {
+            client.send(message);
+        }
+    }
+
+    private closeSocketWhenBackEnds(
+        client: PusherWebSocket,
+        socketData: SocketData,
+        apiClient: RoomManagerClient,
+        backConnectionClose: BackConnectionClose,
+    ): void {
+        try {
+            // Let's close the front connection if the back connection is closed. This way, we can retry connecting from the start.
+            if (!client.isDisconnecting()) {
+                const connectionCloseReason =
+                    backConnectionClose.reason ?? "No close reason received from back server.";
+                const logMessage = `Connection lost to back server '${apiClient
+                    .getChannel()
+                    .getTarget()}' for room '${socketData.roomId}' and user '${socketData.userUuid}'/'${
+                    socketData.name
+                }'. Reason: ${connectionCloseReason}`;
+                if (client.isPermanentlyDisconnected()) {
+                    // Expected teardown: the client closed its WebSocket for good, so we ended the
+                    // back connection ourselves. Not a real "connection lost" event.
+                    debug(logMessage);
+                } else {
+                    console.warn(logMessage);
+                }
+                this.closeWebsocketConnection(
+                    client,
+                    WS_CLOSE_CODE_SESSION_DESTROYED,
+                    `Back lost: ${connectionCloseReason}`,
+                );
+            }
+        } catch (e: unknown) {
+            console.error("Error while handling ended connection to back", e);
+            Sentry.captureException(e);
+        }
+    }
+
+    private closeSocketWhenBackFails(
+        client: PusherWebSocket,
+        socketData: SocketData,
+        apiClient: RoomManagerClient,
+        err: Error,
+    ): void {
+        try {
+            const date = new Date();
+            console.error(
+                "Error in connection to back server '" +
+                    apiClient.getChannel().getTarget() +
+                    "' for room '" +
+                    socketData.roomId +
+                    "'at :" +
+                    date.toLocaleString("en-GB"),
+                err,
+            );
+            if (!client.isDisconnecting()) {
+                this.closeWebsocketConnection(
+                    client,
+                    WS_CLOSE_CODE_SESSION_DESTROYED,
+                    "Error while connecting to back server",
+                );
+            }
+        } catch (e: unknown) {
+            console.error("Error while handling error event in connection to back", e);
+            Sentry.captureException(e);
+        }
+    }
+
     public async handleJoinRoom(client: PusherWebSocket, joinRoomFrontMessage: JoinRoomFrontMessage): Promise<void> {
         const socketData = client.getUserData();
         const message = noUndefined(joinRoomFrontMessage);
@@ -415,7 +445,6 @@ export class SocketManager implements ZoneEventListener {
 
         const streamToBack = socketData.backConnection;
         if (!streamToBack) {
-            Sentry.captureException("Client has no back connection");
             throw new Error("Client has no back connection");
         }
 
@@ -482,7 +511,6 @@ export class SocketManager implements ZoneEventListener {
                 Sentry.captureException(emitErr);
             }
 
-            // Let's close the websocket connection with an error code
             this.closeWebsocketConnection(
                 client,
                 WS_CLOSE_CODE_SESSION_DESTROYED,
@@ -524,9 +552,9 @@ export class SocketManager implements ZoneEventListener {
         let space: SpaceInterface | undefined = this.spaces.get(spaceName);
 
         if (!space) {
-            const onSpaceEmpty = (space: SpaceInterface) => {
-                this.spaces.delete(space.name);
-                clientEventsEmitter.emitDeleteSpace(space.name);
+            const unregisterSpace = (spaceToUnregister: SpaceInterface) => {
+                this.spaces.delete(spaceToUnregister.name);
+                clientEventsEmitter.emitDeleteSpace(spaceToUnregister.name);
             };
 
             space = new Space(
@@ -534,7 +562,7 @@ export class SocketManager implements ZoneEventListener {
                 localSpaceName,
                 eventProcessor,
                 filterType,
-                onSpaceEmpty,
+                unregisterSpace,
                 this._spaceConnection,
                 client.getUserData().world,
                 propertiesToSync,
@@ -547,7 +575,11 @@ export class SocketManager implements ZoneEventListener {
         }
 
         if (space.filterType !== filterType) {
-            throw new Error("Error: Space filter type mismatch");
+            const asked = filterTypeToJSON(filterType);
+            const used = filterTypeToJSON(space.filterType);
+            throw new Error(
+                `Filter type mismatch when joining space "${spaceName}": asked for ${asked}, the space uses ${used}`,
+            );
         }
 
         if (socketData.joinSpacesPromise.has(spaceName)) {
@@ -579,7 +611,6 @@ export class SocketManager implements ZoneEventListener {
 
         await joinPromise;
 
-        // We are done joining the space
         // We could still receive an abort message afterwards (because the client could send the abort while we
         // are sending the answer). In this case, we will just leave the space in the abort handler.
         options.signal.addEventListener("abort", () => {
@@ -616,7 +647,11 @@ export class SocketManager implements ZoneEventListener {
 
     public cleanupSocket(client: PusherWebSocket): void {
         if (client.isDisconnecting()) {
-            // Cleanup already called
+            // Already cleaned up. The pusher cleans a socket up before it calls end(), which sets this flag. A
+            // transport that closes without end() (the client leaving, a connection lost for good) leaves the flag
+            // unset, so that socket is cleaned up again when its back stream ends. That second run releases no resource
+            // twice: leaveRoom checks writableEnded before ending the back stream and analyticsIntervalsClosed before
+            // closing intervals. Each other step releases only what the socket still holds.
             return;
         }
 
@@ -656,21 +691,24 @@ export class SocketManager implements ZoneEventListener {
 
             const room = this.rooms.get(socketData.roomId);
             if (!room) {
-                console.error("In SET_VIEWPORT, could not find world with id '", socketData.roomId, "'");
-                Sentry.captureException("In SET_VIEWPORT, could not find world with id ' " + socketData.roomId);
+                const error = new Error(
+                    `Cannot set the viewport: room ${socketData.roomId} is not open on this pusher`,
+                );
+                Sentry.captureException(error);
+                console.error(error);
                 return;
             }
             room.setViewport(client, socketData.viewport);
         } catch (e) {
-            Sentry.captureException(`An error occurred on "SET_VIEWPORT" event ${e}`);
-            console.error(`An error occurred on "SET_VIEWPORT" event ${e}`);
+            const error = new Error(`Failed to set the viewport of room ${socketData.roomId}`, { cause: asError(e) });
+            Sentry.captureException(error);
+            console.error(error);
         }
     }
 
     handleUserMovesMessage(client: PusherWebSocket, userMovesMessage: UserMovesMessage): void {
         const socketData = client.getUserData();
         if (!socketData.backConnection) {
-            Sentry.captureException("Client has no back connection");
             throw new Error("Client has no back connection");
         }
 
@@ -686,7 +724,6 @@ export class SocketManager implements ZoneEventListener {
             throw new Error("Missing viewport in UserMovesMessage");
         }
 
-        // Now, we need to listen to the correct viewport.
         this.handleViewport(client, viewport);
     }
 
@@ -729,7 +766,7 @@ export class SocketManager implements ZoneEventListener {
         });
     }
 
-    // Useless now, will be useful again if we allow editing details in game
+    // Sends the new details (the status, for instance) to the back and to every space the user is in.
     async handleSetPlayerDetails(
         client: PusherWebSocket,
         playerDetailsMessage: SetPlayerDetailsMessage,
@@ -739,12 +776,12 @@ export class SocketManager implements ZoneEventListener {
         if (playerDetailsMessage.availabilityStatus !== AvailabilityStatus.UNCHANGED) {
             socketData.availabilityStatus = playerDetailsMessage.availabilityStatus;
         }
-        const pusherToBackMessage: PusherToBackMessage["message"] = {
+        const messageToBack: PusherToBackMessage["message"] = {
             $case: "setPlayerDetailsMessage",
             setPlayerDetailsMessage: playerDetailsMessage,
         };
 
-        this.forwardMessageToBack(client, pusherToBackMessage);
+        this.forwardMessageToBack(client, messageToBack);
 
         const spacePromises = Array.from(socketData.spaces).map(async (spaceName: string) => {
             const space = this.spaces.get(spaceName);
@@ -840,12 +877,10 @@ export class SocketManager implements ZoneEventListener {
     }
 
     leaveRoom(socket: PusherWebSocket): void {
-        // leave previous room and world
         const socketData = socket.getUserData();
         try {
             if (socketData.roomId) {
                 try {
-                    //user leaves room
                     const room: PusherRoom | undefined = this.rooms.get(socketData.roomId);
                     if (room) {
                         debug("Leaving room %s.", socketData.roomId);
@@ -858,10 +893,7 @@ export class SocketManager implements ZoneEventListener {
                         // connection to the back.
                         debug("Could not find the GameRoom the user is leaving: %s", socketData.roomId);
                     }
-                    //user leave previous room
-                    //Client.leave(Client.roomId);
                 } finally {
-                    //delete Client.roomId;
                     if (socketData.joinedRoom) {
                         socketData.joinedRoom = false;
                         clientEventsEmitter.emitClientLeave(socketData.userUuid, socketData.roomId);
@@ -872,12 +904,18 @@ export class SocketManager implements ZoneEventListener {
                     // one ending even a millisecond after its session's disconnect, so
                     // that ordering is what keeps the headline metric from silently
                     // reading zero.
-                    analyticsTimedEventTracker.closeConnection(socketData, "socket_closed");
+                    // Closed once per socket. The tracker keys intervals by tabId, which the tab's next socket
+                    // shares, so a second cleanup of this socket would close the next socket's intervals.
+                    if (!socketData.analyticsIntervalsClosed) {
+                        socketData.analyticsIntervalsClosed = true;
+                        analyticsTimedEventTracker.closeConnection(socketData, "socket_closed");
+                    }
                     debug("User ", socketData.name, " left: ", socketData.userUuid);
                 }
             }
         } finally {
-            if (socketData.backConnection) {
+            // A socket the client closed is cleaned up twice, and a failed join ends the stream before it cleans up.
+            if (socketData.backConnection && !socketData.backConnection.writableEnded) {
                 socketData.backConnection.end();
             }
         }
@@ -1315,7 +1353,6 @@ export class SocketManager implements ZoneEventListener {
     ) {
         const oldFilter = removeSpaceFilterMessage.spaceFilterMessage;
         // We don't check that the client is part of the space here, because we could stop watching a space after leaving it.
-        //await this.checkClientIsPartOfSpace(client, oldFilter.spaceName);
         const space = this.spaces.get(oldFilter.spaceName);
         if (space) {
             space.handleUnwatch(client);
@@ -1323,10 +1360,6 @@ export class SocketManager implements ZoneEventListener {
             // This function is called when the userStore of a space in front is unsubscribed.
             // This could happen after we leave the space. Therefore, we don't display an error here.
             // When leaving the space, we take care of removing the filters anyway.
-            /*console.error(`Remove space filter called on a space (${oldFilter.spaceName}) that does not exist`);
-            Sentry.captureException(
-                new Error(`Remove space filter called on a space (${oldFilter.spaceName}) that does not exist`)
-            );*/
         }
     }
 
@@ -1623,7 +1656,9 @@ export class SocketManager implements ZoneEventListener {
         await this.checkClientIsPartOfSpace(client, spaceName);
         const socketData = client.getUserData();
         if (!socketData.spaceUserId) {
-            throw new Error("Space user id not found");
+            throw new Error(
+                `Cannot query the state of space "${spaceName}": user ${socketData.userUuid} has no space user id`,
+            );
         }
         const space = this.spaces.get(spaceName);
         if (!space) {
@@ -1650,7 +1685,7 @@ export class SocketManager implements ZoneEventListener {
         );
 
         if (answer.$case !== "spaceStateAnswer") {
-            throw new Error("Unexpected answer");
+            throw new Error(`Unexpected "${answer.$case}" answer to the state query of space "${spaceName}"`);
         }
     }
 

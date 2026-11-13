@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Aucune caméra utilisable",
             noDeviceDesc:
                 "Le navigateur ne détecte aucune caméra utilisable. Essayez un autre navigateur, vérifiez qu’une caméra est branchée, vérifiez les configurations de l’ordinateur (confidentialité, périphériques), ou redémarrez l’ordinateur si le matériel devrait fonctionner.",
+            deviceInUseTitle: "Caméra déjà utilisée",
+            deviceInUseDesc: "Une autre application utilise votre caméra. Fermez cette application, puis réessayez.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/fr-FR-chrome.png",
@@ -55,6 +57,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Aucun microphone utilisable",
             noDeviceDesc:
                 "Le navigateur ne détecte aucun microphone utilisable. Essayez un autre navigateur, vérifiez qu’un micro est branché, vérifiez les configurations de l’ordinateur (confidentialité, périphériques), ou redémarrez l’ordinateur si le matériel devrait fonctionner.",
+            deviceInUseTitle: "Microphone déjà utilisé",
+            deviceInUseDesc:
+                "Une autre application utilise votre microphone. Fermez cette application, puis réessayez.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/fr-FR-chrome.png",

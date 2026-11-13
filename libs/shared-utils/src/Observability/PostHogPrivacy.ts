@@ -84,7 +84,15 @@ export const sanitizePostHogException: BeforeSendFn = (event) => {
     return {
         ...event,
         properties: {
-            ...pickDiagnostics(event.properties, ["$exception_level", "$process_person_profile"]),
+            ...pickDiagnostics(event.properties, [
+                "$exception_level",
+                "$process_person_profile",
+                "service",
+                "environment",
+                "release",
+                "trace_id",
+                "entryPoint",
+            ]),
             $exception_list: Array.isArray(exceptions) ? exceptions.map(projectException) : [],
         },
     };

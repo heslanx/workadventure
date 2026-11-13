@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Žedna wužywajobna kamera",
             noDeviceDesc:
                 "Browser namakujo žednu kameru, kótaruž móžośo wužywaś. Wopytajśo drugi browser, pśekontrolěrujśo zwisk kamery, pśekontrolěrujśo konfiguraciju kompjutra (datowy škit, graty) abo startujśo kompjuter znowego, jolic hardware by měł funkcioněrowaś.",
+            deviceInUseTitle: "Kamera se wužywa",
+            deviceInUseDesc: "Wašu kameru wužywa druga aplikacija. Zacyńśo tu aplikaciju a wopytajśo to pón znowego.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Žeden wužywajobny mikrofon",
             noDeviceDesc:
                 "Browser namakujo žeden mikrofon, kótaryž móžośo wužywaś. Wopytajśo drugi browser, pśekontrolěrujśo mikrofon, pśekontrolěrujśo konfiguraciju kompjutra (datowy škit, graty) abo startujśo kompjuter znowego, jolic hardware by měł funkcioněrowaś.",
+            deviceInUseTitle: "Mikrofon se wužywa",
+            deviceInUseDesc: "Waš mikrofon wužywa druga aplikacija. Zacyńśo tu aplikaciju a wopytajśo to pón znowego.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",

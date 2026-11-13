@@ -40,6 +40,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Geen bruikbare camera",
             noDeviceDesc:
                 "Je browser ziet geen camera die je kunt gebruiken. Probeer een andere browser, controleer of een camera is aangesloten, controleer de configuratie van de computer (privacy, apparaten) of start de computer opnieuw op als het apparaat zou moeten werken.",
+            deviceInUseTitle: "Camera in gebruik",
+            deviceInUseDesc:
+                "Een andere applicatie gebruikt je camera. Sluit die applicatie en probeer het daarna opnieuw.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -55,6 +58,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Geen bruikbare microfoon",
             noDeviceDesc:
                 "Je browser ziet geen microfoon die je kunt gebruiken. Probeer een andere browser, controleer of een microfoon is aangesloten, controleer de configuratie van de computer (privacy, apparaten) of start de computer opnieuw op als het apparaat zou moeten werken.",
+            deviceInUseTitle: "Microfoon in gebruik",
+            deviceInUseDesc:
+                "Een andere applicatie gebruikt je microfoon. Sluit die applicatie en probeer het daarna opnieuw.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",

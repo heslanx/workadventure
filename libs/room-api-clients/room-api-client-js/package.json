@@ -42,7 +42,7 @@
     "nice-grpc": "^2.1.16"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^24.19.2",
     "@workadventure/eslint-config": "file:../../eslint-config",
     "eslint": "^10.4.0",
     "grpc-tools": "^1.13.1",

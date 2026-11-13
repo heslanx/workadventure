@@ -302,6 +302,13 @@ const debug = Debug("GameScene");
 // Safety cap for moveTo() reroutes when the collision grid keeps changing while the path is followed.
 const MAX_PATH_REROUTES = 5;
 
+// The least frame time between two failure reports of one onPlayerMovementEnded callback. It mirrors the frame guard's
+// FRAME_ERROR_REPORT_INTERVAL_MS in Game.ts.
+const MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS = 10_000;
+
+// How many players the scene reports for one remote-player drift message.
+const MAX_REPORTED_PLAYERS_PER_DRIFT = 10;
+
 export class GameScene extends DirtyScene {
     Terrains: Array<Tileset>;
     CurrentPlayer!: Player;
@@ -323,7 +330,8 @@ export class GameScene extends DirtyScene {
     wamUrlFile?: string;
     roomUrl: string;
     currentTick!: number;
-    lastSentTick!: number; // The last tick at which a position was sent.
+    // The last tick at which a position was sent. Minus infinity until then, so the first move is always sent.
+    lastSentTick = Number.NEGATIVE_INFINITY;
     lastMoveEventSent: HasPlayerMovedInterface = {
         direction: PositionMessage_Direction.DOWN,
         moving: false,
@@ -412,7 +420,7 @@ export class GameScene extends DirtyScene {
     private throttledSendViewportToServer_!: throttle<() => void>;
     private lastSentViewport: ViewportInterface | undefined;
     private serverViewportDebugGraphics: Graphics | undefined;
-    private playersDebugLogAlreadyDisplayed = false;
+    private readonly reportedRemotePlayerDrifts = new Map<string, Set<number | undefined>>();
     private hideTimeout: ReturnType<typeof setTimeout> | undefined;
     // The promise that will resolve to the current player textures. This will be available only after connection is established.
     private currentPlayerTexturesResolve!: (value: string[]) => void;
@@ -442,8 +450,11 @@ export class GameScene extends DirtyScene {
     private _worldUserCounter: ForwardableStore<number> = new ForwardableStore(0);
     public extensionModule: ExtensionModule | undefined = undefined;
     public landingAreas: AreaData[] = [];
-    // Listeners for when the player finishes moving
     private onPlayerMovementEndedCallbacks: Array<(event: HasPlayerMovedInterface) => void> = [];
+    private readonly playerMovementEndedFailures = new WeakMap<
+        (event: HasPlayerMovedInterface) => void,
+        { lastReportTick: number; sinceLastReport: number }
+    >();
 
     private enterLeaveScriptingService: EnterLeaveScriptingService | undefined;
 
@@ -1409,73 +1420,16 @@ export class GameScene extends DirtyScene {
             this.mapEditorModeManager.update(time, delta);
         }
 
-        for (const addedPlayer of this.remotePlayersRepository.getAddedPlayers()) {
-            debugAddPlayer("Player will be add to the GameScene", addedPlayer);
-            this.doAddPlayer(addedPlayer);
-            debugAddPlayer("Player has been added to the GameScene", addedPlayer);
-        }
-        for (const movedPlayer of this.remotePlayersRepository.getMovedPlayers()) {
-            this.doUpdatePlayerPosition(movedPlayer);
-        }
-        for (const updatedPlayer of this.remotePlayersRepository.getUpdatedPlayers()) {
-            debugUpdatePlayer("Player will be update from GameScene", updatedPlayer);
-            this.doUpdatePlayerDetails(updatedPlayer);
-            debugUpdatePlayer("Player has been updated from GameScene", updatedPlayer);
-        }
-        for (const removedPlayerId of this.remotePlayersRepository.getRemovedPlayers()) {
-            debugRemovePlayer("Player will be remove from GameScene", removedPlayerId);
-            this.doRemovePlayer(removedPlayerId);
-            debugRemovePlayer("Player has been removed from GameScene", removedPlayerId);
-        }
-
-        if (
-            !this.playersDebugLogAlreadyDisplayed &&
-            this.remotePlayersRepository.getPlayers().size !== this.MapPlayersByKey.size
-        ) {
-            console.error(
-                "Not the same count of players",
-                this.remotePlayersRepository.getPlayers(),
-                this.MapPlayersByKey,
-                "Added players:",
-                this.remotePlayersRepository.getAddedPlayers(),
-                "Moved players:",
-                this.remotePlayersRepository.getMovedPlayers(),
-                "Updated players:",
-                this.remotePlayersRepository.getUpdatedPlayers(),
-                "Removed players:",
-                this.remotePlayersRepository.getRemovedPlayers(),
-            );
-            this.playersDebugLogAlreadyDisplayed = true;
-        }
-
-        this.remotePlayersRepository.reset();
+        this.applyBufferedRemotePlayerChanges();
 
         // Let's handle all events
         while (this.pendingEvents.length !== 0) {
             this.dirty = true;
             const event = this.pendingEvents.dequeue();
             switch (event.type) {
-                /*case "AddPlayerEvent":
-                    this.doAddPlayer(event.event);
-                    break;
-                case "RemovePlayerEvent":
-                    this.doRemovePlayer(event.userId);
-                    break;
-                case "UserMovedEvent": {
-                    this.doUpdatePlayerPosition(event.event);
-                    const remotePlayer = this.MapPlayersByKey.get(event.event.userId);
-                    if (remotePlayer) {
-                        this.activatablesManager.updateDistanceForSingleActivatableObject(remotePlayer);
-                        this.activatablesManager.deduceSelectedActivatableObjectByDistance();
-                    }
-                    break;
-                }*/
                 case "GroupCreatedUpdatedEvent":
                     this.doShareGroupPosition(event.event);
                     break;
-                /*case "PlayerDetailsUpdated":
-                    this.doUpdatePlayerDetails(event.details);
-                    break;*/
                 case "DeleteGroupEvent": {
                     this.doDeleteGroup(event.groupId);
                     if (this.currentPlayerGroupId === event.groupId) {
@@ -1494,28 +1448,7 @@ export class GameScene extends DirtyScene {
                 }
             }
         }
-        // Let's move all users
-        const updatedPlayersPositions = this.playersPositionInterpolator.getUpdatedPositions(time);
-        const conversationBubblesToUpdate = new Set<ConversationBubble>();
-        updatedPlayersPositions.forEach((moveEvent: HasPlayerMovedInterface, userId: number) => {
-            this.dirty = true;
-            const player: RemotePlayer | undefined = this.MapPlayersByKey.get(userId);
-            if (player === undefined) {
-                throw new Error('Cannot find player with ID "' + userId + '"');
-            }
-            const previousPosition = { x: player.x, y: player.y };
-            player.updatePosition(moveEvent);
-            this.addConversationBubblesAffectedByPlayerMove(
-                userId,
-                previousPosition,
-                player,
-                conversationBubblesToUpdate,
-            );
-            // If the camera is following the player, we need to update the viewport
-            if (this.cameraManager?.playerFollowing === player) {
-                this._sendViewportToServer();
-            }
-        });
+        const conversationBubblesToUpdate = this.drawRemotePlayersAtInterpolatedPositions(time);
 
         if (this.hasMovedThisFrame && currentPlayerPreviousPosition !== undefined) {
             this.addConversationBubblesAffectedByPlayerMove(
@@ -1537,6 +1470,89 @@ export class GameScene extends DirtyScene {
         if (DEBUG_MODE) {
             this.updateServerViewportDebugOverlay();
         }
+    }
+
+    private applyBufferedRemotePlayerChanges(): void {
+        for (const addedPlayer of this.remotePlayersRepository.getAddedPlayers()) {
+            debugAddPlayer("Player will be add to the GameScene", addedPlayer);
+            this.doAddPlayer(addedPlayer);
+            debugAddPlayer("Player has been added to the GameScene", addedPlayer);
+        }
+        for (const movedPlayer of this.remotePlayersRepository.getMovedPlayers()) {
+            this.doUpdatePlayerPosition(movedPlayer);
+        }
+        for (const updatedPlayer of this.remotePlayersRepository.getUpdatedPlayers()) {
+            debugUpdatePlayer("Player will be update from GameScene", updatedPlayer);
+            this.doUpdatePlayerDetails(updatedPlayer);
+            debugUpdatePlayer("Player has been updated from GameScene", updatedPlayer);
+        }
+        for (const removedPlayerId of this.remotePlayersRepository.getRemovedPlayers()) {
+            debugRemovePlayer("Player will be remove from GameScene", removedPlayerId);
+            this.doRemovePlayer(removedPlayerId);
+            debugRemovePlayer("Player has been removed from GameScene", removedPlayerId);
+        }
+
+        if (this.remotePlayersRepository.getPlayers().size !== this.MapPlayersByKey.size) {
+            this.reportRemotePlayerDrift("The scene and the repository have a different number of remote players");
+        }
+
+        this.remotePlayersRepository.reset();
+    }
+
+    /**
+     * The repository, MapPlayersByKey and the spatial index each hold the remote players, and the interpolator holds
+     * only those whose last move it is still interpolating. They drift apart when one of them misses an update. A
+     * drifted player's moves keep arriving several times a second while it walks, so each message is reported once
+     * per player. Players join and leave for as long as the scene lives, so each message reports at most
+     * MAX_REPORTED_PLAYERS_PER_DRIFT players. The limit is per message, so that a flood of one drift cannot hide
+     * another kind. The count mismatch has no player and is reported once.
+     */
+    private reportRemotePlayerDrift(message: string, userId?: number): void {
+        const reportedPlayers = this.reportedRemotePlayerDrifts.get(message) ?? new Set<number | undefined>();
+        if (reportedPlayers.has(userId) || reportedPlayers.size >= MAX_REPORTED_PLAYERS_PER_DRIFT) {
+            return;
+        }
+        reportedPlayers.add(userId);
+        this.reportedRemotePlayerDrifts.set(message, reportedPlayers);
+        const state = {
+            userId,
+            repositoryPlayers: this.remotePlayersRepository.getPlayers().size,
+            scenePlayers: this.MapPlayersByKey.size,
+            spatialIndexPlayers: this.remotePlayersSpatialIndex.size,
+            interpolatedPlayers: this.playersPositionInterpolator.playerMovements.size,
+        };
+        console.error(message, state);
+        Sentry.captureException(new Error(message), { extra: state });
+    }
+
+    private drawRemotePlayersAtInterpolatedPositions(time: number): Set<ConversationBubble> {
+        const interpolatedPositions = this.playersPositionInterpolator.getUpdatedPositions(time);
+        const conversationBubblesToUpdate = new Set<ConversationBubble>();
+        interpolatedPositions.forEach((interpolatedPosition: HasPlayerMovedInterface, userId: number) => {
+            this.dirty = true;
+            const player: RemotePlayer | undefined = this.MapPlayersByKey.get(userId);
+            if (player === undefined) {
+                this.reportRemotePlayerDrift(
+                    "Cannot draw an interpolated remote player that is not in the scene",
+                    userId,
+                );
+                this.playersPositionInterpolator.removePlayer(userId);
+                return;
+            }
+            const previousPosition = { x: player.x, y: player.y };
+            player.updatePosition(interpolatedPosition);
+            this.addConversationBubblesAffectedByPlayerMove(
+                userId,
+                previousPosition,
+                player,
+                conversationBubblesToUpdate,
+            );
+            // If the camera is following the player, we need to update the viewport
+            if (this.cameraManager?.playerFollowing === player) {
+                this._sendViewportToServer();
+            }
+        });
+        return conversationBubblesToUpdate;
     }
 
     private addConversationBubblesAffectedByPlayerMove(
@@ -3935,6 +3951,8 @@ ${escapedMessage}
             if (player.companion) {
                 player.companion.destroy();
             }
+            // An interpolation left for a removed player would be reported as a drift and dropped on the next frame.
+            this.playersPositionInterpolator.removePlayer(player.userId);
         });
         this.MapPlayersByKey.clear();
         this.remotePlayersSpatialIndex.clear();
@@ -4288,7 +4306,6 @@ ${escapedMessage}
     }
 
     private handleCurrentPlayerHasMovedEvent(event: HasPlayerMovedInterface): void {
-        //listen event to share position of user
         this.pushPlayerPosition(event);
         this.gameMapFrontWrapper.setPosition(event.x, event.y);
         this.activatablesManager.updateActivatableObjectsDistances([
@@ -4298,11 +4315,42 @@ ${escapedMessage}
         ]);
         this.activatablesManager.deduceSelectedActivatableObjectByDistance();
 
-        // Call movement ended callbacks if movement just ended
+        // A throwing extension-module callback must not stop the other callbacks, the later move listeners and, when
+        // the move comes inside update(), the rest of the frame. A callback that fails tends to fail on every walking
+        // frame, so each callback is reported at most once per MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS of frame
+        // time, with the number of its failures since its last report. The frame guard in Game.ts uses the same
+        // interval and count, as one limit for all frame errors. Here each callback has its own.
         for (const cb of this.onPlayerMovementEndedCallbacks) {
-            cb(event);
+            try {
+                cb(event);
+            } catch (error) {
+                this.reportPlayerMovementEndedFailure(cb, error);
+            }
         }
         this.hasMovedThisFrame = true;
+    }
+
+    private reportPlayerMovementEndedFailure(callback: (event: HasPlayerMovedInterface) => void, error: unknown): void {
+        // A move can come outside update(), as from Player.teleportTo, and then before the scene's first frame, when
+        // currentTick is not set yet. Every failure before the first frame counts as one at frame time 0.
+        const frameTime = this.currentTick ?? 0;
+        let state = this.playerMovementEndedFailures.get(callback);
+        if (state === undefined) {
+            state = { lastReportTick: Number.NEGATIVE_INFINITY, sinceLastReport: 0 };
+            this.playerMovementEndedFailures.set(callback, state);
+        }
+        state.sinceLastReport++;
+        if (frameTime - state.lastReportTick < MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS) {
+            return;
+        }
+        const cause = asError(error);
+        console.error(
+            `An onPlayerMovementEnded callback failed (failures since the last report: ${state.sinceLastReport})`,
+            cause,
+        );
+        Sentry.captureException(cause, { extra: { failuresSinceLastReport: state.sinceLastReport } });
+        state.lastReportTick = frameTime;
+        state.sinceLastReport = 0;
     }
 
     private createCollisionWithPlayer() {
@@ -4373,30 +4421,32 @@ ${escapedMessage}
         this.createCollisionWithPlayer();
     }
 
+    /**
+     * Other clients draw each shared position over the next POSITION_DELAY and keep a walking Woka going the same way
+     * for up to MAX_EXTRAPOLATION_TIME after it (PlayerMovement). A straight walk needs no more than one share per
+     * POSITION_DELAY for that. A stop or a turn would be drawn wrong until the next share, so it goes at once.
+     */
     private pushPlayerPosition(event: HasPlayerMovedInterface) {
         if (this.lastMoveEventSent === event) {
             return;
         }
 
-        // If the player is not moving, let's send the info right now.
         if (event.moving === false) {
             this.doPushPlayerPosition(event);
             return;
         }
 
-        // If the player is moving, and if it changed direction, let's send an event
-        if (event.direction !== this.lastMoveEventSent.direction) {
+        const hasTurnedSinceLastShare = event.direction !== this.lastMoveEventSent.direction;
+        if (hasTurnedSinceLastShare) {
             this.doPushPlayerPosition(event);
             return;
         }
 
-        // If more than 200ms happened since last event sent
-        if (this.currentTick - this.lastSentTick >= POSITION_DELAY) {
+        const timeSinceLastShare = this.currentTick - this.lastSentTick;
+        if (timeSinceLastShare >= POSITION_DELAY) {
             this.doPushPlayerPosition(event);
             return;
         }
-
-        // Otherwise, do nothing.
     }
 
     private doPushPlayerPosition(event: HasPlayerMovedInterface): void {
@@ -4447,22 +4497,13 @@ ${escapedMessage}
     }
 
     private doAddPlayer(addPlayerData: AddPlayerInterface): void {
-        //check if exist player, if exist, move position
-        // Can this really happen? yes..
+        // The pusher lists a zone as listened before the back has subscribed to it. A player who crosses into that
+        // zone in the gap can be sent as joined a second time (read in the pusher and the back, not observed; GS-13).
+        // The scene keeps the avatar it has.
         if (this.MapPlayersByKey.has(addPlayerData.userId)) {
-            console.warn("Got instructed to add a player that already exists: ", addPlayerData.userId);
-            console.error(
-                "Players status",
-                this.remotePlayersRepository.getPlayers(),
-                this.MapPlayersByKey,
-                "Added players:",
-                this.remotePlayersRepository.getAddedPlayers(),
-                "Moved players:",
-                this.remotePlayersRepository.getMovedPlayers(),
-                "Updated players:",
-                this.remotePlayersRepository.getUpdatedPlayers(),
-                "Removed players:",
-                this.remotePlayersRepository.getRemovedPlayers(),
+            this.reportRemotePlayerDrift(
+                "Cannot add a remote player that is already in the scene",
+                addPlayerData.userId,
             );
             return;
         }
@@ -4574,7 +4615,7 @@ ${escapedMessage}
     private doRemovePlayer(userId: number) {
         const player = this.MapPlayersByKey.get(userId);
         if (player === undefined) {
-            console.error("Cannot find user with id ", userId);
+            this.reportRemotePlayerDrift("Cannot remove a remote player that is not in the scene", userId);
         } else {
             player.destroy();
 
@@ -4584,7 +4625,6 @@ ${escapedMessage}
         }
         this.MapPlayersByKey.delete(userId);
         this.remotePlayersSpatialIndex.delete(userId);
-        // console.debug("User removed in MapPlayersByKey in GameScene", userId);
         this.playersPositionInterpolator.removePlayer(userId);
     }
 
@@ -4605,13 +4645,12 @@ ${escapedMessage}
     private doUpdatePlayerPosition(message: MessageUserMovedInterface): void {
         const player: RemotePlayer | undefined = this.MapPlayersByKey.get(message.userId);
         if (player === undefined) {
-            //throw new Error('Cannot find player with ID "' + message.userId +'"');
-            console.error('Cannot update position of player with ID "' + message.userId + '": player not found');
+            this.reportRemotePlayerDrift("Cannot move a remote player that is not in the scene", message.userId);
             return;
         }
 
-        // We do not update the player position directly (because it is sent only every 200ms).
-        // Instead we use the PlayersPositionInterpolator that will do a smooth animation over the next 200ms.
+        // A walking player shares its position at most once per POSITION_DELAY, so the move is not drawn at once:
+        // the PlayersPositionInterpolator draws it from where the player is now over the next POSITION_DELAY.
         const playerMovement = new PlayerMovement(
             { x: player.x, y: player.y },
             this.currentTick,
@@ -4853,7 +4892,9 @@ ${escapedMessage}
         return this._sayManager;
     }
 
-    // Register a callback that will be called when the player movement ends
+    // Despite its name, the callback gets every move event of the local player (one per frame while walking,
+    // plus each stop, turn and teleport). Extension modules, which live outside this repository in the
+    // git-ignored `src/front/external-modules/`, register it through `ExtensionModuleOptions`.
     public onPlayerMovementEnded(callback: (event: HasPlayerMovedInterface) => void): void {
         this.onPlayerMovementEndedCallbacks.push(callback);
     }

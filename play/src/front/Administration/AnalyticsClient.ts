@@ -266,12 +266,12 @@ class AnalyticsClient {
         this.adminAnalyticsSender({ events });
     }
 
-    identifyUser(uuid: string, email: string | null, roomId: string | null): void {
+    identifyUser(uuid: string, _email: string | null, roomId: string | null): void {
         if (!uuid) {
             return;
         }
 
-        this.posthog?.identify(uuid, { email, wa: true, roomId });
+        this.posthog?.identify(uuid, { wa: true });
         this.trackAdminEvent("auth.user_identified", { roomId });
     }
 
