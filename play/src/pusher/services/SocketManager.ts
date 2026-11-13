@@ -547,9 +547,9 @@ export class SocketManager implements ZoneEventListener {
         let space: SpaceInterface | undefined = this.spaces.get(spaceName);
 
         if (!space) {
-            const onSpaceEmpty = (space: SpaceInterface) => {
-                this.spaces.delete(space.name);
-                clientEventsEmitter.emitDeleteSpace(space.name);
+            const unregisterSpace = (spaceToUnregister: SpaceInterface) => {
+                this.spaces.delete(spaceToUnregister.name);
+                clientEventsEmitter.emitDeleteSpace(spaceToUnregister.name);
             };
 
             space = new Space(
@@ -557,7 +557,7 @@ export class SocketManager implements ZoneEventListener {
                 localSpaceName,
                 eventProcessor,
                 filterType,
-                onSpaceEmpty,
+                unregisterSpace,
                 this._spaceConnection,
                 client.getUserData().world,
                 propertiesToSync,
@@ -760,12 +760,12 @@ export class SocketManager implements ZoneEventListener {
         if (playerDetailsMessage.availabilityStatus !== AvailabilityStatus.UNCHANGED) {
             socketData.availabilityStatus = playerDetailsMessage.availabilityStatus;
         }
-        const pusherToBackMessage: PusherToBackMessage["message"] = {
+        const messageToBack: PusherToBackMessage["message"] = {
             $case: "setPlayerDetailsMessage",
             setPlayerDetailsMessage: playerDetailsMessage,
         };
 
-        this.forwardMessageToBack(client, pusherToBackMessage);
+        this.forwardMessageToBack(client, messageToBack);
 
         const spacePromises = Array.from(socketData.spaces).map(async (spaceName: string) => {
             const space = this.spaces.get(spaceName);
