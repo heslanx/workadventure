@@ -46,6 +46,8 @@ interface FakeRemotePlayer {
 
 // The private members a test reaches: an instance property replaces a method, as a testing subclass would.
 interface GameSceneInternals {
+    // Public on the scene, where it takes RemotePlayer values. Through here a test sets a fake player.
+    MapPlayersByKey: Map<number, unknown>;
     currentTick: number;
     connection: unknown;
     hasJoinedRoom: boolean;
@@ -496,5 +498,46 @@ describe("GameScene extension-module move callbacks (onPlayerMovementEnded)", ()
             [callbackError, { extra: { failuresSinceLastReport: 1 } }],
             [callbackError, { extra: { failuresSinceLastReport: 3 } }],
         ]);
+    });
+});
+
+describe("GameScene remote-player drift", () => {
+    // GS-12: the scene's remote players drift from the repository's when one of them misses an update, as in GS-02.
+    // Each drift is logged its own way: the count mismatch and the duplicate add dump whole collections, the move and
+    // the removal give only the id. Sentry received none of those logs.
+    it("GS-12: logs each move and the removal of a player the scene lost, and the count mismatch once", () => {
+        const { scene } = createScene();
+        const repository = scene.getRemotePlayersRepository();
+        repository.addPlayer(joined(7, 100, 200));
+        scene.update(1_000, 16);
+        scene.MapPlayersByKey.delete(7);
+        repository.movePlayer(moved(7, 300, 200));
+        scene.update(2_000, 16);
+        repository.movePlayer(moved(7, 400, 200));
+        scene.update(2_100, 16);
+        repository.removePlayer(7);
+        scene.update(2_200, 16);
+
+        expect(vi.mocked(console.error).mock.calls.map(([message]) => message)).toEqual([
+            'Cannot update position of player with ID "7": player not found',
+            "Not the same count of players",
+            'Cannot update position of player with ID "7": player not found',
+            "Cannot find user with id ",
+        ]);
+        expect(captureException).not.toHaveBeenCalled();
+    });
+
+    it("GS-12: logs an add for a player the scene already has", () => {
+        const { scene, internals } = createScene();
+        // The real doAddPlayer: it looks for the player before it builds a sprite.
+        Reflect.deleteProperty(internals, "doAddPlayer");
+        const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        internals.MapPlayersByKey.set(8, fakeRemotePlayer(8, 0, 0));
+        scene.getRemotePlayersRepository().addPlayer(joined(8, 0, 0));
+        scene.update(1_000, 16);
+
+        expect(consoleWarn.mock.calls).toEqual([["Got instructed to add a player that already exists: ", 8]]);
+        expect(vi.mocked(console.error).mock.calls.map(([message]) => message)).toEqual(["Players status"]);
+        expect(captureException).not.toHaveBeenCalled();
     });
 });
