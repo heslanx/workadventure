@@ -438,9 +438,8 @@ describe("SocketManager room traffic", () => {
         expect(manager.getRooms().has(ROOM)).toBe(false);
     });
 
-    // SM-03: the close handler cleans the socket up without end(), so isDisconnecting() stays false and the back
-    // stream's end cleans it up again. The second run repeats one call: it ends the back stream again.
-    it("SM-03 (pinned): a socket the browser closed is cleaned up again when its back stream ends, and ends that stream twice", async () => {
+    // The close handler cleans the socket up without end(), so the back stream's end runs cleanup again.
+    it("SM-03 (fixed): a socket the browser closed ends its back stream once", async () => {
         const kick = vi.spyOn(matrixProvider, "kickUserFromRoom").mockResolvedValue(undefined);
         const back = fakeBack();
         const manager = new SocketManager();
@@ -453,7 +452,7 @@ describe("SocketManager room traffic", () => {
         closeByBrowser(manager, alice);
         aliceStream.emit("end");
 
-        expect(aliceStream.end).toHaveBeenCalledTimes(2);
+        expect(aliceStream.end).toHaveBeenCalledTimes(1);
         expect(alice.ended).toEqual([
             [WS_CLOSE_CODE_SESSION_DESTROYED, "Back lost: No close reason received from back server."],
         ]);
@@ -621,7 +620,7 @@ describe("SocketManager room traffic", () => {
         });
 
         // The tracker keys sessions by tabId, which the tab's next socket shares.
-        it("SM-03 (pinned): the old socket's second cleanup ends the next socket's session", async () => {
+        it("SM-03 (fixed): the old socket's second cleanup leaves the next socket's session open", async () => {
             const back = fakeBack();
             const manager = new SocketManager();
             const closedSocket = fakeSocket("alice", { tabId: "tab-1" });
@@ -636,11 +635,10 @@ describe("SocketManager room traffic", () => {
                 ["user.connected", "tab-1"],
                 ["user.disconnected", "tab-1"],
                 ["user.connected", "tab-1"],
-                ["user.disconnected", "tab-1"],
             ]);
         });
 
-        it("keeps the next socket's session closed when that socket is cleaned up", async () => {
+        it("closes the next socket's session on its own cleanup", async () => {
             const back = fakeBack();
             const manager = new SocketManager();
             const closedSocket = fakeSocket("alice", { tabId: "tab-1" });
@@ -698,7 +696,7 @@ describe("SocketManager room traffic", () => {
                 ["user.connected", "tab-alice"],
                 ["user.disconnected", "tab-alice"],
             ]);
-            expect(aliceStream.end).toHaveBeenCalledTimes(2);
+            expect(aliceStream.end).toHaveBeenCalledTimes(1);
             expect(alice.ended).toEqual([[WS_CLOSE_CODE_SESSION_DESTROYED, "Error while connecting to back server"]]);
         });
 

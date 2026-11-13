@@ -645,7 +645,9 @@ export class SocketManager implements ZoneEventListener {
         if (client.isDisconnecting()) {
             // Already cleaned up. The pusher cleans a socket up before it calls end(), which sets this flag. A
             // transport that closes without end() (the client leaving, a connection lost for good) leaves the flag
-            // unset, so that socket is cleaned up again when its back stream ends (SM-03).
+            // unset, so that socket is cleaned up again when its back stream ends. That second run releases no resource
+            // twice: leaveRoom checks writableEnded before ending the back stream and analyticsIntervalsClosed before
+            // closing intervals. Each other step releases only what the socket still holds.
             return;
         }
 
@@ -895,12 +897,18 @@ export class SocketManager implements ZoneEventListener {
                     // one ending even a millisecond after its session's disconnect, so
                     // that ordering is what keeps the headline metric from silently
                     // reading zero.
-                    analyticsTimedEventTracker.closeConnection(socketData, "socket_closed");
+                    // Closed once per socket. The tracker keys intervals by tabId, which the tab's next socket
+                    // shares, so a second cleanup of this socket would close the next socket's intervals.
+                    if (!socketData.analyticsIntervalsClosed) {
+                        socketData.analyticsIntervalsClosed = true;
+                        analyticsTimedEventTracker.closeConnection(socketData, "socket_closed");
+                    }
                     debug("User ", socketData.name, " left: ", socketData.userUuid);
                 }
             }
         } finally {
-            if (socketData.backConnection) {
+            // A socket the client closed is cleaned up twice, and a failed join ends the stream before it cleans up.
+            if (socketData.backConnection && !socketData.backConnection.writableEnded) {
                 socketData.backConnection.end();
             }
         }
