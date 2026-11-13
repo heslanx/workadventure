@@ -46,7 +46,8 @@ Run these from the repo root.
    scripts/orca-vm/docker-auth-image.sh commit
    ```
 
-Repeat steps 2 to 4 when an agent session expires.
+The committed image holds both agents' sign-ins, so keep it on this machine: never push it
+to a registry or share it. Repeat steps 2 to 4 when an agent session expires.
 
 ## Lifecycle
 
