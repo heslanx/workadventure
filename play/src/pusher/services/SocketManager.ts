@@ -52,7 +52,7 @@ import type {
     WorldUser,
     WorldUsersAnswer,
 } from "@workadventure/messages";
-import { AvailabilityStatus, noUndefined } from "@workadventure/messages";
+import { AvailabilityStatus, filterTypeToJSON, noUndefined } from "@workadventure/messages";
 import { Metadata } from "@grpc/grpc-js";
 import type { RoomManagerClient } from "@workadventure/messages/src/ts-proto-generated/services";
 import * as Sentry from "@sentry/node";
@@ -575,7 +575,11 @@ export class SocketManager implements ZoneEventListener {
         }
 
         if (space.filterType !== filterType) {
-            throw new Error("Error: Space filter type mismatch");
+            const asked = filterTypeToJSON(filterType);
+            const used = filterTypeToJSON(space.filterType);
+            throw new Error(
+                `Filter type mismatch when joining space "${spaceName}": asked for ${asked}, the space uses ${used}`,
+            );
         }
 
         if (socketData.joinSpacesPromise.has(spaceName)) {
@@ -1652,7 +1656,9 @@ export class SocketManager implements ZoneEventListener {
         await this.checkClientIsPartOfSpace(client, spaceName);
         const socketData = client.getUserData();
         if (!socketData.spaceUserId) {
-            throw new Error("Space user id not found");
+            throw new Error(
+                `Cannot query the state of space "${spaceName}": user ${socketData.userUuid} has no space user id`,
+            );
         }
         const space = this.spaces.get(spaceName);
         if (!space) {
@@ -1679,7 +1685,7 @@ export class SocketManager implements ZoneEventListener {
         );
 
         if (answer.$case !== "spaceStateAnswer") {
-            throw new Error("Unexpected answer");
+            throw new Error(`Unexpected "${answer.$case}" answer to the state query of space "${spaceName}"`);
         }
     }
 

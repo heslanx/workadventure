@@ -785,11 +785,21 @@ describe("SocketManager room traffic", () => {
         answerLastQuery(`${ROOM}_bob`);
         await bobJoins;
 
-        await expect(
-            manager.handleJoinSpace(carol.socket, "world.meeting", "meeting", FilterType.LIVE_STREAMING_USERS, [], {
-                signal,
-            }),
-        ).rejects.toThrow("Error: Space filter type mismatch");
+        const carolJoins = manager.handleJoinSpace(
+            carol.socket,
+            "world.meeting",
+            "meeting",
+            FilterType.LIVE_STREAMING_USERS,
+            [],
+            { signal },
+        );
+        await expect(carolJoins).rejects.toHaveProperty(
+            "message",
+            'Filter type mismatch when joining space "world.meeting": asked for LIVE_STREAMING_USERS, the space uses ALL_USERS',
+        );
+        // The Playwright test "cannot join a space with a different filter in 2 browsers" matches this phrase in the
+        // message a script gets from WA.spaces.joinSpace.
+        await expect(carolJoins).rejects.toThrow(/[Ff]ilter type mismatch/);
 
         expect(getSpaceStreamToBackPromise).toHaveBeenCalledTimes(1);
         expect(
