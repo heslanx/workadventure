@@ -50,6 +50,39 @@ describe("SocketManager space state queries", () => {
         expect(querySend).not.toHaveBeenCalled();
     });
 
+    // SM-09: the two messages below reach the log, Sentry and the browser without the space, the user or the case.
+    it("SM-09 (pinned): rejects a query from a socket without a space user id, naming neither the space nor the user", async () => {
+        const querySend = vi.fn();
+        const manager = createManager(querySend);
+
+        await expect(
+            manager.handleSpaceStateQuery(
+                createClient({ spaceUserId: "", userUuid: "uuid-alice" }),
+                "world.space-name",
+                { query: { $case: "raiseHand", raiseHand: { raised: true } } },
+                { signal: new AbortController().signal },
+            ),
+        ).rejects.toHaveProperty("message", "Space user id not found");
+        expect(querySend).not.toHaveBeenCalled();
+    });
+
+    it("SM-09 (pinned): rejects an answer of another case from the space back, naming neither the space nor the case", async () => {
+        const querySend = vi.fn().mockResolvedValue({
+            $case: "addSpaceUserAnswer",
+            addSpaceUserAnswer: { spaceName: "world.space-name", spaceUserId: "space-user-1" },
+        });
+        const manager = createManager(querySend);
+
+        await expect(
+            manager.handleSpaceStateQuery(
+                createClient(),
+                "world.space-name",
+                { query: { $case: "raiseHand", raiseHand: { raised: true } } },
+                { signal: new AbortController().signal },
+            ),
+        ).rejects.toHaveProperty("message", "Unexpected answer");
+    });
+
     it("forwards a query with the socket space user id, and the recording timeout for recording", async () => {
         const querySend = vi.fn().mockResolvedValue({ $case: "spaceStateAnswer", spaceStateAnswer: {} });
         const manager = createManager(querySend);
