@@ -429,9 +429,9 @@ export const EnvironmentVariables = z.object({
     NODE_ENV: z.string().optional().describe("Node.js environment: 'development', 'production', or 'test'"),
     CONTACT_URL: AbsoluteOrRelativeUrl.optional().describe("URL for users to contact support or administrators"),
     POSTHOG_REPLAY_ENABLED: BoolAsString.optional()
-        .transform((val) => toBool(val, true))
+        .transform((val) => toBool(val, false))
         .describe(
-            "Allow masked PostHog session replay. Defaults to true; project replay settings must also enable it.",
+            "Allow masked PostHog session replay. Defaults to false; project replay settings must also enable it.",
         ),
     POSTHOG_REPLAY_SAMPLE_RATE: z
         .string()

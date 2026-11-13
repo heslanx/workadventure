@@ -96,3 +96,16 @@ describe("Boolean feature flags defaulting to true", () => {
         expect(FRONT_ENVIRONMENT_VARIABLES.ENABLE_ISSUE_REPORT).toBe(value);
     });
 });
+
+describe("PostHog session replay", () => {
+    it.each([
+        [undefined, false],
+        ["", false],
+        ["false", false],
+        ["true", true],
+    ])("is allowed only when POSTHOG_REPLAY_ENABLED is set to true (%s)", async (raw, expected) => {
+        const { EnvironmentVariables } = await import("../../src/pusher/enums/EnvironmentVariableValidator");
+
+        expect(EnvironmentVariables.shape.POSTHOG_REPLAY_ENABLED.parse(raw)).toBe(expected);
+    });
+});

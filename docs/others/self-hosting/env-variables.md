@@ -100,7 +100,7 @@ Environment variables for the Play service (frontend and pusher).
 | `MAX_DISPLAYED_VIDEOS` | No | An approximation of the maximum number of videos displayed at once. If there are more videos to display, the user will have to scroll. The number of videos can sometimes be slightly greater (MAX_DISPLAYED_VIDEOS + number of videos to display % number of videos per row). This is useful to avoid overloading the Livekit server when a lot of people are in the same room. |
 | `NODE_ENV` | No | Node.js environment: 'development', 'production', or 'test' |
 | `CONTACT_URL` | No | URL for users to contact support or administrators |
-| `POSTHOG_REPLAY_ENABLED` | No | Allow masked PostHog session replay. Defaults to true; project replay settings must also enable it. |
+| `POSTHOG_REPLAY_ENABLED` | No | Allow masked PostHog session replay. Defaults to false; project replay settings must also enable it. |
 | `POSTHOG_REPLAY_SAMPLE_RATE` | No | Fraction of eligible browser sessions recorded, from 0 to 1. Defaults to 0.1. |
 | `FALLBACK_LOCALE` | No | Default locale/language code when user's locale is not available (e.g., 'en', 'fr') |
 | `ENABLE_REPORT_ISSUES_MENU` | No | Enable the 'Report Issues' menu option. Defaults to false |
