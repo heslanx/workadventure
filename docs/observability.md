@@ -39,7 +39,7 @@ time until every game asset is rendered. Background tabs reset the FPS window.
    and notification destination first; this setup does not create unsolicited notifications.
 
 `OBSERVABILITY_ENABLED=false` disables OpenTelemetry only. Remove the project token to disable PostHog event
-and exception capture as well; disable replay independently with `POSTHOG_REPLAY_ENABLED=false`.
+and exception capture as well. Replay stays off unless `POSTHOG_REPLAY_ENABLED=true`.
 Invalid OpenTelemetry configuration skips telemetry with a safe warning rather than preventing startup.
 An optional `OTEL_EXPORTER_OTLP_ENDPOINT` routes OTLP signals to another collector without forwarding the
 PostHog token. Collector authentication must be supplied outside this implementation.
