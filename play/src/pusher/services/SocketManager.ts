@@ -56,6 +56,7 @@ import { AvailabilityStatus, noUndefined } from "@workadventure/messages";
 import { Metadata } from "@grpc/grpc-js";
 import type { RoomManagerClient } from "@workadventure/messages/src/ts-proto-generated/services";
 import * as Sentry from "@sentry/node";
+import { asError } from "catch-unknown";
 import type { AxiosResponse } from "axios";
 import axios, { isAxiosError } from "axios";
 import type { WebSocket } from "uWebSockets.js";
@@ -444,7 +445,6 @@ export class SocketManager implements ZoneEventListener {
 
         const streamToBack = socketData.backConnection;
         if (!streamToBack) {
-            Sentry.captureException("Client has no back connection");
             throw new Error("Client has no back connection");
         }
 
@@ -687,21 +687,24 @@ export class SocketManager implements ZoneEventListener {
 
             const room = this.rooms.get(socketData.roomId);
             if (!room) {
-                console.error("In SET_VIEWPORT, could not find world with id '", socketData.roomId, "'");
-                Sentry.captureException("In SET_VIEWPORT, could not find world with id ' " + socketData.roomId);
+                const error = new Error(
+                    `Cannot set the viewport: room ${socketData.roomId} is not open on this pusher`,
+                );
+                Sentry.captureException(error);
+                console.error(error);
                 return;
             }
             room.setViewport(client, socketData.viewport);
         } catch (e) {
-            Sentry.captureException(`An error occurred on "SET_VIEWPORT" event ${e}`);
-            console.error(`An error occurred on "SET_VIEWPORT" event ${e}`);
+            const error = new Error(`Failed to set the viewport of room ${socketData.roomId}`, { cause: asError(e) });
+            Sentry.captureException(error);
+            console.error(error);
         }
     }
 
     handleUserMovesMessage(client: PusherWebSocket, userMovesMessage: UserMovesMessage): void {
         const socketData = client.getUserData();
         if (!socketData.backConnection) {
-            Sentry.captureException("Client has no back connection");
             throw new Error("Client has no back connection");
         }
 

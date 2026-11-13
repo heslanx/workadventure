@@ -18,7 +18,7 @@ const VIEWPORT = { left: 0, top: 0, right: 319, bottom: 319 };
 
 /**
  * What Sentry and the log receive when a room method of the manager fails. A string has no stack and no cause, so
- * Sentry cannot say where the failure happened (SM-08).
+ * Sentry could not say where the failure happened (SM-08): each failure is reported once, as an Error.
  */
 describe("SocketManager error reports", () => {
     afterEach(() => {
@@ -30,7 +30,7 @@ describe("SocketManager error reports", () => {
         return mock<PusherWebSocket>({ getUserData: vi.fn().mockReturnValue({ roomId: ROOM }) });
     }
 
-    it("SM-08 (pinned): sends Sentry and the log a string, without the error, when a viewport change fails", () => {
+    it("SM-08 (fixed): sends Sentry and the log one Error that names the room and keeps the cause, when a viewport change fails", () => {
         const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
         const manager = new SocketManager();
         const failure = new Error(`Cannot set viewport in room ${ROOM}, connection is closing`);
@@ -43,24 +43,28 @@ describe("SocketManager error reports", () => {
 
         manager.handleViewport(socketWithoutBackStream(), VIEWPORT);
 
-        const text = `An error occurred on "SET_VIEWPORT" event Error: Cannot set viewport in room ${ROOM}, connection is closing`;
-        expect(vi.mocked(Sentry.captureException).mock.calls).toEqual([[text]]);
-        expect(log.mock.calls).toEqual([[text]]);
+        expect(Sentry.captureException).toHaveBeenCalledTimes(1);
+        const [[reported]] = vi.mocked(Sentry.captureException).mock.calls;
+        expect(reported).toBeInstanceOf(Error);
+        expect(reported).toMatchObject({ message: `Failed to set the viewport of room ${ROOM}`, cause: failure });
+        expect(log.mock.calls).toEqual([[reported]]);
     });
 
-    it("SM-08 (pinned): sends Sentry a string when a viewport change finds no room", () => {
+    it("SM-08 (fixed): sends Sentry and the log one Error that names the room, when a viewport change finds no room", () => {
         const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
         const manager = new SocketManager();
 
         manager.handleViewport(socketWithoutBackStream(), VIEWPORT);
 
-        expect(vi.mocked(Sentry.captureException).mock.calls).toEqual([
-            [`In SET_VIEWPORT, could not find world with id ' ${ROOM}`],
-        ]);
-        expect(log.mock.calls).toEqual([["In SET_VIEWPORT, could not find world with id '", ROOM, "'"]]);
+        expect(Sentry.captureException).toHaveBeenCalledTimes(1);
+        const [[reported]] = vi.mocked(Sentry.captureException).mock.calls;
+        expect(reported).toBeInstanceOf(Error);
+        expect(reported).toHaveProperty("message", `Cannot set the viewport: room ${ROOM} is not open on this pusher`);
+        expect(log.mock.calls).toEqual([[reported]]);
     });
 
-    it("SM-08 (pinned): a move from a socket without a back stream throws, and sends Sentry the same text as a string", () => {
+    // The thrown Error is the report: IoSocketController's message handler sends what it catches to Sentry.
+    it("SM-08 (fixed): a move from a socket without a back stream throws, and sends Sentry no second report", () => {
         const manager = new SocketManager();
         const move = UserMovesMessage.fromPartial({ viewport: VIEWPORT });
 
@@ -68,10 +72,10 @@ describe("SocketManager error reports", () => {
             "Client has no back connection",
         );
 
-        expect(vi.mocked(Sentry.captureException).mock.calls).toEqual([["Client has no back connection"]]);
+        expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
-    it("SM-08 (pinned): a join from a socket without a back stream rejects, and sends Sentry the same text as a string", async () => {
+    it("SM-08 (fixed): a join from a socket without a back stream rejects, and sends Sentry no second report", async () => {
         const manager = new SocketManager();
         const join = JoinRoomFrontMessage.fromPartial({ positionMessage: {}, viewportMessage: VIEWPORT });
 
@@ -79,6 +83,6 @@ describe("SocketManager error reports", () => {
             "Client has no back connection",
         );
 
-        expect(vi.mocked(Sentry.captureException).mock.calls).toEqual([["Client has no back connection"]]);
+        expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 });
