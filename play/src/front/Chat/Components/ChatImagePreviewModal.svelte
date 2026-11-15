@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import ButtonClose from "../../Components/Input/ButtonClose.svelte";
     import LL from "../../../i18n/i18n-svelte";
+    import { focusTrap } from "../../Utils/focusTrap";
     import { IconExternalLink } from "@wa-icons";
     import { modals } from "@wa-modals";
 
@@ -53,7 +54,9 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-        class="relative flex flex-col bg-contrast/75 backdrop-blur-md text-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden pointer-events-auto shadow-xl"
+        tabindex="-1"
+        use:focusTrap
+        class="relative flex flex-col bg-contrast/75 backdrop-blur-md text-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden pointer-events-auto shadow-lg"
         onclick={(event) => {
             event.stopPropagation();
         }}
@@ -78,7 +81,7 @@
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="flex items-center justify-center rounded-lg p-2 hover:bg-white/20 text-white transition-colors"
+                        class="flex items-center justify-center rounded p-2 hover:bg-white/20 text-white transition-colors"
                         title={$LL.chat.imagePreview.openInNewTab()}
                     >
                         <IconExternalLink class="h-6 w-6" />

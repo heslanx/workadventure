@@ -78,7 +78,7 @@
     </div>
     <div class="flex flex-col min-w-0 grow">
         <div class="m-0 text-sm font-bold truncate">{$roomName}</div>
-        <div class="text-xs text-white/50 truncate">{subtitle}</div>
+        <div class="text-xs text-white/60 truncate">{subtitle}</div>
     </div>
     {#if loadingInvitation}
         <div class="flex shrink-0 items-center px-3">

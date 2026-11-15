@@ -26,7 +26,7 @@
 
 <!-- Always there, even empty: the conversation does not jump when someone starts or stops typing. -->
 <div
-    class="flex h-[22px] shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap px-3 text-xs text-white/60"
+    class="flex min-h-[1.375rem] shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-xs text-white/60"
     aria-live="polite"
     data-testid="typingIndicator"
 >

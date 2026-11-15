@@ -24,22 +24,32 @@
         room.ensurePollRichHydrated?.().catch((error) => console.error("Failed to hydrate polls side panel", error));
     });
 
+    // Kept under the poll after the toast expires, so the failure stays visible where it happened.
+    let pollFailure: { pollId: string; message: string } | undefined = $state(undefined);
+
+    function showPollFailure(pollId: string, message: string): void {
+        pollFailure = { pollId, message };
+        toastStore.addToast(TextToast, { message }, undefined);
+    }
+
     async function focusPoll(poll: ChatPollItem) {
+        pollFailure = undefined;
         if (poll.context.kind === "thread") {
             const thread = await room.openThread?.(poll.context.threadRootMessageId);
             if (!thread) {
-                toastStore.addToast(TextToast, { message: $LL.chat.thread.openError() }, undefined);
+                showPollFailure(poll.id, $LL.chat.thread.openError());
+                return;
+            }
+
+            // Check before switching sections: the switch unmounts this panel and would drop the inline failure.
+            const canFocusThreadPoll = (await thread.ensureTimelineEventVisible?.(poll.id)) ?? true;
+            if (!canFocusThreadPoll) {
+                showPollFailure(poll.id, $LL.chat.roomPanel.pollFocusError());
                 return;
             }
 
             selectedThreadStore.set(thread);
             roomSidePanelStore.setActiveSection("threads");
-
-            const canFocusThreadPoll = (await thread.ensureTimelineEventVisible?.(poll.id)) ?? true;
-            if (!canFocusThreadPoll) {
-                toastStore.addToast(TextToast, { message: $LL.chat.roomPanel.pollFocusError() }, undefined);
-                return;
-            }
 
             await tick();
             roomSidePanelStore.focusTimelineEvent(thread.id, poll.id);
@@ -48,7 +58,7 @@
 
         const canFocusRoomPoll = (await room.ensureTimelineEventVisible?.(poll.id)) ?? true;
         if (!canFocusRoomPoll) {
-            toastStore.addToast(TextToast, { message: $LL.chat.roomPanel.pollFocusError() }, undefined);
+            showPollFailure(poll.id, $LL.chat.roomPanel.pollFocusError());
             return;
         }
 
@@ -88,7 +98,7 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col bg-white/[0.02]" data-testid="roomSidePanelPolls">
-    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-4 py-5">
+    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-3 py-5">
         <div class="text-sm font-bold tracking-widest uppercase opacity-75">
             {$LL.chat.roomPanel.sections.polls()}
         </div>
@@ -143,6 +153,11 @@
                             data-testid="roomSidePanelPollItem"
                         >
                             <RoomSidePanelPollItem {poll} onFocusPoll={() => focusPoll(poll)} />
+                            {#if pollFailure?.pollId === poll.id}
+                                <div class="mt-2 text-xs text-danger-400" data-testid="roomSidePanelPollItemError">
+                                    {pollFailure.message}
+                                </div>
+                            {/if}
                         </div>
                     {/each}
                 </div>

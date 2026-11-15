@@ -43,7 +43,7 @@
         <div class="flex min-w-0 flex-col gap-1">
             <span class="leading-snug">{title}</span>
             <span
-                class="inline-flex w-fit rounded-md bg-amber-500/25 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200"
+                class="inline-flex w-fit rounded-sm bg-amber-500/25 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200"
                 >{tagText}</span
             >
         </div>

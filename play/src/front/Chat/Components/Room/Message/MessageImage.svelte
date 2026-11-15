@@ -29,7 +29,7 @@
 {#if canDisplayImage}
     <div class="cursor-pointer relative group block p-1 pb-0">
         <div
-            class="bg-contrast/50 p-1 rounded absolute top-2 right-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all h-fit w-fit z-10"
+            class="bg-contrast/50 p-1 rounded absolute top-2 right-2 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all h-fit w-fit z-10"
             role="group"
             aria-label={$LL.chat.imagePreview.imageActions()}
         >

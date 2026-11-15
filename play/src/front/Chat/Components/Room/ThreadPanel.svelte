@@ -31,9 +31,14 @@
         room.ensureThreadsHydrated?.().catch((error) => console.error("Failed to retry thread hydration", error));
     }
 
+    // Kept on the thread row after the toast expires, so the failure stays visible where it happened.
+    let failedThreadId: string | undefined = $state(undefined);
+
     async function openThread(rootMessageId: string) {
+        failedThreadId = undefined;
         const thread = await room.openThread?.(rootMessageId);
         if (!thread) {
+            failedThreadId = rootMessageId;
             toastStore.addToast(TextToast, { message: $LL.chat.thread.openError() }, undefined);
             return;
         }
@@ -165,7 +170,7 @@
                                     >
                                 </div>
                                 {#if summary.isDegraded}
-                                    <div class="mt-2 text-xs text-white/55">
+                                    <div class="mt-2 text-xs text-white/60">
                                         {$LL.chat.thread.degradedBadge()}
                                     </div>
                                 {/if}
@@ -173,6 +178,14 @@
                                     <div class="mt-2 truncate text-xs opacity-60">
                                         {#if summary.lastReplySenderName}{summary.lastReplySenderName}:
                                         {/if}{summary.lastReplyPreview}
+                                    </div>
+                                {/if}
+                                {#if failedThreadId === summary.rootMessageId}
+                                    <div
+                                        class="mt-2 text-xs font-normal text-danger-400"
+                                        data-testid={`threadPanelItemError-${summary.rootMessageId}`}
+                                    >
+                                        {$LL.chat.thread.openError()}
                                     </div>
                                 {/if}
                             </button>

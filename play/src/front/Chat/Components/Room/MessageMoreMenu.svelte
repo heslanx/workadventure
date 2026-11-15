@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import LL from "../../../../i18n/i18n-svelte";
     import { IconArrowDown, IconCopy, IconMessageCircle2, IconPencil, IconTrash } from "@wa-icons";
 
@@ -33,17 +33,23 @@
         }
     });
 
-    let copied = $state(false);
+    let copyState: "idle" | "copied" | "failed" = $state("idle");
+    let closeTimeout: ReturnType<typeof setTimeout> | undefined;
 
-    // Say it worked before going away.
+    // Say it worked before going away; when the browser refuses the clipboard, say so and stay open.
     function copy() {
         onCopy?.()
             .then(() => {
-                copied = true;
-                setTimeout(onClose, 600);
+                copyState = "copied";
+                closeTimeout = setTimeout(onClose, 600);
             })
-            .catch((error) => console.error(error));
+            .catch((error: unknown) => {
+                console.error("Could not copy the message", error);
+                copyState = "failed";
+            });
     }
+
+    onDestroy(() => clearTimeout(closeTimeout));
 
     function run(action: (() => void) | undefined) {
         onClose();
@@ -77,7 +83,11 @@
     {/if}
     {#if onCopy}
         <button type="button" role="menuitem" class="item" data-testid="copyMessageButton" onclick={copy}>
-            <IconCopy font-size={16} />{copied ? $LL.chat.copied() : $LL.chat.copy()}
+            <IconCopy font-size={16} />{copyState === "copied"
+                ? $LL.chat.copied()
+                : copyState === "failed"
+                  ? $LL.chat.copyFailed()
+                  : $LL.chat.copy()}
         </button>
     {/if}
     {#if onEdit}

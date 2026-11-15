@@ -178,7 +178,7 @@
                 {#each [{ key: "joined", title: $LL.chat.manageRoomUsers.sectionJoined(), list: joined }, { key: "invited", title: $LL.chat.manageRoomUsers.sectionInvited(), list: invited }] as section (section.key)}
                     {#if section.list.length > 0}
                         <section class="flex flex-col gap-2" data-testid={`roomSidePanelMembers-${section.key}`}>
-                            <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/50">
+                            <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/60">
                                 {section.title} · {section.list.length}
                             </h3>
                             {#each section.list as member (member.id)}
@@ -196,7 +196,7 @@
                 {#if leftOrBanned.length > 0}
                     <details class="flex flex-col gap-2" data-testid="roomSidePanelMembers-left">
                         <summary
-                            class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/50 hover:text-white/80"
+                            class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-white/80"
                         >
                             {$LL.chat.manageRoomUsers.sectionLeft()} · {leftOrBanned.length}
                         </summary>

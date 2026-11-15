@@ -56,7 +56,7 @@
 
 <button
     data-testid="openEmojiPickerButton"
-    class="p-0 m-0 w-7 h-7 grid place-items-center rounded-md text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer"
+    class="p-0 m-0 w-7 h-7 grid place-items-center rounded text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer"
     aria-label={$LL.chat.react()}
     title={$LL.chat.react()}
     bind:this={trigger}

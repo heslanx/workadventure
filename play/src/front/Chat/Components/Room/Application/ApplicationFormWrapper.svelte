@@ -188,7 +188,7 @@
             {property.title}
         </h2>
     </div>
-    <p class="text-xs text-center p-0 m-0 min-h-8 w-full leading-tight whitespace-normal break-words text-gray-400">
+    <p class="text-xs text-center p-0 m-0 min-h-8 w-full leading-5 whitespace-normal break-words text-white/60">
         {property.description}
     </p>
 

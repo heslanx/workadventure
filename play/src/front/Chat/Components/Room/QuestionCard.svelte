@@ -33,13 +33,13 @@
 <div class="px-3">
     <div
         data-testid="questionCard"
-        class="question-card rounded-2xl bg-contrast/90 border border-solid p-4 max-w-2xl transition-colors {$questionState.isAnswered
+        class="question-card rounded-lg bg-contrast/90 border border-solid p-4 max-w-2xl transition-colors {$questionState.isAnswered
             ? 'border-success/30'
             : 'border-white/10'}"
     >
         <div class="flex flex-wrap items-center gap-2">
             <span
-                class="inline-flex h-6 items-center gap-1 rounded-md bg-warning/15 px-2 text-xs font-medium text-warning"
+                class="inline-flex h-6 items-center gap-1 rounded-sm bg-warning/15 px-2 text-xs font-medium text-warning"
             >
                 <IconHelpCircle font-size={12} />
                 {$LL.chat.question.badge()}
@@ -47,7 +47,7 @@
             {#if $questionState.isAnswered}
                 <span
                     data-testid="questionAnsweredBadge"
-                    class="ms-auto inline-flex h-6 items-center gap-1 rounded-md bg-success/15 px-2 text-xs font-medium text-success"
+                    class="ms-auto inline-flex h-6 items-center gap-1 rounded-sm bg-success/15 px-2 text-xs font-medium text-success"
                 >
                     <IconCheck font-size={12} />
                     {$LL.chat.question.answered()}
@@ -59,7 +59,7 @@
             {$questionState.body}
         </div>
 
-        <div class="mt-2 text-xs text-white/55">
+        <div class="mt-2 text-xs text-white/60">
             {$questionState.senderName ?? $LL.chat.question.unknownAuthor()} · {new Date(
                 $questionState.createdAt,
             ).toLocaleTimeString($locale, { hour: "2-digit", minute: "2-digit" })}

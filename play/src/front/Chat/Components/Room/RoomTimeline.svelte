@@ -115,6 +115,8 @@
     let historyLoadFailed = $state(false);
     /** Messages from others that arrived while the user was reading history (autoScroll off). */
     let newMessagesCount = $state(0);
+    /** Screen-reader line for the latest message from someone else; history pages are never announced. */
+    let incomingMessageAnnouncement: { key: string; text: string } | undefined = $state(undefined);
     /** More than a screen above the bottom: worth offering a way back even with nothing new. */
     let farFromBottom = $state(false);
     /** Height of the visible list: the applications panel can squeeze it down to nothing. */
@@ -466,6 +468,23 @@
                 ? lastItem.timelineItem.message
                 : undefined;
 
+        const incomingSenderName = lastMessage?.sender?.username;
+        // The count is 0 when the timeline was rebuilt: an old message must not be read as a new one.
+        if (
+            isNewLastItem &&
+            lastKey !== undefined &&
+            incomingSenderName &&
+            lastMessage?.sender?.chatId !== myChatID &&
+            countIncomingMessagesAfter(items, previousLastKey, myChatID) > 0
+        ) {
+            untrack(() => {
+                incomingMessageAnnouncement = {
+                    key: lastKey,
+                    text: $LL.notification.message({ name: incomingSenderName }),
+                };
+            });
+        }
+
         if (isNewLastItem && lastMessage?.sender?.chatId === myChatID) {
             // I just sent this: jump to it even if I was reading history.
             scrollToMessageListBottom();
@@ -770,7 +789,7 @@
                                 <!-- A target of its own: the arrow always goes back to the list, the count jumps to a conversation. -->
                                 <button
                                     type="button"
-                                    class="absolute top-0 end-0 rounded-full p-0.5"
+                                    class="absolute top-0 end-0 rounded-full p-0.5 before:absolute before:-inset-1"
                                     data-testid="unreadElsewhereButton"
                                     aria-label={$LL.chat.a11y.showUnreadConversations()}
                                     aria-haspopup="true"
@@ -803,7 +822,11 @@
                         </span>
                     {/if}
                     <div class="min-w-0 grow px-2 {roomListVisible ? 'text-start' : 'text-center'}">
-                        <div class="text-sm font-bold truncate" data-testid="roomName">
+                        <div
+                            class="text-sm font-bold line-clamp-2 break-words"
+                            title={$roomName}
+                            data-testid="roomName"
+                        >
                             {$roomName}
                         </div>
                         <ConversationSubtitle {room} centered={!roomListVisible} />
@@ -845,11 +868,19 @@
                             onclick={() => roomSidePanelStore.toggle()}
                         >
                             <IconInfoCircle font-size="20" />
+                            <span class="sr-only"
+                                >{roomSidePanelToggleIsOpen
+                                    ? $LL.chat.roomPanel.toggleClose()
+                                    : $LL.chat.roomPanel.toggleOpen()}</span
+                            >
                             {#if unreadSidePanelCount > 0}
                                 <span
                                     class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border border-solid border-contrast bg-success"
                                     data-testid="toggleRoomSidePanelUnreadBadge"
-                                ></span>
+                                    ><span class="sr-only"
+                                        >{$LL.chat.a11y.unreadCount({ count: unreadSidePanelCount })}</span
+                                    ></span
+                                >
                             {/if}
                         </button>
                     {:else if !roomListVisible}
@@ -865,6 +896,13 @@
                 {/if}
             </div>
         {/if}
+        <div class="sr-only" aria-live="polite" aria-atomic="true">
+            {#if incomingMessageAnnouncement}
+                {#key incomingMessageAnnouncement.key}
+                    <span>{incomingMessageAnnouncement.text}</span>
+                {/key}
+            {/if}
+        </div>
         <div
             bind:this={messageListRef}
             bind:clientHeight={messageListHeight}

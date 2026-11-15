@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { scale } from "svelte/transition";
+    import { scale } from "../../Utils/reducedMotion";
     import type { MatrixUserSettingsDiagnostics } from "../Connection/ChatConnection";
     import { hasMatrixChatCapabilities } from "../Connection/ChatConnection";
     import Button from "../../Components/UI/Button.svelte";
@@ -127,7 +127,7 @@
 
     <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-4 text-sm">
         <section class="flex flex-col gap-2">
-            <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/50">
+            <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/60">
                 {$LL.chat.matrixSettings.notificationsSection()}
             </h3>
             <InputCheckbox
@@ -145,16 +145,16 @@
                 <span class="text-sm">{$LL.chat.loader()}</span>
             </div>
         {:else if loadError}
-            <p class="m-0 rounded-xl border border-red-400/40 bg-red-500/15 px-3 py-2 text-sm text-red-100">
+            <p class="m-0 rounded-lg border border-red-400/40 bg-red-500/15 px-3 py-2 text-sm text-red-100">
                 {loadError}
             </p>
         {:else if data}
             {@const snapshot = data}
             <section class="flex flex-col gap-2">
-                <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/50">
+                <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/60">
                     {$LL.chat.matrixSettings.profileSection()}
                 </h3>
-                <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                <div class="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
                     {#if snapshot.profileAvatarPreviewUrl && !avatarFailed}
                         <img
                             src={snapshot.profileAvatarPreviewUrl}
@@ -163,7 +163,9 @@
                             onerror={() => (avatarFailed = true)}
                         />
                     {/if}
-                    <span class="min-w-0 flex-1 truncate font-medium">{snapshot.profileDisplayName ?? "—"}</span>
+                    <span class="min-w-0 flex-1 truncate font-medium"
+                        >{snapshot.profileDisplayName ?? $LL.chat.matrixSettings.notSet()}</span
+                    >
                 </div>
                 <p class="m-0 text-xs text-white/60">
                     {#if snapshot.profileNeedsSync}
@@ -199,7 +201,7 @@
             </section>
 
             <section class="flex flex-col gap-2">
-                <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/50">
+                <h3 class="m-0 text-xs font-semibold uppercase tracking-wide text-white/60">
                     {$LL.chat.matrixSettings.securitySection()}
                 </h3>
                 <p class="m-0 text-xs text-white/60">{$LL.chat.matrixSettings.securityHint()}</p>
@@ -216,7 +218,7 @@
 
             <details class="flex flex-col gap-2">
                 <summary
-                    class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/50 hover:text-white/80"
+                    class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-white/80"
                 >
                     {$LL.chat.matrixSettings.advancedSection()}
                 </summary>
@@ -224,7 +226,7 @@
                     {#each [{ key: "id", label: $LL.chat.matrixSettings.matrixUserId(), value: snapshot.matrixUserId }, { key: "hs", label: $LL.chat.matrixSettings.homeserver(), value: snapshot.homeserverUrl }] as row (row.key)}
                         <button
                             type="button"
-                            class="group flex w-full flex-col gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-white/60"
+                            class="group flex w-full flex-col gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-white/60"
                             onclick={() => copyText(row.key, row.value)}
                         >
                             <span class="flex w-full justify-between gap-2 text-xs">
@@ -235,10 +237,10 @@
                                         : $LL.chat.matrixSettings.copy()}
                                 </span>
                             </span>
-                            <span class="w-full break-all text-xs text-white/90">{row.value}</span>
+                            <span class="w-full break-all text-sm text-white/90">{row.value}</span>
                         </button>
                     {/each}
-                    <p class="m-0 text-xs text-white/55">{$LL.chat.matrixSettings.clearSuggestedRoomsHint()}</p>
+                    <p class="m-0 text-xs text-white/60">{$LL.chat.matrixSettings.clearSuggestedRoomsHint()}</p>
                     <Button
                         type="button"
                         variant={successFlash === "clearSuggested" ? "success" : "light"}

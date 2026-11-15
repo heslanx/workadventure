@@ -128,7 +128,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-    class="message-bubble m-0 {hasDepth ? 'text-xs leading-4' : 'text-sm'} text-white py-1 px-3"
+    class="message-bubble m-0 {hasDepth ? 'text-xs leading-5' : 'text-sm'} text-white py-1 px-3"
     class:cursor-wait={opening}
     aria-busy={opening}
     lang=""

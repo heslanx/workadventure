@@ -92,7 +92,7 @@
                             <Avatar tiny pictureStore={who.pictureStore} fallbackName={who.name} color={who.color} />
                             <span class="truncate">{who.name}</span>
                             {#if reader.readAt}
-                                <span class="ms-auto shrink-0 text-white/50 tabular-nums"
+                                <span class="ms-auto shrink-0 text-white/60 tabular-nums"
                                     >{formatLastActivity(reader.readAt, new Date(), $locale)}</span
                                 >
                             {/if}

@@ -108,15 +108,17 @@
         class:mb-2={isOpen || rootFolder}
         data-roving-row
     >
-        <div class="flex items-center space-x-2 grow m-0 p-0">
+        <div class="flex min-w-0 items-center space-x-2 grow m-0 p-0">
             <button
-                class="flex items-center space-x-2 grow m-0 p-0 focus-visible:ring-2 focus-visible:ring-white/70"
+                class="flex min-w-0 items-center space-x-2 grow m-0 p-0 focus-visible:ring-2 focus-visible:ring-white/70"
                 data-room-row-button
                 aria-expanded={isOpen}
                 onclick={toggleFolder}
             >
-                <div class="text-white text-sm font-bold tracking-widest uppercase grow text-start">
-                    <span class="truncate">{$name}</span>
+                <div
+                    class="flex min-w-0 items-center gap-2 text-white text-sm font-bold tracking-widest uppercase grow text-start"
+                >
+                    <span class="truncate" title={$name}>{$name}</span>
                     {#if hasSuggestedRooms}
                         <span
                             class="shrink-0 inline-flex items-center rounded-full bg-secondary/50 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white/95 border border-secondary/60"
@@ -139,7 +141,7 @@
         </div>
 
         <button
-            class="transition-all group-hover:bg-white/10 p-1 rounded-lg aspect-square flex items-center justify-center text-white"
+            class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
             data-testid={`toggleFolder${$name}`}
             tabindex="-1"
             aria-hidden="true"
@@ -189,7 +191,7 @@
                                 </button>
                             </div>
                             <button
-                                class="transition-all group-hover:bg-white/10 p-1 rounded-lg aspect-square flex items-center justify-center text-white"
+                                class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                                 onclick={toggleJoinableRooms}
                             >
                                 <IconChevronUp
@@ -255,11 +257,11 @@
                     <p
                         class={`${
                             rootFolder
-                                ? "self-center text-md text-gray-500"
-                                : "py-2 px-3 m-0 text-white/50 italic text-sm"
+                                ? "self-center text-md text-white/60"
+                                : "py-2 px-3 m-0 text-white/60 italic text-sm"
                         }`}
                     >
-                        {$LL.chat.nothingToDisplay()}
+                        {$LL.chat.folderEmpty()}
                     </p>
                 {/if}
             </div>

@@ -156,7 +156,7 @@
 
 {#if matches.length > 0}
     <div
-        class="absolute bottom-full start-0 end-0 z-50 mx-2 mb-2 overflow-hidden rounded-xl border border-solid border-white/10 bg-contrast shadow-xl"
+        class="absolute bottom-full start-0 end-0 z-50 mx-2 mb-2 overflow-hidden rounded-lg border border-solid border-white/10 bg-contrast shadow-lg"
         data-testid="mentionSuggestions"
     >
         <ul

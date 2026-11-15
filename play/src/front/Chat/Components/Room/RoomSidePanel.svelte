@@ -81,7 +81,7 @@
                 {#if displayedSection !== "home"}
                     <button
                         type="button"
-                        class="m-0 flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-solid border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10"
+                        class="m-0 flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded border border-solid border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10"
                         data-testid="roomSidePanelBackButton"
                         title={$LL.chat.roomPanel.back()}
                         aria-label={$LL.chat.roomPanel.back()}
@@ -108,7 +108,7 @@
                 {#if shouldShowCloseButton}
                     <button
                         type="button"
-                        class="m-0 flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-solid border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10"
+                        class="m-0 flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded border border-solid border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10"
                         data-testid="closeRoomSidePanelButton"
                         title={$LL.chat.roomPanel.toggleClose()}
                         aria-label={$LL.chat.roomPanel.toggleClose()}

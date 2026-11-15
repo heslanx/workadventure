@@ -3,6 +3,7 @@
     import type { MatrixChatConnectionLike, MatrixPeerProfileDiagnostics } from "../Connection/ChatConnection";
     import ButtonClose from "../../Components/Input/ButtonClose.svelte";
     import LL from "../../../i18n/i18n-svelte";
+    import { focusTrap } from "../../Utils/focusTrap";
     import { IconLoader } from "@wa-icons";
     import { modals } from "@wa-modals";
 
@@ -69,9 +70,17 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
-        class="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-contrast/90 text-white shadow-xl backdrop-blur-md pointer-events-auto"
+        class="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-contrast/90 text-white shadow-lg backdrop-blur-md pointer-events-auto"
+        tabindex="-1"
+        use:focusTrap
         onclick={(event) => {
             event.stopPropagation();
+        }}
+        onkeydown={(event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                modals.close();
+            }
         }}
     >
         <div class="flex items-start justify-between gap-3 border-b border-white/10 p-4 sm:p-5">
@@ -92,19 +101,19 @@
                     <span class="text-sm">{$LL.chat.loader()}</span>
                 </div>
             {:else if loadError}
-                <p class="rounded-xl border border-red-400/40 bg-red-500/15 px-3 py-2 text-sm text-red-100">
+                <p class="rounded-lg border border-red-400/40 bg-red-500/15 px-3 py-2 text-sm text-red-100">
                     {loadError}
                 </p>
             {:else if data}
                 {@const snapshot = data}
                 <div class="flex flex-col gap-4 text-sm">
                     <section class="flex flex-col gap-2">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-white/50">
+                        <h3 class="text-xs font-semibold uppercase tracking-wide text-white/60">
                             {$LL.chat.matrixSettings.identitySection()}
                         </h3>
                         <button
                             type="button"
-                            class="group flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-white/20"
+                            class="group flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-white/20"
                             onclick={() => copyText("id", snapshot.matrixUserId)}
                         >
                             <span class="text-white/60">{$LL.chat.matrixSettings.matrixUserId()}</span>
@@ -119,7 +128,7 @@
                         </button>
                         <button
                             type="button"
-                            class="group flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-white/20"
+                            class="group flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-white/20"
                             onclick={() => copyText("hs", snapshot.homeserverUrl)}
                         >
                             <span class="text-white/60">{$LL.chat.matrixSettings.homeserver()}</span>
@@ -135,10 +144,10 @@
                     </section>
 
                     <section class="flex flex-col gap-2">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-white/50">
+                        <h3 class="text-xs font-semibold uppercase tracking-wide text-white/60">
                             {$LL.chat.matrixSettings.profileSection()}
                         </h3>
-                        <div class="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                        <div class="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
                             <div class="flex justify-between gap-2">
                                 <span class="text-white/60">{$LL.chat.matrixSettings.displayName()}</span>
                                 <span class="text-right text-white/90">{snapshot.profileDisplayName ?? "—"}</span>

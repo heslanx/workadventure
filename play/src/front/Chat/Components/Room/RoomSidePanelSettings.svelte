@@ -284,7 +284,7 @@
     <div class="flex-1 overflow-y-auto px-3 py-3">
         <div class="flex flex-col gap-3 text-sm">
             <div class="rounded-lg border border-solid border-white/10 bg-white/[0.04] px-3 py-3">
-                <div class="text-xs font-semibold uppercase text-white/45">
+                <div class="text-xs font-semibold uppercase text-white/70">
                     {$LL.chat.roomPanel.settings.roomType()}
                 </div>
                 <div class="mt-1 text-white">
@@ -295,7 +295,7 @@
             </div>
 
             <div class="rounded-lg border border-solid border-white/10 bg-white/[0.04] px-3 py-3">
-                <div class="text-xs font-semibold uppercase text-white/45">
+                <div class="text-xs font-semibold uppercase text-white/70">
                     {$LL.chat.roomPanel.settings.encryption()}
                 </div>
                 <div class="mt-1 text-white">
@@ -368,7 +368,7 @@
                     </option>
                 </Select>
                 {#if !canUseRestrictedAccess}
-                    <div class="-mt-1 text-xs text-white/45">
+                    <div class="-mt-1 text-xs text-white/70">
                         {$LL.chat.roomPanel.settings.restrictedUnavailable()}
                     </div>
                 {/if}
@@ -449,7 +449,7 @@
                 </details>
             {:else}
                 <div class="rounded-lg border border-solid border-white/10 bg-white/[0.04] px-3 py-3">
-                    <div class="text-xs font-semibold uppercase text-white/45">
+                    <div class="text-xs font-semibold uppercase text-white/70">
                         {$LL.chat.roomPanel.settings.joinRule()}
                     </div>
                     <div class="mt-1 text-white">
@@ -470,7 +470,7 @@
                 </div>
 
                 <div class="rounded-lg border border-solid border-white/10 bg-white/[0.04] px-3 py-3">
-                    <div class="text-xs font-semibold uppercase text-white/45">
+                    <div class="text-xs font-semibold uppercase text-white/70">
                         {$LL.chat.createRoom.historyVisibility.label()}
                     </div>
                     <div class="mt-1 text-white">
@@ -511,7 +511,7 @@
                     <Alert variant="warning" class="w-full">{$LL.chat.roomPanel.settings.lostRightsWarning()}</Alert>
                 </div>
             {/if}
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <Button
                     variant="contrast"
                     class="m-0 flex-1"
@@ -528,6 +528,11 @@
                     disabled={settingsSaving ||
                         (!settingsDirty && !permissionsDirty) ||
                         ($canEditName && editableName.trim().length === 0)}
+                    disabledReason={settingsSaving
+                        ? undefined
+                        : !settingsDirty && !permissionsDirty
+                          ? $LL.chat.roomPanel.settings.nothingToSave()
+                          : $LL.chat.roomPanel.settings.nameRequiredToSave()}
                     onclick={saveSettings}
                 >
                     {settingsSaving ? $LL.chat.roomPanel.settings.saving() : $LL.chat.roomPanel.settings.save()}

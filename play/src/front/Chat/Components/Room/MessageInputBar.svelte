@@ -620,10 +620,10 @@
     let quotedMessageContent = $derived($selectedChatMessageToReply?.content);
 
     const applicationButtonClass =
-        "p-2 m-0 flex flex-col w-36 min-h-32 items-center justify-start hover:bg-white/10 rounded-2xl gap-2 disabled:opacity-50 text-center";
+        "p-2 m-0 flex flex-col w-36 min-h-32 items-center justify-start hover:bg-white/10 rounded-lg gap-2 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent text-center";
     const applicationTitleClass = "text-sm p-0 m-0 w-full leading-tight whitespace-normal break-words";
     const applicationDescriptionClass =
-        "text-xs p-0 m-0 min-h-12 w-full leading-tight whitespace-normal break-words text-gray-400";
+        "text-xs p-0 m-0 min-h-12 w-full leading-5 whitespace-normal break-words text-white/60";
 </script>
 
 <!-- Closing or leaving the tab while typing: the others would otherwise wait for the timeout. -->
@@ -651,19 +651,19 @@
                         {#if preview.type.includes("image") && preview.url !== undefined}
                             <img
                                 draggable="false"
-                                class="w-full h-full object-cover rounded-[10px]"
+                                class="w-full h-full object-cover rounded"
                                 src={preview.url}
                                 alt={preview.name}
                             />
                         {:else}
                             <div
                                 title={preview.name}
-                                class="flex flex-col items-start overflow-hidden text-ellipsis justify-between p-0.5 bg-contrast/90 h-full w-full text-xs rounded-[10px]"
+                                class="flex flex-col items-start overflow-hidden text-ellipsis justify-between p-0.5 bg-contrast/90 h-full w-full text-xs rounded"
                             >
                                 <span class="line-clamp-2 indent-3 text-xs">
                                     {preview.name}
                                 </span>
-                                <div class="flex items-center gap-1 rounded-[6px] bg-white/10 p-0.5 text-xxs m-0.5">
+                                <div class="flex items-center gap-1 rounded-sm bg-white/10 p-0.5 text-xxs m-0.5">
                                     {#if preview.type.includes("image") && preview.url === undefined}
                                         <IconLoader class="animate-spin shrink-0" font-size={12} />
                                     {/if}
@@ -681,7 +681,7 @@
                     data-testid="fileError"
                 >
                     <IconAlertTriangle class="mt-0.5 shrink-0 text-danger-200" font-size={16} />
-                    <div class="leading-snug">
+                    <div class="leading-normal">
                         <div class="font-bold">{fileError.title}</div>
                         {#if fileError.hint}
                             <div class="text-white/85">{fileError.hint}</div>
@@ -693,14 +693,17 @@
     </div>
 {/if}
 {#if applicationComponentOpened}
-    <div class="w-full bg-contrast/50 rounded-t-2xl">
+    <div class="w-full bg-contrast/50 rounded-t-lg">
         <div class="flex flex-wrap w-full justify-between items-center p-2 gap-2">
             <button
                 data-testid="youtubeApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("youtube")}
+                onclick={() => {
+                    if (!applicationManager.youtubeToolActivated) return;
+                    openLinkForm("youtube");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "youtube"}
-                disabled={!applicationManager.youtubeToolActivated}
+                aria-disabled={!applicationManager.youtubeToolActivated}
             >
                 <img draggable="false" class="w-8" src={youtubeSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.youtube.title()}</h2>
@@ -714,9 +717,12 @@
             <button
                 data-testid="klaxoonApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("klaxoon")}
+                onclick={() => {
+                    if (!applicationManager.klaxoonToolActivated) return;
+                    openLinkForm("klaxoon");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "klaxoon"}
-                disabled={!applicationManager.klaxoonToolActivated}
+                aria-disabled={!applicationManager.klaxoonToolActivated}
             >
                 <img draggable="false" class="w-8" src={klaxoonSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.klaxoon.title()}</h2>
@@ -730,9 +736,12 @@
             <button
                 data-testid="googleSheetsApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("googleSheets")}
+                onclick={() => {
+                    if (!applicationManager.googleSheetsToolActivated) return;
+                    openLinkForm("googleSheets");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "googleSheets"}
-                disabled={!applicationManager.googleSheetsToolActivated}
+                aria-disabled={!applicationManager.googleSheetsToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleSheetsSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleSheets.title()}</h2>
@@ -746,9 +755,12 @@
             <button
                 data-testid="googleDocsApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("googleDocs")}
+                onclick={() => {
+                    if (!applicationManager.googleDocsToolActivated) return;
+                    openLinkForm("googleDocs");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "googleDocs"}
-                disabled={!applicationManager.googleDocsToolActivated}
+                aria-disabled={!applicationManager.googleDocsToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleDocsSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleDocs.title()}</h2>
@@ -762,9 +774,12 @@
             <button
                 data-testid="googleSlidesApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("googleSlides")}
+                onclick={() => {
+                    if (!applicationManager.googleSlidesToolActivated) return;
+                    openLinkForm("googleSlides");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "googleSlides"}
-                disabled={!applicationManager.googleSlidesToolActivated}
+                aria-disabled={!applicationManager.googleSlidesToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleSlidesSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleSlides.title()}</h2>
@@ -778,9 +793,12 @@
             <button
                 data-testid="googleDriveApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("googleDrive")}
+                onclick={() => {
+                    if (!applicationManager.googleDriveToolActivated) return;
+                    openLinkForm("googleDrive");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "googleDrive"}
-                disabled={!applicationManager.googleDriveToolActivated}
+                aria-disabled={!applicationManager.googleDriveToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleDriveSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleDrive.title()}</h2>
@@ -794,9 +812,12 @@
             <button
                 data-testid="eraserApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("eraser")}
+                onclick={() => {
+                    if (!applicationManager.eraserToolActivated) return;
+                    openLinkForm("eraser");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "eraser"}
-                disabled={!applicationManager.eraserToolActivated}
+                aria-disabled={!applicationManager.eraserToolActivated}
             >
                 <img draggable="false" class="w-8" src={eraserSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.eraser.title()}</h2>
@@ -810,9 +831,12 @@
             <button
                 data-testid="excalidrawApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("excalidraw")}
+                onclick={() => {
+                    if (!applicationManager.excalidrawToolActivated) return;
+                    openLinkForm("excalidraw");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "excalidraw"}
-                disabled={!applicationManager.excalidrawToolActivated}
+                aria-disabled={!applicationManager.excalidrawToolActivated}
             >
                 <img draggable="false" class="w-8" src={excalidrawSvg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.excalidraw.title()}</h2>
@@ -826,9 +850,12 @@
             <button
                 data-testid="cardsApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("cards")}
+                onclick={() => {
+                    if (!applicationManager.cardsToolActivated) return;
+                    openLinkForm("cards");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "cards"}
-                disabled={!applicationManager.cardsToolActivated}
+                aria-disabled={!applicationManager.cardsToolActivated}
             >
                 <img draggable="false" class="w-8" src={cardsPng} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.cards.title()}</h2>
@@ -842,9 +869,12 @@
             <button
                 data-testid="tldrawApplicationButton"
                 class={applicationButtonClass}
-                onclick={() => openLinkForm("tldraw")}
+                onclick={() => {
+                    if (!applicationManager.tldrawToolActivated) return;
+                    openLinkForm("tldraw");
+                }}
                 class:bg-secondary-800={applicationProperty?.name === "tldraw"}
-                disabled={!applicationManager.tldrawToolActivated}
+                aria-disabled={!applicationManager.tldrawToolActivated}
             >
                 <img draggable="false" class="w-8" src={tldrawJpeg} alt={$LL.chat.a11y.applicationIcon()} />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.tldraw.title()}</h2>
@@ -875,9 +905,12 @@
             <button
                 data-testid="fileAttachmentButton"
                 class={applicationButtonClass}
-                onclick={() => openFileAttachmentComponent()}
+                onclick={() => {
+                    if (!canAttachFiles) return;
+                    openFileAttachmentComponent();
+                }}
                 class:bg-secondary-800={fileAttachmentComponentOpened}
-                disabled={!canAttachFiles}
+                aria-disabled={!canAttachFiles}
             >
                 <IconPaperclip font-size={32} />
                 <h2 class={applicationTitleClass}>
@@ -899,8 +932,11 @@
             <button
                 data-testid="createPollButton"
                 class={applicationButtonClass}
-                onclick={openPollCreationModal}
-                disabled={!pollCreation || !$canCreatePoll}
+                onclick={() => {
+                    if (!pollCreation || !$canCreatePoll) return;
+                    openPollCreationModal();
+                }}
+                aria-disabled={!pollCreation || !$canCreatePoll}
             >
                 <IconList font-size={32} />
                 <h2 class={applicationTitleClass}>{$LL.chat.poll.title()}</h2>
@@ -912,8 +948,11 @@
             <button
                 data-testid="openQuestionsPanelButton"
                 class={applicationButtonClass}
-                onclick={openQuestionsPanel}
-                disabled={!canOpenQuestions}
+                onclick={() => {
+                    if (!canOpenQuestions) return;
+                    openQuestionsPanel();
+                }}
+                aria-disabled={!canOpenQuestions}
             >
                 <IconHelpCircle font-size={32} />
                 <h2 class={applicationTitleClass}>{$LL.chat.question.title()}</h2>
@@ -964,7 +1003,7 @@
                     </span>
                     <div class="flex row w-full border-l border-l-white/10 ml-1 border-solid border-0">
                         <p
-                            class=" text-xs text-white/30 rounded-md p-2 m-0 truncate w-full text-ellipsis"
+                            class=" text-xs text-white/60 rounded-md p-2 m-0 truncate w-full text-ellipsis"
                             style:overflow-wrap="anywhere"
                         >
                             {decodeHtmlEntities($quotedMessageContent?.body ?? "")}
@@ -991,13 +1030,15 @@
         bind:message
         bind:messageInput
         disabled={messageInputDisabled}
-        inputClass="message-input flex-grow !m-0 px-4 py-2.5 max-h-36 overflow-auto h-full rounded-lg block text-sm text-white placeholder:text-white/50 placeholder:text-sm border border-white/10 !bg-white/5 resize-none outline-none shadow-none focus:ring-0 focus:border-white/20"
+        inputClass="message-input flex-grow !m-0 px-4 py-2.5 max-h-36 overflow-auto h-full rounded-md block text-sm text-white placeholder:text-white/60 placeholder:text-sm border border-white/10 !bg-white/5 resize-none outline-none shadow-none focus:ring-0 focus:border-white/20"
         dataText={$LL.chat.enter()}
         disabledText={isProximityChatRoom && !$proximityRoomJoined
             ? $LL.chat.getCloserToWrite()
-            : $canSendMessages
-              ? $LL.chat.cannotSendNow()
-              : $LL.chat.cannotSendHere()}
+            : !$canSendMessages
+              ? $LL.chat.cannotSendHere()
+              : isProximityChatRoom && $proximityChatDisabled
+                ? $LL.chat.chatTurnedOffInArea()
+                : $LL.chat.cannotSendNow()}
         dataTestid="messageInput"
     />
     {#if chatInteraction.compact}

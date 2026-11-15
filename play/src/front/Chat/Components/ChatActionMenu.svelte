@@ -57,7 +57,7 @@
             {#if matrixChatConnection}
                 <button
                     type="button"
-                    class="p-3 mt-2 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center text-white aspect-square w-12 h-12 shrink-0"
+                    class="p-3 mt-2 rounded hover:bg-white/10 transition-all flex items-center justify-center text-white aspect-square w-12 h-12 shrink-0"
                     onclick={openMatrixSettings}
                     aria-label={$LL.chat.matrixSettings.title()}
                     title={$LL.chat.matrixSettings.title()}
@@ -66,7 +66,7 @@
                 </button>
             {/if}
             <button
-                class="p-2 mt-2 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center text-white"
+                class="p-2 mt-2 rounded hover:bg-white/10 transition-all flex items-center justify-center text-white"
                 onclick={toggleMenu}
                 aria-label={$LL.chat.a11y.menuActions()}
             >
@@ -92,10 +92,10 @@
 
         {#if menuOpen && !searchActive}
             <div
-                class="absolute top-full right-0 mt-2 bg-contrast/20 backdrop-blur-md rounded-l shadow-lg p-1 min-w-[140px] z-50"
+                class="absolute top-full right-0 mt-2 bg-contrast/20 backdrop-blur-md rounded-md shadow-lg p-1 min-w-[140px] z-50"
             >
                 <button
-                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg text-white text-left transition-colors"
+                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded text-white text-left transition-colors"
                     onclick={handleToggleSearch}
                 >
                     {#if searchActive}
@@ -109,7 +109,7 @@
                 </button>
 
                 <button
-                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg text-white text-left transition-colors"
+                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded text-white text-left transition-colors"
                     data-testid="closeChatButton"
                     onclick={closeChat}
                 >

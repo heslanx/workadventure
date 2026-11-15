@@ -42,7 +42,7 @@
                             <span class="flex items-baseline gap-2">
                                 <span class="min-w-0 truncate text-sm font-bold">{name}</span>
                                 {#if item.lastMessageTimestamp > 0}
-                                    <span class="ms-auto shrink-0 text-xs text-white/50">
+                                    <span class="ms-auto shrink-0 text-xs text-white/60">
                                         {formatLastActivity(item.lastMessageTimestamp, new Date(), $locale)}
                                     </span>
                                 {/if}

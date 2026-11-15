@@ -127,11 +127,11 @@
             {$pollState.isEnded ? $LL.chat.poll.status.closed() : $LL.chat.poll.status.open()}
         </span>
         {#if isFallbackPoll}
-            <span class="text-xs text-white/50">
+            <span class="text-xs text-white/60">
                 {$pollHydrationState.status === "loading" ? "" : $LL.chat.roomPanel.status.pollDetailsUnavailable()}
             </span>
         {:else}
-            <span class="text-xs text-white/50">{$LL.chat.poll.participants({ count: $pollState.totalVotes })}</span>
+            <span class="text-xs text-white/60">{$LL.chat.poll.participants({ count: $pollState.totalVotes })}</span>
         {/if}
     </div>
 
@@ -140,7 +140,7 @@
     </div>
 
     {#if poll.context.kind === "thread"}
-        <div class="mt-2 flex items-center gap-1.5 text-xs text-white/55" data-testid="roomSidePanelPollThreadContext">
+        <div class="mt-2 flex items-center gap-1.5 text-xs text-white/60" data-testid="roomSidePanelPollThreadContext">
             <IconMessageCircle2 font-size={13} />
             <span class="truncate">
                 {#if poll.context.threadSenderName}{poll.context.threadSenderName}:
@@ -190,7 +190,7 @@
                     {#if isSubmittingVote && selected}
                         <IconLoader class="shrink-0 animate-[spin_2s_linear_infinite]" font-size={13} />
                     {:else if $pollState.resultsVisible}
-                        <span class="shrink-0 text-white/60">{getAnswerResult(answer)}</span>
+                        <span class="shrink-0 text-sm font-semibold text-white/60">{getAnswerResult(answer)}</span>
                     {/if}
                 </button>
             {/each}
@@ -201,7 +201,7 @@
                 <div class="text-xs text-white/70">
                     <div class="mb-1 flex items-center justify-between gap-2">
                         <span class="truncate {answer.isWinning ? 'font-semibold text-white' : ''}">{answer.text}</span>
-                        <span class="shrink-0">{getAnswerResult(answer)}</span>
+                        <span class="shrink-0 text-sm font-semibold">{getAnswerResult(answer)}</span>
                     </div>
                     <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
                         <div
@@ -215,7 +215,7 @@
     {/if}
 
     {#if !isFallbackPoll && !$pollState.resultsVisible && !$pollState.isEnded}
-        <div class="mt-3 text-xs text-white/50">
+        <div class="mt-3 text-xs text-white/60">
             {$pollState.kind === "open" ? $LL.chat.poll.resultsAfterVote() : $LL.chat.poll.resultsWhenClosed()}
         </div>
     {/if}

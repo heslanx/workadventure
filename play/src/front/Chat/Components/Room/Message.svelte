@@ -20,6 +20,7 @@
     import { selectedRoomStore } from "../../Stores/SelectRoomStore";
     import { isThreadPanelEnabledStore, selectedThreadStore } from "../../Stores/SelectedThreadStore";
     import { roomSidePanelStore } from "../../Stores/RoomSidePanelStore";
+    import UserActionButton from "../UserList/UserActionButton.svelte";
     import MessageOptions from "./MessageOptions.svelte";
     import MessageImage from "./Message/MessageImage.svelte";
     import MessageText from "./Message/MessageText.svelte";
@@ -130,6 +131,8 @@
         hasReadReceipt && showReaders && readReceipts !== undefined && readReceipts.readersOf(id).length > 0,
     );
     let timeLabel = $derived(date?.toLocaleTimeString($locale, { hour: "2-digit", minute: "2-digit" }));
+    // The short stamp drops the day: the full date and time is on hover, and at the top of the long-press sheet.
+    let fullDateLabel = $derived(date?.toLocaleString($locale, { dateStyle: "full", timeStyle: "short" }));
     let isEditing = $derived($selectedChatMessageToEdit !== null && $selectedChatMessageToEdit.id === id);
     let hasStamp = $derived(
         replyDepth === 0 && !isQuotedMessage && !messageFromSystem && (showTime || ($isModified && !$isDeleted)),
@@ -261,7 +264,9 @@
             <span>({$LL.chat.messageEdited()})</span>
         {/if}
         {#if showTime}
-            <span class="font-condensed text-nowrap">{timeLabel}</span>
+            <time class="font-condensed text-nowrap" datetime={date?.toISOString()} title={fullDateLabel}
+                >{timeLabel}</time
+            >
         {/if}
         {#if showTime && hasReadReceipt && !hasReaders && readReceipts !== undefined}
             <MessageReadReceipt messageId={id} receipts={readReceipts} showReaders={false} members={roomMembersList} />
@@ -314,11 +319,23 @@
         >
             {#if showNameHeader}
                 <div class="w-full h-fit text-xs px-2 flex items-end gap-2 overflow-x-hidden" data-options-obstacle>
-                    <span class="text-nowrap text-sm font-bold text-white"
-                        >{sender?.username}{#if waDisplayNameParens}<span class="text-xs font-normal opacity-75 ml-0.5"
-                                >({waDisplayNameParens})</span
-                            >{/if}</span
-                    >
+                    {#snippet senderName()}
+                        <span class="text-nowrap text-sm font-bold text-white"
+                            >{sender?.username}{#if waDisplayNameParens}<span
+                                    class="text-xs font-normal opacity-75 ml-0.5">({waDisplayNameParens})</span
+                                >{/if}</span
+                        >
+                    {/snippet}
+                    <!-- The name is a door to the same actions as the user list (talk, follow, invite, card). -->
+                    {#if sender}
+                        <UserActionButton
+                            user={sender}
+                            trigger={senderName}
+                            triggerLabel={$LL.chat.a11y.optionsFor({ name: sender.username ?? "" })}
+                        />
+                    {:else}
+                        {@render senderName()}
+                    {/if}
                     {#if mentionsMe}
                         <span
                             class="flex items-center gap-1 text-nowrap text-xs font-medium text-danger-500"
@@ -332,7 +349,7 @@
             {/if}
             <div
                 bind:this={bubbleRef}
-                title={showTime || replyDepth > 0 ? undefined : timeLabel}
+                title={showTime || replyDepth > 0 ? undefined : fullDateLabel}
                 class="message rounded-md
                     {$isDeleted && !isMyMessage && !messageFromSystem && replyDepth === 0 ? 'bg-white/10' : ''}
                     {$isDeleted && isMyMessage && !messageFromSystem && replyDepth === 0 ? 'bg-white/10' : ''}
@@ -345,6 +362,10 @@
                     {!isQuotedMessage ? 'my' : ''}
                     {hasReactions ? 'pb-2' : ''}"
             >
+                <!-- The time of a grouped message is otherwise only a hover title: screen readers get it here. -->
+                {#if !showTime && replyDepth === 0 && timeLabel}
+                    <time class="sr-only" datetime={date?.toISOString()}>{timeLabel}</time>
+                {/if}
                 {#if $isDeleted}
                     <p class="py-2 px-2 m-0 text-xs flex items-center italic gap-2 opacity-50">
                         <IconTrash font-size={12} />
@@ -354,10 +375,23 @@
                     <MessageEdition message={$selectedChatMessageToEdit} />
                 {:else}
                     {#if replyDepth > 0}
+                        {#snippet quotedSenderName()}
+                            <span
+                                >{isMyMessage ? $LL.chat.you() : sender?.username}{#if waDisplayNameParens}<span
+                                        class="text-xxs font-normal opacity-75 ml-0.5">({waDisplayNameParens})</span
+                                    >{/if}</span
+                            >
+                        {/snippet}
                         <div class="px-2 pt-1 text-xxs font-bold">
-                            {isMyMessage ? $LL.chat.you() : sender?.username}{#if waDisplayNameParens}<span
-                                    class="text-xxs font-normal opacity-75 ml-0.5">({waDisplayNameParens})</span
-                                >{/if}
+                            {#if sender && !isMyMessage}
+                                <UserActionButton
+                                    user={sender}
+                                    trigger={quotedSenderName}
+                                    triggerLabel={$LL.chat.a11y.optionsFor({ name: sender.username ?? "" })}
+                                />
+                            {:else}
+                                {@render quotedSenderName()}
+                            {/if}
                         </div>
                     {/if}
 
@@ -368,7 +402,7 @@
                     {/if}
 
                     {#if $isModified && replyDepth > 0}
-                        <div class="text-white/50 text-xxs p-0 m-0 px-2 pb-1 text-right">
+                        <div class="text-white/70 text-xxs p-0 m-0 px-2 pb-1 text-right">
                             ({$LL.chat.messageEdited()})
                         </div>
                     {/if}
