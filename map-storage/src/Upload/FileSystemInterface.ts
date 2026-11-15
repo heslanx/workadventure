@@ -5,7 +5,7 @@ import type * as unzipper from "unzipper";
 export interface FileSystemInterface {
     deleteFiles(path: string): Promise<void>;
 
-    deleteFilesExceptWAM(directory: string, filesFromZip: string[]): Promise<void>;
+    deleteFilesExceptWAM(directory: string, filesFromZip: string[], wamPathsToDelete: readonly string[]): Promise<void>;
 
     writeFile(zipEntry: unzipper.File, targetFilePath: string): Promise<void>;
 

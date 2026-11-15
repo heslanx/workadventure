@@ -24,7 +24,11 @@ export class DiskFileSystem implements FileSystemInterface {
         }
     }
 
-    async deleteFilesExceptWAM(directory: string, filesFromZip: string[]): Promise<void> {
+    async deleteFilesExceptWAM(
+        directory: string,
+        filesFromZip: string[],
+        wamPathsToDelete: readonly string[],
+    ): Promise<void> {
         try {
             const fullPath = this.getFullPath(directory);
             if (await fs.pathExists(fullPath)) {
@@ -32,8 +36,11 @@ export class DiskFileSystem implements FileSystemInterface {
                 const promises: Promise<void>[] = [];
                 for (const file of files) {
                     if (file.includes(".wam")) {
+                        if (!wamPathsToDelete.includes(file)) {
+                            continue;
+                        }
                         const tmjKey = file.slice().replace(".wam", ".tmj");
-                        // do not delete existing .wam file if there's no new version in zip and .tmj file with the same name exists
+                        // Keep a WAM the upload planned to preserve while deleting the other snapshotted WAM files.
                         if (filesFromZip.includes(tmjKey) && !filesFromZip.includes(file)) {
                             continue;
                         }

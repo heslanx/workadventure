@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -31,11 +31,17 @@ const { storage } = vi.hoisted(() => {
         public readonly files = new Map<string, string>();
         private holding = false;
         private heldWrites: (() => void)[] = [];
+        private afterNextWamList: (() => void) | undefined;
 
         public reset(): void {
             this.files.clear();
             this.holding = false;
             this.heldWrites = [];
+            this.afterNextWamList = undefined;
+        }
+
+        public createWamAfterNextWamList(create: () => void): void {
+            this.afterNextWamList = create;
         }
 
         /** Holds the following writes open until releaseHeldWrites. */
@@ -78,18 +84,24 @@ const { storage } = vi.hoisted(() => {
             return Promise.resolve();
         }
 
-        /** Same selection as S3FileSystem: a .wam is kept only when the zip has its .tmj and not itself. */
-        public deleteFilesExceptWAM(directory: string, filesFromZip: string[]): Promise<void> {
+        /** Same selection as S3FileSystem, using the upload's WAM deletion snapshot. */
+        public deleteFilesExceptWAM(
+            directory: string,
+            filesFromZip: string[],
+            wamPathsToDelete: readonly string[],
+        ): Promise<void> {
             const prefix = directory.endsWith("/") ? directory : `${directory}/`;
             for (const key of [...this.files.keys()].filter((key) => key.startsWith(prefix))) {
                 const relativePath = key.slice(prefix.length);
-                const keptWam =
-                    relativePath.includes(".wam") &&
-                    filesFromZip.includes(relativePath.replace(".wam", ".tmj")) &&
-                    !filesFromZip.includes(relativePath);
-                if (!keptWam) {
-                    this.files.delete(key);
+                if (relativePath.includes(".wam")) {
+                    if (!wamPathsToDelete.includes(relativePath)) {
+                        continue;
+                    }
+                    if (filesFromZip.includes(relativePath.replace(".wam", ".tmj")) && !filesFromZip.includes(relativePath)) {
+                        continue;
+                    }
                 }
+                this.files.delete(key);
             }
             return Promise.resolve();
         }
@@ -98,27 +110,56 @@ const { storage } = vi.hoisted(() => {
             return Promise.resolve(this.files.has(virtualPath));
         }
 
+        /** Moves every key under the prefix, as a real backend does for a directory. */
         public move(virtualPath: string, newVirtualPath: string): Promise<void> {
-            const file = this.files.get(virtualPath);
-            if (file === undefined) {
+            const under = [...this.files.keys()].filter(
+                (key) => key === virtualPath || key.startsWith(`${virtualPath}/`),
+            );
+            if (under.length === 0) {
                 return Promise.reject(new Error(`No file at ${virtualPath}`));
             }
-            this.files.set(newVirtualPath, file);
-            this.files.delete(virtualPath);
+            for (const key of under) {
+                const moved = `${newVirtualPath}${key.slice(virtualPath.length)}`;
+                this.files.set(moved, this.files.get(key) as string);
+                this.files.delete(key);
+            }
+            return Promise.resolve();
+        }
+
+        /** Copies every key under the prefix, failing on an existing destination as the disk backend does. */
+        public copy(virtualPath: string, newVirtualPath: string): Promise<void> {
+            const under = [...this.files.keys()].filter(
+                (key) => key === virtualPath || key.startsWith(`${virtualPath}/`),
+            );
+            if (under.length === 0) {
+                return Promise.reject(new Error(`No file at ${virtualPath}`));
+            }
+            for (const key of under) {
+                const copied = `${newVirtualPath}${key.slice(virtualPath.length)}`;
+                if (this.files.has(copied)) {
+                    return Promise.reject(new Error(`Destination exists: ${copied}`));
+                }
+            }
+            for (const key of under) {
+                this.files.set(`${newVirtualPath}${key.slice(virtualPath.length)}`, this.files.get(key) as string);
+            }
             return Promise.resolve();
         }
 
         /** Same listing as S3FileSystem: every key under the prefix, relative to it. */
         public listFiles(virtualDirectory: string, extension?: string): Promise<string[]> {
-            return Promise.resolve(
-                [...this.files.keys()]
-                    .filter((key) => key.startsWith(virtualDirectory))
-                    .filter((key) => extension === undefined || key.endsWith(extension))
-                    .map((key) => key.slice(virtualDirectory.length).replace(/^\//, "")),
-            );
+            const files = [...this.files.keys()]
+                .filter((key) => key.startsWith(virtualDirectory))
+                .filter((key) => extension === undefined || key.endsWith(extension))
+                .map((key) => key.slice(virtualDirectory.length).replace(/^\//, ""));
+            if (extension === ".wam" && this.afterNextWamList !== undefined) {
+                const create = this.afterNextWamList;
+                this.afterNextWamList = undefined;
+                create();
+            }
+            return Promise.resolve(files);
         }
 
-        public copy = unsupported;
         public serveStaticFile = unsupported;
         public archiveDirectory = unsupported;
         public writeByteArrayAsFile = unsupported;
@@ -350,6 +391,40 @@ describe("UploadController", () => {
             expect(storage.files.has(keyOf("a.wam"))).toBe(false);
             expect(storage.files.get(keyOf("b.wam"))).toBe(wam("b"));
         });
+
+        it("should not delete a WAM created after the upload's deletion snapshot", async () => {
+            storage.createWamAfterNextWamList(() => storage.files.set(keyOf("created-during-upload.wam"), wam("created")));
+
+            const response = await uploadZip({ "b.wam": wam("b") });
+
+            expect(response.status).toBe(200);
+            expect(storage.files.get(keyOf("created-during-upload.wam"))).toBe(wam("created"));
+            expect(storage.files.get(keyOf("b.wam"))).toBe(wam("b"));
+        });
+
+        it("should not let a pending autosave overwrite a WAM generated from the uploaded TMJ", async () => {
+            storage.files.set(keyOf("maps/a.wam"), wam("a"));
+            await edit(keyOf("maps/a.wam"), "cmd-1");
+            storage.files.delete(keyOf("maps/a.wam"));
+            const tiledMap = JSON.parse(
+                readFileSync(new URL("../../tests/assets/maps/empty.tmj", import.meta.url), "utf8"),
+            ) as {
+                properties: { name: string; type: string; value: string | boolean }[];
+                tilesets: { image: string }[];
+            };
+            tiledMap.tilesets[0].image = "../assets/tileset1.png";
+            tiledMap.properties.push({ name: "mapName", type: "string", value: "generated from zip" });
+
+            const response = await uploadZip({
+                "maps/a.tmj": JSON.stringify(tiledMap),
+                "maps/empty.js": "",
+                "assets/tileset1.png": "",
+            });
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(response.status).toBe(200);
+            expect(storedName("maps/a.wam")).toBe("generated from zip");
+        });
     });
 
     describe("POST /move of a map", () => {
@@ -415,6 +490,78 @@ describe("UploadController", () => {
             expect(response.status).toBe(503);
             expect(storedName("a.wam")).toBe("edited by cmd-1");
             expect(storage.files.has(keyOf("b.wam"))).toBe(false);
+        });
+
+        it("should answer 409 when the destination appeared while the move waited for a write", async () => {
+            storage.files.set(keyOf("a.wam"), wam("a"));
+            await edit(keyOf("a.wam"), "cmd-1");
+            storage.holdWrites();
+            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+
+            const first = request(
+                "POST",
+                "/move",
+                JSON.stringify({ source: `${directory}/a.wam`, destination: `${directory}/b.wam` }),
+                "application/json",
+            );
+            await until(() => replacing.mock.calls.length > 0);
+            // A second request writes the destination while the first one waits.
+            storage.files.set(keyOf("b.wam"), wam("b"));
+            storage.releaseHeldWrites();
+            const response = await first;
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(response.status).toBe(409);
+            expect(storage.files.get(keyOf("b.wam"))).toBe(wam("b"));
+            expect(storedName("a.wam")).toBe("edited by cmd-1");
+        });
+    });
+
+    describe("POST /move of a directory that holds maps", () => {
+        it("should hold the maps under it, so a moved map with an unsaved edit is not saved back at its old path", async () => {
+            storage.files.set(keyOf("inner/a.wam"), wam("a"));
+            await edit(keyOf("inner/a.wam"), "cmd-1");
+            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+
+            const response = await request(
+                "POST",
+                "/move",
+                JSON.stringify({ source: `${directory}/inner`, destination: `${directory}/moved` }),
+                "application/json",
+            );
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(response.status).toBe(200);
+            expect(replacing).toHaveBeenCalledWith(
+                expect.arrayContaining([keyOf("inner/a.wam")]),
+                expect.any(Function),
+                { saveFirst: [keyOf("inner/a.wam")] },
+            );
+            expect(storedName("inner/a.wam")).toBeUndefined();
+            expect(storedName("moved/a.wam")).toBe("edited by cmd-1");
+        });
+    });
+
+    describe("POST /copy of a directory that holds maps", () => {
+        it("should hold the maps under it, so a loaded dirty map is not saved back over the copy", async () => {
+            storage.files.set(keyOf("inner/a.wam"), wam("a"));
+            await edit(keyOf("inner/a.wam"), "cmd-1");
+            const replacing = vi.spyOn(mapsManager, "replaceStoredMaps");
+
+            const response = await request(
+                "POST",
+                "/copy",
+                JSON.stringify({ source: `${directory}/inner`, destination: `${directory}/copied` }),
+                "application/json",
+            );
+            await vi.advanceTimersByTimeAsync(LONG_AFTER_LAST_EDIT_MS);
+
+            expect(response.status).toBe(201);
+            expect(replacing).toHaveBeenCalledWith(
+                expect.arrayContaining([keyOf("inner/a.wam")]),
+                expect.any(Function),
+            );
+            expect(storage.files.has(keyOf("copied/a.wam"))).toBe(true);
         });
     });
 
