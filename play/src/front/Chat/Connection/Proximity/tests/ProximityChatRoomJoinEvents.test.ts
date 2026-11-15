@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /* eslint-disable @typescript-eslint/unbound-method -- expect() on vi.fn() members of module mocks */
 import * as Phaser from "phaser";
 globalThis.Phaser = Phaser;

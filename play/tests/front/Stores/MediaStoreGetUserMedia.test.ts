@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { get, writable } from "svelte/store";
 import type { Readable } from "svelte/store";

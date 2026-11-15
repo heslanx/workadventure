@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createRawSnippet, flushSync, mount, unmount } from "svelte";
 import ChatMenu from "./ChatMenu.svelte";

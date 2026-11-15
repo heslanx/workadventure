@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import type { Room } from "matrix-js-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { get, writable } from "svelte/store";

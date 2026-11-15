@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { get } from "svelte/store";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createBiggestAvailableAreaStore } from "./BiggestAvailableAreaStore";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { EventType } from "matrix-js-sdk";
 import { describe, expect, it } from "vitest";
 import type { RoomPowerLevelsEventContent } from "matrix-js-sdk/lib/@types/state_events";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ROOM_ROW_BUTTON_ATTRIBUTE, ROVING_GROUP_ATTRIBUTE, ROW_MENU_ATTRIBUTE, rovingFocus } from "./roomRowKeyboard";
 

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EnvironmentVariables } from "../../src/pusher/enums/EnvironmentVariableValidator";
 
 describe("OIDC redirect URLs", () => {
     beforeEach(() => {
@@ -103,9 +104,7 @@ describe("PostHog session replay", () => {
         ["", false],
         ["false", false],
         ["true", true],
-    ])("is allowed only when POSTHOG_REPLAY_ENABLED is set to true (%s)", async (raw, expected) => {
-        const { EnvironmentVariables } = await import("../../src/pusher/enums/EnvironmentVariableValidator");
-
+    ])("is allowed only when POSTHOG_REPLAY_ENABLED is set to true (%s)", (raw, expected) => {
         expect(EnvironmentVariables.shape.POSTHOG_REPLAY_ENABLED.parse(raw)).toBe(expected);
     });
 });

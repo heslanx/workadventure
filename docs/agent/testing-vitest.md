@@ -21,6 +21,17 @@ cd play
 npm test -- tests/front/Utils/TokenBucket.test.ts
 ```
 
+## Test environment
+
+`play` tests run in Node by default. A test that needs the DOM (`window`, `document`, Svelte components, jsdom APIs)
+declares it on its first line:
+
+```typescript
+// @vitest-environment jsdom
+```
+
+Starting jsdom only where a test needs it keeps the suite fast; do not switch the default back to jsdom.
+
 ## Conventions
 
 ```typescript

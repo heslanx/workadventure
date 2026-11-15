@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { get } from "svelte/store";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";

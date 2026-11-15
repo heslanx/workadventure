@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import * as Phaser from "phaser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock, MockInstance } from "vitest";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { mount, unmount } from "svelte";
 import RangeSlider from "../../../src/front/Components/Input/RangeSlider.svelte";

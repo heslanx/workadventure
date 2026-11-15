@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import type { Room } from "matrix-js-sdk";
 import { MatrixEvent } from "matrix-js-sdk";

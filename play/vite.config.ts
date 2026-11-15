@@ -128,9 +128,16 @@ export default defineConfig(({ mode }) => {
             },
         },
         test: {
-            environment: "jsdom",
+            // Most tests need no DOM: a test that does declares it with `// @vitest-environment jsdom` on its
+            // first line. Starting jsdom for every file cost more than half of the suite's run time.
+            environment: "node",
             globals: true,
             setupFiles: ["./tests/setup/vitest.setup.ts"],
+            experimental: {
+                // Keeps transformed modules on disk between runs (node_modules/.experimental-vitest-cache):
+                // transform time drops from about 100 s to 30 s once the cache is warm.
+                fsModuleCache: true,
+            },
             coverage: {
                 all: true,
                 include: ["src/*.ts", "src/**/*.ts"],

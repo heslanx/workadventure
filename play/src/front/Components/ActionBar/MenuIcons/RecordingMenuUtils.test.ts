@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { readable } from "svelte/store";
 import type { RecordingState as SpaceRecordingState } from "@workadventure/shared-utils";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readable } from "svelte/store";
 import { NoVideoOutputDetector } from "./NoVideoOutputDetector";

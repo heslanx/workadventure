@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { flushSync, mount, tick, unmount } from "svelte";
 import { get, readable, writable } from "svelte/store";

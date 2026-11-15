@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { get } from "svelte/store";
 import { visibilityStore } from "../../../src/front/Stores/VisibilityStore";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import * as Phaser from "phaser";
 import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 import { Game } from "../../../../src/front/Phaser/Game/Game";
