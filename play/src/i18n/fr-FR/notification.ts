@@ -35,6 +35,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "Impossible de démarrer le partage d'écran",
     recordingStarted: "Une personne dans la discussion a commencé un enregistrement.",
     urlCopiedToClipboard: "URL copiée dans le presse-papiers",
+    muteRequest: {
+        acceptMicrophone: "Couper mon micro",
+        acceptCamera: "Désactiver ma caméra",
+        refuse: "Laisser activé",
+    },
+    copyFailed:
+        "Impossible de copier : le navigateur a bloqué le presse-papiers. Sélectionnez le texte et appuyez sur Ctrl+C (Cmd+C sur Mac).",
+    closeToast: "Fermer la notification",
 };
 
 export default notification;

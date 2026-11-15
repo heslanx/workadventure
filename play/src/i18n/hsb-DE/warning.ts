@@ -71,6 +71,22 @@ const warning: DeepPartial<Translation["warning"]> = {
     otherMeetingMuted:
         "Sće nětko tu na zetkanju. Waš mikrofon, kamera a dźělenje wobrazowki su so w {world} wotšaltowali.",
     desktopAppOutdated: "Nowa wersija aplikacije WorkAdventure je k dispoziciji: {url}",
+    connectionLostDetail: "Awtomatisce so znowa spytuje. Štož sy zapisał, wostanje.",
+    reconnectNow: "Nětko znowa spytać",
+    limitMap: "Tuta karta je 2 dnjej k dispoziciji.",
+    registerDomain: "Registruj swoju domenu, zo by ju wobchował",
+    popUp: {
+        close: "Začinić",
+        closeMessage: "Powěsć začinić",
+        openInNewTab: "W nowym rajtarku wočinić",
+        joinJitsi: "Na zetkanju Jitsi wobdźělić",
+        openWebsite: "Websydło wočinić",
+    },
+    limitRoom: {
+        title: "Tuta karta ma časowy limit.",
+        content: "Zo by WorkAdventure tu dale wužiwał, wutwor swoje konto.",
+        createAccount: "Moje konto wutworić",
+    },
 };
 
 export default warning;

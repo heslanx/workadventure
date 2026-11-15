@@ -102,6 +102,16 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "ขอให้ปิดวิดีโอ",
         muteVideoEveryBody: "ปิดวิดีโอสำหรับทุกคน",
         blockOrReportUser: "การจัดการ",
+        mutedAudioNotice: "ไมโครโฟนของ {name} ถูกปิดเสียงอยู่ มีเพียงเจ้าตัวที่เปิดกลับได้",
+        askedMuteAudioNotice: "ขอให้ {name} ปิดเสียงไมโครโฟนแล้ว",
+        mutedVideoNotice: "กล้องของ {name} ปิดอยู่ มีเพียงเจ้าตัวที่เปิดกลับได้",
+        askedMuteVideoNotice: "ขอให้ {name} ปิดกล้องแล้ว",
+        alreadyMuted: "ปิดเสียงอยู่แล้ว",
+        videoAlreadyOff: "ปิดวิดีโออยู่แล้ว",
+    },
+    startError: {
+        camera: "กล้องของคุณไม่เริ่มทำงาน คนอื่นมองไม่เห็นคุณ ปิดแอปอื่นที่ใช้กล้องอยู่แล้วลองอีกครั้ง",
+        microphone: "ไมโครโฟนของคุณไม่เริ่มทำงาน คนอื่นไม่ได้ยินคุณ ปิดแอปอื่นที่ใช้ไมโครโฟนอยู่แล้วลองอีกครั้ง",
     },
 };
 

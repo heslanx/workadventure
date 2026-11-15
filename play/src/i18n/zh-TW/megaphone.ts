@@ -23,6 +23,8 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
         placeNotFound: "該地點已不在地圖上。",
         admin: "管理員",
         more: "等待中的公告：{count}",
+        sendFailed: "未傳送:與伺服器的連線已中斷。你的文字會保留在這裡,重新連線後請再次傳送。",
+        emptyMessage: "請先撰寫訊息再傳送。",
     },
     modal: {
         liveMessage: {
@@ -36,6 +38,7 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
             live: "直播中",
             stop: "停止",
             title: "擴音器",
+            enableMicrophone: "開啟麥克風",
         },
     },
 };

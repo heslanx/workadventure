@@ -6,6 +6,7 @@ const companion: DeepPartial<Translation["cowebsite"]> = {
     close: "Fermer",
     bigBlueButton: "BigBlueButton",
     jitsi: "Jitsi",
+    resize: "Redimensionner le panneau du site web (flèches du clavier pour redimensionner)",
 };
 
 export default companion;

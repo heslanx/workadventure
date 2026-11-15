@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "{userName}님과의 모든 통신을 차단합니다. 이 작업은 되돌릴 수 있습니다.",
         unblock: "이 사용자 차단 해제",
         block: "이 사용자 차단",
+        blockedNotice: "{userName}님을 차단했습니다. 이제 서로 보거나 들을 수 없습니다.",
+        unblockedNotice: "{userName}님의 차단을 해제했습니다.",
+        undoBlock: "차단 해제",
+        undoUnblock: "다시 차단",
     },
     title: "신고",
     content: "이 방의 관리자에게 신고 메시지를 보냅니다. 나중에 이 사용자를 금지할 수 있습니다.",
@@ -67,6 +71,7 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "이 {count}명 차단",
             },
         },
+        sendFailed: "전송되지 않음: 서버 연결이 끊겼습니다. 입력한 텍스트는 유지되니 잠시 후 다시 시도하세요.",
     },
     kicked: {
         title: "내보내짐",

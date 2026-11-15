@@ -16,6 +16,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "Mất kết nối tới máy chủ. Bạn sẽ không thể nói chuyện với những người khác.",
+        retrying: "Đang tự động thử lại. Thông báo này sẽ biến mất khi máy chủ phản hồi.",
     },
     errorDialog: {
         title: "Lỗi 😱",
@@ -24,6 +25,15 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "Bạn cũng có thể xem:",
         reload: "Tải lại",
         close: "Đóng",
+    },
+    errorScreen: {
+        genericTitle: "Chúng tôi không thể mở thế giới này.",
+        genericNextStep: "Tải lại trang để thử lại. Nếu vẫn xảy ra, hãy liên hệ quản trị viên của bạn.",
+        networkTitle: "Chúng tôi không thể kết nối tới máy chủ.",
+        networkNextStep: "Kiểm tra kết nối internet của bạn, sau đó tải lại trang.",
+        reload: "Tải lại trang",
+        showDetails: "Hiện chi tiết",
+        code: "Mã lỗi {code}",
     },
 };
 

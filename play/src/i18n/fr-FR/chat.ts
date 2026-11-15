@@ -435,6 +435,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "Plus d'options",
         createRoom: "Créer le salon",
         createFolder: "Créer le dossier",
+        nameRequired: "Saisissez un nom pour le créer.",
     },
     createFolder: {
         title: "Créer un nouveau dossier",
@@ -579,6 +580,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "Changer l'accès",
                 changePermissions: "Changer les autorisations",
             },
+            nothingToSave: "Modifiez un paramètre pour l'enregistrer.",
+            nameRequiredToSave: "Saisissez un nom de salon pour enregistrer.",
         },
         pollsEmpty: "Aucun sondage pour l'instant",
         participantsEmpty: "Aucun participant pour l'instant",
@@ -589,6 +592,8 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "Impossible d'ouvrir ce sondage dans la timeline.",
         closeFolderMembers: "Fermer les membres du dossier",
         folderMembersHint: "Les membres du dossier peuvent rejoindre ses salons ouverts aux membres.",
+        proximityParticipantsEmpty:
+            "Personne n'est près de vous. Approchez-vous de quelqu'un pour démarrer une conversation.",
     },
     roomMenu: {
         leaveRoom: {
@@ -841,6 +846,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "Sécurité",
         securityHint: "Votre clé de sauvegarde déverrouille vos messages chiffrés sur un nouvel appareil.",
         advancedSection: "Avancé",
+        notSet: "Non défini",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Profil Matrix",
@@ -880,7 +886,23 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "Clore ce sondage ?",
         endPollMessage: "Plus personne ne pourra voter. Les résultats restent visibles.",
         save: "Enregistrer",
+        deleteMessageNamedTitle: "Supprimer « {excerpt} » ?",
+        cannotUndo: "Cette action est irréversible.",
     },
+    chatTurnedOffInArea: "Le chat est désactivé dans cette zone. Quittez la zone pour écrire à nouveau.",
+    searchFailed: "La recherche a échoué. Il peut manquer des résultats dans la liste.",
+    searchRetry: "Relancer la recherche",
+    copyFailed: "Impossible de copier",
+    directMessagesEmpty:
+        "Aucun message direct pour l'instant. Ouvrez la liste des utilisateurs et choisissez quelqu'un à qui écrire.",
+    roomsEmpty: "Aucune conversation de groupe pour l'instant. Créez un salon pour en démarrer une.",
+    folderEmpty: "Ce dossier ne contient encore aucun salon. Créez un salon pour démarrer une conversation.",
+    connectionErrorImpact: "Les messages ne peuvent être ni envoyés ni reçus tant que la connexion n'est pas rétablie.",
+    connectionErrorSince: "Indisponible depuis {time}.",
+    connectionRetrying: "Nouvelle tentative de connexion au chat…",
+    connectionRetryFailed: "Le chat est toujours injoignable. Réessayez, ou rechargez la page si l'échec persiste.",
+    connectionRecovered: "Le chat est de retour. Il était indisponible de {from} à {to}.",
+    connectionRecoveredDismiss: "Ignorer cet avis",
 };
 
 export default chat;

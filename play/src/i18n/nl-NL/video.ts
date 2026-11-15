@@ -28,6 +28,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraAndMicPaused: "Camera en microfoon gepauzeerd tot terugkomst",
         cameraPaused: "Camera gepauzeerd tot terugkomst",
     },
+    enlarge: "Video vergroten",
 };
 
 export default video;

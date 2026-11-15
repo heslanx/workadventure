@@ -433,6 +433,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "خيارات إضافية",
         createRoom: "إنشاء الغرفة",
         createFolder: "إنشاء المجلد",
+        nameRequired: "أدخل اسمًا لإنشائه.",
     },
     createFolder: {
         title: "إنشاء مجلد جديد",
@@ -577,6 +578,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "تغيير الوصول",
                 changePermissions: "تغيير الأذونات",
             },
+            nothingToSave: "غيّر أحد الإعدادات لحفظه.",
+            nameRequiredToSave: "أدخل اسم الغرفة للحفظ.",
         },
         pollsEmpty: "لا توجد استطلاعات بعد",
         participantsEmpty: "لا يوجد مشاركون بعد",
@@ -587,6 +590,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "تعذر فتح هذا الاستطلاع في الخط الزمني.",
         closeFolderMembers: "إغلاق أعضاء المجلد",
         folderMembersHint: "يمكن لأعضاء المجلد الانضمام إلى غرفه المفتوحة للأعضاء.",
+        proximityParticipantsEmpty: "لا أحد بالقرب منك. اقترب من شخص ما لبدء محادثة.",
     },
     roomMenu: {
         leaveRoom: {
@@ -836,6 +840,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "الأمان",
         securityHint: "يفتح مفتاح النسخ الاحتياطي رسائلك المشفّرة على جهاز جديد.",
         advancedSection: "متقدم",
+        notSet: "غير محدد",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -872,7 +877,22 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "إغلاق هذا الاستطلاع؟",
         endPollMessage: "لن يتمكن أحد من التصويت بعد الآن. تبقى النتائج ظاهرة.",
         save: "حفظ",
+        deleteMessageNamedTitle: "هل تريد حذف «{excerpt}»؟",
+        cannotUndo: "لا يمكن التراجع عن هذا الإجراء.",
     },
+    chatTurnedOffInArea: "الدردشة متوقفة في هذه المنطقة. غادر المنطقة لتتمكن من الكتابة مجددًا.",
+    searchFailed: "فشل البحث. قد تكون بعض النتائج مفقودة من القائمة.",
+    searchRetry: "ابحث مرة أخرى",
+    copyFailed: "تعذر النسخ",
+    directMessagesEmpty: "لا توجد رسائل مباشرة بعد. افتح قائمة المستخدمين واختر شخصًا لتراسله.",
+    roomsEmpty: "لا توجد محادثات جماعية بعد. أنشئ غرفة لبدء محادثة.",
+    folderEmpty: "لا يحتوي هذا المجلد على غرف بعد. أنشئ غرفة لبدء محادثة.",
+    connectionErrorImpact: "لا يمكن إرسال الرسائل أو استلامها حتى تتم إعادة الاتصال.",
+    connectionErrorSince: "غير متاح منذ {time}.",
+    connectionRetrying: "جارٍ إعادة محاولة الاتصال بالدردشة…",
+    connectionRetryFailed: "لا يزال تعذر الوصول إلى الدردشة. أعد المحاولة، أو أعد تحميل الصفحة إذا استمر الفشل.",
+    connectionRecovered: "عادت الدردشة. كانت غير متاحة من {from} إلى {to}.",
+    connectionRecoveredDismiss: "إغلاق هذا الإشعار",
 };
 
 export default chat;

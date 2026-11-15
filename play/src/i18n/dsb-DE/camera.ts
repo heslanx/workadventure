@@ -104,6 +104,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Pšosyś, aby video stummschalten",
         muteVideoEveryBody: "Video za wšěch stummschalten",
         blockOrReportUser: "Wužiwarja blokěrowaś abo pśihłasowaś",
+        mutedAudioNotice: "Mikrofon wósoby {name} jo wótšaltowany. Jano toś ta wósoba móžo jen zasej zašaltowaś.",
+        askedMuteAudioNotice: "{name} jo był/a pšošony/-a, mikrofon wótšaltowaś.",
+        mutedVideoNotice: "Kamera wósoby {name} jo wótšaltowana. Jano toś ta wósoba móžo ju zasej zašaltowaś.",
+        askedMuteVideoNotice: "{name} jo był/a pšošony/-a, kameru wótšaltowaś.",
+        alreadyMuted: "Južo wótšaltowany",
+        videoAlreadyOff: "Wideo jo južo wótšaltowane",
+    },
+    startError: {
+        camera: "Twója kamera njejo startowała. Druge śi njewiźe. Zacyń druge nałoženja, kótarež ju wužywaju, a wopytaj hyšći raz.",
+        microphone:
+            "Twój mikrofon njejo startował. Druge śi njesłyše. Zacyń druge nałoženja, kótarež jen wužywaju, a wopytaj hyšći raz.",
     },
 };
 

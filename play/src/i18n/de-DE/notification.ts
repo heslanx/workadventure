@@ -35,6 +35,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "Bildschirmfreigabe kann nicht gestartet werden",
     recordingStarted: "Eine Person in der Diskussion hat eine Aufnahme gestartet.",
     urlCopiedToClipboard: "URL in die Zwischenablage kopiert",
+    muteRequest: {
+        acceptMicrophone: "Mein Mikrofon stummschalten",
+        acceptCamera: "Meine Kamera ausschalten",
+        refuse: "Eingeschaltet lassen",
+    },
+    copyFailed:
+        "Kopieren nicht möglich: Der Browser hat die Zwischenablage blockiert. Markiere den Text und drücke Strg+C (Cmd+C auf dem Mac).",
+    closeToast: "Benachrichtigung schließen",
 };
 
 export default notification;

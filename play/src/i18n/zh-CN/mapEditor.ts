@@ -519,10 +519,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "移动到实体 {name}",
             moveToArea: "移动到区域 {name}",
             errorMovingToObject: "对象尚不可访问 🚫",
+            show: "显示 {name} 的详情",
         },
         zoomIn: "放大 +",
         zoomOut: "缩小 -",
         showMyLocation: "显示我的位置",
+        noEntitiesMatch: "没有与搜索匹配的对象。清除搜索即可查看所有对象。",
+        noAreasMatch: "没有与搜索匹配的区域。清除搜索即可查看所有区域。",
+        entitiesList: "对象列表",
+        areasList: "区域列表",
     },
     listRoom: {
         isFetching: "正在获取房间列表... ⤵️",
@@ -532,6 +537,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "正在移动到房间: {roomNameSelected}... 再见... 🫡",
         searchLabel: "搜索房间",
         searchPlaceholder: "输入关键词...",
+        noRoomAvailable: "此世界中暂无可用房间。",
+        noRoomMatch: "没有与“{search}”匹配的房间。",
+        clearSearch: "清除搜索",
+        fetchFailedTitle: "无法加载房间列表",
+        fetchFailedDetail: "你将留在当前房间。请检查网络连接,然后重试。",
+        retryFetch: "重新加载房间",
     },
 };
 

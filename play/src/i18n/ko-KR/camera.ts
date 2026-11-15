@@ -105,6 +105,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "비디오 끄기 요청",
         muteVideoEveryBody: "모든 사용자 비디오 끄기",
         blockOrReportUser: "관리 / 신고",
+        mutedAudioNotice: "{name}님의 마이크가 음소거되었습니다. 본인만 다시 켤 수 있습니다.",
+        askedMuteAudioNotice: "{name}님에게 마이크 음소거를 요청했습니다.",
+        mutedVideoNotice: "{name}님의 카메라가 꺼져 있습니다. 본인만 다시 켤 수 있습니다.",
+        askedMuteVideoNotice: "{name}님에게 카메라를 꺼 달라고 요청했습니다.",
+        alreadyMuted: "이미 음소거됨",
+        videoAlreadyOff: "비디오가 이미 꺼져 있음",
+    },
+    startError: {
+        camera: "카메라가 시작되지 않았습니다. 다른 사람이 나를 볼 수 없습니다. 카메라를 사용 중인 다른 앱을 닫고 다시 시도하세요.",
+        microphone:
+            "마이크가 시작되지 않았습니다. 다른 사람이 내 목소리를 들을 수 없습니다. 마이크를 사용 중인 다른 앱을 닫고 다시 시도하세요.",
     },
 };
 

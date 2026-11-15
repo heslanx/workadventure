@@ -527,10 +527,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "ไปยังวัตถุ {name}",
             moveToArea: "ไปยังพื้นที่ {name}",
             errorMovingToObject: "ยังไม่สามารถเข้าถึงวัตถุนี้ได้ 🚫",
+            show: "แสดงรายละเอียดของ {name}",
         },
         zoomIn: "ซูมเข้า +",
         zoomOut: "ซูมออก -",
         showMyLocation: "แสดงตำแหน่งของฉัน",
+        noEntitiesMatch: "ไม่มีวัตถุที่ตรงกับการค้นหา ล้างการค้นหาเพื่อดูวัตถุทั้งหมด",
+        noAreasMatch: "ไม่มีพื้นที่ที่ตรงกับการค้นหา ล้างการค้นหาเพื่อดูพื้นที่ทั้งหมด",
+        entitiesList: "รายการวัตถุ",
+        areasList: "รายการพื้นที่",
     },
     listRoom: {
         isFetching: "กำลังดึงรายการห้อง... ⤵️",
@@ -540,6 +545,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "กำลังย้ายไปยังห้อง: {roomNameSelected}... แล้วพบกัน... 🫡",
         searchLabel: "ค้นหาห้อง",
         searchPlaceholder: "พิมพ์คำค้นหา...",
+        noRoomAvailable: "ยังไม่มีห้องที่ใช้งานได้ในโลกนี้",
+        noRoomMatch: "ไม่มีห้องที่ตรงกับ “{search}”",
+        clearSearch: "ล้างการค้นหา",
+        fetchFailedTitle: "โหลดรายการห้องไม่ได้",
+        fetchFailedDetail: "คุณยังอยู่ในห้องปัจจุบัน ตรวจสอบการเชื่อมต่อ แล้วลองอีกครั้ง",
+        retryFetch: "โหลดห้องอีกครั้ง",
     },
 };
 

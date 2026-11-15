@@ -34,6 +34,13 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "ไม่สามารถเริ่มแชร์หน้าจอได้",
     recordingStarted: "มีผู้เข้าร่วมคนหนึ่งเริ่มบันทึกการสนทนา",
     urlCopiedToClipboard: "คัดลอก URL ไปยังคลิปบอร์ดแล้ว",
+    muteRequest: {
+        acceptMicrophone: "ปิดเสียงไมโครโฟนของฉัน",
+        acceptCamera: "ปิดกล้องของฉัน",
+        refuse: "เปิดไว้ต่อ",
+    },
+    copyFailed: "คัดลอกไม่ได้: เบราว์เซอร์บล็อกคลิปบอร์ด เลือกข้อความแล้วกด Ctrl+C (Cmd+C บน Mac)",
+    closeToast: "ปิดการแจ้งเตือน",
 };
 
 export default notification;

@@ -538,10 +538,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "Verplaats naar entiteit {name}",
             moveToArea: "Verplaats naar gebied {name}",
             errorMovingToObject: "Het object is nog niet toegankelijk 🚫",
+            show: "Details van {name} tonen",
         },
         zoomIn: "Zoom In +",
         zoomOut: "Zoom Out -",
         showMyLocation: "Toon mijn locatie",
+        noEntitiesMatch:
+            "Geen objecten komen overeen met je zoekopdracht. Wis de zoekopdracht om alle objecten te zien.",
+        noAreasMatch: "Geen gebieden komen overeen met je zoekopdracht. Wis de zoekopdracht om alle gebieden te zien.",
+        entitiesList: "Objectenlijst",
+        areasList: "Gebiedenlijst",
     },
     listRoom: {
         isFetching: "Lijst met kamers wordt opgehaald... ⤵️",
@@ -551,6 +557,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Verplaatsen naar de kamer: {roomNameSelected}... Tot ziens... 🫡",
         searchLabel: "Zoek een kamer",
         searchPlaceholder: "Typ trefwoorden...",
+        noRoomAvailable: "Er is nog geen ruimte beschikbaar in deze wereld.",
+        noRoomMatch: "Geen ruimte komt overeen met “{search}”.",
+        clearSearch: "Zoekopdracht wissen",
+        fetchFailedTitle: "Kan de ruimtelijst niet laden",
+        fetchFailedDetail: "Je blijft in je huidige ruimte. Controleer je verbinding en probeer het opnieuw.",
+        retryFetch: "Ruimtes opnieuw laden",
     },
 };
 

@@ -532,10 +532,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "エンティティ {name} に移動",
             moveToArea: "エリア {name} に移動",
             errorMovingToObject: "オブジェクトにはまだアクセスできません 🚫",
+            show: "{name}の詳細を表示",
         },
         zoomIn: "ズームイン +",
         zoomOut: "ズームアウト -",
         showMyLocation: "自分の位置を表示",
+        noEntitiesMatch:
+            "検索に一致するオブジェクトはありません。検索をクリアするとすべてのオブジェクトが表示されます。",
+        noAreasMatch: "検索に一致するエリアはありません。検索をクリアするとすべてのエリアが表示されます。",
+        entitiesList: "オブジェクト一覧",
+        areasList: "エリア一覧",
     },
     listRoom: {
         isFetching: "ルームリストの取得中... ⤵️",
@@ -545,6 +551,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "ルーム {roomNameSelected} に移動中 ... また会いましょう ... 🫡",
         searchLabel: "ルームを検索",
         searchPlaceholder: "ルーム名 ...",
+        noRoomAvailable: "このワールドにはまだ利用できるルームがありません。",
+        noRoomMatch: "「{search}」に一致するルームはありません。",
+        clearSearch: "検索をクリア",
+        fetchFailedTitle: "ルーム一覧を読み込めませんでした",
+        fetchFailedDetail: "現在のルームにとどまります。接続を確認してから、もう一度お試しください。",
+        retryFetch: "ルームを再読み込み",
     },
 };
 

@@ -531,10 +531,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "Đi tới đối tượng {name}",
             moveToArea: "Đi tới khu vực {name}",
             errorMovingToObject: "Đối tượng chưa thể tiếp cận 🚫",
+            show: "Hiện chi tiết của {name}",
         },
         zoomIn: "Phóng to +",
         zoomOut: "Thu nhỏ -",
         showMyLocation: "Hiện vị trí của tôi",
+        noEntitiesMatch: "Không có đối tượng nào khớp với tìm kiếm. Xóa tìm kiếm để xem tất cả đối tượng.",
+        noAreasMatch: "Không có khu vực nào khớp với tìm kiếm. Xóa tìm kiếm để xem tất cả khu vực.",
+        entitiesList: "Danh sách đối tượng",
+        areasList: "Danh sách khu vực",
     },
     listRoom: {
         isFetching: "Đang tải danh sách phòng... ⤵️",
@@ -544,6 +549,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Đang chuyển tới phòng: {roomNameSelected}... Hẹn gặp lại... 🫡",
         searchLabel: "Tìm phòng",
         searchPlaceholder: "Nhập từ khóa...",
+        noRoomAvailable: "Chưa có phòng nào khả dụng trong thế giới này.",
+        noRoomMatch: "Không có phòng nào khớp với “{search}”.",
+        clearSearch: "Xóa tìm kiếm",
+        fetchFailedTitle: "Không thể tải danh sách phòng",
+        fetchFailedDetail: "Bạn vẫn ở phòng hiện tại. Kiểm tra kết nối, sau đó thử lại.",
+        retryFetch: "Tải lại danh sách phòng",
     },
 };
 

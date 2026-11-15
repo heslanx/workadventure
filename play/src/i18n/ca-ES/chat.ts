@@ -433,6 +433,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "Més opcions",
         createRoom: "Crea la sala",
         createFolder: "Crea la carpeta",
+        nameRequired: "Escriu un nom per crear-la.",
     },
     createFolder: {
         title: "Crear una nova carpeta",
@@ -577,6 +578,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "Canviar accés",
                 changePermissions: "Canviar permisos",
             },
+            nothingToSave: "Canvia una opció per desar-la.",
+            nameRequiredToSave: "Escriu un nom de sala per desar.",
         },
         pollsEmpty: "Encara no hi ha enquestes",
         participantsEmpty: "Encara no hi ha participants",
@@ -587,6 +590,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "No s'ha pogut obrir aquesta enquesta a la línia de temps.",
         closeFolderMembers: "Tanca els membres de la carpeta",
         folderMembersHint: "Els membres de la carpeta poden unir-se a les seves sales obertes als membres.",
+        proximityParticipantsEmpty: "No hi ha ningú a prop teu. Apropa't a algú per començar una conversa.",
     },
     roomMenu: {
         leaveRoom: {
@@ -837,6 +841,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "Seguretat",
         securityHint: "La teva clau de còpia de seguretat desbloqueja els missatges xifrats en un dispositiu nou.",
         advancedSection: "Avançat",
+        notSet: "No definit",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -874,7 +879,23 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "Vols tancar aquesta enquesta?",
         endPollMessage: "Ningú no hi podrà votar. Els resultats continuen visibles.",
         save: "Desa",
+        deleteMessageNamedTitle: "Vols suprimir «{excerpt}»?",
+        cannotUndo: "Aquesta acció no es pot desfer.",
     },
+    chatTurnedOffInArea: "El xat està desactivat en aquesta zona. Surt de la zona per tornar a escriure.",
+    searchFailed: "La cerca ha fallat. És possible que faltin resultats a la llista.",
+    searchRetry: "Torna a cercar",
+    copyFailed: "No s'ha pogut copiar",
+    directMessagesEmpty: "Encara no hi ha missatges directes. Obre la llista d'usuaris i tria algú a qui escriure.",
+    roomsEmpty: "Encara no hi ha converses de grup. Crea una sala per començar-ne una.",
+    folderEmpty: "Aquesta carpeta encara no té sales. Crea una sala per començar una conversa.",
+    connectionErrorImpact: "No es poden enviar ni rebre missatges fins que es torni a connectar.",
+    connectionErrorSince: "No disponible des de les {time}.",
+    connectionRetrying: "S'està tornant a provar la connexió del xat…",
+    connectionRetryFailed:
+        "El xat encara no és accessible. Torna-ho a provar, o recarrega la pàgina si continua fallant.",
+    connectionRecovered: "El xat ha tornat. No estava disponible de {from} a {to}.",
+    connectionRecoveredDismiss: "Descarta aquest avís",
 };
 
 export default chat;

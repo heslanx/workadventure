@@ -28,6 +28,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraAndMicPaused: "Kamera a mikrofon w pawzy až do wrośenja",
         cameraPaused: "Kamera w pawzy až do wrośenja",
     },
+    enlarge: "Wideo pówětšyś",
 };
 
 export default video;

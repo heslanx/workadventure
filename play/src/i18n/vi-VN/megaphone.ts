@@ -23,6 +23,9 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
         placeNotFound: "Địa điểm này không còn trên bản đồ.",
         admin: "Quản trị viên",
         more: "Thông báo đang chờ: {count}",
+        sendFailed:
+            "Chưa gửi: kết nối tới máy chủ bị gián đoạn. Văn bản của bạn vẫn được giữ ở đây; hãy gửi lại khi đã kết nối lại.",
+        emptyMessage: "Hãy viết tin nhắn để gửi.",
     },
     modal: {
         liveMessage: {
@@ -36,6 +39,7 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
             live: "Trực tiếp",
             stop: "Dừng",
             title: "Loa phóng thanh",
+            enableMicrophone: "Bật micrô",
         },
     },
 };

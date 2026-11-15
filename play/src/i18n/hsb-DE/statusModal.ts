@@ -11,6 +11,7 @@ const statusModal: DeepPartial<Translation["statusModal"]> = {
     audioPlaybackBlocked: "Waš wobhladowak je wothrawanje awdija zablokował.",
     audioPlaybackInterrupted: "Wothrawanje awdija je so přez waš wobhladowak abo dźěłowy system přetorhnyło.",
     turnSoundOn: "Zwuk zmóžnić",
+    stayInCurrentStatus: "Tak wostać, kaž sym",
 };
 
 export default statusModal;

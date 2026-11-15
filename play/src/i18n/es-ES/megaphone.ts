@@ -23,6 +23,9 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
         placeNotFound: "Este lugar ya no existe en el mapa.",
         admin: "Administrador",
         more: "Anuncios en espera: {count}",
+        sendFailed:
+            "No enviado: la conexión con el servidor está caída. Tu texto se conserva aquí; envíalo de nuevo cuando vuelvas a estar conectado.",
+        emptyMessage: "Escribe un mensaje para enviarlo.",
     },
     modal: {
         liveMessage: {
@@ -36,6 +39,7 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
             live: "En directo",
             stop: "Detener",
             title: "Megáfono",
+            enableMicrophone: "Activar micrófono",
         },
     },
 };

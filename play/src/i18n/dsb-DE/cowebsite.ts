@@ -6,6 +6,7 @@ const companion: DeepPartial<Translation["cowebsite"]> = {
     close: "zacyniś",
     bigBlueButton: "BigBlueButton",
     jitsi: "Jitsi",
+    resize: "Wjelikosć wobcerka websedła změniś (šypkowe tasty za změnu wjelikosći)",
 };
 
 export default companion;

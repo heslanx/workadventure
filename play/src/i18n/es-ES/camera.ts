@@ -106,6 +106,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Pedir silenciar vídeo",
         muteVideoEveryBody: "Silenciar vídeo para todos",
         blockOrReportUser: "Bloquear o informar de usuario",
+        mutedAudioNotice: "El micrófono de {name} está silenciado. Solo esa persona puede volver a activarlo.",
+        askedMuteAudioNotice: "Se pidió a {name} que silenciara su micrófono.",
+        mutedVideoNotice: "La cámara de {name} está apagada. Solo esa persona puede volver a encenderla.",
+        askedMuteVideoNotice: "Se pidió a {name} que apagara su cámara.",
+        alreadyMuted: "Ya silenciado",
+        videoAlreadyOff: "Vídeo ya apagado",
+    },
+    startError: {
+        camera: "Tu cámara no se inició. Los demás no pueden verte. Cierra otras aplicaciones que la estén usando e inténtalo de nuevo.",
+        microphone:
+            "Tu micrófono no se inició. Los demás no pueden oírte. Cierra otras aplicaciones que lo estén usando e inténtalo de nuevo.",
     },
 };
 

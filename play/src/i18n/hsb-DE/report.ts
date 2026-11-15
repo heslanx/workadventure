@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "blokuj kóždužkuli komunikaciju z {userName}. Móže so kóždy čas cofnyć. ",
         unblock: "blokowanje za tutoho wužiwarja zběhnyć",
         block: "blokuj tutoho wužiwarja",
+        blockedNotice: "{userName} je zablokowany/-a. Wjace so njewidźitaj a njesłyšitaj.",
+        unblockedNotice: "{userName} hižo zablokowany/-a njeje.",
+        undoBlock: "Blokowanje zběhnyć",
+        undoUnblock: "Znowa blokować",
     },
     title: "přizjewić",
     content: "Napisaj pohóršk na administratorow tutoho ruma. Tući móža wužiwarja po tym wuzamknyć. ",
@@ -67,6 +71,7 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "Tutych {count} wosobow wuzamknyć",
             },
         },
+        sendFailed: "Njepósłane: zwisk ze serwerom je přetorhnjeny. Twój tekst wostanje; spytaj za chwilku hišće raz.",
     },
     kicked: {
         title: "WOTSTRONJENY",

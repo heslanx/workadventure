@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "Chặn mọi liên lạc với {userName}. Thao tác này có thể hoàn tác.",
         unblock: "Bỏ chặn người dùng này",
         block: "Chặn người dùng này",
+        blockedNotice: "Đã chặn {userName}. Hai bạn sẽ không còn nhìn thấy hay nghe thấy nhau.",
+        unblockedNotice: "Đã bỏ chặn {userName}.",
+        undoBlock: "Bỏ chặn",
+        undoUnblock: "Chặn lại",
     },
     title: "Báo cáo",
     content: "Gửi báo cáo tới quản trị viên của phòng này. Sau đó họ có thể cấm người dùng này.",
@@ -68,6 +72,8 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "Cấm {count} người này",
             },
         },
+        sendFailed:
+            "Chưa gửi: kết nối tới máy chủ bị gián đoạn. Văn bản của bạn vẫn được giữ; hãy thử lại sau giây lát.",
     },
     kicked: {
         title: "BỊ ĐƯA RA",

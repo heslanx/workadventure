@@ -108,6 +108,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Vragen om video te dempen",
         muteVideoEveryBody: "Video dempen voor iedereen",
         blockOrReportUser: "Gebruiker blokkeren of rapporteren",
+        mutedAudioNotice: "De microfoon van {name} is gedempt. Alleen die persoon kan hem weer inschakelen.",
+        askedMuteAudioNotice: "{name} is gevraagd de microfoon te dempen.",
+        mutedVideoNotice: "De camera van {name} staat uit. Alleen die persoon kan hem weer inschakelen.",
+        askedMuteVideoNotice: "{name} is gevraagd de camera uit te zetten.",
+        alreadyMuted: "Al gedempt",
+        videoAlreadyOff: "Video staat al uit",
+    },
+    startError: {
+        camera: "Je camera is niet gestart. Anderen kunnen je niet zien. Sluit andere apps die hem gebruiken en probeer het opnieuw.",
+        microphone:
+            "Je microfoon is niet gestart. Anderen kunnen je niet horen. Sluit andere apps die hem gebruiken en probeer het opnieuw.",
     },
 };
 

@@ -48,6 +48,7 @@ const recording: DeepPartial<Translation["recording"]> = {
         spacePicker: {
             megaphone: "Ghi loa phóng thanh",
             discussion: "Ghi cuộc thảo luận",
+            recordedByOther: "Tại đây chỉ có thể ghi một bản cùng lúc. Bạn có thể bắt đầu ghi khi bản này kết thúc.",
         },
     },
 };

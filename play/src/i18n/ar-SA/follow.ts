@@ -22,6 +22,14 @@ const follow: DeepPartial<Translation["follow"]> = {
         },
         yes: "نعم", // Yes
         no: "لا", // No
+        buttons: {
+            follow: "اتبع {leader}",
+            notNow: "ليس الآن",
+            stopLeading: "التوقف عن القيادة",
+            keepLeading: "مواصلة القيادة",
+            stopFollowing: "التوقف عن المتابعة",
+            keepFollowing: "مواصلة المتابعة",
+        },
     },
     actionName: "تحديد الموقع",
 };

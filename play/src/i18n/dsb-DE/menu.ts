@@ -96,6 +96,7 @@ const menu: DeepPartial<Translation["menu"]> = {
             wobble: "Wobble",
         },
         displayVideoQualityStats: "Statistiki kwaliteje video pokazaś",
+        saving: "Nastajenja se składuju",
     },
     invite: {
         description: "Link k tej śpě z drugimi źěliś",

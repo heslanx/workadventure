@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "屏蔽任何来自 {userName} 的通信。该操作是可逆的。",
         unblock: "解除屏蔽该用户",
         block: "屏蔽该用户",
+        blockedNotice: "已屏蔽 {userName}。你们将无法再看到或听到彼此。",
+        unblockedNotice: "已取消屏蔽 {userName}。",
+        undoBlock: "取消屏蔽",
+        undoUnblock: "再次屏蔽",
     },
     title: "举报",
     content: "发送举报信息给这个房间的管理员，他们后续可能禁用该用户。",
@@ -66,6 +70,7 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "封禁这 {count} 人",
             },
         },
+        sendFailed: "未发送:与服务器的连接已断开。你的文本已保留,请稍后再试。",
     },
     kicked: {
         title: "已被移出",

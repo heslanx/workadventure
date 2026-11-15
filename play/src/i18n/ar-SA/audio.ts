@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ التشغيل التلقائي غير مسموح. اضغط [المسافة] أو انقر هنا للتشغيل!",
     },
     disable: "إيقاف الميكروفون", // Disable microphone
+    mute: "كتم الصوت",
 };
 
 export default audio;

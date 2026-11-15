@@ -22,6 +22,14 @@ const follow: DeepPartial<Translation["follow"]> = {
         },
         yes: "是",
         no: "否",
+        buttons: {
+            follow: "跟随 {leader}",
+            notNow: "暂不",
+            stopLeading: "停止带路",
+            keepLeading: "继续带路",
+            stopFollowing: "停止跟随",
+            keepFollowing: "继续跟随",
+        },
     },
     actionName: "定位",
 };

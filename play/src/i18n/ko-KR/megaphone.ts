@@ -23,6 +23,9 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
         placeNotFound: "이 장소는 더 이상 맵에 없습니다.",
         admin: "관리자",
         more: "대기 중인 공지: {count}",
+        sendFailed:
+            "전송되지 않음: 서버 연결이 끊겼습니다. 입력한 텍스트는 여기에 남아 있으니 다시 연결되면 다시 보내세요.",
+        emptyMessage: "보내려면 메시지를 작성하세요.",
     },
     modal: {
         liveMessage: {
@@ -36,6 +39,7 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
             live: "라이브",
             stop: "중지",
             title: "실시간 메시지",
+            enableMicrophone: "마이크 켜기",
         },
     },
 };

@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "Blokkeer alle communicatie van en naar {userName}. Dit kan later ongedaan worden gemaakt.",
         unblock: "Deactiveer blokkering van deze gebruiker",
         block: "Blokkeer deze gebruiker",
+        blockedNotice: "{userName} is geblokkeerd. Jullie zien en horen elkaar niet meer.",
+        unblockedNotice: "{userName} is gedeblokkeerd.",
+        undoBlock: "Deblokkeren",
+        undoUnblock: "Opnieuw blokkeren",
     },
     title: "Rapporteren",
     content:
@@ -69,6 +73,8 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "Deze {count} personen bannen",
             },
         },
+        sendFailed:
+            "Niet verzonden: de verbinding met de server is verbroken. Je tekst blijft bewaard; probeer het zo opnieuw.",
     },
     kicked: {
         title: "VERWIJDERD",

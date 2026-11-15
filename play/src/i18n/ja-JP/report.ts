@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "{userName} とのコミュニケーションをブロックします。これは元に戻すことができます。",
         unblock: "このユーザーのブロックを解除",
         block: "このユーザーをブロック",
+        blockedNotice: "{userName}さんをブロックしました。お互いに姿も声もわからなくなります。",
+        unblockedNotice: "{userName}さんのブロックを解除しました。",
+        undoBlock: "ブロックを解除",
+        undoUnblock: "再度ブロック",
     },
     title: "報告",
     content: "このルームの管理者に報告メッセージを送信します。今後、このユーザーは BAN されるかもしれません。",
@@ -67,6 +71,8 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "この {count} 人を追放",
             },
         },
+        sendFailed:
+            "送信されませんでした: サーバーとの接続が切れています。テキストは保持されています。しばらくしてからもう一度お試しください。",
     },
     kicked: {
         title: "退出されました",

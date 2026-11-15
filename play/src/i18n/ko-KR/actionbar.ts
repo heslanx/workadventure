@@ -134,6 +134,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "잠금/잠금 해제할 영역 선택",
             bubbleLabel: "토론 말풍선",
             unnamedArea: "이름 없는 영역",
+            noPermission: "이 영역을 잠글 수 없습니다. 관리자에게 잠금 권한을 요청하세요.",
         },
         giveBackFloor: {
             title: "발언권 반납",
@@ -229,6 +230,18 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "아직 개인 책상이 없습니다",
         errorMoving: "개인 책상에 도달할 수 없습니다",
         errorUnclaiming: "개인 책상을 해제할 수 없습니다",
+        unclaimConfirmTitle: "책상 “{name}”의 지정을 해제할까요?",
+        unclaimConfirmMessage:
+            "즉시 비어 있는 상태가 됩니다. 누구나 지정할 수 있으며, 비어 있는 동안 다시 지정해야만 되찾을 수 있습니다.",
+    },
+    mediaSettingsToggle: "카메라 및 마이크 설정",
+    blocked: {
+        calendarOff: "이 월드에는 캘린더가 연결되어 있지 않습니다. 관리자가 관리자 설정에서 켤 수 있습니다.",
+        todoListOff: "이 월드에는 할 일 목록이 연결되어 있지 않습니다. 관리자가 관리자 설정에서 켤 수 있습니다.",
+        roomListOff: "이 맵에서 방 목록이 꺼져 있습니다. 맵 소유자에게 다시 켜 달라고 요청하세요.",
+        screenSharingOff: "이 맵에서는 이곳의 화면 공유가 꺼져 있습니다. 맵 소유자에게 다시 켜 달라고 요청하세요.",
+        chatConnecting: "채팅이 아직 연결 중입니다. 몇 초 후에 다시 시도하세요.",
+        alreadyAtDesk: "이미 내 책상에 있습니다.",
     },
 };
 export default actionbar;

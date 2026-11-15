@@ -23,6 +23,9 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
         placeNotFound: "Deze plek bestaat niet meer op de kaart.",
         admin: "Beheerder",
         more: "Wachtende aankondigingen: {count}",
+        sendFailed:
+            "Niet verzonden: de verbinding met de server is verbroken. Je tekst blijft hier staan; verzend hem opnieuw zodra je weer verbonden bent.",
+        emptyMessage: "Schrijf een bericht om het te verzenden.",
     },
     modal: {
         liveMessage: {
@@ -36,6 +39,7 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
             live: "Live",
             stop: "Stoppen",
             title: "Live bericht",
+            enableMicrophone: "Microfoon inschakelen",
         },
     },
 };

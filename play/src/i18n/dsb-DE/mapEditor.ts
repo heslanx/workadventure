@@ -533,10 +533,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "K entitě {name} hyś",
             moveToArea: "K wobcerkoju {name} hyś",
             errorMovingToObject: "Objekt hyšći njejo pśistupny 🚫",
+            show: "Drobnostki wó {name} pokazaś",
         },
         zoomIn: "Pówětšyś +",
         zoomOut: "Pómjeńšyś -",
         showMyLocation: "Móju poziciju pokazaś",
+        noEntitiesMatch: "Žedne objekty twójomu pytanjeju njewótpowěduju. Wuproznij pytanje, aby wšykne objekty wiźeł.",
+        noAreasMatch: "Žedne wobcerki twójomu pytanjeju njewótpowěduju. Wuproznij pytanje, aby wšykne wobcerki wiźeł.",
+        entitiesList: "Lisćina objektow",
+        areasList: "Lisćina wobcerkow",
     },
     listRoom: {
         isFetching: "Lisćina śpow se wótwołujo... ⤵️",
@@ -546,6 +551,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Hyś k śpě: {roomNameSelected}... Do skóro... 🫡",
         searchLabel: "Śpu pytaś",
         searchPlaceholder: "Pśez klucowe słowa pisaś...",
+        noRoomAvailable: "W toś tom swěśe hyšći žeden rum k dispoziciji njejo.",
+        noRoomMatch: "Žeden rum „{search}“ njewótpowědujo.",
+        clearSearch: "Pytanje wuprozniś",
+        fetchFailedTitle: "Lisćina rumow njedajo se zacytaś",
+        fetchFailedDetail: "Wóstanjoš w swójom aktualnem rumje. Pśeglěduj swój zwisk a wopytaj pótom hyšći raz.",
+        retryFetch: "Rumy znowego zacytaś",
     },
 };
 

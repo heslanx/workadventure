@@ -96,6 +96,7 @@ const menu: DeepPartial<Translation["menu"]> = {
             wobble: "Wobble",
         },
         displayVideoQualityStats: "Videokwaliteitsstatistieken weergeven",
+        saving: "Instellingen opslaan",
     },
     invite: {
         description: "Deel de link van de kamer!",

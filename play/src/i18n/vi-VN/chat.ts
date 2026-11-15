@@ -433,6 +433,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "Thêm tùy chọn",
         createRoom: "Tạo phòng",
         createFolder: "Tạo thư mục",
+        nameRequired: "Nhập tên để tạo.",
     },
     createFolder: {
         title: "Tạo thư mục mới",
@@ -577,6 +578,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "Đổi quyền truy cập",
                 changePermissions: "Đổi quyền",
             },
+            nothingToSave: "Hãy thay đổi một cài đặt để lưu.",
+            nameRequiredToSave: "Nhập tên phòng để lưu.",
         },
         pollsEmpty: "Chưa có cuộc bình chọn nào",
         participantsEmpty: "Chưa có người tham gia nào",
@@ -587,6 +590,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "Không thể mở cuộc bình chọn này trong dòng thời gian.",
         closeFolderMembers: "Đóng danh sách thành viên thư mục",
         folderMembersHint: "Thành viên thư mục có thể tham gia các phòng của thư mục mở cho thành viên.",
+        proximityParticipantsEmpty: "Không có ai ở gần bạn. Hãy đi đến gần ai đó để bắt đầu trò chuyện.",
     },
     roomMenu: {
         leaveRoom: {
@@ -836,6 +840,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "Bảo mật",
         securityHint: "Khóa sao lưu giúp mở tin nhắn mã hóa trên thiết bị mới.",
         advancedSection: "Nâng cao",
+        notSet: "Chưa đặt",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Hồ sơ Matrix",
@@ -874,7 +879,22 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "Đóng cuộc thăm dò này?",
         endPollMessage: "Không ai có thể bỏ phiếu nữa. Kết quả vẫn hiển thị.",
         save: "Lưu",
+        deleteMessageNamedTitle: "Xóa “{excerpt}”?",
+        cannotUndo: "Không thể hoàn tác thao tác này.",
     },
+    chatTurnedOffInArea: "Trò chuyện đã bị tắt trong khu vực này. Hãy rời khỏi khu vực để viết lại.",
+    searchFailed: "Tìm kiếm thất bại. Danh sách có thể thiếu kết quả.",
+    searchRetry: "Tìm lại",
+    copyFailed: "Không thể sao chép",
+    directMessagesEmpty: "Chưa có tin nhắn trực tiếp nào. Mở danh sách người dùng và chọn một người để nhắn tin.",
+    roomsEmpty: "Chưa có cuộc trò chuyện nhóm nào. Hãy tạo một phòng để bắt đầu.",
+    folderEmpty: "Thư mục này chưa có phòng nào. Hãy tạo một phòng để bắt đầu trò chuyện.",
+    connectionErrorImpact: "Không thể gửi hoặc nhận tin nhắn cho đến khi kết nối lại.",
+    connectionErrorSince: "Không khả dụng từ {time}.",
+    connectionRetrying: "Đang thử kết nối lại trò chuyện…",
+    connectionRetryFailed: "Vẫn không thể kết nối trò chuyện. Hãy thử lại, hoặc tải lại trang nếu vẫn thất bại.",
+    connectionRecovered: "Trò chuyện đã hoạt động trở lại. Nó không khả dụng từ {from} đến {to}.",
+    connectionRecoveredDismiss: "Đóng thông báo này",
 };
 
 export default chat;

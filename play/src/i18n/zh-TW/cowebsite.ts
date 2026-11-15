@@ -6,6 +6,7 @@ const cowebsite: DeepPartial<Translation["cowebsite"]> = {
     close: "關閉",
     bigBlueButton: "BigBlueButton",
     jitsi: "Jitsi",
+    resize: "調整網站面板大小(使用方向鍵調整大小)",
 };
 
 export default cowebsite;

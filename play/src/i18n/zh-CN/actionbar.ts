@@ -132,6 +132,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "选择要锁定/解锁的区域",
             bubbleLabel: "讨论气泡",
             unnamedArea: "未命名区域",
+            noPermission: "你无法锁定此区域。请向管理员申请锁定权限。",
         },
         giveBackFloor: {
             title: "交回发言权",
@@ -227,6 +228,17 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "您还没有个人办公桌",
         errorMoving: "无法到达您的个人办公桌",
         errorUnclaiming: "无法释放您的个人办公桌",
+        unclaimConfirmTitle: "取消占用你的办公桌“{name}”?",
+        unclaimConfirmMessage: "它会立即空出。任何人都可以占用它,只有在它仍空闲时再次占用,你才能拿回它。",
+    },
+    mediaSettingsToggle: "摄像头和麦克风设置",
+    blocked: {
+        calendarOff: "此世界未连接日历。管理员可以在管理设置中开启。",
+        todoListOff: "此世界未连接待办事项列表。管理员可以在管理设置中开启。",
+        roomListOff: "此地图已关闭房间列表。请让地图所有者重新开启。",
+        screenSharingOff: "此地图已关闭此处的屏幕共享。请让地图所有者重新开启。",
+        chatConnecting: "聊天仍在连接中。请几秒后再试。",
+        alreadyAtDesk: "你已经在自己的办公桌前了。",
     },
 };
 

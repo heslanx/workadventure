@@ -107,6 +107,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Demander à couper la vidéo",
         muteVideoEveryBody: "Couper la vidéo pour tout le monde",
         blockOrReportUser: "Modération",
+        mutedAudioNotice: "Le micro de {name} est coupé. Seule cette personne peut le réactiver.",
+        askedMuteAudioNotice: "{name} a été invité à couper son micro.",
+        mutedVideoNotice: "La caméra de {name} est désactivée. Seule cette personne peut la réactiver.",
+        askedMuteVideoNotice: "{name} a été invité à désactiver sa caméra.",
+        alreadyMuted: "Déjà coupé",
+        videoAlreadyOff: "Vidéo déjà désactivée",
+    },
+    startError: {
+        camera: "Votre caméra n'a pas démarré. Les autres ne peuvent pas vous voir. Fermez les autres applications qui l'utilisent et réessayez.",
+        microphone:
+            "Votre micro n'a pas démarré. Les autres ne peuvent pas vous entendre. Fermez les autres applications qui l'utilisent et réessayez.",
     },
 };
 

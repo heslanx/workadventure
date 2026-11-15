@@ -107,6 +107,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "ビデオをミュートするよう依頼",
         muteVideoEveryBody: "全員のビデオをミュート",
         blockOrReportUser: "ユーザーをブロックまたは報告",
+        mutedAudioNotice: "{name}さんのマイクはミュートされています。再びオンにできるのは本人だけです。",
+        askedMuteAudioNotice: "{name}さんにマイクのミュートを依頼しました。",
+        mutedVideoNotice: "{name}さんのカメラはオフです。再びオンにできるのは本人だけです。",
+        askedMuteVideoNotice: "{name}さんにカメラをオフにするよう依頼しました。",
+        alreadyMuted: "ミュート済み",
+        videoAlreadyOff: "ビデオはすでにオフです",
+    },
+    startError: {
+        camera: "カメラを起動できませんでした。他の人からあなたが見えません。カメラを使用している他のアプリを閉じて、もう一度お試しください。",
+        microphone:
+            "マイクを起動できませんでした。他の人にあなたの声が聞こえません。マイクを使用している他のアプリを閉じて、もう一度お試しください。",
     },
 };
 

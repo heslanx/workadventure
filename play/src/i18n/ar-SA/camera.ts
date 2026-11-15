@@ -103,6 +103,16 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "طلب كتم الفيديو", // Ask to mute video
         muteVideoEveryBody: "كتم الفيديو للجميع", // Mute video for everybody
         blockOrReportUser: "الإشراف", // Moderation
+        mutedAudioNotice: "ميكروفون {name} مكتوم. هو وحده من يمكنه تشغيله مجددًا.",
+        askedMuteAudioNotice: "طُلب من {name} كتم الميكروفون.",
+        mutedVideoNotice: "كاميرا {name} متوقفة. هو وحده من يمكنه تشغيلها مجددًا.",
+        askedMuteVideoNotice: "طُلب من {name} إيقاف الكاميرا.",
+        alreadyMuted: "مكتوم بالفعل",
+        videoAlreadyOff: "الفيديو متوقف بالفعل",
+    },
+    startError: {
+        camera: "لم تبدأ الكاميرا. لا يمكن للآخرين رؤيتك. أغلق التطبيقات الأخرى التي تستخدمها وحاول مرة أخرى.",
+        microphone: "لم يبدأ الميكروفون. لا يمكن للآخرين سماعك. أغلق التطبيقات الأخرى التي تستخدمه وحاول مرة أخرى.",
     },
 };
 

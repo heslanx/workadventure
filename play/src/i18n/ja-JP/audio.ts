@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ オーディオは許可されていません。[スペース]キーを押すか、ここをクリックして再生してください！",
     },
     disable: "マイクをオフにする",
+    mute: "音声をミュート",
 };
 
 export default audio;

@@ -105,6 +105,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Yêu cầu tắt video",
         muteVideoEveryBody: "Tắt video của tất cả mọi người",
         blockOrReportUser: "Kiểm duyệt",
+        mutedAudioNotice: "Micrô của {name} đang tắt tiếng. Chỉ người đó mới có thể bật lại.",
+        askedMuteAudioNotice: "Đã yêu cầu {name} tắt tiếng micrô.",
+        mutedVideoNotice: "Camera của {name} đang tắt. Chỉ người đó mới có thể bật lại.",
+        askedMuteVideoNotice: "Đã yêu cầu {name} tắt camera.",
+        alreadyMuted: "Đã tắt tiếng",
+        videoAlreadyOff: "Video đã tắt",
+    },
+    startError: {
+        camera: "Camera của bạn không khởi động được. Người khác không thể nhìn thấy bạn. Hãy đóng các ứng dụng khác đang dùng camera và thử lại.",
+        microphone:
+            "Micrô của bạn không khởi động được. Người khác không thể nghe thấy bạn. Hãy đóng các ứng dụng khác đang dùng micrô và thử lại.",
     },
 };
 

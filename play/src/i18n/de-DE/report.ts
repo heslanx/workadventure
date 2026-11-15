@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "Blockiere jegliche Kommunikation mit {userName}. Kann jederzeit rückgängig gemacht werden.",
         unblock: "Blockierung für diesen Nutzer aufheben",
         block: "Blockiere diesen Nutzer",
+        blockedNotice: "{userName} ist blockiert. Ihr seht und hört euch nicht mehr.",
+        unblockedNotice: "{userName} ist nicht mehr blockiert.",
+        undoBlock: "Blockierung aufheben",
+        undoUnblock: "Erneut blockieren",
     },
     title: "Melden",
     content: "Verfasse eine Meldung an die Administratoren dieses Raums. Diese können den Nutzer anschließend bannen.",
@@ -68,6 +72,8 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "Diese {count} Personen sperren",
             },
         },
+        sendFailed:
+            "Nicht gesendet: Die Verbindung zum Server ist unterbrochen. Dein Text bleibt erhalten; versuche es gleich noch einmal.",
     },
     kicked: {
         title: "ENTFERNT",

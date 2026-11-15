@@ -134,6 +134,8 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Kies gebied om te vergrendelen/ontgrendelen",
             bubbleLabel: "Discussiebubbel",
             unnamedArea: "Naamloos gebied",
+            noPermission:
+                "Je kunt dit gebied niet vergrendelen. Vraag een beheerder om het recht om het te vergrendelen.",
         },
         giveBackFloor: {
             title: "Woord teruggeven",
@@ -229,6 +231,22 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "U heeft nog geen persoonlijk bureau",
         errorMoving: "Kan uw persoonlijke bureau niet bereiken",
         errorUnclaiming: "Kan uw persoonlijke bureau niet vrijgeven",
+        unclaimConfirmTitle: "Je bureau “{name}” vrijgeven?",
+        unclaimConfirmMessage:
+            "Het komt meteen vrij. Iedereen kan het claimen, en je krijgt het alleen terug door het opnieuw te claimen zolang het nog vrij is.",
+    },
+    mediaSettingsToggle: "Camera- en microfooninstellingen",
+    blocked: {
+        calendarOff:
+            "De agenda is niet gekoppeld in deze wereld. Een beheerder kan hem inschakelen in de beheerinstellingen.",
+        todoListOff:
+            "De takenlijst is niet gekoppeld in deze wereld. Een beheerder kan hem inschakelen in de beheerinstellingen.",
+        roomListOff:
+            "Deze kaart heeft de ruimtelijst uitgeschakeld. Vraag de eigenaar van de kaart om hem weer in te schakelen.",
+        screenSharingOff:
+            "Deze kaart heeft schermdelen hier uitgeschakeld. Vraag de eigenaar van de kaart om het weer in te schakelen.",
+        chatConnecting: "De chat maakt nog verbinding. Probeer het over een paar seconden opnieuw.",
+        alreadyAtDesk: "Je bent al aan je bureau.",
     },
 };
 

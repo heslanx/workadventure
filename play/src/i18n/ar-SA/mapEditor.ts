@@ -527,10 +527,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "الانتقال إلى الكائن {name}", // Move to entity {name}
             moveToArea: "الانتقال إلى المنطقة {name}", // Move to area {name}
             errorMovingToObject: "الكائن غير متاح بعد 🚫", // The object is not accessible yet 🚫
+            show: "عرض تفاصيل {name}",
         },
         zoomIn: "تكبير", // Zoom In +
         zoomOut: "تصغير", // Zoom Out -
         showMyLocation: "إظهار موقعي", // Show my location
+        noEntitiesMatch: "لا توجد عناصر تطابق بحثك. امسح البحث لرؤية جميع العناصر.",
+        noAreasMatch: "لا توجد مناطق تطابق بحثك. امسح البحث لرؤية جميع المناطق.",
+        entitiesList: "قائمة العناصر",
+        areasList: "قائمة المناطق",
     },
     listRoom: {
         isFetching: "جارٍ تحميل قائمة الغرف... ⤵️", // Fetching room list... ⤵️
@@ -540,6 +545,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "الانتقال إلى الغرفة: {roomNameSelected}... إلى اللقاء... 🫡", // Moving to room: {roomNameSelected}... See you soon... 🫡
         searchLabel: "ابحث عن غرفة", // Search for a room
         searchPlaceholder: "اكتب...", // Type...
+        noRoomAvailable: "لا توجد غرفة متاحة في هذا العالم بعد.",
+        noRoomMatch: "لا توجد غرفة تطابق «{search}».",
+        clearSearch: "مسح البحث",
+        fetchFailedTitle: "تعذر تحميل قائمة الغرف",
+        fetchFailedDetail: "ستبقى في غرفتك الحالية. تحقق من اتصالك، ثم حاول مرة أخرى.",
+        retryFetch: "إعادة تحميل الغرف",
     },
 };
 

@@ -128,6 +128,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "เลือกพื้นที่ที่จะล็อก/ปลดล็อก",
             bubbleLabel: "บับเบิลสนทนา",
             unnamedArea: "พื้นที่ไม่มีชื่อ",
+            noPermission: "คุณล็อกพื้นที่นี้ไม่ได้ ขอสิทธิ์ล็อกจากผู้ดูแลระบบ",
         },
         giveBackFloor: {
             title: "คืนสิทธิ์การพูด",
@@ -223,11 +224,22 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "คุณยังไม่มีโต๊ะส่วนตัว",
         errorMoving: "ไม่สามารถไปยังโต๊ะส่วนตัวของคุณได้",
         errorUnclaiming: "ไม่สามารถยกเลิกการจองโต๊ะส่วนตัวของคุณได้",
+        unclaimConfirmTitle: "ยกเลิกการจองโต๊ะ “{name}” ของคุณหรือไม่",
+        unclaimConfirmMessage: "โต๊ะจะว่างทันที ใครก็จองได้ และคุณจะได้คืนก็ต่อเมื่อจองใหม่ในขณะที่ยังว่างอยู่",
     },
     desktop: {
         section: "แอปเดสก์ท็อป",
         openRoom: "เปิดห้องอื่น…",
         openMiniWindow: "เปิดหน้าต่างขนาดเล็ก",
+    },
+    mediaSettingsToggle: "การตั้งค่ากล้องและไมโครโฟน",
+    blocked: {
+        calendarOff: "ปฏิทินยังไม่ได้เชื่อมต่อในโลกนี้ ผู้ดูแลระบบเปิดใช้งานได้ในการตั้งค่าผู้ดูแล",
+        todoListOff: "รายการสิ่งที่ต้องทำยังไม่ได้เชื่อมต่อในโลกนี้ ผู้ดูแลระบบเปิดใช้งานได้ในการตั้งค่าผู้ดูแล",
+        roomListOff: "แผนที่นี้ปิดรายการห้องไว้ ขอให้เจ้าของแผนที่เปิดกลับมา",
+        screenSharingOff: "แผนที่นี้ปิดการแชร์หน้าจอในจุดนี้ ขอให้เจ้าของแผนที่เปิดกลับมา",
+        chatConnecting: "แชทยังกำลังเชื่อมต่อ ลองอีกครั้งในอีกไม่กี่วินาที",
+        alreadyAtDesk: "คุณอยู่ที่โต๊ะของคุณแล้ว",
     },
 };
 export default actionbar;

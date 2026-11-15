@@ -104,6 +104,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "prosyć, zo by video stummschalten",
         muteVideoEveryBody: "video za wšěch stummschalten",
         blockOrReportUser: "wužiwarja blokować abo pśihłasować",
+        mutedAudioNotice: "Mikrofon wosoby {name} je wupinjeny. Jenož tuta wosoba móže jón zaso zapinać.",
+        askedMuteAudioNotice: "{name} bu prošeny/-a, mikrofon wupinać.",
+        mutedVideoNotice: "Kamera wosoby {name} je wupinjena. Jenož tuta wosoba móže ju zaso zapinać.",
+        askedMuteVideoNotice: "{name} bu prošeny/-a, kameru wupinać.",
+        alreadyMuted: "Hižo wupinjeny",
+        videoAlreadyOff: "Widejo je hižo wupinjene",
+    },
+    startError: {
+        camera: "Twoja kamera njeje startowała. Druzy će njewidźa. Začiń druhe aplikacije, kotrež ju wužiwaja, a spytaj hišće raz.",
+        microphone:
+            "Twój mikrofon njeje startował. Druzy će njesłyša. Začiń druhe aplikacije, kotrež jón wužiwaja, a spytaj hišće raz.",
     },
 };
 

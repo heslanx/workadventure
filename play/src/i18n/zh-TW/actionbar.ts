@@ -132,6 +132,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "選擇要鎖定／解鎖的區域",
             bubbleLabel: "討論氣泡",
             unnamedArea: "未命名區域",
+            noPermission: "你無法鎖定此區域。請向管理員申請鎖定權限。",
         },
         giveBackFloor: {
             title: "交回發言權",
@@ -227,6 +228,17 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "您還沒有個人辦公桌",
         errorMoving: "無法抵達您的個人辦公桌",
         errorUnclaiming: "無法釋放您的個人辦公桌",
+        unclaimConfirmTitle: "要取消佔用你的辦公桌「{name}」嗎?",
+        unclaimConfirmMessage: "它會立即空出。任何人都可以佔用它,只有在它仍空著時再次佔用,你才能拿回它。",
+    },
+    mediaSettingsToggle: "攝影機與麥克風設定",
+    blocked: {
+        calendarOff: "此世界尚未連結行事曆。管理員可以在管理設定中開啟。",
+        todoListOff: "此世界尚未連結待辦清單。管理員可以在管理設定中開啟。",
+        roomListOff: "此地圖已關閉房間清單。請聯絡地圖擁有者重新開啟。",
+        screenSharingOff: "此地圖已關閉此處的螢幕分享。請聯絡地圖擁有者重新開啟。",
+        chatConnecting: "聊天仍在連線中。請幾秒後再試一次。",
+        alreadyAtDesk: "你已經在自己的辦公桌前了。",
     },
 };
 

@@ -102,6 +102,16 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "要求關閉視訊",
         muteVideoEveryBody: "關閉所有人的視訊",
         blockOrReportUser: "管理",
+        mutedAudioNotice: "{name} 的麥克風已靜音。只有本人可以重新開啟。",
+        askedMuteAudioNotice: "已請 {name} 將麥克風靜音。",
+        mutedVideoNotice: "{name} 的攝影機已關閉。只有本人可以重新開啟。",
+        askedMuteVideoNotice: "已請 {name} 關閉攝影機。",
+        alreadyMuted: "已靜音",
+        videoAlreadyOff: "視訊已關閉",
+    },
+    startError: {
+        camera: "你的攝影機無法啟動。其他人看不到你。請關閉正在使用它的其他應用程式,然後再試一次。",
+        microphone: "你的麥克風無法啟動。其他人聽不到你。請關閉正在使用它的其他應用程式,然後再試一次。",
     },
 };
 

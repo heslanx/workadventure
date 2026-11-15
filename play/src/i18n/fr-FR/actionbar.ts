@@ -132,6 +132,8 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Choisir la zone à verrouiller/déverrouiller",
             bubbleLabel: "Bulle de discussion",
             unnamedArea: "Zone sans nom",
+            noPermission:
+                "Vous ne pouvez pas verrouiller cette zone. Demandez à un administrateur le droit de la verrouiller.",
         },
         giveBackFloor: {
             title: "Rendre la parole",
@@ -233,6 +235,22 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Vous n'avez pas encore de bureau personnel",
         errorMoving: "Impossible d'atteindre votre bureau personnel",
         errorUnclaiming: "Impossible de libérer votre bureau personnel",
+        unclaimConfirmTitle: "Libérer votre bureau « {name} » ?",
+        unclaimConfirmMessage:
+            "Il devient libre immédiatement. N'importe qui peut le réserver, et vous ne le récupérerez qu'en le réservant à nouveau tant qu'il est encore libre.",
+    },
+    mediaSettingsToggle: "Paramètres de la caméra et du micro",
+    blocked: {
+        calendarOff:
+            "Le calendrier n'est pas connecté dans ce monde. Un administrateur peut l'activer dans les paramètres d'administration.",
+        todoListOff:
+            "La liste de tâches n'est pas connectée dans ce monde. Un administrateur peut l'activer dans les paramètres d'administration.",
+        roomListOff:
+            "Cette carte a désactivé la liste des salles. Demandez au propriétaire de la carte de la réactiver.",
+        screenSharingOff:
+            "Cette carte a désactivé le partage d'écran ici. Demandez au propriétaire de la carte de le réactiver.",
+        chatConnecting: "Le chat est encore en cours de connexion. Réessayez dans quelques secondes.",
+        alreadyAtDesk: "Vous êtes déjà à votre bureau.",
     },
 };
 

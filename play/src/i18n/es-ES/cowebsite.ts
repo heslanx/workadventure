@@ -6,6 +6,7 @@ const companion: DeepPartial<Translation["cowebsite"]> = {
     close: "Cerca",
     bigBlueButton: "BigBlueButton",
     jitsi: "Jitsi",
+    resize: "Cambiar el tamaño del panel del sitio web (teclas de flecha para cambiar el tamaño)",
 };
 
 export default companion;

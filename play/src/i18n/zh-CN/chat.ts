@@ -432,6 +432,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "更多选项",
         createRoom: "创建房间",
         createFolder: "创建文件夹",
+        nameRequired: "输入名称即可创建。",
     },
     createFolder: {
         title: "创建新文件夹",
@@ -576,6 +577,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "更改访问权限",
                 changePermissions: "更改权限",
             },
+            nothingToSave: "更改设置后才能保存。",
+            nameRequiredToSave: "输入房间名称后才能保存。",
         },
         pollsEmpty: "暂无投票",
         participantsEmpty: "暂无参与者",
@@ -586,6 +589,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "无法在时间线中打开此投票。",
         closeFolderMembers: "关闭文件夹成员",
         folderMembersHint: "文件夹成员可以加入其中对成员开放的房间。",
+        proximityParticipantsEmpty: "你附近没有人。走近某人即可开始对话。",
     },
     roomMenu: {
         leaveRoom: {
@@ -833,6 +837,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "安全",
         securityHint: "备份密钥可在新设备上解锁你的加密消息。",
         advancedSection: "高级",
+        notSet: "未设置",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -869,7 +874,22 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "结束此投票？",
         endPollMessage: "之后任何人都无法再投票，结果仍然可见。",
         save: "保存",
+        deleteMessageNamedTitle: "删除“{excerpt}”?",
+        cannotUndo: "此操作无法撤销。",
     },
+    chatTurnedOffInArea: "此区域已关闭聊天。离开该区域即可再次发消息。",
+    searchFailed: "搜索失败。列表中可能缺少部分结果。",
+    searchRetry: "重新搜索",
+    copyFailed: "无法复制",
+    directMessagesEmpty: "还没有私信。打开用户列表,选择一个人开始聊天。",
+    roomsEmpty: "还没有群组对话。创建一个房间来开始对话。",
+    folderEmpty: "此文件夹中还没有房间。创建一个房间来开始对话。",
+    connectionErrorImpact: "重新连接之前,无法发送或接收消息。",
+    connectionErrorSince: "自 {time} 起不可用。",
+    connectionRetrying: "正在重试聊天连接…",
+    connectionRetryFailed: "聊天仍然无法连接。请重试,如果一直失败,请重新加载页面。",
+    connectionRecovered: "聊天已恢复。它在 {from} 至 {to} 期间不可用。",
+    connectionRecoveredDismiss: "关闭此通知",
 };
 
 export default chat;

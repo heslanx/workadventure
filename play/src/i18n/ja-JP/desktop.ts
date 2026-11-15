@@ -111,6 +111,7 @@ const desktop: DeepPartial<Translation["desktop"]> = {
         kick: "ミーティングから外す",
         visitCard: "名刺",
         blockOrReport: "ブロックまたは報告",
+        todayWithSoonMeeting: "今日、次の会議: {title}",
     },
     meetingBar: {
         switchSharedScreenDialog: "共有する内容を変更",

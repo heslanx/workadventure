@@ -134,6 +134,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Wobcerk za zawrěśenje/wótwardenje wubraś",
             bubbleLabel: "Diskusijowa balonka",
             unnamedArea: "Wobcerk běz mjenja",
+            noPermission: "Njamóžoš toś ten wobcerk zastajiś. Pšos administratora wó pšawo, jen zastajiś.",
         },
         giveBackFloor: {
             title: "Słowo slědk daś",
@@ -229,6 +230,21 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Njamajo hyšći wósobinske pisanje blidko",
         errorMoving: "Wósobinske pisanje blidko njejo se docyło",
         errorUnclaiming: "Wósobinske pisanje blidko njejo se wótpórało",
+        unclaimConfirmTitle: "Twójo pisańske blido „{name}“ wuswobodniś?",
+        unclaimConfirmMessage:
+            "Buźo ned liche. Kuždy móžo se jo wześ, a ty dostanjoš jo jano slědk, gaž se jo znowego wzejoš, jolic jo hyšći liche.",
+    },
+    mediaSettingsToggle: "Nastajenja kamery a mikrofona",
+    blocked: {
+        calendarOff:
+            "Kalender njejo w toś tom swěśe zwězany. Administrator móžo jen w administraciskich nastajenjach zmóžniś.",
+        todoListOff:
+            "Lisćina nadawkow njejo w toś tom swěśe zwězana. Administrator móžo ju w administraciskich nastajenjach zmóžniś.",
+        roomListOff: "Toś ta karta jo lisćinu rumow znjemóžniła. Pšos wobsejźarja karty, ju zasej zmóžniś.",
+        screenSharingOff:
+            "Toś ta karta jo źělenje wobrazowki how znjemóžniła. Pšos wobsejźarja karty, jo zasej zmóžniś.",
+        chatConnecting: "Chat se hyšći zwězujo. Wopytaj za někotare sekundy hyšći raz.",
+        alreadyAtDesk: "Sy južo pśi swójom pisańskem blidle.",
     },
 };
 

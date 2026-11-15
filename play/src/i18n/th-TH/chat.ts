@@ -434,6 +434,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "ตัวเลือกเพิ่มเติม",
         createRoom: "สร้างห้อง",
         createFolder: "สร้างโฟลเดอร์",
+        nameRequired: "ป้อนชื่อเพื่อสร้าง",
     },
     createFolder: {
         title: "สร้างโฟลเดอร์ใหม่",
@@ -578,6 +579,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "เปลี่ยนการเข้าถึง",
                 changePermissions: "เปลี่ยนสิทธิ์",
             },
+            nothingToSave: "เปลี่ยนการตั้งค่าเพื่อบันทึก",
+            nameRequiredToSave: "ป้อนชื่อห้องเพื่อบันทึก",
         },
         pollsEmpty: "ยังไม่มีโพล",
         participantsEmpty: "ยังไม่มีผู้เข้าร่วม",
@@ -588,6 +591,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "ไม่สามารถเปิดโพลนี้ในไทม์ไลน์ได้",
         closeFolderMembers: "ปิดสมาชิกโฟลเดอร์",
         folderMembersHint: "สมาชิกโฟลเดอร์สามารถเข้าร่วมห้องของโฟลเดอร์ที่เปิดให้สมาชิกได้",
+        proximityParticipantsEmpty: "ไม่มีใครอยู่ใกล้คุณ เดินเข้าไปหาใครสักคนเพื่อเริ่มการสนทนา",
     },
     roomMenu: {
         leaveRoom: {
@@ -836,6 +840,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "ความปลอดภัย",
         securityHint: "คีย์สำรองใช้ปลดล็อกข้อความที่เข้ารหัสบนอุปกรณ์ใหม่",
         advancedSection: "ขั้นสูง",
+        notSet: "ไม่ได้ตั้งค่า",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "โปรไฟล์ Matrix",
@@ -872,7 +877,22 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "ปิดโพลนี้หรือไม่?",
         endPollMessage: "จะไม่มีใครโหวตได้อีก ผลลัพธ์ยังคงแสดงอยู่",
         save: "บันทึก",
+        deleteMessageNamedTitle: "ลบ “{excerpt}” หรือไม่",
+        cannotUndo: "การดำเนินการนี้ยกเลิกไม่ได้",
     },
+    chatTurnedOffInArea: "แชทถูกปิดในพื้นที่นี้ ออกจากพื้นที่เพื่อเขียนข้อความอีกครั้ง",
+    searchFailed: "ค้นหาไม่สำเร็จ รายการอาจแสดงผลลัพธ์ไม่ครบ",
+    searchRetry: "ค้นหาอีกครั้ง",
+    copyFailed: "คัดลอกไม่ได้",
+    directMessagesEmpty: "ยังไม่มีข้อความส่วนตัว เปิดรายชื่อผู้ใช้แล้วเลือกคนที่จะส่งข้อความถึง",
+    roomsEmpty: "ยังไม่มีการสนทนากลุ่ม สร้างห้องเพื่อเริ่มการสนทนา",
+    folderEmpty: "โฟลเดอร์นี้ยังไม่มีห้อง สร้างห้องเพื่อเริ่มการสนทนา",
+    connectionErrorImpact: "ส่งหรือรับข้อความไม่ได้จนกว่าจะเชื่อมต่อใหม่",
+    connectionErrorSince: "ใช้งานไม่ได้ตั้งแต่ {time}",
+    connectionRetrying: "กำลังลองเชื่อมต่อแชทอีกครั้ง…",
+    connectionRetryFailed: "ยังเชื่อมต่อแชทไม่ได้ ลองอีกครั้ง หรือโหลดหน้าใหม่หากยังล้มเหลว",
+    connectionRecovered: "แชทกลับมาแล้ว แชทใช้งานไม่ได้ตั้งแต่ {from} ถึง {to}",
+    connectionRecoveredDismiss: "ปิดประกาศนี้",
 };
 
 export default chat;

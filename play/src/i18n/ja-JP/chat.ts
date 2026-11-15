@@ -434,6 +434,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "その他のオプション",
         createRoom: "ルームを作成",
         createFolder: "フォルダーを作成",
+        nameRequired: "作成するには名前を入力してください。",
     },
     createFolder: {
         title: "新しいフォルダーの作成",
@@ -579,6 +580,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "アクセスを変更",
                 changePermissions: "権限を変更",
             },
+            nothingToSave: "保存するには設定を変更してください。",
+            nameRequiredToSave: "保存するにはルーム名を入力してください。",
         },
         pollsEmpty: "投票はまだありません",
         participantsEmpty: "参加者はまだいません",
@@ -589,6 +592,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "タイムラインでこの投票を開けませんでした。",
         closeFolderMembers: "フォルダーのメンバーを閉じる",
         folderMembersHint: "フォルダーのメンバーは、メンバーに公開されているそのルームに参加できます。",
+        proximityParticipantsEmpty: "近くに誰もいません。誰かに近づいて会話を始めましょう。",
     },
     roomMenu: {
         leaveRoom: {
@@ -839,6 +843,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "セキュリティ",
         securityHint: "バックアップキーで、新しい端末でも暗号化されたメッセージを読めます。",
         advancedSection: "詳細",
+        notSet: "未設定",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -876,7 +881,24 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "この投票を締め切りますか？",
         endPollMessage: "これ以降は誰も投票できません。結果は表示されたままです。",
         save: "保存",
+        deleteMessageNamedTitle: "「{excerpt}」を削除しますか?",
+        cannotUndo: "この操作は元に戻せません。",
     },
+    chatTurnedOffInArea: "このエリアではチャットがオフになっています。エリアを出ると再び書き込めます。",
+    searchFailed: "検索に失敗しました。一覧に表示されていない結果がある可能性があります。",
+    searchRetry: "もう一度検索",
+    copyFailed: "コピーできませんでした",
+    directMessagesEmpty:
+        "ダイレクトメッセージはまだありません。ユーザー一覧を開いて、メッセージを送る相手を選んでください。",
+    roomsEmpty: "グループの会話はまだありません。ルームを作成して始めましょう。",
+    folderEmpty: "このフォルダにはまだルームがありません。ルームを作成して会話を始めましょう。",
+    connectionErrorImpact: "再接続されるまで、メッセージの送受信はできません。",
+    connectionErrorSince: "{time}から利用できません。",
+    connectionRetrying: "チャットへの接続を再試行しています…",
+    connectionRetryFailed:
+        "チャットにまだ接続できません。もう一度お試しいただくか、失敗が続く場合はページを再読み込みしてください。",
+    connectionRecovered: "チャットが復旧しました。{from}から{to}まで利用できませんでした。",
+    connectionRecoveredDismiss: "この通知を閉じる",
 };
 
 export default chat;

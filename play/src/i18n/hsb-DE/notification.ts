@@ -35,6 +35,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "Dźělenje wobrazowki njedaje so startować",
     recordingStarted: "Jedyn wotdźělnik w diskusiji je nagraće započał.",
     urlCopiedToClipboard: "URL do mjezywótkłada kopěrowana",
+    muteRequest: {
+        acceptMicrophone: "Mój mikrofon wupinać",
+        acceptCamera: "Moju kameru wupinać",
+        refuse: "Zapinjene wostajić",
+    },
+    copyFailed:
+        "Kopěrowanje njemóžne: wobhladowak je mjezyskład zablokował. Wubjer tekst a tłóč Strg+C (Cmd+C na Macu).",
+    closeToast: "Zdźělenku začinić",
 };
 
 export default notification;

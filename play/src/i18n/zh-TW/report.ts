@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "封鎖任何來自 {userName} 的通訊。此操作是可逆的。",
         unblock: "解除封鎖該使用者",
         block: "封鎖該使用者",
+        blockedNotice: "已封鎖 {userName}。你們將無法再看到或聽到彼此。",
+        unblockedNotice: "已解除封鎖 {userName}。",
+        undoBlock: "解除封鎖",
+        undoUnblock: "再次封鎖",
     },
     title: "檢舉",
     content: "傳送檢舉訊息給這個房間的管理員，他們後續可能停權該使用者。",
@@ -66,6 +70,7 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "封鎖這 {count} 人",
             },
         },
+        sendFailed: "未傳送:與伺服器的連線已中斷。你的文字已保留,請稍後再試一次。",
     },
     kicked: {
         title: "已被移出",

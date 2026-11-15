@@ -22,6 +22,14 @@ const follow: DeepPartial<Translation["follow"]> = {
         },
         yes: "Ja",
         no: "Nee",
+        buttons: {
+            follow: "{leader} volgen",
+            notNow: "Niet nu",
+            stopLeading: "Stoppen met leiden",
+            keepLeading: "Blijven leiden",
+            stopFollowing: "Stoppen met volgen",
+            keepFollowing: "Blijven volgen",
+        },
     },
     actionName: "Lokaliseren",
 };

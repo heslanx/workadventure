@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "Bloquejar qualsevol comunicació des de i cap a {userName}. Aquest cambi es pot desfer.",
         unblock: "Desbloquejar aquest usuari",
         block: "Bloquejar aquest usuari",
+        blockedNotice: "{userName} està bloquejat. Ja no us veieu ni us sentiu.",
+        unblockedNotice: "{userName} està desbloquejat.",
+        undoBlock: "Desbloqueja",
+        undoUnblock: "Torna a bloquejar",
     },
     title: "Denunciar",
     content:
@@ -69,6 +73,8 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "Bandejar aquestes {count} persones",
             },
         },
+        sendFailed:
+            "No enviat: la connexió amb el servidor ha caigut. El teu text es conserva; torna-ho a provar d'aquí a un moment.",
     },
     kicked: {
         title: "EXPULSAT",
