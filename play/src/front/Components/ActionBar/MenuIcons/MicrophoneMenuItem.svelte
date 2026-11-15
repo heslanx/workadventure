@@ -110,14 +110,17 @@
     statusDot={$heldMediaStore.microphone ? getColorHexOfStatus($heldMediaStore.status) : undefined}
     statusDotClickable={canComeBackFrom($heldMediaStore.status)}
     ariaLabel={$LL.actionbar.help.mic.title()}
+    pressed={Boolean(
+        $requestedMicrophoneState && !$silentStore && $microphoneListStore && $microphoneListStore.length > 0,
+    )}
     dataTestId="microphone-button"
     tooltipTitle={$microphoneActionBarTooltipStore.title}
     desc={$microphoneActionBarTooltipStore.desc}
     media={$microphoneActionBarTooltipStore.media}
 >
     {#if $requestedMicrophoneState && !$silentStore && $microphoneListStore && $microphoneListStore.length > 0}
-        <MicOnIcon />
+        <MicOnIcon height="h-5" width="w-5" strokeWidth="2" />
     {:else}
-        <MicOffIcon />
+        <MicOffIcon height="h-5" width="w-5" strokeWidth="2" />
     {/if}
 </ActionBarButton>

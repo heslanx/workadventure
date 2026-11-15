@@ -42,7 +42,7 @@
 </script>
 
 <ConfirmationModal props={confirmationModalProps}>
-    <div id="notificationPermission" class="grow text-center text-xl">
+    <div id="notificationPermission" class="grow text-center text-xl leading-8">
         {$LL.statusModal.allowNotification()}
     </div>
     <div>

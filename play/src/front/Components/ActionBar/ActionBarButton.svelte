@@ -16,8 +16,13 @@
         statusDot?: string;
         // ...unless a click ends what holds it (away mode).
         statusDotClickable?: boolean;
+        // Why a disabled or held-off button does nothing, in one line that points to the way out. With it the
+        // button stays focusable (aria-disabled) and a click or Enter shows this line instead of being swallowed.
+        blockedReason?: string;
         // The name of an icon-only button (a menu row is named by its text).
         ariaLabel?: string;
+        // On/off state of a toggle (camera, microphone), so the state is not told by the background colour alone.
+        pressed?: boolean;
         dataTestId?: string;
         classList?: string;
         hideIconInActionBar?: boolean;
@@ -59,7 +64,9 @@
         state: buttonState = "normal",
         statusDot = undefined,
         statusDotClickable = false,
+        blockedReason = undefined,
         ariaLabel = undefined,
+        pressed = undefined,
         dataTestId = undefined,
         classList = "group",
         hideIconInActionBar = false,
@@ -95,8 +102,20 @@
 
     let helpActive = $state(false);
 
+    let blocked = $derived(buttonState === "disabled" || buttonState === "disabledForbidden" || heldOff);
+    let explained = $derived(blocked && Boolean(blockedReason));
+    // A click on an explained button is still a response: it keeps the pointer cursor.
+    let blockedCursor = $derived(blockedReason ? "cursor-pointer" : "cursor-not-allowed");
+    const reasonId = $props.id();
+    let reasonRequested = $state(false);
+    let reasonShown = $derived(explained && reasonRequested);
+
     function handleClick(event: MouseEvent) {
-        if (buttonState === "disabled" || buttonState === "disabledForbidden" || heldOff) {
+        if (blocked) {
+            if (blockedReason) {
+                helpActive = false;
+                reasonRequested = true;
+            }
             return;
         }
         helpActive = false;
@@ -132,9 +151,9 @@
         <button
             type="button"
             class="{compact ? 'h-9' : 'h-12 @sm/actions:h-10 @xl/actions:h-12'} p-1 m-0 rounded relative
-                    {buttonState === 'disabled' ? 'opacity-50 cursor-not-allowed' : ''}
-                    {buttonState === 'disabledForbidden' ? 'bg-danger opacity-70 cursor-not-allowed' : ''}
-                    {heldOff ? 'cursor-not-allowed' : ''}
+                    {buttonState === 'disabled' ? `opacity-50 ${blockedCursor}` : ''}
+                    {buttonState === 'disabledForbidden' ? `bg-danger opacity-70 ${blockedCursor}` : ''}
+                    {heldOff ? blockedCursor : ''}
                     {buttonState === 'normal' && !isGradient && !heldOff ? 'hover:bg-white/10 cursor-pointer' : ''}
                     {buttonState === 'active' ? 'bg-secondary hover:bg-secondary-600 cursor-pointer' : ''}
                     {buttonState === 'forbidden' ? 'bg-danger hover:bg-danger-600 cursor-pointer' : ''}
@@ -147,21 +166,28 @@
                 {isGradient ? 'gradient overflow-hidden font-bold' : ''}
                 {bgColor && !isGradient ? 'bg-[var(--bg-color)]' : ''}
                 {textColor ? 'text-[var(--text-color)]' : 'text-neutral-100'}
-                    flex items-center justify-center outline-none focus:outline-none gap-2 select-none"
-            disabled={buttonState === "disabled" || buttonState === "disabledForbidden" || heldOff}
+                    flex items-center justify-center gap-2 select-none"
+            disabled={blocked && !blockedReason}
+            aria-disabled={explained || undefined}
+            aria-describedby={explained ? reasonId : undefined}
             aria-label={ariaLabel}
+            aria-pressed={pressed}
             title={compact ? nativeTitle : undefined}
             onclick={(event) => {
                 event.preventDefault();
                 handleClick(event);
             }}
             {onkeydown}
+            onfocus={() => (reasonRequested = explained)}
+            onblur={() => (reasonRequested = false)}
             onmouseenter={(event) => {
                 helpActive = true;
+                reasonRequested = explained;
                 onmouseenter?.(event);
             }}
             onmouseleave={(event) => {
                 helpActive = false;
+                reasonRequested = false;
                 onmouseleave?.(event);
             }}
             data-testid={dataTestId}
@@ -180,7 +206,19 @@
             {/if}
             {#if label}<span class={boldLabel ? "font-bold" : ""}>{label}</span>{/if}
         </button>
-        {#if !compact && helpActive && !$helpTextDisabledStore && !disabledHelp && (tooltipTitle || tooltipDesc || tooltip)}
+        {#if explained}
+            <!-- Read with the button (aria-describedby); shown on hover, focus, click or Enter. -->
+            <span
+                id={reasonId}
+                class={reasonShown
+                    ? "absolute top-full start-0 z-10 mt-1 w-max max-w-64 rounded bg-contrast px-2 py-1 text-xs text-white shadow-lg"
+                    : "sr-only"}
+                data-testid={dataTestId ? `${dataTestId}-blocked-reason` : undefined}
+            >
+                {blockedReason}
+            </span>
+        {/if}
+        {#if !compact && !reasonShown && helpActive && !$helpTextDisabledStore && !disabledHelp && (tooltipTitle || tooltipDesc || tooltip)}
             <HelpTooltip
                 title={tooltipTitle}
                 helpMedia={media}
@@ -195,9 +233,9 @@
 {:else}
     <button
         class="group flex p-2 gap-2 mb-1 items-center hover:bg-white/10 transition-all cursor-pointer font-bold text-sm text-neutral-100 w-full pointer-events-auto text-start rounded select-none
-                    {buttonState === 'disabled' || statusDot ? 'opacity-50' : ''}
-                    {buttonState === 'disabled' || heldOff ? 'cursor-not-allowed' : ''}
-                    {buttonState === 'disabledForbidden' ? 'bg-danger opacity-70 cursor-not-allowed' : ''}
+                    {(buttonState === 'disabled' && !blockedReason) || statusDot ? 'opacity-50' : ''}
+                    {buttonState === 'disabled' || heldOff ? blockedCursor : ''}
+                    {buttonState === 'disabledForbidden' ? `bg-danger opacity-70 ${blockedCursor}` : ''}
                     {buttonState === 'active' && !isGradient
             ? 'bg-secondary hover:bg-secondary-600 cursor-pointer'
             : ''}
@@ -208,6 +246,8 @@
                     {textColor ? 'text-[var(--text-color)]' : 'text-neutral-100'}
                     {isGradient ? 'relative' : ''}"
         use:action
+        aria-disabled={explained || undefined}
+        aria-pressed={pressed}
         onclick={handleClick}
         {onkeydown}
         {onmouseenter}
@@ -217,13 +257,33 @@
         bind:this={wrapperDiv}
     >
         {#if hasImage}
-            <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
+            <div
+                class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center {explained &&
+                buttonState === 'disabled'
+                    ? 'opacity-50'
+                    : ''}"
+            >
                 {@render children?.()}
             </div>
         {/if}
-        <div class="text-start h-6 leading-4 flex items-center text-nowrap">
-            {label ?? tooltipTitle ?? ""}
-            {@render end?.()}
+        <div class="flex flex-col min-w-0">
+            <div
+                class="text-start h-6 leading-4 flex items-center text-nowrap {explained && buttonState === 'disabled'
+                    ? 'opacity-50'
+                    : ''}"
+            >
+                {label ?? tooltipTitle ?? ""}
+                {@render end?.()}
+            </div>
+            {#if explained}
+                <!-- In a menu row the reason is always on show, under the label (and part of the row's name). -->
+                <span
+                    class="text-xs font-normal text-white/80 text-wrap leading-4"
+                    data-testid={dataTestId ? `${dataTestId}-blocked-reason` : undefined}
+                >
+                    {blockedReason}
+                </span>
+            {/if}
         </div>
     </button>
 {/if}
@@ -253,10 +313,5 @@
     .gradient {
         border: 1px solid rgb(from var(--bg-color) r g b / 0.3);
         transition: all 0.2s ease-in-out;
-        box-shadow: 0px 0px 0px 0px var(--bg-color) / 0;
-    }
-
-    .gradient:hover {
-        box-shadow: 0px 0px 4px 2px rgb(from var(--bg-color) r g b / 0.1);
     }
 </style>

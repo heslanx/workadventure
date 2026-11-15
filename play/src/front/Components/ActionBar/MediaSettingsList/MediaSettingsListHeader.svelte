@@ -15,7 +15,7 @@
 </script>
 
 <div class="flex flex-row gap-2 px-1">
-    <div class="flex-1 flex text-xxs uppercase text-white/50 pb-0.5 pt-1 relative bold">
+    <div class="flex-1 flex text-xxs uppercase text-white/60 pb-0.5 pt-1 relative bold">
         <div class="group flex items-center relative z-10 w-full">
             <Button
                 variant="light"
@@ -30,7 +30,7 @@
             </Button>
         </div>
     </div>
-    <div class="flex-1 flex text-xxs uppercase text-white/50 pb-0.5 pt-1 relative bold">
+    <div class="flex-1 flex text-xxs uppercase text-white/60 pb-0.5 pt-1 relative bold">
         <div class="group flex items-center relative z-10 w-full">
             <Button
                 variant="light"

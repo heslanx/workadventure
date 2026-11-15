@@ -57,6 +57,9 @@
         desc={$LL.actionbar.help.apps.desc()}
     >
         <AppsIcon
+            height="h-5"
+            width="w-5"
+            strokeWidth="2"
             strokeColor={$openedMenuStore === "appMenu"
                 ? "stroke-white fill-white"
                 : "stroke-white fill-transparent group-hover/btn-apps:fill-white"}
@@ -76,7 +79,7 @@
                 <div use:arrowAction></div>
                 <div class="bottom-action-bar">
                     <div
-                        class="bottom-action-section flex flex-col animate bg-contrast/80 backdrop-blur rounded-md p-1"
+                        class="bottom-action-section flex flex-col animate bg-contrast/95 backdrop-blur rounded-md p-1"
                     >
                         <AppsMenuContent />
                     </div>

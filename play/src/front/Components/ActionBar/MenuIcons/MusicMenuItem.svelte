@@ -38,11 +38,11 @@
     dataTestId="music-pause-button"
 >
     {#if $audioManagerPlayerState === "loading"}
-        <IconLoader class="animate-spin" />
+        <IconLoader font-size="20" class="animate-spin" />
     {:else if $audioManagerVolumeStore.paused}
-        <PlayerPlayIcon />
+        <PlayerPlayIcon height="h-5" width="w-5" strokeWidth="2" />
     {:else}
-        <PlayerPauseIcon />
+        <PlayerPauseIcon height="h-5" width="w-5" strokeWidth="2" />
     {/if}
 </ActionBarButton>
 <ActionBarButton
@@ -70,7 +70,7 @@
             : undefined}
     dataTestId="music-stop-button"
 >
-    <PlayerStopIcon />
+    <PlayerStopIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>
 <ActionBarButton
     onclick={() => {
@@ -106,7 +106,7 @@
             : undefined}
     dataTestId="music-button"
 >
-    <PlayerMusicIcon />
+    <PlayerMusicIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>
 {#if $activeSecondaryZoneActionBarStore === "audio-manager"}
     <AudioManager />

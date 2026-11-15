@@ -198,9 +198,9 @@
         bind:wrapperDiv={triggerElement}
     >
         {#if lockState}
-            <LockIcon />
+            <LockIcon height="h-5" width="w-5" strokeWidth="2" />
         {:else}
-            <LockOpenIcon />
+            <LockOpenIcon height="h-5" width="w-5" strokeWidth="2" />
         {/if}
     </ActionBarButton>
 {/if}

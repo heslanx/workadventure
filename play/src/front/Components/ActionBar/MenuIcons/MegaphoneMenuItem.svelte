@@ -15,5 +15,5 @@
     dataTestId="Megaphone-button"
     desc={$LL.actionbar.help.megaphone.desc()}
 >
-    <MegaphoneIcon />
+    <MegaphoneIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>

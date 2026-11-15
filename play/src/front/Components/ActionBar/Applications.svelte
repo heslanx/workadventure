@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import type { KlaxoonEvent } from "@workadventure/shared-utils/src/types";
     import { KlaxoonService } from "@workadventure/shared-utils";
+    import { fly } from "../../Utils/reducedMotion";
     import appOnImg from "../images/applications/appOn.png";
     import appOffImg from "../images/applications/appOff.png";
     import klaxoonImg from "../images/applications/icon_klaxoon.svg";

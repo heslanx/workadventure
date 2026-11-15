@@ -153,7 +153,7 @@
     }
 </script>
 
-<div class="bg-contrast/80 backdrop-blur rounded-md p-1 w-56 text-white select-none" data-testid="profile-menu">
+<div class="bg-contrast/95 backdrop-blur rounded-md p-1 w-56 text-white select-none" data-testid="profile-menu">
     <div class="p-0 m-0 list-none overflow-y-auto max-h-[calc(100vh-96px)]">
         <ExternalComponents zone="menuTop" />
         <AvailabilityStatusList statusInformation={getStatusInformation(statusToShow)} />
@@ -166,7 +166,7 @@
                     analyticsClient.trackAdminEvent("profile.name_edit_opened");
                 }}
             >
-                <ProfilIcon />
+                <ProfilIcon height="h-5" width="w-5" strokeWidth="2" />
             </ActionBarButton>
         {/if}
         <ActionBarButton
@@ -190,12 +190,12 @@
 
         <HeaderMenuItem label={$LL.menu.sub.settings()} />
         <ActionBarButton label={$LL.actionbar.editCamMic()} onclick={openEnableCameraScene}>
-            <CamSettingsIcon />
+            <CamSettingsIcon height="h-5" width="w-5" strokeWidth="2" />
         </ActionBarButton>
 
         {#if SENTRY_DSN_FRONT != undefined && connectionManager.currentRoom?.isIssueReportEnabled}
             <ActionBarButton label={$LL.actionbar.issueReport.menuAction()} onclick={openFeedbackScene}>
-                <IconBug font-size="22" />
+                <IconBug font-size="20" />
             </ActionBarButton>
         {/if}
 
@@ -207,7 +207,7 @@
                 openedMenuStore.close("profileMenu");
             }}
         >
-            <SettingsIcon />
+            <SettingsIcon height="h-5" width="w-5" strokeWidth="2" />
         </ActionBarButton>
 
         {#if window.WAD?.desktop && window.WAD.windows}
@@ -220,7 +220,7 @@
                 }}
                 dataTestId="desktop-open-mini-window"
             >
-                <IconAppWindow font-size="22" />
+                <IconAppWindow font-size="20" />
             </ActionBarButton>
         {/if}
 

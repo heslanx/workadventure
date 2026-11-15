@@ -10,7 +10,7 @@
     let { title = "", children, actions }: Props = $props();
 </script>
 
-<div class="flex items-center justify-between text-xxs uppercase text-white/50 px-2 pb-0.5 pt-1 relative bold">
+<div class="flex items-center justify-between text-xxs uppercase text-white/60 px-2 pb-0.5 pt-1 relative bold">
     <span>
         {title}
         {@render children?.()}

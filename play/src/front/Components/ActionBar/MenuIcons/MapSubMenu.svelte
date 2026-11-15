@@ -40,15 +40,23 @@
 
 {#if $mapMenuVisibleStore}
     {#if !inProfileMenu}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             data-testid="map-menu"
             class="items-center relative cursor-pointer pointer-events-auto ps-2 pe-2"
+            role="button"
+            tabindex="0"
+            aria-haspopup="menu"
+            aria-expanded={$openedMenuStore === "mapMenu"}
             use:floatingUiRef
             onclick={(event) => {
                 event.preventDefault();
                 openedMenuStore.toggle("mapMenu");
+            }}
+            onkeydown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openedMenuStore.toggle("mapMenu");
+                }
             }}
         >
             <div class="group bg-contrast/80 backdrop-blur rounded-lg h-16 @sm/actions:h-14 @xl/actions:h-16 p-2">
@@ -65,7 +73,6 @@
                     </div>
 
                     <IconChevronDown
-                        stroke="2"
                         class="h-4 w-4 aspect-square transition-all opacity-50 {$openedMenuStore === 'mapMenu'
                             ? 'rotate-180'
                             : ''}"
@@ -77,7 +84,7 @@
         </div>
         {#if $openedMenuStore === "mapMenu"}
             <div
-                class="absolute bg-contrast/80 backdrop-blur rounded-md w-auto max-w-full text-white"
+                class="absolute bg-contrast/95 backdrop-blur rounded-md w-auto max-w-full text-white"
                 data-testid="map-sub-menu"
                 use:floatingUiContent
                 use:clickOutside={closeMapMenu}

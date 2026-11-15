@@ -1,9 +1,9 @@
 <script lang="ts">
     import type { EmojiClickEvent } from "emoji-picker-element/shared";
     import * as Sentry from "@sentry/svelte";
-    import { fly } from "svelte/transition";
     import { clickOutside } from "svelte-outside";
     import { onDestroy } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import {
         emoteDataStore,
@@ -171,7 +171,7 @@
     }}
 >
     <div
-        class="bottom-action-bar bg-contrast/80 transition-all backdrop-blur-md rounded-md px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
+        class="bottom-action-bar bg-contrast/95 transition-all backdrop-blur-md rounded-md px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
     >
         <div class="flex animate flex-row items-center select-none">
             <div class="py-1 flex">
@@ -196,7 +196,7 @@
                             >
                                 {$emoteDataStore.get(key)?.emoji}
                             </div>
-                            <div class="text-white/50 group-hover:text-white group-hover:bold font-xxs pl-1">
+                            <div class="text-white/60 group-hover:text-white group-hover:bold font-xxs pl-1">
                                 {key}
                             </div>
                         </button>
@@ -241,10 +241,10 @@
                                 />
                             </svg>
                         {:else if !$emoteMenuStore}
-                            <IconPencil stroke="1" font-size="12" class="text-white" />
+                            <IconPencil font-size="12" class="text-white" />
                             <div>{$LL.actionbar.edit()}</div>
                         {:else}
-                            <IconXIcon stroke="1" font-size="16" class="text-white" />
+                            <IconXIcon font-size="16" class="text-white" />
                             <div>{$LL.actionbar.cancel()}</div>
                         {/if}
                     </span>

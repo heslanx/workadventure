@@ -137,6 +137,9 @@
         <RecordingActiveIcon width="40" height="40" />
     {:else}
         <RecordingIcon
+            width="24"
+            height="24"
+            strokeWidth="2"
             status={$recordingMenuState.hasPendingRequest || $recordingMenuState.hasOtherRecording ? "active" : "idle"}
         />
     {/if}

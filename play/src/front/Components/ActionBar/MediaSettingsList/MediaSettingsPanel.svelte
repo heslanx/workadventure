@@ -131,17 +131,17 @@
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.permissionDeniedTitle()}</p>
                     {:else if $cameraAccessIssueStore === "device_in_use"}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.deviceInUseTitle()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.tooltip.deviceInUseDesc()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.tooltip.deviceInUseDesc()}</span>
                     {:else if $cameraAccessIssueStore === "no_device" || (!$devicesNotLoaded && $cameraListStore !== undefined && $cameraListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.noDeviceTitle()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
                     {:else if $cameraPermissionStateStore === "prompt" && !$requestedCameraState}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.title()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.content()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.content()}</span>
                     {:else if $mediaStreamConstraintsStore.video === false || !$requestedCameraState}
                         <p class="text-sm p-0 m-0">{$LL.actionbar.camera.disabled()}</p>
                     {:else if $rawLocalStreamStore.type === "error"}
-                        <p class="text-sm p-0 m-0">{$LL.login.genericError()}</p>
+                        <p class="text-sm p-0 m-0">{$LL.camera.startError.camera()}</p>
                     {:else}
                         <p class="text-sm p-0 m-0">{$LL.chat.loading()}...</p>
                     {/if}
@@ -226,7 +226,7 @@
                     </span>
                 </InputSwitch>
                 {#if $noiseSuppressionStateStore.status === "initializing"}
-                    <div class="ms-14 px-3 text-sm text-white/50">
+                    <div class="ms-14 px-3 text-sm text-white/60">
                         {$LL.actionbar.microphone.noiseSuppressionInitializing()}
                     </div>
                 {:else if $noiseSuppressionStateStore.status === "unsupported"}
@@ -246,17 +246,17 @@
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.permissionDeniedTitle()}</p>
                     {:else if $microphoneAccessIssueStore === "device_in_use"}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.deviceInUseTitle()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</span>
                     {:else if $microphoneAccessIssueStore === "no_device" || (!$devicesNotLoaded && $microphoneListStore !== undefined && $microphoneListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.noDeviceTitle()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>
                     {:else if $microphonePermissionStateStore === "prompt" && !$requestedMicrophoneState}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.title()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.content()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.content()}</span>
                     {:else if $mediaStreamConstraintsStore.audio === false || !$requestedMicrophoneState}
                         <p class="text-sm p-0 m-0">{$LL.actionbar.microphone.disabled()}</p>
                     {:else if $rawLocalStreamStore.type === "error"}
-                        <p class="text-sm p-0 m-0">{$LL.login.genericError()}</p>
+                        <p class="text-sm p-0 m-0">{$LL.camera.startError.microphone()}</p>
                     {:else}
                         <p class="text-sm p-0 m-0">{$LL.chat.loading()}...</p>
                     {/if}
@@ -328,7 +328,7 @@
                     <div class="text-sm italic text-center">
                         {#if $speakerListStore.length === 0}
                             <p class="text-sm p-0 m-0">{$LL.actionbar.speaker.noDevices()}</p>
-                            <span class="text-xs text-white/55">{$LL.actionbar.speaker.noDevicesDesc()}</span>
+                            <span class="text-xs text-white/60">{$LL.actionbar.speaker.noDevicesDesc()}</span>
                         {:else}
                             {$LL.actionbar.speaker.disabled()}
                         {/if}

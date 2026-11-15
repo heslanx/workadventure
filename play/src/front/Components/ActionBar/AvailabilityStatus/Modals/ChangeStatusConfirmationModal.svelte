@@ -18,10 +18,10 @@
             closeChangeStatusConfirmationModal();
         },
         acceptLabel: $LL.statusModal.confirm(),
-        closeLabel: $LL.statusModal.close(),
+        closeLabel: $LL.statusModal.stayInCurrentStatus(),
     };
 </script>
 
 <ConfirmationModal props={confirmationModalProps}>
-    <div class="grow text-center text-xl">{$LL.statusModal.goBackToOnlineStatusLabel()}</div>
+    <div class="grow text-center text-xl leading-8">{$LL.statusModal.goBackToOnlineStatusLabel()}</div>
 </ConfirmationModal>

@@ -18,7 +18,7 @@
     title={label}
 >
     <div
-        class="absolute inset-0 rounded-sm overflow-hidden {isSelected
+        class="absolute inset-0 rounded overflow-hidden {isSelected
             ? 'border-white border-solid border-2'
             : 'border-transparent hover:border-white/30'}"
     >

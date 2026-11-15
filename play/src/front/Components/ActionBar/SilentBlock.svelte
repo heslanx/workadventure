@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { LL } from "../../../i18n/i18n-svelte";
 
     let showMobileInformation: boolean = $state(false);
@@ -10,6 +11,9 @@
 <div
     class="mx-auto px-2 z-0 text-white border border-solid border-danger flex flex-col items-center justify-between bg-no-repeat bg-center bg-danger-1000/70 backdrop-blur rounded-lg text-center pointer-events-auto select-none"
     onclick={() => (showMobileInformation = !showMobileInformation)}
+    role="button"
+    tabindex="0"
+    onkeydown={(event) => activateOnEnterOrSpace(event, () => (showMobileInformation = !showMobileInformation))}
 >
     <div class="py-2 px-1">
         <div class="m-0 text-center text-base bold">

@@ -24,6 +24,8 @@
     import { megaphoneCanBeUsedStore } from "../../../Stores/MegaphoneStore";
     import ActionBarButton from "../ActionBarButton.svelte";
     import { EditorToolName } from "../../../Phaser/Game/MapEditor/MapEditorModeManager";
+    import type { MapEditorModeManager } from "../../../Phaser/Game/MapEditor/MapEditorModeManager";
+    import ConfirmDialog from "../../../Chat/Components/ConfirmDialog.svelte";
     import AdditionalMenuItems from "./AdditionalMenuItems.svelte";
     import {
         IconMapSearch,
@@ -34,6 +36,7 @@
         IconMessageShare,
         IconWorldSearch,
     } from "@wa-icons";
+    import { modals } from "@wa-modals";
 
     function resetChatVisibility() {
         chatVisibilityStore.set(false);
@@ -115,31 +118,37 @@
         }
     }
 
-    async function unclaimPersonalDesk() {
-        if (!$personalAreaDataStore) {
+    // Unclaiming has no way back (someone else may claim the desk at once): ask first, naming the desk.
+    function unclaimPersonalDesk() {
+        const personalArea = $personalAreaDataStore;
+        if (!personalArea) {
             warningMessageStore.addWarningMessage($LL.actionbar.personalDesk.errorNotFound(), { closable: true });
             return;
         }
-
+        // No game scene throws: report it like a missing editor instead of failing silently.
+        let mapEditorModeManager: MapEditorModeManager | undefined;
         try {
-            const gameScene = gameManager.getCurrentGameScene();
-            const mapEditorModeManager = gameScene.getMapEditorModeManager();
-            if (!mapEditorModeManager) {
-                warningMessageStore.addWarningMessage($LL.actionbar.personalDesk.errorUnclaiming(), { closable: true });
-                return;
-            }
-            // Use unclaim personal area method of the map editor mode manager
-            await mapEditorModeManager.unclaimPersonalArea($personalAreaDataStore);
-
-            // Send analytics event
-            analyticsClient.trackAdminEvent("personal_desk.unclaimed");
-
-            // Close the menu
-            openedMenuStore.close("profileMenu");
+            mapEditorModeManager = gameManager.getCurrentGameScene().getMapEditorModeManager();
         } catch (error) {
             console.error("Error while unclaiming personal desk", error);
-            warningMessageStore.addWarningMessage($LL.actionbar.personalDesk.errorUnclaiming(), { closable: true });
         }
+        if (!mapEditorModeManager) {
+            warningMessageStore.addWarningMessage($LL.actionbar.personalDesk.errorUnclaiming(), { closable: true });
+            return;
+        }
+        const manager = mapEditorModeManager;
+        openedMenuStore.close("profileMenu");
+        modals.open(ConfirmDialog, {
+            heading: $LL.actionbar.personalDesk.unclaimConfirmTitle({ name: personalArea.name }),
+            message: $LL.actionbar.personalDesk.unclaimConfirmMessage(),
+            confirmLabel: $LL.actionbar.personalDesk.unclaim(),
+            danger: true,
+            // A failure throws: the dialog stays open with its error and a retry.
+            onConfirm: async () => {
+                await manager.unclaimPersonalArea(personalArea);
+                analyticsClient.trackAdminEvent("personal_desk.unclaimed");
+            },
+        });
     }
 </script>
 
@@ -166,6 +175,7 @@
         onclick={showRoomList}
         label={$LL.actionbar.help.roomList.title()}
         state={$roomListActivated ? "normal" : "disabled"}
+        blockedReason={$LL.actionbar.blocked.roomListOff()}
         dataTestId="room-list-button"
     >
         <IconWorldSearch font-size="20" />
@@ -198,6 +208,7 @@
         label={$LL.actionbar.personalDesk.label()}
         onclick={goToPersonalDesk}
         state={$isInsidePersonalAreaStore ? "disabled" : "normal"}
+        blockedReason={$LL.actionbar.blocked.alreadyAtDesk()}
         classList="group/btn-personal-desk"
     >
         <IconDesk font-size="20" />

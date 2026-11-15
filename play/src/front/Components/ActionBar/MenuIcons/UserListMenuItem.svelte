@@ -22,15 +22,10 @@
         navChat.switchToUserList();
     }
 
-    let chatAvailable = $state(false);
-    gameManager
-        .getChatConnection()
-        .then(() => {
-            chatAvailable = true;
-        })
-        .catch((e: unknown) => {
-            console.error("Could not get chat", e);
-        });
+    // The game scene opens the chat connection. A failed attempt still opens the panel, which explains the
+    // failure and offers Retry; only a pending attempt keeps the button disabled.
+    const chatConnectionAttemptStore = gameManager.chatConnectionAttemptStore;
+    let chatAvailable = $derived($chatConnectionAttemptStore === "ready" || $chatConnectionAttemptStore === "failed");
 </script>
 
 <ActionBarButton
@@ -39,10 +34,11 @@
     tooltipTitle={$LL.actionbar.help.users.title()}
     desc={$LL.actionbar.help.users.desc()}
     state={chatAvailable ? buttonState : "disabled"}
+    blockedReason={chatAvailable ? undefined : $LL.actionbar.blocked.chatConnecting()}
     dataTestId="user-list-button"
     disabledHelp={false}
     media="./static/Videos/UserList.mp4"
     tooltipShortcuts={["u"]}
 >
-    <UsersIcon />
+    <UsersIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>

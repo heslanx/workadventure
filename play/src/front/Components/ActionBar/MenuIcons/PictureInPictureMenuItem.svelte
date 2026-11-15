@@ -54,8 +54,8 @@
     onclick={pictureInPictureClick}
 >
     {#if $activePictureInPictureStore}
-        <PictureInPictureOffIcon />
+        <PictureInPictureOffIcon height="h-5" width="w-5" strokeWidth="2" />
     {:else}
-        <PictureInPictureIcon />
+        <PictureInPictureIcon height="h-5" width="w-5" strokeWidth="2" />
     {/if}
 </ActionBarButton>

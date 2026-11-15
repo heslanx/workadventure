@@ -124,6 +124,9 @@
     bind:wrapperDiv={triggerElement}
 >
     <RaiseHandIcon
+        height="h-5"
+        width="w-5"
+        strokeWidth="2"
         strokeColor={$isHandRaisedStore || $givenFloorSpaceStore
             ? "stroke-contrast fill-white"
             : "stroke-white fill-transparent"}
