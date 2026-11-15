@@ -17,6 +17,7 @@
     }
 
     let { selectedDevice = undefined, deviceList, onselectdevice, icon, title, widget }: Props = $props();
+    const uid = $props.id();
 </script>
 
 <div
@@ -24,7 +25,7 @@
 >
     <div class="text-lg bold flex items-center gap-3 mb-4 ps-2">
         {@render icon?.()}
-        <div class="grow pe-8 ps-2">
+        <div id="{uid}-title" class="grow pe-8 ps-2">
             {@render title?.()}
         </div>
         <Button
@@ -41,18 +42,27 @@
     </div>
 
     <div class="flex w-full">
-        <div class="flex flex-wrap justify-center w-full min-h-[129px]">
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="flex flex-wrap justify-center w-full min-h-[129px]" role="radiogroup" aria-labelledby="{uid}-title">
             <div
                 class="flex border border-solid border-white w-full rounded-lg items-center justify-start transition-all overflow-hidden cursor-pointer px-8 py-6 space-x-4 {!selectedDevice
                     ? 'bg-white text-secondary border-none'
                     : ' hover:bg-white/10 pt-4'} "
                 class:hidden={!editMode && selectedDevice}
                 class:flex={editMode || !selectedDevice}
+                role="radio"
+                aria-checked={!selectedDevice}
+                tabindex="0"
                 onclick={() => {
                     onselectdevice?.(undefined);
                     editMode = false;
+                }}
+                onkeydown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onselectdevice?.(undefined);
+                        editMode = false;
+                    }
                 }}
             >
                 <div
@@ -81,8 +91,6 @@
                 </div>
             </div>
             {#each deviceList ?? [] as device (device.deviceId)}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div
                     class="border border-solid border-white w-full rounded-lg transition-all overflow-hidden cursor-pointer relative px-8 py-6 space-x-4 {selectedDevice ===
                     device.deviceId
@@ -90,9 +98,20 @@
                         : 'hover:bg-white/10 pt-4'}"
                     class:hidden={!editMode && selectedDevice !== device.deviceId}
                     class:flex={editMode || selectedDevice === device.deviceId}
+                    role="radio"
+                    aria-checked={selectedDevice === device.deviceId}
+                    tabindex="0"
                     onclick={() => {
                         onselectdevice?.(device.deviceId);
                         editMode = false;
+                    }}
+                    onkeydown={(event) => {
+                        if (event.target !== event.currentTarget) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onselectdevice?.(device.deviceId);
+                            editMode = false;
+                        }
                     }}
                 >
                     {#if device.deviceId === selectedDevice}

@@ -23,6 +23,7 @@
 <svg
     xmlns="http://www.w3.org/2000/svg"
     class="icon {height} {width} {strokeColor} {fillColor} {classList} {hover}"
+    viewBox="0 0 24 24"
     stroke-width={strokeWidth}
     stroke-linecap="round"
     stroke-linejoin="round"

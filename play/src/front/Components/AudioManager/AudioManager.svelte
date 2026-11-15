@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { clickOutside } from "svelte-outside";
     import type { Unsubscriber } from "svelte/store";
     import { get } from "svelte/store";
     import { onDestroy, onMount } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import type { AudioManagerVolume } from "../../Stores/AudioManagerStore";
     import { audioManagerVolumeStore } from "../../Stores/AudioManagerStore";
     import { localUserStore } from "../../Connection/LocalUserStore";
@@ -91,20 +91,21 @@
     }}
 >
     <div
-        class="bottom-action-bar bg-contrast/80 transition-all backdrop-blur-md rounded-md p-4 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300 gap-2"
+        class="bottom-action-bar bg-contrast/95 transition-all backdrop-blur-md rounded-md p-4 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300 gap-2"
     >
         <!--        <div class="font-lg text-center text-white mb-4 opacity-50">-->
         <!--            {$LL.audio.volumeCtrl()}-->
         <!--        </div>-->
         <span>{$LL.audio.volumeCtrl()}</span>
         <div class="audio-manager-player-volume flex items-center justify-center">
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
+            <button
+                type="button"
                 id="audioplayer_volume_icon_playing"
                 bind:this={audioPlayerVolumeIcon}
                 onclick={onMute}
-                class="pr-4 flex items-center"
+                aria-label={$LL.audio.mute()}
+                aria-pressed={$audioManagerVolumeStore.muted}
+                class="mr-3 p-1 flex items-center justify-center min-h-8 min-w-8 rounded cursor-pointer hover:bg-white/10"
             >
                 <svg
                     viewBox="0 0 19.54 18.03"
@@ -136,7 +137,7 @@
                         />
                     </g>
                 </svg>
-            </div>
+            </button>
             <input
                 type="range"
                 min="0"

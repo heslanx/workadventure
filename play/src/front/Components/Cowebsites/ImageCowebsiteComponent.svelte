@@ -110,47 +110,47 @@
     >
         <div class="flex flex-col justify-center gap-2">
             <div class="flex flex-col justify-center gap-1">
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div
+                <button
+                    type="button"
+                    aria-label={$LL.mapEditor.explorer.zoomIn()}
                     class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
                     onclick={zoomIn}
                 >
                     <IconPlus />
                     <div
-                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
                         {$LL.mapEditor.explorer.zoomIn()}
                     </div>
-                </div>
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div
+                </button>
+                <button
+                    type="button"
+                    aria-label={$LL.mapEditor.explorer.zoomOut()}
                     class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
                     onclick={zoomOut}
                 >
                     <IconMinus />
                     <div
-                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
                         {$LL.mapEditor.explorer.zoomOut()}
                     </div>
-                </div>
+                </button>
             </div>
             {#if !actualCowebsite.getHideUrl()}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div
+                <button
+                    type="button"
+                    aria-label={$LL.chat.imagePreview.openInNewTab()}
                     class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
                     onclick={openInNewTab}
                 >
                     <IconExternalLink />
                     <div
-                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
                         {$LL.chat.imagePreview.openInNewTab()}
                     </div>
-                </div>
+                </button>
             {/if}
         </div>
     </div>

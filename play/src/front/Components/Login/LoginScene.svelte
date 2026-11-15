@@ -128,7 +128,7 @@
                 name="fname"
                 data-testid="loginSceneNameInput"
                 placeholder={$LL.login.input.name.placeholder()}
-                class="w-52 md:w-96 h-12 text text-center bg-contrast rounded border border-solid border-white/20 mt-4 mb-0"
+                class="w-52 md:w-96 h-12 text text-center bg-contrast rounded-md border border-solid border-white/20 mt-4 mb-0"
                 autofocus
                 maxlength={MAX_USERNAME_LENGTH}
                 bind:value={name}

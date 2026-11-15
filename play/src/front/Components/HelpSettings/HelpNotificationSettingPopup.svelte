@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { helpNotificationSettingsVisibleStore } from "../../Stores/HelpSettingsStore";
     import { getNavigatorType, isAndroid as isAndroidFct, NavigatorType } from "../../WebRtc/DeviceUtils";
     import { LL } from "../../../i18n/i18n-svelte";
@@ -26,7 +26,7 @@
 </script>
 
 <form
-    class="helpNotificationSettings z-[901] bg-contrast/80 backdrop-filter text-center rounded-lg text-white self-center pointer-events-auto flex flex-col m-auto w-full md:w-2/3 xl:w-[380px] text-sm md:text-base absolute top-10 left-0 right-0 overflow-hidden"
+    class="helpNotificationSettings z-[901] bg-contrast/95 backdrop-filter text-center rounded-lg text-white self-center pointer-events-auto flex flex-col m-auto w-full md:w-[380px] text-sm md:text-base absolute top-10 left-0 right-0 overflow-hidden"
     style={getBackgroundColor() ? `background-color: ${getBackgroundColor()};` : ""}
     onsubmit={(event) => {
         event.preventDefault();
@@ -46,7 +46,7 @@
                 </p>
             </div>
         </div>
-        <div class="p-4 italic opacity-50 text-sm leading-4">
+        <div class="p-4 italic opacity-50 text-sm leading-6">
             {$LL.notification.help.content()}
         </div>
         <div class="max-h-72 overflow-hidden opacity-80 saturate-50">
@@ -64,9 +64,9 @@
             {/if}
         </div>
     </section>
-    <section class="flex row justify-center p-4 bg-contrast">
+    <section class="flex flex-col gap-2 p-4 bg-contrast">
         <Button
-            class="bg-white/10 hover:bg-white/20 mr-2 w-full"
+            class="bg-white/10 hover:bg-white/20 w-full whitespace-normal"
             onclick={(event) => {
                 event.preventDefault();
                 refresh();
@@ -77,7 +77,7 @@
         <Button
             type="submit"
             variant="danger"
-            class="w-full"
+            class="w-full whitespace-normal"
             onclick={(event) => {
                 event.preventDefault();
                 close();

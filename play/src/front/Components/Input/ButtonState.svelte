@@ -45,7 +45,6 @@
     {:else if buttonState === "loading"}
         <svg
             aria-hidden="true"
-            role="status"
             class="inline w-4 h-4 mr-3 text-gray-200 animate-spin"
             viewBox="0 0 100 101"
             fill="none"
@@ -56,7 +55,7 @@
                 fill="currentColor"
             />
         </svg>
-        {loadingText}
+        <span role="status">{loadingText}</span>
     {:else}
         {#if buttonState === "success"}
             <IconInfoCircle class="mr-3" />

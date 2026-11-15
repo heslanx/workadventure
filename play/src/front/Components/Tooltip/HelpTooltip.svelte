@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import { isMac } from "../../WebRtc/DeviceUtils";
     import tooltipArrow from "../images/arrow-top.svg";
@@ -69,7 +69,7 @@
                     <div class="ps-4 text-xs opacity-80 pb-1 flex flex-row items-center gap-1">
                         {#each shortcuts as shortcut, index (index)}
                             <div
-                                class="text-sm h-[26px] leading-none font-bold p-1.5 rounded border border-solid border-white/50 flex items-center justify-center w-fit shadow-white/50 shadow-[0_2px_0px_rgba(0,0,0,0.50)] mb-[2px] {shortcut.length <
+                                class="text-sm min-h-[1.625rem] leading-none font-bold p-1.5 rounded border border-solid border-white/50 flex items-center justify-center w-fit shadow-white/50 shadow-[0_2px_0px_rgba(0,0,0,0.50)] mb-[2px] {shortcut.length <
                                 2
                                     ? ' aspect-square'
                                     : ''}"

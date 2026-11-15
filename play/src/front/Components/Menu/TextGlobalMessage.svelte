@@ -15,21 +15,27 @@
     let QUILL_EDITOR: HTMLDivElement | undefined = $state();
 
     export type TextGlobalMessageHandle = {
-        sendTextMessage(broadcastToWorld: boolean, joinUrl?: string): void;
+        /** False when nothing was handed to the server: the text is then kept in the editor. */
+        sendTextMessage(broadcastToWorld: boolean, joinUrl?: string): boolean;
     };
 
     interface Props {
         handleSending?: TextGlobalMessageHandle;
         /** Called with the Quill delta (as JSON) on every change, or "" when the editor is empty. */
         onchange?: (delta: string) => void;
+        /** A Quill delta (as JSON) to restore, e.g. a draft kept from an earlier opening. */
+        initialContent?: string;
     }
 
-    let { handleSending = $bindable(), onchange }: Props = $props();
+    let { handleSending = $bindable(), onchange, initialContent }: Props = $props();
 
     handleSending = {
         sendTextMessage(broadcastToWorld: boolean, joinUrl = "") {
-            if (gameScene == undefined) {
-                return;
+            const connection = gameScene?.connection;
+            // A closed or reconnecting socket would drop or replay the message later: refuse, so the
+            // person can send it again without a duplicate.
+            if (!connection || connection.closed || !connection.socket.isOpen()) {
+                return false;
             }
             const text = JSON.stringify(quill.getContents(0, quill.getLength()));
 
@@ -40,8 +46,9 @@
                 joinUrl,
             };
 
+            connection.emitGlobalMessage(textGlobalMessage);
             quill.deleteText(0, quill.getLength());
-            gameScene.connection?.emitGlobalMessage(textGlobalMessage);
+            return true;
         },
     };
 
@@ -64,6 +71,14 @@
             },
         });
         quill.on("text-change", onTextChange);
+        if (initialContent) {
+            try {
+                quill.setContents(JSON.parse(initialContent));
+            } catch (error: unknown) {
+                // A draft this component wrote itself: failing to parse it only means starting empty.
+                console.error("Could not restore the announcement draft", error);
+            }
+        }
         menuInputFocusStore.set(true);
     });
 

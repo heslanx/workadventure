@@ -25,7 +25,7 @@
         aria-labelledby="duplicate-user-title"
         aria-describedby="duplicate-user-message"
     >
-        <div class="w-full max-w-md rounded-2xl bg-contrast p-6 shadow-2xl" role="document">
+        <div class="w-full max-w-md rounded-lg bg-contrast p-6 shadow-lg" role="document">
             <h2 id="duplicate-user-title" class="text-xl font-bold text-white">
                 {$LL.warning.duplicateUserConnected.title()}
             </h2>

@@ -24,6 +24,7 @@
     let showZoneSelect = $state(initialPrefs.showZoneSelect);
     let entryPoint = $state("");
     let linkCopied = $state(false);
+    let copyFailed = $state(false);
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let disposed = false;
 
@@ -78,10 +79,13 @@
         try {
             await navigator.clipboard.writeText(input.value);
             if (disposed) return;
+            copyFailed = false;
             analyticsClient.trackAdminEvent("invite.sent", { inviteType: "copy_link" });
             changeCopyLinkButtonStatus();
         } catch (error: unknown) {
             linkCopied = false;
+            // The link stays selected in the field, so the message can point to the keyboard copy.
+            if (!disposed) copyFailed = true;
             console.error("Navigator clipboard write text error: ", error);
         }
     }
@@ -148,7 +152,7 @@
                 </div>
                 <Button variant="secondary" class="w-full" onclick={shareLink}>
                     {#snippet icon()}
-                        <IconShare font-size="20" stroke="1.5" />
+                        <IconShare font-size="20" />
                     {/snippet}
                     <span class="text-lg font-bold">
                         {$LL.menu.invite.share()}
@@ -180,6 +184,11 @@
                     <div hidden={linkCopied}>{$LL.menu.invite.copy()}</div>
                 </Button>
             </div>
+            {#if copyFailed}
+                <p class="m-0 mt-2 text-sm text-danger-400" role="alert" data-testid="invite-copy-failed">
+                    {$LL.notification.copyFailed()}
+                </p>
+            {/if}
         </div>
     </div>
 

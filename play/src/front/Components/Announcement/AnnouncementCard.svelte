@@ -71,7 +71,7 @@
 </script>
 
 <div
-    class="announcement-card bg-contrast/90 backdrop-blur-md rounded-lg shadow-xl text-white overflow-hidden border-t-4 {broadcastToWorld
+    class="announcement-card bg-contrast/90 backdrop-blur-md rounded-lg shadow-lg text-white overflow-hidden border-t-4 {broadcastToWorld
         ? 'border-secondary'
         : 'border-success'}"
     data-testid="announcement-card"

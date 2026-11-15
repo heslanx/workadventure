@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { onMount } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import type { Notification } from "../../Stores/NotificationStore";
     import { notificationPlayingStore } from "../../Stores/NotificationStore";
     import microphoneOffImg from "../images/mic.svg";

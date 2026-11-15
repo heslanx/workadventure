@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { onDestroy, onMount } from "svelte";
     import { get } from "svelte/store";
+    import { fly } from "../Utils/reducedMotion";
     import { requestVisitCardsStore } from "../Stores/GameStore";
     import { helpNotificationSettingsVisibleStore, helpWebRtcSettingsVisibleStore } from "../Stores/HelpSettingsStore";
     import { helpSettingsPopupBlockedStore } from "../Stores/HelpSettingsPopupBlockedStore";
@@ -81,6 +81,7 @@
     import CalendarReminders from "./Calendar/CalendarReminders.svelte";
     import TodoList from "./TodoList/TodoList.svelte";
     import ProximityNotificationContainer from "./ProximityNotification/ProximityNotificationContainer.svelte";
+    import LiveAnnouncer from "./LiveAnnouncer.svelte";
     import MeetingInvitationPopup from "./MeetingInvitation/MeetingInvitationPopup.svelte";
     import ChevronLeftIcon from "./Icons/ChevronLeftIcon.svelte";
     import { IconArrowsMinimize, IconMessageCircle2, IconUserPlus } from "@wa-icons";
@@ -285,7 +286,7 @@
             <button
                 type="button"
                 id="highlightFullScreenParticipantCamerasListToggle"
-                class="pointer-events-auto absolute right-0 top-1/2 z-[321] flex h-16 w-10 -translate-y-1/2 items-center justify-center rounded-l-lg border border-white/10 border-e-0 bg-contrast/50 shadow-md backdrop-blur transition-colors duration-200 hover:bg-white/10"
+                class="pointer-events-auto absolute right-0 top-1/2 z-[321] flex h-16 w-10 -translate-y-1/2 items-center justify-center rounded-l-lg border border-white/10 border-e-0 bg-contrast/50 backdrop-blur transition-colors duration-200 hover:bg-white/10"
                 aria-expanded={highlightParticipantCamerasListOpen}
                 aria-controls="highlightFullScreenParticipantCamerasList"
                 aria-label={highlightParticipantCamerasListOpen
@@ -298,7 +299,7 @@
                     class="inline-flex transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
                     class:rotate-180={highlightParticipantCamerasListOpen}
                 >
-                    <ChevronLeftIcon height="h-7" width="w-7" strokeWidth="2" />
+                    <ChevronLeftIcon height="h-8" width="w-8" strokeWidth="2" />
                 </span>
             </button>
         </div>
@@ -342,6 +343,7 @@
                 <TextMessageContainer />
             {/if}
             <ProximityNotificationContainer />
+            <LiveAnnouncer />
             {#if $notificationPlayingStore}
                 <div class="flex flex-col absolute w-auto end-0">
                     {#each [...$notificationPlayingStore.values()] as notification, index (`${index}-${notification.id}`)}

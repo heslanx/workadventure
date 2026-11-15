@@ -82,7 +82,7 @@
     {/if}
 
     {#if $followStateStore === "ending"}
-        <div class="w-56 min-h-10 bottom-12 text-center z-[150] bg-contrast/80 backdrop-blur rounded-lg text-white">
+        <div class="w-56 min-h-10 bottom-12 text-center z-[150] bg-contrast/95 backdrop-blur rounded-lg text-white">
             <div>{$LL.follow.interactMenu.title.interact()}</div>
             {#if $followRoleStore === "follower"}
                 <div class="m-1">{$LL.follow.interactMenu.stop.follower({ leader: name($followUsersStore[0]) })}</div>
@@ -135,7 +135,7 @@
                     reset();
                 }}
             >
-                {$LL.follow.interactMenu.no()}
+                {$LL.follow.interactMenu.buttons.notNow()}
             </Button>
             <Button
                 variant="secondary"
@@ -145,7 +145,7 @@
                     acceptFollowRequest();
                 }}
             >
-                {$LL.follow.interactMenu.yes()}
+                {$LL.follow.interactMenu.buttons.follow({ leader: name($followUsersStore[0]) })}
             </Button>
         {/if}
 
@@ -158,7 +158,9 @@
                     reset();
                 }}
             >
-                {$LL.follow.interactMenu.yes()}
+                {$followRoleStore === "leader"
+                    ? $LL.follow.interactMenu.buttons.stopLeading()
+                    : $LL.follow.interactMenu.buttons.stopFollowing()}
             </Button>
             <Button
                 variant="light"
@@ -169,7 +171,9 @@
                     abortEnding();
                 }}
             >
-                {$LL.follow.interactMenu.no()}
+                {$followRoleStore === "leader"
+                    ? $LL.follow.interactMenu.buttons.keepLeading()
+                    : $LL.follow.interactMenu.buttons.keepFollowing()}
             </Button>
         {/if}
 

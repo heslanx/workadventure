@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { CalendarEventInterface } from "@workadventure/shared-utils";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { isCalendarVisibleStore } from "../../Stores/CalendarStore";
     import { isTodoListVisibleStore } from "../../Stores/TodoListStore";
     import Button from "../UI/Button.svelte";
@@ -51,7 +51,7 @@
                     <IconCalendar class="h-6 w-6" aria-hidden="true" />
                 </div>
                 <div class="flex min-w-0 flex-1 flex-col gap-1">
-                    <span class="truncate text-lg font-bold leading-tight">{event.title}</span>
+                    <span class="truncate text-lg font-bold leading-tight" title={event.title}>{event.title}</span>
                     <span class="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-contrast-200">
                         <span class="whitespace-nowrap font-bold {started ? 'text-danger-600' : 'text-white'}">
                             {when(event)}

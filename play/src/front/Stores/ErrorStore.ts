@@ -109,6 +109,9 @@ function createWarningMessageStore() {
                 return messages;
             });
         },
+        removeWarningMessage: (id: string): void => {
+            update((messages: WarningMessage[]) => messages.filter((message) => message.id !== id));
+        },
     };
 }
 export const warningMessageStore = createWarningMessageStore();

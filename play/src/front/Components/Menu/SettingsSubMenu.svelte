@@ -1,6 +1,6 @@
 <script lang="ts">
     import { tick } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import type { NoiseSuppressionEngine, NoiseSuppressionProvider } from "../../Connection/LocalUserStore";
     import {
         audioManagerFileStore,
@@ -329,7 +329,7 @@
             <div class="me-4 opacity-50"><IconCameraUp /></div>
             {$LL.menu.settings.videoBandwidth.title()}
         </div>
-        <div class="flex w-full mb-6 mt-2 ps-6 justify-center">
+        <div class="flex w-full mb-6 mt-2 justify-center">
             <div class="flex flex-col w-10/12 lg:w-6/12">
                 <ul class="flex justify-between w-full px-[10px] mb-8">
                     <li
@@ -338,15 +338,15 @@
                             : 'opacity-50 hover:opacity-80'}"
                     >
                         <IconAntennaBarsLow />
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span
-                            class="absolute -bottom-4 cursor-pointer"
+                        <button
+                            type="button"
+                            aria-pressed={valueVideoQuality === 1}
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueVideoQuality = 1;
                                 updateVideoQuality();
-                            }}>{$LL.menu.settings.videoBandwidth.low()}</span
+                            }}>{$LL.menu.settings.videoBandwidth.low()}</button
                         >
                     </li>
                     <li
@@ -355,15 +355,15 @@
                             : 'opacity-50 hover:opacity-80'}"
                     >
                         <IconAntennaBarsMid />
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span
-                            class="absolute -bottom-4 cursor-pointer"
+                        <button
+                            type="button"
+                            aria-pressed={valueVideoQuality === 2}
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueVideoQuality = 2;
                                 updateVideoQuality();
-                            }}>{$LL.menu.settings.videoBandwidth.recommended()}</span
+                            }}>{$LL.menu.settings.videoBandwidth.recommended()}</button
                         >
                     </li>
                     <li
@@ -372,15 +372,15 @@
                             : 'opacity-50 hover:opacity-80'}"
                     >
                         <IconAntennaBarsHigh />
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span
-                            class="absolute -bottom-4 cursor-pointer"
+                        <button
+                            type="button"
+                            aria-pressed={valueVideoQuality === 3}
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueVideoQuality = 3;
                                 updateVideoQuality();
-                            }}>{$LL.menu.settings.videoBandwidth.high()}</span
+                            }}>{$LL.menu.settings.videoBandwidth.high()}</button
                         >
                     </li>
                 </ul>
@@ -401,7 +401,7 @@
 
             {$LL.menu.settings.shareScreenBandwidth.title()}
         </div>
-        <div class="flex w-full mb-6 mt-2 ps-6 justify-center">
+        <div class="flex w-full mb-6 mt-2 justify-center">
             <div class="flex flex-col w-10/12 lg:w-6/12">
                 <ul class="flex justify-between w-full px-[10px] mb-8">
                     <li
@@ -410,15 +410,15 @@
                             : 'opacity-50 hover:opacity-80'}"
                     >
                         <IconAntennaBarsLow />
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span
-                            class="absolute -bottom-4 cursor-pointer"
+                        <button
+                            type="button"
+                            aria-pressed={valueScreenShareQuality === 1}
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueScreenShareQuality = 1;
                                 updateScreenShareQuality();
-                            }}>{$LL.menu.settings.shareScreenBandwidth.low()}</span
+                            }}>{$LL.menu.settings.shareScreenBandwidth.low()}</button
                         >
                     </li>
                     <li
@@ -427,15 +427,15 @@
                             : 'opacity-50 hover:opacity-80'}"
                     >
                         <IconAntennaBarsMid />
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span
-                            class="absolute -bottom-4 cursor-pointer"
+                        <button
+                            type="button"
+                            aria-pressed={valueScreenShareQuality === 2}
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueScreenShareQuality = 2;
                                 updateScreenShareQuality();
-                            }}>{$LL.menu.settings.shareScreenBandwidth.recommended()}</span
+                            }}>{$LL.menu.settings.shareScreenBandwidth.recommended()}</button
                         >
                     </li>
                     <li
@@ -444,15 +444,15 @@
                             : 'opacity-50 hover:opacity-80'}"
                     >
                         <IconAntennaBarsHigh />
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <span
-                            class="absolute -bottom-4 cursor-pointer"
+                        <button
+                            type="button"
+                            aria-pressed={valueScreenShareQuality === 3}
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueScreenShareQuality = 3;
                                 updateScreenShareQuality();
-                            }}>{$LL.menu.settings.shareScreenBandwidth.high()}</span
+                            }}>{$LL.menu.settings.shareScreenBandwidth.high()}</button
                         >
                     </li>
                 </ul>
@@ -466,8 +466,8 @@
                 />
             </div>
         </div>
-        <div class="input-label">
-            <div class="grow font-light text-center font-semibold">
+        <div class="input-label px-4">
+            <div class="grow font-light text-start font-semibold">
                 {$LL.menu.settings.bandwidthConstrainedPreference.title()}
             </div>
         </div>
@@ -521,7 +521,7 @@
         </div>
 
         {#if $noiseSuppressionEnabledStore}
-            <div class="input-label text-center mt-4">{$LL.menu.settings.microphone.noiseSuppressionMode()}</div>
+            <div class="input-label text-start px-4 mt-4">{$LL.menu.settings.microphone.noiseSuppressionMode()}</div>
             <div class="mt-2 p-2 grid grid-cols-1 @lg/main-layout:grid-cols-2 gap-4 justify-center items-stretch">
                 <InputRadioBox
                     id="noise-suppression-provider-workadventure"
@@ -533,7 +533,7 @@
                     <Chip class="mb-1">{$LL.menu.settings.microphone.recommended()}</Chip>
                     <em>{$LL.menu.settings.microphone.workAdventureNoiseSuppressionDescription()}</em>
                     {#if selectedNoiseSuppressionProvider === "workadventure" && $noiseSuppressionStateStore.status === "initializing"}
-                        <div data-testid="noise-suppression-loading" class="text-xs text-white/50 mt-1">
+                        <div data-testid="noise-suppression-loading" class="text-xs text-white/60 mt-1">
                             {$LL.actionbar.microphone.noiseSuppressionInitializing()}
                         </div>
                     {:else if selectedNoiseSuppressionProvider === "workadventure" && $noiseSuppressionStateStore.status === "unsupported"}
@@ -685,7 +685,7 @@
         </div>
         <div class="mt-2 p-2">
             <select
-                class="w-full languages-switcher bg-contrast rounded border border-solid border-white/20 mb-0"
+                class="w-full languages-switcher bg-contrast rounded-md border border-solid border-white/20 mb-0"
                 bind:value={valueLocale}
                 onchange={updateLocale}
             >
@@ -705,7 +705,7 @@
                 <div class="me-4 opacity-50"><IconDoorExit /></div>
                 <div class="grow">
                     <div>{$LL.menu.settings.privacySettings.title()}</div>
-                    <div class="text-sm italic text-white/50">{$LL.menu.settings.privacySettings.explanation()}</div>
+                    <div class="text-sm italic text-white/60">{$LL.menu.settings.privacySettings.explanation()}</div>
                 </div>
             </div>
         </div>

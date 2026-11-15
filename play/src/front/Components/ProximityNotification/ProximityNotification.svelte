@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
     import { onMount } from "svelte";
+    import { fade } from "../../Utils/reducedMotion";
     import type { ProximityNotification } from "../../Stores/ProximityNotificationStore";
     import { chatNotificationStore } from "../../Stores/ProximityNotificationStore";
     import { chatVisibilityStore } from "../../Stores/ChatStore";
@@ -50,8 +50,8 @@
 </script>
 
 <div
-    class="proximity-notification bg-contrast/50 backdrop-blur-md flex gap-3 py-3 pr-2 shadow-xl pointer-events-auto z-[900] cursor-pointer hover:bg-contrast/90 transition-colors text-white w-[60%] min-w-[300px] max-w-[600px] {notification.mention
-        ? 'rounded-[10px] border border-solid border-danger/60 pl-3.5'
+    class="proximity-notification bg-contrast/95 backdrop-blur-md flex gap-3 py-3 pr-2 shadow-lg pointer-events-auto z-[900] cursor-pointer hover:bg-contrast transition-colors text-white w-[60%] min-w-[300px] max-w-[600px] {notification.mention
+        ? 'rounded border border-solid border-danger/60 pl-3.5'
         : 'rounded pl-5'}"
     onclick={handleClick}
     role="button"
@@ -87,8 +87,9 @@
                     {$LL.notification.mention({ name: notification.userName })}
                 </div>
                 {#if $roomType !== "direct"}
-                    <span class="ms-auto shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/85"
-                        >{$roomName}</span
+                    <span
+                        class="ms-auto min-w-0 max-w-[45%] truncate rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/85"
+                        title={$roomName}>{$roomName}</span
                     >
                 {/if}
             </div>
@@ -105,7 +106,7 @@
         {/if}
         <div
             data-testid="proximity-notification-message"
-            class="font-['Roboto_Condensed'] font-normal text-lg leading-[24px] tracking-normal text-white line-clamp-2"
+            class="font-['Roboto_Condensed'] font-normal text-base leading-[24px] tracking-normal text-white line-clamp-2"
         >
             {notification.message}
         </div>

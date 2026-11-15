@@ -28,7 +28,7 @@
 
 <div
     data-testid="raise-hand-space-picker"
-    class="bg-contrast/80 backdrop-blur-md rounded-md shadow-lg p-2 max-w-96 overflow-auto flex flex-col gap-1"
+    class="bg-contrast/95 backdrop-blur-md rounded-md shadow-lg p-2 max-w-96 overflow-auto flex flex-col gap-1"
     use:clickOutside={() => onclose?.()}
 >
     <div class="text-sm font-semibold text-white px-2 pb-1">
@@ -38,7 +38,7 @@
     {#each entries as entry (entry.spaceName)}
         <button
             type="button"
-            class="w-full text-left p-2 rounded transition-colors flex flex-row items-center gap-2 {entry.raised
+            class="w-full text-left p-2 rounded-sm transition-colors flex flex-row items-center gap-2 {entry.raised
                 ? 'bg-white/20 hover:bg-white/30'
                 : 'hover:bg-white/10'}"
             data-testid="raise-hand-space-option-{entry.kind}"

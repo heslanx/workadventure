@@ -30,7 +30,7 @@
 </script>
 
 <div
-    class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/80 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
+    class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/95 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
     data-testid="meeting-invitation-popup"
 >
     <div class="p-4 flex flex-col gap-4">
@@ -48,7 +48,7 @@
                 {/if}
             </div>
             <div class="flex-1 min-w-0 pt-0.5">
-                <p class="text-sm text-white/95 leading-snug">
+                <p class="text-sm text-white/95 leading-normal wrap-anywhere">
                     {$LL.chat.meetingInvitation.title({ name: request?.senderName ?? "" })}
                 </p>
             </div>

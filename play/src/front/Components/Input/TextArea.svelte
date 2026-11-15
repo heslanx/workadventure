@@ -38,7 +38,7 @@
         optional = false,
         variant = undefined,
         size = undefined,
-        height = "h-[85px]",
+        height = "min-h-[5.3125rem]",
         maxlength = 524288,
         info,
     }: Props = $props();

@@ -14,6 +14,8 @@
     import { mediaSynchronizedSpacesStore } from "../../Stores/PeerStore";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import { meetingOf } from "../../Administration/CurrentMeeting";
+    import { toastStore } from "../../Stores/ToastStoreSingleton";
+    import UndoToast from "../Toasts/UndoToast.svelte";
     import { modals } from "@wa-modals";
     import {
         IconAlertTriangle,
@@ -40,6 +42,11 @@
     /** The one text field of the modal: the report message, or the reason of a kick / ban. */
     let text = $state("");
     let textIsEmpty = $state(false);
+    /** The report, kick or ban could not leave: the server connection is gone. The text stays for a retry. */
+    let sendFailed = $state(false);
+    let submitted = false;
+    // A report or a reason is typed work: closing asks before it is lost.
+    const hasTypedText = () => !submitted && step !== undefined && text.trim() !== "";
 
     const canReport = connectionManager.currentRoom?.canReport ?? false;
 
@@ -97,12 +104,25 @@
             });
     }
 
-    function toggleBlock() {
-        if (userIsBlocked) {
-            blackListManager.cancelBlackList(userUuid);
-        } else {
+    function setBlocked(blocked: boolean) {
+        if (blocked) {
             blackListManager.blackList(userUuid);
+        } else {
+            blackListManager.cancelBlackList(userUuid);
         }
+    }
+
+    // Blocking is reversible with the same API: say who, and offer the way back right in the notice.
+    function toggleBlock() {
+        const blocked = !userIsBlocked;
+        setBlocked(blocked);
+        toastStore.addToast(UndoToast, {
+            message: blocked
+                ? $LL.report.block.blockedNotice({ userName })
+                : $LL.report.block.unblockedNotice({ userName }),
+            actionLabel: blocked ? $LL.report.block.undoBlock() : $LL.report.block.undoUnblock(),
+            onAction: () => setBlocked(!blocked),
+        });
         modals.close();
     }
 
@@ -122,6 +142,12 @@
 
     function submit() {
         const connection = gameManager.getCurrentGameScene().connection;
+        // Nothing can reach the server: say so and keep the text, instead of closing as if it was sent.
+        if (step !== "remove" && (!connection || connection.closed)) {
+            sendFailed = true;
+            return;
+        }
+        sendFailed = false;
         if (step === "remove") {
             removeFromConversation();
         } else if (step === "report") {
@@ -147,6 +173,7 @@
                 step === "ban" && banScope === "ip" && canBanIp,
             );
         }
+        submitted = true;
         modals.close();
     }
 </script>
@@ -173,7 +200,7 @@
     </button>
 {/snippet}
 
-<Popup {isOpen} withAction={step !== undefined}>
+<Popup {isOpen} withAction={step !== undefined} isDirty={hasTypedText}>
     {#snippet title()}
         <div class="flex flex-row items-center gap-2 pb-2">
             {#if step !== undefined}
@@ -335,11 +362,21 @@
                         placeHolder={step === "report" ? "" : $LL.report.moderate.reason.placeholder({ userName })}
                         bind:value={text}
                         optional={step !== "report"}
-                        height="h-[80px]"
+                        height="min-h-[5rem]"
                         maxlength={500}
                         onkeypress={() => (textIsEmpty = false)}
                         dataTestId="moderation-text"
                     />
+                {/if}
+                {#if sendFailed}
+                    <p
+                        class="mb-0 flex flex-row items-center gap-2 font-semibold"
+                        role="alert"
+                        data-testid="moderation-send-failed"
+                    >
+                        <IconAlertTriangle font-size="20" class="shrink-0" />
+                        {$LL.report.moderate.sendFailed()}
+                    </p>
                 {/if}
                 {#if textIsEmpty}
                     <p class="mb-0 flex flex-row items-center gap-2 font-semibold" role="alert">

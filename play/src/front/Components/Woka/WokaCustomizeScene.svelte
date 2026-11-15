@@ -363,7 +363,7 @@
                             class="flex-none lg:flex-1 flex flex-col items-start gap-0 min-h-0 min-w-0 max-h-full overflow-y-scroll overflow-x-auto scroll-mask py-[20px]"
                         >
                             {#each wokaData?.[selectedBodyPart]?.collections || [] as collection, collectionIndex (collection.name)}
-                                <p class="text-sm text-gray-500 mb-1 mt-4 p-0">{collection.name}</p>
+                                <p class="text-sm text-white/60 mb-1 mt-4 p-0">{collection.name}</p>
                                 <div
                                     class="w-full flex flex-row flex-wrap items-start justify-start gap-3"
                                     id={`woka-line-${collectionIndex}`}

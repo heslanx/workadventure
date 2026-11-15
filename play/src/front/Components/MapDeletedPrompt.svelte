@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../Utils/reducedMotion";
     import { LL } from "../../i18n/i18n-svelte";
     import { gameManager } from "../Phaser/Game/GameManager";
     import logoImg from "./images/logo-min-white.png";

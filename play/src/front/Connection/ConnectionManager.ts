@@ -531,7 +531,11 @@ class ConnectionManager {
         //eslint-disable-next-line rxjs/no-ignored-subscription, svelte/no-ignored-unsubscribe
         connection.websocketReconnectingStream.subscribe((reconnecting) => {
             if (reconnecting) {
-                toastStore.addToast(WebsocketReconnectingToast, {}, websocketReconnectingToastId);
+                toastStore.addToast(
+                    WebsocketReconnectingToast,
+                    { onRetry: () => connection.socket.reconnectNow() },
+                    websocketReconnectingToastId,
+                );
                 return;
             }
 

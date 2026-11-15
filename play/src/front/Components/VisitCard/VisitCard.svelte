@@ -68,7 +68,7 @@
 </script>
 
 <section class="visitCard {isEmbedded ? 'w-full' : 'max-w-[320px]'}">
-    <div class="{isEmbedded ? '' : 'bg-contrast/80 rounded-lg'} relative backdrop-blur">
+    <div class="{isEmbedded ? '' : 'bg-contrast/95 rounded-lg'} relative backdrop-blur">
         {#if !isEmbedded}
             <div class="absolute top-2 {h > maxHeigth ? 'right-5' : ' right-2'}">
                 <ButtonClose size="xs" dataTestId="closeVisitCardButton" onclick={closeCard} />

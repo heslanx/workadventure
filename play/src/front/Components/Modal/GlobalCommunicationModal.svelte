@@ -111,6 +111,7 @@
 
     let hasVideo = $derived(Boolean($requestedCameraState && stream?.getVideoTracks().length));
     let canGoLive = $derived($requestedCameraState || $requestedMicrophoneState);
+    const blockedReasonId = $props.id();
 
     function startLive() {
         startMegaphoneLive();
@@ -128,7 +129,7 @@
     class="absolute z-[308] w-full h-full inset-0 flex items-center justify-center overflow-hidden pointer-events-none"
 >
     <div
-        class="pointer-events-auto bg-contrast/80 backdrop-blur rounded-md max-h-screen overflow-y-auto w-full md:w-[46rem] text-white"
+        class="pointer-events-auto bg-contrast/95 backdrop-blur rounded-md max-h-screen overflow-y-auto w-full md:w-[46rem] text-white"
         data-testid="go-live-sheet"
     >
         <header class="flex flex-row items-center justify-between p-4 pb-2">
@@ -235,13 +236,29 @@
 
                 <footer class="flex flex-wrap items-center justify-end gap-2">
                     {#if !canGoLive}
-                        <p class="m-0 me-auto text-sm flex items-center gap-1 text-warning-400">
+                        <p id={blockedReasonId} class="m-0 me-auto text-sm flex items-center gap-1 text-warning-400">
                             <IconAlertTriangle font-size="16" />
                             {$LL.warning.megaphoneNeeds()}
                         </p>
+                        <!-- The way out of the block, right beside it: the microphone alone is enough to go live. -->
+                        <Button
+                            variant="light"
+                            appearance="border"
+                            onclick={() => requestedMicrophoneState.enableMicrophone()}
+                            dataTestId="go-live-enable-microphone"
+                        >
+                            {#snippet icon()}<IconMicrophone font-size="16" />{/snippet}
+                            {$LL.megaphone.modal.liveMessage.enableMicrophone()}
+                        </Button>
                     {/if}
                     {#if !$requestedMegaphoneStore}
-                        <Button variant="danger" onclick={startLive} disabled={!canGoLive} dataTestId="go-live-start">
+                        <Button
+                            variant="danger"
+                            onclick={startLive}
+                            disabled={!canGoLive}
+                            disabledReasonId={blockedReasonId}
+                            dataTestId="go-live-start"
+                        >
                             {$LL.actionbar.goLive()}
                         </Button>
                     {:else}

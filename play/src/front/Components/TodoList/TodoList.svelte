@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { get } from "svelte/store";
     import type { TodoListInterface } from "@workadventure/shared-utils";
+    import { fly } from "../../Utils/reducedMotion";
     import { isTodoListVisibleStore, todoListsStore } from "../../Stores/TodoListStore";
     import LL from "../../../i18n/i18n-svelte";
     import todoListPng from "../images/applications/todolist.png";
@@ -68,7 +68,7 @@
 
 <div class="todolist select-text flex">
     <div
-        class="sidebar p-3 h-full bg-contrast/80 backdrop-blur w-96 max-md:w-screen"
+        class="sidebar p-3 h-full bg-contrast/95 backdrop-blur w-96 max-md:w-screen"
         in:fly={{ x: 100, duration: 250, delay: 200 }}
         out:fly={{ x: 100, duration: 200 }}
         {@attach blocker}

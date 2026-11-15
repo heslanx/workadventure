@@ -85,7 +85,7 @@
 
 {#if wokaMenuData}
     <div
-        class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/80 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
+        class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/95 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
         data-testid="actions-menu"
     >
         <div>
@@ -108,8 +108,8 @@
                                 />
                             </div>
                         {/if}
-                        <div class=" w-max mt-[29px]">
-                            <h3>{wokaMenuData.wokaName}</h3>
+                        <div class="max-w-full min-w-0 px-10 mt-[29px]">
+                            <h3 class="wrap-anywhere">{wokaMenuData.wokaName}</h3>
                         </div>
                         {#if remotePlayer}
                             <div class="my-2">

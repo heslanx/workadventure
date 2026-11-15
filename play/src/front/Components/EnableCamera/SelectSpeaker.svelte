@@ -15,6 +15,7 @@
     }
 
     let { selectedDevice = undefined, deviceList, onplaysound, onselectdevice }: Props = $props();
+    const uid = $props.id();
 </script>
 
 <div
@@ -22,7 +23,7 @@
 >
     <div class="text-lg bold flex items-center justify-center gap-3 mb-4 ps-2">
         <IconUnMute font-size="28" />
-        <div class="grow pe-8 ps-2">{$LL.camera.editSpeaker()}</div>
+        <div id="{uid}-title" class="grow pe-8 ps-2">{$LL.camera.editSpeaker()}</div>
         <Button
             variant={!editMode ? "secondary" : "light"}
             appearance={!editMode ? "filled" : "ghost"}
@@ -37,10 +38,8 @@
     </div>
 
     <div class="flex items-center justify-center w-full">
-        <div class="flex flex-wrap items-center justify-center w-full">
+        <div class="flex flex-wrap items-center justify-center w-full" role="radiogroup" aria-labelledby="{uid}-title">
             {#each deviceList as speaker, index (index)}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div
                     class="border border-solid border-white w-full rounded-lg items-center justify-between transition-all overflow-hidden cursor-pointer relative px-8 py-6 space-x-4 {selectedDevice ===
                     speaker.deviceId
@@ -48,10 +47,22 @@
                         : 'border-white hover:bg-white/10'}"
                     class:flex={editMode || selectedDevice === speaker.deviceId}
                     class:hidden={!editMode && selectedDevice !== speaker.deviceId}
+                    role="radio"
+                    aria-checked={selectedDevice === speaker.deviceId}
+                    tabindex="0"
                     onclick={() => {
                         onselectdevice?.(speaker.deviceId);
                         onplaysound?.(speaker.deviceId);
                         editMode = false;
+                    }}
+                    onkeydown={(event) => {
+                        if (event.target !== event.currentTarget) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onselectdevice?.(speaker.deviceId);
+                            onplaysound?.(speaker.deviceId);
+                            editMode = false;
+                        }
                     }}
                 >
                     <div class="flex items-center space-x-4 overflow-hidden truncate">

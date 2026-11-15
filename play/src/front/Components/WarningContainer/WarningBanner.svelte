@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { userIsAdminStore, limitMapStore, bannerStore } from "../../Stores/GameStore";
     import { ADMIN_URL } from "../../Enum/EnvironmentVariable";
     import { LL } from "../../../i18n/i18n-svelte";
@@ -58,7 +58,7 @@
             <p>{@html $LL.warning.content({ upgradeLink: ADMIN_URL + "/pricing" })}</p>
         {:else if $limitMapStore}
             <p>
-                This map is available for 2 days. You can register your domain <a href={registerLink}>here</a>!
+                {$LL.warning.limitMap()} <a href={registerLink}>{$LL.warning.registerDomain()}</a>
             </p>
         {:else}
             <h2>{$LL.warning.title()}</h2>

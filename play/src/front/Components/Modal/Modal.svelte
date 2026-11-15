@@ -1,11 +1,13 @@
 <script lang="ts">
-    import { blur } from "svelte/transition";
     import { onDestroy, onMount } from "svelte";
+    import { blur } from "../../Utils/reducedMotion";
     import { iframeListener } from "../../Api/IframeListener";
     import { modalIframeStore, modalVisibilityStore } from "../../Stores/ModalStore";
     import { isMediaBreakpointUp } from "../../Utils/BreakpointsUtils";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import Button from "../UI/Button.svelte";
+    import { focusTrap } from "../../Utils/focusTrap";
+    import LL from "../../../i18n/i18n-svelte";
     import { IconX, IconArrowsMaximize, IconArrowsMinimize } from "@wa-icons";
 
     let modalIframe: HTMLIFrameElement | undefined = $state();
@@ -59,6 +61,10 @@
     const resizeObserver = new ResizeObserver(() => {
         isMobile = isMediaBreakpointUp("md");
     });
+
+    // A left or right modal is a side panel next to the game, so Tab may leave it. Centered, fullscreen and mobile
+    // modals cover the game and keep focus inside.
+    let isBlocking = $derived(isMobile || isFullScreened || $modalIframeStore?.position === "center");
 </script>
 
 <svelte:window onkeydown={onKeyDown} />
@@ -68,10 +74,15 @@
         ? 'mobile'
         : $modalIframeStore?.position} {isFullScreened ? 'fullscreened' : ''}"
     bind:this={mainModal}
+    role="dialog"
+    aria-modal={isBlocking}
+    aria-label={$modalIframeStore?.title || "WorkAdventure"}
+    tabindex="-1"
+    use:focusTrap={{ cycle: isBlocking }}
 >
-    <div class="w-full h-full bg-contrast/80 backdrop-blur rounded" transition:blur={{ amount: 10, duration: 250 }}>
+    <div class="w-full h-full bg-contrast/95 backdrop-blur rounded" transition:blur={{ amount: 10, duration: 250 }}>
         <div
-            class={`flex justify-center items-center content-center bg-contrast/80 backdrop-blur p-2 space-y-0 @lg/main-layout:space-y-2 rounded-lg absolute z-50 hover:opacity-100 opacity-25 transition-opacity duration-300
+            class={`flex justify-center items-center content-center bg-contrast/80 backdrop-blur p-2 space-y-0 @lg/main-layout:space-y-2 rounded-lg absolute z-50 hover:opacity-100 focus-within:opacity-100 opacity-25 transition-opacity duration-300
                 ${
                     isFullScreened || isMobile
                         ? "top-4 right-4"
@@ -90,6 +101,8 @@
                         appearance="ghost"
                         square
                         class="rounded hidden @lg/main-layout:block"
+                        aria-label={$LL.menu.settings.fullscreen()}
+                        aria-pressed={isFullScreened}
                         onclick={() => (isFullScreened = !isFullScreened)}
                     >
                         {#snippet icon()}
@@ -113,6 +126,7 @@
                     class="rounded m-0"
                     style={isFullScreened == true ? "" : "margin: 0px;"}
                     dataTestId="close-modal-button"
+                    aria-label={$LL.actionbar.close()}
                 >
                     {#snippet icon()}
                         <IconX font-size="20" class="text-white" />

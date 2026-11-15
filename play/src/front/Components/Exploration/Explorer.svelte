@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { writable } from "svelte/store";
     import { onMount } from "svelte";
     import type { OpenWebsitePropertyData } from "@workadventure/map-editor";
@@ -376,6 +377,9 @@
             <div
                 class="group entities p-2 rounded flex flex-row justify-between items-center cursor-pointer hover:bg-white/10 transition-all"
                 onclick={toggleEntityList}
+                role="button"
+                tabindex="0"
+                onkeydown={(event) => activateOnEnterOrSpace(event, toggleEntityList)}
             >
                 <div class="flex flex-row items-center justify-start gap-2">
                     <img
@@ -396,12 +400,19 @@
                             >
                         </span>
                     {:else}
-                        <p class="m-0">{$LL.mapEditor.explorer.noEntitiesFound()}</p>
+                        <p class="m-0">
+                            {filter !== "" || $selectFilters.length > 0
+                                ? $LL.mapEditor.explorer.noEntitiesMatch()
+                                : $LL.mapEditor.explorer.noEntitiesFound()}
+                        </p>
                     {/if}
                 </div>
 
                 <button
-                    class="transition-all group-hover:bg-white/10 p-1 rounded-lg aspect-square flex items-center justify-center text-white"
+                    type="button"
+                    aria-expanded={entityListActive}
+                    aria-label={$LL.mapEditor.explorer.entitiesList()}
+                    class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                     data-testid="toggleFolderEntity"
                     onclick={(event) => {
                         event.stopPropagation();
@@ -421,13 +432,19 @@
                             id={entity.entityId}
                             onmouseenter={() => highlightEntity(entity)}
                             onmouseleave={() => unhighlightEntity(entity)}
+                            onfocusin={() => highlightEntity(entity)}
+                            onfocusout={() => unhighlightEntity(entity)}
                             onclick={() => handlerToSelectEntity(entity)}
+                            role="button"
+                            tabindex="0"
+                            onkeydown={(event) => activateOnEnterOrSpace(event, () => handlerToSelectEntity(entity))}
                             class={[
                                 "item p-2 rounded flex flex-row justify-start gap-2 items-center cursor-pointer hover:bg-white/10 transition-all",
                                 {
                                     "bg-white/10": $mapExplorationObjectSelectedStore === entity,
                                 },
                             ]}
+                            title={getEntityDisplayName(entity)}
                         >
                             <img
                                 draggable="false"
@@ -442,7 +459,11 @@
                                     : entity.getPrefab().name}</span
                             >
                             <button
-                                class="transition-all hover:bg-white/10 p-2 rounded-md aspect-square flex items-center justify-center m-0"
+                                type="button"
+                                aria-label={$LL.mapEditor.explorer.details.moveToEntity({
+                                    name: getEntityDisplayName(entity),
+                                })}
+                                class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
                                 onclick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
@@ -452,7 +473,9 @@
                                 <IconWalk font-size="16" />
                             </button>
                             <button
-                                class="transition-all hover:bg-white/10 p-2 rounded-md aspect-square flex items-center justify-center m-0"
+                                type="button"
+                                aria-label={$LL.mapEditor.explorer.details.show({ name: getEntityDisplayName(entity) })}
+                                class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
                                 onclick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
@@ -471,6 +494,9 @@
             <div
                 class="group areas p-2 rounded flex flex-row justify-between items-center cursor-pointer hover:bg-white/10 transition-all"
                 onclick={toggleAreaList}
+                role="button"
+                tabindex="0"
+                onkeydown={(event) => activateOnEnterOrSpace(event, toggleAreaList)}
             >
                 <div class="flex flex-row items-center justify-start gap-2">
                     <img draggable="false" class="w-10 h-auto pointer-events-none" src={AreaToolImg} alt="link icon" />
@@ -486,11 +512,18 @@
                             >
                         </span>
                     {:else}
-                        <p class="m-0 text-white/75 group-hover:text-white">{$LL.mapEditor.explorer.noAreasFound()}</p>
+                        <p class="m-0 text-white/75 group-hover:text-white">
+                            {filter !== "" || $selectFilters.length > 0
+                                ? $LL.mapEditor.explorer.noAreasMatch()
+                                : $LL.mapEditor.explorer.noAreasFound()}
+                        </p>
                     {/if}
                 </div>
                 <button
-                    class="transition-all group-hover:bg-white/10 p-1 rounded-lg aspect-square flex items-center justify-center text-white"
+                    type="button"
+                    aria-expanded={areaListActive}
+                    aria-label={$LL.mapEditor.explorer.areasList()}
+                    class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                     data-testid="toggleFolderArea"
                     onclick={(event) => {
                         event.stopPropagation();
@@ -510,7 +543,12 @@
                                 id={key}
                                 onmouseenter={() => highlightArea(area)}
                                 onmouseleave={() => unhighlightArea(area)}
+                                onfocusin={() => highlightArea(area)}
+                                onfocusout={() => unhighlightArea(area)}
                                 onclick={() => handlerToSelectArea(area)}
+                                role="button"
+                                tabindex="0"
+                                onkeydown={(event) => activateOnEnterOrSpace(event, () => handlerToSelectArea(area))}
                                 class={[
                                     "item p-2 rounded flex flex-row justify-start gap-2 items-center cursor-pointer hover:bg-white/10 transition-all",
                                     {
@@ -533,7 +571,11 @@
                                     {area.getAreaData().name || "No name"}
                                 </span>
                                 <button
-                                    class="transition-all hover:bg-white/10 p-2 rounded-md aspect-square flex items-center justify-center m-0"
+                                    type="button"
+                                    aria-label={$LL.mapEditor.explorer.details.moveToArea({
+                                        name: area.getAreaData().name || "No name",
+                                    })}
+                                    class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
                                     onclick={(event) => {
                                         event.preventDefault();
                                         event.stopPropagation();
@@ -543,7 +585,11 @@
                                     <IconWalk font-size="16" />
                                 </button>
                                 <button
-                                    class="transition-all hover:bg-white/10 p-2 rounded-md aspect-square flex items-center justify-center m-0"
+                                    type="button"
+                                    aria-label={$LL.mapEditor.explorer.details.show({
+                                        name: area.getAreaData().name || "No name",
+                                    })}
+                                    class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
                                     onclick={(event) => {
                                         event.preventDefault();
                                         event.stopPropagation();

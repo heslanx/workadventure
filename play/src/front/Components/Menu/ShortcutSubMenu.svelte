@@ -197,7 +197,7 @@
     <div class="submenu p-4 flex flex-col gap-4">
         <div class="flex items-start justify-between gap-4">
             <div>
-                <h2 class="text-white text-lg font-semibold m-0">{$LL.menu.shortcuts.title()}</h2>
+                <h2 class="text-white text-xl font-semibold m-0">{$LL.menu.shortcuts.title()}</h2>
                 <p class="text-white/70 text-sm m-0 mt-1">{$LL.menu.shortcuts.subtitle()}</p>
             </div>
             {#if !editing}
@@ -254,13 +254,13 @@
         </div>
 
         {#if filteredGroups.length === 0}
-            <p class="text-white/70 text-center p-6 m-0 rounded-2xl bg-contrast/80">
+            <p class="text-white/70 text-center p-6 m-0 rounded-lg bg-contrast/80">
                 {$LL.menu.shortcuts.noResult({ query })}
             </p>
         {:else}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 {#each filteredGroups as group (group.title)}
-                    <section class="rounded-2xl bg-contrast/80 border border-solid border-white/10 px-4 py-3">
+                    <section class="rounded-lg bg-contrast/80 border border-solid border-white/10 px-4 py-3">
                         <h3 class="text-white text-base font-bold m-0 pb-2">{group.title}</h3>
                         <ul class="list-none m-0 p-0">
                             {#each group.rows as row (row.label)}

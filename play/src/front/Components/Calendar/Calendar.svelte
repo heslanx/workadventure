@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { get } from "svelte/store";
+    import { fly } from "../../Utils/reducedMotion";
     import { calendarEventsStore, isCalendarVisibleStore } from "../../Stores/CalendarStore";
     import LL from "../../../i18n/i18n-svelte";
 
@@ -45,7 +45,7 @@
 
 <div class="calendar select-text flex">
     <div
-        class="sidebar p-3 h-full bg-contrast/80 backdrop-blur w-96 max-md:w-screen"
+        class="sidebar p-3 h-full bg-contrast/95 backdrop-blur w-96 max-md:w-screen"
         in:fly={{ x: 100, duration: 250, delay: 200 }}
         out:fly={{ x: 100, duration: 200 }}
         {@attach blocker}
@@ -122,7 +122,7 @@
                             {#each day.allDay as event (event.id)}
                                 <div class="flex items-center gap-2 rounded-sm bg-secondary-300/15 px-2 py-1 text-sm">
                                     <span class="text-contrast-200">{$LL.externalModule.calendar.allDay()}</span>
-                                    <span class="truncate font-bold">{event.title}</span>
+                                    <span class="truncate font-bold" title={event.title}>{event.title}</span>
                                 </div>
                             {/each}
                         </div>

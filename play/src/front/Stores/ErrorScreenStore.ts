@@ -11,10 +11,34 @@ import { isAxiosError } from "axios";
 import { ApiError } from "./Errors/ApiError";
 
 /**
+ * An error raised in the browser (not sent by the server). The error screen shows a translated, plain-language
+ * message for it, and keeps the technical text behind "Show details" for support.
+ */
+export type ClientErrorKind = "generic" | "network";
+
+export type ErrorScreenState = ErrorScreenMessage & {
+    clientErrorKind?: ClientErrorKind;
+    technicalDetails?: string;
+};
+
+function clientError(
+    code: string,
+    kind: ClientErrorKind,
+    technicalDetails: string,
+    images: Partial<Pick<ErrorScreenMessage, "image" | "imageLogo">> = {},
+): ErrorScreenState {
+    return {
+        ...ErrorScreenMessage.fromPartial({ ...images, type: "error", code }),
+        clientErrorKind: kind,
+        technicalDetails,
+    };
+}
+
+/**
  * A store that contains one error of type WAError to be displayed.
  */
 function createErrorScreenStore() {
-    const { subscribe, set } = writable<ErrorScreenMessage | undefined>(undefined);
+    const { subscribe, set } = writable<ErrorScreenState | undefined>(undefined);
 
     return {
         subscribe,
@@ -90,13 +114,9 @@ function createErrorScreenStore() {
 
             if (typeof error === "string" || error instanceof String) {
                 set(
-                    ErrorScreenMessage.fromPartial({
+                    clientError("INTERNAL_ERROR", "generic", error.toString(), {
                         image: "/resources/icons/new_version.png",
                         imageLogo: "/static/images/logo.png",
-                        type: "error",
-                        code: "INTERNAL_ERROR",
-                        title: "An error occurred",
-                        details: error.toString(),
                     }),
                 );
                 return;
@@ -107,16 +127,13 @@ function createErrorScreenStore() {
                 console.error("Axios error. Request:", error.request, " - Response: ", error.response);
 
                 set(
-                    ErrorScreenMessage.fromPartial({
-                        type: "error",
-                        code: "HTTP_ERROR",
-                        title:
-                            "HTTP " +
-                            error.response.status +
-                            " - " +
-                            (error.response.data ? error.response.data : error.response.statusText),
-                        details: "An error occurred while accessing URL: " + error.config?.url,
-                    }),
+                    clientError(
+                        "HTTP_ERROR",
+                        "generic",
+                        `HTTP ${error.response.status} (${String(
+                            error.response.data ? error.response.data : error.response.statusText,
+                        )}) ${error.config?.url ?? ""}`,
+                    ),
                 );
                 return;
             }
@@ -124,14 +141,7 @@ function createErrorScreenStore() {
                 // Axios HTTP error
                 // client never received a response, or request never left
                 console.error("Axios error. No full HTTP response received. Request to URL:", error.config?.url);
-                set(
-                    ErrorScreenMessage.fromPartial({
-                        type: "error",
-                        code: "NETWORK_ERROR",
-                        title: "Network error",
-                        subtitle: error.message,
-                    }),
-                );
+                set(clientError("NETWORK_ERROR", "network", error.message));
                 return;
             }
             if (error instanceof ApiError) {
@@ -164,27 +174,12 @@ function createErrorScreenStore() {
             }
             if (error instanceof Error) {
                 // Error
-                set(
-                    ErrorScreenMessage.fromPartial({
-                        type: "error",
-                        code: "INTERNAL_ERROR",
-                        title: "An error occurred",
-                        subtitle: error.name,
-                        details: error.message,
-                    }),
-                );
+                set(clientError("INTERNAL_ERROR", "generic", `${error.name}. ${error.message}`));
                 return;
             }
             // Something that is not an Error was thrown (an event, a plain object...). Rethrowing it would leave the
             // user with no error screen at all, and an unhandled rejection in the caller.
-            set(
-                ErrorScreenMessage.fromPartial({
-                    type: "error",
-                    code: "INTERNAL_ERROR",
-                    title: "An error occurred",
-                    details: String(error),
-                }),
-            );
+            set(clientError("INTERNAL_ERROR", "generic", String(error)));
         },
         delete: () => {
             set(undefined);

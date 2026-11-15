@@ -78,7 +78,7 @@
     <div
         class="relative z-10 mx-auto flex w-full max-w-[min(510px,calc(100vw-2rem))] flex-col items-center gap-6 px-4 py-10"
     >
-        <div class="w-full overflow-hidden rounded-2xl bg-contrast text-left">
+        <div class="w-full overflow-hidden rounded-lg bg-contrast text-left">
             <!-- Header: banner + logo + italic pitch -->
             <div class="hidden relative min-h-[200px] md:block">
                 <div class="absolute inset-0 bg-cover bg-center" aria-hidden="true">
@@ -97,7 +97,7 @@
                             ? 'max-h-[100px]'
                             : 'brightness-0 invert'}"
                     />
-                    <p class="m-0 max-w-sm text-sm italic leading-snug text-white/90">
+                    <p class="m-0 max-w-sm text-sm italic leading-normal text-white/90">
                         {#if $pwaInstallUiStore.isIos}
                             {$LL.warning.pwaInstall.descriptionIos()}
                         {:else}

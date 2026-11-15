@@ -83,7 +83,7 @@
 {#if currentRecord?.videoFile}
     <div
         data-testid="recording-context-menu"
-        class="context-menu flex flex-col gap-1 min-w-[200px] z-50 absolute bg-contrast/80 backdrop-blur-md rounded-md shadow-lg py-1 p-1"
+        class="context-menu flex flex-col gap-1 min-w-[200px] z-50 absolute bg-contrast/95 backdrop-blur-md rounded-md shadow-lg py-1 p-1"
     >
         <button
             class="w-full p-2 text-left flex items-center gap-2 bg-secondary-800 hover:bg-secondary cursor-pointer rounded"

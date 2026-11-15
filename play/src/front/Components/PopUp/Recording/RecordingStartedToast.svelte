@@ -100,7 +100,7 @@
     .recording-subtitle {
         font-size: 13px;
         color: rgba(255, 255, 255, 0.7);
-        line-height: 1.3;
+        line-height: 1.5;
         margin: 0;
     }
 

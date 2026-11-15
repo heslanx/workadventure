@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import type { UserInputManager } from "../../Phaser/UserInput/UserInputManager";
+    import LL from "../../../i18n/i18n-svelte";
     import Button from "../UI/Button.svelte";
     import PopUpContainer from "./PopUpContainer.svelte";
 
@@ -24,7 +25,9 @@
 <PopUpContainer reduceOnSmallScreen={true}>
     {message}
     {#snippet buttons()}
-        <Button variant="secondary" class="w-1/2 max-w-80 responsive-message" onclick={click}>Open Tab</Button>
+        <Button variant="secondary" class="w-1/2 max-w-80 responsive-message" onclick={click}
+            >{$LL.warning.popUp.openInNewTab()}</Button
+        >
     {/snippet}
 </PopUpContainer>
 

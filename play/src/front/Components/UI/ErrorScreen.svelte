@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { onDestroy } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import { errorScreenStore } from "../../Stores/ErrorScreenStore";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { connectionManager } from "../../Connection/ConnectionManager";
@@ -85,13 +85,20 @@
                     draggable="false"
                 />
             </div>
-            {#if $errorScreenStore.type !== "retry"}<h2 class="mt-10">{$errorScreenStore.title}</h2>{/if}
+            {#if $errorScreenStore.type !== "retry"}<h2 class="mt-10">
+                    {#if $errorScreenStore.clientErrorKind === "network"}
+                        {$LL.error.errorScreen.networkTitle()}
+                    {:else if $errorScreenStore.clientErrorKind === "generic"}
+                        {$LL.error.errorScreen.genericTitle()}
+                    {:else}
+                        {$errorScreenStore.title}
+                    {/if}
+                </h2>{/if}
             {#if $errorScreenStore.subtitle}<p>{$errorScreenStore.subtitle}</p>{/if}
-            {#if $errorScreenStore.type !== "retry" && $errorScreenStore.type !== "reconnecting"}<p class="code">
-                    Code : {$errorScreenStore.code}
-                </p>{/if}
             <div class="details flex flex-row items-center justify-center content-center gap-2">
-                <span class="whitespace-pre-line">{detailsStylized}</span>
+                <span class="whitespace-pre-line"
+                    >{#if $errorScreenStore.clientErrorKind === "network"}{$LL.error.errorScreen.networkNextStep()}{:else if $errorScreenStore.clientErrorKind === "generic"}{$LL.error.errorScreen.genericNextStep()}{:else}{detailsStylized}{/if}</span
+                >
                 {#if $errorScreenStore.type === "retry"}
                     <div class="loading"></div>
                 {:else if $errorScreenStore.type === "reconnecting"}
@@ -116,8 +123,29 @@
                             {$LL.menu.profile.logout()}
                         </Button>
                     {/if}
+                {:else if $errorScreenStore.type === "error"}
+                    <Button
+                        type="button"
+                        size="lg"
+                        variant="light"
+                        appearance="border"
+                        class="button"
+                        icon={refreshIcon}
+                        onclick={click}
+                    >
+                        {$LL.error.errorScreen.reload()}
+                    </Button>
                 {/if}
             </div>
+            {#if $errorScreenStore.type !== "retry" && $errorScreenStore.type !== "reconnecting"}
+                <details class="code mt-4">
+                    <summary class="cursor-pointer">{$LL.error.errorScreen.showDetails()}</summary>
+                    <p class="m-0 mt-1">{$LL.error.errorScreen.code({ code: $errorScreenStore.code ?? "" })}</p>
+                    {#if $errorScreenStore.technicalDetails}
+                        <p class="m-0 mt-1 break-all">{$errorScreenStore.technicalDetails}</p>
+                    {/if}
+                </details>
+            {/if}
         </div>
     </main>
 {/if}
@@ -136,7 +164,7 @@
             padding: 5px;
             font-size: 30px;
         }
-        p.code {
+        details.code {
             font-size: 12px;
             opacity: 0.6;
             /* Prefixed too, or WebKit ignores the opt-in and `body` keeps this unselectable. */

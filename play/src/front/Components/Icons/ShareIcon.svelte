@@ -12,7 +12,7 @@
         height = "h-6",
         width = "w-6",
         strokeColor = "stroke-white",
-        strokeWidth = "stroke-2",
+        strokeWidth = "stroke-[1.5]",
         hover = "group-hover/btn-emoji:fill-white",
         classList = "aspect-ratio transition-all",
     }: Props = $props();
@@ -23,7 +23,7 @@
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    stroke-width="2"
+    stroke-width="1.5"
     stroke-linecap="round"
     stroke-linejoin="round"
     class="{height} {width} {strokeColor} {strokeWidth} {classList} {hover} icon icon-tabler icons-tabler-outline icon-tabler-share"

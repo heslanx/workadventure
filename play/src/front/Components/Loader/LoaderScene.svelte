@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
+    import { fade } from "../../Utils/reducedMotion";
     import { loaderProgressStore } from "../../Stores/LoaderStore";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import bgMap from "../images/map-exemple.webp";

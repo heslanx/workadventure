@@ -1,4 +1,10 @@
+<script lang="ts" module>
+    type AnnouncementDraft = { delta: string; broadcastToWorld: boolean; place: string };
+    let announcementDraft: AnnouncementDraft | undefined;
+</script>
+
 <script lang="ts">
+    import { onDestroy } from "svelte";
     import { LL } from "../../../i18n/i18n-svelte";
     import { showModalGlobalComminucationVisibilityStore } from "../../Stores/ModalStore";
     import { gameManager } from "../../Phaser/Game/GameManager";
@@ -23,11 +29,21 @@
         .filter((name, index, names) => names.indexOf(name) === index)
         .sort((a, b) => a.localeCompare(b));
 
+    // Restored from an earlier opening that closed without sending (Esc, close button, another menu).
+    const draft = announcementDraft;
+
     let handleSendText: TextGlobalMessageHandle | undefined = $state();
-    let broadcastToWorld = $state(false);
-    let place = $state("");
-    let delta = $state("");
+    let broadcastToWorld = $state(draft?.broadcastToWorld ?? false);
+    let place = $state(draft?.place ?? "");
+    let delta = $state(draft?.delta ?? "");
     let confirmingWorld = $state(false);
+    let sendFailed = $state(false);
+    let sent = false;
+
+    // The modal unmounts on every close path: keep what was typed until it is sent.
+    onDestroy(() => {
+        announcementDraft = !sent && delta ? { delta, broadcastToWorld, place } : undefined;
+    });
 
     let joinUrl = $derived(
         place ? `${window.location.origin}${window.location.pathname}#moveTo=${encodeURIComponent(place)}` : "",
@@ -54,8 +70,15 @@
             confirmingWorld = true;
             return;
         }
+        // Success only once the message reached an open connection; otherwise the text stays here.
+        if (!handleSendText?.sendTextMessage(broadcastToWorld, joinUrl)) {
+            sendFailed = true;
+            confirmingWorld = false;
+            return;
+        }
+        sent = true;
+        sendFailed = false;
         analyticsClient.trackAdminEvent("global_message.text_sent");
-        handleSendText?.sendTextMessage(broadcastToWorld, joinUrl);
         toastStore.addToast(TextToast, {
             message: broadcastToWorld
                 ? $LL.megaphone.announcement.sentToWorld()
@@ -72,7 +95,7 @@
     class="absolute z-[308] w-full h-full inset-0 flex items-center justify-center overflow-hidden pointer-events-none"
 >
     <div
-        class="pointer-events-auto bg-contrast/80 backdrop-blur rounded-md max-h-screen overflow-y-auto w-full md:w-[46rem] text-white"
+        class="pointer-events-auto bg-contrast/95 backdrop-blur rounded-md max-h-screen overflow-y-auto w-full md:w-[46rem] text-white"
         data-testid="announcement-composer"
     >
         <header class="flex flex-row items-center justify-between p-4 pb-2">
@@ -110,7 +133,14 @@
             </section>
 
             <section class="h-48">
-                <TextGlobalMessage bind:handleSending={handleSendText} onchange={(value) => (delta = value)} />
+                <TextGlobalMessage
+                    bind:handleSending={handleSendText}
+                    initialContent={draft?.delta}
+                    onchange={(value) => {
+                        delta = value;
+                        sendFailed = false;
+                    }}
+                />
             </section>
 
             <section>
@@ -146,6 +176,16 @@
             {/if}
 
             <footer class="flex flex-wrap items-center justify-end gap-2">
+                {#if sendFailed}
+                    <p
+                        class="m-0 me-auto text-sm flex items-center gap-1 text-danger-400"
+                        role="alert"
+                        data-testid="announcement-send-failed"
+                    >
+                        <IconAlertTriangle font-size="16" class="shrink-0" />
+                        {$LL.megaphone.announcement.sendFailed()}
+                    </p>
+                {/if}
                 {#if confirmingWorld}
                     <p class="m-0 me-auto text-sm flex items-center gap-1 text-warning-400">
                         <IconAlertTriangle font-size="16" />
@@ -155,7 +195,13 @@
                         {$LL.megaphone.announcement.cancel()}
                     </Button>
                 {/if}
-                <Button variant="secondary" disabled={!delta} onclick={send} dataTestId="announcement-send">
+                <Button
+                    variant="secondary"
+                    disabled={!delta}
+                    disabledReason={$LL.megaphone.announcement.emptyMessage()}
+                    onclick={send}
+                    dataTestId="announcement-send"
+                >
                     {#snippet icon()}<IconSend class="h-4 w-4" />{/snippet}
                     {confirmingWorld
                         ? $LL.megaphone.announcement.confirmSend()

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { getNavigatorType } from "../../WebRtc/DeviceUtils";
     import { LL } from "../../../i18n/i18n-svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
@@ -17,7 +17,7 @@
 </script>
 
 <form
-    class="helpCameraSettings z-[600] bg-contrast/80 backdrop-blur rounded-lg text-white self-center pointer-events-auto flex flex-col m-auto w-full md:w-2/3 2xl:w-1/4 text-sm md:text-base"
+    class="helpCameraSettings z-[600] bg-contrast/95 backdrop-blur rounded-lg text-white self-center pointer-events-auto flex flex-col m-auto w-full md:w-2/3 2xl:w-1/4 text-sm md:text-base"
     style={getBackgroundColor() ? `background-color: ${getBackgroundColor()};` : ""}
     onsubmit={(event) => {
         event.preventDefault();
