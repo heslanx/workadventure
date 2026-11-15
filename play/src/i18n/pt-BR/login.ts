@@ -9,12 +9,12 @@ const login: BaseTranslation = {
             notValidError: "O nome não é válido",
         },
     },
-    genericError: "Ocorreu um erro",
+    genericError: "Seu nome não foi salvo. Você ainda não pode entrar. Tente de novo.",
     terms: "Ao continuar, você concorda com nossos {links}.",
     termsOfUse: "termos de uso",
     privacyPolicy: "política de privacidade",
     cookiePolicy: "política de cookies",
-    continue: "Continuar",
+    continue: "Entrar no mundo",
 };
 
 export default login;

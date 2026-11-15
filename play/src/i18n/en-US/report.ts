@@ -2,6 +2,10 @@ import type { BaseTranslation } from "../i18n-types";
 
 const report: BaseTranslation = {
     block: {
+        blockedNotice: "{userName} is blocked. You no longer see or hear each other.",
+        unblockedNotice: "{userName} is unblocked.",
+        undoBlock: "Unblock",
+        undoUnblock: "Block again",
         title: "Block",
         content: "Block any communication from and to {userName}. This can be reverted.",
         unblock: "Unblock this user",
@@ -16,6 +20,7 @@ const report: BaseTranslation = {
     },
     submit: "Report this user",
     moderate: {
+        sendFailed: "Not sent: the connection to the server is down. Your text is kept; try again in a moment.",
         title: "Moderate {userName}",
         action: "Moderate",
         block: "Block",

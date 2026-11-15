@@ -9,12 +9,12 @@ const login: BaseTranslation = {
             notValidError: "Incorrect name format",
         },
     },
-    genericError: "An error occurred",
+    genericError: "Your name was not saved. You cannot enter yet. Try again.",
     terms: "By continuing, you are agreeing our {links}.",
     termsOfUse: "terms of use",
     privacyPolicy: "privacy policy",
     cookiePolicy: "cookie policy",
-    continue: "Continue",
+    continue: "Enter the world",
 };
 
 export default login;

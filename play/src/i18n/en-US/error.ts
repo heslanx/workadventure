@@ -13,6 +13,7 @@ const error: BaseTranslation = {
     },
     connectionRetry: {
         unableConnect: "Connection to server lost. You won't be able to speak to others.",
+        retrying: "Retrying automatically. This message goes away once the server answers.",
     },
     errorDialog: {
         title: "Error 😱",
@@ -21,6 +22,15 @@ const error: BaseTranslation = {
         messageFAQ: "You may also check our:",
         reload: "Reload",
         close: "Close",
+    },
+    errorScreen: {
+        genericTitle: "We could not open this world.",
+        genericNextStep: "Reload the page to try again. If this keeps happening, contact your administrator.",
+        networkTitle: "We could not reach the server.",
+        networkNextStep: "Check your internet connection, then reload the page.",
+        reload: "Reload the page",
+        showDetails: "Show details",
+        code: "Error code {code}",
     },
 };
 

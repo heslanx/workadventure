@@ -21,6 +21,14 @@ const follow: BaseTranslation = {
         },
         yes: "Yes",
         no: "No",
+        buttons: {
+            follow: "Follow {leader}",
+            notNow: "Not now",
+            stopLeading: "Stop leading",
+            keepLeading: "Keep leading",
+            stopFollowing: "Stop following",
+            keepFollowing: "Keep following",
+        },
     },
     actionName: "Locate",
 };

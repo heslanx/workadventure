@@ -79,7 +79,8 @@ const menu: BaseTranslation = {
             cameraToggle: 'Mantenha a câmera ativa no "modo ausente"',
             microphoneToggle: 'Mantenha o microfone ativo no "modo ausente"',
         },
-        save: "Salvar",
+        save: "Salvar configurações",
+        saving: "Salvando configurações",
         otherSettings: "Outras configurações",
         fullscreen: "Tela cheia",
         notifications: "Notificações",
@@ -146,7 +147,7 @@ const menu: BaseTranslation = {
             warning:
                 "Redefinir o armazenamento de chaves removerá sua sessão atual e todos os usuários confiáveis. Você pode perder o acesso a algumas mensagens anteriores e não será mais reconhecido como um usuário confiável. Certifique-se de entender completamente as consequências desta ação antes de prosseguir.",
             cancel: "Cancelar",
-            continue: "Continuar",
+            continue: "Redefinir armazenamento de chaves",
         },
     },
     sub: {

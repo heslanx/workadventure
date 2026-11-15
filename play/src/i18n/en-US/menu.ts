@@ -21,7 +21,7 @@ const menu: BaseTranslation = {
         sendMessage: "Send message",
     },
     profile: {
-        login: "Sign in",
+        login: "Log in",
         logout: "Log out",
         helpAndTips: "Help & Tips",
     },
@@ -77,7 +77,8 @@ const menu: BaseTranslation = {
             cameraToggle: 'Keep camera active in "away mode"',
             microphoneToggle: 'Keep microphone active in "away mode"',
         },
-        save: "Save",
+        save: "Save settings",
+        saving: "Saving settings",
         otherSettings: "Other settings",
         fullscreen: "Fullscreen",
         notifications: "Notifications",
@@ -144,7 +145,7 @@ const menu: BaseTranslation = {
             warning:
                 "Resetting the key storage will remove your current session and all trusted users. You could lose access to some past messages, and you will no longer be recognized as a trusted user. Make sure you fully understand the consequences of this action before proceeding.",
             cancel: "Cancel",
-            continue: "Continue",
+            continue: "Reset key storage",
         },
     },
     sub: {

@@ -6,15 +6,20 @@ const notification: BaseTranslation = {
     mention: "{name} mentioned you",
     askToMuteMicrophone: "Can I mute your microphone?",
     askToMuteCamera: "Can I mute your camera?",
+    muteRequest: {
+        acceptMicrophone: "Mute my microphone",
+        acceptCamera: "Turn off my camera",
+        refuse: "Keep it on",
+    },
     microphoneMuted: "Your microphone was muted by a moderator",
     cameraMuted: "Your camera was muted by a moderator",
     givenTheFloor: "It's your turn to speak",
-    givenTheFloorEnableMicrophone: "It's your turn to speak — enable your microphone",
+    givenTheFloorEnableMicrophone: "It's your turn to speak. Turn on your microphone.",
     floorRevoked: "You no longer have the floor",
     floorGivenBack: "You gave back the floor",
     handLowered: "A moderator lowered your hand",
     removedFromConversation: "A moderator removed you from the conversation.",
-    actionFailed: "This action could not be completed",
+    actionFailed: "The change was not applied. Nothing changed for the other people. Try again in a moment.",
     announcement: "Announcement",
     help: {
         title: "Notifications access denied",
@@ -31,9 +36,12 @@ const notification: BaseTranslation = {
         screenAlt: "Allowing notifications from the address bar in Chrome",
     },
     addNewTag: "add a new tag: '{tag}'",
-    screenSharingError: "Cannot start screen sharing",
+    screenSharingError:
+        "Screen sharing did not start. Others cannot see your screen. Allow screen sharing in your browser and try again.",
     recordingStarted: "One person in the discussion has started a recording.",
     urlCopiedToClipboard: "Url copied to clipboard",
+    copyFailed: "Could not copy: the browser blocked the clipboard. Select the text and press Ctrl+C (Cmd+C on Mac).",
+    closeToast: "Close notification",
 };
 
 export default notification;

@@ -5,7 +5,7 @@ const companion: DeepPartial<Translation["companion"]> = {
     select: {
         title: "Selecione seu companheiro",
         any: "Sem companheiro",
-        continue: "Continuar",
+        continue: "Usar este companheiro",
     },
 };
 

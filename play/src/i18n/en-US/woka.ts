@@ -11,7 +11,7 @@ const woka: BaseTranslation = {
     },
     selectWoka: {
         title: "Select your WOKA",
-        continue: "Continue",
+        continue: "Use this WOKA",
         customize: "Build your WOKA",
         randomize: "Select Randomly",
     },

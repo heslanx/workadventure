@@ -4,7 +4,7 @@ const companion: BaseTranslation = {
     select: {
         title: "Select your companion",
         any: "No companion",
-        continue: "Continue",
+        continue: "Use this companion",
     },
 };
 

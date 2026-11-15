@@ -172,35 +172,35 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             label: "Abrir Vídeo do YouTube",
             description: "Abrir vídeo do YouTube no WorkAdventure ou como nova aba.",
             error: "Por favor, digite uma URL válida do YouTube",
-            disabled: "Integração do YouTube está desabilitada.",
+            disabled: "O YouTube está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir vídeo do YouTube",
         },
         googleDocs: {
             label: "Abrir Google Docs",
             description: "Abrir Google Docs no WorkAdventure ou como nova aba.",
             error: "Por favor, digite uma URL válida do Google Docs",
-            disabled: "Integração do Google Docs está desabilitada.",
+            disabled: "O Google Docs está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Google Docs",
         },
         klaxoon: {
             label: "Abrir Klaxoon",
             description: "Abrir Klaxoon no WorkAdventure ou como nova aba.",
             error: "Por favor, digite uma URL válida do Klaxoon",
-            disabled: "Integração do Klaxoon está desabilitada.",
+            disabled: "O Klaxoon está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Klaxoon",
         },
         googleSheets: {
             label: "Abrir Google Sheets",
             description: "Abrir Google Sheets no WorkAdventure ou como nova aba.",
             error: "Por favor, digite uma URL válida do Google Sheets",
-            disabled: "Integração do Google Sheets está desabilitada.",
+            disabled: "O Google Sheets está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Google Sheets",
         },
         googleSlides: {
             label: "Abrir Google Slides",
             description: "Abrir Google Slides no WorkAdventure ou como nova aba.",
             error: "Por favor, digite uma URL válida do Google Slides",
-            disabled: "Integração do Google Slides está desabilitada.",
+            disabled: "O Google Slides está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Google Slides",
         },
         eraser: {
@@ -208,14 +208,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             description: "Apagar todos os desenhos no mapa.",
             defaultButtonLabel: "Apagar",
             error: "Por favor, digite uma URL válida da Borracha",
-            disabled: "Integração da Borracha está desabilitada.",
+            disabled: "O Eraser está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Apagar desenhos",
         },
         googleDrive: {
             label: "Abrir Google Drive",
             description: "Abrir Google Drive no WorkAdventure ou como nova aba.",
             error: "Por favor, digite uma URL válida do Google Drive",
-            disabled: "Integração do Google Drive está desabilitada.",
+            disabled: "O Google Drive está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Google Drive",
         },
         restrictedRightsPropertyData: {
@@ -252,7 +252,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             description:
                 "Um quadro branco virtual de código aberto com estilo desenhado à mão. Colaborativo e criptografado de ponta a ponta.",
             error: "Por favor, digite uma URL válida do Excalidraw",
-            disabled: "Integração do Excalidraw está desabilitada.",
+            disabled: "O Excalidraw está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Excalidraw",
         },
         cards: {
@@ -260,14 +260,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             description:
                 "Solução mais rápida e fácil para compartilhar seu conhecimento rapidamente, online, no MS Teams e no celular.",
             error: "Por favor, digite uma URL válida do Cards",
-            disabled: "Integração do Cards está desabilitada.",
+            disabled: "O Cards está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir Cards",
         },
         tldraw: {
             label: "Abrir tldraw",
             description: "Um SDK de quadro branco online / tela infinita.",
             error: "Por favor, digite uma URL válida do tldraw",
-            disabled: "Integração do tldraw está desabilitada.",
+            disabled: "O tldraw está desligado neste mundo. Peça a um administrador para ligá-lo.",
             actionButtonLabel: "Abrir tldraw",
         },
         matrixRoomPropertyData: {
@@ -291,7 +291,8 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             label: "Abrir arquivo",
             description: "Abrir arquivo dentro do WorkAdventure.",
             error: "Por favor, insira um arquivo válido",
-            disabled: "A integração de arquivos está desabilitada.",
+            disabled:
+                "O compartilhamento de arquivos está desligado neste mundo. Peça a um administrador para ligá-lo.",
             fileUrlLabel: "URL do arquivo",
             uploadFile: {
                 title: "Adicionar seu arquivo",
@@ -472,7 +473,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                     title: "Por favor, digite um título",
                     save: {
                         success: "Configurações do megafone salvas",
-                        fail: "Erro ao salvar configurações do megafone",
+                        fail: "Configurações não salvas. Suas alterações continuam aqui. Tente de novo.",
                     },
                 },
             },
@@ -490,7 +491,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 error: {
                     save: {
                         success: "Configurações de gravação salvas",
-                        fail: "Erro ao salvar as configurações de gravação",
+                        fail: "Configurações não salvas. Suas alterações continuam aqui. Tente de novo.",
                     },
                 },
             },
@@ -518,7 +519,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 save: "Salvar",
                 confirm: "Confirmar",
                 success: "Configurações da sala salvas",
-                error: "Erro ao salvar configurações da sala",
+                error: "Configurações não salvas. Suas alterações continuam aqui. Tente de novo.",
             },
             confirmSave:
                 "Confirme que você quer salvar as alterações no mapa. Isso criará uma nova versão do mapa, desconectará todos os jogadores e recarregará o mapa para todos os jogadores.",
@@ -528,15 +529,20 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         title: "Explorar a sala",
         description:
             "Permite explorar a sala. Você poderá se mover pela sala e interagir com objetos. 2 modos estão disponíveis: 'Exploração' e 'Pesquisa'. O modo 'Pesquisa' proporá que você pesquise ou filtre entidades e áreas na sala. O modo 'Exploração' permitirá que você se mova livremente na sala.",
-        noEntitiesFound: "Nenhuma entidade encontrada na sala 🙅‍♂️",
+        noEntitiesFound: "Este mapa ainda não tem objetos. Adicione um com a ferramenta de objetos.",
+        noEntitiesMatch: "Nenhum objeto corresponde à busca. Limpe a busca para ver todos os objetos.",
         entitiesFound: "objeto{{s}} encontrado{{s}}",
-        noAreasFound: "Nenhuma área encontrada na sala 🙅‍♀️",
+        noAreasFound: "Este mapa ainda não tem áreas. Desenhe uma com a ferramenta de áreas.",
+        noAreasMatch: "Nenhuma área corresponde à busca. Limpe a busca para ver todas as áreas.",
         areasFound: "área{{s}} encontrada{{s}}",
+        entitiesList: "Lista de objetos",
+        areasList: "Lista de áreas",
         noDescriptionFound: "Nenhuma descrição encontrada 🫥",
         details: {
             close: "Fechar",
             moveToEntity: "Mover para entidade {name}",
             moveToArea: "Mover para área {name}",
+            show: "Mostrar detalhes de {name}",
             errorMovingToObject: "O objeto ainda não está acessível 🚫",
         },
         zoomIn: "Aproximar +",
@@ -545,12 +551,18 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
     },
     listRoom: {
         isFetching: "Lista de salas sendo buscada... ⤵️",
-        noRoomFound: "Nenhuma sala encontrada 🙅‍♂️",
+        noRoomFound: "Nenhum mapa corresponde à busca. Limpe a busca para ver todos os mapas.",
         items: "{countEntity} entidades / {countArea} áreas",
         close: "Fechar",
         movingToRoom: "Movendo para a sala: {roomNameSelected}... Vejo você em breve... 🫡",
         searchLabel: "Pesquisar uma sala",
         searchPlaceholder: "Digite palavras-chave...",
+        noRoomAvailable: "Ainda não há nenhuma sala disponível neste mundo.",
+        noRoomMatch: 'Nenhuma sala corresponde a "{search}".',
+        clearSearch: "Limpar busca",
+        fetchFailedTitle: "Não foi possível carregar a lista de salas",
+        fetchFailedDetail: "Você continua na sala atual. Verifique sua conexão e tente de novo.",
+        retryFetch: "Carregar salas de novo",
     },
 };
 

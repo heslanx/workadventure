@@ -4,8 +4,8 @@ import type { DeepPartial } from "../DeepPartial";
 const recording: DeepPartial<Translation["recording"]> = {
     refresh: "Atualizar",
     title: "Sua lista de gravações",
-    noRecordings: "Nenhuma gravação encontrada",
-    errorFetchingRecordings: "Ocorreu um erro ao buscar as gravações",
+    noRecordings: "Nenhuma gravação ainda. Comece uma gravação pela barra de ações e ela aparece aqui.",
+    errorFetchingRecordings: "Suas gravações não carregaram. Elas continuam salvas. Feche esta janela e abra de novo.",
     expireIn: "Expira em {days} dia{s}",
     expiresOn: "Expira em {date}",
     download: "Baixar",
@@ -22,10 +22,10 @@ const recording: DeepPartial<Translation["recording"]> = {
     notification: {
         deleteNotification: "Gravação excluída com sucesso",
         deleteFailedNotification: "Falha ao excluir gravação",
-        startFailedNotification: "Falha ao iniciar gravação",
-        stopFailedNotification: "Falha ao parar gravação",
+        startFailedNotification: "A gravação não começou. Nada foi gravado. Tente de novo.",
+        stopFailedNotification: "A gravação pode continuar ativa. Tente parar de novo.",
         recordingStarted: "{name} iniciou uma gravação.",
-        downloadFailedNotification: "Falha ao baixar gravação",
+        downloadFailedNotification: "O download não começou. A gravação continua salva. Tente de novo.",
         recordingComplete: "Gravação concluída",
         recordingIsInProgress: "Gravação em andamento",
         unexpectedlyStoppedNotification: "A gravação foi interrompida inesperadamente",
@@ -48,6 +48,7 @@ const recording: DeepPartial<Translation["recording"]> = {
         spacePicker: {
             megaphone: "Gravar megafone",
             discussion: "Gravar discussão",
+            recordedByOther: "Só uma gravação por vez aqui. Você pode iniciar a sua quando esta terminar.",
         },
     },
 };
