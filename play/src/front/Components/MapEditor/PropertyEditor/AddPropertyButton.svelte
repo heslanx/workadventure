@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
+    import { fade } from "../../../Utils/reducedMotion";
     import type { WorkAdventureComponent } from "../../../../types/component";
     import { createFloatingUiActions } from "../../../Utils/svelte-floatingui";
 

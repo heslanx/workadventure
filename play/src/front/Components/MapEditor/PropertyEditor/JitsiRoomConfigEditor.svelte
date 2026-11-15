@@ -73,7 +73,7 @@
 {#if isOpen}
     <div class="absolute flex items-center justify-center w-full h-full">
         <div
-            class="backdrop-blur-md text-white z-[2001] w-[90%] m-auto left-0 right-0 sm:max-w-[668px] rounded-3xl max-h-full overflow-y-auto pointer-events-auto"
+            class="backdrop-blur-md text-white z-[2001] w-[90%] m-auto left-0 right-0 sm:max-w-[668px] rounded-lg max-h-full overflow-y-auto pointer-events-auto"
         >
             <PopUpContainer fullContent={true}>
                 <div class="flex items-center justify-between">

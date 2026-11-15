@@ -44,7 +44,7 @@
     {#snippet content()}
         <span>
             <div>
-                <p class="text-sm text-white/50 px-2 m-0">{$LL.mapEditor.properties.start.infoAreaName()}</p>
+                <p class="text-sm text-white/60 px-2 m-0">{$LL.mapEditor.properties.start.infoAreaName()}</p>
 
                 <Select
                     id="startTypeSelector"

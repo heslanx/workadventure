@@ -1,7 +1,6 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
-
     import type { MegaphoneSettings } from "@workadventure/map-editor/src/types";
+    import { fade } from "../../../Utils/reducedMotion";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { LL } from "../../../../i18n/i18n-svelte";
     import Input from "../../Input/Input.svelte";
@@ -272,4 +271,4 @@
         </div>
     </div>
 {/if}
-<ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText="Saving" />
+<ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText={$LL.menu.settings.saving()} />

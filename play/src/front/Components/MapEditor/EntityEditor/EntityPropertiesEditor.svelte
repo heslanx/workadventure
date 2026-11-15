@@ -285,18 +285,17 @@
         <div class="header-container">
             <h3>{$LL.mapEditor.entityEditor.editing({ name: $mapEditorSelectedEntityStore.getPrefab().name })}</h3>
         </div>
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <p
+        <button
+            type="button"
             onclick={(event) => {
                 event.preventDefault();
                 backToSelectObject();
             }}
             class="flex flex-row items-center text-xs m-0"
         >
-            <IconArrowLeft font-size="12" class="cursor-pointer" />
-            <span class="ml-1 cursor-pointer">{$LL.mapEditor.entityEditor.itemPicker.backToSelectObject()}</span>
-        </p>
+            <IconArrowLeft font-size="12" />
+            <span class="ml-1">{$LL.mapEditor.entityEditor.itemPicker.backToSelectObject()}</span>
+        </button>
         <div class="properties-buttons flex flex-row m-2">
             <AddPropertyButtonWrapper
                 property="playAudio"

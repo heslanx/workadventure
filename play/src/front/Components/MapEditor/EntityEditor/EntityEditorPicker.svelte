@@ -313,7 +313,7 @@
         {:else}
             {#if pickedEntityVariant && pickedEntity}
                 <div
-                    class="fixed left-2 flex flex-row gap-2 items-center justify-center border-b-blue-50 p-4 mb-2 min-h-[200px] bg-white/20 backdrop-blur-xl rounded-2xl w-[calc(100%-16px)]"
+                    class="fixed left-2 flex flex-row gap-2 items-center justify-center border-b-blue-50 p-4 mb-2 min-h-[200px] bg-white/20 backdrop-blur-xl rounded-lg w-[calc(100%-16px)]"
                 >
                     {#if isEditingCustomEntity}
                         <CustomEntityEditionForm

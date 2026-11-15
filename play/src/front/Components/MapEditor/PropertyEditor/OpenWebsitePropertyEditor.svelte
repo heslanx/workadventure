@@ -669,19 +669,18 @@
 
                     {#if property.application === "googleDocs" || property.application === "googleSheets" || property.application === "googleSlides" || property.application === "klaxoon" || property.application === "googleDrive"}
                         <div class="flex flex-row items-center justify-center">
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-                            <img
-                                class="w-6 ms-4 items-center cursor-pointer"
-                                src={pickerSvg}
-                                alt={$LL.mapEditor.properties.openWebsite.openPickerSelector()}
-                                draggable="false"
+                            <button
+                                type="button"
+                                class="ms-4 flex items-center"
+                                aria-label={$LL.mapEditor.properties.openWebsite.openPickerSelector()}
                                 onclick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     openPicker();
                                 }}
-                            />
+                            >
+                                <img class="w-6" src={pickerSvg} alt="" draggable="false" />
+                            </button>
                             <Tooltip
                                 text={$LL.mapEditor.properties.openWebsite.openPickerSelector()}
                                 leftPosition="true"
@@ -689,19 +688,18 @@
                         </div>
                     {:else if property.application === "cards" || property.application === "eraser" || property.application === "excalidraw" || property.application === "tldraw"}
                         <div class="flex flex-row items-center justify-center">
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-                            <img
-                                class="w-6 ms-4 items-center cursor-pointer"
-                                src={pickerSvg}
-                                alt={`${$LL.mapEditor.properties.openWebsite.openApplication()} ${property.application}`}
-                                draggable="false"
+                            <button
+                                type="button"
+                                class="ms-4 flex items-center"
+                                aria-label={`${$LL.mapEditor.properties.openWebsite.openApplication()} ${property.application}`}
                                 onclick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     openApplicationWithoutPicker();
                                 }}
-                            />
+                            >
+                                <img class="w-6" src={pickerSvg} alt="" draggable="false" />
+                            </button>
                             <Tooltip
                                 text={`${$LL.mapEditor.properties.openWebsite.openApplication()} ${property.application}`}
                                 leftPosition="true"

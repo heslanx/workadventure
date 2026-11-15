@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { activateOnEnterOrSpace } from "../../../../Utils/activateOnEnterOrSpace";
     interface Props {
         collisionGrid: number[][];
         collisionGridHeight: number;
@@ -22,6 +23,11 @@
                     },
                 ]}
                 onclick={() => updateCollisionGrid(rowIndex, columnIndex)}
+                role="button"
+                tabindex="0"
+                onkeydown={(event) => activateOnEnterOrSpace(event, () => updateCollisionGrid(rowIndex, columnIndex))}
+                aria-pressed={collisionGrid[rowIndex][columnIndex] === 1}
+                aria-label={`${rowIndex + 1}, ${columnIndex + 1}`}
             ></div>
         {/each}
     {/each}

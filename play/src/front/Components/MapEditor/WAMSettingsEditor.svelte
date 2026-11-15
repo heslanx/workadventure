@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Component } from "svelte";
     import { onDestroy, onMount } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { EditorToolName } from "../../Phaser/Game/MapEditor/MapEditorModeManager";
@@ -12,6 +12,7 @@
     import { userIsAdminStore, userIsEditorStore } from "../../Stores/GameStore";
     import ButtonClose from "../Input/ButtonClose.svelte";
     import Button from "../UI/Button.svelte";
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import Megaphone from "./ConfigureMyRoom/Megaphone.svelte";
     import RecordingSettings from "./ConfigureMyRoom/RecordingSettings.svelte";
     import RoomSettings from "./ConfigureMyRoom/RoomSettings.svelte";
@@ -52,6 +53,10 @@
         }
     }
 
+    function selectMenuItem(menuItem: WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM) {
+        mapEditorWamSettingsEditorToolCurrentMenuItemStore.set(menuItem);
+    }
+
     function close() {
         mapEditorWamSettingsEditorToolCurrentMenuItemStore.set(undefined);
         gameManager.getCurrentGameScene().getMapEditorModeManager()?.equipTool(EditorToolName.EntityEditor);
@@ -60,7 +65,7 @@
 
 <div>
     <div
-        class="configure-my-room bg-contrast/80 overflow-hidden backdrop-blur-md flex flex-col justify-between absolute rounded-lg w-4/6 min-h-96 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-fit z-[700]"
+        class="configure-my-room bg-contrast/95 overflow-hidden backdrop-blur-md flex flex-col justify-between absolute rounded-lg w-4/6 min-h-96 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-fit z-[700]"
         in:fly={{ x: 100, duration: 250, delay: 200 }}
         out:fly={{ x: 100, duration: 200 }}
     >
@@ -71,44 +76,56 @@
             <div class="menu mx-auto flex flex-col relative">
                 <div class="sticky top-0 left-0 w-full">
                     <h3>{$LL.mapEditor.sideBar.configureMyRoom()}</h3>
-                    <ul>
+                    <ul role="tablist" aria-orientation="vertical">
                         <!-- check if the user has right to update room settings -->
                         {#if $userIsAdminStore}
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                             <li
+                                role="tab"
+                                tabindex="0"
+                                aria-selected={$mapEditorWamSettingsEditorToolCurrentMenuItemStore ===
+                                    WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.RoomSettings}
+                                class="cursor-pointer"
                                 class:selected={$mapEditorWamSettingsEditorToolCurrentMenuItemStore ===
                                     WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.RoomSettings}
-                                onclick={() =>
-                                    mapEditorWamSettingsEditorToolCurrentMenuItemStore.set(
-                                        WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.RoomSettings,
+                                onclick={() => selectMenuItem(WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.RoomSettings)}
+                                onkeydown={(event) =>
+                                    activateOnEnterOrSpace(event, () =>
+                                        selectMenuItem(WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.RoomSettings),
                                     )}
                             >
                                 <span>{$LL.mapEditor.settings.room.title()}</span>
                                 <IconChevronRight class="-mr-2" />
                             </li>
                         {/if}
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                         <li
+                            role="tab"
+                            tabindex="0"
+                            aria-selected={$mapEditorWamSettingsEditorToolCurrentMenuItemStore ===
+                                WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Megaphone}
+                            class="cursor-pointer"
                             class:selected={$mapEditorWamSettingsEditorToolCurrentMenuItemStore ===
                                 WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Megaphone}
-                            onclick={() =>
-                                mapEditorWamSettingsEditorToolCurrentMenuItemStore.set(
-                                    WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Megaphone,
+                            onclick={() => selectMenuItem(WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Megaphone)}
+                            onkeydown={(event) =>
+                                activateOnEnterOrSpace(event, () =>
+                                    selectMenuItem(WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Megaphone),
                                 )}
                         >
                             <span>{$LL.mapEditor.settings.megaphone.title()}</span>
                         </li>
                         {#if $userIsEditorStore || $userIsAdminStore}
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                             <li
+                                role="tab"
+                                tabindex="0"
+                                aria-selected={$mapEditorWamSettingsEditorToolCurrentMenuItemStore ===
+                                    WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Recording}
+                                class="cursor-pointer"
                                 class:selected={$mapEditorWamSettingsEditorToolCurrentMenuItemStore ===
                                     WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Recording}
-                                onclick={() =>
-                                    mapEditorWamSettingsEditorToolCurrentMenuItemStore.set(
-                                        WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Recording,
+                                onclick={() => selectMenuItem(WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Recording)}
+                                onkeydown={(event) =>
+                                    activateOnEnterOrSpace(event, () =>
+                                        selectMenuItem(WAM_SETTINGS_EDITOR_TOOL_MENU_ITEM.Recording),
                                     )}
                             >
                                 <span>{$LL.mapEditor.settings.recording.title()}</span>
@@ -118,7 +135,7 @@
                 </div>
             </div>
 
-            <div class="content space-y-6 space overflow-y-scroll">
+            <div class="content space-y-6 space overflow-y-scroll" role="tabpanel">
                 {#if $mapEditorWamSettingsEditorToolCurrentMenuItemStore !== undefined}
                     {@const SvelteComponent = getCurrentComponent()}
                     <SvelteComponent />

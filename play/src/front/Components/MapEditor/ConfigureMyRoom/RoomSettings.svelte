@@ -132,6 +132,6 @@
     </div>
 
     <div class="flex flex-row justify-center cursor-pointer">
-        <ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText="Saving" />
+        <ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText={$LL.menu.settings.saving()} />
     </div>
 </div>
