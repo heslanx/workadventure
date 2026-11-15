@@ -26,7 +26,7 @@ test.describe("Error pages @nowebkit", () => {
         await dismissPwaInstallScreenIfShown(page);
         await dismissDuplicateUserConnectedModalIfShown(page);
 
-        await expect(page.getByText("An error occurred")).toBeVisible();
+        await expect(page.locator(".errorScreen")).toBeVisible();
     });
 
     test("successfully displayed for not found WAM", async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe("Error pages @nowebkit", () => {
         await dismissPwaInstallScreenIfShown(page);
         await dismissDuplicateUserConnectedModalIfShown(page);
 
-        await expect(page.getByText("An error occurred")).toBeVisible();
+        await expect(page.locator(".errorScreen")).toBeVisible();
     });
 
     test("successfully displayed for resources not found", async ({ page }) => {
@@ -53,7 +53,8 @@ test.describe("Error pages @nowebkit", () => {
         await dismissPwaInstallScreenIfShown(page);
         await dismissDuplicateUserConnectedModalIfShown(page);
 
-        await expect(page.getByText("An error occurred")).toBeVisible();
+        await expect(page.locator(".errorScreen")).toBeVisible();
+        await page.getByText("Show details").click();
         await expect(page.getByText("NETWORK_ERROR")).toBeVisible();
         await expect(page.getByText("not_exists.png")).toBeVisible();
     });

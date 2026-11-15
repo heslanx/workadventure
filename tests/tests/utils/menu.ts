@@ -259,9 +259,9 @@ class Menu {
             .click();
     }
     async closeCameraPopUp(page: Page) {
-        if (await page.getByRole("button", { name: "Continue without webcam" }).isHidden()) return;
-        await page.getByRole("button", { name: "Continue without webcam" }).click();
-        await expect(page.getByRole("button", { name: "Continue without webcam" })).toBeVisible();
+        if (await page.getByRole("button", { name: "Continue without camera" }).isHidden()) return;
+        await page.getByRole("button", { name: "Continue without camera" }).click();
+        await expect(page.getByRole("button", { name: "Continue without camera" })).toBeVisible();
     }
 
     // Closes the "Configure my room" panel only — the map editor itself stays open.
