@@ -42,11 +42,16 @@ const matrixStaysLazy: Plugin = {
     },
 };
 
+function watchedDirGlob(relativeDir: string): string {
+    return fileURLToPath(new URL(relativeDir, import.meta.url)) + "/**";
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     // Load env file based on `mode` in the current working directory.
     // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
     const env = loadEnv(mode, process.cwd(), "");
+    const watchPolling = env.VITE_WATCH_POLLING === "true";
     const config = {
         // Relative base: every URL Vite emits resolves against the file that references it, so the build can be
         // served from any origin (the pusher itself, or an assets domain set at runtime with ASSETS_URL).
@@ -66,7 +71,22 @@ export default defineConfig(({ mode }) => {
                 host: "front.workadventure.localhost",
             },
             watch: {
-                ignored: ["./src/pusher"],
+                // Absolute globs: chokidar matches ignored paths against absolute ones, so "./src/pusher" ignored nothing.
+                // Vitest's watch mode reuses this watcher and must still see the pusher, hence the dev-only list.
+                ignored:
+                    mode === "test"
+                        ? []
+                        : [
+                              watchedDirGlob("./src/pusher"),
+                              // Polling stats every watched file, so it also skips public/ (a third of the files):
+                              // a new file there is served after a restart of Vite, an edited one at once.
+                              ...(watchPolling ? [watchedDirGlob("./public")] : []),
+                          ],
+                // Colima's mountInotify only forwards in-place writes; an editor that saves by renaming a temp file
+                // over the original never reaches the container. Polling catches those saves too, at a CPU cost.
+                ...(watchPolling
+                    ? { usePolling: true, interval: Number(env.VITE_WATCH_POLLING_INTERVAL) || 1000 }
+                    : {}),
             },
         },
         build: {
@@ -146,9 +166,11 @@ export default defineConfig(({ mode }) => {
         },
         optimizeDeps: {
             exclude: ["svelte-modals"],
-            esbuildOptions: {
-                define: {
-                    global: "globalThis",
+            rolldownOptions: {
+                transform: {
+                    define: {
+                        global: "globalThis",
+                    },
                 },
             },
         },
