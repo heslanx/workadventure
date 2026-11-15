@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { writable } from "svelte/store";
     import { onMount } from "svelte";
     import type { OpenWebsitePropertyData } from "@workadventure/map-editor";
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { LL } from "../../../i18n/i18n-svelte";
     import AreaToolImg from "../images/icon-tool-area.png";
     import EntityToolImg from "../images/icon-tool-entity.svg";

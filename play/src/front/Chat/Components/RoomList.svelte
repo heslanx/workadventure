@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { get } from "svelte/store";
 
     import { onDestroy, onMount, setContext } from "svelte";
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { warningMessageStore } from "../../Stores/ErrorStore";
     import LL, { locale } from "../../../i18n/i18n-svelte";
