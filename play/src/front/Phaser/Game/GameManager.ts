@@ -3,6 +3,7 @@ import { get, readonly, writable } from "svelte/store";
 import * as Sentry from "@sentry/svelte";
 import * as Phaser from "phaser";
 import { Deferred } from "@workadventure/shared-utils";
+import { asError } from "catch-unknown";
 import { TimeoutError } from "@workadventure/shared-utils/src/Abort/TimeoutError";
 import { connectionManager } from "../../Connection/ConnectionManager";
 import { localUserStore } from "../../Connection/LocalUserStore";
@@ -33,6 +34,10 @@ import { MATRIX_PUBLIC_URI } from "../../Enum/EnvironmentVariable";
 import { VoidChatConnection } from "../../Chat/Connection/VoidChatConnection";
 import { loginTokenErrorStore, isMatrixChatEnabledStore } from "../../Stores/ChatStore";
 import { initializeChatVisibilitySubscription } from "../../Chat/Stores/ChatStore";
+import {
+    chatConnectionFailureStore,
+    type ChatConnectionAttemptStatus,
+} from "../../Chat/Stores/ChatConnectionFailureStore";
 import { ABSOLUTE_PUSHER_URL } from "../../Enum/ComputedConst";
 import type { WokaData } from "../../Components/Woka/WokaTypes";
 import { generateRandomName } from "../../Utils/RandomNameGenerator";
@@ -58,6 +63,8 @@ export class GameManager {
     private matrixServerUrl: string | undefined = undefined;
     private chatConnectionPromise: Promise<ChatConnectionInterface> | undefined;
     private pendingChatConnectionPromise: Promise<ChatConnectionInterface> | undefined;
+    // Set when the last openChatConnection() fell back on a void connection because the Matrix code did not download.
+    private matrixChatLoadFailed = false;
     private matrixLoginTokenExchange: Promise<void> | undefined;
     private readonly _chatConnectionStore = writable<ChatConnectionInterface | undefined>(undefined);
     /**
@@ -68,6 +75,15 @@ export class GameManager {
         this._chatConnectionStore,
     );
     private chatVisibilitySubscription: Unsubscriber | undefined;
+    private chatConnectionStatusSubscription: Unsubscriber | undefined;
+    private readonly _chatConnectionAttemptStore = writable<ChatConnectionAttemptStatus>("connecting");
+    /**
+     * Whether opening the chat connection is under way, failed, or being retried. Until a connection object exists,
+     * this is the only thing the chat panel and the action bar can show.
+     */
+    public readonly chatConnectionAttemptStore: Readable<ChatConnectionAttemptStatus> = readonly(
+        this._chatConnectionAttemptStore,
+    );
 
     constructor() {
         this.playerName = localUserStore.getName();
@@ -439,11 +455,50 @@ export class GameManager {
             return alreadyRequested;
         }
 
-        this.pendingChatConnectionPromise = this.openChatConnection().finally(() => {
-            this.pendingChatConnectionPromise = undefined;
-        });
+        // A void connection is opened again on every call: once there is one, that is not a new attempt to show.
+        const previousAttempt = get(this._chatConnectionAttemptStore);
+        if (previousAttempt !== "ready") {
+            this._chatConnectionAttemptStore.set(previousAttempt === "failed" ? "retrying" : "connecting");
+        }
+        this.pendingChatConnectionPromise = this.openChatConnection()
+            .then(
+                (chatConnection) => {
+                    // The void stand-in keeps the proximity chat working, but the Matrix chat is missing: the panel
+                    // says so and offers Retry, which downloads the code again (a void connection is not memoised).
+                    if (this.matrixChatLoadFailed) {
+                        this._chatConnectionAttemptStore.set("failed");
+                        chatConnectionFailureStore.recordFailure();
+                        return chatConnection;
+                    }
+                    this._chatConnectionAttemptStore.set("ready");
+                    // A Matrix connection reports its recovery when it syncs (see openChatConnection()); a void one
+                    // has nothing left to wait for.
+                    if (!get(isMatrixChatEnabledStore)) {
+                        chatConnectionFailureStore.recordRecovery();
+                    }
+                    return chatConnection;
+                },
+                (error: unknown) => {
+                    // Each caller logs and reports the rejection; this only makes it visible in the chat panel.
+                    this._chatConnectionAttemptStore.set("failed");
+                    chatConnectionFailureStore.recordFailure();
+                    throw error;
+                },
+            )
+            .finally(() => {
+                this.pendingChatConnectionPromise = undefined;
+            });
 
         return this.pendingChatConnectionPromise;
+    }
+
+    /** Runs the same connection path again, for the Retry button of the chat panel. */
+    public retryChatConnection(): void {
+        this.getChatConnection().catch((e: unknown) => {
+            const error = asError(e);
+            console.error("Retrying the chat connection failed", error);
+            Sentry.captureException(error);
+        });
     }
 
     /**
@@ -474,6 +529,7 @@ export class GameManager {
 
     private async openChatConnection(): Promise<ChatConnectionInterface> {
         const matrixServerUrl = this.getMatrixServerUrl() ?? MATRIX_PUBLIC_URI;
+        this.matrixChatLoadFailed = false;
 
         // The chat setting is checked *before* the client is built, on purpose. Opening a Matrix session on a
         // room where the chat is disabled used to mean a full connection and initial sync, immediately
@@ -494,9 +550,11 @@ export class GameManager {
             ]);
         } catch (e) {
             // A network error, or a chunk removed by a newer deployment. The world works without the chat, and
-            // a void connection is not memoised, so the next call tries again.
+            // a void connection is not memoised, so the next call tries again. getChatConnection() marks the
+            // attempt failed, so the chat panel shows it.
             console.error("Could not load the Matrix chat", e);
             Sentry.captureException(e);
+            this.matrixChatLoadFailed = true;
             return this.useVoidChatConnection();
         }
         const [{ MatrixClientWrapper, MissingMatrixCredentialsError }, { MatrixChatConnection }] = matrixModules;
@@ -519,6 +577,14 @@ export class GameManager {
 
         this.chatConnectionPromise = matrixChatConnection.init().then(() => matrixChatConnection);
         isMatrixChatEnabledStore.set(true);
+        this.chatConnectionStatusSubscription?.();
+        this.chatConnectionStatusSubscription = matrixChatConnection.connectionStatus.subscribe((status) => {
+            if (status === "ON_ERROR") {
+                chatConnectionFailureStore.recordFailure();
+            } else if (status === "ONLINE") {
+                chatConnectionFailureStore.recordRecovery();
+            }
+        });
 
         return this.chatConnectionPromise;
     }
@@ -568,6 +634,10 @@ export class GameManager {
             if (this.chatVisibilitySubscription) {
                 this.chatVisibilitySubscription();
             }
+            this.chatConnectionStatusSubscription?.();
+            this.chatConnectionStatusSubscription = undefined;
+            chatConnectionFailureStore.dismiss();
+            this._chatConnectionAttemptStore.set("connecting");
             this.clearChatDataFromLocalStorage();
             this._chatConnectionStore.set(undefined);
             this.chatConnectionPromise = undefined;

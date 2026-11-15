@@ -4,6 +4,7 @@ import { cameraDetachedStore } from "../../Stores/CameraStore";
 import { Easing } from "../../types";
 import { HtmlUtils } from "../../WebRtc/HtmlUtils";
 import type { Box } from "../../WebRtc/LayoutManager";
+import { motionDuration } from "../../Utils/reducedMotion";
 import type { Character } from "../Entity/Character";
 import { hasMovedEventName, type Player } from "../Player/Player";
 import type { WaScaleManager, WaScaleManagerFocusTarget } from "../Services/WaScaleManager";
@@ -242,9 +243,10 @@ export class CameraManager extends EventEmitter {
 
     private animateToFocus(
         target: Character | { x: number; y: number },
-        duration: number,
+        requestedDuration: number,
         callback?: () => void,
     ): void {
+        const duration = motionDuration(requestedDuration);
         this.stopWalkFraming();
         // The focus tween moves explorerFocusOn itself: let a running cursor zoom finish around the centre instead.
         this.cursorZoomAnchor = undefined;
@@ -497,7 +499,7 @@ export class CameraManager extends EventEmitter {
         this.cameraOffsetCurrentTween = this.scene.tweens.addCounter({
             from: 0,
             to: 1,
-            duration: 500,
+            duration: motionDuration(500),
             ease: Easing.QuadEaseOut,
             onUpdate: (tween) => {
                 const progress = tween.getValue() ?? 0;
@@ -705,10 +707,13 @@ export class CameraManager extends EventEmitter {
         const { from } = framing;
         if (framing.elapsed === 0) {
             const travel = Math.hypot(target.x - from.x, target.y - from.y) * this.scene.scale.zoom * this.camera.zoom;
-            framing.duration = Math.min(WALK_BLEND_MIN_MS + travel * WALK_BLEND_MS_PER_SCREEN_PIXEL, WALK_BLEND_MAX_MS);
+            framing.duration = motionDuration(
+                Math.min(WALK_BLEND_MIN_MS + travel * WALK_BLEND_MS_PER_SCREEN_PIXEL, WALK_BLEND_MAX_MS),
+            );
         }
         framing.elapsed += delta;
-        const blend = Phaser.Math.Easing.Sine.InOut(Math.min(framing.elapsed / framing.duration, 1));
+        const progress = framing.duration > 0 ? Math.min(framing.elapsed / framing.duration, 1) : 1;
+        const blend = Phaser.Math.Easing.Sine.InOut(progress);
         // The position and the zoom move on the same blend, so neither runs ahead of the other. The zoom blends in
         // ratios, so zooming out and back in feel alike.
         this.explorerFocusOn.x = from.x + (target.x - from.x) * blend;
@@ -913,10 +918,11 @@ export class CameraManager extends EventEmitter {
 
     private animateToZoomLevel(
         targetZoomModifier: number,
-        duration: number,
+        requestedDuration: number,
         callback?: () => void,
         anchor?: CursorZoomAnchor,
     ): void {
+        const duration = motionDuration(requestedDuration);
         this.stopWalkFraming();
         this.zoomAnimation?.onInterrupt();
         const applyZoom = (value: number, animating: boolean): void => {
@@ -1063,17 +1069,18 @@ export class CameraManager extends EventEmitter {
 
         const currentZoomModifier = this.waScaleManager.zoomModifier;
         this.smoothButtonZoomElapsedMs += delta;
+        const smoothZoomDuration = motionDuration(SMOOTH_BUTTON_ZOOM_DURATION);
         const nextZoomModifier = getSmoothButtonZoomModifier(
             startZoomModifier,
             targetZoomModifier,
             this.smoothButtonZoomElapsedMs,
-            SMOOTH_BUTTON_ZOOM_DURATION,
+            smoothZoomDuration,
         );
 
         this.updateButtonZoomModifier(nextZoomModifier, true);
 
         if (
-            this.smoothButtonZoomElapsedMs >= SMOOTH_BUTTON_ZOOM_DURATION ||
+            this.smoothButtonZoomElapsedMs >= smoothZoomDuration ||
             Math.abs(this.waScaleManager.zoomModifier - targetZoomModifier) <= SMOOTH_BUTTON_ZOOM_TARGET_EPSILON ||
             this.isButtonZoomLimitReached(currentZoomModifier, targetZoomModifier)
         ) {
