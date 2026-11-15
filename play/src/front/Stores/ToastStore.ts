@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { ConcatenateMapStore, MapStore } from "@workadventure/store-utils";
-import { derived } from "svelte/store";
+import { derived, writable } from "svelte/store";
 import type { Readable, Unsubscriber } from "svelte/store";
 import type { WorkAdventureComponent, WorkAdventureComponentProps } from "../../types/component";
 
@@ -28,6 +28,8 @@ export function createToastStore(initialSources: ToastSourceDefinition[] = []) {
     const innerStore = new MapStore<string, Toast>();
     const combinedStore = new ConcatenateMapStore<string, Toast>();
     const sourceOptions = new Map<string, ToastSourceOptions>();
+    // A source toast closed by the user stays hidden until its source emits a different value.
+    const sourceDismissers = new Map<string, () => void>();
 
     combinedStore.addStore(innerStore);
 
@@ -49,9 +51,17 @@ export function createToastStore(initialSources: ToastSourceDefinition[] = []) {
             uuid?: string,
         ): Unsubscriber => {
             const toastUuid = uuid ?? v4();
-            const sourceStore = derived(source, (toastInput) => {
+            // Bumped on dismiss so the derived store recomputes; the dismissed value resets when the source clears.
+            const dismissTick = writable(0);
+            let dismissedInput: ToastInput | undefined;
+            let currentInput: ToastInput | undefined;
+            const sourceStore = derived([source, dismissTick], ([toastInput]) => {
+                currentInput = toastInput;
+                if (toastInput === undefined) {
+                    dismissedInput = undefined;
+                }
                 const toasts = new Map<string, Toast>();
-                if (toastInput !== undefined) {
+                if (toastInput !== undefined && toastInput !== dismissedInput) {
                     toasts.set(toastUuid, {
                         component: toastInput.component,
                         props: {
@@ -66,15 +76,21 @@ export function createToastStore(initialSources: ToastSourceDefinition[] = []) {
             if (options !== undefined) {
                 sourceOptions.set(toastUuid, options);
             }
+            sourceDismissers.set(toastUuid, () => {
+                dismissedInput = currentInput;
+                dismissTick.update((tick) => tick + 1);
+            });
             combinedStore.addStore(sourceStore);
 
             return () => {
                 combinedStore.removeStore(sourceStore);
                 sourceOptions.delete(toastUuid);
+                sourceDismissers.delete(toastUuid);
             };
         },
         removeToast: (uuid: string): void => {
             innerStore.delete(uuid);
+            sourceDismissers.get(uuid)?.();
             sourceOptions.get(uuid)?.onRemove?.();
         },
     };
