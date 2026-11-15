@@ -84,14 +84,14 @@
     // The app's look (ActionBarButton, the desktop meeting bar), with the theme's colors. Rings, not outlines:
     // the app removes the outline of a focused button.
     const baseButton =
-        "inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-[6px] p-1.5 text-neutral-100 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white";
+        "inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-sm p-1.5 text-neutral-100 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white";
     const button = `${baseButton} aria-pressed:bg-secondary aria-pressed:hover:bg-secondary-600`;
     const separator = "mx-0.5 h-6 w-px bg-neutral-800";
 </script>
 
 <div
     class={[
-        "pointer-events-auto absolute left-1/2 z-[255] flex w-max max-w-[calc(100%-24px)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-md border border-solid border-neutral-800 bg-contrast/90 p-2 text-neutral-100 shadow-[0_4px_16px_#0006] backdrop-blur",
+        "pointer-events-auto absolute left-1/2 z-[255] flex w-max max-w-[calc(100%-24px)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-md border border-solid border-neutral-800 bg-contrast/90 p-2 text-neutral-100 shadow-lg backdrop-blur",
         placement === "top" ? "top-3" : "bottom-3",
     ]}
     data-testid="annotation-toolbar"

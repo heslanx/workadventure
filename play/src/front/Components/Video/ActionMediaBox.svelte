@@ -11,6 +11,8 @@
     import type { SpaceUserExtended } from "../../Space/SpaceInterface";
     import { openModerationModal } from "../Moderation/openModerationModal";
     import RangeSlider from "../Input/RangeSlider.svelte";
+    import { toastStore } from "../../Stores/ToastStoreSingleton";
+    import TextToast from "../Toasts/TextToast.svelte";
     import type { StreamCategory } from "../../Space/Streamable";
     import { IconAlertTriangle, IconUser, IconMute, IconUnMute, IconMicrophone, IconMicrophoneOff } from "@wa-icons";
 
@@ -45,6 +47,10 @@
 
     let moreActionOpened = $state(false);
 
+    function notifyMuted(message: string) {
+        toastStore.addToast(TextToast, { message, theme: "success" });
+    }
+
     function muteAudio(spaceUser: SpaceUserExtended) {
         analyticsClient.trackAdminEvent("meeting.microphone.muted", meetingOf(spaceUser.space));
         spaceUser.emitPrivateEvent({
@@ -53,6 +59,12 @@
                 force: false, // This is going to be overwritten by the processor of muteAudio in the back
             },
         });
+        // No API turns someone else's microphone back on: confirm who was muted (or asked) instead of an Undo.
+        notifyMuted(
+            isModerator
+                ? $LL.camera.menu.mutedAudioNotice({ name: spaceUser.name })
+                : $LL.camera.menu.askedMuteAudioNotice({ name: spaceUser.name }),
+        );
         close();
     }
 
@@ -73,6 +85,11 @@
                 force: false, // This is going to be overwritten by the processor of muteVideo in the back
             },
         });
+        notifyMuted(
+            isModerator
+                ? $LL.camera.menu.mutedVideoNotice({ name: spaceUser.name })
+                : $LL.camera.menu.askedMuteVideoNotice({ name: spaceUser.name }),
+        );
         close();
     }
 
@@ -126,7 +143,7 @@
 </script>
 
 <div
-    class="flex flex-col p-1 w-48 bg-contrast/80 backdrop-blur-md rounded-md max-h-max z-50 cursor-pointer select-none"
+    class="flex flex-col p-1 w-48 bg-contrast/95 backdrop-blur-md rounded-md max-h-max z-50 cursor-pointer select-none"
     class:mt-[0.2rem]={!videoEnabled}
     onclick={(event) => {
         event.preventDefault();
@@ -136,7 +153,11 @@
     }}
     role="button"
     tabindex="0"
-    onkeydown={() => toggleActionMenu(!moreActionOpened)}
+    onkeydown={(event) => {
+        if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        toggleActionMenu(!moreActionOpened);
+    }}
     onmouseleave={() => close()}
 >
     <!-- Volume control -->
@@ -185,27 +206,41 @@
     <!-- Mute audio user -->
     {#if (isModerator || $canAskToMuteAudioOrTurnOffVideo) && !isScreenSharing}
         <button
-            class="action-button mute-audio-user flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white disabled:opacity-50"
+            class="action-button mute-audio-user flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             onclick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
+                // Already muted: the row says so (below) and the click does nothing more.
+                if (!$isMicrophoneEnabled) return;
                 muteAudio(spaceUser);
             }}
-            disabled={!$isMicrophoneEnabled}
+            aria-disabled={!$isMicrophoneEnabled || undefined}
         >
-            <img src={MicrophoneCloseSvg} class="w-4 h-4" alt="" draggable="false" />
-            {#if isModerator}
-                {$LL.camera.menu.muteAudioUser()}
-            {:else}
-                {$LL.camera.menu.askToMuteAudioUser()}
-            {/if}
+            <img
+                src={MicrophoneCloseSvg}
+                class="w-4 h-4 {$isMicrophoneEnabled ? '' : 'opacity-50'}"
+                alt=""
+                draggable="false"
+            />
+            <span class="flex flex-col">
+                <span class={$isMicrophoneEnabled ? "" : "opacity-50"}>
+                    {#if isModerator}
+                        {$LL.camera.menu.muteAudioUser()}
+                    {:else}
+                        {$LL.camera.menu.askToMuteAudioUser()}
+                    {/if}
+                </span>
+                {#if !$isMicrophoneEnabled}
+                    <span class="text-xs text-white/80">{$LL.camera.menu.alreadyMuted()}</span>
+                {/if}
+            </span>
         </button>
     {/if}
 
     <!-- Give the floor (to a user who raised their hand) -->
     {#if canModerateFloor && !isScreenSharing && isHandRaised && !$hasFloor}
         <button
-            class="action-button give-floor-user flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
+            class="action-button give-floor-user flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             data-testid="give-floor-user"
             onclick={(event) => {
                 event.preventDefault();
@@ -221,7 +256,7 @@
     <!-- Revoke the floor (take it back from a current speaker) -->
     {#if canModerateFloor && !isScreenSharing && $hasFloor}
         <button
-            class="action-button revoke-floor-user flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
+            class="action-button revoke-floor-user flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             data-testid="revoke-floor-user"
             onclick={(event) => {
                 event.preventDefault();
@@ -237,7 +272,7 @@
     <!-- Mute audio every body -->
     {#if isModerator}
         <button
-            class="action-button flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
+            class="action-button flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             onclick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -253,27 +288,36 @@
     {#if (isModerator || $canAskToMuteAudioOrTurnOffVideo) && !isScreenSharing}
         <button
             id="mute-video-user"
-            class="action-button flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white disabled:opacity-50"
+            class="action-button flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             onclick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
+                // Video already off: the row says so (below) and the click does nothing more.
+                if (!$isVideoEnabled) return;
                 muteVideo(spaceUser);
             }}
-            disabled={!$isVideoEnabled}
+            aria-disabled={!$isVideoEnabled || undefined}
         >
-            <img src={NoVideoSvg} class="w-4 h-4" alt="" draggable="false" />
-            {#if isModerator}
-                {$LL.camera.menu.muteVideoUser()}
-            {:else}
-                {$LL.camera.menu.askToMuteVideoUser()}
-            {/if}
+            <img src={NoVideoSvg} class="w-4 h-4 {$isVideoEnabled ? '' : 'opacity-50'}" alt="" draggable="false" />
+            <span class="flex flex-col">
+                <span class={$isVideoEnabled ? "" : "opacity-50"}>
+                    {#if isModerator}
+                        {$LL.camera.menu.muteVideoUser()}
+                    {:else}
+                        {$LL.camera.menu.askToMuteVideoUser()}
+                    {/if}
+                </span>
+                {#if !$isVideoEnabled}
+                    <span class="text-xs text-white/80">{$LL.camera.menu.videoAlreadyOff()}</span>
+                {/if}
+            </span>
         </button>
     {/if}
 
     <!-- Mute video every body -->
     {#if isModerator}
         <button
-            class="action-button flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
+            class="action-button flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             onclick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -302,7 +346,7 @@
     <!-- Show visit card-->
     {#if spaceUser.visitCardUrl}
         <button
-            class="action-button flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
+            class="action-button flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
             onclick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -315,7 +359,7 @@
     {/if}
     <!-- Block or report user -->
     <button
-        class="action-button flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
+        class="action-button flex gap-2 items-center hover:bg-white/10 aria-disabled:hover:bg-transparent aria-disabled:cursor-not-allowed m-0 p-2 w-full text-sm rounded leading-4 text-left text-white"
         onclick={(event) => {
             event.preventDefault();
             event.stopPropagation();

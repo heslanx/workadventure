@@ -6,6 +6,7 @@
         showDesktopCapturerSourcePicker,
     } from "../../Stores/ScreenSharingStore";
     import { LL } from "../../../i18n/i18n-svelte";
+    import { focusTrap } from "../../Utils/focusTrap";
     import { getDesktopCapturerSourceKind, type DesktopCapturerSourceKind } from "./DesktopCapturerSourcePickerPolicy";
 
     let desktopCapturerSources: DesktopCapturerSource[] = $state([]);
@@ -118,6 +119,15 @@
     function stopPropagation(event: Event) {
         event.stopPropagation();
     }
+
+    // Escape cancels the picker like the Cancel button; other keys stay inside the dialog (not sent to the game).
+    function onDialogKeydown(event: KeyboardEvent) {
+        event.stopPropagation();
+        if (event.key === "Escape") {
+            event.preventDefault();
+            cancel();
+        }
+    }
 </script>
 
 <div class="source-picker-backdrop" role="presentation" onclick={cancel}>
@@ -127,8 +137,9 @@
         aria-modal="true"
         aria-labelledby="desktop-source-picker-title"
         tabindex="-1"
+        use:focusTrap
         onclick={stopPropagation}
-        onkeydown={stopPropagation}
+        onkeydown={onDialogKeydown}
     >
         <header class="source-picker-header">
             <div>
@@ -224,7 +235,7 @@
         background: #111827;
         border: 1px solid rgb(255 255 255 / 14%);
         border-radius: 8px;
-        box-shadow: 0 24px 80px rgb(0 0 0 / 45%);
+        box-shadow: var(--shadow-darkLg);
     }
 
     .source-picker-header {

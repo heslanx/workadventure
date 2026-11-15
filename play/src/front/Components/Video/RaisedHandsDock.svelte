@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import { visibleRaisedHandSectionsStore } from "../../Stores/RaisedHandsAdminVisibleStore";
     import Badge from "../UI/Badge.svelte";

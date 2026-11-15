@@ -163,7 +163,7 @@
     const iconButton =
         "relative inline-flex size-8 shrink-0 items-center justify-center rounded p-0 text-white transition-colors [-webkit-app-region:no-drag] [&>svg]:size-4.5";
     const activeButton = "bg-secondary hover:bg-secondary-600";
-    const textButton = "shrink-0 rounded-md px-3 py-1 text-xs font-bold text-white";
+    const textButton = "shrink-0 rounded px-3 py-1 text-xs font-bold text-white";
     const navBadge =
         "absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xxs leading-none font-bold";
     const count =
@@ -183,7 +183,7 @@
         return [
             "absolute inset-y-0 left-0 z-20 flex flex-col bg-contrast-900 transition-transform duration-200",
             open ? "translate-x-0" : "-translate-x-full",
-            inMeeting ? "w-[min(320px,66%)] border-r border-white/10 shadow-xl" : "w-full",
+            inMeeting ? "w-[min(320px,66%)] border-r border-white/10 shadow-lg" : "w-full",
         ].join(" ");
     }
 </script>
@@ -193,7 +193,7 @@
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        stroke-width="1.8"
+        stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
         aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg
@@ -230,7 +230,7 @@
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="1.8"
+                    stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     aria-hidden="true"
@@ -253,7 +253,7 @@
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="1.8"
+                    stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     aria-hidden="true"
@@ -270,14 +270,16 @@
                     class="{iconButton} {view === 'agenda' ? activeButton : 'hover:bg-white/10'}"
                     type="button"
                     title={$LL.desktop.miniWindow.today()}
-                    aria-label={$LL.desktop.miniWindow.today()}
+                    aria-label={soonMeeting
+                        ? $LL.desktop.miniWindow.todayWithSoonMeeting({ title: soonMeeting.title })
+                        : $LL.desktop.miniWindow.today()}
                     onclick={() => toggleView("agenda")}
                 >
                     <svg
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         aria-hidden="true"
@@ -315,7 +317,7 @@
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="1.8"
+                    stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     aria-hidden="true"
@@ -370,7 +372,7 @@
 
     {#if statusMenuOpen}
         <div
-            class="absolute top-[46px] right-2.5 z-40 min-w-44 rounded-md border border-solid border-white/15 bg-contrast p-1.5 shadow-xl"
+            class="absolute top-[46px] right-2.5 z-40 min-w-44 rounded-md border border-solid border-white/15 bg-contrast p-1.5 shadow-lg"
             role="menu"
         >
             {#each statusChoices as choice (choice.status)}
@@ -397,7 +399,7 @@
                 </button>
             {/each}
             {#if media.statusLocked}
-                <div class="px-2 pt-2 pb-1 text-xxs text-white/40">{$LL.desktop.miniWindow.statusLocked()}</div>
+                <div class="px-2 pt-2 pb-1 text-xxs text-white/60">{$LL.desktop.miniWindow.statusLocked()}</div>
             {/if}
         </div>
     {/if}
@@ -426,8 +428,8 @@
                 ></span
             >
             <div class="flex min-w-0 flex-1 flex-col">
-                <span class="truncate font-bold">{soonMeeting.title}</span>
-                <span class="text-xxs {soonMeeting.live ? 'text-success' : 'text-warning'}">{soonMeeting.detail}</span>
+                <span class="truncate text-sm font-bold">{soonMeeting.title}</span>
+                <span class="text-xs {soonMeeting.live ? 'text-success' : 'text-warning'}">{soonMeeting.detail}</span>
             </div>
             {#if soonMeeting.joinable}
                 {@const meeting = soonMeeting}
@@ -494,9 +496,13 @@
                                 : user.name || $LL.desktop.miniWindow.someone()}</span
                         >
                         {#if user.isSelf}
-                            <span class="shrink-0 text-xxs text-white/40">{$LL.desktop.miniWindow.youChip()}</span>
+                            <span class="shrink-0 text-xxs text-white/60">{$LL.desktop.miniWindow.youChip()}</span>
                         {:else}
-                            <div class="hidden shrink-0 gap-0.5 group-hover:flex">
+                            <!-- Collapsed rather than display:none, so the buttons stay in the Tab order; focus or a
+                                 touch screen opens them like hover does. -->
+                            <div
+                                class="flex w-0 shrink-0 gap-0.5 overflow-hidden group-hover:w-auto group-focus-within:w-auto [@media(pointer:coarse)]:w-auto"
+                            >
                                 <button
                                     class={rowButton}
                                     type="button"
@@ -564,7 +570,7 @@
                 {/each}
             </div>
             {#if users.length === 0}
-                <div class="px-4 py-5 text-center text-white/40">{$LL.desktop.miniWindow.noOneAround()}</div>
+                <div class="px-4 py-5 text-center text-white/60">{$LL.desktop.miniWindow.noOneAround()}</div>
             {/if}
         </section>
 
@@ -616,7 +622,7 @@
                                 <div class="truncate font-bold">
                                     {conversation.name || $LL.desktop.miniWindow.conversation()}
                                 </div>
-                                {#if conversation.preview}<div class="truncate text-xxs text-white/40">
+                                {#if conversation.preview}<div class="truncate text-xxs text-white/60">
                                         {conversation.preview}
                                     </div>{/if}
                             </div>
@@ -628,6 +634,10 @@
                             {:else if conversation.unreadCount > 0}
                                 <span
                                     class="size-2.5 shrink-0 rounded-full bg-success"
+                                    role="img"
+                                    aria-label={conversation.unreadCount > 1
+                                        ? $LL.desktop.miniWindow.unreadMessages({ count: conversation.unreadCount })
+                                        : $LL.desktop.miniWindow.unreadMessage()}
                                     title={conversation.unreadCount > 1
                                         ? $LL.desktop.miniWindow.unreadMessages({ count: conversation.unreadCount })
                                         : $LL.desktop.miniWindow.unreadMessage()}
@@ -637,7 +647,7 @@
                     {/each}
                 </div>
                 {#if $conversations.length === 0}
-                    <div class="px-4 py-5 text-center text-white/40">
+                    <div class="px-4 py-5 text-center text-white/60">
                         {$chatStatus === "connecting"
                             ? $LL.desktop.miniWindow.connectingChat()
                             : $chatStatus === "unavailable"
@@ -659,7 +669,7 @@
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="1.8"
+                                stroke-width="2"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 aria-hidden="true"><path d="M15 6l-6 6l6 6" /></svg
@@ -681,7 +691,7 @@
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
-                                    stroke-width="1.8"
+                                    stroke-width="2"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     aria-hidden="true"
@@ -708,7 +718,7 @@
                     {#if agenda.meetings}
                         {@const nextIndex = agenda.meetings[0]?.live ? 1 : 0}
                         <div
-                            class="flex items-center gap-1.5 px-1.5 pt-2.5 pb-1 text-xxs font-bold tracking-wide text-white/40 uppercase"
+                            class="flex items-center gap-1.5 px-1.5 pt-2.5 pb-1 text-xxs font-bold tracking-wide text-white/60 uppercase"
                         >
                             {$LL.desktop.miniWindow.meetings()}
                         </div>
@@ -728,7 +738,7 @@
                                 ></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="truncate font-bold">{meeting.title}</div>
-                                    <div class="truncate text-xxs text-white/40">{meeting.detail}</div>
+                                    <div class="truncate text-xxs text-white/60">{meeting.detail}</div>
                                 </div>
                                 {#if meeting.joinable}
                                     <button
@@ -741,7 +751,7 @@
                                 {/if}
                             </div>
                         {:else}
-                            <div class="px-2 pt-1 pb-1.5 text-white/40">{$LL.desktop.miniWindow.noMoreMeetings()}</div>
+                            <div class="px-2 pt-1 pb-1.5 text-white/60">{$LL.desktop.miniWindow.noMoreMeetings()}</div>
                         {/each}
                         <button
                             class="mb-1.5 flex items-center gap-1.5 rounded px-2 py-1.5 font-bold text-secondary-300 hover:bg-white/5"
@@ -752,7 +762,7 @@
                     {/if}
                     {#if agenda.tasks}
                         <div
-                            class="flex items-center gap-1.5 px-1.5 pt-2.5 pb-1 text-xxs font-bold tracking-wide text-white/40 uppercase"
+                            class="flex items-center gap-1.5 px-1.5 pt-2.5 pb-1 text-xxs font-bold tracking-wide text-white/60 uppercase"
                         >
                             {$LL.desktop.miniWindow.tasks()}
                             {#if agenda.tasks.open > 0}<span class={count}>{agenda.tasks.open}</span>{/if}
@@ -766,7 +776,7 @@
                                 ></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="truncate font-bold">{task.title}</div>
-                                    <div class="truncate text-xxs text-white/40">{task.list}</div>
+                                    <div class="truncate text-xxs text-white/60">{task.list}</div>
                                 </div>
                                 {#if task.due}<span
                                         class="shrink-0 rounded-full px-2 py-0.5 text-xxs font-bold {due[task.urgency]}"
@@ -774,7 +784,7 @@
                                     >{/if}
                             </div>
                         {:else}
-                            <div class="px-2 pt-1 pb-1.5 text-white/40">{$LL.desktop.miniWindow.noTasks()}</div>
+                            <div class="px-2 pt-1 pb-1.5 text-white/60">{$LL.desktop.miniWindow.noTasks()}</div>
                         {/each}
                         <button
                             class="mb-1.5 flex items-center gap-1.5 rounded px-2 py-1.5 font-bold text-secondary-300 hover:bg-white/5"

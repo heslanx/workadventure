@@ -513,7 +513,7 @@
     </div>
     {#if pipDockLocalCamera}
         <div
-            class="pointer-events-auto fixed bottom-20 right-2 z-30 aspect-video w-40 max-w-[14rem] min-w-[8.75rem] overflow-hidden rounded-lg shadow-xl"
+            class="pointer-events-auto fixed bottom-20 right-2 z-30 aspect-video w-40 max-w-[14rem] min-w-[8.75rem] overflow-hidden rounded-lg shadow-lg"
             data-testid="pip-local-camera-overlay"
         >
             <MediaBox videoBox={$myCameraPeerStore} />

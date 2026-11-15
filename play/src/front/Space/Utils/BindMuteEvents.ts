@@ -49,6 +49,10 @@ function displayMuteDialog(event: PrivateEvents["muteAudio"] | PrivateEvents["mu
         MuteDialogPopup,
         {
             message,
+            acceptLabel:
+                event.$case === "muteAudio"
+                    ? get(LL).notification.muteRequest.acceptMicrophone()
+                    : get(LL).notification.muteRequest.acceptCamera(),
             sender: senderUser,
             acceptRequest: () => {
                 if (event.$case === "muteAudio") {

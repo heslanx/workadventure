@@ -589,11 +589,13 @@
                                 <!-- The menu to go fullscreen -->
                                 {#if !inCameraContainer && videoEnabled}
                                     <div
-                                        class="absolute m-auto top-0 right-0 left-0 z-[256] h-14 w-fit rounded-lg bg-contrast/50 backdrop-blur transition-all opacity-0 hover:!opacity-100 group-hover/centered-video:opacity-20 [@media(pointer:coarse)]:opacity-100 flex items-center justify-center cursor-pointer"
+                                        class="absolute m-auto top-0 right-0 left-0 z-[256] h-14 w-fit rounded-lg bg-contrast/50 backdrop-blur transition-all opacity-0 hover:!opacity-100 focus-within:!opacity-100 group-hover/centered-video:opacity-20 [@media(pointer:coarse)]:opacity-100 flex items-center justify-center cursor-pointer"
                                     >
                                         <div class="h-full w-full flex flex-row justify-evenly cursor-pointer">
                                             {#if !fullScreen && !$highlightFullScreen}
                                                 <button
+                                                    type="button"
+                                                    aria-label={$LL.video.reduce()}
                                                     class="svg p-4 h-full w-full hover:bg-white/10 flex justify-start items-center z-25 rounded-lg text-base"
                                                     onclick={removeHighlight}
                                                     data-testid="highlight-minimize-button"
@@ -603,6 +605,8 @@
                                             {/if}
                                             {#if fullScreen}
                                                 <button
+                                                    type="button"
+                                                    aria-label={$LL.actionbar.participantExitFullscreen()}
                                                     class="muted-video p-4 h-full w-full hover:bg-white/10 flex justify-start cursor-pointer items-center z-25 rounded-lg text-base"
                                                     onclick={exitFullScreen}
                                                 >
@@ -610,6 +614,8 @@
                                                 </button>
                                             {:else}
                                                 <button
+                                                    type="button"
+                                                    aria-label={$LL.menu.settings.fullscreen()}
                                                     class="muted-video p-4 h-full w-full hover:bg-white/10 flex justify-start cursor-pointer items-center z-25 rounded-lg text-base"
                                                     onclick={setFullScreen}
                                                     data-testid="highlight-enter-fullscreen-button"
@@ -669,9 +675,11 @@
             !!annotationTargetUserId &&
             (isLocalUser || ($screenAnnotationEnabledStore.get(annotationTargetUserId) ?? false))}
         <div
-            class="absolute top-0 bottom-0 right-0 left-0 m-auto h-14 w-fit z-20 flex items-center justify-center gap-2 opacity-0 group-hover/screenshare:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all"
+            class="absolute top-0 bottom-0 right-0 left-0 m-auto h-14 w-fit z-20 flex items-center justify-center gap-2 opacity-0 group-hover/screenshare:opacity-100 focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all"
         >
             <button
+                type="button"
+                aria-label={$LL.video.enlarge()}
                 class="full-screen-button h-14 w-14 p-4 rounded-lg bg-contrast/50 backdrop-blur hover:bg-white/10 cursor-pointer"
                 data-testid={isScreenShare ? "screenshare-fullscreen-button" : undefined}
                 onclick={highlightPeer}
@@ -697,10 +705,9 @@
     {/if}
 
     {#if isCurrentUserBlackListed}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-            class="absolute w-full h-full aspect-video mx-auto flex justify-center items-center bg-contrast/50 rounded-lg z-20 cursor-pointer"
+        <button
+            type="button"
+            class="absolute w-full h-full aspect-video mx-auto flex justify-center items-center bg-contrast/50 rounded-lg z-20 cursor-pointer p-0 m-0 border-0"
             onclick={() => {
                 if (userUuid !== undefined) blackListManager.cancelBlackList(userUuid);
                 if (spaceUserId !== undefined) blackListManager.cancelBlackList(spaceUserId);
@@ -710,7 +717,7 @@
             <div class="text-center">
                 <div class="text-lg text-white bold">{$LL.video.click_to_unblock()}</div>
             </div>
-        </div>
+        </button>
     {/if}
 </div>
 

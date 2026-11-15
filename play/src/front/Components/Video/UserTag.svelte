@@ -22,5 +22,5 @@
     <div id="woka">
         <Woka src={wokaSrc} customWidth={`${size}px`} />
     </div>
-    <span id="name">{isMe ? $LL.camera.my.nameTag() : name}</span>
+    <span id="name" title={isMe ? $LL.camera.my.nameTag() : name}>{isMe ? $LL.camera.my.nameTag() : name}</span>
 </div>

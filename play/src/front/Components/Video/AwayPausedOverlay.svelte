@@ -37,7 +37,7 @@
 {#snippet button()}
     <button
         type="button"
-        class="pointer-events-auto shrink-0 cursor-pointer rounded-md bg-secondary hover:bg-secondary-600 px-3 py-1 text-sm text-white"
+        class="pointer-events-auto shrink-0 cursor-pointer rounded bg-secondary hover:bg-secondary-600 px-3 py-1 text-sm text-white"
         data-testid="away-paused-turn-on"
         onclick={() => privacyShutdownStore.comeBack()}
     >
@@ -54,7 +54,7 @@
         data-testid="away-paused-overlay"
     >
         <IconEyeOff class="text-warning shrink-0" font-size="20" />
-        <div class="hidden @[14rem]/videomediabox:block text-sm leading-tight">{text}</div>
+        <div class="hidden @[14rem]/videomediabox:block text-sm leading-snug">{text}</div>
         <div class="hidden @[14rem]/videomediabox:block text-xs text-white/60 mb-1">{$LL.video.away.subtitle()}</div>
         {@render button()}
     </div>
@@ -65,7 +65,7 @@
         data-testid="away-paused-overlay"
     >
         <IconMicrophoneOff class="text-warning shrink-0" font-size="16" />
-        <span class="hidden @[14rem]/videomediabox:block flex-1 text-xs leading-tight">{text}</span>
+        <span class="hidden @[14rem]/videomediabox:block flex-1 text-xs leading-snug">{text}</span>
         <span class="flex-1 @[14rem]/videomediabox:hidden"></span>
         {@render button()}
     </div>

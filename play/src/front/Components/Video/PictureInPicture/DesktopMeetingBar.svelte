@@ -182,7 +182,7 @@
     const barButton = "inline-flex size-9 items-center justify-center rounded text-neutral-100 [&>svg]:size-6";
     const activeButton = "bg-secondary hover:bg-secondary-600";
     // The design system's radii: rounded-sm 4px, rounded 8px, rounded-md 12px.
-    const surface = "rounded-md bg-contrast/90 shadow-[0_6px_24px_rgba(0,0,0,0.45)] backdrop-blur";
+    const surface = "rounded-md bg-contrast/90 shadow-lg backdrop-blur";
     const panel = `${surface} mb-2 flex min-h-0 flex-col`;
     const panelHead = "flex items-center justify-between gap-2 border-b border-white/10 px-2.5 py-2";
     const closeButton = "inline-flex size-6 items-center justify-center rounded-sm bg-white/5 hover:bg-white/15";
@@ -267,7 +267,7 @@
                 <div class="grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-2">
                     {#each shownSources as source, index (source.id)}
                         <button
-                            class="flex flex-col overflow-hidden rounded-[6px] border border-solid border-white/5 bg-white/5 text-start hover:border-secondary/60 hover:bg-secondary/20"
+                            class="flex flex-col overflow-hidden rounded-sm border border-solid border-white/5 bg-white/5 text-start hover:border-secondary/60 hover:bg-secondary/20"
                             type="button"
                             title={source.name}
                             onclick={() => pickSource(source)}

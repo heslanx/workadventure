@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import type { Unsubscriber } from "svelte/store";
+    import LL from "../../../i18n/i18n-svelte";
     import { coWebsiteRatio, coWebsites, fullScreenCowebsite } from "../../Stores/CoWebsiteStore";
     import JitsiCowebsiteComponent from "../Cowebsites/JistiCowebsiteComponent.svelte";
     import SimpleCowebsiteComponent from "../Cowebsites/SimpleCowebsiteComponent.svelte";
@@ -118,6 +119,32 @@
         window.removeEventListener("mouseup", removeDivForResize);
     }
 
+    // Keyboard alternative to dragging the resize bar (WAI-ARIA window splitter): each arrow press moves it 5%.
+    const KEYBOARD_RESIZE_STEP = 0.05;
+    const MIN_KEYBOARD_RATIO = 0.1;
+    const MAX_KEYBOARD_RATIO = 0.9;
+
+    function handleResizeKeydown(event: KeyboardEvent) {
+        const isLandscape = $screenOrientationStore === "landscape";
+        const isRtl = document.documentElement.dir === "rtl";
+        // The bar sits on the edge between the website and the game: pressing the arrow that points away from the
+        // website grows it. Landscape: start edge in LTR, end edge in RTL. Portrait: bottom edge.
+        const growKey = isLandscape ? (isRtl ? "ArrowRight" : "ArrowLeft") : "ArrowDown";
+        const shrinkKey = isLandscape ? (isRtl ? "ArrowLeft" : "ArrowRight") : "ArrowUp";
+
+        let delta: number;
+        if (event.key === growKey) {
+            delta = KEYBOARD_RESIZE_STEP;
+        } else if (event.key === shrinkKey) {
+            delta = -KEYBOARD_RESIZE_STEP;
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        coWebsiteRatio.set(Math.min(MAX_KEYBOARD_RATIO, Math.max(MIN_KEYBOARD_RATIO, $coWebsiteRatio + delta)));
+    }
+
     const setActiveCowebsite = (coWebsite: CoWebsite) => {
         activeCowebsite = coWebsite;
     };
@@ -223,13 +250,12 @@
             <div class="tab-bar flex-1 w-32" bind:clientWidth={tabsContainerWidth}>
                 <div
                     bind:this={tabsContainer}
+                    role="tablist"
                     class="flex items-stretch overflow-x-hidden space-x-2 snap-x touch-pan-x"
                     onscroll={onTabsScroll}
                 >
                     {#each $coWebsites as coWebsite, index (coWebsite.getId())}
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div data-testid="tab{index + 1}" class="snap-start">
+                        <div data-testid="tab{index + 1}" class="snap-start" role="presentation">
                             <CoWebsiteTab
                                 {coWebsite}
                                 isLoading={false}
@@ -253,10 +279,11 @@
                 </div>
             {/if}
 
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div class="flex justify-end w-10 flex-none">
-                <div
+                <button
+                    type="button"
+                    aria-label={$LL.menu.settings.fullscreen()}
+                    aria-pressed={$fullScreenCowebsite}
                     class="ms-full h-10 w-10 rounded flex items-center justify-center hover:bg-white/10 me-2 cursor-pointer"
                     onclick={toggleFullScreen}
                 >
@@ -265,7 +292,7 @@
                     {:else}
                         <IconArrowsMinimize font-size="20" class="text-white" />
                     {/if}
-                </div>
+                </button>
             </div>
         </div>
 
@@ -293,11 +320,20 @@
         </div>
     </div>
     <!-- We make the drag handle bigger than it really is to make it more easily selectable (especially on mobile) with "after" pseudo element -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- A focusable separator is the WAI-ARIA window splitter pattern, which Svelte's a11y rules don't know. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
     <div
+        role="separator"
+        tabindex="0"
+        aria-orientation={$screenOrientationStore === "portrait" ? "horizontal" : "vertical"}
+        aria-label={$LL.cowebsite.resize()}
+        aria-valuenow={Math.round($coWebsiteRatio * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        onkeydown={handleResizeKeydown}
         class={$screenOrientationStore === "portrait"
-            ? "-mt-1.5 mx-auto w-40 h-1 bg-white rounded cursor-row-resize relative after:content-[''] after:absolute after:-start-4 after:-top-1  after:w-48 after:h-6 select-none"
-            : "absolute start-1 top-0 bottom-0 m-auto w-1 h-40 bg-white rounded cursor-col-resize after:content-[''] after:absolute after:-start-4 after:-top-4 after:h-48 after:w-6 select-none"}
+            ? "-mt-1.5 mx-auto w-40 h-1 bg-white rounded cursor-row-resize relative after:content-[''] after:absolute after:-start-4 after:-top-1  after:w-48 after:h-6 select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            : "absolute start-1 top-0 bottom-0 m-auto w-1 h-40 bg-white rounded cursor-col-resize after:content-[''] after:absolute after:-start-4 after:-top-4 after:h-48 after:w-6 select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"}
         class:hidden={$fullScreenCowebsite}
         bind:this={resizeBar}
         onmousedown={addDivForResize}

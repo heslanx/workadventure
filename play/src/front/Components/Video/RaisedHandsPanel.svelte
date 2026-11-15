@@ -77,7 +77,7 @@
                             pictureStore={getPictureStore(section.space, entry.spaceUserId)}
                             name={entry.name}
                         />
-                        <span class="text-white text-sm grow truncate">{entry.name}</span>
+                        <span class="text-white text-sm grow min-w-0 truncate" title={entry.name}>{entry.name}</span>
                         {#if section.floorControls}
                             <Button
                                 variant="secondary"
@@ -117,7 +117,7 @@
                             pictureStore={getPictureStore(section.space, entry.spaceUserId)}
                             name={entry.name}
                         />
-                        <span class="text-white text-sm grow truncate">{entry.name}</span>
+                        <span class="text-white text-sm grow min-w-0 truncate" title={entry.name}>{entry.name}</span>
                         {#if section.floorControls}
                             <Button
                                 variant="danger"
