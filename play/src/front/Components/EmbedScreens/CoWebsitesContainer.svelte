@@ -238,10 +238,12 @@
             {#if tabsOverflowing && tabsScrollX > 0}
                 <div class="flex-0 w-10">
                     <button
+                        type="button"
+                        aria-label={$LL.a11y.compScrollTabsLeft()}
                         class="w-10 h-10 rounded flex items-center justify-center hover:bg-white/10 me-2"
                         onclick={scrollTabsLeft}
                     >
-                        <IconChevronLeft font-size="20" class="text-white" />
+                        <IconChevronLeft font-size="20" class="text-white" aria-hidden="true" />
                     </button>
                 </div>
             {/if}
@@ -271,10 +273,12 @@
             {#if tabsOverflowing && tabsScrollX < tabsContainer?.scrollWidth - tabsContainer?.clientWidth}
                 <div class="flex-0 w-10">
                     <button
+                        type="button"
+                        aria-label={$LL.a11y.compScrollTabsRight()}
                         class="w-10 h-10 rounded flex items-center justify-center hover:bg-white/10 me-2"
                         onclick={scrollTabsRight}
                     >
-                        <IconChevronRight font-size="20" class="text-white" />
+                        <IconChevronRight font-size="20" class="text-white" aria-hidden="true" />
                     </button>
                 </div>
             {/if}
@@ -288,9 +292,9 @@
                     onclick={toggleFullScreen}
                 >
                     {#if !$fullScreenCowebsite}
-                        <IconArrowsMinimize font-size="20" class="text-white" />
+                        <IconArrowsMinimize font-size="20" class="text-white" aria-hidden="true" />
                     {:else}
-                        <IconArrowsMinimize font-size="20" class="text-white" />
+                        <IconArrowsMinimize font-size="20" class="text-white" aria-hidden="true" />
                     {/if}
                 </button>
             </div>

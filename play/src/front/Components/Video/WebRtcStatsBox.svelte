@@ -12,16 +12,16 @@
     );
     let statsColorClass = $derived(
         webRtcStats?.fpsStdDev !== undefined && webRtcStats.fpsStdDev > 10
-            ? "text-red-300 bg-red-950/50"
+            ? "text-red-300 bg-red-950/80"
             : webRtcStats?.fpsStdDev !== undefined && webRtcStats.fpsStdDev > 4
-              ? "text-yellow-300 bg-yellow-950/50"
-              : "text-green-300 bg-green-950/50",
+              ? "text-yellow-300 bg-yellow-950/80"
+              : "text-green-300 bg-green-950/80",
     );
 </script>
 
 {#if webRtcStats}
     <div
-        class={`absolute bottom-0 right-0 p-2 text-[0.6rem] @[20rem]/videomediabox:text-[0.75rem] rounded-br-md rounded-tl-md select-text ${statsColorClass}`}
+        class={`absolute bottom-0 right-0 p-2 text-xxs @[20rem]/videomediabox:text-[0.75rem] rounded-br-md rounded-tl-md select-text ${statsColorClass}`}
     >
         <table class="m-0 p-0 border-hidden">
             <tbody class="m-0 p-0 border-hidden">

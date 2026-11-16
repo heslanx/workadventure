@@ -18,6 +18,8 @@
     let isDragging = false;
     let startY: number;
     let startParentHeight: number;
+    // Height currently reported to the screen readers (see aria-valuenow); read from the layout on focus.
+    let currentHeight: number | undefined = $state();
 
     const startDragging = (e: MouseEvent | TouchEvent) => {
         isDragging = true;
@@ -37,7 +39,8 @@
         const clientY = e instanceof MouseEvent ? e.clientY : e.touches[0].clientY;
         const deltaY = clientY - startY;
         const newHeight = startParentHeight + deltaY;
-        onResize(Math.min(Math.max(newHeight, minHeight), maxHeight));
+        currentHeight = Math.min(Math.max(newHeight, minHeight), maxHeight);
+        onResize(currentHeight);
     }
 
     function stopDragging() {
@@ -46,6 +49,34 @@
         document.removeEventListener("mouseup", stopDragging);
         document.removeEventListener("touchmove", handleDragging);
         document.removeEventListener("touchend", stopDragging);
+        onResizeEnd();
+    }
+
+    // Keyboard alternative to dragging the handle (WAI-ARIA window splitter): each arrow press moves it 5%.
+    const KEYBOARD_RESIZE_STEP = 0.05;
+    let isKeyboardResizing = false;
+
+    function readHeightFromLayout(): number {
+        return dragHandle.offsetTop - (dragHandle.parentElement as HTMLElement).offsetTop;
+    }
+
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+            return;
+        }
+        event.preventDefault();
+        const step = (maxHeight - minHeight) * KEYBOARD_RESIZE_STEP;
+        const newHeight = readHeightFromLayout() + (event.key === "ArrowDown" ? step : -step);
+        isKeyboardResizing = true;
+        currentHeight = Math.min(Math.max(newHeight, minHeight), maxHeight);
+        onResize(currentHeight);
+    }
+
+    function handleKeyup(event: KeyboardEvent) {
+        if (!isKeyboardResizing || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) {
+            return;
+        }
+        isKeyboardResizing = false;
         onResizeEnd();
     }
 
@@ -65,10 +96,22 @@
     });
 </script>
 
+<!-- A focusable separator is the WAI-ARIA window splitter pattern, which Svelte's a11y rules don't know. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
     bind:this={dragHandle}
     data-testid={dataTestid}
-    class="group/resize-handle relative drag-handle mx-auto mt-3 w-40 h-1 outline outline-4 outline-contrast bg-white cursor-ns-resize transition-colors rounded-lg select-none"
+    role="separator"
+    tabindex="0"
+    aria-orientation="horizontal"
+    aria-label={$LL.a11y.compResizeCameras()}
+    aria-valuemin={0}
+    aria-valuemax={100}
+    aria-valuenow={Math.round((((currentHeight ?? minHeight) - minHeight) / (maxHeight - minHeight || 1)) * 100)}
+    onfocus={() => (currentHeight = Math.min(Math.max(readHeightFromLayout(), minHeight), maxHeight))}
+    onkeydown={handleKeydown}
+    onkeyup={handleKeyup}
+    class="group/resize-handle relative drag-handle mx-auto mt-3 w-40 h-1 outline outline-4 outline-contrast bg-white cursor-ns-resize transition-colors rounded-lg select-none focus-visible:outline-secondary-300"
 >
     <div
         class="absolute bottom-0 bg-contrast/80 backdrop-blur-xl p-2 px-4 rounded-md pointer-events-none w-fit left-1/2 -translate-x-1/2 group-active/resize-handle:opacity-0 group-hover/resize-handle:-translate-y-4 group-hover/resize-handle:opacity-100 opacity-0 transition-all duration-300 z-20 select-none"

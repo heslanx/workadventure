@@ -249,7 +249,7 @@
         h2 {
             margin: 0 0 6px;
             font-family: "Roboto", sans-serif;
-            font-size: 22px;
+            font-size: 1.375rem;
             font-weight: 700;
             letter-spacing: 0;
         }
@@ -257,7 +257,7 @@
         p {
             margin: 0;
             color: #cbd5e1;
-            font-size: 14px;
+            font-size: 0.875rem;
         }
     }
 
@@ -277,7 +277,7 @@
         color: #e2e8f0;
         background: rgb(255 255 255 / 10%);
         border-radius: 6px;
-        font-size: 24px;
+        font-size: 1.5rem;
         line-height: 1;
     }
 
@@ -318,7 +318,7 @@
         min-height: 260px;
         place-items: center;
         color: #cbd5e1;
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
 
     .source-picker-state.error {
@@ -346,7 +346,6 @@
 
     .source-tile:hover,
     .source-tile:focus-visible {
-        outline: none;
         background: rgb(67 83 255 / 22%);
         border-color: rgb(129 140 248 / 80%);
     }
@@ -373,7 +372,7 @@
         color: #e2e8f0;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 14px;
+        font-size: 0.875rem;
         font-weight: 600;
     }
 

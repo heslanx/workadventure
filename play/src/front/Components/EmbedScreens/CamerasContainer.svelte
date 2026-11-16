@@ -35,6 +35,7 @@
     import { highlightFullScreen } from "../../Stores/ActionsCamStore";
     import { localUserStore } from "../../Connection/LocalUserStore";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
+    import LL from "../../../i18n/i18n-svelte";
     import { MAX_DISPLAYED_VIDEOS } from "../../Enum/EnvironmentVariable";
     import {
         orderedStreamableCollectionStore,
@@ -541,8 +542,8 @@
         {#if canScrollLeft}
             <button
                 type="button"
-                class="scroll-indicator scroll-indicator-left scroll-indicator-button opacity-10 group-hover/cameras-container:opacity-100"
-                aria-label="Scroll left to see more cameras"
+                class="scroll-indicator scroll-indicator-left scroll-indicator-button opacity-10 group-hover/cameras-container:opacity-100 focus-visible:opacity-100"
+                aria-label={$LL.a11y.compCamerasScrollLeft()}
                 onclick={scrollCamerasLeft}
             >
                 <span class="scroll-indicator-gradient scroll-indicator-gradient-left"></span>
@@ -554,8 +555,8 @@
         {#if canScrollRight}
             <button
                 type="button"
-                class="scroll-indicator scroll-indicator-right scroll-indicator-button opacity-10 group-hover/cameras-container:opacity-100"
-                aria-label="Scroll right to see more cameras"
+                class="scroll-indicator scroll-indicator-right scroll-indicator-button opacity-10 group-hover/cameras-container:opacity-100 focus-visible:opacity-100"
+                aria-label={$LL.a11y.compCamerasScrollRight()}
                 onclick={scrollCamerasRight}
             >
                 <span class="scroll-indicator-gradient scroll-indicator-gradient-right"></span>
@@ -568,8 +569,8 @@
         {#if canScrollTop}
             <button
                 type="button"
-                class="absolute scroll-indicator scroll-indicator-top scroll-indicator-button opacity-10 group-hover/cameras-container:opacity-100"
-                aria-label="Scroll up to see more cameras"
+                class="absolute scroll-indicator scroll-indicator-top scroll-indicator-button opacity-10 group-hover/cameras-container:opacity-100 focus-visible:opacity-100"
+                aria-label={$LL.a11y.compCamerasScrollUp()}
                 onclick={scrollCamerasUp}
             >
                 <span class="scroll-indicator-gradient scroll-indicator-gradient-top"></span>
@@ -581,8 +582,8 @@
         {#if canScrollBottom}
             <button
                 type="button"
-                class="absolute scroll-indicator scroll-indicator-bottom scroll-indicator-button h-fit w-fit opacity-40 group-hover/cameras-container:opacity-100"
-                aria-label="Scroll down to see more cameras"
+                class="absolute scroll-indicator scroll-indicator-bottom scroll-indicator-button h-fit w-fit opacity-40 group-hover/cameras-container:opacity-100 focus-visible:opacity-100"
+                aria-label={$LL.a11y.compCamerasScrollDown()}
                 onclick={scrollCamerasDown}
             >
                 <span class="scroll-indicator-gradient scroll-indicator-gradient-bottom h-full"></span>

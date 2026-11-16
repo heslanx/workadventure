@@ -200,6 +200,8 @@
             {#if isMegaphoneSpace}
                 <div
                     class="absolute bottom-0 right-0 rounded-none rounded-tl-lg bg-yellow-200 backdrop-blur flex justify-center items-center gap-2 px-2 h-10 w-10 content-center z-[600]"
+                    role="img"
+                    aria-label={$LL.megaphone.modal.liveMessage.title()}
                 >
                     <MegaphoneIcon strokeColor="stroke-black" classList="mt-1 ml-1" />
                 </div>
@@ -268,12 +270,12 @@
         </div>
         {#if displayNoVideoWarning}
             <div
-                class="absolute w-full h-full aspect-video mx-auto flex justify-center items-center bg-danger text-white rounded-lg"
+                class="absolute w-full h-full aspect-video mx-auto flex justify-center items-center bg-danger text-contrast-900 rounded-lg"
             >
                 <div class="text-center">
-                    <IconCameraExclamation font-size="20" class="text-white" />
-                    <div class="text-lg text-white bold">{$LL.video.no_video_stream_received()}</div>
-                    <div class="italic text-xs opacity-50">
+                    <IconCameraExclamation font-size="20" class="text-contrast-900" aria-hidden="true" />
+                    <div class="text-lg text-contrast-900 bold">{$LL.video.no_video_stream_received()}</div>
+                    <div class="italic text-xs opacity-90">
                         {$LL.menu.sub.help()}
                     </div>
                 </div>

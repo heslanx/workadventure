@@ -164,7 +164,7 @@
     <div
         class="flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded leading-4 text-left text-white disabled:opacity-50"
         role="group"
-        aria-label="Volume control"
+        aria-label={$LL.audio.volumeCtrl()}
     >
         {#if $volumeStore === 0}
             <button
@@ -173,9 +173,10 @@
                     event.stopPropagation();
                     volumeStore.set(1);
                 }}
-                class="p-0 m-0"
+                class="p-0 m-0 hit-area"
+                aria-label={$LL.a11y.videoUnmuteAudio()}
             >
-                <IconMute class="w-4 h-4 text-white flex-shrink-0" />
+                <IconMute class="w-4 h-4 text-white flex-shrink-0" aria-hidden="true" />
             </button>
         {:else}
             <button
@@ -184,9 +185,10 @@
                     event.stopPropagation();
                     volumeStore.set(0);
                 }}
-                class="p-0 m-0"
+                class="p-0 m-0 hit-area"
+                aria-label={$LL.audio.mute()}
             >
-                <IconUnMute class="w-4 h-4 text-white flex-shrink-0" />
+                <IconUnMute class="w-4 h-4 text-white flex-shrink-0" aria-hidden="true" />
             </button>
         {/if}
         <div class="w-[80%] mx-auto">
@@ -248,7 +250,7 @@
                 giveFloor(spaceUser);
             }}
         >
-            <IconMicrophone class="w-4 h-4 text-white flex-shrink-0" />
+            <IconMicrophone class="w-4 h-4 text-white flex-shrink-0" aria-hidden="true" />
             {$LL.camera.menu.giveFloor()}
         </button>
     {/if}
@@ -264,7 +266,7 @@
                 revokeFloor(spaceUser);
             }}
         >
-            <IconMicrophoneOff class="w-4 h-4 text-white flex-shrink-0" />
+            <IconMicrophoneOff class="w-4 h-4 text-white flex-shrink-0" aria-hidden="true" />
             {$LL.camera.menu.revokeFloor()}
         </button>
     {/if}
@@ -353,7 +355,7 @@
                 visitCard(spaceUser);
             }}
         >
-            <IconUser />
+            <IconUser aria-hidden="true" />
             {$LL.chat.menu.visitCard()}
         </button>
     {/if}
@@ -366,7 +368,7 @@
             openBlockOrReportPopup(spaceUser);
         }}
     >
-        <IconAlertTriangle />
+        <IconAlertTriangle aria-hidden="true" />
         {$LL.camera.menu.blockOrReportUser()}
     </button>
 </div>

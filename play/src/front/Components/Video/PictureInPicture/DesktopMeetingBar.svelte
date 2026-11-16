@@ -180,12 +180,13 @@
 
     // The look of the app's compact ActionBarButton (as in the mini window), with the theme's colors.
     const barButton = "inline-flex size-9 items-center justify-center rounded text-neutral-100 [&>svg]:size-6";
-    const activeButton = "bg-secondary hover:bg-secondary-600";
+    const activeButton = "bg-secondary hover:bg-secondary-800";
     // The design system's radii: rounded-sm 4px, rounded 8px, rounded-md 12px.
     const surface = "rounded-md bg-contrast/90 shadow-lg backdrop-blur";
     const panel = `${surface} mb-2 flex min-h-0 flex-col`;
     const panelHead = "flex items-center justify-between gap-2 border-b border-white/10 px-2.5 py-2";
-    const closeButton = "inline-flex size-6 items-center justify-center rounded-sm bg-white/5 hover:bg-white/15";
+    const closeButton =
+        "hit-area inline-flex size-6 items-center justify-center rounded-sm bg-white/5 hover:bg-white/15";
     const menuItem = "flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-start text-sm hover:bg-white/10";
     const menuIcon = "inline-flex w-8.5 shrink-0 justify-center [&>svg]:size-4.5";
     const separator = "mx-1.5 my-1 h-px bg-white/10";
@@ -199,10 +200,11 @@
             <div class="flex gap-1">
                 {#each sourceKinds as kind (kind)}
                     <button
-                        class="rounded-full px-2.5 py-1 text-xxs {pickerKind === kind
+                        class="hit-area rounded-full px-2.5 py-1 text-xxs {pickerKind === kind
                             ? 'bg-secondary'
                             : 'bg-white/5 hover:bg-white/10'}"
                         type="button"
+                        aria-pressed={pickerKind === kind}
                         onclick={() => (pickerKind = kind)}
                         >{kind === "screen"
                             ? $LL.desktop.meetingBar.screens()
@@ -212,7 +214,7 @@
             </div>
         {/if}
         <button class={closeButton} type="button" aria-label={closeLabel} onclick={close}>
-            <IconX class="size-4" />
+            <IconX class="size-4" aria-hidden="true" />
         </button>
     </div>
 {/snippet}
@@ -224,7 +226,10 @@
     enabled: boolean,
 )}
     <div class="flex items-center gap-1.5 px-1 pt-2 pb-1 text-xxs font-bold tracking-wide text-white/60 uppercase">
-        {#if kind === "camera"}<IconCamera class="size-3.5" />{:else}<IconMicrophone class="size-3.5" />{/if}
+        {#if kind === "camera"}<IconCamera class="size-3.5" aria-hidden="true" />{:else}<IconMicrophone
+                class="size-3.5"
+                aria-hidden="true"
+            />{/if}
         <span>{kind === "camera" ? $LL.desktop.meetingBar.camera() : $LL.desktop.meetingBar.microphone()}</span>
     </div>
     {#if !enabled}
@@ -240,9 +245,13 @@
             <button
                 type="button"
                 class="flex w-full items-center gap-2 rounded px-2.5 py-2 text-start text-xs hover:bg-white/10"
+                aria-current={device.deviceId === currentId ? "true" : undefined}
                 onclick={() => pickDevice(kind, device.deviceId)}
             >
-                <IconCheck class="size-4 shrink-0 text-secondary {device.deviceId === currentId ? '' : 'invisible'}" />
+                <IconCheck
+                    class="size-4 shrink-0 text-secondary-300 {device.deviceId === currentId ? '' : 'invisible'}"
+                    aria-hidden="true"
+                />
                 <span class="truncate">{device.label || device.deviceId}</span>
             </button>
         {/each}
@@ -274,7 +283,7 @@
                         >
                             <img
                                 class="block aspect-video w-full bg-black object-cover"
-                                alt={source.name}
+                                alt=""
                                 src={source.thumbnailURL}
                             />
                             <span class="truncate px-1.5 py-1 text-xxs"
@@ -354,24 +363,25 @@
                 <span class="flex-1">{$LL.desktop.meetingBar.displayTabs()}</span>
             </button>
             <div class={separator}></div>
-            <button class={menuItem} type="button" onclick={openPicker}>
-                <span class={menuIcon}><IconDeviceDesktopUp /></span>
+            <button class={menuItem} type="button" role="menuitem" onclick={openPicker}>
+                <span class={menuIcon} aria-hidden="true"><IconDeviceDesktopUp /></span>
                 <span class="flex-1">{$LL.desktop.meetingBar.switchSharedScreen()}</span>
             </button>
-            <button class={menuItem} type="button" onclick={openDevices}>
-                <span class={menuIcon}><IconDeviceComputerCamera /></span>
+            <button class={menuItem} type="button" role="menuitem" onclick={openDevices}>
+                <span class={menuIcon} aria-hidden="true"><IconDeviceComputerCamera /></span>
                 <span class="flex-1">{$LL.desktop.meetingBar.changeDevices()}</span>
             </button>
             <div class={separator}></div>
             <button
                 class={menuItem}
                 type="button"
+                role="menuitem"
                 onclick={() => {
                     menuOpen = false;
                     windows.focusMain();
                 }}
             >
-                <span class={menuIcon}><IconSettings /></span>
+                <span class={menuIcon} aria-hidden="true"><IconSettings /></span>
                 <span class="flex-1">{$LL.desktop.meetingBar.otherSettings()}</span>
             </button>
             <!-- Joins the menu to the "…" button, so it is clear which button opened it. -->
@@ -397,7 +407,7 @@
                     aria-pressed={$localAnnotationActiveStore}
                     onclick={() => screenAnnotationManager.toggleDrawingOnMyShare()}
                 >
-                    <IconPencil />
+                    <IconPencil aria-hidden="true" />
                 </button>
                 <button
                     type="button"
@@ -412,7 +422,7 @@
                         : $LL.screenAnnotation.allowAnnotations()}
                     onclick={() => screenAnnotationManager.setOthersAllowed(!othersAllowed)}
                 >
-                    <IconUsersGroup />
+                    <IconUsersGroup aria-hidden="true" />
                 </button>
                 <!-- The app's own media buttons, as in its action bar. -->
                 {#if !$inExternalServiceStore && $proximityMeetingStore && $myMicrophoneStore}
@@ -432,7 +442,7 @@
                     bind:this={moreButton}
                     onclick={toggleMenu}
                 >
-                    <IconDots />
+                    <IconDots aria-hidden="true" />
                 </button>
             </div>
         </div>

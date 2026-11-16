@@ -1,4 +1,5 @@
 import type { ScreenAnnotationElement, ScreenAnnotationPoint } from "@workadventure/messages";
+import { readableTextColor } from "./readableTextColor";
 
 /**
  * Pure rendering & hit-testing helpers for screen-sharing annotations.
@@ -87,10 +88,8 @@ export function hitTest(element: ScreenAnnotationElement, p: ScreenAnnotationPoi
 
 /** Black or white text, whichever reads better on `color` (white unless it is a light #rrggbb color). */
 function textColorOn(color: string): string {
-    const hex = /^#([0-9a-f]{6})$/i.exec(color)?.[1];
-    if (!hex) return "#ffffff";
-    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    return 0.299 * r + 0.587 * g + 0.114 * b > 128 ? "#000000" : "#ffffff";
+    // The better of black and white by WCAG contrast: a brightness threshold left white on red and blue at 3.6:1.
+    return readableTextColor(color) === "black" ? "#000000" : "#ffffff";
 }
 
 /**

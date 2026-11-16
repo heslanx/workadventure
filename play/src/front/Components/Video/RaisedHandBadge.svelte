@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { LL } from "../../../i18n/i18n-svelte";
     import { findHandPosition, raisedHandsOrderStore } from "../../Stores/RaisedHandsStore";
     import RaiseHandIcon from "../Icons/RaiseHandIcon.svelte";
 
@@ -16,7 +17,10 @@
 
 {#if hand !== undefined}
     <div class="flex items-center gap-1 px-1 pointer-events-none" data-testid="raised-hand-badge">
-        <RaiseHandIcon height="h-4" width="w-4" strokeColor="stroke-current" hover="" />
+        <span class="inline-flex" aria-hidden="true">
+            <RaiseHandIcon height="h-4" width="w-4" strokeColor="stroke-current" hover="" />
+        </span>
+        <span class="sr-only">{$LL.a11y.videoHandRaised()}</span>
         <!-- The order only matters when several hands are raised. -->
         {#if hand.queueSize > 1}
             <span class="text-sm font-bold leading-none tabular-nums">{hand.position}</span>

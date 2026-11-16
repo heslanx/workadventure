@@ -109,7 +109,7 @@
                 {/if}
             </div>
             {#if !coWebsite.getHideUrl()}
-                <div class="text-xxs opacity-50 text-ellipsis max-w-[150px] whitespace-nowrap overflow-hidden">
+                <div class="text-xxs opacity-70 text-ellipsis max-w-[150px] whitespace-nowrap overflow-hidden">
                     {#if !isLoading}
                         {coWebsite.getUrl()}
                     {:else}
@@ -127,6 +127,8 @@
     <div class="flex gap-0.5">
         {#if !coWebsite.getHideUrl()}
             <button
+                type="button"
+                aria-label={$LL.menu.invite.copy()}
                 class="group {active
                     ? 'hover:bg-contrast/10'
                     : 'hover:bg-white/10'} transition-all aspect-ratio h-8 w-8 rounded flex items-center justify-center"
@@ -145,6 +147,8 @@
         {/if}
         {#if !coWebsite.getHideUrl()}
             <button
+                type="button"
+                aria-label={$LL.chat.imagePreview.openInNewTab()}
                 class="group {active
                     ? 'hover:bg-contrast/10'
                     : 'hover:bg-white/10'} transition-all aspect-ratio h-8 w-8 rounded flex items-center justify-center"
@@ -163,6 +167,8 @@
         {/if}
         {#if coWebsite.isClosable() === true}
             <button
+                type="button"
+                aria-label={$LL.cowebsite.close()}
                 class="group {active
                     ? 'hover:bg-contrast/10'
                     : 'hover:bg-white/10'} transition-all aspect-ratio h-8 w-8 rounded flex items-center justify-center"

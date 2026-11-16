@@ -16,16 +16,16 @@
     // Red when the machine cannot keep up, yellow when something else holds the encoder back
     let statsColorClass = $derived(
         encoderStats?.qualityLimitationReason === "cpu"
-            ? "text-red-300 bg-red-950/50"
+            ? "text-red-300 bg-red-950/80"
             : encoderStats?.qualityLimitationReason === "bandwidth" || encoderStats?.qualityLimitationReason === "other"
-              ? "text-yellow-300 bg-yellow-950/50"
-              : "text-green-300 bg-green-950/50",
+              ? "text-yellow-300 bg-yellow-950/80"
+              : "text-green-300 bg-green-950/80",
     );
 </script>
 
 {#if encoderStats}
     <div
-        class={`absolute bottom-0 right-0 p-2 text-[0.6rem] @[20rem]/videomediabox:text-[0.75rem] rounded-br-md rounded-tl-md select-text ${statsColorClass}`}
+        class={`absolute bottom-0 right-0 p-2 text-xxs @[20rem]/videomediabox:text-[0.75rem] rounded-br-md rounded-tl-md select-text ${statsColorClass}`}
         data-testid="encoder-stats"
     >
         <table class="m-0 p-0 border-hidden">

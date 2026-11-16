@@ -47,7 +47,10 @@ describe("drawElement", () => {
     });
 
     it("writes the name in black or white, whichever reads better on the pointer's color", () => {
-        expect(drawPointer(0.5, "Bob", "#ff3b30").color).toBe("#ffffff");
+        // Black reads better on the red and blue of the palette (5.9:1 and 5.8:1, against 3.6:1 for white).
+        expect(drawPointer(0.5, "Bob", "#ff3b30").color).toBe("#000000");
+        expect(drawPointer(0.5, "Bob", "#0a84ff").color).toBe("#000000");
+        expect(drawPointer(0.5, "Bob", "#1c1c1e").color).toBe("#ffffff");
         expect(drawPointer(0.5, "Bob", "#ffcc00").color).toBe("#000000");
         expect(drawPointer(0.5, "Bob", "not-a-hex").color).toBe("#ffffff");
     });

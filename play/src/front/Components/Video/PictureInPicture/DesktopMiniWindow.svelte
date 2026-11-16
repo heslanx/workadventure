@@ -21,6 +21,7 @@
     import CameraMenuItem from "../../ActionBar/MenuIcons/CameraMenuItem.svelte";
     import ScreenSharingMenuItem from "../../ActionBar/MenuIcons/ScreenSharingMenuItem.svelte";
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { readableTextColor } from "../readableTextColor";
     import {
         miniWindowAgendaStore,
         miniWindowMediaStore,
@@ -114,6 +115,11 @@
         { status: "do_not_disturb", label: () => $LL.desktop.miniWindow.statusDoNotDisturb() },
     ];
 
+    // The status dots carry no text: this names the state they show ("away" is the one a user cannot pick).
+    function statusLabel(status: string): string {
+        return statusChoices.find((choice) => choice.status === status)?.label() ?? $LL.actionbar.status.AWAY();
+    }
+
     function openConversation(id: string) {
         conversationId = id;
         chat.open(id);
@@ -162,8 +168,8 @@
     // The app's looks (ActionBarButton, AwayPausedOverlay): theme colors, so the admin's colors apply here too.
     const iconButton =
         "relative inline-flex size-8 shrink-0 items-center justify-center rounded p-0 text-white transition-colors [-webkit-app-region:no-drag] [&>svg]:size-4.5";
-    const activeButton = "bg-secondary hover:bg-secondary-600";
-    const textButton = "shrink-0 rounded px-3 py-1 text-xs font-bold text-white";
+    const activeButton = "bg-secondary hover:bg-secondary-800";
+    const textButton = "min-h-7 shrink-0 rounded px-3 py-1 text-xs font-bold text-white";
     const navBadge =
         "absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xxs leading-none font-bold";
     const count =
@@ -173,7 +179,7 @@
         "inline-flex size-7 items-center justify-center rounded text-white/60 hover:bg-white/10 hover:text-white [&>svg]:size-3.75";
     const wokaImage = "size-full object-contain [image-rendering:pixelated]";
     const due: Record<MiniWindowAgendaTask["urgency"], string> = {
-        late: "bg-danger/20 text-danger",
+        late: "bg-danger/20 text-danger-400",
         today: "bg-warning/15 text-warning",
         later: "bg-white/10 text-white/60",
     };
@@ -238,7 +244,7 @@
                         d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"
                     /></svg
                 >
-                {#if highlights > 0}<span class="{navBadge} bg-danger text-white"
+                {#if highlights > 0}<span class="{navBadge} bg-danger text-contrast-900"
                         >{highlights > 99 ? "99+" : highlights}</span
                     >{/if}
             </button>
@@ -342,6 +348,7 @@
             >
                 <span
                     class="dot size-2.5 shrink-0 rounded-full"
+                    aria-hidden="true"
                     data-status={selfStatus}
                     style:background-color={statusDotColor(selfStatus)}
                 ></span>
@@ -385,6 +392,7 @@
                     ]}
                     role="menuitemradio"
                     aria-checked={media.status === choice.status}
+                    aria-disabled={media.statusLocked || undefined}
                     type="button"
                     onclick={() => {
                         if (media.statusLocked) return;
@@ -392,10 +400,13 @@
                         statusMenuOpen = false;
                     }}
                 >
-                    <span class="size-2.5 shrink-0 rounded-full" style:background-color={statusDotColor(choice.status)}
+                    <span
+                        class="size-2.5 shrink-0 rounded-full"
+                        aria-hidden="true"
+                        style:background-color={statusDotColor(choice.status)}
                     ></span>
                     <span>{choice.label()}</span>
-                    {#if current}<span class="ms-auto text-white/60">✓</span>{/if}
+                    {#if current}<span class="ms-auto text-white/60" aria-hidden="true">✓</span>{/if}
                 </button>
             {/each}
             {#if media.statusLocked}
@@ -473,7 +484,8 @@
             class="absolute inset-0 bg-contrast-900 [&_.pip-action-bar]:hidden [&_.pip-map-background]:hidden"
         ></div>
 
-        <section class={viewClass(view === "people")}>
+        <!-- A closed panel only slides out of view: inert keeps its buttons out of the Tab order and the reader. -->
+        <section class={viewClass(view === "people")} inert={view !== "people"}>
             {@render viewHead($LL.desktop.miniWindow.onlineUsers(), users.length)}
             <div class="min-h-0 flex-1 overflow-y-auto p-1.5" data-testid="mini-window-people">
                 {#each users as user (user.id)}
@@ -486,7 +498,7 @@
                             {@const color = Color.getColorByString(user.name)}
                             <span
                                 class="grid size-6.5 shrink-0 place-items-center rounded-full text-xxs font-bold uppercase"
-                                style="background: {color}; color: {Color.getTextColorByBackgroundColor(color)}"
+                                style="background: {color}; color: {readableTextColor(color)}"
                                 >{initials(user.name)}</span
                             >
                         {/if}
@@ -516,6 +528,7 @@
                                         stroke-width="2"
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
+                                        aria-hidden="true"
                                         ><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path
                                             d="M19 16v6"
                                         /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg
@@ -534,6 +547,7 @@
                                         stroke-width="2"
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
+                                        aria-hidden="true"
                                         ><path
                                             d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"
                                         /></svg
@@ -555,6 +569,7 @@
                                         stroke-width="2"
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
+                                        aria-hidden="true"
                                         ><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path
                                             d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"
                                         /></svg
@@ -564,6 +579,9 @@
                         {/if}
                         <span
                             class="size-2.5 shrink-0 rounded-full"
+                            role="img"
+                            aria-label={statusLabel(user.status)}
+                            title={statusLabel(user.status)}
                             style:background-color={statusDotColor(user.status)}
                         ></span>
                     </div>
@@ -574,7 +592,7 @@
             {/if}
         </section>
 
-        <section class={viewClass(view === "chat")}>
+        <section class={viewClass(view === "chat")} inert={view !== "chat"}>
             {@render viewHead($LL.desktop.miniWindow.chat())}
 
             {#if !inConversation}
@@ -601,6 +619,7 @@
                                         stroke-width="2"
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
+                                        aria-hidden="true"
                                     >
                                         {#if conversation.kind === "nearby"}
                                             <path d="M18.364 19.364a9 9 0 1 0 -12.728 0" /><path
@@ -628,7 +647,7 @@
                             </div>
                             {#if conversation.highlightCount > 0}
                                 <span
-                                    class="inline-flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-danger px-1.5 text-xxs font-bold text-white"
+                                    class="inline-flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-danger px-1.5 text-xxs font-bold text-contrast-900"
                                     >@{conversation.highlightCount > 99 ? "99+" : conversation.highlightCount}</span
                                 >
                             {:else if conversation.unreadCount > 0}
@@ -712,7 +731,7 @@
         </section>
 
         {#if agenda}
-            <section class={viewClass(view === "agenda")}>
+            <section class={viewClass(view === "agenda")} inert={view !== "agenda"}>
                 {@render viewHead($LL.desktop.miniWindow.today())}
                 <div class="min-h-0 flex-1 overflow-y-auto p-1.5">
                     {#if agenda.meetings}
@@ -754,7 +773,7 @@
                             <div class="px-2 pt-1 pb-1.5 text-white/60">{$LL.desktop.miniWindow.noMoreMeetings()}</div>
                         {/each}
                         <button
-                            class="mb-1.5 flex items-center gap-1.5 rounded px-2 py-1.5 font-bold text-secondary-300 hover:bg-white/5"
+                            class="mb-1.5 flex min-h-7 items-center gap-1.5 rounded px-2 py-1.5 font-bold text-secondary-300 hover:bg-white/5"
                             type="button"
                             onclick={() => openInApp(() => isCalendarVisibleStore.set(true))}
                             >{$LL.desktop.miniWindow.fullAgenda()}</button
@@ -771,7 +790,7 @@
                             <div class={listRow}>
                                 <span
                                     class="size-3.5 shrink-0 rounded-full border-2 border-solid {task.inProgress
-                                        ? 'border-secondary bg-conic from-secondary from-50% to-transparent to-50%'
+                                        ? 'border-secondary-400 bg-conic from-secondary-400 from-50% to-transparent to-50%'
                                         : 'border-white/40'}"
                                 ></span>
                                 <div class="min-w-0 flex-1">
@@ -787,7 +806,7 @@
                             <div class="px-2 pt-1 pb-1.5 text-white/60">{$LL.desktop.miniWindow.noTasks()}</div>
                         {/each}
                         <button
-                            class="mb-1.5 flex items-center gap-1.5 rounded px-2 py-1.5 font-bold text-secondary-300 hover:bg-white/5"
+                            class="mb-1.5 flex min-h-7 items-center gap-1.5 rounded px-2 py-1.5 font-bold text-secondary-300 hover:bg-white/5"
                             type="button"
                             onclick={() => openInApp(() => isTodoListVisibleStore.set(true))}
                             >{$LL.desktop.miniWindow.allTasks()}</button
