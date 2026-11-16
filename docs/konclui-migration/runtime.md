@@ -143,3 +143,22 @@ The next freeze is held for the independently diagnosed People/chat toggle state
 fix and its behavior test. No passing claim transfers automatically to that source
 change. The retained container is idle and available for the final frozen build;
 the previous artifact and failed formatting evidence remain separately labeled.
+
+The subsequent `candidate-refined-20261112-format` snapshot includes all lifecycle
+fixes and 28 Play files, fingerprint
+`69a6584418fe049c3097a1e34dc22b57c225bf8ac82c35a7fe0a2b445a1860df`.
+Formatting, 64 tests across seven files, and production build passed. TypeScript
+and Svelte each reported the same input-contract error: ScriptedTileWallEdges
+requires `value`, but upstream Tiled properties make it optional. The helper already
+handles undefined at runtime; its declared input must match that consumer. This
+required gate remains failed and the artifact is not accepted for activation.
+The error logs and source manifest are preserved under the matching audit label.
+
+`candidate-contract-20261112` corrects the optional property contract and adds the
+omitted-value case, fingerprint
+`a1d82312ac29c8459d768ab443d657f24064566fe1d230f43afbbfecab156cf5`.
+All 65 tests, formatting, TypeScript, Svelte, and production build passed. The
+new focused ESLint gate found ten errors in migrated code: eight import-order
+errors, the dock's mutable Map registry, and an unbound-method reference in the
+thin-wall test. No suppression was added. Its overall status remains failed until
+those findings are corrected and verified in a separately identified candidate.
