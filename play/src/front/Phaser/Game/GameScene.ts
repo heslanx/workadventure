@@ -254,6 +254,7 @@ import { uiWebsiteManager } from "./UI/UIWebsiteManager";
 import { ScriptingVideoManager } from "./ScriptingVideoManager";
 import { UsernameDomLayer } from "./UsernameDomLayer";
 import { ThinWallsController } from "./ThinWallsController";
+import { TileAnimationRefreshTracker } from "./TileAnimationRefreshTracker";
 
 import Tileset = Phaser.Tilemaps.Tileset;
 import Tilemap = Phaser.Tilemaps.Tilemap;
@@ -361,6 +362,7 @@ export class GameScene extends DirtyScene {
     private iframeSubscriptionList: Array<Subscription> = [];
     private gameMapChangedSubscription!: Subscription;
     private tileAnimationRefreshEvent: Phaser.Time.TimerEvent | undefined;
+    private readonly tileAnimationRefreshTracker = new TileAnimationRefreshTracker();
     private readonly thinWallsController = new ThinWallsController();
     private messageSubscription: Subscription | null = null;
     private rxJsSubscriptions: Array<Subscription> = [];
@@ -3400,6 +3402,7 @@ ${escapedMessage}
         this.iframeSubscriptionList.push(
             iframeListener.showLayerStream.subscribe((layerEvent) => {
                 this.gameMapFrontWrapper.setLayerVisibility(layerEvent.name, true);
+                this.tileAnimationRefreshTracker.reset();
                 this.rebuildThinWalls();
                 this.markDirty();
             }),
@@ -3408,6 +3411,7 @@ ${escapedMessage}
         this.iframeSubscriptionList.push(
             iframeListener.hideLayerStream.subscribe((layerEvent) => {
                 this.gameMapFrontWrapper.setLayerVisibility(layerEvent.name, false);
+                this.tileAnimationRefreshTracker.reset();
                 this.rebuildThinWalls();
                 this.markDirty();
             }),
@@ -3554,6 +3558,7 @@ ${escapedMessage}
         });
         this.iframeSubscriptionList.push(
             iframeListener.setTilesStream.subscribe((eventTiles) => {
+                this.tileAnimationRefreshTracker.reset();
                 let wallEdgesChanged = false;
                 for (const eventTile of eventTiles) {
                     const changed = this.gameMapFrontWrapper.putTile(
@@ -3943,6 +3948,7 @@ ${escapedMessage}
     private configureTileAnimations(): void {
         this.tileAnimationRefreshEvent?.remove(false);
         this.tileAnimationRefreshEvent = undefined;
+        this.tileAnimationRefreshTracker.reset();
 
         this.setTileAnimationsPaused(localUserStore.getDisableAnimations());
 
@@ -3955,7 +3961,16 @@ ${escapedMessage}
             delay: refreshDelay,
             loop: true,
             callback: () => {
-                if (!localUserStore.getDisableAnimations()) {
+                if (
+                    !localUserStore.getDisableAnimations() &&
+                    this.tileAnimationRefreshTracker.shouldRedraw(
+                        this.gameMapFrontWrapper.phaserLayers,
+                        this.gameMapFrontWrapper.phaserMap.tileWidth,
+                        this.gameMapFrontWrapper.phaserMap.tileHeight,
+                        this.cameras?.main?.worldView,
+                        () => performance.now(),
+                    )
+                ) {
                     this.markDirty();
                 }
             },
