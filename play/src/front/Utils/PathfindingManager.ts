@@ -11,6 +11,16 @@ export enum PathTileType {
     PersonalDesk = 5,
 }
 
+export type DirectionalPathfindingDirection =
+    | "TOP"
+    | "TOP_RIGHT"
+    | "RIGHT"
+    | "BOTTOM_RIGHT"
+    | "BOTTOM"
+    | "BOTTOM_LEFT"
+    | "LEFT"
+    | "TOP_LEFT";
+
 export class PathfindingManager {
     private easyStar: EasyStar;
     private grid: number[][];
@@ -35,6 +45,20 @@ export class PathfindingManager {
 
     public setCollisionGrid(collisionGrid: number[][]): void {
         this.setEasyStarGrid(collisionGrid);
+    }
+
+    /**
+     * Restrict entry to a tile by the source tile's direction, without making it unwalkable.
+     */
+    public setDirectionalCondition(x: number, y: number, allowedDirections: DirectionalPathfindingDirection[]): void {
+        this.easyStar.setDirectionalCondition(x, y, allowedDirections);
+    }
+
+    /**
+     * Remove map-specific edge restrictions before rebuilding them or leaving the scene.
+     */
+    public clearDirectionalConditions(): void {
+        this.easyStar.removeAllDirectionalConditions();
     }
 
     /**

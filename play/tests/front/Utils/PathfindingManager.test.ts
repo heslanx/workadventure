@@ -13,6 +13,8 @@ const { mockEasyStar, EasyStarConstructor } = vi.hoisted(() => {
         disableCornerCutting: vi.fn(),
         setTileCost: vi.fn(),
         setIterationsPerCalculation: vi.fn(),
+        setDirectionalCondition: vi.fn(),
+        removeAllDirectionalConditions: vi.fn(),
     };
 
     const EasyStarConstructor = vi.fn(function EasyStarMock() {
@@ -43,6 +45,8 @@ vi.mock("@workadventure/math-utils", () => ({
 
 import { PathfindingManager } from "../../../src/front/Utils/PathfindingManager";
 
+type AllowedDirections = Parameters<PathfindingManager["setDirectionalCondition"]>[2];
+
 describe("PathfindingManager", () => {
     let pathfindingManager: PathfindingManager;
     let mockGrid: number[][];
@@ -67,6 +71,18 @@ describe("PathfindingManager", () => {
     afterEach(() => {
         pathfindingManager.cleanup();
         vi.clearAllMocks();
+    });
+
+    describe("Directional path conditions", () => {
+        it("forwards edge restrictions and resets them for the next map state", () => {
+            const allowedDirections: AllowedDirections = ["TOP", "TOP_RIGHT", "TOP_LEFT"];
+
+            pathfindingManager.setDirectionalCondition(2, 1, allowedDirections);
+            pathfindingManager.clearDirectionalConditions();
+
+            expect(mockEasyStar.setDirectionalCondition).toHaveBeenCalledWith(2, 1, allowedDirections);
+            expect(mockEasyStar.removeAllDirectionalConditions).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe("Basic pathfinding functionality", () => {
