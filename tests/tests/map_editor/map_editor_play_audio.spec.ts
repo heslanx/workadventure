@@ -101,6 +101,10 @@ test.describe("Map editor play audio @oidc @nomobile", () => {
         await page.keyboard.press("e");
         await EntityEditor.moveAndClick(page, 1 * 32, 7.5 * 32);
         await page.keyboard.press("Delete");
+        const confirmDialog = page.getByTestId("confirmDialog");
+        await expect(confirmDialog).toContainText("Undo cannot restore an uploaded file");
+        await page.getByTestId("confirmDialogConfirm").click();
+        await expect(confirmDialog).toBeHidden();
 
         await expect.poll(async () => (await request.get(entitySoundUrl)).ok()).toBe(false);
     });
