@@ -25,6 +25,29 @@ button.button-state {
   }
 }
 
+/* Field borders. The design system draws them with contrast-400 (#3c5e90), 2.20:1 on bg-contrast, under the 3:1 a
+   control's boundary needs (WCAG 1.4.11). lighter-purple (#928ebb) is >= 3.2:1 on bg-contrast, contrast-900/1000,
+   dark-purple, brand-blue and bg-white/10 rows, and it is the border .svelte-select already had.
+   This sits in the design system's own layer, with the same specificity (:where() adds none) and later in the
+   source, so it wins by order for the default state only: hover, focus, error, success and invalid are more
+   specific and keep their colours. The light variants (white fields) are left out. */
+@layer components {
+  .input-text:where(:not(.input-text-light)),
+  .input-number:where(:not(.input-number-light)),
+  .input-search:where(:not(.input-search-light)),
+  .input-select:where(:not(.input-select-light)),
+  .input-tags:where(:not(.input-tags-light)) {
+    @apply border-lighter-purple;
+  }
+
+  /* InputTags and MemberAutocomplete add !border-contrast-400. Among !important declarations the earlier layer
+     wins and unlayered CSS comes last, so that utility beat the unlayered rule this replaces. Important in this
+     layer beats it. */
+  .svelte-select {
+    border-color: var(--color-lighter-purple) !important;
+  }
+}
+
 .input-select {
   @apply mb-2;
 
@@ -73,7 +96,6 @@ button.button-state {
 .svelte-select {
   border-radius: 8px !important;
   padding-left: 0.75rem !important;
-  border-color: rgb(146, 142, 187) !important;
   transition: all ease-in-out 150ms !important;
 }
 .svelte-select.focused {

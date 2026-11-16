@@ -35,6 +35,7 @@
     import { highlightFullScreen } from "../../Stores/ActionsCamStore";
     import { localUserStore } from "../../Connection/LocalUserStore";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
+    import { isReducedMotion } from "../../Utils/reducedMotion";
     import LL from "../../../i18n/i18n-svelte";
     import { MAX_DISPLAYED_VIDEOS } from "../../Enum/EnvironmentVariable";
     import {
@@ -416,25 +417,25 @@
     function scrollCamerasLeft() {
         if (!camerasContainer) return;
         const step = camerasContainer.clientWidth * scrollStepRatio;
-        camerasContainer.scrollBy({ left: -step, behavior: "smooth" });
+        camerasContainer.scrollBy({ left: -step, behavior: isReducedMotion() ? "auto" : "smooth" });
     }
 
     function scrollCamerasRight() {
         if (!camerasContainer) return;
         const step = camerasContainer.clientWidth * scrollStepRatio;
-        camerasContainer.scrollBy({ left: step, behavior: "smooth" });
+        camerasContainer.scrollBy({ left: step, behavior: isReducedMotion() ? "auto" : "smooth" });
     }
 
     function scrollCamerasUp() {
         if (!camerasContainer) return;
         const step = camerasContainer.clientHeight * scrollStepRatio;
-        camerasContainer.scrollBy({ top: -step, behavior: "smooth" });
+        camerasContainer.scrollBy({ top: -step, behavior: isReducedMotion() ? "auto" : "smooth" });
     }
 
     function scrollCamerasDown() {
         if (!camerasContainer) return;
         const step = camerasContainer.clientHeight * scrollStepRatio;
-        camerasContainer.scrollBy({ top: step, behavior: "smooth" });
+        camerasContainer.scrollBy({ top: step, behavior: isReducedMotion() ? "auto" : "smooth" });
     }
 
     // In picture-in-picture the container lives in another window, where bind:clientWidth no longer reports.

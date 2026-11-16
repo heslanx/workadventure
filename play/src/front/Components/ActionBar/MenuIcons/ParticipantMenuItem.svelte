@@ -21,6 +21,7 @@
     import type { MeetingParticipant } from "../../../Stores/MeetingInvitationStore";
     import WokaFromUserId from "../../Woka/WokaFromUserId.svelte";
     import Spinner from "../../Icons/Spinner.svelte";
+    import { readableTextColor } from "../../Video/readableTextColor";
     import HeaderMenuItem from "./HeaderMenuItem.svelte";
     import ParticipantWoka from "./ParticipantWoka.svelte";
     import {
@@ -208,6 +209,7 @@
     /** True when menu is visible but game scene / proximityChatRoomManager is not ready yet. */
     let loading = $derived($participantMenuVisibleStore && !$gameSceneStore?.proximityChatRoomManager);
     let localParticipantName = $derived(localUserStore.getName()?.trim() || $LL.camera.my.nameTag());
+    let localParticipantColor = $derived(getColorByString(localParticipantName));
 </script>
 
 {#if $participantMenuVisibleStore}
@@ -309,8 +311,9 @@
                         data-testid="participant-row-me"
                     >
                         <div
-                            class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden relative"
-                            style:background-color={getColorByString(localParticipantName)}
+                            class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm overflow-hidden relative"
+                            style:background-color={localParticipantColor}
+                            style:color={readableTextColor(localParticipantColor)}
                             aria-hidden="true"
                         >
                             <span class="flex items-center justify-center w-full h-full">?</span>
@@ -399,8 +402,9 @@
             data-testid="participant-row-me"
         >
             <div
-                class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden relative"
-                style:background-color={getColorByString(localParticipantName)}
+                class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm overflow-hidden relative"
+                style:background-color={localParticipantColor}
+                style:color={readableTextColor(localParticipantColor)}
                 aria-hidden="true"
             >
                 <span class="flex items-center justify-center w-full h-full">?</span>

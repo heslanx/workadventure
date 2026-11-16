@@ -25,6 +25,7 @@
     import LL from "../../../../i18n/i18n-svelte";
     import { createUnreadElsewhereStore, getUnreadConversationsElsewhere } from "../../Stores/UnreadMessagesCountStore";
     import { showFloatingUi } from "../../../Utils/svelte-floatingui-show";
+    import { isReducedMotion } from "../../../Utils/reducedMotion";
     import UnreadConversationsPopover from "../UnreadConversationsPopover.svelte";
     import UnreadCount from "../UnreadCount.svelte";
     import { hasPendingMentionElsewhere } from "../../Stores/ChatMessageBannerStore";
@@ -592,7 +593,7 @@
         anchorHardReleaseTimer = setTimeout(releaseScrollAnchor, ANCHOR_MAX_HOLD_MS);
     }
 
-    function scrollToMessageListBottom(behavior: ScrollBehavior = "smooth") {
+    function scrollToMessageListBottom(behavior: ScrollBehavior = isReducedMotion() ? "auto" : "smooth") {
         if (messageListRef == undefined) return;
         releaseScrollAnchor();
         autoScroll = true;
@@ -728,7 +729,7 @@
         autoScroll = false;
         releaseScrollAnchor();
         beginProgrammaticScroll("resync");
-        target.scrollIntoView({ block: "center", behavior: "smooth" });
+        target.scrollIntoView({ block: "center", behavior: isReducedMotion() ? "auto" : "smooth" });
         target.classList.add("highlight-message", "highlight-message-pulse");
         return true;
     }
