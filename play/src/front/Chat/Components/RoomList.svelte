@@ -380,7 +380,7 @@
                         <p class="m-0 grow">{$LL.chat.connectionRecovered(recoveredOutage)}</p>
                         <button
                             type="button"
-                            class="m-0 -my-1.5 -me-2 p-1.5 shrink-0 rounded bg-transparent text-white/75 hover:text-white hover:bg-white/10 cursor-pointer"
+                            class="hit-area m-0 -my-1.5 -me-2 p-1.5 shrink-0 rounded bg-transparent text-white/75 hover:text-white hover:bg-white/10 cursor-pointer"
                             aria-label={$LL.chat.connectionRecoveredDismiss()}
                             onclick={() => chatConnectionFailureStore.dismiss()}
                         >
@@ -510,7 +510,7 @@
                             <!-- The count is a door: it opens the section that holds the unread conversations. -->
                             <button
                                 type="button"
-                                class="m-0 p-1 flex items-center bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                                class="hit-area m-0 p-1 flex items-center bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                                 aria-label={$LL.chat.a11y.showUnreadConversations()}
                                 title={$LL.chat.a11y.showUnreadConversations()}
                                 onclick={toggleDisplayDirectRooms}
@@ -593,7 +593,7 @@
                                 <!-- The count is a door: it opens the section that holds the unread conversations. -->
                                 <button
                                     type="button"
-                                    class="m-0 p-1 flex items-center bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                                    class="hit-area m-0 p-1 flex items-center bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                                     aria-label={$LL.chat.a11y.showUnreadConversations()}
                                     title={$LL.chat.a11y.showUnreadConversations()}
                                     onclick={(event) => {
@@ -693,8 +693,9 @@
             ondblclick={() => roomListWidthStore.set(ROOM_LIST_DEFAULT_WIDTH)}
             onkeydown={resizeRoomListWithKeyboard}
         >
+            <!-- hit-area: a 28px pointer target around the 4px bar, only in its own height so the header stays clear. -->
             <span
-                class="w-1 h-32 rounded bg-white/20 transition-colors group-hover:bg-white group-focus-visible:bg-white"
+                class="hit-area w-1 h-32 rounded bg-white/20 transition-colors group-hover:bg-white group-focus-visible:bg-white"
             ></span>
         </div>
     {/if}
