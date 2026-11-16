@@ -31,8 +31,10 @@ import onboarding from "./onboarding";
 import recording from "./recording";
 import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
+import a11y from "./a11y";
 
 const vi_VN = deepmerge(en_US, {
+    a11y,
     audio,
     camera,
     chat,
