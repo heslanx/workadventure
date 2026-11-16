@@ -43,11 +43,10 @@ Run one command at a time; this machine's load makes parallel suites time out. U
 cd play && npm run typesafe-i18n && npm run typecheck && npm run svelte-check && npm run lint \
   && npm run pretty-check && npm run i18n:check && npx vitest run
 cd ../back && npm test -- --run
-cd ../map-storage && npx tsc --noEmit && npx vitest run --testTimeout=30000
+cd ../map-storage && npx tsc --noEmit && npm test -- --run
 ```
 
-`map-storage` gets 30 s because three `UploadController` tests exceed 5 s on this host under load
-(timing, recorded in `docs/ui-polish/TASKS.md` under Parked). Add the package's own checks when a
+Add the package's own checks when a
 batch touches `libs/`, `messages/` or `desktop/`; `.github/workflows/continuous_integration.yml` is
 the source of truth.
 

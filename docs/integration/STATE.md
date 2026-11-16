@@ -16,11 +16,11 @@ Owned by the integrator ([`LOOP.md`](LOOP.md)). Status key: `ready`, `waiting` (
 
 | # | Item | Producer | Status | Evidence / next |
 |---|---|---|---|---|
-| 1 | Apple HIG pass, verify phase of workflow `wf_9d4de14d-c84` | workadventure-cb | waiting | Edits up to ~01:00 are committed (11 commits ending `ec1851d3a`). Wait for "done" with the final a11y key list; then re-diff the 15 locale `a11y.ts` files against `en-US/a11y.ts`. `/tmp/wa-hig` belongs to cb until then |
+| 1 | Apple HIG pass, round 2 (critic residuals) | workadventure-cb | waiting | Round 1 done 2026-11-16: fully committed (`2b572e4ba`..`ec1851d3a`, `bffa20c5b`, `be66d0f89`, `ce6ece405`), no a11y key changes (31 keys). Round 2 touches only `play/src/front/**`, no new keys, no package.json. Wait for its "done", then commit and run the full check. `/tmp/wa-hig` belongs to cb until then |
 | 2 | Dependency upgrades, one per commit | workadventure-b0 | waiting | Runs in `/tmp/wa-upgrade-repo` on branch `chore/deps-upgrade` from `ce6ece405`. b0 announces before fetching into this checkout or pushing. Integrate as a fast-forward when its gate is green |
 | 3 | Native-speaker review of dsb-DE and hsb-DE strings | user | user | Machine translations in `play/src/i18n/{dsb-DE,hsb-DE}/` (a11y.ts from `bffa20c5b`, earlier keys from the UI polish). Needs a reviewer the loop cannot supply |
 | 4 | `.env.bak` at the repo root, untracked | user | user | Keep untracked, move out of the repo, or delete. The loop never reads or commits it |
-| 5 | `map-storage` `UploadController` tests over the 5 s default timeout on this host | none | waiting | Pass at 30 s. A fix (per-test timeout or faster fixtures) needs an owner; parked in `docs/ui-polish/TASKS.md` |
+| 5 | `map-storage` `UploadController` tests stalled 6 s after earlier tests | integrator | done | Cause: `fetch` reused a keep-alive loopback socket the test server was about to drop, so the request waited for the server's 5 s keep-alive timeout. Fix: `server.closeIdleConnections()` after each test; 3 runs 18/18 at the default 5 s timeout, full map-storage suite 119/119 |
 
 ## Decisions
 

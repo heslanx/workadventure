@@ -97,7 +97,10 @@ const { storage } = vi.hoisted(() => {
                     if (!wamPathsToDelete.includes(relativePath)) {
                         continue;
                     }
-                    if (filesFromZip.includes(relativePath.replace(".wam", ".tmj")) && !filesFromZip.includes(relativePath)) {
+                    if (
+                        filesFromZip.includes(relativePath.replace(".wam", ".tmj")) &&
+                        !filesFromZip.includes(relativePath)
+                    ) {
                         continue;
                     }
                 }
@@ -306,6 +309,9 @@ describe("UploadController", () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
+        // fetch keeps the loopback connection alive; a test that reuses a socket the server is about to drop
+        // stalls until the server's 5 s keep-alive timeout. Every test starts on a fresh connection instead.
+        server.closeIdleConnections();
     });
 
     describe("DELETE of a map whose autosave write is in flight", () => {
@@ -393,7 +399,9 @@ describe("UploadController", () => {
         });
 
         it("should not delete a WAM created after the upload's deletion snapshot", async () => {
-            storage.createWamAfterNextWamList(() => storage.files.set(keyOf("created-during-upload.wam"), wam("created")));
+            storage.createWamAfterNextWamList(() =>
+                storage.files.set(keyOf("created-during-upload.wam"), wam("created")),
+            );
 
             const response = await uploadZip({ "b.wam": wam("b") });
 
