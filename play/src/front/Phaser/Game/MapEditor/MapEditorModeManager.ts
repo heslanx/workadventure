@@ -183,8 +183,12 @@ export class MapEditorModeManager {
     private runningUndoRedoCommand: Promise<void> = Promise.resolve();
 
     public async undoCommand(): Promise<void> {
+        await this.undoLastCommand();
+    }
+
+    private async undoLastCommand(): Promise<boolean> {
         if (this.localCommandsHistory.length === 0 || this.currentCommandIndex === -1) {
-            return;
+            return false;
         }
         try {
             const command = this.localCommandsHistory[this.currentCommandIndex];
@@ -196,11 +200,13 @@ export class MapEditorModeManager {
             // this should not be called with every change. Use some sort of debounce
             this.emitMapEditorUpdate(undoCommand);
             this.currentCommandIndex -= 1;
+            return true;
         } catch (e) {
             this.localCommandsHistory.splice(this.currentCommandIndex, 1);
             this.currentCommandIndex -= 1;
             console.error(e);
             Sentry.captureException(e);
+            return false;
         }
     }
 
@@ -231,8 +237,7 @@ export class MapEditorModeManager {
                 if (this.localCommandsHistory[this.currentCommandIndex] !== command) {
                     return;
                 }
-                await this.undoCommand();
-                undone = true;
+                undone = await this.undoLastCommand();
             })
             .catch((e) => console.error(e));
         return this.runningUndoRedoCommand.then(() => undone);
