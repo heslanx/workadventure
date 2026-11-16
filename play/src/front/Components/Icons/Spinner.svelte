@@ -1,10 +1,12 @@
 <script lang="ts">
+    import { LL } from "../../../i18n/i18n-svelte";
+
     interface Props {
         size?: "xs" | "sm" | "md" | "lg";
         fillColor?: string;
     }
 
-    let { size = "md", fillColor = "fill-secondary" }: Props = $props();
+    let { size = "md", fillColor = "fill-secondary-300" }: Props = $props();
 
     let sizeClasses = $derived(
         size === "xs"
@@ -36,4 +38,5 @@
             fill="currentFill"
         />
     </svg>
+    <span class="sr-only">{$LL.chat.loading()}</span>
 </div>

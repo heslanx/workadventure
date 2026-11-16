@@ -27,6 +27,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     viewBox="0 0 24 24"
+    aria-hidden="true"
 >
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />

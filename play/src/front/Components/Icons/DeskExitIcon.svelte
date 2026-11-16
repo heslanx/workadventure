@@ -13,6 +13,7 @@
     stroke-linejoin="round"
     {width}
     {height}
+    aria-hidden="true"
     {...$$restProps}
 >
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />

@@ -23,6 +23,7 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     class="{height} {width} {strokeColor} {fillColor} {classList} {hover} icon icon-tabler icons-tabler-filled icon-tabler-man"
+    aria-hidden="true"
 >
     <g clip-path="url(#clip0_827_10)">
         <path
