@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Actualiser ne restaurera pas cette carte, car elle n'existe plus.",
         editionFailed: "Votre modification n'a pas pu être enregistrée et a été annulée.",
     },
+    undo: {
+        action: "Annuler",
+        unavailable: "Cette modification ne peut plus être annulée ici. Refaites-la à la main.",
+        entityDeleted: "Objet « {name} » supprimé",
+        areaDeleted: "Zone « {name} » supprimée",
+        areaDeletedUnnamed: "Zone supprimée",
+        propertyRemovedFromArea: "Propriété retirée de cette zone",
+        propertyRemovedFromObject: "Propriété retirée de cet objet",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "Supprimer « {name} » et son fichier importé ?",
+        areaTitle: "Supprimer la zone « {name} » et son fichier importé ?",
+        areaTitleUnnamed: "Supprimer cette zone et son fichier importé ?",
+        propertyTitle: "Retirer cette propriété et son fichier importé ?",
+        message: "Le fichier est aussi supprimé du stockage de la carte.",
+        warning: "Annuler ne peut pas restaurer un fichier importé. Il faudrait l'importer à nouveau.",
+        delete: "Supprimer",
+        remove: "Retirer",
+    },
     sideBar: {
         areaEditor: "Outil d'édition de zone",
         entityEditor: "Outil d'édition d'entités",
@@ -301,6 +320,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Format du fichier non supporté",
                 errorOnFileNumber: "Dépôt multiple de fichiers non supporté",
                 errorOnFileSize: "Fichier trop volumineux : la taille maximale est de {size} MB",
+                removeFile: "Retirer {name}",
             },
             hideUrlLabel: "Masquer l'URL",
             actionButtonLabel: "Ouvrir le fichier",
@@ -338,6 +358,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "Seuls les utilisateurs avec ces tags peuvent verrouiller ou déverrouiller cette zone. Laissez vide pour autoriser tout le monde.",
         },
         noProperties: "Aucune propriété définie",
+        removeProperty: "Retirer cette propriété",
     },
     areaEditor: {
         editInstructions: "Sélectionnez une zone pour modifier ses propriétés.",
@@ -351,10 +372,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Action requise",
             description: "Cette zone personnelle contient un ou plusieurs objets. Que souhaitez-vous faire avec ?",
+            heading: "Cette zone personnelle contient {count} {{objet|objets}}",
+            question: "Les supprimer de la carte ou les laisser où ils sont ?",
             buttons: {
                 keep: "Conserver",
                 remove: "Supprimer",
                 cancel: "Annuler",
+                keepObjects: "Conserver les objets",
+                deleteObjects: "Supprimer {count} {{objet|objets}}",
             },
         },
         nameHelpText: "Le nom de la zone sera affiché aux utilisateurs lorsqu'ils entreront dans la zone.",
@@ -375,9 +400,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Rechercher",
             backToSelectObject: "Retour à la sélection d'objet",
+            colors: "Couleurs",
+            positions: "Positions",
         },
         trashTool: {
             delete: "Supprimer un item en cliquant dessus !",
+            undoHint:
+                "Supprimé par erreur ? Utilisez Annuler dans la notification qui s'affiche, ou appuyez sur Ctrl/Cmd+Z.",
+            keyboardHint: "Sans souris, sélectionnez un objet ou une zone dans son éditeur, puis appuyez sur Suppr.",
         },
         deleteButton: "Supprimer",
         testInteractionButton: "Tester interaction",
@@ -420,6 +450,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Collision",
             wokaAbove: "Woka devant",
             wokaBelow: "Woka derrière",
+            deleteConfirmTitle: "Supprimer « {name} » ?",
+            deleteConfirmMessage: "Cet objet personnalisé sera retiré du sélecteur d'objets.",
+            deleteConfirmMessageWithCopies:
+                "Cet objet personnalisé sera retiré du sélecteur d'objets, ainsi que ses {count} {{copie|copies}} placées sur cette carte.",
         },
         buttons: {
             editEntity: "Éditer",

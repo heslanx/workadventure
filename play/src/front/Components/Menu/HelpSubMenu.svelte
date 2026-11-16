@@ -19,7 +19,7 @@
     <div class="submenu p-4">
         <h2 class="text-white text-xl font-semibold mb-4">{$LL.menu.sub.help()}</h2>
         <div class="space-y-2">
-            <ActionBarButton label="Restart tutorial" onclick={restartOnboarding}>
+            <ActionBarButton label={$LL.menu.profile.replayTutorial()} onclick={restartOnboarding}>
                 <svg
                     aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"

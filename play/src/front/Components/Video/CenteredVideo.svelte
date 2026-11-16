@@ -264,7 +264,7 @@
                         bind:videoHeight={videoStreamHeight}
                     />
                 {:else}
-                    <p>Unknown media type</p>
+                    <p>{$LL.video.unknownMediaType()}</p>
                 {/if}
             {/if}
         </div>

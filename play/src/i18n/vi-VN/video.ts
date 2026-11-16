@@ -11,6 +11,7 @@ const video: DeepPartial<Translation["video"]> = {
     persistent_connection_issue: "Đang kết nối lại... Kết nối không ổn định...",
     click_and_drag_to_resize: "Bấm và kéo để thay đổi kích thước",
     click_to_unblock: "Bấm để bỏ chặn",
+    unknownMediaType: "Không hỗ trợ loại nguồn video này.",
     away: {
         subtitle: "Tạm dừng khi bạn vắng mặt",
         cantSeeOrHear: "Không ai có thể thấy hoặc nghe bạn",

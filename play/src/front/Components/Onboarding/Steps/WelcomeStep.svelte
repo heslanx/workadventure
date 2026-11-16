@@ -44,6 +44,7 @@
                 <button
                     class="px-6 py-3 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
                     data-testid="onboarding-button-welcome-start"
+                    data-onboarding-primary
                     onclick={handleNext}
                 >
                     {$LL.onboarding.welcome.start()}

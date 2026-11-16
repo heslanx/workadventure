@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "การรีเฟรชจะไม่นำแผนที่นี้กลับมา เพราะแผนที่ไม่มีอยู่แล้ว",
         editionFailed: "ไม่สามารถบันทึกการเปลี่ยนแปลงของคุณได้ และถูกย้อนกลับแล้ว",
     },
+    undo: {
+        action: "เลิกทำ",
+        unavailable: "ไม่สามารถเลิกทำการเปลี่ยนแปลงนี้ได้อีกแล้ว กรุณาทำใหม่ด้วยตัวเอง",
+        entityDeleted: "ลบวัตถุ “{name}” แล้ว",
+        areaDeleted: "ลบพื้นที่ “{name}” แล้ว",
+        areaDeletedUnnamed: "ลบพื้นที่แล้ว",
+        propertyRemovedFromArea: "นำคุณสมบัติออกจากพื้นที่นี้แล้ว",
+        propertyRemovedFromObject: "นำคุณสมบัติออกจากวัตถุนี้แล้ว",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "ลบ “{name}” และไฟล์ที่อัปโหลดหรือไม่",
+        areaTitle: "ลบพื้นที่ “{name}” และไฟล์ที่อัปโหลดหรือไม่",
+        areaTitleUnnamed: "ลบพื้นที่นี้และไฟล์ที่อัปโหลดหรือไม่",
+        propertyTitle: "นำคุณสมบัตินี้และไฟล์ที่อัปโหลดออกหรือไม่",
+        message: "ไฟล์จะถูกลบออกจากที่เก็บข้อมูลของแผนที่ด้วย",
+        warning: "การเลิกทำไม่สามารถกู้คืนไฟล์ที่อัปโหลดได้ คุณจะต้องอัปโหลดใหม่",
+        delete: "ลบ",
+        remove: "นำออก",
+    },
     sideBar: {
         areaEditor: "เครื่องมือแก้ไขพื้นที่",
         entityEditor: "เครื่องมือแก้ไขวัตถุ",
@@ -292,6 +311,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "ไม่รองรับรูปแบบไฟล์นี้",
                 errorOnFileNumber: "ไม่รองรับการวางหลายไฟล์พร้อมกัน",
                 errorOnFileSize: "ไฟล์ใหญ่เกินไป ขนาดสูงสุดคือ {size} MB",
+                removeFile: "นำ {name} ออก",
             },
             hideUrlLabel: "ซ่อน URL",
             actionButtonLabel: "เปิดไฟล์",
@@ -333,6 +353,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         allowTalking: "อนุญาตให้พูดคุยและสร้างบับเบิล",
         raiseHandEnabled: "อนุญาตให้ยกมือ",
         noProperties: "ยังไม่ได้กำหนดคุณสมบัติ",
+        removeProperty: "นำคุณสมบัตินี้ออก",
     },
     areaEditor: {
         editInstructions: "คลิกที่พื้นที่เพื่อแก้ไขคุณสมบัติ",
@@ -346,10 +367,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "ต้องดำเนินการ",
             description: "พื้นที่ส่วนตัวนี้มีวัตถุอยู่หนึ่งชิ้นหรือมากกว่า คุณต้องการทำอย่างไรกับวัตถุเหล่านี้?",
+            heading: "พื้นที่ส่วนตัวนี้มีวัตถุ {count} ชิ้น",
+            question: "ลบออกจากแผนที่ หรือเก็บไว้ที่เดิม?",
             buttons: {
                 keep: "เก็บไว้",
                 remove: "ลบออก",
                 cancel: "ยกเลิก",
+                keepObjects: "เก็บวัตถุไว้",
+                deleteObjects: "ลบวัตถุ {count} ชิ้น",
             },
         },
         nameHelpText: "ข้อความนี้จะแสดงให้ผู้ใช้เห็นเมื่อเข้าสู่พื้นที่",
@@ -370,9 +395,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "ค้นหา",
             backToSelectObject: "กลับไปเลือกวัตถุ",
+            colors: "สี",
+            positions: "ตำแหน่ง",
         },
         trashTool: {
             delete: "คลิกที่วัตถุเพื่อลบ!",
+            undoHint: "ลบโดยไม่ตั้งใจใช่ไหม? กด “เลิกทำ” ในการแจ้งเตือนที่ปรากฏขึ้น หรือกด Ctrl/Cmd+Z",
+            keyboardHint: "หากไม่ใช้เมาส์ ให้เลือกวัตถุหรือพื้นที่ในตัวแก้ไขของมัน แล้วกด Delete",
         },
         deleteButton: "ลบ",
         testInteractionButton: "ทดสอบการโต้ตอบ",
@@ -414,6 +443,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "การชน",
             wokaAbove: "Woka อยู่ด้านบน",
             wokaBelow: "Woka อยู่ด้านล่าง",
+            deleteConfirmTitle: "ลบ “{name}” ใช่ไหม?",
+            deleteConfirmMessage: "วัตถุกำหนดเองนี้จะถูกนำออกจากตัวเลือกวัตถุ",
+            deleteConfirmMessageWithCopies:
+                "วัตถุกำหนดเองนี้จะถูกนำออกจากตัวเลือกวัตถุ พร้อมกับสำเนา {count} ชิ้นที่วางอยู่บนแผนที่นี้",
         },
         buttons: {
             editEntity: "แก้ไข",

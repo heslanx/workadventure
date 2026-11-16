@@ -4,12 +4,15 @@
     import LL from "../../../../i18n/i18n-svelte";
     import { isMobileOnboarding, pressedKeysStore } from "../../../Stores/OnboardingStore";
     import { touchScreenManager } from "../../../Touch/TouchScreenManager";
+    import OnboardingNav from "../OnboardingNav.svelte";
 
     interface Props {
         onnext?: () => void;
+        onback?: () => void;
+        onskip?: () => void;
     }
 
-    const { onnext }: Props = $props();
+    const { onnext, onback, onskip }: Props = $props();
 
     let keyboardLayout: "QWERTY" | "AZERTY" = "QWERTY";
 
@@ -192,10 +195,12 @@
             {/if}
             <button
                 class="mt-4 px-4 py-2 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
+                data-onboarding-primary
                 onclick={handleNext}
             >
                 {$LL.onboarding.movement.next()}
             </button>
+            <OnboardingNav {onback} {onskip} />
         </div>
     </div>
 </div>

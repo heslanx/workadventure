@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Non recommandé",
     enable: {
         title: "Allumez votre caméra et votre microphone",
+        join: "Rejoindre la salle",
         start: "Bienvenue sur notre page de configuration des périphériques audio et vidéo ! Trouvez ici les outils pour optimiser votre expérience en ligne. Ajustez les paramètres selon vos préférences pour résoudre les problèmes éventuels. Assurez-vous que votre matériel est bien connecté et à jour. Explorez et testez différentes configurations pour trouver celle qui convient le mieux.",
     },
     help: {
@@ -29,6 +30,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "Continuer sans webcam",
         continueWithoutMicrophone: "Continuer sans microphone",
         continueCameraMicrophone: "Continuer sans webcam et microphone",
+        showSteps: "Voir comment faire",
+        hideSteps: "Masquer les étapes",
+        steps: {
+            chrome: "Cliquez sur l'icône de cadenas à gauche de la barre d'adresse, réglez Caméra ou Microphone sur Autoriser, puis rechargez la page.",
+            firefox:
+                "Cliquez sur l'icône des autorisations à gauche de la barre d'adresse, supprimez l'entrée Caméra ou Microphone bloquée, puis rechargez la page et autorisez l'accès lorsqu'il vous est demandé.",
+            safari: "Ouvrez le menu Safari, choisissez Réglages pour ce site web, réglez Caméra ou Microphone sur Autoriser, puis rechargez la page.",
+            android:
+                "Appuyez sur l'icône de cadenas à gauche de la barre d'adresse, ouvrez Autorisations, réglez Caméra ou Microphone sur Autoriser, puis rechargez la page.",
+            other: "Ouvrez les paramètres de site de votre navigateur pour cette page, réglez Caméra ou Microphone sur Autoriser, puis rechargez la page.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/fr-FR-chrome.png",
@@ -37,6 +49,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Accès caméra refusé",
             permissionDeniedDesc:
                 "Le navigateur a refusé la caméra pour ce site. Autorisez-la via la barre d’adresse (cadenas ou icône caméra) ou les paramètres du site. L’illustration correspond à votre navigateur.",
+            permissionDeniedFix:
+                "Le navigateur a refusé la caméra pour ce site. Autorisez-la via la barre d'adresse (cadenas ou icône caméra) ou les paramètres du site, puis rechargez la page. Sélectionnez ce bouton pour voir les étapes.",
             noDeviceTitle: "Aucune caméra utilisable",
             noDeviceDesc:
                 "Le navigateur ne détecte aucune caméra utilisable. Essayez un autre navigateur, vérifiez qu’une caméra est branchée, vérifiez les configurations de l’ordinateur (confidentialité, périphériques), ou redémarrez l’ordinateur si le matériel devrait fonctionner.",
@@ -54,6 +68,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Accès microphone refusé",
             permissionDeniedDesc:
                 "Le navigateur a refusé le microphone pour ce site. Autorisez-le via la barre d’adresse (cadenas ou icône micro) ou les paramètres du site. L’illustration correspond à votre navigateur.",
+            permissionDeniedFix:
+                "Le navigateur a refusé le microphone pour ce site. Autorisez-le via la barre d'adresse (cadenas ou icône micro) ou les paramètres du site, puis rechargez la page. Sélectionnez ce bouton pour voir les étapes.",
             noDeviceTitle: "Aucun microphone utilisable",
             noDeviceDesc:
                 "Le navigateur ne détecte aucun microphone utilisable. Essayez un autre navigateur, vérifiez qu’un micro est branché, vérifiez les configurations de l’ordinateur (confidentialité, périphériques), ou redémarrez l’ordinateur si le matériel devrait fonctionner.",
@@ -85,6 +101,10 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "Rafraîchir",
         continue: "Continuer",
         newDeviceDetected: "Nouveau périphérique détecté {device} 🎉 Changer ? [ESPACE] Ignorer [ÉCHAP]",
+        newDeviceSwitch: "Changer",
+        newDeviceIgnore: "Ignorer",
+        newDeviceAnnouncement:
+            "Nouveau périphérique détecté : {device}. Appuyez sur Espace pour l'utiliser, ou sur Échap pour l'ignorer.",
     },
     my: {
         silentZone: "Zone silencieuse",
@@ -111,6 +131,26 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "{name} a été invité à couper son micro.",
         mutedVideoNotice: "La caméra de {name} est désactivée. Seule cette personne peut la réactiver.",
         askedMuteVideoNotice: "{name} a été invité à désactiver sa caméra.",
+        confirmMuteAudioEveryBodyTitle: "Couper le micro de tout le monde ?",
+        confirmMuteAudioEveryBodyMessage:
+            "Cela coupe le micro de tout le monde dans cette conversation. Chaque personne est la seule à pouvoir réactiver son propre micro.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "Cela coupe le micro de {count} {{personne|personnes}} dans cette conversation. Chaque personne est la seule à pouvoir réactiver son propre micro.",
+        confirmMuteAudioEveryBodyAction: "Couper pour tout le monde",
+        mutedAudioEveryBodyNotice:
+            "Le micro de tout le monde est coupé. Chaque personne est la seule à pouvoir réactiver le sien.",
+        mutedAudioEveryBodyNoticeCount:
+            "Micro coupé pour {count} {{personne|personnes}}. Chaque personne est la seule à pouvoir réactiver le sien.",
+        confirmMuteVideoEveryBodyTitle: "Désactiver la caméra de tout le monde ?",
+        confirmMuteVideoEveryBodyMessage:
+            "Cela désactive la caméra de tout le monde dans cette conversation. Chaque personne est la seule à pouvoir réactiver sa propre caméra.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "Cela désactive la caméra de {count} {{personne|personnes}} dans cette conversation. Chaque personne est la seule à pouvoir réactiver sa propre caméra.",
+        confirmMuteVideoEveryBodyAction: "Désactiver les caméras",
+        mutedVideoEveryBodyNotice:
+            "La caméra de tout le monde est désactivée. Chaque personne est la seule à pouvoir réactiver la sienne.",
+        mutedVideoEveryBodyNoticeCount:
+            "Caméra désactivée pour {count} {{personne|personnes}}. Chaque personne est la seule à pouvoir réactiver la sienne.",
         alreadyMuted: "Déjà coupé",
         videoAlreadyOff: "Vidéo déjà désactivée",
     },

@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Actualitzar no restaurarà aquest mapa perquè ja no existeix.",
         editionFailed: "No s'ha pogut desar el teu canvi i s'ha desfet.",
     },
+    undo: {
+        action: "Desfés",
+        unavailable: "Aquest canvi ja no es pot desfer des d'aquí. Torna a fer-lo manualment.",
+        entityDeleted: "Objecte «{name}» eliminat",
+        areaDeleted: "Àrea «{name}» eliminada",
+        areaDeletedUnnamed: "Àrea eliminada",
+        propertyRemovedFromArea: "Propietat eliminada d'aquesta àrea",
+        propertyRemovedFromObject: "Propietat eliminada d'aquest objecte",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "Voleu suprimir «{name}» i el seu fitxer pujat?",
+        areaTitle: "Voleu suprimir l'àrea «{name}» i el seu fitxer pujat?",
+        areaTitleUnnamed: "Voleu suprimir aquesta àrea i el seu fitxer pujat?",
+        propertyTitle: "Voleu treure aquesta propietat i el seu fitxer pujat?",
+        message: "El fitxer també se suprimeix de l'emmagatzematge del mapa.",
+        warning: "Desfer no pot restaurar un fitxer pujat. Caldria tornar-lo a pujar.",
+        delete: "Suprimeix",
+        remove: "Treu",
+    },
     sideBar: {
         areaEditor: "Eina d'edició d'àrees",
         entityEditor: "Eina d'edició d'entitats",
@@ -295,6 +314,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Format de fitxer no suportat",
                 errorOnFileNumber: "No es suporta el deixar anar múltiple de fitxers",
                 errorOnFileSize: "El fitxer és massa gran, la mida màxima és de {size} MB",
+                removeFile: "Treu {name}",
             },
             hideUrlLabel: "Ocultar URL",
             actionButtonLabel: "Obrir fitxer",
@@ -336,6 +356,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         allowTalking: "Permetre parlar i formar bombolles",
         raiseHandEnabled: "Permetre aixecar la mà",
         noProperties: "No s'han definit propietats",
+        removeProperty: "Elimina aquesta propietat",
     },
     areaEditor: {
         editInstructions: "Feu clic en una àrea per modificar les seves propietats.",
@@ -349,10 +370,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Acció requerida",
             description: "Aquesta àrea personal conté un o més objectes. Què voleu fer amb ells?",
+            heading: "Aquesta àrea personal conté {count} {{objecte|objectes}}",
+            question: "Vols eliminar-los del mapa o mantenir-los on són?",
             buttons: {
                 keep: "Mantenir",
                 remove: "Eliminar",
                 cancel: "Cancel·lar",
+                keepObjects: "Mantenir els objectes",
+                deleteObjects: "Eliminar {count} {{objecte|objectes}}",
             },
         },
         nameHelpText: "Aquesta entrada es mostrarà a l'usuari si entra a l'àrea.",
@@ -373,9 +398,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Cercar",
             backToSelectObject: "Tornar a seleccionar objecte",
+            colors: "Colors",
+            positions: "Posicions",
         },
         trashTool: {
             delete: "Feu clic a l'objecte per eliminar-lo!",
+            undoHint: "L'has eliminat per error? Fes servir Desfés a l'avís que apareix o prem Ctrl/Cmd+Z.",
+            keyboardHint: "Sense ratolí, selecciona un objecte o una àrea al seu editor i prem Supr.",
         },
         deleteButton: "Eliminar",
         testInteractionButton: "Provar interacció",
@@ -418,6 +447,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Col·lisió",
             wokaAbove: "Woka a sobre",
             wokaBelow: "Woka a sota",
+            deleteConfirmTitle: "Vols eliminar «{name}»?",
+            deleteConfirmMessage: "Aquest objecte personalitzat s'eliminarà del selector d'objectes.",
+            deleteConfirmMessageWithCopies:
+                "Aquest objecte personalitzat s'eliminarà del selector d'objectes, juntament amb {count} {{còpia col·locada|còpies col·locades}} en aquest mapa.",
         },
         buttons: {
             editEntity: "Editar",

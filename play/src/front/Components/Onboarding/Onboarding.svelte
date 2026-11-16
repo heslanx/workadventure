@@ -1,14 +1,13 @@
 <script lang="ts">
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { get, type Unsubscriber } from "svelte/store";
     import { onboardingStore } from "../../Stores/OnboardingStore";
-    import { gameManager } from "../../Phaser/Game/GameManager";
-    import { hasMovedEventName } from "../../Phaser/Player/Player";
+    import { liveAnnouncementStore } from "../../Stores/LiveAnnouncementStore";
     import { requestedScreenSharingState } from "../../Stores/ScreenSharingStore";
     import { activePictureInPictureStore } from "../../Stores/PeerStore";
     import { currentPlayerGroupIdStore } from "../../Stores/CurrentPlayerGroupStore";
     import { inJitsiStore, inLivekitStore, silentStore } from "../../Stores/MediaStore";
-    import type { GameScene } from "../../Phaser/Game/GameScene";
+    import { LL } from "../../../i18n/i18n-svelte";
     import OnboardingStep from "./OnboardingStep.svelte";
     import OnboardingHighlight from "./OnboardingHighlight.svelte";
     import WelcomeStep from "./Steps/WelcomeStep.svelte";
@@ -19,37 +18,32 @@
     import PictureInPictureStep from "./Steps/PictureInPictureStep.svelte";
     import CompleteStep from "./Steps/CompleteStep.svelte";
 
-    let movementTimeout: ReturnType<typeof setTimeout> | null = null;
     let onboardingHighlight: OnboardingHighlight | null = $state(null);
     let onboardingUnsubscribe: Unsubscriber | undefined = undefined;
-    let currentGameScene: GameScene | undefined = undefined;
+    // True when the user reached the current step with Back: a step that is already satisfied must not skip itself.
+    let reachedByBack = false;
 
-    // Listen for ESC key to exit onboarding
+    // Escape skips the tutorial, but only when it comes from inside the tutorial panel: an Escape meant for a menu,
+    // a dialog or the map must not end it. There is no confirmation: the tutorial can be replayed from the menu.
+    // The listener lives on <svelte:window> for the whole life of the component, not only during the first run: a
+    // tutorial replayed from the menu (restart) has the same Skip button and the same "Press Esc" hint.
     const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === "Escape" && $onboardingStore) {
-            handleSkip();
-        }
+        if (event.key !== "Escape" || !$onboardingStore) return;
+        if (!(event.target instanceof Element) || !event.target.closest("[data-onboarding-panel]")) return;
+        handleSkip();
     };
 
     function destroyOnboarding() {
-        currentGameScene?.CurrentPlayer?.off(hasMovedEventName, handlePlayerMove);
-        if (movementTimeout) clearTimeout(movementTimeout);
-        window.removeEventListener("keydown", handleKeyDown);
         if (onboardingUnsubscribe) onboardingUnsubscribe();
     }
 
     onMount(() => {
-        // Listen to player movement for step 2
-        currentGameScene = gameManager.getCurrentGameScene();
-        currentGameScene?.CurrentPlayer?.on(hasMovedEventName, handlePlayerMove);
-
         // Auto-start onboarding if not completed (with a small delay to ensure scene is loaded)
         setTimeout(() => {
             if (onboardingStore.isCompleted()) return;
 
             // Start the onboarding
             onboardingStore.start();
-            window.addEventListener("keydown", handleKeyDown);
 
             // Subscribe to the onboarding store
             onboardingUnsubscribe = onboardingStore.subscribe((step) => {
@@ -68,15 +62,18 @@
         destroyOnboarding();
     });
 
-    function handlePlayerMove() {
-        if ($onboardingStore === "movement") {
-            if (movementTimeout) clearTimeout(movementTimeout);
-            // Wait 5 seconds after movement, then advance only when no movement key is pressed
-            movementTimeout = setTimeout(() => {
-                // Advance to the next step only if no movement key is pressed for 2 seconds
-                onboardingStore.next();
-            }, 1000);
-        }
+    // The button that was pressed leaves the page with its step. A user who was working inside the panel keeps their
+    // place: the focus goes to the main button of the new step, so Tab and Escape keep working from there.
+    function changeStep(action: () => void) {
+        const panel = document.querySelector("[data-onboarding-panel]");
+        const hadFocus = panel?.contains(document.activeElement) ?? false;
+        action();
+        if (!hadFocus) return;
+        tick()
+            .then(() => {
+                document.querySelector<HTMLElement>("[data-onboarding-panel] [data-onboarding-primary]")?.focus();
+            })
+            .catch((error: unknown) => console.error("Could not move the focus to the new tutorial step", error));
     }
 
     function handleNext() {
@@ -84,53 +81,117 @@
         if ($onboardingStore === "lockBubble" && onboardingHighlight) {
             onboardingHighlight.lockBubble();
         }
-        onboardingStore.next();
+        reachedByBack = false;
+        changeStep(() => onboardingStore.next());
+    }
+
+    function handleBack() {
+        reachedByBack = true;
+        changeStep(() => onboardingStore.back());
     }
 
     function handleSkip() {
         onboardingStore.skip();
     }
 
+    // Where the focus was when the tutorial opened. Skipping, finishing or cancelling it removes the button that had the
+    // focus, which would leave it on <body>: it goes back to where it was, or to the profile menu that replays the
+    // tutorial. Moving between steps keeps the tutorial open, so it never touches the focus here.
+    let focusBeforeTutorial: HTMLElement | undefined;
+    let tutorialWasOpen = false;
+
+    function isDocumentRoot(element: Element | null): boolean {
+        return !element || element === document.body || element === document.documentElement;
+    }
+
+    function isFocusLost(): boolean {
+        const active = document.activeElement;
+        return isDocumentRoot(active) || !!active?.closest("[data-onboarding-panel]");
+    }
+
+    // Runs before the DOM update, so a step that takes the focus when it mounts is not mistaken for the origin.
+    $effect.pre(() => {
+        const isOpen = $onboardingStore !== null;
+        if (isOpen === tutorialWasOpen) return;
+        tutorialWasOpen = isOpen;
+        if (isOpen) {
+            // The profile menu closes itself when it starts the tutorial, so the focus can already be on <body>, which
+            // is never a place to give it back to.
+            const active = document.activeElement;
+            focusBeforeTutorial =
+                active instanceof HTMLElement && !isDocumentRoot(active) && !active.closest("[data-onboarding-panel]")
+                    ? active
+                    : undefined;
+            return;
+        }
+        const origin = focusBeforeTutorial;
+        focusBeforeTutorial = undefined;
+        tick()
+            .then(() => {
+                // Someone who moved on to another control during the closing keeps it.
+                if (!isFocusLost()) return;
+                origin?.focus();
+                // An origin that is gone, hidden or not focusable any more falls through to the profile menu.
+                if (!isFocusLost()) return;
+                document.querySelector<HTMLElement>('[data-testid="action-user"] [role="button"]')?.focus();
+            })
+            .catch((error: unknown) => console.error("Could not restore the focus after the tutorial", error));
+    });
+
     // During onboarding: temporarily disable silent zone so the communication demo works
     $effect(() => {
         silentStore.setOnboardingOverride($onboardingStore !== null);
     });
 
-    // Cancel onboarding if user enters a real conversation bubble or meeting
+    // Stop the tutorial if the user enters a real conversation bubble or meeting. The user did not choose to skip it,
+    // so it is not marked as done: it is offered again on the next visit and can be replayed from the menu.
     $effect(() => {
         if ($onboardingStore && ($currentPlayerGroupIdStore !== undefined || $inJitsiStore || $inLivekitStore)) {
-            onboardingStore.skip();
+            onboardingStore.cancel();
             silentStore.setOnboardingOverride(false);
+            liveAnnouncementStore.announce(get(LL).onboarding.cancelledByConversation());
         }
     });
 
     // Watch for step completion conditions
     $effect(() => {
         // Note: lockBubble step completion is handled by click interceptor in OnboardingHighlight
-        if ($onboardingStore === "screenSharing" && get(requestedScreenSharingState)) {
-            setTimeout(() => onboardingStore.next(), 1000);
+        // The step is read before anything else: an early return that skipped it would leave the effect without
+        // dependencies, and it would never run again for the next step.
+        const step = $onboardingStore;
+        if (step === null) reachedByBack = false;
+        // A step that is already satisfied when it opens moves on, except when the user came back to it on purpose.
+        if (reachedByBack) return;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        if (step === "screenSharing" && get(requestedScreenSharingState)) {
+            timeout = setTimeout(() => changeStep(() => onboardingStore.next()), 1000);
         }
-        if ($onboardingStore === "pictureInPicture" && get(activePictureInPictureStore)) {
-            setTimeout(() => onboardingStore.next(), 1000);
+        if (step === "pictureInPicture" && get(activePictureInPictureStore)) {
+            timeout = setTimeout(() => changeStep(() => onboardingStore.next()), 1000);
         }
+        return () => {
+            if (timeout) clearTimeout(timeout);
+        };
     });
 </script>
+
+<svelte:window onkeydown={handleKeyDown} />
 
 <OnboardingStep>
     {#if $onboardingStore === "welcome"}
         <WelcomeStep onnext={handleNext} onskip={handleSkip} />
     {:else if $onboardingStore === "movement"}
-        <MovementStep onnext={handleNext} />
+        <MovementStep onnext={handleNext} onback={handleBack} onskip={handleSkip} />
     {:else if $onboardingStore === "communication"}
-        <CommunicationStep onnext={handleNext} />
+        <CommunicationStep onnext={handleNext} onback={handleBack} onskip={handleSkip} />
     {:else if $onboardingStore === "lockBubble"}
-        <LockBubbleStep onnext={handleNext} />
+        <LockBubbleStep onnext={handleNext} onback={handleBack} onskip={handleSkip} />
     {:else if $onboardingStore === "screenSharing"}
-        <ScreenSharingStep onnext={handleNext} />
+        <ScreenSharingStep onnext={handleNext} onback={handleBack} onskip={handleSkip} />
     {:else if $onboardingStore === "pictureInPicture"}
-        <PictureInPictureStep onnext={handleNext} />
+        <PictureInPictureStep onnext={handleNext} onback={handleBack} onskip={handleSkip} />
     {:else if $onboardingStore === "complete"}
-        <CompleteStep onnext={handleNext} />
+        <CompleteStep onnext={handleNext} onback={handleBack} />
     {/if}
 </OnboardingStep>
 <OnboardingHighlight bind:this={onboardingHighlight} />

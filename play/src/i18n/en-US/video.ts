@@ -11,6 +11,7 @@ const video: BaseTranslation = {
     persistent_connection_issue: "Reconnecting... Unstable connection...",
     click_and_drag_to_resize: "Click and drag to resize",
     click_to_unblock: "Click to unblock",
+    unknownMediaType: "This kind of video source is not supported.",
     away: {
         subtitle: "Paused while you're away",
         cantSeeOrHear: "No one can see or hear you",

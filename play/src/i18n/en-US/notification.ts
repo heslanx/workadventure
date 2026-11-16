@@ -13,6 +13,8 @@ const notification: BaseTranslation = {
     },
     microphoneMuted: "Your microphone was muted by a moderator",
     cameraMuted: "Your camera was muted by a moderator",
+    microphoneMutedForEverybody: "A moderator muted everybody's microphone. You can turn yours back on.",
+    cameraMutedForEverybody: "A moderator turned off everybody's camera. You can turn yours back on.",
     givenTheFloor: "It's your turn to speak",
     givenTheFloorEnableMicrophone: "It's your turn to speak. Turn on your microphone.",
     floorRevoked: "You no longer have the floor",

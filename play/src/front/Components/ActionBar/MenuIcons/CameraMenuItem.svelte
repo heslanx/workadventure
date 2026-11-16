@@ -16,8 +16,9 @@
     } from "../../../Stores/MediaStore";
 
     import { openedMenuStore } from "../../../Stores/MenuStore";
-    import { LL } from "../../../../i18n/i18n-svelte";
-    import { getNavigatorType, isAndroid, NavigatorType } from "../../../WebRtc/DeviceUtils";
+    import { LL, locale } from "../../../../i18n/i18n-svelte";
+    import { getPermissionHelpBrowser, getPermissionHelpScreenshot } from "../../HelpSettings/permissionHelp";
+    import { showHelpForBlockedDevices } from "../../../Stores/HelpSettingsStore";
     import { getColorHexOfStatus, getStatusLabel } from "../../../Utils/AvailabilityStatus";
     import { canComeBackFrom, heldMediaStore, toggleCamera } from "../../../Stores/HeldMediaStore";
 
@@ -33,8 +34,8 @@
     );
 
     const cameraActionBarTooltipStore = derived(
-        [LL, cameraButtonHelpContextStore, heldMediaStore, silentStore, availabilityStatusStore],
-        ([$LL, ctx, held, silent, status]) => {
+        [LL, locale, cameraButtonHelpContextStore, heldMediaStore, silentStore, availabilityStatusStore],
+        ([$LL, $locale, ctx, held, silent, status]) => {
             if (held.camera && canComeBackFrom(held.status)) {
                 return {
                     title: $LL.actionbar.help.camPausedByStatus.title(),
@@ -51,31 +52,13 @@
                     media: "",
                 };
             }
-            const permissionMedia = (() => {
-                try {
-                    if (isAndroid()) {
-                        return $LL.camera.help.tooltip.permissionMedia.android();
-                    }
-                    const nt = getNavigatorType();
-                    if (nt === NavigatorType.firefox) {
-                        return $LL.camera.help.tooltip.permissionMedia.firefox();
-                    }
-                    if (nt === NavigatorType.chrome) {
-                        return $LL.camera.help.tooltip.permissionMedia.chrome();
-                    }
-                    if (nt === NavigatorType.safari) {
-                        return $LL.camera.help.tooltip.permissionMedia.safari();
-                    }
-                } catch {
-                    // getNavigatorType() throws on some embedded or uncommon browsers
-                }
-                return $LL.camera.help.tooltip.permissionMedia.default();
-            })();
+            // A screenshot only where one shows this browser in this language: no image otherwise.
+            const permissionMedia = getPermissionHelpScreenshot(getPermissionHelpBrowser(), $locale) ?? "";
 
             if (ctx === "permission") {
                 return {
                     title: $LL.camera.help.tooltip.permissionDeniedTitle(),
-                    desc: $LL.camera.help.tooltip.permissionDeniedDesc(),
+                    desc: $LL.camera.help.tooltip.permissionDeniedFix(),
                     media: permissionMedia,
                 };
             }
@@ -100,6 +83,10 @@
     function cameraClick(): void {
         analyticsClient.trackAdminEvent("media.camera.toggled");
         if ($silentStore) return;
+        // The fix in the tooltip needs a hover: a tap or Enter on a camera the browser blocks opens it as a popup.
+        if ($cameraButtonHelpContextStore === "permission" && !$heldMediaStore.camera) {
+            showHelpForBlockedDevices({ camera: true });
+        }
         toggleCamera();
     }
 </script>

@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "권장하지 않음",
     enable: {
         title: "카메라와 마이크를 켜세요",
+        join: "방에 입장",
         start: "오디오 및 비디오 장치 설정 페이지에 오신 것을 환영합니다! 여기에서 온라인 경험을 향상시킬 수 있는 도구를 찾을 수 있습니다. 선호에 맞게 설정을 조정해 잠재적인 문제를 해결하세요. 하드웨어가 올바르게 연결되어 있고 최신 상태인지 확인한 뒤, 나에게 가장 잘 맞는 구성을 찾을 때까지 여러 설정을 탐색하고 테스트해 보세요.",
     },
     help: {
@@ -28,6 +29,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "웹캠 없이 계속하기",
         continueWithoutMicrophone: "마이크 없이 계속하기",
         continueCameraMicrophone: "웹캠과 마이크 없이 계속하기",
+        showSteps: "방법 보기",
+        hideSteps: "단계 숨기기",
+        steps: {
+            chrome: "주소 표시줄 왼쪽의 자물쇠 아이콘을 클릭하고, 카메라 또는 마이크를 허용으로 설정한 다음 페이지를 새로고침하세요.",
+            firefox:
+                "주소 표시줄 왼쪽의 권한 아이콘을 클릭하고, 차단된 카메라 또는 마이크 항목을 삭제한 다음 페이지를 새로고침하세요. 요청이 표시되면 접근을 허용하세요.",
+            safari: "Safari 메뉴에서 “이 웹 사이트에 대한 설정”을 선택하고, 카메라 또는 마이크를 허용으로 설정한 다음 페이지를 새로고침하세요.",
+            android:
+                "주소 표시줄 왼쪽의 자물쇠 아이콘을 탭하고, 권한을 열어 카메라 또는 마이크를 허용으로 설정한 다음 페이지를 새로고침하세요.",
+            other: "브라우저에서 이 페이지의 사이트 설정을 열고, 카메라 또는 마이크를 허용으로 설정한 다음 페이지를 새로고침하세요.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -36,6 +48,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "카메라 액세스 차단됨",
             permissionDeniedDesc:
                 "브라우저가 이 사이트의 카메라 액세스를 거부했습니다. 주소 표시줄(자물쇠 또는 카메라 아이콘)이나 사이트 설정에서 허용하세요. 아래 그림은 사용 중인 브라우저에 맞습니다.",
+            permissionDeniedFix:
+                "브라우저가 이 사이트의 카메라 액세스를 거부했습니다. 주소 표시줄(자물쇠 또는 카메라 아이콘)이나 사이트 설정에서 허용한 뒤 새로고침하세요. 방법을 보려면 이 버튼을 선택하세요.",
             noDeviceTitle: "사용 가능한 카메라 없음",
             noDeviceDesc:
                 "브라우저가 사용할 수 있는 카메라를 찾지 못했습니다. 다른 브라우저를 시도하거나 카메라 연결을 확인하거나, 컴퓨터 설정(개인 정보 보호, 장치)을 확인하거나, 장치가 정상이라면 컴퓨터를 다시 시작해 보세요.",
@@ -54,6 +68,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "마이크 액세스 차단됨",
             permissionDeniedDesc:
                 "브라우저가 이 사이트의 마이크 액세스를 거부했습니다. 주소 표시줄(자물쇠 또는 마이크 아이콘)이나 사이트 설정에서 허용하세요. 아래 그림은 사용 중인 브라우저에 맞습니다.",
+            permissionDeniedFix:
+                "브라우저가 이 사이트의 마이크 액세스를 거부했습니다. 주소 표시줄(자물쇠 또는 마이크 아이콘)이나 사이트 설정에서 허용한 뒤 새로고침하세요. 방법을 보려면 이 버튼을 선택하세요.",
             noDeviceTitle: "사용 가능한 마이크 없음",
             noDeviceDesc:
                 "브라우저가 사용할 수 있는 마이크를 찾지 못했습니다. 다른 브라우저를 시도하거나 마이크 연결을 확인하거나, 컴퓨터 설정(개인 정보 보호, 장치)을 확인하거나, 장치가 정상이라면 컴퓨터를 다시 시작해 보세요.",
@@ -83,6 +99,9 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "새로고침",
         continue: "계속하기",
         newDeviceDetected: "새 장치를 발견했습니다: {device} 🎉 전환할까요? [SPACE] 무시 [ESC]",
+        newDeviceSwitch: "전환",
+        newDeviceIgnore: "무시",
+        newDeviceAnnouncement: "새 장치를 발견했습니다: {device}. 전환하려면 Space 키를, 무시하려면 Esc 키를 누르세요.",
     },
     my: {
         silentZone: "조용한 구역",
@@ -109,6 +128,22 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "{name}님에게 마이크 음소거를 요청했습니다.",
         mutedVideoNotice: "{name}님의 카메라가 꺼져 있습니다. 본인만 다시 켤 수 있습니다.",
         askedMuteVideoNotice: "{name}님에게 카메라를 꺼 달라고 요청했습니다.",
+        confirmMuteAudioEveryBodyTitle: "모든 사용자의 마이크를 음소거할까요?",
+        confirmMuteAudioEveryBodyMessage:
+            "이 대화의 모든 사용자가 음소거됩니다. 각자 본인만 마이크를 다시 켤 수 있습니다.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "이 대화의 {count}명이 음소거됩니다. 각자 본인만 마이크를 다시 켤 수 있습니다.",
+        confirmMuteAudioEveryBodyAction: "모두 음소거",
+        mutedAudioEveryBodyNotice: "모든 사용자의 마이크가 음소거되었습니다. 각자 본인만 다시 켤 수 있습니다.",
+        mutedAudioEveryBodyNoticeCount: "{count}명의 마이크가 음소거되었습니다. 각자 본인만 다시 켤 수 있습니다.",
+        confirmMuteVideoEveryBodyTitle: "모든 사용자의 카메라를 끌까요?",
+        confirmMuteVideoEveryBodyMessage:
+            "이 대화의 모든 사용자의 카메라가 꺼집니다. 각자 본인만 카메라를 다시 켤 수 있습니다.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "이 대화의 {count}명의 카메라가 꺼집니다. 각자 본인만 카메라를 다시 켤 수 있습니다.",
+        confirmMuteVideoEveryBodyAction: "모든 카메라 끄기",
+        mutedVideoEveryBodyNotice: "모든 사용자의 카메라가 꺼졌습니다. 각자 본인만 다시 켤 수 있습니다.",
+        mutedVideoEveryBodyNoticeCount: "{count}명의 카메라가 꺼졌습니다. 각자 본인만 다시 켤 수 있습니다.",
         alreadyMuted: "이미 음소거됨",
         videoAlreadyOff: "비디오가 이미 꺼져 있음",
     },

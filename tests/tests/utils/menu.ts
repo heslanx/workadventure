@@ -85,11 +85,15 @@ class Menu {
             return;
         }
 
-        const skipButton = page.getByTestId("onboarding-button-welcome-skip");
+        // The first step has its own Skip; the next ones share the Skip of the tutorial panel. The last step has no
+        // Skip, only its main button. Escape only skips when the focus is inside the panel, so it is no way out here.
+        const skipButton = page
+            .getByTestId("onboarding-button-welcome-skip")
+            .or(page.getByTestId("onboarding-button-skip"));
         if (await skipButton.isVisible().catch(() => false)) {
             await skipButton.click();
         } else {
-            await page.keyboard.press("Escape");
+            await onboardingStep.locator("[data-onboarding-primary]").click();
         }
 
         await expect(onboardingStep).toBeHidden();

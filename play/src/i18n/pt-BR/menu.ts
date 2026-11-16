@@ -24,6 +24,7 @@ const menu: BaseTranslation = {
         login: "Entrar",
         logout: "Sair",
         helpAndTips: "Ajuda e dicas",
+        replayTutorial: "Refazer o tutorial",
     },
     settings: {
         videoBandwidth: {

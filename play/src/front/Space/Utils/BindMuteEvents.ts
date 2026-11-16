@@ -81,7 +81,8 @@ export function bindMuteEventsToSpace(space: SpaceInterface): void {
             notificationPlayingStore.playNotification(get(LL).notification.microphoneMuted(), "microphone-off.png");
             requestedMicrophoneState.disableMicrophone();
         } else {
-            notificationPlayingStore.playNotification(get(LL).notification.askToMuteMicrophone(), "microphone-off.png");
+            // The dialog carries the question and is announced by the popup stack: a notification with the same
+            // sentence would only repeat it.
             displayMuteDialog({ ...event, sender: event.sender.spaceUserId }, space);
         }
     });
@@ -93,7 +94,6 @@ export function bindMuteEventsToSpace(space: SpaceInterface): void {
             notificationPlayingStore.playNotification(get(LL).notification.cameraMuted(), "camera-off.png");
             requestedCameraState.disableWebcam();
         } else {
-            notificationPlayingStore.playNotification(get(LL).notification.askToMuteCamera(), "camera-off.png");
             displayMuteDialog({ ...event, sender: event.sender.spaceUserId }, space);
         }
     });
@@ -134,15 +134,19 @@ export function bindMuteEventsToSpace(space: SpaceInterface): void {
 
     // We can safely ignore the subscription because it will be automatically completed when the space is destroyed.
     // eslint-disable-next-line rxjs/no-ignored-subscription,svelte/no-ignored-unsubscribe
-    space.observePublicEvent("muteAudioForEverybody").subscribe((event) => {
-        notificationPlayingStore.playNotification(get(LL).notification.askToMuteMicrophone(), "microphone-off.png");
+    space.observePublicEvent("muteAudioForEverybody").subscribe(() => {
+        // The device is already off when this is read, so it says what happened instead of asking.
+        notificationPlayingStore.playNotification(
+            get(LL).notification.microphoneMutedForEverybody(),
+            "microphone-off.png",
+        );
         requestedMicrophoneState.disableMicrophone();
     });
 
     // We can safely ignore the subscription because it will be automatically completed when the space is destroyed.
     // eslint-disable-next-line rxjs/no-ignored-subscription,svelte/no-ignored-unsubscribe
-    space.observePublicEvent("muteVideoForEverybody").subscribe((event) => {
-        notificationPlayingStore.playNotification(get(LL).notification.askToMuteCamera(), "camera-off.png");
+    space.observePublicEvent("muteVideoForEverybody").subscribe(() => {
+        notificationPlayingStore.playNotification(get(LL).notification.cameraMutedForEverybody(), "camera-off.png");
         requestedCameraState.disableWebcam();
     });
 }

@@ -171,6 +171,10 @@ class AreaEditor {
 
     async deleteFile(page: Page) {
         await page.getByTestId("closeFileUpload").click();
+        const confirmDialog = page.getByTestId("confirmDialog");
+        await expect(confirmDialog).toContainText("Undo cannot restore an uploaded file");
+        await page.getByTestId("confirmDialogConfirm").click();
+        await expect(confirmDialog).toBeHidden();
     }
 
     async setMatrixChatRoomProperty(page: Page, shouldOpenAutomatically: boolean, roomName?: string) {

@@ -15,16 +15,20 @@
 
     let { onclose, onkeypress, header, content }: Props = $props();
 
+    // The group is named after the property's header, so each "Remove this property" button is announced with the
+    // property it removes.
+    const headerId = $props.id();
+
     onDestroy(() => {
         inputFormFocusStore.set(false);
     });
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="property-settings-container" role="group" {onkeypress}>
+<div class="property-settings-container" role="group" aria-labelledby={headerId} {onkeypress}>
     <div class="header relative font-bold flex items-center flex-col">
         <div class="flex items-center justify-between w-full">
-            <div class="ps-3">
+            <div class="ps-3" id={headerId}>
                 {#if header}
                     {@render header()}
                 {:else}
@@ -32,6 +36,7 @@
                 {/if}
             </div>
             <ButtonClose
+                label={$LL.mapEditor.properties.removeProperty()}
                 onclick={() => {
                     onclose?.();
                 }}

@@ -20,6 +20,13 @@
         mapEditorAskToClaimPersonalAreaStore.set(undefined);
     }
 
+    // Escape means "not now" in both steps. A dialog that handled the key first (it prevents the default) keeps it.
+    function closeOnEscape(event: KeyboardEvent) {
+        if (event.key === "Escape" && !event.defaultPrevented) {
+            closeDialog();
+        }
+    }
+
     // function to check key press and if it is enter key then click on yes button
     function emitKeypressEvents(event: KeyboardEvent) {
         if (event.key === "Enter") {
@@ -51,16 +58,29 @@
     });
 </script>
 
+<svelte:window onkeydown={closeOnEscape} />
+
 <div class="absolute w-fit bottom-0 left-0 right-0 pb-4 pointer-events-auto z-[150] m-auto hover:animate-none">
     {#if alreadyHasPersonalArea && !replaceExistingConfirmed}
         <PopUpContainer extraClasses="w-fit">
             <p class="m-0 mt-2 max-w-xs">{$LL.area.personalArea.alreadyHavePersonalArea()}</p>
             {#snippet buttons()}
-                <div class="flex flex-row justify-center items-center w-full">
+                <div class="flex flex-row justify-center items-center w-full gap-2">
+                    <Button
+                        dataTestId="claimPersonalAreaReplaceCancelButton"
+                        type="button"
+                        class="btn-outline w-fit px-10 hover:bg-contrast-600/50"
+                        onclick={(event) => {
+                            event.preventDefault();
+                            closeDialog();
+                        }}
+                    >
+                        {$LL.area.personalArea.buttons.no()}
+                    </Button>
                     <Button
                         dataTestId="claimPersonalAreaReplaceConfirmButton"
                         type="button"
-                        variant="secondary"
+                        variant="danger"
                         class="w-fit px-10"
                         onclick={(event) => {
                             event.preventDefault();

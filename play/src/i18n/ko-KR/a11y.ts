@@ -26,6 +26,7 @@ const a11y: DeepPartial<Translation["a11y"]> = {
     mapEditorResizePanel: "사이드 패널 크기 조절",
     mapEditorStopAudio: "오디오 정지",
     mapEditorToggleSidebar: "사이드 패널 표시 또는 숨기기",
+    popupAwaitsAnswer: "응답을 기다리는 요청",
     popupNextSlide: "다음 슬라이드",
     popupPreviousSlide: "이전 슬라이드",
     uiMoreInfo: "자세한 정보",

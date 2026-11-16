@@ -52,4 +52,10 @@ export default {
             "You've learned the basics of {worldName}! Feel free to explore, meet new people, and have fun. You can always access help from the menu if you need it.",
         finish: "Start exploring!",
     },
+    back: "عودة",
+    stepIndicator: "الخطوة {current} من {total}",
+    skipShortcutHint: "اضغط Esc لتخطي الدليل التعليمي.",
+    videoPlay: "تشغيل الفيديو",
+    videoPause: "إيقاف الفيديو مؤقتًا",
+    cancelledByConversation: "أُغلق الدليل التعليمي لأنك انضممت إلى محادثة. يمكنك إعادة تشغيله من قائمة الملف الشخصي.",
 } satisfies Translation["onboarding"];

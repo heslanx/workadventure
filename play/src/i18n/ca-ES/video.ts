@@ -29,6 +29,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraPaused: "Càmera en pausa fins que torni",
     },
     enlarge: "Amplia el vídeo",
+    unknownMediaType: "Aquest tipus de font de vídeo no és compatible.",
 };
 
 export default video;

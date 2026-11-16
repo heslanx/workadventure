@@ -179,6 +179,11 @@ test.describe("Map editor interacting with object @oidc @nomobile", () => {
         await EntityEditor.moveAndClick(page, 1 * 32, 7.5 * 32);
         await page.keyboard.press("Delete");
 
+        const confirmDialog = page.getByTestId("confirmDialog");
+        await expect(confirmDialog).toContainText("Undo cannot restore an uploaded file");
+        await page.getByTestId("confirmDialogConfirm").click();
+        await expect(confirmDialog).toBeHidden();
+
         // Check if the PDF files from entity iframe are accessible
         const uploadFileE2 = request.post(iframeSrcE);
         expect((await uploadFileE2).ok()).toBeFalsy();

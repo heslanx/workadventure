@@ -9,6 +9,8 @@ const notification: DeepPartial<Translation["notification"]> = {
     askToMuteCamera: "¿Puedo silenciar tu cámara?",
     microphoneMuted: "Tu micrófono ha sido silenciado por un moderador",
     cameraMuted: "Tu cámara ha sido silenciada por un moderador",
+    microphoneMutedForEverybody: "Un moderador ha silenciado el micrófono de todos. Puedes volver a activar el tuyo.",
+    cameraMutedForEverybody: "Un moderador ha apagado la cámara de todos. Puedes volver a encender la tuya.",
     givenTheFloor: "Es tu turno de hablar",
     givenTheFloorEnableMicrophone: "Es tu turno de hablar — activa tu micrófono",
     floorRevoked: "Ya no tienes la palabra",

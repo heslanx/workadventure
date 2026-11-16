@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "غير موصى به",
     enable: {
         title: "يرجى تشغيل الكاميرا والميكروفون.", // Please turn on your camera and microphone.
+        join: "الانضمام إلى الغرفة", // Join the room
         start: "لنبدأ!", // Let's start!
     },
     help: {
@@ -28,6 +29,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         allow: "السماح بالكاميرا", // Allow camera
         allowMicrophone: "السماح بالميكروفون",
         allowCameraMicrophone: "السماح بالكاميرا والميكروفون",
+        showSteps: "أرني كيف",
+        hideSteps: "إخفاء الخطوات",
+        steps: {
+            chrome: "انقر على أيقونة القفل في بداية شريط العناوين، واضبط الكاميرا أو الميكروفون على «السماح»، ثم أعد تحميل الصفحة.",
+            firefox:
+                "انقر على أيقونة الأذونات في بداية شريط العناوين، وأزل إدخال الكاميرا أو الميكروفون المحظور، ثم أعد تحميل الصفحة واسمح بالوصول عند الطلب.",
+            safari: "افتح قائمة Safari، واختر «إعدادات هذا الموقع»، واضبط الكاميرا أو الميكروفون على «السماح»، ثم أعد تحميل الصفحة.",
+            android:
+                "اضغط على أيقونة القفل في بداية شريط العناوين، وافتح «الأذونات»، واضبط الكاميرا أو الميكروفون على «السماح»، ثم أعد تحميل الصفحة.",
+            other: "افتح إعدادات الموقع لهذه الصفحة في متصفحك، واضبط الكاميرا أو الميكروفون على «السماح»، ثم أعد تحميل الصفحة.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -36,6 +48,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "تم حظر الوصول إلى الكاميرا",
             permissionDeniedDesc:
                 "رفض المتصفح الوصول إلى الكاميرا لهذا الموقع. اسمح بها من شريط العناوين (أيقونة القفل أو الكاميرا) أو من إعدادات الموقع. الصورة أدناه تناسب متصفحك.",
+            permissionDeniedFix:
+                "رفض المتصفح الوصول إلى الكاميرا لهذا الموقع. اسمح بها من شريط العناوين (أيقونة القفل أو الكاميرا) أو من إعدادات الموقع، ثم أعد التحميل. حدد هذا الزر لعرض الخطوات.",
             noDeviceTitle: "لا توجد كاميرا صالحة للاستخدام",
             noDeviceDesc:
                 "المتصفح لا يكتشف أي كاميرا يمكن استخدامها. جرّب متصفحًا آخر، أو تحقق من توصيل الكاميرا، أو تحقق من إعدادات الجهاز (الخصوصية، الأجهزة)، أو أعد تشغيل الجهاز إذا كان يفترض أن يعمل.",
@@ -53,6 +67,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "تم حظر الوصول إلى الميكروفون",
             permissionDeniedDesc:
                 "رفض المتصفح الوصول إلى الميكروفون لهذا الموقع. اسمح به من شريط العناوين (أيقونة القفل أو الميكروفون) أو من إعدادات الموقع. الصورة أدناه تناسب متصفحك.",
+            permissionDeniedFix:
+                "رفض المتصفح الوصول إلى الميكروفون لهذا الموقع. اسمح به من شريط العناوين (أيقونة القفل أو الميكروفون) أو من إعدادات الموقع، ثم أعد التحميل. حدد هذا الزر لعرض الخطوات.",
             noDeviceTitle: "لا يوجد ميكروفون صالح للاستخدام",
             noDeviceDesc:
                 "المتصفح لا يكتشف أي ميكروفون يمكن استخدامه. جرّب متصفحًا آخر، أو تحقق من توصيل الميكروفون، أو تحقق من إعدادات الجهاز (الخصوصية، الأجهزة)، أو أعد تشغيل الجهاز إذا كان يفترض أن يعمل.",
@@ -81,6 +97,9 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "استمرار", // Continue
         solutionVpnNotAskAgain: "فهمت. لا تحذرني مرة أخرى 🫡",
         newDeviceDetected: "تم اكتشاف جهاز جديد {device} 🎉 التبديل؟ [SPACE] تجاهل [ESC]",
+        newDeviceSwitch: "تبديل",
+        newDeviceIgnore: "تجاهل",
+        newDeviceAnnouncement: "تم اكتشاف جهاز جديد: {device}. اضغط Space للتبديل إليه، أو Escape لتجاهله.",
     },
     my: {
         silentZone: "منطقة صامتة", // Silent zone
@@ -107,6 +126,24 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "طُلب من {name} كتم الميكروفون.",
         mutedVideoNotice: "كاميرا {name} متوقفة. هو وحده من يمكنه تشغيلها مجددًا.",
         askedMuteVideoNotice: "طُلب من {name} إيقاف الكاميرا.",
+        confirmMuteAudioEveryBodyTitle: "كتم ميكروفون الجميع؟",
+        confirmMuteAudioEveryBodyMessage:
+            "سيؤدي هذا إلى كتم الجميع في هذه المحادثة. كل شخص وحده من يمكنه إعادة تشغيل ميكروفونه.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "سيؤدي هذا إلى كتم {count} {{أشخاص|شخص|شخصين|أشخاص|شخصًا|شخص}} في هذه المحادثة. كل شخص وحده من يمكنه إعادة تشغيل ميكروفونه.",
+        confirmMuteAudioEveryBodyAction: "كتم الجميع",
+        mutedAudioEveryBodyNotice: "تم كتم ميكروفون الجميع. كل شخص وحده من يمكنه إعادة تشغيل ميكروفونه.",
+        mutedAudioEveryBodyNoticeCount:
+            "تم كتم الميكروفون لدى {count} {{أشخاص|شخص|شخصين|أشخاص|شخصًا|شخص}}. كل شخص وحده من يمكنه إعادة تشغيل ميكروفونه.",
+        confirmMuteVideoEveryBodyTitle: "إيقاف كاميرا الجميع؟",
+        confirmMuteVideoEveryBodyMessage:
+            "سيؤدي هذا إلى إيقاف كاميرا الجميع في هذه المحادثة. كل شخص وحده من يمكنه إعادة تشغيل كاميرته.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "سيؤدي هذا إلى إيقاف كاميرا {count} {{أشخاص|شخص|شخصين|أشخاص|شخصًا|شخص}} في هذه المحادثة. كل شخص وحده من يمكنه إعادة تشغيل كاميرته.",
+        confirmMuteVideoEveryBodyAction: "إيقاف الكاميرات",
+        mutedVideoEveryBodyNotice: "كاميرا الجميع متوقفة. كل شخص وحده من يمكنه إعادة تشغيل كاميرته.",
+        mutedVideoEveryBodyNoticeCount:
+            "تم إيقاف الكاميرا لدى {count} {{أشخاص|شخص|شخصين|أشخاص|شخصًا|شخص}}. كل شخص وحده من يمكنه إعادة تشغيل كاميرته.",
         alreadyMuted: "مكتوم بالفعل",
         videoAlreadyOff: "الفيديو متوقف بالفعل",
     },

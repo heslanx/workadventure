@@ -11,6 +11,7 @@ const video: DeepPartial<Translation["video"]> = {
     persistent_connection_issue: "재연결 중... 연결이 불안정합니다...",
     click_to_unblock: "클릭하여 차단 해제",
     click_and_drag_to_resize: "클릭하고 드래그하여 크기 조정",
+    unknownMediaType: "이 유형의 비디오 소스는 지원되지 않습니다.",
     away: {
         subtitle: "자리 비움 중 일시 중지됨",
         cantSeeOrHear: "아무도 나를 보거나 들을 수 없습니다",

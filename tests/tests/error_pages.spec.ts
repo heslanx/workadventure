@@ -22,7 +22,7 @@ test.describe("Error pages @nowebkit", () => {
         await page.getByTestId("loginSceneNameInput").fill("Alice");
         await page.click("button.loginSceneFormSubmit");
         await page.click("button.selectCharacterSceneFormSubmit");
-        await page.click("text=Save");
+        await page.click("button.enableCameraSceneFormSubmit");
         await dismissPwaInstallScreenIfShown(page);
         await dismissDuplicateUserConnectedModalIfShown(page);
 
@@ -35,7 +35,7 @@ test.describe("Error pages @nowebkit", () => {
         await page.getByTestId("loginSceneNameInput").fill("Alice");
         await page.click("button.loginSceneFormSubmit");
         await page.click("button.selectCharacterSceneFormSubmit");
-        await page.click("text=Save");
+        await page.click("button.enableCameraSceneFormSubmit");
         await dismissPwaInstallScreenIfShown(page);
         await dismissDuplicateUserConnectedModalIfShown(page);
 
@@ -49,7 +49,7 @@ test.describe("Error pages @nowebkit", () => {
         await page.getByTestId("loginSceneNameInput").fill("Alice");
         await page.click("button.loginSceneFormSubmit");
         await page.click("button.selectCharacterSceneFormSubmit");
-        await page.click("text=Save");
+        await page.click("button.enableCameraSceneFormSubmit");
         await dismissPwaInstallScreenIfShown(page);
         await dismissDuplicateUserConnectedModalIfShown(page);
 

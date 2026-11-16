@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "推奨されません",
     enable: {
         title: "カメラとマイクを有効にしてください",
+        join: "ルームに参加",
         start: "オーディオおよびビデオデバイスの設定ページへようこそ！オンライン体験を向上させるためのツールをここで見つけることができます。潜在的な問題を解決するために、設定を好みに合わせて調整してください。ハードウェアが正しく接続され、最新の状態であることを確認してください。最適な構成を見つけるために、さまざまな構成を探索してテストしてください。",
     },
     help: {
@@ -29,6 +30,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "カメラなしで続ける",
         continueWithoutMicrophone: "マイクなしで続ける",
         continueCameraMicrophone: "ウェブカメラとマイクなしで続ける",
+        showSteps: "手順を表示",
+        hideSteps: "手順を非表示",
+        steps: {
+            chrome: "アドレスバー左側の鍵アイコンをクリックし、カメラまたはマイクを「許可」に設定してから、ページを更新してください。",
+            firefox:
+                "アドレスバー左側の権限アイコンをクリックし、ブロックされているカメラまたはマイクの項目を削除してからページを更新し、確認が表示されたらアクセスを許可してください。",
+            safari: "Safari のメニューから「このWebサイトの設定」を選び、カメラまたはマイクを「許可」に設定してから、ページを更新してください。",
+            android:
+                "アドレスバー左側の鍵アイコンをタップし、「権限」を開いて、カメラまたはマイクを「許可」に設定してから、ページを更新してください。",
+            other: "ブラウザでこのページのサイト設定を開き、カメラまたはマイクを「許可」に設定してから、ページを更新してください。",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -37,6 +49,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "カメラへのアクセスがブロックされています",
             permissionDeniedDesc:
                 "ブラウザがこのサイトのカメラへのアクセスを拒否しました。アドレスバー（鍵またはカメラアイコン）またはサイトの設定から許可してください。下の図はお使いのブラウザに対応しています。",
+            permissionDeniedFix:
+                "ブラウザがこのサイトのカメラへのアクセスを拒否しました。アドレスバー（鍵またはカメラアイコン）またはサイトの設定から許可し、ページを更新してください。手順はこのボタンを選択すると表示されます。",
             noDeviceTitle: "使用できるカメラがありません",
             noDeviceDesc:
                 "ブラウザが使用できるカメラを検出できません。別のブラウザを試すか、カメラの接続を確認するか、パソコンの設定（プライバシー、デバイス）を確認するか、ハードウェアに問題がなければパソコンを再起動してください。",
@@ -55,6 +69,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "マイクへのアクセスがブロックされています",
             permissionDeniedDesc:
                 "ブラウザがこのサイトのマイクへのアクセスを拒否しました。アドレスバー（鍵またはマイクアイコン）またはサイトの設定から許可してください。下の図はお使いのブラウザに対応しています。",
+            permissionDeniedFix:
+                "ブラウザがこのサイトのマイクへのアクセスを拒否しました。アドレスバー（鍵またはマイクアイコン）またはサイトの設定から許可し、ページを更新してください。手順はこのボタンを選択すると表示されます。",
             noDeviceTitle: "使用できるマイクがありません",
             noDeviceDesc:
                 "ブラウザが使用できるマイクを検出できません。別のブラウザを試すか、マイクの接続を確認するか、パソコンの設定（プライバシー、デバイス）を確認するか、ハードウェアに問題がなければパソコンを再起動してください。",
@@ -85,6 +101,10 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "更新",
         continue: "続ける",
         newDeviceDetected: "新しいデバイスが検出されました {device} 🎉 切り替えますか？ [スペース] 無視 [Esc]",
+        newDeviceSwitch: "切り替える",
+        newDeviceIgnore: "無視",
+        newDeviceAnnouncement:
+            "新しいデバイスが検出されました: {device}。スペースキーで切り替え、Escape キーで無視します。",
     },
     my: {
         silentZone: "サイレントゾーン",
@@ -111,6 +131,21 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "{name}さんにマイクのミュートを依頼しました。",
         mutedVideoNotice: "{name}さんのカメラはオフです。再びオンにできるのは本人だけです。",
         askedMuteVideoNotice: "{name}さんにカメラをオフにするよう依頼しました。",
+        confirmMuteAudioEveryBodyTitle: "全員のマイクをミュートしますか？",
+        confirmMuteAudioEveryBodyMessage: "この会話の全員をミュートします。マイクを再びオンにできるのは本人だけです。",
+        confirmMuteAudioEveryBodyMessageCount:
+            "この会話の {count} 人をミュートします。マイクを再びオンにできるのは本人だけです。",
+        confirmMuteAudioEveryBodyAction: "全員をミュート",
+        mutedAudioEveryBodyNotice: "全員のマイクをミュートしました。再びオンにできるのは本人だけです。",
+        mutedAudioEveryBodyNoticeCount: "{count} 人のマイクをミュートしました。再びオンにできるのは本人だけです。",
+        confirmMuteVideoEveryBodyTitle: "全員のカメラをオフにしますか？",
+        confirmMuteVideoEveryBodyMessage:
+            "この会話の全員のカメラをオフにします。カメラを再びオンにできるのは本人だけです。",
+        confirmMuteVideoEveryBodyMessageCount:
+            "この会話の {count} 人のカメラをオフにします。カメラを再びオンにできるのは本人だけです。",
+        confirmMuteVideoEveryBodyAction: "カメラをオフにする",
+        mutedVideoEveryBodyNotice: "全員のカメラをオフにしました。再びオンにできるのは本人だけです。",
+        mutedVideoEveryBodyNoticeCount: "{count} 人のカメラをオフにしました。再びオンにできるのは本人だけです。",
         alreadyMuted: "ミュート済み",
         videoAlreadyOff: "ビデオはすでにオフです",
     },

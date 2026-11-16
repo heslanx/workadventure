@@ -13,6 +13,8 @@ const notification: BaseTranslation = {
     },
     microphoneMuted: "Seu microfone foi silenciado por um moderador",
     cameraMuted: "Sua câmera foi silenciada por um moderador",
+    microphoneMutedForEverybody: "Um moderador silenciou o microfone de todos. Você pode ligar o seu novamente.",
+    cameraMutedForEverybody: "Um moderador desligou a câmera de todos. Você pode ligar a sua novamente.",
     givenTheFloor: "É a sua vez de falar",
     givenTheFloorEnableMicrophone: "É a sua vez de falar. Ligue o microfone.",
     floorRevoked: "Você não tem mais a palavra",

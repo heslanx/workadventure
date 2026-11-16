@@ -351,6 +351,12 @@ const chat: DeepPartial<Translation["chat"]> = {
         tooMany: "Massa fitxers",
         tooManyHint: "Pots enviar fins a {max} fitxers alhora. Treu-ne alguns per enviar.",
         notLogged: "Necessiteu iniciar sessió per pujar un fitxer.",
+        notSent: "No enviat",
+        sendFailed: "No enviat: {names}",
+        sendFailedAfterMessage: "El teu missatge s'ha enviat, però no: {names}",
+        sendFailedHint:
+            "El text i els fitxers surten com a missatges separats. Torna a provar d'enviar els fitxers o treu-los.",
+        retry: "Torna-ho a provar",
     },
     needRefresh: "La vostra connexió ha expirat, necessiteu actualitzar la pàgina per tornar-vos a connectar al xat.",
     refresh: "Actualitzar",

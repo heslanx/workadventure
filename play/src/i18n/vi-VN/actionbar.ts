@@ -244,5 +244,11 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "Trò chuyện vẫn đang kết nối. Hãy thử lại sau vài giây.",
         alreadyAtDesk: "Bạn đã ở bàn làm việc của mình.",
     },
+    leaveConversationConfirm: {
+        title: "Rời cuộc trò chuyện của bạn?",
+        message:
+            "Thao tác này sẽ đưa bạn ra khỏi phòng trong chốc lát. Bạn sẽ rời cuộc trò chuyện hoặc buổi phát trực tiếp hiện tại, camera và micrô của bạn sẽ tắt, và nhân vật của bạn sẽ biến mất khỏi bản đồ cho đến khi bạn quay lại.",
+        confirm: "Rời đi và tiếp tục",
+    },
 };
 export default actionbar;

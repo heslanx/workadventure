@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import type { JitsiRoomConfigData } from "@workadventure/map-editor";
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { focusTrap } from "../../../Utils/focusTrap";
     import InputSwitch from "../../Input/InputSwitch.svelte";
     import Input from "../../Input/Input.svelte";
     import PopUpContainer from "../../PopUp/PopUpContainer.svelte";
@@ -62,6 +63,9 @@
         close();
     }
 
+    // The dialog is named after its title, which is also what a screen reader announces when the focus moves in.
+    const titleId = $props.id();
+
     function onKeyDown(e: KeyboardEvent) {
         if (e.key === "Escape") {
             close();
@@ -73,11 +77,16 @@
 {#if isOpen}
     <div class="absolute flex items-center justify-center w-full h-full">
         <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabindex="-1"
+            use:focusTrap
             class="backdrop-blur-md text-white z-[2001] w-[90%] m-auto left-0 right-0 sm:max-w-[668px] rounded-lg max-h-full overflow-y-auto pointer-events-auto"
         >
             <PopUpContainer fullContent={true}>
                 <div class="flex items-center justify-between">
-                    <span class="font-bold text-xl pl-4">
+                    <span class="font-bold text-xl pl-4" id={titleId}>
                         {$LL.mapEditor.properties.jitsiRoomProperty.moreOptionsLabel()}
                     </span>
                     <ButtonClose onclick={close} />

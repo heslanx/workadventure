@@ -26,6 +26,7 @@ const a11y: DeepPartial<Translation["a11y"]> = {
     mapEditorResizePanel: "ปรับขนาดแผงด้านข้าง",
     mapEditorStopAudio: "หยุดเสียง",
     mapEditorToggleSidebar: "แสดงหรือซ่อนแผงด้านข้าง",
+    popupAwaitsAnswer: "คำขอรอคำตอบจากคุณ",
     popupNextSlide: "สไลด์ถัดไป",
     popupPreviousSlide: "สไลด์ก่อนหน้า",
     uiMoreInfo: "ข้อมูลเพิ่มเติม",

@@ -53,6 +53,13 @@ const onboarding: DeepPartial<Translation["onboarding"]> = {
             "Bạn đã nắm được những điều cơ bản của {worldName}! Hãy thoải mái khám phá, gặp gỡ mọi người và vui chơi. Bạn luôn có thể mở phần trợ giúp từ menu khi cần.",
         finish: "Bắt đầu khám phá!",
     },
+    back: "Quay lại",
+    stepIndicator: "Bước {current}/{total}",
+    skipShortcutHint: "Nhấn Esc để bỏ qua hướng dẫn.",
+    videoPlay: "Phát video",
+    videoPause: "Tạm dừng video",
+    cancelledByConversation:
+        "Hướng dẫn đã đóng vì bạn vừa tham gia một cuộc trò chuyện. Bạn có thể xem lại hướng dẫn từ menu hồ sơ.",
 };
 
 export default onboarding;

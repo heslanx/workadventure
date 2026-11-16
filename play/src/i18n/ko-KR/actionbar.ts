@@ -243,5 +243,11 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "채팅이 아직 연결 중입니다. 몇 초 후에 다시 시도하세요.",
         alreadyAtDesk: "이미 내 책상에 있습니다.",
     },
+    leaveConversationConfirm: {
+        title: "대화에서 나갈까요?",
+        message:
+            "잠시 방에서 나가게 됩니다. 현재 대화나 라이브에서 나가고, 카메라와 마이크가 꺼지며, 돌아올 때까지 내 캐릭터가 지도에서 사라집니다.",
+        confirm: "나가고 계속하기",
+    },
 };
 export default actionbar;

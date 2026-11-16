@@ -240,6 +240,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "聊天仍在连接中。请几秒后再试。",
         alreadyAtDesk: "你已经在自己的办公桌前了。",
     },
+    leaveConversationConfirm: {
+        title: "离开当前对话？",
+        message:
+            "这会让你暂时离开房间。你将退出当前的对话或直播，摄像头和麦克风会关闭，你的角色也会从地图上消失，直到你回来。",
+        confirm: "离开并继续",
+    },
 };
 
 export default actionbar;

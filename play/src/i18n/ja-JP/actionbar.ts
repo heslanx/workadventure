@@ -232,6 +232,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         unclaimConfirmTitle: "デスク「{name}」の確保を解除しますか?",
         unclaimConfirmMessage: "すぐに空きになります。誰でも確保でき、空いている間に再度確保しない限り取り戻せません。",
     },
+    leaveConversationConfirm: {
+        title: "現在の会話から退出しますか？",
+        message:
+            "一時的にルームから離れます。現在の会話またはライブから退出し、カメラとマイクがオフになり、戻るまでキャラクターはマップから消えます。",
+        confirm: "退出して続ける",
+    },
     mediaSettingsToggle: "カメラとマイクの設定",
     blocked: {
         calendarOff: "このワールドではカレンダーが連携されていません。管理者が管理設定で有効にできます。",

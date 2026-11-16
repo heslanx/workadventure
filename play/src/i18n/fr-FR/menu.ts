@@ -25,6 +25,7 @@ const menu: DeepPartial<Translation["menu"]> = {
         login: "S'identifier",
         logout: "Déconnexion",
         helpAndTips: "Aide et astuces",
+        replayTutorial: "Revoir le tutoriel",
     },
     settings: {
         videoBandwidth: {

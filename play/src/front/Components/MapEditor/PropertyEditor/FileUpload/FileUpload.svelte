@@ -168,6 +168,7 @@
                 hoverColor="bg-white/20"
                 textColor="text-white"
                 size="xs"
+                label={$LL.mapEditor.properties.openFile.uploadFile.removeFile({ name })}
                 onclick={() => {
                     files = undefined;
                     ondeleteFile?.();

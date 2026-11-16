@@ -16,6 +16,7 @@
     import InputTags from "../../Input/InputTags.svelte";
     import type { InputTagOption } from "../../Input/InputTagOption";
     import { IconFile } from "../../Icons";
+    import { removeGuardingUploadedFiles } from "../offerUndo";
     import FileUpload from "./FileUpload/FileUpload.svelte";
     import PropertyEditorBase from "./PropertyEditorBase.svelte";
 
@@ -124,14 +125,25 @@
         property.name = null;
         onchange?.(property.link);
     }
+
+    function removeUploadedFile() {
+        const target = property;
+        removeGuardingUploadedFiles({
+            properties: [target],
+            heading: $LL.mapEditor.properties.openFile.uploadFile.removeFile({ name: target.name ?? "" }),
+            confirmLabel: $LL.mapEditor.uploadedFileDeletion.remove(),
+            remove: () => {
+                // The editor may show another property by the time the person confirms: fail rather than touch it.
+                if (property !== target) throw new Error("The property editor no longer shows this property");
+                deleteFile();
+            },
+            removeWithUndo: deleteFile,
+        });
+    }
 </script>
 
-<PropertyEditorBase
-    onclose={() => {
-        deleteFile();
-        onclose?.();
-    }}
->
+<!-- No file cleanup here: the parent asks before removing a property that holds an upload. -->
+<PropertyEditorBase {onclose}>
     {#snippet header()}
         <span class="flex justify-center items-center">
             <IconFile font-size="18" class="mr-2" aria-hidden="true" />
@@ -171,7 +183,7 @@
                     property.link = link;
                     onchange?.(property.link);
                 }}
-                ondeleteFile={deleteFile}
+                ondeleteFile={removeUploadedFile}
             />
 
             {#if !property.hideButtonLabel}

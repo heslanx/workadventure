@@ -29,6 +29,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraPaused: "الكاميرا متوقفة مؤقتًا حتى العودة",
     },
     enlarge: "تكبير الفيديو",
+    unknownMediaType: "نوع مصدر الفيديو هذا غير مدعوم.",
 };
 
 export default video;

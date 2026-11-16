@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type Writable, writable } from "svelte/store";
+    import { type Writable, get, writable } from "svelte/store";
     import { FilterType } from "@workadventure/messages";
     import MicrophoneCloseSvg from "../images/microphone-close.svg";
     import NoVideoSvg from "../images/no-video.svg";
@@ -14,7 +14,9 @@
     import { toastStore } from "../../Stores/ToastStoreSingleton";
     import TextToast from "../Toasts/TextToast.svelte";
     import type { StreamCategory } from "../../Space/Streamable";
+    import ConfirmDialog from "../../Chat/Components/ConfirmDialog.svelte";
     import { IconAlertTriangle, IconUser, IconMute, IconUnMute, IconMicrophone, IconMicrophoneOff } from "@wa-icons";
+    import { modals } from "@wa-modals";
 
     interface Props {
         spaceUser: SpaceUserExtended;
@@ -68,11 +70,41 @@
         close();
     }
 
+    /**
+     * How many people the "for everybody" actions reach: everybody in the space but the moderator, who is not sent
+     * the event. Undefined when the space does not list them (a megaphone does not show its audience).
+     */
+    function countOthersInSpace(spaceUser: SpaceUserExtended): number | undefined {
+        const space = spaceUser.space;
+        const others = [...get(space.usersStore).values()].filter((user) => user.spaceUserId !== space.mySpaceUserId);
+        return others.length > 0 ? others.length : undefined;
+    }
+
     function muteAudioEveryBody(spaceUser: SpaceUserExtended) {
-        analyticsClient.trackAdminEvent("meeting.microphone.muted_for_everybody", meetingOf(spaceUser.space));
-        spaceUser.space.emitPublicMessage({
-            $case: "muteAudioForEverybody",
-            muteAudioForEverybody: {},
+        const count = countOthersInSpace(spaceUser);
+        // Read now: the menu, and the translations it subscribes to, are gone when the moderator confirms.
+        const notice =
+            count === undefined
+                ? $LL.camera.menu.mutedAudioEveryBodyNotice()
+                : $LL.camera.menu.mutedAudioEveryBodyNoticeCount({ count });
+        // Nobody can turn the microphones back on but their owners: ask before, and say it was done after.
+        modals.open(ConfirmDialog, {
+            heading: $LL.camera.menu.confirmMuteAudioEveryBodyTitle(),
+            message:
+                count === undefined
+                    ? $LL.camera.menu.confirmMuteAudioEveryBodyMessage()
+                    : $LL.camera.menu.confirmMuteAudioEveryBodyMessageCount({ count }),
+            confirmLabel: $LL.camera.menu.confirmMuteAudioEveryBodyAction(),
+            danger: true,
+            onConfirm: () => {
+                analyticsClient.trackAdminEvent("meeting.microphone.muted_for_everybody", meetingOf(spaceUser.space));
+                spaceUser.space.emitPublicMessage({
+                    $case: "muteAudioForEverybody",
+                    muteAudioForEverybody: {},
+                });
+                notifyMuted(notice);
+                return Promise.resolve();
+            },
         });
         close();
     }
@@ -94,10 +126,28 @@
     }
 
     function muteVideoEveryBody(spaceUser: SpaceUserExtended) {
-        analyticsClient.trackAdminEvent("meeting.video.muted_for_everybody", meetingOf(spaceUser.space));
-        spaceUser.space.emitPublicMessage({
-            $case: "muteVideoForEverybody",
-            muteVideoForEverybody: {},
+        const count = countOthersInSpace(spaceUser);
+        const notice =
+            count === undefined
+                ? $LL.camera.menu.mutedVideoEveryBodyNotice()
+                : $LL.camera.menu.mutedVideoEveryBodyNoticeCount({ count });
+        modals.open(ConfirmDialog, {
+            heading: $LL.camera.menu.confirmMuteVideoEveryBodyTitle(),
+            message:
+                count === undefined
+                    ? $LL.camera.menu.confirmMuteVideoEveryBodyMessage()
+                    : $LL.camera.menu.confirmMuteVideoEveryBodyMessageCount({ count }),
+            confirmLabel: $LL.camera.menu.confirmMuteVideoEveryBodyAction(),
+            danger: true,
+            onConfirm: () => {
+                analyticsClient.trackAdminEvent("meeting.video.muted_for_everybody", meetingOf(spaceUser.space));
+                spaceUser.space.emitPublicMessage({
+                    $case: "muteVideoForEverybody",
+                    muteVideoForEverybody: {},
+                });
+                notifyMuted(notice);
+                return Promise.resolve();
+            },
         });
         close();
     }

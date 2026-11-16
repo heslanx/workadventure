@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { SvelteMap } from "svelte/reactivity";
+    import { get } from "svelte/store";
     import type {
         AreaDataProperties,
         AreaDataPropertiesKeys,
@@ -16,6 +17,7 @@
     import { mapEditorSelectedAreaPreviewStore } from "../../../Stores/MapEditorStore";
     import { MATRIX_PUBLIC_URI, PUSHER_URL } from "../../../Enum/EnvironmentVariable";
     import { analyticsClient } from "../../../Administration/AnalyticsClient";
+    import { offerUndo, removeGuardingUploadedFiles } from "../offerUndo";
     import JitsiRoomPropertyEditor from "../PropertyEditor/JitsiRoomPropertyEditor.svelte";
     import PlayAudioPropertyEditor from "../PropertyEditor/PlayAudioPropertyEditor.svelte";
     import OpenWebsitePropertyEditor from "../PropertyEditor/OpenWebsitePropertyEditor.svelte";
@@ -457,14 +459,44 @@
 
     function onDeleteProperty(id: string, removeAreaEntities?: boolean) {
         if ($mapEditorSelectedAreaPreviewStore) {
-            analyticsClient.trackAdminEvent("map_editor.property.removed", {
-                name: properties.find((property) => property.id === id)?.type || "unknown",
-                type: "area",
+            const areaPreview = $mapEditorSelectedAreaPreviewStore;
+            const removedProperty = properties.find((property) => property.id === id);
+            const removedPropertyCopy = removedProperty ? $state.snapshot(removedProperty) : undefined;
+            const removeProperty = () => {
+                analyticsClient.trackAdminEvent("map_editor.property.removed", {
+                    name: removedProperty?.type || "unknown",
+                    type: "area",
+                });
+                areaPreview.deleteProperty(id, removeAreaEntities);
+                // refresh properties
+                properties = areaPreview.getProperties();
+                refreshFlags();
+            };
+            // A property that held an uploaded file loses it on the server, so it asks first instead of an Undo.
+            removeGuardingUploadedFiles({
+                properties: removedPropertyCopy ? [removedPropertyCopy] : [],
+                heading: $LL.mapEditor.uploadedFileDeletion.propertyTitle(),
+                confirmLabel: $LL.mapEditor.uploadedFileDeletion.remove(),
+                remove: removeProperty,
+                removeWithUndo: () => {
+                    removeProperty();
+                    // Removing the objects of a personal area too was confirmed in a dialog, and putting the property
+                    // back would not bring them back.
+                    if (removedPropertyCopy && !removeAreaEntities) {
+                        offerUndo($LL.mapEditor.undo.propertyRemovedFromArea(), () => {
+                            // The property goes back only to the area it came from, as long as that area is still
+                            // selected.
+                            if (get(mapEditorSelectedAreaPreviewStore) !== areaPreview) {
+                                return false;
+                            }
+                            areaPreview.addProperty(removedPropertyCopy);
+                            properties = areaPreview.getProperties();
+                            refreshFlags();
+                            return true;
+                        });
+                    }
+                },
             });
-            $mapEditorSelectedAreaPreviewStore.deleteProperty(id, removeAreaEntities);
-            // refresh properties
-            properties = $mapEditorSelectedAreaPreviewStore.getProperties();
-            refreshFlags();
         }
     }
 

@@ -252,6 +252,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "Le chat est encore en cours de connexion. Réessayez dans quelques secondes.",
         alreadyAtDesk: "Vous êtes déjà à votre bureau.",
     },
+    leaveConversationConfirm: {
+        title: "Quitter votre conversation ?",
+        message:
+            "Cela vous fait sortir de la salle un instant. Vous quitterez votre conversation ou votre direct en cours, votre caméra et votre micro seront coupés, et votre personnage disparaîtra de la carte jusqu'à votre retour.",
+        confirm: "Quitter et continuer",
+    },
 };
 
 export default actionbar;

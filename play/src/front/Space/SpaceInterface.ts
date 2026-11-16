@@ -216,7 +216,15 @@ export type ReactiveSpaceUser = {
 export type SpaceUserExtended = SpaceUser & {
     pictureStore: Readable<string | undefined>;
     emitPrivateEvent: (message: NonNullable<PrivateSpaceEvent["event"]>) => void;
-    space: Pick<SpaceInterface, "emitPublicMessage" | "canAskToMuteAudioOrTurnOffVideo" | "filterType" | "getName"> & {
+    space: Pick<
+        SpaceInterface,
+        | "emitPublicMessage"
+        | "canAskToMuteAudioOrTurnOffVideo"
+        | "filterType"
+        | "getName"
+        | "usersStore"
+        | "mySpaceUserId"
+    > & {
         state: Pick<SpaceStateManager, "giveFloor" | "revokeFloor">;
     };
     reactiveUser: ReactiveSpaceUser;

@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { EntityPrefab } from "@workadventure/map-editor";
+    import { LL } from "../../../../../i18n/i18n-svelte";
 
     interface Props {
         entityPrefabsPositions: EntityPrefab[];
@@ -8,11 +9,13 @@
     }
 
     let { entityPrefabsPositions, selectedEntity, onPickItem }: Props = $props();
+
+    const labelId = $props.id();
 </script>
 
 {#if entityPrefabsPositions.length > 1}
-    <p class="m-0 text-xxs">Positions</p>
-    <div class="flex flex-row gap-2">
+    <p class="m-0 text-xxs" id={labelId}>{$LL.mapEditor.entityEditor.itemPicker.positions()}</p>
+    <div class="flex flex-row gap-2" role="group" aria-labelledby={labelId}>
         {#each entityPrefabsPositions as item (item.id)}
             <button
                 type="button"

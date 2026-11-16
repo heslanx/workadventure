@@ -11,8 +11,9 @@
 </script>
 
 <div
-    class="fixed inset-0 z-[3000] pointer-events-none"
+    class="group/onboarding fixed inset-0 z-[3000] pointer-events-none"
     data-testid="onboarding-step"
+    data-onboarding-panel
     transition:fade={{ duration: 300 }}
 >
     <!-- Overlay with gray background and blur - only for welcome step -->

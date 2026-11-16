@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Wobnowjenje tutu kartu njewobnowi, dokelž hižo njeeksistuje.",
         editionFailed: "Twoja změna njeda so składować a bu cofnjena.",
     },
+    undo: {
+        action: "Cofnyć",
+        unavailable: "Tuta změna njeda so tu wjace cofnyć. Wuwjedźće ju znowa ručnje.",
+        entityDeleted: "Objekt „{name}“ wotstronjeny",
+        areaDeleted: "Wobłuk „{name}“ wotstronjeny",
+        areaDeletedUnnamed: "Wobłuk wotstronjeny",
+        propertyRemovedFromArea: "Kajkosć z tutoho wobłuka wotstronjena",
+        propertyRemovedFromObject: "Kajkosć z tutoho objekta wotstronjena",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "„{name}“ a nahratu dataju zhašeć?",
+        areaTitle: "Wobłuk „{name}“ a nahratu dataju zhašeć?",
+        areaTitleUnnamed: "Tutón wobłuk a nahratu dataju zhašeć?",
+        propertyTitle: "Tutu kajkosć a nahratu dataju wotstronić?",
+        message: "Dataja so tež ze składa karty zhaša.",
+        warning: "Cofnjenje njemóže nahratu dataju wobnowić. Dyrbjał by ju znowa nahrać.",
+        delete: "Zhašeć",
+        remove: "Wotstronić",
+    },
     sideBar: {
         areaEditor: "Płoninu wobdźěłać",
         entityEditor: "Entita wobdźěłać",
@@ -298,6 +317,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Datajowy format so njepodpěra",
                 errorOnFileNumber: "Wjacordatajowe pušćanje so njepodpěra",
                 errorOnFileSize: "Dataja je přewulka, maksimalna wulkosć je {size} MB",
+                removeFile: "{name} wotstronić",
             },
             hideUrlLabel: "URL schować",
             actionButtonLabel: "Dataju wočinić",
@@ -335,6 +355,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "Jenož wužiwarjo z tutymi toflickami móža tutón wokrjes zawrjeć abo wotewrić. Wostajće prózdne, zo by wšěm dowolili.",
         },
         noProperties: "Žane kajkosće njejsu definowane",
+        removeProperty: "Tutu kajkosć wotstronić",
     },
     areaEditor: {
         editInstructions: "Klikńće na płoninu, zo byšće jeje kajkosće změnili.",
@@ -348,10 +369,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Akcija je trěbna",
             description: "Tutón priwatny wobłuk wobsahuje jedyn abo wjace objektow. Što chceće z nim/nimi činić?",
+            heading: "Tutón priwatny wobłuk wobsahuje {count} {{objektow|objekt|objektaj|objekty|objektow|objektow}}",
+            question: "Maja so z karty wotstronić abo wostać, hdźež su?",
             buttons: {
                 keep: "Wobchować",
                 remove: "Wotstronić",
                 cancel: "přetorhnyć",
+                keepObjects: "Objekty wobchować",
+                deleteObjects: "{count} {{objektow|objekt|objektaj|objekty|objektow|objektow}} wotstronić",
             },
         },
         nameHelpText: "Tute zapodaće so wužiwarjej pokazuje, hdyž do wobłuka stupi.",
@@ -372,9 +397,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "slědźić",
             backToSelectObject: "Wróćo k wubrance",
+            colors: "Barby",
+            positions: "Pozicije",
         },
         trashTool: {
             delete: "Klikńće na objekt, zo byšće jón wotstronił!",
+            undoHint: "Zmylnje wotstronjene? Wužiwajće Cofnyć w pokazanej zdźělence abo tłóčće Strg/Cmd+Z.",
+            keyboardHint: "Bjez myški wubjerće objekt abo wobłuk w jeho editorje a tłóčće klawsu Delete.",
         },
         deleteButton: "wotstronić",
         testInteractionButton: "Interakciju testować",
@@ -417,6 +446,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Kolizija",
             wokaAbove: "Woka horjejce",
             wokaBelow: "Woka delejce",
+            deleteConfirmTitle: "„{name}“ wotstronić?",
+            deleteConfirmMessage: "Tutón swójski objekt budźe z wuběra objektow wotstronjeny.",
+            deleteConfirmMessageWithCopies:
+                "Tutón swójski objekt budźe z wuběra objektow wotstronjeny. Na tutej karće so tež jeho kopije wotstronja ({count} {{kopijow|kopija|kopiji|kopije|kopijow|kopijow}}).",
         },
         buttons: {
             editEntity: "Wobdźěłać",

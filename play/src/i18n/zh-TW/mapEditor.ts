@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "重新整理不會復原此地圖，因為它已經不存在了。",
         editionFailed: "您的變更無法儲存，已被復原。",
     },
+    undo: {
+        action: "復原",
+        unavailable: "此變更無法再從這裡復原。請手動重做。",
+        entityDeleted: "已刪除物件「{name}」",
+        areaDeleted: "已刪除區域「{name}」",
+        areaDeletedUnnamed: "已刪除區域",
+        propertyRemovedFromArea: "已從此區域移除屬性",
+        propertyRemovedFromObject: "已從此物件移除屬性",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "刪除「{name}」及其上傳的檔案？",
+        areaTitle: "刪除區域「{name}」及其上傳的檔案？",
+        areaTitleUnnamed: "刪除此區域及其上傳的檔案？",
+        propertyTitle: "移除此屬性及其上傳的檔案？",
+        message: "該檔案也會從地圖儲存空間中刪除。",
+        warning: "復原無法還原已上傳的檔案，需要重新上傳。",
+        delete: "刪除",
+        remove: "移除",
+    },
     sideBar: {
         areaEditor: "區域編輯器工具",
         entityEditor: "實體編輯器工具",
@@ -289,6 +308,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "不支援的檔案格式",
                 errorOnFileNumber: "不支援多個檔案拖放",
                 errorOnFileSize: "檔案太大，大小上限為 {size} MB",
+                removeFile: "移除 {name}",
             },
             hideUrlLabel: "隱藏 URL",
             actionButtonLabel: "開啟檔案",
@@ -329,6 +349,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         allowTalking: "允許交談和形成氣泡",
         raiseHandEnabled: "允許舉手",
         noProperties: "未定義屬性",
+        removeProperty: "移除此屬性",
     },
     areaEditor: {
         editInstructions: "點選區域以修改其屬性。",
@@ -342,10 +363,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "需要操作",
             description: "此個人區域包含一個或多個物件。您想如何處理它／它們？",
+            heading: "此個人區域包含 {count} 個物件",
+            question: "要將它們從地圖上刪除，還是保留在原處？",
             buttons: {
                 keep: "保留",
                 remove: "刪除",
                 cancel: "取消",
+                keepObjects: "保留物件",
+                deleteObjects: "刪除 {count} 個物件",
             },
         },
         nameHelpText: "如果使用者進入該區域，將向使用者顯示此輸入。",
@@ -366,9 +391,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "搜尋",
             backToSelectObject: "返回選擇物件",
+            colors: "顏色",
+            positions: "位置",
         },
         trashTool: {
             delete: "點選物件以刪除它！",
+            undoHint: "誤刪了嗎？請在出現的通知中點選「復原」，或按 Ctrl/Cmd+Z。",
+            keyboardHint: "不使用滑鼠時，請在編輯器中選取物件或區域，再按 Delete 鍵。",
         },
         deleteButton: "刪除",
         testInteractionButton: "測試互動",
@@ -410,6 +439,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "碰撞",
             wokaAbove: "Woka 上方",
             wokaBelow: "Woka 下方",
+            deleteConfirmTitle: "要刪除「{name}」嗎？",
+            deleteConfirmMessage: "此自訂物件將從物件選擇器中移除。",
+            deleteConfirmMessageWithCopies:
+                "此自訂物件將從物件選擇器中移除，地圖上已放置的 {count} 個副本也會一併移除。",
         },
         buttons: {
             editEntity: "編輯",

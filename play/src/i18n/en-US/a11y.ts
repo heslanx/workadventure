@@ -25,6 +25,7 @@ const a11y: BaseTranslation = {
     mapEditorResizePanel: "Resize the side panel",
     mapEditorStopAudio: "Stop the audio",
     mapEditorToggleSidebar: "Show or hide the side panel",
+    popupAwaitsAnswer: "Request waiting for your answer",
     popupNextSlide: "Next slide",
     popupPreviousSlide: "Previous slide",
     uiMoreInfo: "More information",

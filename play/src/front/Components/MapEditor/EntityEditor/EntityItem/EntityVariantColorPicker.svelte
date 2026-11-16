@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { LL } from "../../../../../i18n/i18n-svelte";
+
     interface Props {
         colors: string[];
         selectedColor: string;
@@ -6,11 +8,13 @@
     }
 
     let { colors, selectedColor, onColorChange }: Props = $props();
+
+    const labelId = $props.id();
 </script>
 
 {#if colors.length > 1}
-    <p class="m-0 text-xxs">Colors</p>
-    <div class="flex flex-row gap-2">
+    <p class="m-0 text-xxs" id={labelId}>{$LL.mapEditor.entityEditor.itemPicker.colors()}</p>
+    <div class="flex flex-row gap-2" role="group" aria-labelledby={labelId}>
         {#each colors as color (color)}
             <div class="hover:cursor-pointer">
                 <button

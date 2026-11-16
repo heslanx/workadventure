@@ -15,6 +15,7 @@
         mapEditorSelectedEntityStore,
         selectCategoryStore,
     } from "../../../Stores/MapEditorStore";
+    import ConfirmDialog from "../../../Chat/Components/ConfirmDialog.svelte";
     import Input from "../../Input/Input.svelte";
     import ButtonClose from "../../Input/ButtonClose.svelte";
     import Button from "../../UI/Button.svelte";
@@ -26,6 +27,7 @@
     import EntityUpload from "./EntityUpload/EntityUpload.svelte";
     import TagListItem from "./TagListItem.svelte";
     import { IconChevronLeft, IconPencil } from "@wa-icons";
+    import { modals } from "@wa-modals";
 
     const entitiesCollectionsManager = gameManager.getCurrentGameScene().getEntitiesCollectionsManager();
     const entitiesPrefabsVariants = entitiesCollectionsManager.getEntitiesPrefabsVariantStore();
@@ -74,6 +76,29 @@
         mapEditorDeleteCustomEntityEventStore.set({ id });
         clearEntitySelection();
         setIsEditingCustomEntity(false);
+    }
+
+    // Deleting a custom object removes it from the picker and every copy placed on this map, and Ctrl+Z cannot bring
+    // it back: say so, naming the object, and let Cancel take the focus.
+    function confirmRemoveEntity(entityId: string, entityName: string) {
+        const translations = get(LL);
+        const form = translations.mapEditor.entityEditor.customEntityEditorForm;
+        const wamFile = gameManager.getCurrentGameScene().getGameMap().getWamFile();
+        const placedCopies = wamFile?.getGameMapEntities().findEntitiesByPrefabId(entityId).length ?? 0;
+        modals.open(ConfirmDialog, {
+            heading: form.deleteConfirmTitle({ name: entityName }),
+            message:
+                placedCopies > 0
+                    ? form.deleteConfirmMessageWithCopies({ count: placedCopies })
+                    : form.deleteConfirmMessage(),
+            warning: translations.chat.confirm.cannotUndo(),
+            confirmLabel: translations.mapEditor.entityEditor.buttons.delete(),
+            danger: true,
+            onConfirm: () => {
+                removeEntity(entityId);
+                return Promise.resolve();
+            },
+        });
     }
 
     function saveCustomEntityModifications(customEntity: EntityPrefab) {
@@ -323,7 +348,7 @@
                                 setIsEditingCustomEntity(false);
                             }}
                             removeEntity={({ entityId }) => {
-                                removeEntity(entityId);
+                                confirmRemoveEntity(entityId, pickedEntity?.name ?? "");
                             }}
                             applyEntityModifications={(customModifiedEntity) =>
                                 saveCustomEntityModifications(customModifiedEntity)}

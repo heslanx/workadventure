@@ -10,6 +10,8 @@
         textColor?: string;
         size?: "xs" | "sm" | "md" | "lg";
         extraButtonClasses?: string;
+        /** What the button does, when it is not a plain "Close" (e.g. "Remove this property"). */
+        label?: string;
         onclick?: (event: MouseEvent) => void;
     }
 
@@ -21,6 +23,7 @@
         textColor = "text-white",
         size = "lg",
         extraButtonClasses = "",
+        label = undefined,
         onclick,
     }: Props = $props();
 
@@ -46,7 +49,7 @@
     {id}
     class="{sizeClasses} p-0 flex items-center justify-center rounded backdrop-blur close-window transition-all aspect-square text-2xl {textColor} {bgColor} hover:{hoverColor} close-btn {extraButtonClasses}"
     data-testid={dataTestId}
-    aria-label={$LL.actionbar.close()}
+    aria-label={label ?? $LL.actionbar.close()}
     onclick={handleClick}
 >
     <IconX aria-hidden="true" />

@@ -9,6 +9,8 @@ const notification: DeepPartial<Translation["notification"]> = {
     askToMuteCamera: "يرجى كتم الكاميرا 🙏", // please mute your camera
     microphoneMuted: "تم كتم ميكروفونك بواسطة مشرف",
     cameraMuted: "تم كتم كاميرتك بواسطة مشرف",
+    microphoneMutedForEverybody: "كتم أحد المشرفين ميكروفون الجميع. يمكنك إعادة تشغيل ميكروفونك.",
+    cameraMutedForEverybody: "أوقف أحد المشرفين كاميرا الجميع. يمكنك إعادة تشغيل كاميرتك.",
     givenTheFloor: "حان دورك للتحدث",
     givenTheFloorEnableMicrophone: "حان دورك للتحدث — فعّل الميكروفون",
     floorRevoked: "لم يعد لديك الكلمة",

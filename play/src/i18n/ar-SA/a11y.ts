@@ -26,6 +26,7 @@ const a11y: DeepPartial<Translation["a11y"]> = {
     mapEditorResizePanel: "تغيير حجم اللوحة الجانبية",
     mapEditorStopAudio: "إيقاف الصوت",
     mapEditorToggleSidebar: "إظهار اللوحة الجانبية أو إخفاؤها",
+    popupAwaitsAnswer: "طلب ينتظر ردك",
     popupNextSlide: "الشريحة التالية",
     popupPreviousSlide: "الشريحة السابقة",
     uiMoreInfo: "مزيد من المعلومات",

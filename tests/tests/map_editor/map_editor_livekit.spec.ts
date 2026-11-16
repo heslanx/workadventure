@@ -215,10 +215,15 @@ test.describe("Map editor @oidc @nomobile @nowebkit", () => {
         await expect(member.getByTestId("Bob is muted.")).toBeVisible({ timeout: 20_000 });
         await expect(bob.getByText("Can I mute your microphone?")).toBeHidden();
 
-        // The moderator turns off everybody's camera.
+        // The moderator turns off everybody's camera, after confirming: nobody but its owner can turn a camera back on.
         await bobBox.locator(".user-menu-btn").click();
         await member.getByRole("button", { name: "Turn off video for everybody", exact: true }).click();
-        await expect(bob.getByText("Can I mute your camera?")).toBeVisible({ timeout: 20_000 });
+        await expect(member.getByTestId("confirmDialog")).toContainText("1 person");
+        await member.getByTestId("confirmDialogConfirm").click();
+        await expect(member.getByText("Camera turned off for 1 person.")).toBeVisible({ timeout: 20_000 });
+        // Bob is told what happened, not asked.
+        await expect(bob.getByText("A moderator turned off everybody's camera.")).toBeVisible({ timeout: 20_000 });
+        await expect(bob.getByText("Can I mute your camera?")).toBeHidden();
         await expect(bobBox.locator("video")).toHaveCount(0, { timeout: 20_000 });
 
         // And removes him from the meeting.

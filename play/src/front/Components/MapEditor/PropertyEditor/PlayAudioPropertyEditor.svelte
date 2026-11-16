@@ -10,6 +10,7 @@
     import { audioOutput } from "../../../WebRtc/AudioOutputManager";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { resolveSoundUrl } from "../../../Utils/UrlPlaceholderResolver";
+    import { removeGuardingUploadedFiles } from "../offerUndo";
     import PropertyEditorBase from "./PropertyEditorBase.svelte";
     import FileUpload from "./FileUpload/FileUpload.svelte";
 
@@ -82,6 +83,22 @@
         onValueChange();
     }
 
+    function removeUploadedSound() {
+        const target = property;
+        const clearSound = () => setSound("", null);
+        removeGuardingUploadedFiles({
+            properties: [target],
+            heading: $LL.mapEditor.properties.openFile.uploadFile.removeFile({ name: target.audioName ?? "" }),
+            confirmLabel: $LL.mapEditor.uploadedFileDeletion.remove(),
+            remove: () => {
+                // The editor may show another property by the time the person confirms: fail rather than touch it.
+                if (property !== target) throw new Error("The property editor no longer shows this property");
+                clearSound();
+            },
+            removeWithUndo: clearSound,
+        });
+    }
+
     function onRangeChange() {
         if (property.volume !== undefined) {
             HTMLAudioPlayer.volume = property.volume;
@@ -129,7 +146,7 @@
                                     url = "";
                                     setSound(link, name);
                                 }}
-                                ondeleteFile={() => setSound("", null)}
+                                ondeleteFile={removeUploadedSound}
                             />
                         {:else}
                             <Input

@@ -5,16 +5,22 @@
     import Button from "../UI/Button.svelte";
     import { IconCheck, IconUnMute } from "@wa-icons";
 
-    let editMode = $state(false);
-
     interface Props {
         selectedDevice?: string;
         deviceList: MediaDeviceInfo[];
         onplaysound?: (deviceId: string | undefined) => void;
         onselectdevice?: (deviceId: string | undefined) => void;
+        // Whether the list of devices is open. Bound by the page, which closes it on Escape before it leaves.
+        editMode?: boolean;
     }
 
-    let { selectedDevice = undefined, deviceList, onplaysound, onselectdevice }: Props = $props();
+    let {
+        selectedDevice = undefined,
+        deviceList,
+        onplaysound,
+        onselectdevice,
+        editMode = $bindable(false),
+    }: Props = $props();
     const uid = $props.id();
 </script>
 
@@ -27,6 +33,7 @@
         <Button
             variant={!editMode ? "secondary" : "light"}
             appearance={!editMode ? "filled" : "ghost"}
+            aria-describedby="{uid}-title"
             onclick={(event) => {
                 event.stopPropagation();
                 event.preventDefault();

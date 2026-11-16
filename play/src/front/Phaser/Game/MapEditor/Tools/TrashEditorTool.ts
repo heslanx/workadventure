@@ -152,9 +152,9 @@ export class TrashEditorTool extends EntityRelatedEditorTool {
     }
 
     private bindAreaPreviewEventHandlers(areaPreview: AreaPreview): void {
-        areaPreview.on(AreaPreviewEvent.Delete, () =>
-            this.areaEditorTool.handleDeleteAreaFrontCommandExecution(areaPreview.getAreaData().id, this),
-        );
+        areaPreview.on(AreaPreviewEvent.Delete, () => {
+            this.areaEditorTool.handleDeleteAreaFrontCommandExecution(areaPreview.getAreaData().id, this);
+        });
     }
 
     private deleteAreaPreview(id: string): boolean {

@@ -9,6 +9,8 @@ const notification: DeepPartial<Translation["notification"]> = {
     askToMuteCamera: "ขอปิดกล้องของคุณได้ไหม?",
     microphoneMuted: "ไมโครโฟนของคุณถูกปิดเสียงโดยผู้ควบคุม",
     cameraMuted: "กล้องของคุณถูกปิดโดยผู้ควบคุม",
+    microphoneMutedForEverybody: "ผู้ควบคุมปิดเสียงไมโครโฟนของทุกคน คุณเปิดไมโครโฟนของคุณกลับได้",
+    cameraMutedForEverybody: "ผู้ควบคุมปิดกล้องของทุกคน คุณเปิดกล้องของคุณกลับได้",
     givenTheFloor: "ถึงตาคุณพูดแล้ว",
     givenTheFloorEnableMicrophone: "ถึงตาคุณพูดแล้ว — เปิดไมโครโฟนของคุณ",
     floorRevoked: "คุณไม่มีสิทธิ์การพูดแล้ว",

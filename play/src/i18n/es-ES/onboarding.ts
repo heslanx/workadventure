@@ -52,4 +52,11 @@ export default {
             "¡Has aprendido los conceptos básicos de {worldName}! Siéntete libre de explorar, conocer nuevas personas y divertirte. Siempre puedes acceder a la ayuda desde el menú si la necesitas.",
         finish: "¡Comienza a explorar!",
     },
+    back: "Atrás",
+    stepIndicator: "Paso {current} de {total}",
+    skipShortcutHint: "Pulsa Esc para saltar el tutorial.",
+    videoPlay: "Reproducir el vídeo",
+    videoPause: "Pausar el vídeo",
+    cancelledByConversation:
+        "Se ha cerrado el tutorial porque te has unido a una conversación. Puedes repetirlo desde el menú de perfil.",
 } satisfies Translation["onboarding"];

@@ -380,7 +380,7 @@ async function loginWithMockedMediaDevices(page: Page, url: string): Promise<voi
 
     if (firstVisibleStep !== "map") {
         await expect(mediaStep).toBeVisible();
-        await page.getByText("Save").click();
+        await page.locator("button.enableCameraSceneFormSubmit").click();
     }
 
     await waitForMapAfterOnboarding(page);

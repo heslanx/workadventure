@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "L'aggiornamento non ripristinerà questa mappa perché non esiste più.",
         editionFailed: "Non è stato possibile salvare la tua modifica ed è stata annullata.",
     },
+    undo: {
+        action: "Annulla",
+        unavailable: "Questa modifica non può più essere annullata da qui. Rifalla manualmente.",
+        entityDeleted: "Oggetto “{name}” eliminato",
+        areaDeleted: "Area “{name}” eliminata",
+        areaDeletedUnnamed: "Area eliminata",
+        propertyRemovedFromArea: "Proprietà rimossa da quest'area",
+        propertyRemovedFromObject: "Proprietà rimossa da questo oggetto",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "Eliminare “{name}” e il suo file caricato?",
+        areaTitle: "Eliminare l'area “{name}” e il suo file caricato?",
+        areaTitleUnnamed: "Eliminare quest'area e il suo file caricato?",
+        propertyTitle: "Rimuovere questa proprietà e il suo file caricato?",
+        message: "Il file viene eliminato anche dall'archivio della mappa.",
+        warning: "Annulla non può ripristinare un file caricato. Andrebbe caricato di nuovo.",
+        delete: "Elimina",
+        remove: "Rimuovi",
+    },
     sideBar: {
         areaEditor: "Strumento di modifica dell'area",
         entityEditor: "Strumento di modifica dell'entità",
@@ -27,6 +46,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
     },
     properties: {
         noProperties: "No properties defined",
+        removeProperty: "Rimuovi questa proprietà",
         silent: {
             label: "Silenzioso",
             description: "Non consentire conversazioni all'interno.",
@@ -293,6 +313,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Formato file non supportato",
                 errorOnFileNumber: "Il rilascio di più file non è supportato",
                 errorOnFileSize: "Il file è troppo grande, la dimensione massima è {size} MB",
+                removeFile: "Rimuovi {name}",
             },
             hideUrlLabel: "Nascondi URL",
             actionButtonLabel: "Apri file",
@@ -349,10 +370,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Azione richiesta",
             description: "Quest'area personale contiene uno o più oggetti. Cosa vuoi fare con essi?",
+            heading: "Quest'area personale contiene {count} {{oggetto|oggetti}}",
+            question: "Eliminarli dalla mappa o lasciarli dove sono?",
             buttons: {
                 keep: "Mantieni",
                 remove: "Rimuovi",
                 cancel: "Annulla",
+                keepObjects: "Mantieni gli oggetti",
+                deleteObjects: "Elimina {count} {{oggetto|oggetti}}",
             },
         },
         nameHelpText: "Questo nome verrà mostrato agli utenti quando entreranno nell'area.",
@@ -373,9 +398,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Cerca",
             backToSelectObject: "Torna a selezionare oggetto",
+            colors: "Colori",
+            positions: "Posizioni",
         },
         trashTool: {
             delete: "Clicca sull'oggetto per eliminarlo!",
+            undoHint: "Eliminato per errore? Usa Annulla nell'avviso che compare, oppure premi Ctrl/Cmd+Z.",
+            keyboardHint: "Senza mouse, seleziona un oggetto o un'area nel relativo editor e premi Canc.",
         },
         deleteButton: "Elimina",
         testInteractionButton: "Testa Interazione",
@@ -418,6 +447,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Collisione",
             wokaAbove: "Woka sopra",
             wokaBelow: "Woka sotto",
+            deleteConfirmTitle: "Eliminare “{name}”?",
+            deleteConfirmMessage: "Questo oggetto personalizzato verrà rimosso dal selettore degli oggetti.",
+            deleteConfirmMessageWithCopies:
+                "Questo oggetto personalizzato verrà rimosso dal selettore degli oggetti, insieme a {count} {{copia posizionata|copie posizionate}} su questa mappa.",
         },
         buttons: {
             editEntity: "Modifica",

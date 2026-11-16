@@ -9,6 +9,25 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Verversen zal deze kaart niet herstellen omdat deze niet meer bestaat.",
         editionFailed: "Je wijziging kon niet worden opgeslagen en is ongedaan gemaakt.",
     },
+    undo: {
+        action: "Ongedaan maken",
+        unavailable: "Deze wijziging kan hier niet meer ongedaan worden gemaakt. Doe het handmatig opnieuw.",
+        entityDeleted: "Object “{name}” verwijderd",
+        areaDeleted: "Gebied “{name}” verwijderd",
+        areaDeletedUnnamed: "Gebied verwijderd",
+        propertyRemovedFromArea: "Eigenschap uit dit gebied verwijderd",
+        propertyRemovedFromObject: "Eigenschap uit dit object verwijderd",
+    },
+    uploadedFileDeletion: {
+        objectTitle: "“{name}” en het geüploade bestand verwijderen?",
+        areaTitle: "Gebied “{name}” en het geüploade bestand verwijderen?",
+        areaTitleUnnamed: "Dit gebied en het geüploade bestand verwijderen?",
+        propertyTitle: "Deze eigenschap en het geüploade bestand verwijderen?",
+        message: "Het bestand wordt ook uit de kaartopslag verwijderd.",
+        warning: "Ongedaan maken kan een geüpload bestand niet herstellen. Je zou het opnieuw moeten uploaden.",
+        delete: "Verwijderen",
+        remove: "Verwijderen",
+    },
     sideBar: {
         areaEditor: "Gebied editor tool",
         entityEditor: "Entiteit editor tool",
@@ -301,6 +320,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Bestandsformaat niet ondersteund",
                 errorOnFileNumber: "Meerdere bestanden neerzetten wordt niet ondersteund",
                 errorOnFileSize: "Bestand is te groot, maximale grootte is {size} MB",
+                removeFile: "{name} verwijderen",
             },
             hideUrlLabel: "URL verbergen",
             actionButtonLabel: "Open bestand",
@@ -338,6 +358,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "Alleen gebruikers met deze tags kunnen dit gebied vergrendelen of ontgrendelen. Laat leeg om iedereen toe te staan.",
         },
         noProperties: "Geen eigenschappen gedefinieerd",
+        removeProperty: "Deze eigenschap verwijderen",
     },
     areaEditor: {
         editInstructions: "Klik op een gebied om de eigenschappen te wijzigen.",
@@ -351,10 +372,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Actie vereist",
             description: "Dit persoonlijke gebied bevat een of meer objecten. Wat wil je ermee/hen doen?",
+            heading: "Dit persoonlijke gebied bevat {count} {{object|objecten}}",
+            question: "Wil je ze van de kaart verwijderen of laten staan waar ze zijn?",
             buttons: {
                 keep: "Houd",
                 remove: "Verwijder",
                 cancel: "Annuleren",
+                keepObjects: "Objecten behouden",
+                deleteObjects: "{count} {{object|objecten}} verwijderen",
             },
         },
         nameHelpText: "Deze tekst wordt aan de gebruiker getoond wanneer ze het gebied betreden.",
@@ -375,9 +400,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Zoeken",
             backToSelectObject: "Terug om object te selecteren",
+            colors: "Kleuren",
+            positions: "Posities",
         },
         trashTool: {
             delete: "Klik op het object om het te verwijderen!",
+            undoHint:
+                "Per ongeluk verwijderd? Gebruik Ongedaan maken in de melding die verschijnt, of druk op Ctrl/Cmd+Z.",
+            keyboardHint: "Zonder muis: selecteer een object of gebied in de bijbehorende editor en druk op Delete.",
         },
         deleteButton: "Verwijderen",
         testInteractionButton: "Test Interactie",
@@ -420,6 +450,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Botsing",
             wokaAbove: "Woka boven",
             wokaBelow: "Woka onder",
+            deleteConfirmTitle: "“{name}” verwijderen?",
+            deleteConfirmMessage: "Dit aangepaste object wordt verwijderd uit de objectkiezer.",
+            deleteConfirmMessageWithCopies:
+                "Dit aangepaste object wordt verwijderd uit de objectkiezer, samen met {count} {{geplaatste kopie|geplaatste kopieën}} op deze kaart.",
         },
         buttons: {
             editEntity: "Bewerken",

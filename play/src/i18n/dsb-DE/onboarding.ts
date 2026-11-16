@@ -52,4 +52,11 @@ export default {
             "You've learned the basics of {worldName}! Feel free to explore, meet new people, and have fun. You can always access help from the menu if you need it.",
         finish: "Start exploring!",
     },
+    back: "Slědk",
+    stepIndicator: "Kšac {current} z {total}",
+    skipShortcutHint: "Tłocćo Esc, aby tutorial pśeskócyli.",
+    videoPlay: "Wideo wótgraś",
+    videoPause: "Wideo zastajiś",
+    cancelledByConversation:
+        "Tutorial jo se zacynił, dokulaž sćo se do rozgrona pśizamknuł. Móžośo jen w meniju profila znowego wótgraś.",
 } satisfies Translation["onboarding"];

@@ -1,5 +1,6 @@
 import { get, writable } from "svelte/store";
 import HelpCameraSettingsPopup from "../Components/HelpSettings/HelpCameraSettingsPopup.svelte";
+import type { MediaPermissionDeniedState } from "./MediaStatusStore";
 import { mediaPermissionDeniedStore } from "./MediaStatusStore";
 import { popupStore } from "./PopupStore";
 
@@ -16,6 +17,23 @@ export function showHelpCameraSettings() {
     }
 
     popupStore.addPopup(HelpCameraSettingsPopup, {}, HELP_CAMERA_SETTINGS_POPUP_ID);
+}
+
+/**
+ * Opens the help for devices the caller knows are blocked (a failed request, a camera button the browser blocks).
+ * showHelpCameraSettings() waits for the browser's permission state to say "denied", which a browser without the
+ * Permissions API never does: the popup would never open for it.
+ */
+export function showHelpForBlockedDevices(blocked: Partial<MediaPermissionDeniedState>) {
+    if (!blocked.camera && !blocked.microphone) {
+        return;
+    }
+
+    popupStore.addPopup(
+        HelpCameraSettingsPopup,
+        { camera: blocked.camera, microphone: blocked.microphone },
+        HELP_CAMERA_SETTINGS_POPUP_ID,
+    );
 }
 
 export function hideHelpCameraSettings() {
