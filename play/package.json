@@ -86,7 +86,6 @@
     "typescript": "^5.9.3",
     "vite": "^8.1.4",
     "vite-plugin-node-polyfills": "^0.28.0",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.7",
     "vitest-mock-extended": "^4.0.0"
   },
@@ -174,9 +173,9 @@
     "throttle-debounce": "^5.0.2",
     "tsx": "^4.22.3",
     "typesafe-i18n": "^5.27.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.67.0",
     "unplugin-icons": "^23.0.1",
     "uuid": "^14.0.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.67.0",
     "zod": "^3.25.76"
   }
 }

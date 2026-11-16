@@ -8,7 +8,6 @@ import posthog from "@posthog/rollup-plugin";
 import { noiseSuppressionAudioWorkletVitePlugin } from "@workadventure/noise-suppression/vite";
 import tailwindcss from "@tailwindcss/vite";
 import Icons from "unplugin-icons/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { apiVersionHash } from "../libs/messages/src/JsonMessages/ApiVersion";
 
@@ -78,9 +77,14 @@ export default defineConfig(({ mode }) => {
                         ? []
                         : [
                               watchedDirGlob("./src/pusher"),
-                              // Polling stats every watched file, so it also skips public/ (a third of the files):
-                              // a new file there is served after a restart of Vite, an edited one at once.
-                              ...(watchPolling ? [watchedDirGlob("./public")] : []),
+                              // Polling stats every watched file, so it also skips the asset folders of public/ (a
+                              // third of the files): a new file in them is served after a restart of Vite, an edited
+                              // one at once. public/ itself stays watched for iframe_api.js, built while Vite runs.
+                              ...(watchPolling
+                                  ? ["./public/resources", "./public/static", "./public/collections"].map(
+                                        watchedDirGlob,
+                                    )
+                                  : []),
                           ],
                 // Colima's mountInotify only forwards in-place writes; an editor that saves by renaming a temp file
                 // over the original never reaches the container. Polling catches those saves too, at a CPU cost.
@@ -136,7 +140,6 @@ export default defineConfig(({ mode }) => {
             Icons({
                 compiler: "svelte",
             }),
-            tsconfigPaths(),
         ],
         resolve: {
             // Without this, vitest resolves Svelte to its server build and mount() is unavailable.
