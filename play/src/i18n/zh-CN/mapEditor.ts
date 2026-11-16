@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "已从此区域移除该属性",
         propertyRemovedFromObject: "已从此对象移除该属性",
     },
+    uploadedFileDeletion: {
+        objectTitle: "删除“{name}”及其上传的文件？",
+        areaTitle: "删除区域“{name}”及其上传的文件？",
+        areaTitleUnnamed: "删除此区域及其上传的文件？",
+        propertyTitle: "移除此属性及其上传的文件？",
+        message: "该文件也会从地图存储中删除。",
+        warning: "撤销无法恢复已上传的文件，需要重新上传。",
+        delete: "删除",
+        remove: "移除",
+    },
     sideBar: {
         areaEditor: "区域编辑器工具",
         entityEditor: "实体编辑器工具",

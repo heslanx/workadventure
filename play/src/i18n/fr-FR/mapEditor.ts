@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Propriété retirée de cette zone",
         propertyRemovedFromObject: "Propriété retirée de cet objet",
     },
+    uploadedFileDeletion: {
+        objectTitle: "Supprimer « {name} » et son fichier importé ?",
+        areaTitle: "Supprimer la zone « {name} » et son fichier importé ?",
+        areaTitleUnnamed: "Supprimer cette zone et son fichier importé ?",
+        propertyTitle: "Retirer cette propriété et son fichier importé ?",
+        message: "Le fichier est aussi supprimé du stockage de la carte.",
+        warning: "Annuler ne peut pas restaurer un fichier importé. Il faudrait l'importer à nouveau.",
+        delete: "Supprimer",
+        remove: "Retirer",
+    },
     sideBar: {
         areaEditor: "Outil d'édition de zone",
         entityEditor: "Outil d'édition d'entités",

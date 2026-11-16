@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "이 영역에서 속성을 제거했습니다",
         propertyRemovedFromObject: "이 오브젝트에서 속성을 제거했습니다",
     },
+    uploadedFileDeletion: {
+        objectTitle: "“{name}”와 업로드한 파일을 삭제할까요?",
+        areaTitle: "영역 “{name}”와 업로드한 파일을 삭제할까요?",
+        areaTitleUnnamed: "이 영역과 업로드한 파일을 삭제할까요?",
+        propertyTitle: "이 속성과 업로드한 파일을 제거할까요?",
+        message: "파일은 맵 저장소에서도 삭제됩니다.",
+        warning: "실행 취소로는 업로드한 파일을 복원할 수 없습니다. 다시 업로드해야 합니다.",
+        delete: "삭제",
+        remove: "제거",
+    },
     sideBar: {
         areaEditor: "영역 편집 도구",
         entityEditor: "오브젝트 편집 도구",

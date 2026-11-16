@@ -21,6 +21,8 @@ import { DeleteEntityFrontCommand } from "../Commands/Entity/DeleteEntityFrontCo
 import ActionPopupOnPersonalAreaWithEntities from "../../../../Components/MapEditor/ActionPopupOnPersonalAreaWithEntities.svelte";
 import { SpeechDomElement } from "../../../Entity/SpeechDomElement";
 import { LL } from "../../../../../i18n/i18n-svelte";
+import { holdsUploadedFile, removeGuardingUploadedFiles } from "../../../../Components/MapEditor/offerUndo";
+import { warningMessageStore } from "../../../../Stores/ErrorStore";
 import { MapEditorTool } from "./MapEditorTool";
 import type { TrashEditorTool } from "./TrashEditorTool";
 import { modals } from "@wa-modals";
@@ -177,14 +179,17 @@ export class AreaEditorTool extends MapEditorTool {
     }
 
     /**
-     * @param undoNotice When set (the trash tool deletes in one click), what to tell the person once the area is
-     * gone, with an Undo button.
+     * Every way to delete an area (the Delete key, the area editor, the trash tool) ends here. An area holding an
+     * uploaded file asks first, in the personal area choice when there is one: the map storage deletes the file with
+     * the area and no Undo brings it back.
      */
-    public handleDeleteAreaFrontCommandExecution(
-        areaId: string,
-        editorTool?: AreaEditorTool | TrashEditorTool,
-        undoNotice?: string,
-    ): void {
+    public handleDeleteAreaFrontCommandExecution(areaId: string, editorTool?: AreaEditorTool | TrashEditorTool): void {
+        const area = this.scene.getGameMap().getWamFile()?.getGameMapAreas()?.getArea(areaId);
+        const properties = area?.properties ?? [];
+        const translations = get(LL).mapEditor;
+        const undoNotice = area?.name
+            ? translations.undo.areaDeleted({ name: area.name })
+            : translations.undo.areaDeletedUnnamed();
         const isPersonalArea = this.getIsPersonalArea(areaId);
         const deleteAreaCommand = new DeleteAreaFrontCommand(
             this.scene.getGameMap().getWamFile()!,
@@ -196,20 +201,43 @@ export class AreaEditorTool extends MapEditorTool {
         if (isPersonalArea) {
             const entitiesInsideArea = this.getEntitiesInsideArea(areaId);
             if (entitiesInsideArea.size > 0) {
+                const areaHoldsUploadedFile = holdsUploadedFile(properties);
+                const entitiesHoldUploadedFile = [...entitiesInsideArea.values()].some((entity) =>
+                    holdsUploadedFile(entity.getProperties()),
+                );
                 modals.open(ActionPopupOnPersonalAreaWithEntities, {
                     entitiesCount: entitiesInsideArea.size,
-                    onDeleteEntities: () => this.executeDeletePersonalAreaWithEntities(areaId, deleteAreaCommand, true),
-                    onKeepEntities: () => this.executeDeletePersonalAreaWithEntities(areaId, deleteAreaCommand),
+                    warning:
+                        areaHoldsUploadedFile || entitiesHoldUploadedFile
+                            ? translations.uploadedFileDeletion.warning()
+                            : undefined,
+                    // Each object goes in its own command, so deleting them with the area has no single Undo.
+                    onDeleteEntities: () => {
+                        this.removeAreaEntities(areaId);
+                        this.mapEditorModeManager
+                            .executeCommand(deleteAreaCommand)
+                            .catch((error) => this.reportRemovalFailure(error));
+                    },
+                    onKeepEntities: () => {
+                        (areaHoldsUploadedFile
+                            ? this.mapEditorModeManager.executeCommand(deleteAreaCommand)
+                            : this.mapEditorModeManager.executeCommandWithUndoNotice(deleteAreaCommand, undoNotice)
+                        ).catch((error) => this.reportRemovalFailure(error));
+                    },
                     onCancel: () => {},
                 });
                 return;
             }
         }
-        const execution =
-            undoNotice !== undefined
-                ? this.mapEditorModeManager.executeCommandWithUndoNotice(deleteAreaCommand, undoNotice)
-                : this.mapEditorModeManager.executeCommand(deleteAreaCommand);
-        execution.catch((error) => console.error(error));
+        removeGuardingUploadedFiles({
+            properties,
+            heading: area?.name
+                ? translations.uploadedFileDeletion.areaTitle({ name: area.name })
+                : translations.uploadedFileDeletion.areaTitleUnnamed(),
+            confirmLabel: translations.uploadedFileDeletion.delete(),
+            remove: () => this.mapEditorModeManager.executeCommand(deleteAreaCommand),
+            removeWithUndo: () => this.mapEditorModeManager.executeCommandWithUndoNotice(deleteAreaCommand, undoNotice),
+        });
     }
 
     private getIsPersonalArea(areaId: string): boolean {
@@ -643,17 +671,6 @@ export class AreaEditorTool extends MapEditorTool {
         );
     }
 
-    private executeDeletePersonalAreaWithEntities(
-        areaId: string,
-        deleteAreaCommand: DeleteAreaFrontCommand,
-        removeEntities?: boolean,
-    ): void {
-        if (removeEntities) {
-            this.removeAreaEntities(areaId);
-        }
-        this.mapEditorModeManager.executeCommand(deleteAreaCommand).catch((error) => console.error(error));
-    }
-
     private executeUpdateAreaFrontCommand(
         newData: AtLeast<AreaData, "id">,
         oldData: AtLeast<AreaData, "id"> | undefined,
@@ -677,7 +694,13 @@ export class AreaEditorTool extends MapEditorTool {
                     this.scene.getGameMapFrontWrapper(),
                 ),
             )
-            .catch((error) => console.error(error));
+            .catch((error) => (removeEntities ? this.reportRemovalFailure(error) : console.error(error)));
+    }
+
+    // The warning store shows one message per text, so several failures of one removal give one warning.
+    private reportRemovalFailure(error: unknown): void {
+        console.error("Could not run the map editor removal", error);
+        warningMessageStore.addWarningMessage(get(LL).chat.confirm.failed(), { closable: true });
     }
 
     private removeAreaEntities(areaId: string): void {
@@ -690,7 +713,7 @@ export class AreaEditorTool extends MapEditorTool {
         entitiesInsideArea.forEach((_, entityId) => {
             this.mapEditorModeManager
                 .executeCommand(new DeleteEntityFrontCommand(wamFile, entityId, undefined, entitiesManager))
-                .catch((error) => console.error(error));
+                .catch((error) => this.reportRemovalFailure(error));
         });
     }
 

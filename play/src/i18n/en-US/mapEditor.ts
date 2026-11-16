@@ -17,6 +17,16 @@ const mapEditor: BaseTranslation = {
         propertyRemovedFromArea: "Property removed from this area",
         propertyRemovedFromObject: "Property removed from this object",
     },
+    uploadedFileDeletion: {
+        objectTitle: "Delete “{name}” and its uploaded file?",
+        areaTitle: "Delete area “{name}” and its uploaded file?",
+        areaTitleUnnamed: "Delete this area and its uploaded file?",
+        propertyTitle: "Remove this property and its uploaded file?",
+        message: "The file is deleted from the map storage too.",
+        warning: "Undo cannot restore an uploaded file. You would have to upload it again.",
+        delete: "Delete",
+        remove: "Remove",
+    },
     sideBar: {
         areaEditor: "Area editor tool",
         entityEditor: "Entity editor tool",

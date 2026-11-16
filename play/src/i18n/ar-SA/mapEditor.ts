@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "تمت إزالة الخاصية من هذه المنطقة",
         propertyRemovedFromObject: "تمت إزالة الخاصية من هذا الكائن",
     },
+    uploadedFileDeletion: {
+        objectTitle: "حذف «{name}» والملف الذي تم رفعه؟",
+        areaTitle: "حذف المنطقة «{name}» والملف الذي تم رفعه؟",
+        areaTitleUnnamed: "حذف هذه المنطقة والملف الذي تم رفعه؟",
+        propertyTitle: "إزالة هذه الخاصية والملف الذي تم رفعه؟",
+        message: "يُحذف الملف أيضًا من تخزين الخريطة.",
+        warning: "لا يمكن للتراجع استعادة ملف مرفوع. سيتعين رفعه مرة أخرى.",
+        delete: "حذف",
+        remove: "إزالة",
+    },
     sideBar: {
         areaEditor: "تحرير المنطقة", // Fläche bearbeiten
         entityEditor: "تحرير الكيان", // Entität bearbeiten

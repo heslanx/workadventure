@@ -11,6 +11,7 @@
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { mapEditorSelectedAreaPreviewStore } from "../../../Stores/MapEditorStore";
     import ActionPopupOnPersonalAreaWithEntities from "../ActionPopupOnPersonalAreaWithEntities.svelte";
+    import { holdsUploadedFile } from "../offerUndo";
     import ButtonClose from "../../Input/ButtonClose.svelte";
     import PropertyEditorBase from "./PropertyEditorBase.svelte";
     import { IconInfoCircle, IconUser, IconDesk } from "@wa-icons";
@@ -94,8 +95,13 @@
     }
 
     function openModalForActionOnAreaEntities(dispatchType: "change" | "close", callback?: () => void) {
+        const areaId = $mapEditorSelectedAreaPreviewStore?.getId();
+        const entities = areaId ? [...entitiesManager.getEntitiesInsideArea(areaId).values()] : [];
         modals.open(ActionPopupOnPersonalAreaWithEntities, {
-            entitiesCount: countPersonalAreaEntities(),
+            entitiesCount: entities.length,
+            warning: entities.some((entity) => holdsUploadedFile(entity.getProperties()))
+                ? $LL.mapEditor.uploadedFileDeletion.warning()
+                : undefined,
             onDeleteEntities: () => {
                 if (callback) {
                     callback();

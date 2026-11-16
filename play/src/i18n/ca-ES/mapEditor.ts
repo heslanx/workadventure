@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Propietat eliminada d'aquesta àrea",
         propertyRemovedFromObject: "Propietat eliminada d'aquest objecte",
     },
+    uploadedFileDeletion: {
+        objectTitle: "Voleu suprimir «{name}» i el seu fitxer pujat?",
+        areaTitle: "Voleu suprimir l'àrea «{name}» i el seu fitxer pujat?",
+        areaTitleUnnamed: "Voleu suprimir aquesta àrea i el seu fitxer pujat?",
+        propertyTitle: "Voleu treure aquesta propietat i el seu fitxer pujat?",
+        message: "El fitxer també se suprimeix de l'emmagatzematge del mapa.",
+        warning: "Desfer no pot restaurar un fitxer pujat. Caldria tornar-lo a pujar.",
+        delete: "Suprimeix",
+        remove: "Treu",
+    },
     sideBar: {
         areaEditor: "Eina d'edició d'àrees",
         entityEditor: "Eina d'edició d'entitats",

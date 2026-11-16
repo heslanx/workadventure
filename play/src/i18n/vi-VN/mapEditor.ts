@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Đã xóa thuộc tính khỏi khu vực này",
         propertyRemovedFromObject: "Đã xóa thuộc tính khỏi đối tượng này",
     },
+    uploadedFileDeletion: {
+        objectTitle: "Xóa “{name}” và tệp đã tải lên?",
+        areaTitle: "Xóa khu vực “{name}” và tệp đã tải lên?",
+        areaTitleUnnamed: "Xóa khu vực này và tệp đã tải lên?",
+        propertyTitle: "Gỡ thuộc tính này và tệp đã tải lên?",
+        message: "Tệp cũng bị xóa khỏi kho lưu trữ của bản đồ.",
+        warning: "Hoàn tác không thể khôi phục tệp đã tải lên. Bạn sẽ phải tải lên lại.",
+        delete: "Xóa",
+        remove: "Gỡ",
+    },
     sideBar: {
         areaEditor: "Công cụ chỉnh sửa khu vực",
         entityEditor: "Công cụ chỉnh sửa đối tượng",

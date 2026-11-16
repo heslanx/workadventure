@@ -4,6 +4,8 @@ import LL from "../../../i18n/i18n-svelte";
 import { toastStore } from "../../Stores/ToastStoreSingleton";
 import { warningMessageStore } from "../../Stores/ErrorStore";
 import UndoToast from "../Toasts/UndoToast.svelte";
+import ConfirmDialog from "../../Chat/Components/ConfirmDialog.svelte";
+import { modals } from "@wa-modals";
 
 /**
  * The map storage deletes the file a property uploaded (a document, a sound) as soon as that property goes, whether it
@@ -28,15 +30,65 @@ export function offerUndo(message: string, undo: () => boolean | Promise<boolean
         message,
         actionLabel: get(LL).mapEditor.undo.action(),
         onAction: () => {
-            Promise.resolve(undo())
+            const reportUnavailable = () =>
+                warningMessageStore.addWarningMessage(get(LL).mapEditor.undo.unavailable(), { closable: true });
+            attempt(undo)
                 .then((undone) => {
                     if (!undone) {
-                        warningMessageStore.addWarningMessage(get(LL).mapEditor.undo.unavailable(), {
-                            closable: true,
-                        });
+                        reportUnavailable();
                     }
                 })
-                .catch((error: unknown) => console.error("Could not undo the map editor change", error));
+                .catch((error: unknown) => {
+                    console.error("Could not undo the map editor change", error);
+                    reportUnavailable();
+                });
+        },
+    });
+}
+
+// Async so that a synchronous throw becomes a rejection too.
+async function attempt<T>(run: () => T | Promise<T>): Promise<T> {
+    return run();
+}
+
+function reportRemovalFailure(error: unknown): void {
+    console.error("Could not run the map editor removal", error);
+    warningMessageStore.addWarningMessage(get(LL).chat.confirm.failed(), { closable: true });
+}
+
+/**
+ * Runs a map editor removal (an object, an area, a property). When what goes holds an uploaded file, the map storage
+ * deletes that file with it and no Undo could bring it back: the person confirms first, with Cancel focused, and only
+ * the confirm runs `remove`, at most once unless it failed. Any other removal runs `removeWithUndo` at once and keeps
+ * its Undo.
+ */
+export function removeGuardingUploadedFiles(removal: {
+    properties: ReadonlyArray<AreaDataProperty | EntityDataProperty>;
+    heading: string;
+    confirmLabel: string;
+    remove: () => void | Promise<void>;
+    removeWithUndo: () => void | Promise<void>;
+}): void {
+    if (!holdsUploadedFile(removal.properties)) {
+        attempt(removal.removeWithUndo).catch(reportRemovalFailure);
+        return;
+    }
+    const translations = get(LL).mapEditor.uploadedFileDeletion;
+    let removing: Promise<void> | undefined;
+    modals.open(ConfirmDialog, {
+        heading: removal.heading,
+        message: translations.message(),
+        warning: translations.warning(),
+        confirmLabel: removal.confirmLabel,
+        danger: true,
+        onConfirm: () => {
+            removing ??= attempt(removal.remove).catch((error: unknown) => {
+                removing = undefined;
+                // Cancel stays available while the removal runs, so the dialog may be gone when it fails.
+                reportRemovalFailure(error);
+                throw error;
+            });
+            return removing;
         },
     });
 }

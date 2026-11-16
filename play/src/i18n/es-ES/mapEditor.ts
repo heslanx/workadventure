@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Propiedad quitada de esta zona",
         propertyRemovedFromObject: "Propiedad quitada de este objeto",
     },
+    uploadedFileDeletion: {
+        objectTitle: "¿Eliminar «{name}» y su archivo subido?",
+        areaTitle: "¿Eliminar el área «{name}» y su archivo subido?",
+        areaTitleUnnamed: "¿Eliminar esta área y su archivo subido?",
+        propertyTitle: "¿Quitar esta propiedad y su archivo subido?",
+        message: "El archivo también se elimina del almacenamiento del mapa.",
+        warning: "Deshacer no puede restaurar un archivo subido. Habría que subirlo de nuevo.",
+        delete: "Eliminar",
+        remove: "Quitar",
+    },
     sideBar: {
         areaEditor: "Herramienta de edición de zonas",
         entityEditor: "Herramienta de edición de entidades",

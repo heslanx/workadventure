@@ -18,6 +18,17 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Eigenschaft aus diesem Bereich entfernt",
         propertyRemovedFromObject: "Eigenschaft von diesem Objekt entfernt",
     },
+    uploadedFileDeletion: {
+        objectTitle: "„{name}“ und die hochgeladene Datei löschen?",
+        areaTitle: "Bereich „{name}“ und die hochgeladene Datei löschen?",
+        areaTitleUnnamed: "Diesen Bereich und die hochgeladene Datei löschen?",
+        propertyTitle: "Diese Eigenschaft und die hochgeladene Datei entfernen?",
+        message: "Die Datei wird auch aus dem Kartenspeicher gelöscht.",
+        warning:
+            "Rückgängig kann eine hochgeladene Datei nicht wiederherstellen. Sie müsste erneut hochgeladen werden.",
+        delete: "Löschen",
+        remove: "Entfernen",
+    },
     sideBar: {
         areaEditor: "Fläche bearbeiten",
         entityEditor: "Entität bearbeiten",

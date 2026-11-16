@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Eigenschap uit dit gebied verwijderd",
         propertyRemovedFromObject: "Eigenschap uit dit object verwijderd",
     },
+    uploadedFileDeletion: {
+        objectTitle: "“{name}” en het geüploade bestand verwijderen?",
+        areaTitle: "Gebied “{name}” en het geüploade bestand verwijderen?",
+        areaTitleUnnamed: "Dit gebied en het geüploade bestand verwijderen?",
+        propertyTitle: "Deze eigenschap en het geüploade bestand verwijderen?",
+        message: "Het bestand wordt ook uit de kaartopslag verwijderd.",
+        warning: "Ongedaan maken kan een geüpload bestand niet herstellen. Je zou het opnieuw moeten uploaden.",
+        delete: "Verwijderen",
+        remove: "Verwijderen",
+    },
     sideBar: {
         areaEditor: "Gebied editor tool",
         entityEditor: "Entiteit editor tool",

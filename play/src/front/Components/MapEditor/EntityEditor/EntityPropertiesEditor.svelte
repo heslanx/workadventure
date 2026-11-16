@@ -11,7 +11,7 @@
     } from "../../../Stores/MapEditorStore";
     import { analyticsClient } from "../../../Administration/AnalyticsClient";
     import LL from "../../../../i18n/i18n-svelte";
-    import { holdsUploadedFile, offerUndo } from "../offerUndo";
+    import { offerUndo, removeGuardingUploadedFiles } from "../offerUndo";
     import AddPropertyButtonWrapper from "../PropertyEditor/AddPropertyButtonWrapper.svelte";
     import PlayAudioPropertyEditor from "../PropertyEditor/PlayAudioPropertyEditor.svelte";
     import OpenWebsitePropertyEditor from "../PropertyEditor/OpenWebsitePropertyEditor.svelte";
@@ -254,28 +254,37 @@
             const entity = $mapEditorSelectedEntityStore;
             const removedProperty = properties.find((p) => p.id === id);
             const removedPropertyCopy = removedProperty ? $state.snapshot(removedProperty) : undefined;
-            analyticsClient.trackAdminEvent("map_editor.property.removed", {
-                name: removedProperty?.type || "unknown",
-                type: "entity",
-            });
-            entity.deleteProperty(id);
-            // refresh properties
-            properties = entity.getProperties();
-            // A property that held an uploaded file lost it on the server: putting it back would not restore it.
-            if (removedPropertyCopy && !holdsUploadedFile([removedPropertyCopy])) {
-                offerUndo($LL.mapEditor.undo.propertyRemovedFromObject(), () => {
-                    // The property goes back only to the object it came from, as long as that object is still selected.
-                    if (get(mapEditorSelectedEntityStore) !== entity) {
-                        return false;
-                    }
-                    entity.addProperty(removedPropertyCopy);
-                    properties = entity.getProperties();
-                    return true;
+            const removeProperty = () => {
+                analyticsClient.trackAdminEvent("map_editor.property.removed", {
+                    name: removedProperty?.type || "unknown",
+                    type: "entity",
                 });
-            }
-            // $mapEditorSelectedEntityStore.delete();
-            // mapEditorSelectedEntityStore.set(undefined);
-            // mapEditorEntityModeStore.set("ADD");
+                entity.deleteProperty(id);
+                // refresh properties
+                properties = entity.getProperties();
+            };
+            // A property that held an uploaded file loses it on the server, so it asks first instead of an Undo.
+            removeGuardingUploadedFiles({
+                properties: removedPropertyCopy ? [removedPropertyCopy] : [],
+                heading: $LL.mapEditor.uploadedFileDeletion.propertyTitle(),
+                confirmLabel: $LL.mapEditor.uploadedFileDeletion.remove(),
+                remove: removeProperty,
+                removeWithUndo: () => {
+                    removeProperty();
+                    if (removedPropertyCopy) {
+                        offerUndo($LL.mapEditor.undo.propertyRemovedFromObject(), () => {
+                            // The property goes back only to the object it came from, as long as that object is still
+                            // selected.
+                            if (get(mapEditorSelectedEntityStore) !== entity) {
+                                return false;
+                            }
+                            entity.addProperty(removedPropertyCopy);
+                            properties = entity.getProperties();
+                            return true;
+                        });
+                    }
+                },
+            });
         }
     }
 

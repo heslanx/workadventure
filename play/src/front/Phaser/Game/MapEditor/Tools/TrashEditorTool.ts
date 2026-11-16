@@ -2,15 +2,12 @@ import * as Phaser from "phaser";
 import type { AreaData } from "@workadventure/map-editor";
 import type { EditMapCommandMessage } from "@workadventure/messages";
 import { get } from "svelte/store";
-import LL from "../../../../../i18n/i18n-svelte";
 import { userIsAdminStore, userIsEditorStore } from "../../../../Stores/GameStore";
 import { mapEditorSelectedAreaPreviewStore, mapEditorVisibilityStore } from "../../../../Stores/MapEditorStore";
 import { AreaPreview, AreaPreviewEvent } from "../../../Components/MapEditor/AreaPreview";
 import { SizeAlteringSquare } from "../../../Components/MapEditor/SizeAlteringSquare";
 import { Entity } from "../../../ECS/Entity";
-import { holdsUploadedFile } from "../../../../Components/MapEditor/offerUndo";
 import type { MapEditorModeManager } from "../MapEditorModeManager";
-import type { DeleteEntityFrontCommand } from "../Commands/Entity/DeleteEntityFrontCommand";
 import { EntityRelatedEditorTool } from "./EntityRelatedEditorTool";
 import type { AreaEditorTool } from "./AreaEditorTool";
 
@@ -156,29 +153,8 @@ export class TrashEditorTool extends EntityRelatedEditorTool {
 
     private bindAreaPreviewEventHandlers(areaPreview: AreaPreview): void {
         areaPreview.on(AreaPreviewEvent.Delete, () => {
-            const { id, name, properties } = areaPreview.getAreaData();
-            const translations = get(LL).mapEditor.undo;
-            // One click deletes: say what went and offer the way back, unless the map storage deletes an uploaded
-            // file with the area, which an Undo would not bring back.
-            const undoNotice = holdsUploadedFile(properties)
-                ? undefined
-                : name
-                  ? translations.areaDeleted({ name })
-                  : translations.areaDeletedUnnamed();
-            this.areaEditorTool.handleDeleteAreaFrontCommandExecution(id, this, undoNotice);
+            this.areaEditorTool.handleDeleteAreaFrontCommandExecution(areaPreview.getAreaData().id, this);
         });
-    }
-
-    // One click deletes an object: say what went and offer the way back, unless the map storage deletes an uploaded
-    // file with the object, which an Undo would not bring back.
-    protected executeEntityDeletion(command: DeleteEntityFrontCommand, entity: Entity): Promise<void> {
-        if (holdsUploadedFile(entity.getProperties())) {
-            return super.executeEntityDeletion(command, entity);
-        }
-        return this.mapEditorModeManager.executeCommandWithUndoNotice(
-            command,
-            get(LL).mapEditor.undo.entityDeleted({ name: entity.getPrefab().name }),
-        );
     }
 
     private deleteAreaPreview(id: string): boolean {

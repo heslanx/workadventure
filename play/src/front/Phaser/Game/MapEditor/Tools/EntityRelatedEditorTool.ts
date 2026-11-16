@@ -19,6 +19,8 @@ import {
 import { DeleteEntityFrontCommand } from "../Commands/Entity/DeleteEntityFrontCommand";
 import type { GameMapFrontWrapper } from "../../GameMap/GameMapFrontWrapper";
 import { TexturesHelper } from "../../../Helpers/TexturesHelper";
+import LL from "../../../../../i18n/i18n-svelte";
+import { removeGuardingUploadedFiles } from "../../../../Components/MapEditor/offerUndo";
 import type { Entity } from "../../../ECS/Entity";
 import { MapEditorTool } from "./MapEditorTool";
 
@@ -213,23 +215,27 @@ export abstract class EntityRelatedEditorTool extends MapEditorTool {
         };
     }
 
+    // Every way to delete an object (the Delete key, the trash tool, the editor's button) ends here, so an object that
+    // holds an uploaded file always asks first: the map storage deletes the file with it and no Undo brings it back.
     private deleteEntity(entity: Entity) {
-        this.executeEntityDeletion(
-            new DeleteEntityFrontCommand(
-                this.scene.getGameMap().getWamFile()!,
-                entity.entityId,
-                undefined,
-                this.entitiesManager,
-            ),
-            entity,
-        ).catch((e) => console.error(e));
-    }
-
-    /**
-     * Runs the deletion of an entity. A tool whose deletion is a single click (the trash tool) overrides it to say
-     * what was deleted and offer an Undo.
-     */
-    protected executeEntityDeletion(command: DeleteEntityFrontCommand, entity: Entity): Promise<void> {
-        return this.mapEditorModeManager.executeCommand(command);
+        const command = new DeleteEntityFrontCommand(
+            this.scene.getGameMap().getWamFile()!,
+            entity.entityId,
+            undefined,
+            this.entitiesManager,
+        );
+        const name = entity.getPrefab().name;
+        const translations = get(LL).mapEditor;
+        removeGuardingUploadedFiles({
+            properties: entity.getProperties(),
+            heading: translations.uploadedFileDeletion.objectTitle({ name }),
+            confirmLabel: translations.uploadedFileDeletion.delete(),
+            remove: () => this.mapEditorModeManager.executeCommand(command),
+            removeWithUndo: () =>
+                this.mapEditorModeManager.executeCommandWithUndoNotice(
+                    command,
+                    translations.undo.entityDeleted({ name }),
+                ),
+        });
     }
 }

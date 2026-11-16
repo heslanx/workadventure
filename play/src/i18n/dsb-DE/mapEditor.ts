@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Kakosć jo se z toś togo wobceŕka wótpórała",
         propertyRemovedFromObject: "Kakosć jo se z toś togo objekta wótpórała",
     },
+    uploadedFileDeletion: {
+        objectTitle: "„{name}“ a nagratu dataju lašowaś?",
+        areaTitle: "Wobceŕk „{name}“ a nagratu dataju lašowaś?",
+        areaTitleUnnamed: "Toś ten wobceŕk a nagratu dataju lašowaś?",
+        propertyTitle: "Toś tu kakosć a nagratu dataju wótpóraś?",
+        message: "Dataja se teke ze składa kórty lašujo.",
+        warning: "Anulěrowanje njamóžo nagratu dataju wótnowiś. Dejał by ju znowego nagraś.",
+        delete: "Lašowaś",
+        remove: "Wótpóraś",
+    },
     sideBar: {
         areaEditor: "Areal wobźěłaś",
         entityEditor: "Entitu wobźěłaś",

@@ -18,6 +18,16 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         propertyRemovedFromArea: "Kajkosć z tutoho wobłuka wotstronjena",
         propertyRemovedFromObject: "Kajkosć z tutoho objekta wotstronjena",
     },
+    uploadedFileDeletion: {
+        objectTitle: "„{name}“ a nahratu dataju zhašeć?",
+        areaTitle: "Wobłuk „{name}“ a nahratu dataju zhašeć?",
+        areaTitleUnnamed: "Tutón wobłuk a nahratu dataju zhašeć?",
+        propertyTitle: "Tutu kajkosć a nahratu dataju wotstronić?",
+        message: "Dataja so tež ze składa karty zhaša.",
+        warning: "Cofnjenje njemóže nahratu dataju wobnowić. Dyrbjał by ju znowa nahrać.",
+        delete: "Zhašeć",
+        remove: "Wotstronić",
+    },
     sideBar: {
         areaEditor: "Płoninu wobdźěłać",
         entityEditor: "Entita wobdźěłać",
