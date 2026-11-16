@@ -94,7 +94,7 @@
                                     )}
                             >
                                 <span>{$LL.mapEditor.settings.room.title()}</span>
-                                <IconChevronRight class="-mr-2" />
+                                <IconChevronRight class="-mr-2" aria-hidden="true" />
                             </li>
                         {/if}
                         <li
@@ -153,7 +153,7 @@
                         close();
                     }}
                 >
-                    close
+                    {$LL.actionbar.close()}
                 </Button>
             </div>
         </div>

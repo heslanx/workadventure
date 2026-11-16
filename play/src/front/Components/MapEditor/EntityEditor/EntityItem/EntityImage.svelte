@@ -31,13 +31,13 @@
 
 {#if imageRetry}
     <div class="flex items-center justify-center flex-1" data-testid="entityImageLoader">
-        <IconLoader class="animate-spin" />
+        <IconLoader class="animate-spin" aria-hidden="true" />
     </div>
 {/if}
 
 {#if imageError}
     <div class="flex items-center justify-center flex-1" data-testid="entityImageError">
-        <IconPhotoOff />
+        <IconPhotoOff aria-hidden="true" />
     </div>
 {/if}
 

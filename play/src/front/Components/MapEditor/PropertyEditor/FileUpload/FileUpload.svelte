@@ -120,7 +120,7 @@
 <div class="p-1 bg-white/10 rounded-md flex flex-col gap-2">
     {#if !name}
         <p class="m-0">{$LL.mapEditor.properties.openFile.uploadFile.title()}</p>
-        <p class="opacity-50">{$LL.mapEditor.properties.openFile.uploadFile.description()}</p>
+        <p class="text-white/60">{$LL.mapEditor.properties.openFile.uploadFile.description()}</p>
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             ondrop={(event) => {
@@ -137,24 +137,24 @@
                 dropZoneRef?.classList.remove("border-cyan-400");
             }}
             bind:this={dropZoneRef}
-            class="hover:cursor-pointer h-32 flex flex-col border border-dashed rounded-md items-center justify-center bg-white/10"
+            class="hover:cursor-pointer h-32 flex flex-col border border-dashed rounded-md items-center justify-center bg-white/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-white"
         >
-            <input id="upload-{propertyId}" class="hidden" type="file" accept={format.accept} bind:files />
+            <input id="upload-{propertyId}" class="sr-only" type="file" accept={format.accept} bind:files />
 
             <label class="flex flex-row gap-2 min-w-full p-2 m-0 items-center justify-center" for="upload-{propertyId}">
-                <IconCloudUpload font-size={32} />
+                <IconCloudUpload font-size={32} aria-hidden="true" />
                 <span class="flex flex-col">
                     <span class="hover:cursor-pointer">
                         {$LL.mapEditor.properties.openFile.uploadFile.dragDrop()}
-                        <span class="hover:cursor-pointer underline text-contrast-300" id="chooseUpload"
+                        <span class="hover:cursor-pointer underline text-white" id="chooseUpload"
                             >{$LL.mapEditor.properties.openFile.uploadFile.chooseFile()}</span
                         >
                     </span>
-                    <span class="text-xs m-0 opacity-50"
+                    <span class="text-xs m-0 text-white/70"
                         >{acceptedFormats.map((accepted) => accepted.replace(/^.*[./]/, "")).join(", ")}</span
                     >
                     {#if errorOnFile}
-                        <span class="text-xx text-red-500">{errorOnFile}</span>
+                        <span class="text-xx text-danger-400" role="alert">{errorOnFile}</span>
                     {/if}
                 </span></label
             >

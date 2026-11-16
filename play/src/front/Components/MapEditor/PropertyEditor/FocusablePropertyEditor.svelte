@@ -25,7 +25,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconZoomInArea font-size="18" class="mr-2" />
+            <IconZoomInArea font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.focusable.label()}
         </span>
     {/snippet}

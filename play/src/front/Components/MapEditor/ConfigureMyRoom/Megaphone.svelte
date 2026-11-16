@@ -151,7 +151,7 @@
 </div>
 
 <p class="help-text">
-    <IconInfoCircle font-size="18" />
+    <IconInfoCircle font-size="18" aria-hidden="true" />
     {$LL.mapEditor.settings.megaphone.description()}
 </p>
 {#if enabled}
@@ -167,7 +167,7 @@
         <Select label={$LL.mapEditor.settings.megaphone.inputs.scope()} options={scopes} bind:value={scope} />
 
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.settings.megaphone.inputs.spaceNameHelper()}
         </p>
         <div class="flex flex-wrap gap-x-4 items-center h-fit">
@@ -203,12 +203,12 @@
                 bind:value={rights}
             />
             <p class="help-text">
-                <IconInfoCircle font-size="18" />
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {$LL.mapEditor.settings.megaphone.inputs.rightsHelper()}
             </p>
         {:catch error}
-            <p class="help-text text-danger-800">
-                <IconInfoCircle font-size="18" />
+            <p class="help-text text-danger-400">
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {error}
             </p>
         {/await}
@@ -230,7 +230,7 @@
             </label>
         </div>
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.settings.megaphone.inputs.audienceVideoFeedbackActivatedHelper()}
         </p>
         <div class="space-y-4">
@@ -244,7 +244,7 @@
                 />
             </div>
             <p class="help-text">
-                <IconInfoCircle font-size="18" />
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {$LL.mapEditor.settings.megaphone.inputs.recording.enableHelper()}
             </p>
             {#if recordingEnabled}
@@ -258,12 +258,12 @@
                         testId="megaphone-recording-rights-input"
                     />
                     <p class="help-text">
-                        <IconInfoCircle font-size="18" />
+                        <IconInfoCircle font-size="18" aria-hidden="true" />
                         {$LL.mapEditor.settings.megaphone.inputs.recording.rightsHelper()}
                     </p>
                 {:catch error}
-                    <p class="help-text text-danger-800">
-                        <IconInfoCircle font-size="18" />
+                    <p class="help-text text-danger-400">
+                        <IconInfoCircle font-size="18" aria-hidden="true" />
                         {error}
                     </p>
                 {/await}

@@ -15,7 +15,8 @@
             <div class="hover:cursor-pointer">
                 <button
                     aria-label={color}
-                    class={`w-4 h-4 rounded-full p-0 ${
+                    aria-pressed={selectedColor === color}
+                    class={`w-4 h-4 rounded-full p-0 hit-area ${
                         selectedColor === color ? "border-solid border-yellow-400 rounded-full" : ""
                     }`}
                     style="background-color: {color};"

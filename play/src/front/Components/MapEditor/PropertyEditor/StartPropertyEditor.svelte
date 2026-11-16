@@ -36,7 +36,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconDoorIn font-size="18" class="mr-2" />
+            <IconDoorIn font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.start.label()}
         </span>
     {/snippet}

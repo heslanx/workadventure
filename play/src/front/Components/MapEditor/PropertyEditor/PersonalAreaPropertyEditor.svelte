@@ -135,7 +135,7 @@
 <PropertyEditorBase onclose={onRemoveProperty}>
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconDesk class="w-6 mr-1" />
+            <IconDesk class="w-6 mr-1" aria-hidden="true" />
             {$LL.mapEditor.properties.personalAreaPropertyData.label()}
         </span>
     {/snippet}
@@ -144,14 +144,14 @@
             {#if property !== undefined}
                 <div class="overflow-y-auto overflow-x-hidden flex flex-col gap-2">
                     <p class="help-text">
-                        <IconInfoCircle font-size="18" />
+                        <IconInfoCircle font-size="18" aria-hidden="true" />
                         {$LL.mapEditor.properties.personalAreaPropertyData.description()}
                     </p>
                     {#if personalAreaOwner}
                         <div class="flex flex-col">
                             <div class="flex flex-col gap-2 bg-black/10 rounded-md p-2">
                                 <div class="flex items-center justify-center gap-2 p-2">
-                                    <IconUser />
+                                    <IconUser aria-hidden="true" />
                                     <span>{$LL.mapEditor.properties.personalAreaPropertyData.owner()}</span>
                                 </div>
                                 <div class="bg-white p-2 rounded flex flex-row items-center justify-between">
@@ -168,7 +168,7 @@
                                 </div>
                             </div>
                             <button
-                                class="flex items-center justify-center text-white p-2 bg-red-500/80 hover:bg-red-500 rounded mt-2"
+                                class="flex items-center justify-center text-white p-2 bg-pop-red-strong hover:brightness-90 rounded mt-2"
                                 data-testid="revokeAccessButton"
                                 onclick={revokeOwner}
                             >
@@ -194,7 +194,7 @@
                                 {#snippet helper()}
                                     <div>
                                         <p class="help-text">
-                                            <IconInfoCircle font-size="18" />
+                                            <IconInfoCircle font-size="18" aria-hidden="true" />
                                             {$LL.mapEditor.properties.personalAreaPropertyData[
                                                 `${property.accessClaimMode}AccessDescription`
                                             ]()}

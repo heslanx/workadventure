@@ -65,7 +65,7 @@
 </div>
 
 <p class="help-text">
-    <IconInfoCircle font-size="18" />
+    <IconInfoCircle font-size="18" aria-hidden="true" />
     {$LL.mapEditor.settings.recording.description()}
 </p>
 
@@ -75,7 +75,7 @@
     {:then tags}
         <InputTags label={$LL.mapEditor.settings.recording.inputs.rights()} options={tags ?? []} bind:value={rights} />
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.settings.recording.inputs.rightsHelper()}
         </p>
         <div class="flex cursor-pointer items-center relative">
@@ -87,13 +87,13 @@
             />
         </div>
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.settings.recording.inputs.enableSoundsHelper()}
         </p>
         <ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText={$LL.menu.settings.saving()} />
     {:catch error}
-        <p class="help-text text-danger-800">
-            <IconInfoCircle font-size="18" />
+        <p class="help-text text-danger-400">
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {error}
         </p>
     {/await}

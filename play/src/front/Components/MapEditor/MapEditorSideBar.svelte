@@ -106,18 +106,21 @@
                 <button
                     class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
                     data-testid="closeMapEditorButton"
+                    aria-label={$LL.mapEditor.sideBar.closeMapEditor()}
                     onclick={(event) => {
                         event.preventDefault();
                         switchTool(EditorToolName.CloseMapEditor);
                     }}
                 >
-                    <IconX font-size="20" />
+                    <IconX font-size="20" aria-hidden="true" />
                 </button>
             </div>
             <div class="close-window p-2 bg-contrast/80 rounded-lg backdrop-blur-md">
                 <button
                     class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
                     data-testid="hideMapEditorButton"
+                    aria-label={$LL.a11y.mapEditorToggleSidebar()}
+                    aria-expanded={$mapEditorVisibilityStore}
                     onclick={(event) => {
                         event.preventDefault();
                         toggleMapEditor();
@@ -128,7 +131,7 @@
                         width="w-5"
                         strokeColor="stroke-white"
                         fillColor="fill-transparent"
-                        classList={`aspect-ratio transition-all ${direction === "rtl" ? "rotate-180" : ""} ${
+                        classList={`aspect-ratio transition-all motion-reduce:transition-none ${direction === "rtl" ? "rotate-180" : ""} ${
                             $mapEditorVisibilityStore ? "" : "rotate-180"
                         }`}
                     />
@@ -145,6 +148,7 @@
                             : 'hover:bg-white/10'}"
                         id={tool.toolName}
                         aria-label={tool.tooltiptext}
+                        aria-pressed={$mapEditorSelectedToolStore === tool.toolName}
                         class:active={$mapEditorSelectedToolStore === tool.toolName}
                         onclick={(event) => {
                             event.preventDefault();
@@ -152,10 +156,10 @@
                         }}
                         type="button"
                     >
-                        <ToolIcon font-size="22" />
+                        <ToolIcon font-size="22" aria-hidden="true" />
                     </button>
                     <div
-                        class=" bg-contrast/90 backdrop-blur-xl text-white tooltip absolute text-nowrap p-2 invisible opacity-0 transition-all peer-hover:visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100 rounded top-1/2 -translate-y-1/2 right-[130%]"
+                        class=" bg-contrast/90 backdrop-blur-xl text-white tooltip absolute text-nowrap p-2 invisible opacity-0 transition-all motion-reduce:transition-none peer-hover:visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100 rounded top-1/2 -translate-y-1/2 right-[130%]"
                     >
                         {tool.tooltiptext}
                     </div>

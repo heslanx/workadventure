@@ -16,7 +16,7 @@
         {#each entityPrefabsPositions as item (item.id)}
             <button
                 type="button"
-                class="m-0 p-0 bg-transparent border-0 cursor-pointer"
+                class="m-0 p-0 bg-transparent border-0 cursor-pointer hit-area"
                 aria-pressed={item.imagePath === selectedEntity?.imagePath}
                 onclick={() => onPickItem(item)}
             >

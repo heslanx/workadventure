@@ -19,7 +19,8 @@
                 class={[
                     "cursor-pointer border-solid border border-gray-400 rounded-sm",
                     {
-                        "bg-red-600/30": collisionGrid[rowIndex][columnIndex] === 1,
+                        "bg-red-600/30 bg-[repeating-linear-gradient(45deg,transparent_0_3px,rgba(255,255,255,0.55)_3px_4px)]":
+                            collisionGrid[rowIndex][columnIndex] === 1,
                     },
                 ]}
                 onclick={() => updateCollisionGrid(rowIndex, columnIndex)}

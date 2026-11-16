@@ -291,9 +291,9 @@
                 event.preventDefault();
                 backToSelectObject();
             }}
-            class="flex flex-row items-center text-xs m-0"
+            class="flex flex-row items-center text-xs m-0 hit-area"
         >
-            <IconArrowLeft font-size="12" />
+            <IconArrowLeft font-size="12" aria-hidden="true" />
             <span class="ml-1">{$LL.mapEditor.entityEditor.itemPicker.backToSelectObject()}</span>
         </button>
         <div class="properties-buttons flex flex-row m-2">
@@ -404,18 +404,23 @@
         </div>
         <div class="entity-name-container">
             {#if !showDescriptionField}
-                <a
-                    href="#addDescriptionField"
-                    class="pl-0 text-blue-500 flex flex-row items-center"
+                <button
+                    type="button"
+                    class="pl-0 text-secondary-300 flex flex-row items-center"
+                    aria-expanded="false"
                     onclick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
                         toggleDescriptionField();
-                    }}>+ {$LL.mapEditor.entityEditor.addDescriptionField()}</a
+                    }}>+ {$LL.mapEditor.entityEditor.addDescriptionField()}</button
                 >
             {:else}
-                <button class="pl-0 text-blue-500 flex flex-row items-center" onclick={toggleDescriptionField}>
-                    <IconChevronDown />{$LL.mapEditor.entityEditor.addDescriptionField()}</button
+                <button
+                    class="pl-0 text-secondary-300 flex flex-row items-center"
+                    aria-expanded="true"
+                    onclick={toggleDescriptionField}
+                >
+                    <IconChevronDown aria-hidden="true" />{$LL.mapEditor.entityEditor.addDescriptionField()}</button
                 >
 
                 <TextArea

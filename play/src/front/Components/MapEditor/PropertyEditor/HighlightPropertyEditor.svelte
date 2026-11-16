@@ -26,7 +26,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconFocus font-size="18" class="mr-2" />
+            <IconFocus font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.highlight.label()}
         </span>
     {/snippet}

@@ -15,7 +15,7 @@
 
 {#if entityPrefabVariants.length === 0}
     <div class="flex flex-col items-center text-white/60">
-        <IconPhotoOff />
+        <IconPhotoOff aria-hidden="true" />
         <p>{$LL.mapEditor.entityEditor.noImage()}</p>
     </div>
 {:else}

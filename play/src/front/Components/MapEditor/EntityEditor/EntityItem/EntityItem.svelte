@@ -18,7 +18,7 @@
     tabindex="0"
     aria-pressed={isActive}
     onkeydown={(event) => activateOnEnterOrSpace(event, () => onselectentity?.(entityVariant))}
-    class={`flex items-center justify-center box-border py-0.5 cursor-pointer border-solid border-transparent h-full w-full bg-white/10 rounded-lg hover:bg-white/20 hover:border-white hover:animate-pulse ${
+    class={`flex items-center justify-center box-border py-0.5 cursor-pointer border-solid border-transparent h-full w-full bg-white/10 rounded-lg hover:bg-white/20 hover:border-white hover:animate-pulse motion-reduce:hover:animate-none ${
         isActive ? "border-solid border-yellow-400 rounded-lg" : ""
     }`}
     onclick={() => onselectentity?.(entityVariant)}

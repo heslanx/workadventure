@@ -32,7 +32,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconMicrophone font-size="18" class="mr-2" />
+            <IconMicrophone font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.speakerMegaphone.label()}
         </span>
     {/snippet}

@@ -47,11 +47,13 @@
                     {entitiesPrefabsVariants.length}
                 </div>
                 <div class="object">{$LL.mapEditor.entityEditor.images(entitiesPrefabsVariants.length)}</div>
-                <div class="chevronRight group-hover:-translate-x-2 transition-transform">
+                <div
+                    class="chevronRight group-hover:-translate-x-2 motion-reduce:group-hover:translate-x-0 transition-transform"
+                >
                     {#if isRtl}
-                        <IconChevronLeft />
+                        <IconChevronLeft aria-hidden="true" />
                     {:else}
-                        <IconChevronRight />
+                        <IconChevronRight aria-hidden="true" />
                     {/if}
                 </div>
             </div>
@@ -85,7 +87,7 @@
 
     .entitiesCount {
         grid-area: entitiesCount;
-        font-size: 12px;
+        font-size: 0.75rem;
         border: 1px solid white;
         align-self: center;
         justify-self: center;
@@ -99,8 +101,8 @@
 
     .object {
         grid-area: object;
-        opacity: 50%;
-        font-size: 12px;
+        opacity: 70%;
+        font-size: 0.75rem;
         align-self: center;
     }
 </style>

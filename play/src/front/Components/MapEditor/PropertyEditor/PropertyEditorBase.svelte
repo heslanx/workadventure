@@ -47,7 +47,7 @@
             {@render content()}
         {:else}
             <p class="help-text">
-                <IconInfoCircle font-size="18" />
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {$LL.mapEditor.properties.noProperties()}
             </p>
         {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
+    import { LL } from "../../../i18n/i18n-svelte";
 
     interface Props {
         minWidth: number;
@@ -39,6 +40,17 @@
         onResize(Math.min(Math.max(newWidth, minWidth), maxWidth));
     }
 
+    const KEYBOARD_STEP = 16;
+
+    // Keyboard alternative to dragging. The panel grows towards the start of the screen, like the drag does.
+    function handleKeyDown(e: KeyboardEvent) {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();
+        const growKey = document.documentElement.dir === "rtl" ? "ArrowRight" : "ArrowLeft";
+        const delta = e.key === growKey ? KEYBOARD_STEP : -KEYBOARD_STEP;
+        onResize(Math.min(Math.max(currentWidth + delta, minWidth), maxWidth));
+    }
+
     function stopDragging() {
         isDragging = false;
         document.removeEventListener("mousemove", handleDragging);
@@ -63,9 +75,19 @@
     });
 </script>
 
+<!-- A focusable separator is the WAI-ARIA window splitter, an interactive widget Svelte sees as a structure role. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
     bind:this={dragHandle}
-    class="relative drag-handle my-auto mr-3 w-1 h-20 outline outline-4 outline-contrast bg-white cursor-col-resize transition-colors rounded-lg select-none"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label={$LL.a11y.mapEditorResizePanel()}
+    aria-valuemin={minWidth}
+    aria-valuemax={maxWidth}
+    aria-valuenow={Math.round(currentWidth)}
+    tabindex="0"
+    onkeydown={handleKeyDown}
+    class="relative drag-handle my-auto mr-3 w-1 h-20 outline outline-4 outline-contrast focus-visible:outline-secondary-300 bg-white cursor-col-resize transition-colors rounded-lg select-none"
 ></div>
 
 <style>

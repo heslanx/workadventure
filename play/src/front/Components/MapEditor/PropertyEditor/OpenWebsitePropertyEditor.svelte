@@ -617,7 +617,7 @@
                 />
                 {$LL.mapEditor.properties.openWebsite.label()}
             {:else}
-                <img class="w-6 me-1" src={property.icon} alt={property.label} draggable="false" />
+                <img class="w-6 me-1" src={property.icon} alt="" draggable="false" />
                 {property.label}
             {/if}
         </span>
@@ -671,7 +671,7 @@
                         <div class="flex flex-row items-center justify-center">
                             <button
                                 type="button"
-                                class="ms-4 flex items-center"
+                                class="ms-4 flex items-center hit-area"
                                 aria-label={$LL.mapEditor.properties.openWebsite.openPickerSelector()}
                                 onclick={(event) => {
                                     event.preventDefault();
@@ -690,7 +690,7 @@
                         <div class="flex flex-row items-center justify-center">
                             <button
                                 type="button"
-                                class="ms-4 flex items-center"
+                                class="ms-4 flex items-center hit-area"
                                 aria-label={`${$LL.mapEditor.properties.openWebsite.openApplication()} ${property.application}`}
                                 onclick={(event) => {
                                     event.preventDefault();
@@ -708,14 +708,14 @@
                     {/if}
                 </div>
                 {#if error !== ""}
-                    <span class="err text-danger-900 text-xs italic mt-1">{error}</span>
+                    <span class="err text-danger-400 text-xs italic mt-1">{error}</span>
                 {/if}
                 {#if warning !== ""}
-                    <span class="err text-warning-900 text-xs italic mt-1">{warning}</span>
+                    <span class="err text-warning text-xs italic mt-1">{warning}</span>
                 {/if}
                 {#if !embeddable && property.newTab == false && error === ""}
-                    <span class="err text-warning-900 text-xs italic mt-1">
-                        <IconAlertTriangle font-size="12" />
+                    <span class="err text-warning text-xs italic mt-1">
+                        <IconAlertTriangle font-size="12" aria-hidden="true" />
                         {$LL.mapEditor.properties.openWebsite.messageNotEmbeddableLink()}.
                         <a
                             href="https://workadventu.re/map-building/troubleshooting.md#content-issues-embedding-a-website"
@@ -769,8 +769,8 @@
 
                 {#if property.forceNewTab == true}
                     <div class="mb-3">
-                        <span class="err text-warning-900 text-xs italic">
-                            <IconAlertTriangle font-size="12" />
+                        <span class="err text-warning text-xs italic">
+                            <IconAlertTriangle font-size="12" aria-hidden="true" />
                             {$LL.mapEditor.properties.openWebsite.forcedInNewTab()}
                         </span>
                     </div>
@@ -788,8 +788,8 @@
 
                 {#if !embeddable && !property.newTab}
                     <div class="mb-3">
-                        <span class="err text-warning-900 text-xs italic">
-                            <IconAlertTriangle font-size="12" />
+                        <span class="err text-warning text-xs italic">
+                            <IconAlertTriangle font-size="12" aria-hidden="true" />
                             {$LL.mapEditor.properties.openWebsite.warningEmbeddableLink()}.
                             <a
                                 href="https://workadventu.re/map-building/troubleshooting.md#content-issues-embedding-a-website"
