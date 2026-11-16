@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
+    import type { Attachment } from "svelte/attachments";
     import { get } from "svelte/store";
     import { fly } from "../Utils/reducedMotion";
     import { requestVisitCardsStore } from "../Stores/GameStore";
@@ -18,6 +19,7 @@
     import { isActivatedStore as calendarIsActivatedStore, isCalendarVisibleStore } from "../Stores/CalendarStore";
     import { isActivatedStore as todoListIsActivatedStore, isTodoListVisibleStore } from "../Stores/TodoListStore";
     import { popupStore } from "../Stores/PopupStore";
+    import { followRoleStore, followStateStore } from "../Stores/FollowStore";
     import {
         mapEditorAskToClaimPersonalAreaStore,
         mapEditorModeStore,
@@ -83,6 +85,8 @@
     import ProximityNotificationContainer from "./ProximityNotification/ProximityNotificationContainer.svelte";
     import LiveAnnouncer from "./LiveAnnouncer.svelte";
     import MeetingInvitationPopup from "./MeetingInvitation/MeetingInvitationPopup.svelte";
+    import MuteDialogPopup from "./PopUp/MuteDialogPopup.svelte";
+    import PopUpFollow from "./PopUp/PopUpFollow.svelte";
     import ChevronLeftIcon from "./Icons/ChevronLeftIcon.svelte";
     import { IconArrowsMinimize, IconMessageCircle2, IconUserPlus } from "@wa-icons";
 
@@ -213,6 +217,36 @@
     function exitHighlightFullscreen() {
         highlightFullScreen.set(false);
     }
+
+    /**
+     * Whether a popup of the stack is a question the user has to answer (a request to mute the microphone or the
+     * camera, a request to follow someone), as opposed to a hint. Only the popup on top of the stack can be answered.
+     */
+    function awaitsAnswer(component: WorkAdventureComponent, isOnTop: boolean): boolean {
+        if (!isOnTop) {
+            return false;
+        }
+        if (component === MuteDialogPopup) {
+            return true;
+        }
+        return component === PopUpFollow && $followStateStore === "requesting" && $followRoleStore === "follower";
+    }
+
+    /**
+     * Moves the keyboard focus to the answer that changes nothing ("Keep it on", "Not now"), so a keyboard or screen
+     * reader user lands on the question without being one key press away from accepting it. Nothing is stolen from
+     * somebody typing, who finds the popup through the live region of the popup stack.
+     */
+    const focusSafeAnswer =
+        (enabled: boolean): Attachment<HTMLElement> =>
+        (element) => {
+            if (!enabled || get(inputFormFocusStore)) {
+                return;
+            }
+            element
+                .querySelector<HTMLElement>("button:not([disabled]):not(.btn-danger)")
+                ?.focus({ preventScroll: true });
+        };
 </script>
 
 <!-- Components ordered by z-index -->
@@ -321,10 +355,23 @@
     <div class="flex min-h-full flex-col-reverse mobile:flex-col">
         <section id="main-layout-main" class="pb-0 flex-1 pointer-events-none h-full w-full relative">
             <div class="fixed z-[1000] bottom-0 start-0 right-0 m-auto w-max mobile:w-[98vw] md:max-w-[80%]">
-                <div class="popups flex items-end relative w-full justify-center mobile:mb-24 mb-4 h-[calc(100%-96px)]">
+                <!-- Always mounted, so the popups added to it are spoken: a live region created together with its
+                     content is often not announced. -->
+                <div
+                    class="popups flex items-end relative w-full justify-center mobile:mb-24 mb-4 h-[calc(100%-96px)]"
+                    aria-live="polite"
+                    aria-relevant="additions"
+                >
                     {#each $popupStore.slice().reverse() as popup, index (popup.uuid)}
                         {@const PopupComponent = popup.component}
-                        <div class="popupwrapper popupwrapper-{index} w-full flex-1" in:fly={{ y: 150, duration: 550 }}>
+                        {@const isQuestion = awaitsAnswer(popup.component, index === 0)}
+                        <div
+                            class="popupwrapper popupwrapper-{index} w-full flex-1"
+                            role={isQuestion ? "alertdialog" : undefined}
+                            aria-label={isQuestion ? $LL.a11y.popupAwaitsAnswer() : undefined}
+                            {@attach focusSafeAnswer(isQuestion)}
+                            in:fly={{ y: 150, duration: 550 }}
+                        >
                             <PopupComponent {...popup.props} onclose={() => popupStore.removePopup(popup.uuid)} />
                         </div>
                     {/each}
@@ -346,8 +393,11 @@
             <ProximityNotificationContainer />
             <LiveAnnouncer />
             {#if $notificationPlayingStore}
-                <div class="flex flex-col absolute w-auto end-0">
-                    {#each [...$notificationPlayingStore.values()] as notification, index (`${index}-${notification.id}`)}
+                <!-- The live region of the notifications ("your microphone was muted", "you were removed"): it is
+                     mounted before the first one, which a screen reader would not speak if it came with its region.
+                     Keyed by the notification, so one that goes away does not rebuild the others (and their timers). -->
+                <div class="flex flex-col absolute w-auto end-0" aria-live="polite" aria-relevant="additions">
+                    {#each [...$notificationPlayingStore.values()] as notification (notification)}
                         <Notification {notification} />
                     {/each}
                 </div>

@@ -43,6 +43,7 @@
     import { showFloatingUi } from "../../../Utils/svelte-floatingui-show";
     import { formatFileSize } from "../../../Utils/FileSize";
     import PollCreateDialog from "../PollCreateDialog.svelte";
+    import Button from "../../../Components/UI/Button.svelte";
     import LazyEmote from "../../../Components/EmoteMenu/LazyEmote.svelte";
     import youtubeSvg from "../../../Components/images/applications/icon_youtube.svg";
     import klaxoonSvg from "../../../Components/images/applications/icon_klaxoon.svg";
@@ -98,6 +99,11 @@
     let typingRequests: Promise<unknown> = Promise.resolve();
     let files: { id: string; file: File }[] = $state([]);
     let sendingFiles = $state(false);
+    // The files whose last upload failed. They stay in the preview, marked, so they can be sent again or removed.
+    let failedFileIds: string[] = $state([]);
+    // Files and text are sent as separate messages: when the text went out while some files did not, say so.
+    let textSentWithoutFailedFiles = $state(false);
+    const ATTACHMENT_FAILURE_WARNING_ID = "chat-attachments-failed";
     let filesPreview: {
         id: string;
         size: number;
@@ -240,41 +246,14 @@
 
         // send files
         if (files && files.length > 0) {
-            const idsToSend = files.map((f) => f.id);
-            sendingFiles = true;
-            // One file at a time: those that fail stay in the preview, named in the warning, so nothing is lost.
-            const sentFiles = files.filter((file) => idsToSend.includes(file.id));
-            const results = await Promise.allSettled(
-                sentFiles.map((file) => {
-                    const single = new DataTransfer();
-                    single.items.add(file.file);
-                    return room.sendFiles(single.files);
-                }),
-            );
-            const sentIds = sentFiles.filter((_, index) => results[index].status === "fulfilled").map((f) => f.id);
-            const failedNames = sentFiles
-                .filter((_, index) => results[index].status === "rejected")
-                .map((file) => file.file.name);
-            files = files.filter((f) => !sentIds.includes(f.id));
-            filesPreview = filesPreview.filter((p) => !sentIds.includes(p.id));
-            if (failedNames.length > 0) {
-                results.forEach((result) => {
-                    if (result.status === "rejected") console.error(result.reason);
-                });
-                warningMessageStore.addWarningMessage(
-                    $LL.chat.failedToSendNamedAttachments({ names: failedNames.join(", ") }),
-                    { closable: true },
-                );
-            }
-            // A second send cannot start while this guarded upload is in progress.
-            // eslint-disable-next-line require-atomic-updates
-            sendingFiles = false;
+            await sendFilesOneByOne(files);
         }
 
         // send message
         const text = messageInputText(messageToSend);
         if (text !== undefined) {
             room?.sendMessage(text);
+            textSentWithoutFailedFiles = failedFileIds.length > 0;
             analyticsClient.trackAdminEvent("chat.message_sent", {
                 chatContext: room instanceof ProximityChatRoom ? "proximity" : "room",
             });
@@ -282,6 +261,63 @@
                 messageInput.innerText = "";
             }
             message = "";
+        }
+    }
+
+    /**
+     * Uploads the files one at a time. Those that fail stay in the preview, marked as not sent and named in an alert
+     * next to them, so nothing is lost and the person knows what did not go out.
+     */
+    async function sendFilesOneByOne(filesToSend: { id: string; file: File }[]) {
+        const sentFiles = [...filesToSend];
+        sendingFiles = true;
+        const results = await Promise.allSettled(
+            sentFiles.map((file) => {
+                const single = new DataTransfer();
+                single.items.add(file.file);
+                return room.sendFiles(single.files);
+            }),
+        );
+        const sentIds = sentFiles.filter((_, index) => results[index].status === "fulfilled").map((f) => f.id);
+        const failedIds = sentFiles.filter((_, index) => results[index].status === "rejected").map((f) => f.id);
+        files = files.filter((f) => !sentIds.includes(f.id));
+        filesPreview = filesPreview.filter((p) => !sentIds.includes(p.id));
+        failedFileIds = failedIds;
+        if (failedIds.length > 0) {
+            results.forEach((result) => {
+                if (result.status === "rejected") console.error(result.reason);
+            });
+            // Replaces the warning of an earlier failure: the names are the ones of this one.
+            warningMessageStore.removeWarningMessage(ATTACHMENT_FAILURE_WARNING_ID);
+            warningMessageStore.addWarningMessage(
+                $LL.chat.failedToSendNamedAttachments({
+                    names: sentFiles
+                        .filter((file) => failedIds.includes(file.id))
+                        .map((file) => file.file.name)
+                        .join(", "),
+                }),
+                { closable: true, id: ATTACHMENT_FAILURE_WARNING_ID },
+            );
+        } else {
+            clearAttachmentFailure();
+        }
+        // A second send cannot start while this guarded upload is in progress.
+        sendingFiles = false;
+    }
+
+    function clearAttachmentFailure() {
+        failedFileIds = [];
+        textSentWithoutFailedFiles = false;
+        warningMessageStore.removeWarningMessage(ATTACHMENT_FAILURE_WARNING_ID);
+    }
+
+    function retryFailedFiles() {
+        if (sendingFiles) {
+            return;
+        }
+        const filesToRetry = files.filter((file) => failedFileIds.includes(file.id));
+        if (filesToRetry.length > 0) {
+            sendFilesOneByOne(filesToRetry).catch((error) => console.error(error));
         }
     }
 
@@ -350,6 +386,9 @@
         closeEmojiPicker = undefined;
         selectedChatChatMessageToReplyUnsubscriber();
         if (chatInteraction.compact) chatInputFocusStore.set(false);
+        // The files that failed leave with this component, and the warning no longer expires by itself: it must not
+        // keep saying that they stay in the message box.
+        warningMessageStore.removeWarningMessage(ATTACHMENT_FAILURE_WARNING_ID);
     });
 
     let closeEmojiPicker: (() => void) | undefined = undefined;
@@ -424,6 +463,12 @@
     function deleteFile(id: string) {
         files = files.filter((file) => file.id !== id);
         filesPreview = filesPreview.filter((filePreview) => filePreview.id !== id);
+        if (failedFileIds.includes(id)) {
+            failedFileIds = failedFileIds.filter((failedId) => failedId !== id);
+            if (failedFileIds.length === 0) {
+                clearAttachmentFailure();
+            }
+        }
     }
 
     function focusin(event: FocusEvent) {
@@ -637,7 +682,8 @@
                     <div
                         class="relative shrink-0 content-center {preview.type.includes('image')
                             ? 'w-20'
-                            : 'w-28'} h-20 rounded-md backdrop-opacity-10 p-0.5 {tooLargeFileIds.has(preview.id)
+                            : 'w-28'} h-20 rounded-md backdrop-opacity-10 p-0.5 {tooLargeFileIds.has(preview.id) ||
+                        failedFileIds.includes(preview.id)
                             ? 'bg-danger'
                             : 'bg-white'}"
                         data-testid="filePreview"
@@ -672,9 +718,53 @@
                                 </div>
                             </div>
                         {/if}
+                        {#if failedFileIds.includes(preview.id)}
+                            <!-- An icon and a word, not only the red frame, say this file did not go out. -->
+                            <div
+                                class="absolute inset-x-1 bottom-1 flex items-center gap-1 rounded-sm bg-danger-1000 px-1 py-0.5 text-xxs font-bold text-white"
+                                data-testid="filePreviewFailed"
+                            >
+                                <IconAlertTriangle aria-hidden="true" class="shrink-0" font-size={12} />
+                                <span class="truncate">{$LL.chat.file.notSent()}</span>
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             </div>
+            {#if failedFileIds.length > 0}
+                {@const failedNames = filesPreview
+                    .filter((preview) => failedFileIds.includes(preview.id))
+                    .map((preview) => preview.name)
+                    .join(", ")}
+                <div
+                    class="mx-2 mb-2 flex items-start gap-2 rounded-lg border border-solid border-danger bg-danger/15 px-2.5 py-1.5 text-sm text-white"
+                    role="alert"
+                    data-testid="fileSendFailed"
+                >
+                    <IconAlertTriangle aria-hidden="true" class="mt-0.5 shrink-0 text-danger-200" font-size={16} />
+                    <div class="min-w-0 grow leading-normal wrap-anywhere">
+                        <div class="font-bold">
+                            {#if textSentWithoutFailedFiles}
+                                {$LL.chat.file.sendFailedAfterMessage({ names: failedNames })}
+                            {:else}
+                                {$LL.chat.file.sendFailed({ names: failedNames })}
+                            {/if}
+                        </div>
+                        <div class="text-white/85">{$LL.chat.file.sendFailedHint()}</div>
+                    </div>
+                    <Button
+                        variant="light"
+                        appearance="ghost"
+                        size="sm"
+                        class="shrink-0"
+                        disabled={sendingFiles}
+                        dataTestId="fileSendRetry"
+                        onclick={retryFailedFiles}
+                    >
+                        {$LL.chat.file.retry()}
+                    </Button>
+                </div>
+            {/if}
             {#each fileErrors as fileError (fileError.title)}
                 <div
                     class="mx-2 mb-2 flex items-start gap-2 rounded-lg border border-solid border-danger bg-danger/15 px-2.5 py-1.5 text-sm text-white"

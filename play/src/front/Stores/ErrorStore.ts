@@ -7,7 +7,16 @@ interface ErrorMessage {
     message: string | number | boolean | undefined;
 }
 
-type WarningMessage = ErrorMessage;
+interface WarningMessage extends ErrorMessage {
+    /**
+     * How long the warning stays before it removes itself, held while it is hovered or focused (see WarningToast).
+     * Undefined: it stays until it is closed.
+     */
+    durationMs: number | undefined;
+}
+
+/** A warning nobody can close removes itself after this long, so it cannot stay on the screen for good. */
+const NOT_CLOSABLE_WARNING_DURATION_MS = 10000;
 
 /**
  * A store that contains a list of error messages to be displayed.
@@ -73,6 +82,8 @@ function createWarningMessageStore() {
             options?: {
                 closable?: boolean;
                 id?: string;
+                /** Overrides when the warning goes away by itself. A closable warning stays until it is closed. */
+                durationMs?: number;
             },
         ): void => {
             update((messages: WarningMessage[]) => {
@@ -83,10 +94,12 @@ function createWarningMessageStore() {
                     message = e;
                 }
 
-                const newWarningMessage = {
+                const closable = options?.closable ?? true;
+                const newWarningMessage: WarningMessage = {
                     message,
-                    closable: options?.closable ?? true,
+                    closable,
                     id: options?.id ?? uuid(),
+                    durationMs: options?.durationMs ?? (closable ? undefined : NOT_CLOSABLE_WARNING_DURATION_MS),
                 };
                 if (
                     !messages.find(
@@ -98,12 +111,6 @@ function createWarningMessageStore() {
                     )
                 ) {
                     messages.push(newWarningMessage);
-
-                    setTimeout(() => {
-                        update((messages: WarningMessage[]) => {
-                            return messages.filter((message) => message.id !== newWarningMessage.id);
-                        });
-                    }, 10000);
                 }
 
                 return messages;

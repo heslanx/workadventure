@@ -47,7 +47,8 @@ export async function deleteAllRecordings(page: Page) {
 export async function closeRecordingCompletedToast(page: Page) {
     const completedToast = page.getByTestId("recording-completed-modal");
     await expect(completedToast).toBeVisible();
-    await page.getByRole("button", { name: "Close" }).click();
+    // Scoped to the toast: a notification on screen at the same time has its own close button.
+    await page.locator(".recording-completed-modal").getByRole("button", { name: "Close" }).click();
     await expect(completedToast).toBeHidden();
 }
 
