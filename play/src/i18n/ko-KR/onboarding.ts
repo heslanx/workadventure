@@ -50,4 +50,10 @@ export default {
             "{worldName}의 기본 사항을 배웠습니다! 자유롭게 탐험하고, 새로운 사람들을 만나고, 즐기세요. 필요할 때는 메뉴에서 항상 도움말에 액세스할 수 있습니다.",
         finish: "탐험 시작하기!",
     },
+    back: "이전",
+    stepIndicator: "{total}단계 중 {current}단계",
+    skipShortcutHint: "Esc 키를 누르면 튜토리얼을 건너뜁니다.",
+    videoPlay: "동영상 재생",
+    videoPause: "동영상 일시 정지",
+    cancelledByConversation: "대화에 참여하여 튜토리얼이 닫혔습니다. 프로필 메뉴에서 다시 볼 수 있습니다.",
 } satisfies Translation["onboarding"];

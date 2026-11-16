@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Actualizar no restaurará este mapa porque ya no existe.",
         editionFailed: "No se ha podido guardar tu cambio y se ha deshecho.",
     },
+    undo: {
+        action: "Deshacer",
+        unavailable: "Este cambio ya no se puede deshacer desde aquí. Vuelve a hacerlo a mano.",
+        entityDeleted: "Objeto «{name}» eliminado",
+        areaDeleted: "Zona «{name}» eliminada",
+        areaDeletedUnnamed: "Zona eliminada",
+        propertyRemovedFromArea: "Propiedad quitada de esta zona",
+        propertyRemovedFromObject: "Propiedad quitada de este objeto",
+    },
     sideBar: {
         areaEditor: "Herramienta de edición de zonas",
         entityEditor: "Herramienta de edición de entidades",
@@ -296,6 +305,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Formato de archivo no admitido",
                 errorOnFileNumber: "No se admite soltar varios archivos",
                 errorOnFileSize: "El archivo es demasiado grande, el tamaño máximo es {size} MB",
+                removeFile: "Quitar {name}",
             },
             hideUrlLabel: "Ocultar URL",
             actionButtonLabel: "Abrir archivo",
@@ -337,6 +347,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "Solo los usuarios con estas etiquetas pueden bloquear o desbloquear esta zona. Déjelo vacío para permitir a todos.",
         },
         noProperties: "No hay propiedades definidas",
+        removeProperty: "Quitar esta propiedad",
     },
     areaEditor: {
         editInstructions: "Haga clic en una zona para modificar sus propiedades.",
@@ -350,7 +361,11 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Acción requerida",
             description: "Esta zona personal contiene uno o más objetos. ¿Qué desea hacer con él/ellos?",
+            heading: "Esta zona personal contiene {count} {{objeto|objetos}}",
+            question: "¿Eliminarlos del mapa o conservarlos donde están?",
             buttons: {
+                keepObjects: "Conservar objetos",
+                deleteObjects: "Eliminar {count} {{objeto|objetos}}",
                 keep: "Conservar",
                 remove: "Eliminar",
                 cancel: "Cancelar",
@@ -374,9 +389,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Buscar",
             backToSelectObject: "Volver a seleccionar objeto",
+            colors: "Colores",
+            positions: "Posiciones",
         },
         trashTool: {
             delete: "Haga clic en el objeto para eliminarlo.",
+            undoHint: "¿Lo has eliminado por error? Usa Deshacer en el aviso que aparece o pulsa Ctrl/Cmd+Z.",
+            keyboardHint: "Sin ratón, selecciona un objeto o una zona en su editor y pulsa Supr.",
         },
         deleteButton: "Eliminar",
         testInteractionButton: "Probar interacción",
@@ -419,6 +438,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Colisión",
             wokaAbove: "Woka delante",
             wokaBelow: "Woka detrás",
+            deleteConfirmTitle: "¿Eliminar «{name}»?",
+            deleteConfirmMessage: "Este objeto personalizado se quitará del selector de objetos.",
+            deleteConfirmMessageWithCopies:
+                "Este objeto personalizado se quitará del selector de objetos, junto con {count} {{copia colocada|copias colocadas}} en este mapa.",
         },
         buttons: {
             editEntity: "Editar",

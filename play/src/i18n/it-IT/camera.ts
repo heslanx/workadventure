@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Non raccomandato",
     enable: {
         title: "Accendi la tua fotocamera e il microfono",
+        join: "Entra nella stanza",
         start: "Benvenuto nella nostra pagina di configurazione dei dispositivi audio e video! Trova qui gli strumenti per migliorare la tua esperienza online. Regola le impostazioni in base alle tue preferenze per risolvere eventuali problemi. Assicurati che il tuo hardware sia correttamente collegato e aggiornato. Esplora e testa diverse configurazioni per trovare quella che funziona meglio per te.",
     },
     help: {
@@ -29,6 +30,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "Continua senza webcam",
         continueWithoutMicrophone: "Continua senza microfono",
         continueCameraMicrophone: "Continua senza webcam e microfono",
+        showSteps: "Mostrami come",
+        hideSteps: "Nascondi i passaggi",
+        steps: {
+            chrome: "Clicca sull'icona del lucchetto a sinistra della barra degli indirizzi, imposta Fotocamera o Microfono su Consenti, poi ricarica la pagina.",
+            firefox:
+                "Clicca sull'icona delle autorizzazioni a sinistra della barra degli indirizzi, rimuovi la voce bloccata di Fotocamera o Microfono, poi ricarica la pagina e consenti l'accesso quando richiesto.",
+            safari: "Apri il menu Safari, scegli Impostazioni per questo sito web, imposta Fotocamera o Microfono su Consenti, poi ricarica la pagina.",
+            android:
+                "Tocca l'icona del lucchetto a sinistra della barra degli indirizzi, apri Autorizzazioni, imposta Fotocamera o Microfono su Consenti, poi ricarica la pagina.",
+            other: "Apri le impostazioni del sito del tuo browser per questa pagina, imposta Fotocamera o Microfono su Consenti, poi ricarica la pagina.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -37,6 +49,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Accesso alla fotocamera bloccato",
             permissionDeniedDesc:
                 "Il browser ha negato l’accesso alla fotocamera per questo sito. Consentilo dalla barra degli indirizzi (lucchetto o icona della fotocamera) o dalle impostazioni del sito. L’illustrazione corrisponde al tuo browser.",
+            permissionDeniedFix:
+                "Il browser ha negato l’accesso alla fotocamera per questo sito. Consentilo dalla barra degli indirizzi (lucchetto o icona della fotocamera) o dalle impostazioni del sito, poi ricarica. Seleziona questo pulsante per vedere i passaggi.",
             noDeviceTitle: "Nessuna fotocamera utilizzabile",
             noDeviceDesc:
                 "Il browser non rileva alcuna fotocamera utilizzabile. Prova un altro browser, verifica che la fotocamera sia collegata, controlla le impostazioni del computer (privacy, dispositivi) o riavvia il computer se il dispositivo dovrebbe funzionare.",
@@ -54,6 +68,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Accesso al microfono bloccato",
             permissionDeniedDesc:
                 "Il browser ha negato l’accesso al microfono per questo sito. Consentilo dalla barra degli indirizzi (lucchetto o icona del microfono) o dalle impostazioni del sito. L’illustrazione corrisponde al tuo browser.",
+            permissionDeniedFix:
+                "Il browser ha negato l’accesso al microfono per questo sito. Consentilo dalla barra degli indirizzi (lucchetto o icona del microfono) o dalle impostazioni del sito, poi ricarica. Seleziona questo pulsante per vedere i passaggi.",
             noDeviceTitle: "Nessun microfono utilizzabile",
             noDeviceDesc:
                 "Il browser non rileva alcun microfono utilizzabile. Prova un altro browser, verifica il microfono, controlla le impostazioni del computer (privacy, dispositivi) o riavvia il computer se il dispositivo dovrebbe funzionare.",
@@ -84,6 +100,10 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "Ricarica",
         continue: "Continua",
         newDeviceDetected: "Nuovo dispositivo rilevato {device} 🎉 Cambiare? [SPAZIO] Ignora [ESC]",
+        newDeviceSwitch: "Cambia",
+        newDeviceIgnore: "Ignora",
+        newDeviceAnnouncement:
+            "Nuovo dispositivo rilevato: {device}. Premi Spazio per cambiare dispositivo, oppure Esc per ignorarlo.",
     },
     my: {
         silentZone: "Zona silenziosa",
@@ -110,6 +130,25 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "È stato chiesto a {name} di disattivare il microfono.",
         mutedVideoNotice: "La fotocamera di {name} è spenta. Solo questa persona può riaccenderla.",
         askedMuteVideoNotice: "È stato chiesto a {name} di spegnere la fotocamera.",
+        confirmMuteAudioEveryBodyTitle: "Disattivare il microfono di tutti?",
+        confirmMuteAudioEveryBodyMessage:
+            "Questo disattiva il microfono di tutti in questa conversazione. Solo ciascuna persona può riattivare il proprio microfono.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "Questo disattiva il microfono di {count} {{persona|persone}} in questa conversazione. Solo ciascuna persona può riattivare il proprio microfono.",
+        confirmMuteAudioEveryBodyAction: "Disattiva per tutti",
+        mutedAudioEveryBodyNotice:
+            "Il microfono di tutti è disattivato. Solo ciascuna persona può riattivare il proprio.",
+        mutedAudioEveryBodyNoticeCount:
+            "Microfono disattivato per {count} {{persona|persone}}. Solo ciascuna persona può riattivare il proprio.",
+        confirmMuteVideoEveryBodyTitle: "Spegnere la fotocamera di tutti?",
+        confirmMuteVideoEveryBodyMessage:
+            "Questo spegne la fotocamera di tutti in questa conversazione. Solo ciascuna persona può riaccendere la propria fotocamera.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "Questo spegne la fotocamera di {count} {{persona|persone}} in questa conversazione. Solo ciascuna persona può riaccendere la propria fotocamera.",
+        confirmMuteVideoEveryBodyAction: "Spegni le fotocamere",
+        mutedVideoEveryBodyNotice: "La fotocamera di tutti è spenta. Solo ciascuna persona può riaccendere la propria.",
+        mutedVideoEveryBodyNoticeCount:
+            "Fotocamera spenta per {count} {{persona|persone}}. Solo ciascuna persona può riaccendere la propria.",
         alreadyMuted: "Già disattivato",
         videoAlreadyOff: "Video già spento",
     },

@@ -246,6 +246,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "Chat se hyšći zwězujo. Wopytaj za někotare sekundy hyšći raz.",
         alreadyAtDesk: "Sy južo pśi swójom pisańskem blidle.",
     },
+    leaveConversationConfirm: {
+        title: "Swójo rozgrono wopušćiś?",
+        message:
+            "To was na krotki cas z ruma wuwjeźo. Wopušćiśo swójo aktualne rozgrono abo live, waša kamera a waš mikrofon se wótšaltujotej, a waš Woka buźo se z kórty schowaś až do wašogo wrośenja.",
+        confirm: "Wopušćiś a dalej",
+    },
 };
 
 export default actionbar;

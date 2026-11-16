@@ -29,6 +29,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraPaused: "摄像头已暂停，回来后恢复",
     },
     enlarge: "放大视频",
+    unknownMediaType: "不支持此类视频来源。",
 };
 
 export default video;

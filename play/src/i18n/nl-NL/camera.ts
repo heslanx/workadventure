@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Niet aanbevolen",
     enable: {
         title: "Zet je camera en microfoon aan",
+        join: "De kamer betreden",
         start: "Welkom op onze pagina voor het configureren van audio- en videog apparaten! Vind hier de tools om je online ervaring te verbeteren. Pas de instellingen aan naar je voorkeuren om eventuele problemen op te lossen. Zorg ervoor dat je hardware correct is aangesloten en up-to-date is. Verken en test verschillende configuraties om te vinden wat het beste voor jou werkt.",
     },
     help: {
@@ -29,6 +30,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "Doorgaan zonder webcam",
         continueWithoutMicrophone: "Doorgaan zonder microfoon",
         continueCameraMicrophone: "Doorgaan zonder webcam en microfoon",
+        showSteps: "Laat me zien hoe",
+        hideSteps: "Stappen verbergen",
+        steps: {
+            chrome: "Klik op het slotpictogram links in de adresbalk, zet Camera of Microfoon op Toestaan en laad de pagina opnieuw.",
+            firefox:
+                "Klik op het machtigingenpictogram links in de adresbalk, verwijder de geblokkeerde vermelding voor Camera of Microfoon, laad de pagina opnieuw en sta toegang toe wanneer daarom wordt gevraagd.",
+            safari: "Open het Safari-menu, kies Instellingen voor deze website, zet Camera of Microfoon op Toestaan en laad de pagina opnieuw.",
+            android:
+                "Tik op het slotpictogram links in de adresbalk, open Machtigingen, zet Camera of Microfoon op Toestaan en laad de pagina opnieuw.",
+            other: "Open de site-instellingen van je browser voor deze pagina, zet Camera of Microfoon op Toestaan en laad de pagina opnieuw.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -37,6 +49,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Cameratoegang geblokkeerd",
             permissionDeniedDesc:
                 "Je browser heeft cameratoegang voor deze site geweigerd. Sta het toe via de adresbalk (slot- of camera-icoon) of in de site-instellingen. De afbeelding hieronder hoort bij je browser.",
+            permissionDeniedFix:
+                "Je browser heeft cameratoegang voor deze site geweigerd. Sta het toe via de adresbalk (slot- of camera-icoon) of in de site-instellingen en laad de pagina daarna opnieuw. Selecteer deze knop voor de stappen.",
             noDeviceTitle: "Geen bruikbare camera",
             noDeviceDesc:
                 "Je browser ziet geen camera die je kunt gebruiken. Probeer een andere browser, controleer of een camera is aangesloten, controleer de configuratie van de computer (privacy, apparaten) of start de computer opnieuw op als het apparaat zou moeten werken.",
@@ -55,6 +69,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Microfoontoegang geblokkeerd",
             permissionDeniedDesc:
                 "Je browser heeft microfoontoegang voor deze site geweigerd. Sta het toe via de adresbalk (slot- of microfoon-icoon) of in de site-instellingen. De afbeelding hieronder hoort bij je browser.",
+            permissionDeniedFix:
+                "Je browser heeft microfoontoegang voor deze site geweigerd. Sta het toe via de adresbalk (slot- of microfoon-icoon) of in de site-instellingen en laad de pagina daarna opnieuw. Selecteer deze knop voor de stappen.",
             noDeviceTitle: "Geen bruikbare microfoon",
             noDeviceDesc:
                 "Je browser ziet geen microfoon die je kunt gebruiken. Probeer een andere browser, controleer of een microfoon is aangesloten, controleer de configuratie van de computer (privacy, apparaten) of start de computer opnieuw op als het apparaat zou moeten werken.",
@@ -86,6 +102,10 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "Vernieuwen",
         continue: "Doorgaan",
         newDeviceDetected: "Nieuw apparaat gedetecteerd {device} 🎉 Wisselen? [SPATIE] Negeren [ESC]",
+        newDeviceSwitch: "Wisselen",
+        newDeviceIgnore: "Negeren",
+        newDeviceAnnouncement:
+            "Nieuw apparaat gedetecteerd: {device}. Druk op Spatie om ernaar te wisselen, of op Escape om het te negeren.",
     },
     my: {
         silentZone: "Stille zone",
@@ -112,6 +132,26 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "{name} is gevraagd de microfoon te dempen.",
         mutedVideoNotice: "De camera van {name} staat uit. Alleen die persoon kan hem weer inschakelen.",
         askedMuteVideoNotice: "{name} is gevraagd de camera uit te zetten.",
+        confirmMuteAudioEveryBodyTitle: "Microfoon van iedereen dempen?",
+        confirmMuteAudioEveryBodyMessage:
+            "Hiermee demp je iedereen in dit gesprek. Alleen deelnemers zelf kunnen hun eigen microfoon weer aanzetten.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "Hiermee demp je {count} {{persoon|personen}} in dit gesprek. Alleen deelnemers zelf kunnen hun eigen microfoon weer aanzetten.",
+        confirmMuteAudioEveryBodyAction: "Iedereen dempen",
+        mutedAudioEveryBodyNotice:
+            "De microfoon van iedereen is gedempt. Alleen deelnemers zelf kunnen hun microfoon weer aanzetten.",
+        mutedAudioEveryBodyNoticeCount:
+            "Microfoon gedempt voor {count} {{persoon|personen}}. Alleen deelnemers zelf kunnen hun microfoon weer aanzetten.",
+        confirmMuteVideoEveryBodyTitle: "Camera van iedereen uitzetten?",
+        confirmMuteVideoEveryBodyMessage:
+            "Hiermee zet je de camera van iedereen in dit gesprek uit. Alleen deelnemers zelf kunnen hun eigen camera weer aanzetten.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "Hiermee zet je de camera van {count} {{persoon|personen}} in dit gesprek uit. Alleen deelnemers zelf kunnen hun eigen camera weer aanzetten.",
+        confirmMuteVideoEveryBodyAction: "Camera's uitzetten",
+        mutedVideoEveryBodyNotice:
+            "De camera van iedereen staat uit. Alleen deelnemers zelf kunnen hun camera weer aanzetten.",
+        mutedVideoEveryBodyNoticeCount:
+            "Camera uitgezet voor {count} {{persoon|personen}}. Alleen deelnemers zelf kunnen hun camera weer aanzetten.",
         alreadyMuted: "Al gedempt",
         videoAlreadyOff: "Video staat al uit",
     },

@@ -241,6 +241,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "لا تزال الدردشة قيد الاتصال. حاول مرة أخرى بعد بضع ثوانٍ.",
         alreadyAtDesk: "أنت بالفعل عند مكتبك.",
     },
+    leaveConversationConfirm: {
+        title: "هل تريد مغادرة محادثتك؟",
+        message:
+            "سيُخرجك هذا من الغرفة مؤقتًا. ستغادر محادثتك أو بثك المباشر الحالي، وسيتوقف تشغيل الكاميرا والميكروفون، وستختفي شخصيتك من الخريطة إلى أن تعود.",
+        confirm: "المغادرة والمتابعة",
+    },
 };
 
 export default actionbar;

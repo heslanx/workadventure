@@ -242,5 +242,11 @@ const actionbar: BaseTranslation = {
         unclaimConfirmMessage:
             "It becomes free right away. Anyone can claim it, and you get it back only by claiming it again while it is still free.",
     },
+    leaveConversationConfirm: {
+        title: "Leave your conversation?",
+        message:
+            "This takes you out of the room for a moment. You will leave your current conversation or live, your camera and microphone will turn off, and your character will disappear from the map until you come back.",
+        confirm: "Leave and continue",
+    },
 };
 export default actionbar;

@@ -9,6 +9,8 @@ const notification: DeepPartial<Translation["notification"]> = {
     askToMuteCamera: "Mógu wašu kameru němy cyniś?",
     microphoneMuted: "Waš mikrofon jo se wót moderatora němy cynił",
     cameraMuted: "Waša kamera jo se wót moderatora němy cyniła",
+    microphoneMutedForEverybody: "Moderator jo mikrofony wšěch wótšaltował. Móžośo swój zasej zašaltowaś.",
+    cameraMutedForEverybody: "Moderator jo kamery wšěch wótšaltował. Móžośo swóju zasej zašaltowaś.",
     givenTheFloor: "Něnto sy ty na rěźe",
     givenTheFloorEnableMicrophone: "Něnto sy ty na rěźe — zašaltuj swój mikrofon",
     floorRevoked: "Njamaš wěcej słowo",

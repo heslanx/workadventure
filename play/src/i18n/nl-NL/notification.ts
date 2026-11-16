@@ -9,6 +9,9 @@ const notification: DeepPartial<Translation["notification"]> = {
     askToMuteCamera: "Vraag om je camera te dempen 🙏",
     microphoneMuted: "Je microfoon is gedempt door een moderator",
     cameraMuted: "Je camera is gedempt door een moderator",
+    microphoneMutedForEverybody:
+        "Een moderator heeft de microfoon van iedereen gedempt. Je kunt de jouwe weer aanzetten.",
+    cameraMutedForEverybody: "Een moderator heeft de camera van iedereen uitgezet. Je kunt de jouwe weer aanzetten.",
     givenTheFloor: "Het is jouw beurt om te spreken",
     givenTheFloorEnableMicrophone: "Het is jouw beurt om te spreken — zet je microfoon aan",
     floorRevoked: "Je hebt niet langer het woord",

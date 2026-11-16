@@ -352,6 +352,12 @@ const chat: DeepPartial<Translation["chat"]> = {
         tooMany: "Přewjele datajow",
         tooManyHint: "Móžeće naraz hač do {max} datajow pósłać. Wotstroń někotre, zo by pósłał.",
         notLogged: "Dyrbiće přizjewjeni być, zo byšće dataju nakładowali.",
+        notSent: "Njepósłane",
+        sendFailed: "Njepósłane: {names}",
+        sendFailedAfterMessage: "Waša powěsć bu pósłana, ale nic: {names}",
+        sendFailedHint:
+            "Tekst a dataje so jako wosebite powěsće pósćelu. Spytajće dataje hišće raz pósłać abo je wotstrońće.",
+        retry: "Hišće raz spytać",
     },
     needRefresh: "Waš zwisk je wotběžał. Prošu aktualizujće stronu, zo byšće zwisk k chatej zaso nawjazał.",
     refresh: "aktualizować",

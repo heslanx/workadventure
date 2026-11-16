@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "不建議",
     enable: {
         title: "開啟你的攝影機和麥克風",
+        join: "加入房間",
         start: "歡迎來到我們的音訊與視訊裝置設定頁面！在這裡找到工具來提升您的線上體驗。依您的偏好調整設定以解決任何潛在問題。請確保您的硬體已正確連接並保持最新。探索並測試不同的設定，找到最適合您的組合。",
     },
     help: {
@@ -28,6 +29,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "不使用攝影機繼續遊戲",
         continueWithoutMicrophone: "不使用麥克風繼續遊戲",
         continueCameraMicrophone: "不使用網路攝影機和麥克風繼續遊戲",
+        showSteps: "查看操作方式",
+        hideSteps: "隱藏步驟",
+        steps: {
+            chrome: "點選網址列左側的鎖頭圖示，將「攝影機」或「麥克風」設為「允許」，然後重新載入頁面。",
+            firefox:
+                "點選網址列左側的權限圖示，移除被封鎖的「攝影機」或「麥克風」項目，然後重新載入頁面，並在出現提示時允許存取。",
+            safari: "開啟 Safari 選單，選擇「此網站的設定」，將「攝影機」或「麥克風」設為「允許」，然後重新載入頁面。",
+            android:
+                "點一下網址列左側的鎖頭圖示，開啟「權限」，將「攝影機」或「麥克風」設為「允許」，然後重新載入頁面。",
+            other: "開啟瀏覽器中此頁面的網站設定，將「攝影機」或「麥克風」設為「允許」，然後重新載入頁面。",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -36,6 +48,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "攝影機存取被封鎖",
             permissionDeniedDesc:
                 "瀏覽器拒絕了此網站的攝影機權限。請在網址列（鎖頭或攝影機圖示）或網站設定中允許存取。下圖說明與您的瀏覽器相對應。",
+            permissionDeniedFix:
+                "瀏覽器拒絕了此網站的攝影機權限。請在網址列（鎖頭或攝影機圖示）或網站設定中允許存取，然後重新載入。選取此按鈕可查看步驟。",
             noDeviceTitle: "沒有可用的攝影機",
             noDeviceDesc:
                 "瀏覽器未偵測到可用的攝影機。請嘗試其他瀏覽器、檢查攝影機是否已連接、檢查電腦的設定（隱私、裝置），或在裝置正常時重新啟動電腦。",
@@ -53,6 +67,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "麥克風存取被封鎖",
             permissionDeniedDesc:
                 "瀏覽器拒絕了此網站的麥克風權限。請在網址列（鎖頭或麥克風圖示）或網站設定中允許存取。下圖說明與您的瀏覽器相對應。",
+            permissionDeniedFix:
+                "瀏覽器拒絕了此網站的麥克風權限。請在網址列（鎖頭或麥克風圖示）或網站設定中允許存取，然後重新載入。選取此按鈕可查看步驟。",
             noDeviceTitle: "沒有可用的麥克風",
             noDeviceDesc:
                 "瀏覽器未偵測到可用的麥克風。請嘗試其他瀏覽器、檢查麥克風是否已連接、檢查電腦的設定（隱私、裝置），或在裝置正常時重新啟動電腦。",
@@ -81,6 +97,9 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "重新整理",
         continue: "繼續",
         newDeviceDetected: "偵測到新裝置 {device} 🎉 切換？[空白鍵] 忽略 [Esc]",
+        newDeviceSwitch: "切換",
+        newDeviceIgnore: "忽略",
+        newDeviceAnnouncement: "偵測到新裝置：{device}。按空白鍵切換至該裝置，或按 Esc 忽略。",
     },
     my: {
         silentZone: "安靜區",
@@ -106,6 +125,19 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "已請 {name} 將麥克風靜音。",
         mutedVideoNotice: "{name} 的攝影機已關閉。只有本人可以重新開啟。",
         askedMuteVideoNotice: "已請 {name} 關閉攝影機。",
+        confirmMuteAudioEveryBodyTitle: "要將所有人的麥克風靜音嗎？",
+        confirmMuteAudioEveryBodyMessage: "這會將此對話中的所有人靜音。只有本人可以重新開啟自己的麥克風。",
+        confirmMuteAudioEveryBodyMessageCount: "這會將此對話中的 {count} 個人靜音。只有本人可以重新開啟自己的麥克風。",
+        confirmMuteAudioEveryBodyAction: "全部靜音",
+        mutedAudioEveryBodyNotice: "所有人的麥克風都已靜音。只有本人可以重新開啟。",
+        mutedAudioEveryBodyNoticeCount: "已將 {count} 個人的麥克風靜音。只有本人可以重新開啟。",
+        confirmMuteVideoEveryBodyTitle: "要關閉所有人的攝影機嗎？",
+        confirmMuteVideoEveryBodyMessage: "這會關閉此對話中所有人的攝影機。只有本人可以重新開啟自己的攝影機。",
+        confirmMuteVideoEveryBodyMessageCount:
+            "這會關閉此對話中 {count} 個人的攝影機。只有本人可以重新開啟自己的攝影機。",
+        confirmMuteVideoEveryBodyAction: "關閉攝影機",
+        mutedVideoEveryBodyNotice: "所有人的攝影機都已關閉。只有本人可以重新開啟。",
+        mutedVideoEveryBodyNoticeCount: "已關閉 {count} 個人的攝影機。只有本人可以重新開啟。",
         alreadyMuted: "已靜音",
         videoAlreadyOff: "視訊已關閉",
     },

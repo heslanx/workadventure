@@ -248,6 +248,12 @@ const actionbar: BaseTranslation = {
         unclaimConfirmMessage:
             "Ela fica livre na hora. Qualquer pessoa pode reivindicá-la, e você só a recupera reivindicando de novo enquanto ainda estiver livre.",
     },
+    leaveConversationConfirm: {
+        title: "Sair da sua conversa?",
+        message:
+            "Isso tira você da sala por um momento. Você sairá da conversa ou da transmissão ao vivo atual, sua câmera e seu microfone serão desligados e seu personagem desaparecerá do mapa até você voltar.",
+        confirm: "Sair e continuar",
+    },
 };
 
 export default actionbar;

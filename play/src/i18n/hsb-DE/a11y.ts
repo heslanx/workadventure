@@ -26,6 +26,7 @@ const a11y: DeepPartial<Translation["a11y"]> = {
     mapEditorResizePanel: "Bóčny panel přiměrić",
     mapEditorStopAudio: "Awdio zastajić",
     mapEditorToggleSidebar: "Bóčny panel pokazać abo schować",
+    popupAwaitsAnswer: "Naprašowanje čaka na wašu wotmołwu",
     popupNextSlide: "Přichodny folija",
     popupPreviousSlide: "Předchadna folija",
     uiMoreInfo: "Dalše informacije",

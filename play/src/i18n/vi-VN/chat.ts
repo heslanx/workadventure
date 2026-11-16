@@ -351,6 +351,12 @@ const chat: DeepPartial<Translation["chat"]> = {
         tooMany: "Quá nhiều tệp",
         tooManyHint: "Bạn có thể gửi tối đa {max} tệp mỗi lần. Hãy gỡ bớt để gửi.",
         notLogged: "Bạn cần đăng nhập để tải tệp lên.",
+        notSent: "Chưa được gửi",
+        sendFailed: "Chưa được gửi: {names}",
+        sendFailedAfterMessage: "Tin nhắn của bạn đã được gửi, nhưng chưa gửi được: {names}",
+        sendFailedHint:
+            "Văn bản và tệp được gửi dưới dạng các tin nhắn riêng biệt. Hãy thử gửi lại các tệp hoặc xóa chúng.",
+        retry: "Thử lại",
     },
     needRefresh: "Kết nối của bạn đã hết hạn, bạn cần tải lại trang để kết nối lại với trò chuyện.",
     refresh: "Tải lại",

@@ -352,6 +352,12 @@ const chat: DeepPartial<Translation["chat"]> = {
         tooMany: "Te veel bestanden",
         tooManyHint: "Je kunt maximaal {max} bestanden tegelijk versturen. Verwijder er een paar om te versturen.",
         notLogged: "Je moet ingelogd zijn om een bestand te uploaden.",
+        notSent: "Niet verstuurd",
+        sendFailed: "Niet verstuurd: {names}",
+        sendFailedAfterMessage: "Je bericht is verstuurd, maar niet: {names}",
+        sendFailedHint:
+            "Tekst en bestanden worden als aparte berichten verstuurd. Probeer de bestanden opnieuw of verwijder ze.",
+        retry: "Opnieuw proberen",
     },
     needRefresh: "Je verbinding is verlopen, je moet de pagina verversen om opnieuw verbinding te maken met de chat.",
     refresh: "Verversen",

@@ -247,6 +247,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         chatConnecting: "El xat encara s'està connectant. Torna-ho a provar d'aquí a uns segons.",
         alreadyAtDesk: "Ja ets al teu escriptori.",
     },
+    leaveConversationConfirm: {
+        title: "Vols deixar la teva conversa?",
+        message:
+            "Això et treu de la sala per un moment. Deixaràs la conversa o la retransmissió en directe actual, la teva càmera i el teu micròfon s'apagaran i el teu personatge desapareixerà del mapa fins que tornis.",
+        confirm: "Deixa-ho i continua",
+    },
 };
 
 export default actionbar;

@@ -13,6 +13,7 @@ const camera: BaseTranslation = {
     notRecommended: "Não recomendado",
     enable: {
         title: "Ligue sua câmera e microfone",
+        join: "Entrar na sala",
         start: "Bem-vindo à nossa página de configuração de dispositivos de áudio e vídeo! Encontre aqui as ferramentas para melhorar sua experiência online. Ajuste as configurações às suas preferências para resolver possíveis problemas. Certifique-se de que seu hardware esteja conectado corretamente e atualizado. Explore e teste diferentes configurações para encontrar o que funciona melhor para você.",
     },
     help: {
@@ -33,6 +34,17 @@ const camera: BaseTranslation = {
         continue: "Continuar sem câmera",
         continueWithoutMicrophone: "Continuar sem microfone",
         continueCameraMicrophone: "Continuar sem câmera e microfone",
+        showSteps: "Mostrar como fazer",
+        hideSteps: "Ocultar os passos",
+        steps: {
+            chrome: "Clique no ícone de cadeado à esquerda da barra de endereços, defina Câmera ou Microfone como Permitir e recarregue a página.",
+            firefox:
+                "Clique no ícone de permissões à esquerda da barra de endereços, remova a entrada bloqueada de Câmera ou Microfone, recarregue a página e permita o acesso quando solicitado.",
+            safari: "Abra o menu Safari, escolha Ajustes para Este Site, defina Câmera ou Microfone como Permitir e recarregue a página.",
+            android:
+                "Toque no ícone de cadeado à esquerda da barra de endereços, abra Permissões, defina Câmera ou Microfone como Permitir e recarregue a página.",
+            other: "Abra as configurações do site no seu navegador, defina Câmera ou Microfone como Permitir e recarregue a página.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -41,6 +53,8 @@ const camera: BaseTranslation = {
             permissionDeniedTitle: "Acesso à câmera bloqueado",
             permissionDeniedDesc:
                 "O navegador negou o acesso à câmera para este site. Permita na barra de endereços (cadeado ou ícone da câmera) ou nas configurações do site. A ilustração abaixo corresponde ao seu navegador.",
+            permissionDeniedFix:
+                "O navegador negou o acesso à câmera para este site. Permita pela barra de endereços (ícone de cadeado ou de câmera) ou nas configurações do site e recarregue. Selecione este botão para ver os passos.",
             noDeviceTitle: "Nenhuma câmera utilizável",
             noDeviceDesc:
                 "O navegador não detecta nenhuma câmera utilizável. Tente outro navegador, verifique se a câmera está conectada, verifique as configurações do computador (privacidade, dispositivos) ou reinicie o computador se o dispositivo deveria funcionar.",
@@ -58,6 +72,8 @@ const camera: BaseTranslation = {
             permissionDeniedTitle: "Acesso ao microfone bloqueado",
             permissionDeniedDesc:
                 "O navegador negou o acesso ao microfone para este site. Permita na barra de endereços (cadeado ou ícone do microfone) ou nas configurações do site. A ilustração abaixo corresponde ao seu navegador.",
+            permissionDeniedFix:
+                "O navegador negou o acesso ao microfone para este site. Permita pela barra de endereços (ícone de cadeado ou de microfone) ou nas configurações do site e recarregue. Selecione este botão para ver os passos.",
             noDeviceTitle: "Nenhum microfone utilizável",
             noDeviceDesc:
                 "O navegador não detecta nenhum microfone utilizável. Tente outro navegador, verifique o microfone, verifique as configurações do computador (privacidade, dispositivos) ou reinicie o computador se o dispositivo deveria funcionar.",
@@ -87,6 +103,10 @@ const camera: BaseTranslation = {
         refresh: "Atualizar",
         continue: "Continuar",
         newDeviceDetected: "Novo dispositivo detectado {device} 🎉 Trocar? [ESPAÇO] Ignorar [ESC]",
+        newDeviceSwitch: "Trocar",
+        newDeviceIgnore: "Ignorar",
+        newDeviceAnnouncement:
+            "Novo dispositivo detectado: {device}. Pressione Espaço para trocar para ele ou Esc para ignorá-lo.",
     },
     my: {
         silentZone: "Zona silenciosa",
@@ -101,6 +121,24 @@ const camera: BaseTranslation = {
         askedMuteAudioNotice: "{name} recebeu o pedido para silenciar o microfone.",
         mutedVideoNotice: "A câmera de {name} foi desligada. Só a própria pessoa pode religá-la.",
         askedMuteVideoNotice: "{name} recebeu o pedido para desligar a câmera.",
+        confirmMuteAudioEveryBodyTitle: "Silenciar o microfone de todos?",
+        confirmMuteAudioEveryBodyMessage:
+            "Isto silencia todos nesta conversa. Só cada pessoa pode ligar o próprio microfone de novo.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "Isto silencia {count} {{pessoa|pessoas}} nesta conversa. Só cada pessoa pode ligar o próprio microfone de novo.",
+        confirmMuteAudioEveryBodyAction: "Silenciar todos",
+        mutedAudioEveryBodyNotice: "O microfone de todos está silenciado. Só cada pessoa pode ligar o seu de novo.",
+        mutedAudioEveryBodyNoticeCount:
+            "Microfone silenciado para {count} {{pessoa|pessoas}}. Só cada pessoa pode ligar o seu de novo.",
+        confirmMuteVideoEveryBodyTitle: "Desligar a câmera de todos?",
+        confirmMuteVideoEveryBodyMessage:
+            "Isto desliga a câmera de todos nesta conversa. Só cada pessoa pode ligar a própria câmera de novo.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "Isto desliga a câmera de {count} {{pessoa|pessoas}} nesta conversa. Só cada pessoa pode ligar a própria câmera de novo.",
+        confirmMuteVideoEveryBodyAction: "Desligar câmeras",
+        mutedVideoEveryBodyNotice: "A câmera de todos está desligada. Só cada pessoa pode ligar a sua de novo.",
+        mutedVideoEveryBodyNoticeCount:
+            "Câmera desligada para {count} {{pessoa|pessoas}}. Só cada pessoa pode ligar a sua de novo.",
         moreAction: "Mais ações",
         closeMenu: "Fechar menu",
         senPrivateMessage: "Enviar mensagem privada (em breve)",

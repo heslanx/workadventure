@@ -51,4 +51,11 @@ export default {
             "Je hebt de basis van {worldName} geleerd! Voel je vrij om te verkennen, nieuwe mensen te ontmoeten en plezier te hebben. Je kunt altijd hulp openen via het menu als je het nodig hebt.",
         finish: "Begin met verkennen!",
     },
+    back: "Terug",
+    stepIndicator: "Stap {current} van {total}",
+    skipShortcutHint: "Druk op Esc om de tutorial over te slaan.",
+    videoPlay: "Video afspelen",
+    videoPause: "Video pauzeren",
+    cancelledByConversation:
+        "Tutorial gesloten omdat je aan een gesprek bent gaan deelnemen. Je kunt de tutorial opnieuw starten via het profielmenu.",
 } satisfies Translation["onboarding"];

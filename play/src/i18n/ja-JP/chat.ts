@@ -352,6 +352,12 @@ const chat: DeepPartial<Translation["chat"]> = {
         tooMany: "ファイルが多すぎます",
         tooManyHint: "一度に送信できるファイルは {max} 件までです。いくつか削除してから送信してください。",
         notLogged: "ファイルをアップロードするにはログインする必要があります。",
+        notSent: "未送信",
+        sendFailed: "未送信: {names}",
+        sendFailedAfterMessage: "メッセージは送信されましたが、次のファイルは送信されませんでした: {names}",
+        sendFailedHint:
+            "テキストとファイルは別々のメッセージとして送信されます。ファイルを再試行するか、削除してください。",
+        retry: "再試行",
     },
     needRefresh: "接続が切れました。チャットに再接続するには、ページを更新する必要があります。",
     refresh: "更新",

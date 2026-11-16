@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "لن تؤدي إعادة التحميل إلى استعادة هذه الخريطة لأنها لم تعد موجودة.",
         editionFailed: "تعذر حفظ التغيير الذي أجريته، وتم التراجع عنه.",
     },
+    undo: {
+        action: "تراجع",
+        unavailable: "لم يعد التراجع عن هذا التغيير ممكنًا هنا. أعد إجراءه يدويًا.",
+        entityDeleted: "تم حذف الكائن «{name}»",
+        areaDeleted: "تم حذف المنطقة «{name}»",
+        areaDeletedUnnamed: "تم حذف المنطقة",
+        propertyRemovedFromArea: "تمت إزالة الخاصية من هذه المنطقة",
+        propertyRemovedFromObject: "تمت إزالة الخاصية من هذا الكائن",
+    },
     sideBar: {
         areaEditor: "تحرير المنطقة", // Fläche bearbeiten
         entityEditor: "تحرير الكيان", // Entität bearbeiten
@@ -294,6 +303,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "تنسيق الملف غير مدعوم",
                 errorOnFileNumber: "إسقاط ملفات متعددة غير مدعوم",
                 errorOnFileSize: "الملف كبير جدًا، الحد الأقصى للحجم هو {size} ميجابايت",
+                removeFile: "إزالة {name}",
             },
             hideUrlLabel: "إخفاء الرابط",
             actionButtonLabel: "فتح الملف",
@@ -331,6 +341,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "يمكن فقط للمستخدمين الذين لديهم هذه الوسوم قفل أو فتح هذه المنطقة. اتركه فارغًا للسماح للجميع.",
         },
         noProperties: "لا توجد خصائص محددة",
+        removeProperty: "إزالة هذه الخاصية",
     },
     areaEditor: {
         editInstructions: "انقر على منطقة لتعديل خصائصها", // Click on an area to edit its properties
@@ -344,10 +355,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "إجراء مطلوب", // Action required
             description: "يحتوي هذا المجال الشخصي على كائن واحد أو أكثر. ماذا تريد أن تفعل معه؟", // This personal area contains one or more objects. What would you like to do with it?
+            heading: "تحتوي هذه المنطقة الشخصية على {count} {{كائنات|كائن|كائنين|كائنات|كائنًا|كائن}}",
+            question: "هل تريد حذفها من الخريطة أم إبقاءها في أماكنها؟",
             buttons: {
                 keep: "احتفظ", // Keep
                 remove: "أزل", // Remove
                 cancel: "إلغاء", // Cancel
+                keepObjects: "إبقاء الكائنات",
+                deleteObjects: "حذف {count} {{كائنات|كائن|كائنين|كائنات|كائنًا|كائن}}",
             },
         },
         nameHelpText: "سيتم عرض هذا الاسم للمستخدمين عند دخولهم المنطقة.", // This name will be shown to users when they enter the area.
@@ -368,9 +383,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "بحث", // Search
             backToSelectObject: "العودة لاختيار الكائن", // Back to select object
+            colors: "الألوان",
+            positions: "المواضع",
         },
         trashTool: {
             delete: "انقر على الكائن لحذفه!", // Click on the object to delete it!
+            undoHint: "حذفته عن طريق الخطأ؟ استخدم «تراجع» في الإشعار الذي يظهر، أو اضغط Ctrl/Cmd+Z.",
+            keyboardHint: "بدون فأرة، حدد كائنًا أو منطقة في محررها واضغط Delete.",
         },
         deleteButton: "حذف", // Delete
         testInteractionButton: "اختبار التفاعل", // Test interaction
@@ -412,6 +431,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "تصادم",
             wokaAbove: "وكا فوق",
             wokaBelow: "وكا تحت",
+            deleteConfirmTitle: "هل تريد حذف «{name}»؟",
+            deleteConfirmMessage: "ستتم إزالة هذا الكائن المخصص من قائمة اختيار الكائنات.",
+            deleteConfirmMessageWithCopies:
+                "ستتم إزالة هذا الكائن المخصص من قائمة اختيار الكائنات، مع {count} {{نسخ|نسخة|نسختين|نسخ|نسخة|نسخة}} منه على هذه الخريطة.",
         },
         buttons: {
             editEntity: "تعديل الكائن", // Edit entity

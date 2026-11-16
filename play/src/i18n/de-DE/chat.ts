@@ -353,6 +353,12 @@ const chat: DeepPartial<Translation["chat"]> = {
         tooMany: "Zu viele Dateien",
         tooManyHint: "Sie können bis zu {max} Dateien auf einmal senden. Entfernen Sie einige, um zu senden.",
         notLogged: "Sie müssen angemeldet sein, um eine Datei hochzuladen.",
+        notSent: "Nicht gesendet",
+        sendFailed: "Nicht gesendet: {names}",
+        sendFailedAfterMessage: "Die Nachricht wurde gesendet, nicht aber: {names}",
+        sendFailedHint:
+            "Text und Dateien werden als getrennte Nachrichten gesendet. Dateien erneut senden oder entfernen.",
+        retry: "Erneut versuchen",
     },
     needRefresh:
         "Ihre Verbindung ist abgelaufen. Bitte aktualisieren Sie die Seite, um die Verbindung zum Chat wiederherzustellen.",

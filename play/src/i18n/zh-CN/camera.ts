@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "不推荐",
     enable: {
         title: "开启你的摄像头和麦克风",
+        join: "加入房间",
         start: "欢迎来到我们的音视频设备配置页面！在这里找到工具来增强您的在线体验。根据您的偏好调整设置以解决任何潜在问题。确保您的硬件已正确连接并保持最新。探索和测试不同的配置，找到最适合您的配置。",
     },
     help: {
@@ -28,6 +29,16 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "不使用摄像头继续游戏",
         continueWithoutMicrophone: "不使用麦克风继续游戏",
         continueCameraMicrophone: "不使用网络摄像头和麦克风继续游戏",
+        showSteps: "查看步骤",
+        hideSteps: "隐藏步骤",
+        steps: {
+            chrome: "点击地址栏左侧的锁形图标，将“摄像头”或“麦克风”设为“允许”，然后重新加载页面。",
+            firefox:
+                "点击地址栏左侧的权限图标，移除被阻止的“摄像头”或“麦克风”条目，然后重新加载页面，并在提示时允许访问。",
+            safari: "打开 Safari 浏览器菜单，选择“此网站的设置”，将“摄像头”或“麦克风”设为“允许”，然后重新加载页面。",
+            android: "点击地址栏左侧的锁形图标，打开“权限”，将“摄像头”或“麦克风”设为“允许”，然后重新加载页面。",
+            other: "打开浏览器中此页面的网站设置，将“摄像头”或“麦克风”设为“允许”，然后重新加载页面。",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -36,6 +47,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "摄像头访问被阻止",
             permissionDeniedDesc:
                 "浏览器拒绝了此网站的摄像头权限。请在地址栏（锁或摄像头图标）或网站设置中允许访问。下图说明与您的浏览器相对应。",
+            permissionDeniedFix:
+                "浏览器已拒绝此网站使用摄像头。请在地址栏（锁形或摄像头图标）或网站设置中允许访问，然后重新加载。选择此按钮可查看步骤。",
             noDeviceTitle: "没有可用的摄像头",
             noDeviceDesc:
                 "浏览器未检测到可用的摄像头。请尝试其他浏览器、检查摄像头是否已连接、检查计算机的配置（隐私、设备），或在设备正常时重启电脑。",
@@ -53,6 +66,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "麦克风访问被阻止",
             permissionDeniedDesc:
                 "浏览器拒绝了此网站的麦克风权限。请在地址栏（锁或麦克风图标）或网站设置中允许访问。下图说明与您的浏览器相对应。",
+            permissionDeniedFix:
+                "浏览器已拒绝此网站使用麦克风。请在地址栏（锁形或麦克风图标）或网站设置中允许访问，然后重新加载。选择此按钮可查看步骤。",
             noDeviceTitle: "没有可用的麦克风",
             noDeviceDesc:
                 "浏览器未检测到可用的麦克风。请尝试其他浏览器、检查麦克风是否已连接、检查计算机的配置（隐私、设备），或在设备正常时重启电脑。",
@@ -81,6 +96,9 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "刷新",
         continue: "继续",
         newDeviceDetected: "检测到新设备 {device} 🎉 切换？[空格] 忽略 [Esc]",
+        newDeviceSwitch: "切换",
+        newDeviceIgnore: "忽略",
+        newDeviceAnnouncement: "检测到新设备：{device}。按空格键切换到该设备，或按 Esc 键忽略。",
     },
     my: {
         silentZone: "安静区",
@@ -106,6 +124,19 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "已请求 {name} 将麦克风静音。",
         mutedVideoNotice: "{name} 的摄像头已关闭。只有本人可以重新打开。",
         askedMuteVideoNotice: "已请求 {name} 关闭摄像头。",
+        confirmMuteAudioEveryBodyTitle: "将所有人的麦克风静音？",
+        confirmMuteAudioEveryBodyMessage: "这会让此对话中的所有人静音。只有本人才能重新打开自己的麦克风。",
+        confirmMuteAudioEveryBodyMessageCount: "这会让此对话中的 {count} 人静音。只有本人才能重新打开自己的麦克风。",
+        confirmMuteAudioEveryBodyAction: "静音所有人",
+        mutedAudioEveryBodyNotice: "所有人的麦克风已静音。只有本人可以重新打开。",
+        mutedAudioEveryBodyNoticeCount: "已将 {count} 人的麦克风静音。只有本人可以重新打开。",
+        confirmMuteVideoEveryBodyTitle: "关闭所有人的摄像头？",
+        confirmMuteVideoEveryBodyMessage: "这会关闭此对话中所有人的摄像头。只有本人才能重新打开自己的摄像头。",
+        confirmMuteVideoEveryBodyMessageCount:
+            "这会关闭此对话中 {count} 人的摄像头。只有本人才能重新打开自己的摄像头。",
+        confirmMuteVideoEveryBodyAction: "关闭摄像头",
+        mutedVideoEveryBodyNotice: "所有人的摄像头已关闭。只有本人可以重新打开。",
+        mutedVideoEveryBodyNoticeCount: "已关闭 {count} 人的摄像头。只有本人可以重新打开。",
         alreadyMuted: "已静音",
         videoAlreadyOff: "视频已关闭",
     },

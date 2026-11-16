@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "이 지도는 더 이상 존재하지 않으므로 새로고침해도 복원되지 않습니다.",
         editionFailed: "변경 사항을 저장하지 못하여 취소되었습니다.",
     },
+    undo: {
+        action: "실행 취소",
+        unavailable: "이 변경 사항은 여기서 더 이상 실행 취소할 수 없습니다. 직접 다시 하세요.",
+        entityDeleted: "오브젝트 “{name}”을(를) 삭제했습니다",
+        areaDeleted: "영역 “{name}”을(를) 삭제했습니다",
+        areaDeletedUnnamed: "영역을 삭제했습니다",
+        propertyRemovedFromArea: "이 영역에서 속성을 제거했습니다",
+        propertyRemovedFromObject: "이 오브젝트에서 속성을 제거했습니다",
+    },
     sideBar: {
         areaEditor: "영역 편집 도구",
         entityEditor: "오브젝트 편집 도구",
@@ -296,6 +305,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "지원하지 않는 파일 형식입니다",
                 errorOnFileNumber: "여러 파일 업로드는 지원하지 않습니다",
                 errorOnFileSize: "파일이 너무 큽니다. 최대 크기는 {size} MB입니다",
+                removeFile: "{name} 제거",
             },
             hideUrlLabel: "URL 숨기기",
             actionButtonLabel: "파일 열기",
@@ -333,6 +343,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "이 태그를 가진 사용자만 이 영역을 잠금 또는 잠금 해제할 수 있습니다. 비워두면 모든 사용자에게 허용됩니다.",
         },
         noProperties: "이 엔티티에는 설정된 속성이 없습니다",
+        removeProperty: "이 속성 제거",
     },
     areaEditor: {
         editInstructions: "영역을 클릭해 속성을 수정하세요.",
@@ -347,10 +358,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             title: "조치가 필요합니다",
             description:
                 "이 개인 영역에는 하나 이상의 오브젝트가 포함되어 있습니다. 이 오브젝트들을 어떻게 처리할까요?",
+            heading: "이 개인 영역에 오브젝트 {count}개가 있습니다",
+            question: "지도에서 삭제할까요, 아니면 그대로 둘까요?",
             buttons: {
                 keep: "유지",
                 remove: "삭제",
                 cancel: "취소",
+                keepObjects: "오브젝트 유지",
+                deleteObjects: "오브젝트 {count}개 삭제",
             },
         },
         nameHelpText: "플레이어가 이 영역에 들어왔을 때 보게 되는 이름입니다.",
@@ -371,9 +386,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "검색",
             backToSelectObject: "오브젝트 선택 화면으로 돌아가기",
+            colors: "색상",
+            positions: "위치",
         },
         trashTool: {
             delete: "삭제하려는 오브젝트를 클릭하세요!",
+            undoHint: "실수로 삭제했나요? 표시되는 알림에서 실행 취소를 누르거나 Ctrl/Cmd+Z를 누르세요.",
+            keyboardHint: "마우스를 사용하지 않는 경우, 편집기에서 오브젝트나 영역을 선택하고 Delete 키를 누르세요.",
         },
         deleteButton: "삭제",
         testInteractionButton: "상호작용 테스트",
@@ -416,6 +435,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "충돌",
             wokaAbove: "캐릭터 위에 표시",
             wokaBelow: "캐릭터 아래에 표시",
+            deleteConfirmTitle: "“{name}”을(를) 삭제할까요?",
+            deleteConfirmMessage: "이 사용자 정의 오브젝트가 오브젝트 선택기에서 제거됩니다.",
+            deleteConfirmMessageWithCopies:
+                "이 사용자 정의 오브젝트가 오브젝트 선택기에서 제거되며, 이 지도에 배치된 사본 {count}개도 함께 삭제됩니다.",
         },
         buttons: {
             editEntity: "편집",

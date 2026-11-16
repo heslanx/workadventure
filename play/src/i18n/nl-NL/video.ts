@@ -29,6 +29,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraPaused: "Camera gepauzeerd tot terugkomst",
     },
     enlarge: "Video vergroten",
+    unknownMediaType: "Dit type videobron wordt niet ondersteund.",
 };
 
 export default video;

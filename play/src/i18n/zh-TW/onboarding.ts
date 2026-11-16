@@ -46,4 +46,10 @@ export default {
             "您已經學會了 {worldName} 的基礎知識！隨時可以探索、結識新朋友並享受樂趣。如有需要，您隨時可以從選單存取說明。",
         finish: "開始探索！",
     },
+    back: "上一步",
+    stepIndicator: "第 {current} 步，共 {total} 步",
+    skipShortcutHint: "按 Esc 可略過教學。",
+    videoPlay: "播放影片",
+    videoPause: "暫停影片",
+    cancelledByConversation: "教學已關閉，因為你加入了對話。你可以從個人資料選單重新觀看。",
 } satisfies Translation["onboarding"];

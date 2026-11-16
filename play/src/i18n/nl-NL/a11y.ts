@@ -26,6 +26,7 @@ const a11y: DeepPartial<Translation["a11y"]> = {
     mapEditorResizePanel: "Zijpaneel aanpassen",
     mapEditorStopAudio: "Audio stoppen",
     mapEditorToggleSidebar: "Zijpaneel tonen of verbergen",
+    popupAwaitsAnswer: "Verzoek wacht op je antwoord",
     popupNextSlide: "Volgende dia",
     popupPreviousSlide: "Vorige dia",
     uiMoreInfo: "Meer informatie",

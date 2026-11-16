@@ -327,6 +327,11 @@ const chat: DeepPartial<Translation["chat"]> = {
         viewAll: "Vedi tutte le domande",
     },
     file: {
+        notSent: "Non inviato",
+        sendFailed: "Impossibile inviare: {names}",
+        sendFailedAfterMessage: "Il tuo messaggio è stato inviato, ma non: {names}",
+        sendFailedHint: "Testo e file partono come messaggi separati. Riprova a inviare i file oppure rimuovili.",
+        retry: "Riprova",
         fileContentNoEmbed: "Contenuto non disponibile per la visualizzazione. Si prega di scaricarlo",
         download: "scarica",
         openCoWebsite: "Apri nel co-sito",

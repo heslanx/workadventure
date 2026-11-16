@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Nje dopórucony",
     enable: {
         title: "Zašaltuj kameru a mikrofon.",
+        join: "Do ruma stupiś",
         start: "Witajśo na našej boku za konfiguraciju awdio- a widejogratow! Namakajśo how rědy, aby pólěpšyli swóju online-dožywjenje. Pśiměŕśo nastajenja swójim pśednosam, aby rozwězali eventuelne problemy. Zawěsććo, až waša hardware korektnje zwězana a aktualizěrowana jo. Wuslěźćo a testujśo wšake konfiguracije, aby namakali, což nejlěpje za was funkcioněrujo.",
     },
     help: {
@@ -29,6 +30,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "Dalej mimo kamery",
         continueWithoutMicrophone: "Dalej mimo mikrofona",
         continueCameraMicrophone: "Dalej mimo webcamy a mikrofona",
+        showSteps: "Pokazaś, kak",
+        hideSteps: "Kšace schowaś",
+        steps: {
+            chrome: "Klikniśo na symbol šloska nalěwo wót adresowego póla, nastajśo Kameru abo Mikrofon na Zwóliś a pón bok znowego zacytajśo.",
+            firefox:
+                "Klikniśo na symbol zwólenjow nalěwo wót adresowego póla, wótpórajśo blokěrowany zapisk za Kameru abo Mikrofon, pón bok znowego zacytajśo a dowóliśo pśistup, gaž se pšašo.",
+            safari: "Wócyńśo menij Safari, wubjeŕśo Nastajenja za toś to websedło, nastajśo Kameru abo Mikrofon na Zwóliś a pón bok znowego zacytajśo.",
+            android:
+                "Tknuśo se symbola šloska nalěwo wót adresowego póla, wócyńśo Zwólenja, nastajśo Kameru abo Mikrofon na Zwóliś a pón bok znowego zacytajśo.",
+            other: "Wócyńśo nastajenja websedła we wašom browseru za toś ten bok, nastajśo Kameru abo Mikrofon na Zwóliś a pón bok znowego zacytajśo.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -37,6 +49,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Kamerowy pśistup jo se blokěrował",
             permissionDeniedDesc:
                 "Waš browser jo pśistup kamerje za toś ten bok wótpokazał. Zwóliśo jen pśez adresowe pólo (šlosk abo symbol kamery) abo w nastajenjach sedła. Wobraz wótpowědujo wašomu browseroju.",
+            permissionDeniedFix:
+                "Waš browser jo pśistup kamerje za toś ten bok wótpokazał. Zwóliśo jen pśez adresowe pólo (šlosk abo symbol kamery) abo w nastajenjach sedła a pón bok znowego zacytajśo. Wubjeŕśo toś ten tłocašk, aby kšace wiźeł.",
             noDeviceTitle: "Žedna wužywajobna kamera",
             noDeviceDesc:
                 "Browser namakujo žednu kameru, kótaruž móžośo wužywaś. Wopytajśo drugi browser, pśekontrolěrujśo zwisk kamery, pśekontrolěrujśo konfiguraciju kompjutra (datowy škit, graty) abo startujśo kompjuter znowego, jolic hardware by měł funkcioněrowaś.",
@@ -54,6 +68,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Mikrofonowy pśistup jo se blokěrował",
             permissionDeniedDesc:
                 "Waš browser jo pśistup mikrofonoju za toś ten bok wótpokazał. Zwóliśo jen pśez adresowe pólo (šlosk abo symbol mikrofona) abo w nastajenjach sedła. Wobraz wótpowědujo wašomu browseroju.",
+            permissionDeniedFix:
+                "Waš browser jo pśistup mikrofonoju za toś ten bok wótpokazał. Zwóliśo jen pśez adresowe pólo (šlosk abo symbol mikrofona) abo w nastajenjach sedła a pón bok znowego zacytajśo. Wubjeŕśo toś ten tłocašk, aby kšace wiźeł.",
             noDeviceTitle: "Žeden wužywajobny mikrofon",
             noDeviceDesc:
                 "Browser namakujo žeden mikrofon, kótaryž móžośo wužywaś. Wopytajśo drugi browser, pśekontrolěrujśo mikrofon, pśekontrolěrujśo konfiguraciju kompjutra (datowy škit, graty) abo startujśo kompjuter znowego, jolic hardware by měł funkcioněrowaś.",
@@ -82,6 +98,10 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "Aktualizěrowaś",
         continue: "Dalej",
         newDeviceDetected: "Nowy grat namakany {device} 🎉 Změniś? [SPACE] ignorować [ESC]",
+        newDeviceSwitch: "Změniś",
+        newDeviceIgnore: "Ignorěrowaś",
+        newDeviceAnnouncement:
+            "Nowy grat namakany: {device}. Tłocćo Space, aby na njen změnił, abo Escape, aby jen ignorěrował.",
     },
     my: {
         silentZone: "Śichy wobceŕk",
@@ -108,6 +128,24 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "{name} jo był/a pšošony/-a, mikrofon wótšaltowaś.",
         mutedVideoNotice: "Kamera wósoby {name} jo wótšaltowana. Jano toś ta wósoba móžo ju zasej zašaltowaś.",
         askedMuteVideoNotice: "{name} jo był/a pšošony/-a, kameru wótšaltowaś.",
+        confirmMuteAudioEveryBodyTitle: "Mikrofony wšěch wótšaltowaś?",
+        confirmMuteAudioEveryBodyMessage:
+            "To wótšaltujo wšych w toś tom rozgronje. Jano kuždy sam móžo swój mikrofon zasej zašaltowaś.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "To wótšaltujo {count} {{wósobu|wósobow}} w toś tom rozgronje. Jano kuždy sam móžo swój mikrofon zasej zašaltowaś.",
+        confirmMuteAudioEveryBodyAction: "Wšych wótšaltowaś",
+        mutedAudioEveryBodyNotice: "Mikrofony wšěch su wótšaltowane. Jano kuždy sam móžo swój zasej zašaltowaś.",
+        mutedAudioEveryBodyNoticeCount:
+            "Mikrofon wótšaltowany za {count} {{wósobu|wósobow}}. Jano kuždy sam móžo swój zasej zašaltowaś.",
+        confirmMuteVideoEveryBodyTitle: "Kamery wšěch wótšaltowaś?",
+        confirmMuteVideoEveryBodyMessage:
+            "To wótšaltujo kamery wšych w toś tom rozgronje. Jano kuždy sam móžo swóju kameru zasej zašaltowaś.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "To wótšaltujo kamery {count} {{wósoby|wósobow}} w toś tom rozgronje. Jano kuždy sam móžo swóju kameru zasej zašaltowaś.",
+        confirmMuteVideoEveryBodyAction: "Kamery wótšaltowaś",
+        mutedVideoEveryBodyNotice: "Kamery wšěch su wótšaltowane. Jano kuždy sam móžo swóju zasej zašaltowaś.",
+        mutedVideoEveryBodyNoticeCount:
+            "Kamera wótšaltowana za {count} {{wósobu|wósobow}}. Jano kuždy sam móžo swóju zasej zašaltowaś.",
         alreadyMuted: "Južo wótšaltowany",
         videoAlreadyOff: "Wideo jo južo wótšaltowane",
     },

@@ -25,6 +25,7 @@ const menu: DeepPartial<Translation["menu"]> = {
         login: "přizjewić",
         logout: "wotzjewić",
         helpAndTips: "Pomoc a pokiwki",
+        replayTutorial: "Nawod znowa wothrać",
     },
     settings: {
         videoBandwidth: {

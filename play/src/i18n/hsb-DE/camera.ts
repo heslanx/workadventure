@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Njeporučeny",
     enable: {
         title: "Prošu zaswěć swoju kameru a swój mikrofon.",
+        join: "Do ruma stupić",
         start: "Witajće na našej stronie za konfiguraciju awdio- a widejogratow! Namakajće tu nastroje, zo byšće swoju online-dožiwjenje polěpšili. Přiměrće nastajenja swojim preferencam, zo byšće eventuelne problemy rozrisali. Zawěsćće, zo waša hardware korektnje zwjazana a aktualizowana je. Wuslědźće a testujće wšelake konfiguracije, zo byšće namakali, što najlěpje za was funguje.",
     },
     help: {
@@ -29,6 +30,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         continue: "bjez kamery pokročować",
         continueWithoutMicrophone: "Bjez mikrofona pokročować",
         continueCameraMicrophone: "Bjez webcamy a mikrofona pokročować",
+        showSteps: "Pokazajće mi, kak",
+        hideSteps: "Kročele schować",
+        steps: {
+            chrome: "Klikńće na symbol šloska nalěwo wot adresoweho pola, nastajće Kamera abo Mikrofon na „Dowolić“ a aktualizujće stronu.",
+            firefox:
+                "Klikńće na symbol dowolnosćow nalěwo wot adresoweho pola, wotstrońće zablokowany zapisk Kamera abo Mikrofon, aktualizujće potom stronu a dowolće přistup, hdyž so was praša.",
+            safari: "Wočińće meni Safari, wubjerće „Nastajenja za tute websydło“, nastajće Kamera abo Mikrofon na „Dowolić“ a aktualizujće stronu.",
+            android:
+                "Tupńće na symbol šloska nalěwo wot adresoweho pola, wočińće „Dowolnosće“, nastajće Kamera abo Mikrofon na „Dowolić“ a aktualizujće stronu.",
+            other: "Wočińće nastajenja sydła swojeho wobhladowaka za tutu stronu, nastajće Kamera abo Mikrofon na „Dowolić“ a aktualizujće stronu.",
+        },
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -37,6 +49,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Kamerowy přistup je so zablokował",
             permissionDeniedDesc:
                 "Waš wobhladowak je přistup ke kamerje za tutu stronu wotpokazał. Dopušćće jón přez adresowe polo (šlosk abo symbol kamery) abo w nastajenjach sydła. Wobraz wotpowěduje wašemu wobhladowakej.",
+            permissionDeniedFix:
+                "Waš wobhladowak je přistup ke kamerje za tute sydło wotpokazał. Dopušćće jón přez adresowe polo (šlosk abo symbol kamery) abo w nastajenjach sydła a aktualizujće potom stronu. Wubjerće tutón knefl za kročele.",
             noDeviceTitle: "Žana wužiwajomna kamera",
             noDeviceDesc:
                 "Wobhladowak namaka žanu kameru, kotruž móžeće wužiwać. Spytajće druhi wobhladowak, překontrolujće zwjazanje kamery, přepruwujće konfiguraciju kompjutra (datowy škit, graty) abo startujće kompjuter znowa, jeli hardware měł fungować.",
@@ -54,6 +68,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             permissionDeniedTitle: "Mikrofonowy přistup je so zablokował",
             permissionDeniedDesc:
                 "Waš wobhladowak je přistup ke mikrofonej za tutu stronu wotpokazał. Dopušćće jón přez adresowe polo (šlosk abo symbol mikrofona) abo w nastajenjach sydła. Wobraz wotpowěduje wašemu wobhladowakej.",
+            permissionDeniedFix:
+                "Waš wobhladowak je přistup ke mikrofonej za tute sydło wotpokazał. Dopušćće jón přez adresowe polo (šlosk abo symbol mikrofona) abo w nastajenjach sydła a aktualizujće potom stronu. Wubjerće tutón knefl za kročele.",
             noDeviceTitle: "Žadyn wužiwajomny mikrofon",
             noDeviceDesc:
                 "Wobhladowak namaka žadyn mikrofon, kotryž móžeće wužiwać. Spytajće druhi wobhladowak, překontrolujće mikrofon, přepruwujće konfiguraciju kompjutra (datowy škit, graty) abo startujće kompjuter znowa, jeli hardware měł fungować.",
@@ -82,6 +98,10 @@ const camera: DeepPartial<Translation["camera"]> = {
         refresh: "aktualizuj",
         continue: "dale",
         newDeviceDetected: "Nowy grat namakany {device} 🎉 Změnić? [SPACE] ignorować [ESC]",
+        newDeviceSwitch: "Změnić",
+        newDeviceIgnore: "Ignorować",
+        newDeviceAnnouncement:
+            "Nowy grat namakany: {device}. Tłóčće Space, zo byšće na njón změnił, abo Escape, zo byšće jón ignorował.",
     },
     my: {
         silentZone: "ćichi wobłuk",
@@ -108,6 +128,24 @@ const camera: DeepPartial<Translation["camera"]> = {
         askedMuteAudioNotice: "{name} bu prošeny/-a, mikrofon wupinać.",
         mutedVideoNotice: "Kamera wosoby {name} je wupinjena. Jenož tuta wosoba móže ju zaso zapinać.",
         askedMuteVideoNotice: "{name} bu prošeny/-a, kameru wupinać.",
+        confirmMuteAudioEveryBodyTitle: "Mikrofon wšěch němy činić?",
+        confirmMuteAudioEveryBodyMessage:
+            "Tole wupina mikrofon wšěch w tutej rozmołwje. Jenož kóžda wosoba móže swój mikrofon zaso zapinać.",
+        confirmMuteAudioEveryBodyMessageCount:
+            "Tole wupina mikrofony w tutej rozmołwje ({count} {{wosobow|wosoba|wosobje|wosoby|wosobow|wosobow}}). Jenož kóžda wosoba móže swój mikrofon zaso zapinać.",
+        confirmMuteAudioEveryBodyAction: "Wšěch němy činić",
+        mutedAudioEveryBodyNotice: "Mikrofon wšěch je wupinjeny. Jenož kóžda wosoba móže swój zaso zapinać.",
+        mutedAudioEveryBodyNoticeCount:
+            "Mikrofon wupinjeny za {count} {{wosobow|wosobu|wosobje|wosoby|wosobow|wosobow}}. Jenož kóžda wosoba móže swój zaso zapinać.",
+        confirmMuteVideoEveryBodyTitle: "Kameru wšěch wupinać?",
+        confirmMuteVideoEveryBodyMessage:
+            "Tole wupina kameru wšěch w tutej rozmołwje. Jenož kóžda wosoba móže swoju kameru zaso zapinać.",
+        confirmMuteVideoEveryBodyMessageCount:
+            "Tole wupina kamery w tutej rozmołwje ({count} {{wosobow|wosoba|wosobje|wosoby|wosobow|wosobow}}). Jenož kóžda wosoba móže swoju kameru zaso zapinać.",
+        confirmMuteVideoEveryBodyAction: "Kamery wupinać",
+        mutedVideoEveryBodyNotice: "Kamera wšěch je wupinjena. Jenož kóžda wosoba móže swoju zaso zapinać.",
+        mutedVideoEveryBodyNoticeCount:
+            "Kamera wupinjena za {count} {{wosobow|wosobu|wosobje|wosoby|wosobow|wosobow}}. Jenož kóžda wosoba móže swoju zaso zapinać.",
         alreadyMuted: "Hižo wupinjeny",
         videoAlreadyOff: "Widejo je hižo wupinjene",
     },

@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Tải lại sẽ không khôi phục bản đồ này vì nó không còn tồn tại.",
         editionFailed: "Thay đổi của bạn không lưu được và đã bị hoàn tác.",
     },
+    undo: {
+        action: "Hoàn tác",
+        unavailable: "Không thể hoàn tác thay đổi này tại đây nữa. Hãy tự thực hiện lại.",
+        entityDeleted: "Đã xóa đối tượng “{name}”",
+        areaDeleted: "Đã xóa khu vực “{name}”",
+        areaDeletedUnnamed: "Đã xóa khu vực",
+        propertyRemovedFromArea: "Đã xóa thuộc tính khỏi khu vực này",
+        propertyRemovedFromObject: "Đã xóa thuộc tính khỏi đối tượng này",
+    },
     sideBar: {
         areaEditor: "Công cụ chỉnh sửa khu vực",
         entityEditor: "Công cụ chỉnh sửa đối tượng",
@@ -293,6 +302,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Định dạng tệp không được hỗ trợ",
                 errorOnFileNumber: "Không hỗ trợ thả nhiều tệp cùng lúc",
                 errorOnFileSize: "Tệp quá lớn, kích thước tối đa là {size} MB",
+                removeFile: "Xóa {name}",
             },
             hideUrlLabel: "Ẩn URL",
             actionButtonLabel: "Mở tệp",
@@ -334,6 +344,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         allowTalking: "Cho phép nói chuyện và tạo bong bóng",
         raiseHandEnabled: "Cho phép giơ tay",
         noProperties: "Chưa có thuộc tính nào",
+        removeProperty: "Xóa thuộc tính này",
     },
     areaEditor: {
         editInstructions: "Bấm vào một khu vực để sửa thuộc tính của nó.",
@@ -347,10 +358,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Cần hành động",
             description: "Khu vực cá nhân này chứa một hoặc nhiều đối tượng. Bạn muốn làm gì với chúng?",
+            heading: "Khu vực cá nhân này chứa {count} đối tượng",
+            question: "Xóa chúng khỏi bản đồ hay giữ nguyên tại chỗ?",
             buttons: {
                 keep: "Giữ lại",
                 remove: "Xóa",
                 cancel: "Hủy",
+                keepObjects: "Giữ các đối tượng",
+                deleteObjects: "Xóa {count} đối tượng",
             },
         },
         nameHelpText: "Nội dung này sẽ hiển thị cho người dùng khi họ vào khu vực.",
@@ -371,9 +386,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Tìm kiếm",
             backToSelectObject: "Quay lại chọn đối tượng",
+            colors: "Màu sắc",
+            positions: "Vị trí",
         },
         trashTool: {
             delete: "Bấm vào đối tượng để xóa nó!",
+            undoHint: "Lỡ xóa nhầm? Dùng Hoàn tác trong thông báo hiện ra, hoặc nhấn Ctrl/Cmd+Z.",
+            keyboardHint:
+                "Nếu không dùng chuột, hãy chọn một đối tượng hoặc khu vực trong trình chỉnh sửa của nó rồi nhấn Delete.",
         },
         deleteButton: "Xóa",
         testInteractionButton: "Thử tương tác",
@@ -416,6 +436,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Va chạm",
             wokaAbove: "Woka ở trên",
             wokaBelow: "Woka ở dưới",
+            deleteConfirmTitle: "Xóa “{name}”?",
+            deleteConfirmMessage: "Đối tượng tùy chỉnh này sẽ bị xóa khỏi bộ chọn đối tượng.",
+            deleteConfirmMessageWithCopies:
+                "Đối tượng tùy chỉnh này sẽ bị xóa khỏi bộ chọn đối tượng, cùng với {count} bản sao đã đặt trên bản đồ này.",
         },
         buttons: {
             editEntity: "Sửa",

@@ -25,6 +25,7 @@ const menu: DeepPartial<Translation["menu"]> = {
         login: "Einloggen",
         logout: "Ausloggen",
         helpAndTips: "Hilfe & Tipps",
+        replayTutorial: "Tutorial wiederholen",
     },
     settings: {
         proximityDiscussionVolume: "Proximity discussion volume",

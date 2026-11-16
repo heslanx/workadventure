@@ -231,6 +231,12 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         unclaimConfirmTitle: "要取消佔用你的辦公桌「{name}」嗎?",
         unclaimConfirmMessage: "它會立即空出。任何人都可以佔用它,只有在它仍空著時再次佔用,你才能拿回它。",
     },
+    leaveConversationConfirm: {
+        title: "要離開目前的對話嗎？",
+        message:
+            "這會讓你暫時離開房間。你將離開目前的對話或直播，攝影機和麥克風會關閉，你的角色也會從地圖上消失，直到你回來為止。",
+        confirm: "離開並繼續",
+    },
     mediaSettingsToggle: "攝影機與麥克風設定",
     blocked: {
         calendarOff: "此世界尚未連結行事曆。管理員可以在管理設定中開啟。",

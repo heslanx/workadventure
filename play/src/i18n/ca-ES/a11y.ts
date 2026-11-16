@@ -26,6 +26,7 @@ const a11y: DeepPartial<Translation["a11y"]> = {
     mapEditorResizePanel: "Canvia la mida del tauler lateral",
     mapEditorStopAudio: "Atura l'àudio",
     mapEditorToggleSidebar: "Mostra o amaga el tauler lateral",
+    popupAwaitsAnswer: "Sol·licitud pendent de la teva resposta",
     popupNextSlide: "Diapositiva següent",
     popupPreviousSlide: "Diapositiva anterior",
     uiMoreInfo: "Més informació",

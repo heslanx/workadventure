@@ -29,6 +29,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraPaused: "Fotocamera in pausa fino al suo ritorno",
     },
     enlarge: "Ingrandisci il video",
+    unknownMediaType: "Questo tipo di sorgente video non è supportato.",
 };
 
 export default video;

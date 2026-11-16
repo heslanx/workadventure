@@ -11,6 +11,7 @@ const video: DeepPartial<Translation["video"]> = {
     persistent_connection_issue: "Reconnexion en cours... Connexion instable...",
     click_to_unblock: "Cliquez pour débloquer",
     click_and_drag_to_resize: "Cliquez et faites glisser pour redimensionner",
+    unknownMediaType: "Ce type de source vidéo n'est pas pris en charge.",
     away: {
         subtitle: "En pause pendant votre absence",
         cantSeeOrHear: "Personne ne peut vous voir ni vous entendre",

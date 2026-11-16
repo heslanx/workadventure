@@ -52,4 +52,11 @@ export default {
             "{worldName}の基本を学びました！自由に探索し、新しい人と出会い、楽しんでください。必要に応じて、メニューからいつでもヘルプにアクセスできます。",
         finish: "探索を始めましょう！",
     },
+    back: "戻る",
+    stepIndicator: "ステップ {current} / {total}",
+    skipShortcutHint: "Esc キーでチュートリアルをスキップできます。",
+    videoPlay: "動画を再生",
+    videoPause: "動画を一時停止",
+    cancelledByConversation:
+        "会話に参加したため、チュートリアルを閉じました。プロフィールメニューからもう一度見ることができます。",
 } satisfies Translation["onboarding"];

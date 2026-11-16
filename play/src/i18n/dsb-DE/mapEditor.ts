@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Aktualizěrowanje toś tu kórtu njewótnowi, dokulaž wěcej njeeksistěrujo.",
         editionFailed: "Twója změna njejo se dała składowaś a jo se anulěrowała.",
     },
+    undo: {
+        action: "Anulěrowaś",
+        unavailable: "Toś ta změna njedajo se how wěcej anulěrowaś. Cyńśo ju znowego ručnje.",
+        entityDeleted: "Objekt „{name}“ jo se wulašował",
+        areaDeleted: "Wobceŕk „{name}“ jo se wulašował",
+        areaDeletedUnnamed: "Wobceŕk jo se wulašował",
+        propertyRemovedFromArea: "Kakosć jo se z toś togo wobceŕka wótpórała",
+        propertyRemovedFromObject: "Kakosć jo se z toś togo objekta wótpórała",
+    },
     sideBar: {
         areaEditor: "Areal wobźěłaś",
         entityEditor: "Entitu wobźěłaś",
@@ -299,6 +308,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Datajowy format se njepódpěra",
                 errorOnFileNumber: "Wěcejdatajowe pušćanje se njepódpěra",
                 errorOnFileSize: "Dataja jo pśewjelika, maksimalna wjelikosć jo {size} MB",
+                removeFile: "{name} wótpóraś",
             },
             hideUrlLabel: "URL schowaś",
             actionButtonLabel: "Dataju wótcyniś",
@@ -336,6 +346,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 "Jano wužywarje z toś tymi toflickami mógu toś to wobcerje zawěriś abo wótcyniś. Wóstajśo prozne, aby wšym dowóliło.",
         },
         noProperties: "Žedne kakosći njejsu definěrowane",
+        removeProperty: "Toś tu kakosć wótpóraś",
     },
     areaEditor: {
         editInstructions: "Klikniśo na wobceŕk, aby jogo kakosći pśeměnili.",
@@ -349,10 +360,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Akcija jo trěbna",
             description: "Toś ten priwatny wobceŕk wopśimujo jaden abo wěcej objektow. Cośo z nim/nimi cyniś?",
+            heading: "Toś ten priwatny wobceŕk wopśimujo {count} {{objekt|objektow}}",
+            question: "Cośo je z kórty wulašowaś abo na jich městnje wóstajiś?",
             buttons: {
                 keep: "Wobchowaś",
                 remove: "Wótpóraś",
                 cancel: "Pśetergnuś",
+                keepObjects: "Objekty wobchowaś",
+                deleteObjects: "{count} {{objekt|objektow}} wulašowaś",
             },
         },
         nameHelpText: "Toś to zapódanje se wužywarjeju pokažo, jolic do wobcerka stupiju.",
@@ -373,9 +388,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Pytowaś",
             backToSelectObject: "Slědk k wuzwólonemu objektoju",
+            colors: "Barwy",
+            positions: "Pozicije",
         },
         trashTool: {
             delete: "Klikniśo na objekt, aby jen wulašowali!",
+            undoHint:
+                "Pśez zmylk wulašowane? Wužywajśo Anulěrowaś w powěźeńce, kótaraž se pokažo, abo tłocćo Strg/Cmd+Z.",
+            keyboardHint: "Bźez myški wubjeŕśo objekt abo wobceŕk w jogo editorje a tłocćo Entf.",
         },
         deleteButton: "Wulašowaś",
         testInteractionButton: "Interakciju testowaś",
@@ -418,6 +438,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Kolizija",
             wokaAbove: "Woka górjejce",
             wokaBelow: "Woka dołojce",
+            deleteConfirmTitle: "„{name}“ wulašowaś?",
+            deleteConfirmMessage: "Toś ten swójski objekt buźo se z wuběra objektow wótpórał.",
+            deleteConfirmMessageWithCopies:
+                "Toś ten swójski objekt buźo se z wuběra objektow wótpórał, ako teke jogo {count} {{kopija|kopijow}} na toś tej kórśe.",
         },
         buttons: {
             editEntity: "Wobźěłaś",

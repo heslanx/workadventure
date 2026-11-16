@@ -8,6 +8,15 @@ const mapEditor: BaseTranslation = {
         deletePromptDetails: "Refreshing will not restore this map because it no longer exists.",
         editionFailed: "Your change could not be saved and has been undone.",
     },
+    undo: {
+        action: "Undo",
+        unavailable: "This change can no longer be undone here. Redo it by hand.",
+        entityDeleted: "Object “{name}” deleted",
+        areaDeleted: "Area “{name}” deleted",
+        areaDeletedUnnamed: "Area deleted",
+        propertyRemovedFromArea: "Property removed from this area",
+        propertyRemovedFromObject: "Property removed from this object",
+    },
     sideBar: {
         areaEditor: "Area editor tool",
         entityEditor: "Entity editor tool",
@@ -292,6 +301,7 @@ const mapEditor: BaseTranslation = {
                 errorOnFileFormat: "File format not supported",
                 errorOnFileNumber: "Multiple file drop is not supported",
                 errorOnFileSize: "File is too large, max size is {size} MB",
+                removeFile: "Remove {name}",
             },
             hideUrlLabel: "Hide URL",
             actionButtonLabel: "Open file",
@@ -332,6 +342,7 @@ const mapEditor: BaseTranslation = {
         allowTalking: "Allow talking and forming bubbles",
         raiseHandEnabled: "Allow raising hands",
         noProperties: "No properties defined",
+        removeProperty: "Remove this property",
     },
     areaEditor: {
         editInstructions: "Click an area to modify its properties.",
@@ -345,10 +356,14 @@ const mapEditor: BaseTranslation = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Action required",
             description: "This personal area contains one or more objects. What would you like to do with it/them ?",
+            heading: "This personal area contains {count:number} {{object|objects}}",
+            question: "Delete them from the map, or keep them where they are?",
             buttons: {
                 keep: "Keep",
                 remove: "Remove",
                 cancel: "Cancel",
+                keepObjects: "Keep objects",
+                deleteObjects: "Delete {count:number} {{object|objects}}",
             },
         },
         nameHelpText: "This input will be shown to the user if they enter the area.",
@@ -369,9 +384,13 @@ const mapEditor: BaseTranslation = {
         itemPicker: {
             searchPlaceholder: "Search",
             backToSelectObject: "Back to select object",
+            colors: "Colors",
+            positions: "Positions",
         },
         trashTool: {
             delete: "Click on the object to delete it!",
+            undoHint: "Deleted by mistake? Use Undo in the notice that appears, or press Ctrl/Cmd+Z.",
+            keyboardHint: "Without a mouse, select an object or an area in its editor and press Delete.",
         },
         deleteButton: "Delete",
         testInteractionButton: "Test Interaction",
@@ -414,6 +433,10 @@ const mapEditor: BaseTranslation = {
             collision: "Collision",
             wokaAbove: "Woka above",
             wokaBelow: "Woka below",
+            deleteConfirmTitle: "Delete “{name}”?",
+            deleteConfirmMessage: "This custom object will be removed from the object picker.",
+            deleteConfirmMessageWithCopies:
+                "This custom object will be removed from the object picker, along with its {count:number} {{copy|copies}} placed on this map.",
         },
         buttons: {
             editEntity: "Edit",

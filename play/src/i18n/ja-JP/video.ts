@@ -29,6 +29,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraPaused: "戻るまでカメラを一時停止中",
     },
     enlarge: "ビデオを拡大",
+    unknownMediaType: "この種類の動画ソースには対応していません。",
 };
 
 export default video;

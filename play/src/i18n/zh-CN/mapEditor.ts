@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "刷新不会恢复此地图，因为它已经不存在了。",
         editionFailed: "您的更改无法保存，已被撤销。",
     },
+    undo: {
+        action: "撤销",
+        unavailable: "此更改已无法在此处撤销，请手动重新操作。",
+        entityDeleted: "对象“{name}”已删除",
+        areaDeleted: "区域“{name}”已删除",
+        areaDeletedUnnamed: "区域已删除",
+        propertyRemovedFromArea: "已从此区域移除该属性",
+        propertyRemovedFromObject: "已从此对象移除该属性",
+    },
     sideBar: {
         areaEditor: "区域编辑器工具",
         entityEditor: "实体编辑器工具",
@@ -289,6 +298,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "不支持的文件格式",
                 errorOnFileNumber: "不支持多个文件拖放",
                 errorOnFileSize: "文件太大，最大大小为 {size} MB",
+                removeFile: "移除 {name}",
             },
             hideUrlLabel: "隐藏 URL",
             actionButtonLabel: "打开文件",
@@ -329,6 +339,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         allowTalking: "允许交谈和形成气泡",
         raiseHandEnabled: "允许举手",
         noProperties: "未定义属性",
+        removeProperty: "移除此属性",
     },
     areaEditor: {
         editInstructions: "点击区域以修改其属性。",
@@ -342,10 +353,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "需要操作",
             description: "此个人区域包含一个或多个对象。您想如何处理它/它们？",
+            heading: "此个人区域包含 {count} 个对象",
+            question: "要将这些对象从地图中删除，还是保留在原位？",
             buttons: {
                 keep: "保留",
                 remove: "删除",
                 cancel: "取消",
+                keepObjects: "保留对象",
+                deleteObjects: "删除 {count} 个对象",
             },
         },
         nameHelpText: "如果用户进入该区域，将向用户显示此输入。",
@@ -366,9 +381,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "搜索",
             backToSelectObject: "返回选择对象",
+            colors: "颜色",
+            positions: "位置",
         },
         trashTool: {
             delete: "点击对象以删除它！",
+            undoHint: "误删了？请点击随后出现的通知中的“撤销”，或按 Ctrl/Cmd+Z。",
+            keyboardHint: "如果不使用鼠标，请在编辑器中选择对象或区域，然后按 Delete 键。",
         },
         deleteButton: "删除",
         testInteractionButton: "测试交互",
@@ -410,6 +429,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "碰撞",
             wokaAbove: "Woka 上方",
             wokaBelow: "Woka 下方",
+            deleteConfirmTitle: "删除“{name}”？",
+            deleteConfirmMessage: "此自定义对象将从对象选择器中移除。",
+            deleteConfirmMessageWithCopies:
+                "此自定义对象将从对象选择器中移除，同时也会移除它在此地图上放置的 {count} 个副本。",
         },
         buttons: {
             editEntity: "编辑",

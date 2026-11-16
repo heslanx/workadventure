@@ -9,6 +9,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         deletePromptDetails: "Ein Neuladen stellt diese Karte nicht wieder her, da sie nicht mehr existiert.",
         editionFailed: "Deine Änderung konnte nicht gespeichert werden und wurde rückgängig gemacht.",
     },
+    undo: {
+        action: "Rückgängig",
+        unavailable: "Diese Änderung kann hier nicht mehr rückgängig gemacht werden. Wiederhole sie von Hand.",
+        entityDeleted: "Objekt „{name}“ gelöscht",
+        areaDeleted: "Bereich „{name}“ gelöscht",
+        areaDeletedUnnamed: "Bereich gelöscht",
+        propertyRemovedFromArea: "Eigenschaft aus diesem Bereich entfernt",
+        propertyRemovedFromObject: "Eigenschaft von diesem Objekt entfernt",
+    },
     sideBar: {
         areaEditor: "Fläche bearbeiten",
         entityEditor: "Entität bearbeiten",
@@ -294,6 +303,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
                 errorOnFileFormat: "Dateiformat wird nicht unterstützt.",
                 errorOnFileNumber: "Mehrere Dateien werden nicht unterstützt.",
                 errorOnFileSize: "Datei ist zu groß, maximale Größe ist {size} MB",
+                removeFile: "{name} entfernen",
             },
             hideUrlLabel: "URL ausblenden",
             actionButtonLabel: "Datei öffnen",
@@ -338,6 +348,7 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             actionButtonLabel: "tldraw öffnen",
         },
         noProperties: "Keine Eigenschaften definiert",
+        removeProperty: "Diese Eigenschaft entfernen",
     },
     areaEditor: {
         editInstructions: "Klicken Sie auf eine Fläche, um ihre Eigenschaften zu ändern.",
@@ -351,10 +362,14 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         actionPopupOnPersonalAreaWithEntities: {
             title: "Aktion erforderlich",
             description: "Dieser persönliche Bereich enthält ein oder mehrere Objekte. Was möchten Sie damit tun?",
+            heading: "Dieser persönliche Bereich enthält {count} {{Objekt|Objekte}}",
+            question: "Sollen sie von der Karte gelöscht werden oder an ihrem Platz bleiben?",
             buttons: {
                 keep: "Behalten",
                 remove: "Entfernen",
                 cancel: "Abbrechen",
+                keepObjects: "Objekte behalten",
+                deleteObjects: "{count} {{Objekt|Objekte}} löschen",
             },
         },
         nameHelpText: "Dieser Text wird dem Benutzer angezeigt, wenn er den Bereich betritt.",
@@ -375,9 +390,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         itemPicker: {
             searchPlaceholder: "Suchen",
             backToSelectObject: "Zurück zur Objektauswahl",
+            colors: "Farben",
+            positions: "Positionen",
         },
         trashTool: {
             delete: "Klicken Sie auf das Objekt, um es zu löschen!",
+            undoHint: "Aus Versehen gelöscht? Nutze „Rückgängig“ in der eingeblendeten Meldung oder drücke Strg/Cmd+Z.",
+            keyboardHint: "Ohne Maus wählst du ein Objekt oder einen Bereich in seinem Editor aus und drückst Entf.",
         },
         deleteButton: "Löschen",
         testInteractionButton: "Interaktion testen",
@@ -420,6 +439,10 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             collision: "Kollision",
             wokaAbove: "Woka darüber",
             wokaBelow: "Woka darunter",
+            deleteConfirmTitle: "„{name}“ löschen?",
+            deleteConfirmMessage: "Dieses benutzerdefinierte Objekt wird aus der Objektauswahl entfernt.",
+            deleteConfirmMessageWithCopies:
+                "Dieses benutzerdefinierte Objekt wird aus der Objektauswahl entfernt, zusammen mit {count} {{Kopie|Kopien}} davon auf dieser Karte.",
         },
         buttons: {
             editEntity: "Bearbeiten",
