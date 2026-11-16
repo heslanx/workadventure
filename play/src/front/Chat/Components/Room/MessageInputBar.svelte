@@ -283,32 +283,27 @@
         files = files.filter((f) => !sentIds.includes(f.id));
         filesPreview = filesPreview.filter((p) => !sentIds.includes(p.id));
         failedFileIds = failedIds;
-        if (failedIds.length > 0) {
-            results.forEach((result) => {
-                if (result.status === "rejected") console.error(result.reason);
-            });
-            // Replaces the warning of an earlier failure: the names are the ones of this one.
-            warningMessageStore.removeWarningMessage(ATTACHMENT_FAILURE_WARNING_ID);
-            warningMessageStore.addWarningMessage(
-                $LL.chat.failedToSendNamedAttachments({
-                    names: sentFiles
-                        .filter((file) => failedIds.includes(file.id))
-                        .map((file) => file.file.name)
-                        .join(", "),
-                }),
-                { closable: true, id: ATTACHMENT_FAILURE_WARNING_ID },
-            );
-        } else {
-            clearAttachmentFailure();
-        }
+        results.forEach((result) => {
+            if (result.status === "rejected") console.error(result.reason);
+        });
+        if (failedIds.length === 0) textSentWithoutFailedFiles = false;
+        syncAttachmentFailureWarning();
         // A second send cannot start while this guarded upload is in progress.
         sendingFiles = false;
     }
 
-    function clearAttachmentFailure() {
-        failedFileIds = [];
-        textSentWithoutFailedFiles = false;
+    /**
+     * The persistent warning always names the files that are failed right now and still in the message box: it is
+     * replaced when the list changes (a new failure, a failed file removed) and removed when none is left.
+     */
+    function syncAttachmentFailureWarning() {
         warningMessageStore.removeWarningMessage(ATTACHMENT_FAILURE_WARNING_ID);
+        const names = files.filter((file) => failedFileIds.includes(file.id)).map((file) => file.file.name);
+        if (names.length === 0) return;
+        warningMessageStore.addWarningMessage($LL.chat.failedToSendNamedAttachments({ names: names.join(", ") }), {
+            closable: true,
+            id: ATTACHMENT_FAILURE_WARNING_ID,
+        });
     }
 
     function retryFailedFiles() {
@@ -465,9 +460,8 @@
         filesPreview = filesPreview.filter((filePreview) => filePreview.id !== id);
         if (failedFileIds.includes(id)) {
             failedFileIds = failedFileIds.filter((failedId) => failedId !== id);
-            if (failedFileIds.length === 0) {
-                clearAttachmentFailure();
-            }
+            if (failedFileIds.length === 0) textSentWithoutFailedFiles = false;
+            syncAttachmentFailureWarning();
         }
     }
 
