@@ -65,7 +65,7 @@ export class ErrorScene extends Phaser.Scene {
             this.message,
             {
                 fontFamily: 'Georgia, "Goudy Bookletter 1911", Times, serif',
-                fontSize: "10px",
+                fontSize: "11px",
             },
         );
         this.messageField.setOrigin(0.5, 0.5);

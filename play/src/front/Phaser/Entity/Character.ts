@@ -17,6 +17,7 @@ import { CharacterTextureError } from "../../Exception/CharacterTextureError";
 import { getPlayerAnimations, PlayerAnimationTypes } from "../Player/Animation";
 import { ProtobufClientUtils } from "../../Network/ProtobufClientUtils";
 import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
+import { isReducedMotion } from "../../Utils/reducedMotion";
 
 import { UsernameDisplay } from "../Components/UsernameDisplay";
 import { lazyLoadPlayerCharacterTextures } from "./PlayerTexturesLoadingManager";
@@ -662,12 +663,19 @@ export abstract class Character extends Container implements OutlineableInterfac
     }
 
     private createStartTransition(emoteY: number) {
+        // The emote rises, pulses and floats away. When the user reduces motion it stays in place and only fades.
+        const reducedMotion = isReducedMotion();
+        if (reducedMotion) {
+            this.emote?.setY(emoteY);
+        }
         this.emoteTween = this.scene?.tweens.add({
             targets: this.emote,
-            props: {
-                alpha: 1,
-                y: emoteY,
-            },
+            props: reducedMotion
+                ? { alpha: 1 }
+                : {
+                      alpha: 1,
+                      y: emoteY,
+                  },
             ease: "Power2",
             duration: 500,
             onComplete: () => {
@@ -680,10 +688,13 @@ export abstract class Character extends Container implements OutlineableInterfac
         if (this.emote) {
             this.emoteTween = this.scene?.tweens.add({
                 targets: this.emote,
-                props: {
-                    y: emoteY * 1.3,
-                    scale: this.emote.scale * 1.1,
-                },
+                // Reduced motion: a still hold of the same length as the pulse, so the emote stays readable as long.
+                props: isReducedMotion()
+                    ? { alpha: 1 }
+                    : {
+                          y: emoteY * 1.3,
+                          scale: this.emote.scale * 1.1,
+                      },
                 duration: 250,
                 yoyo: true,
                 repeat: 1,
@@ -698,10 +709,12 @@ export abstract class Character extends Container implements OutlineableInterfac
     private startExitTransition(emoteY: number) {
         this.emoteTween = this.scene?.tweens.add({
             targets: this.emote,
-            props: {
-                alpha: 0,
-                y: 2 * emoteY,
-            },
+            props: isReducedMotion()
+                ? { alpha: 0 }
+                : {
+                      alpha: 0,
+                      y: 2 * emoteY,
+                  },
             ease: "Power2",
             duration: 500,
             onComplete: () => {

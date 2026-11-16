@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { AvailabilityStatus } from "@workadventure/messages";
 import type { GameScene } from "../Game/GameScene";
 import { waScaleManager, WaScaleManagerEvent } from "../Services/WaScaleManager";
+import { readableTextColor } from "../../Components/Video/readableTextColor";
 import { PLAYER_NAME_GAP, PLAYER_NAME_HEIGHT } from "./UsernameDisplaySizes";
 import { UsernameMegaphoneDisplay } from "./UsernameMegaphoneDisplay";
 import { UsernameRaisedHandDisplay } from "./UsernameRaisedHandDisplay";
@@ -9,10 +10,12 @@ import { UsernameStatusDisplay } from "./UsernameStatusDisplay";
 
 const CORRECTION_RATE = 0.65; // When one game pixel is smaller than one screen pixel (zoomed-out), we zoom out the Woka name, but only up to CORRECTION_RATE. After that, the Woka name will stay at its current screen size even if we zoom out more (to keep the text readable)
 const USERNAME_FONT_FAMILY = "Roboto";
-const USERNAME_FONT_SIZE = 10;
+// In game pixels, scaled with the camera zoom like the whole pill. 11 is the smallest legible text size.
+const USERNAME_FONT_SIZE = 11;
 const USERNAME_FONT_WEIGHT = 500;
 
-const PLAYER_NAME_BACKGROUND_COLOR = "rgba(27, 42, 65, 0.5)";
+// Dark enough for the white name to keep 4.5:1 or better over any map, even a white one.
+const PLAYER_NAME_BACKGROUND_COLOR = "rgba(27, 42, 65, 0.7)";
 const PLAYER_NAME_BACKGROUND_RADIUS = 8;
 const PLAYER_NAME_PADDING = 4;
 
@@ -243,6 +246,9 @@ export class UsernameDisplay {
     private updateUsernameBackgroundColor(color: number | undefined): void {
         this.element.style.background =
             color === undefined ? PLAYER_NAME_BACKGROUND_COLOR : `#${color.toString(16).padStart(6, "0")}`;
+        // The outline colour can be light: pick the name colour that keeps it readable (4.5:1 or better).
+        this.playerNameElement.style.color =
+            color === undefined ? "#ffffff" : readableTextColor(`#${color.toString(16).padStart(6, "0")}`);
     }
 
     public setTalking(talking: boolean, isSpeaker: boolean): void {

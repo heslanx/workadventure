@@ -1,5 +1,6 @@
 import { AvailabilityStatus } from "@workadventure/messages";
 import { getColorOfStatus } from "../../Utils/AvailabilityStatus";
+import { isReducedMotion } from "../../Utils/reducedMotion";
 
 const STATUS_DOT_BORDER_WIDTH = 1;
 
@@ -35,7 +36,8 @@ export class UsernameStatusDisplay {
         }
 
         this.availabilityStatusValue = availabilityStatus;
-        if (instant) {
+        // No pulse when the user reduces motion: the dot changes colour at once.
+        if (instant || isReducedMotion()) {
             this.stopAnimation();
             this.redraw();
             return;

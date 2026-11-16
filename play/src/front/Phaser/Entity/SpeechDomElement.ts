@@ -3,17 +3,18 @@ import { get } from "svelte/store";
 import { marked } from "marked";
 import LL from "../../../i18n/i18n-svelte";
 import { sanitizeHtml } from "../../Utils/HtmlSanitizer";
+import { isReducedMotion } from "../../Utils/reducedMotion";
 
 import DOMElement = Phaser.GameObjects.DOMElement;
 
 let speechKeyShadowFilterUid = 0;
 
 /** Primary action key — light “keycap”, same height as escape for alignment. */
-function buildSpaceKeyboardBadgeHtml(): string {
+function buildSpaceKeyboardBadgeHtml(label: string): string {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", "48");
-    svg.setAttribute("height", "18");
-    svg.setAttribute("viewBox", "0 0 48 18");
+    svg.setAttribute("width", "56");
+    svg.setAttribute("height", "22");
+    svg.setAttribute("viewBox", "0 0 56 22");
     svg.setAttribute("class", "speech-key__svg");
     svg.style.verticalAlign = "middle";
 
@@ -37,8 +38,8 @@ function buildSpaceKeyboardBadgeHtml(): string {
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", "0.5");
     rect.setAttribute("y", "0.5");
-    rect.setAttribute("width", "47");
-    rect.setAttribute("height", "17");
+    rect.setAttribute("width", "55");
+    rect.setAttribute("height", "21");
     rect.setAttribute("rx", "4");
     rect.setAttribute("fill", "#f8fafc");
     rect.setAttribute("stroke", "#cbd5e1");
@@ -47,11 +48,11 @@ function buildSpaceKeyboardBadgeHtml(): string {
     svg.appendChild(rect);
 
     const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    textElement.setAttribute("x", "24");
-    textElement.setAttribute("y", "12");
+    textElement.setAttribute("x", "28");
+    textElement.setAttribute("y", "15");
     textElement.setAttribute("text-anchor", "middle");
     textElement.setAttribute("font-family", "system-ui, -apple-system, Segoe UI, sans-serif");
-    textElement.setAttribute("font-size", "7");
+    textElement.setAttribute("font-size", "11");
     textElement.setAttribute("font-weight", "700");
     textElement.setAttribute("letter-spacing", "0.04em");
     textElement.setAttribute("fill", "#0f172a");
@@ -60,25 +61,27 @@ function buildSpaceKeyboardBadgeHtml(): string {
 
     const wrap = document.createElement("span");
     wrap.className = "speech-key speech-key--space";
-    wrap.setAttribute("aria-hidden", "true");
+    // The badge replaces the key name in the sentence: keep the name for screen readers.
+    wrap.setAttribute("role", "img");
+    wrap.setAttribute("aria-label", label);
     wrap.appendChild(svg);
     return wrap.outerHTML;
 }
 
 /** Cancel / dismiss — outlined, darker cap (visually secondary). */
-function buildEscapeKeyboardBadgeHtml(isInteractive: boolean): string {
+function buildEscapeKeyboardBadgeHtml(isInteractive: boolean, label: string): string {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", "34");
-    svg.setAttribute("height", "18");
-    svg.setAttribute("viewBox", "0 0 34 18");
+    svg.setAttribute("width", "40");
+    svg.setAttribute("height", "22");
+    svg.setAttribute("viewBox", "0 0 40 22");
     svg.setAttribute("class", "speech-key__svg");
     svg.style.verticalAlign = "middle";
 
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", "0.5");
     rect.setAttribute("y", "0.5");
-    rect.setAttribute("width", "33");
-    rect.setAttribute("height", "17");
+    rect.setAttribute("width", "39");
+    rect.setAttribute("height", "21");
     rect.setAttribute("rx", "4");
     rect.setAttribute("fill", "rgba(15, 23, 42, 0.95)");
     rect.setAttribute("stroke", "#fb923c");
@@ -86,11 +89,11 @@ function buildEscapeKeyboardBadgeHtml(isInteractive: boolean): string {
     svg.appendChild(rect);
 
     const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    textElement.setAttribute("x", "17");
-    textElement.setAttribute("y", "12");
+    textElement.setAttribute("x", "20");
+    textElement.setAttribute("y", "15");
     textElement.setAttribute("text-anchor", "middle");
     textElement.setAttribute("font-family", "system-ui, -apple-system, Segoe UI, sans-serif");
-    textElement.setAttribute("font-size", "8");
+    textElement.setAttribute("font-size", "11");
     textElement.setAttribute("font-weight", "700");
     textElement.setAttribute("letter-spacing", "0.06em");
     textElement.setAttribute("fill", "#ffedd5");
@@ -101,7 +104,9 @@ function buildEscapeKeyboardBadgeHtml(isInteractive: boolean): string {
     wrapper.className = `character-trigger-escape-hint speech-key speech-key--escape${
         isInteractive ? " speech-key--interactive" : ""
     }`;
-    wrapper.setAttribute("aria-hidden", "true");
+    // The badge replaces the key name in the sentence: keep the name for screen readers.
+    wrapper.setAttribute("role", "img");
+    wrapper.setAttribute("aria-label", label);
     wrapper.appendChild(svg);
     return wrapper.outerHTML;
 }
@@ -112,7 +117,7 @@ function bubbleOuterStyle(type: "warning" | "message"): string {
         "box-sizing:border-box",
         "padding:8px 12px",
         "border-radius:12px",
-        "font-size:10px",
+        "font-size:0.6875rem",
         "line-height:1.45",
         'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',
         "letter-spacing:0.01em",
@@ -127,9 +132,9 @@ function bubbleOuterStyle(type: "warning" | "message"): string {
         "-webkit-backdrop-filter:blur(12px)",
     ];
     if (type === "message") {
-        base.push("background:rgba(27,52,65,0.50)", "color:white", "border:1px solid rgba(27,52,65,0.50)");
+        base.push("background:rgba(27,52,65,0.75)", "color:white", "border:1px solid rgba(27,52,65,0.50)");
     } else {
-        base.push("background:rgba(27,52,65,0.50)", "color:white", "border:1px solid rgba(233,110,83,0.50)");
+        base.push("background:rgba(27,52,65,0.75)", "color:white", "border:1px solid rgba(233,110,83,0.50)");
     }
     return base.join(";");
 }
@@ -153,9 +158,12 @@ export class SpeechDomElement extends DOMElement {
         const spaceMarker = get(LL).trigger.spaceKeyboard();
         const escapeMarker = get(LL).trigger.escapeKeyboard();
 
-        let textTransformed = text.replace(spaceMarker, buildSpaceKeyboardBadgeHtml());
+        let textTransformed = text.replace(spaceMarker, buildSpaceKeyboardBadgeHtml(spaceMarker));
         if (text.includes(escapeMarker)) {
-            textTransformed = textTransformed.replace(escapeMarker, buildEscapeKeyboardBadgeHtml(!!escapeCallback));
+            textTransformed = textTransformed.replace(
+                escapeMarker,
+                buildEscapeKeyboardBadgeHtml(!!escapeCallback, escapeMarker),
+            );
         }
 
         const textMarked = marked.parse(textTransformed);
@@ -222,7 +230,8 @@ export class SpeechDomElement extends DOMElement {
                 x: textX,
             },
             ease: "Power2",
-            duration: 1000,
+            // The slide-in is skipped (1 ms, as a 0 ms tween has no progress) when the user reduces motion.
+            duration: isReducedMotion() ? 1 : 1000,
             onComplete: () => {
                 if (duration < 1) return;
                 this.timeoutDestroyText = setTimeout(() => {

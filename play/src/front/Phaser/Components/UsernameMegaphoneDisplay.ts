@@ -1,3 +1,4 @@
+import { motionDuration } from "../../Utils/reducedMotion";
 import { MEGAPHONE_ICON_SIZE, PLAYER_NAME_GAP } from "./UsernameDisplaySizes";
 
 const ANIMATION_DURATION = 350;
@@ -78,7 +79,8 @@ export class UsernameMegaphoneDisplay {
         this.animation = this.element.animate(
             show ? [COLLAPSED_KEYFRAME, EXPANDED_KEYFRAME] : [EXPANDED_KEYFRAME, COLLAPSED_KEYFRAME],
             {
-                duration: ANIMATION_DURATION,
+                // 0 when the user reduces motion: the icon just appears or disappears.
+                duration: motionDuration(ANIMATION_DURATION),
                 easing: show ? SHOW_EASING : HIDE_EASING,
                 // While hiding, hold the collapsed box until `display: none` is applied, otherwise the
                 // element snaps back to its resting size for one frame.

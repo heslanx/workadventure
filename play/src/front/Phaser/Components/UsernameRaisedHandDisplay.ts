@@ -1,3 +1,4 @@
+import { motionDuration } from "../../Utils/reducedMotion";
 import { MEGAPHONE_ICON_SIZE } from "./UsernameDisplaySizes";
 
 // Explicit game-pixel square, same size as the megaphone badge: a percentage height on an <img> only
@@ -57,13 +58,14 @@ export class UsernameRaisedHandDisplay {
                     { opacity: 1, transform: "translateY(0) scale(1)" },
                 ],
                 {
-                    duration: 350,
+                    // 0 when the user reduces motion: the badge just appears or disappears.
+                    duration: motionDuration(350),
                     easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
                 },
             );
         } else {
             this.animation = this.element.animate([{ opacity: 1 }, { opacity: 0 }], {
-                duration: 350,
+                duration: motionDuration(350),
                 easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
             });
         }

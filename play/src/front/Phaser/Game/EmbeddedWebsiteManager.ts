@@ -1,9 +1,11 @@
 import * as Phaser from "phaser";
 import type { Subscription } from "rxjs";
+import { get } from "svelte/store";
 import { iframeListener } from "../../Api/IframeListener";
 import { analyticsClient } from "../../Administration/AnalyticsClient";
 import { stripUrlToOrigin } from "../../Administration/CowebsiteAnalyticsProperties";
 import type { CreateEmbeddedWebsiteEvent, ModifyEmbeddedWebsiteEvent } from "../../Api/Events/EmbeddedWebsiteEvent";
+import { LL } from "../../../i18n/i18n-svelte";
 import type { GameScene } from "./GameScene";
 
 import DOMElement = Phaser.GameObjects.DOMElement;
@@ -189,6 +191,7 @@ height,*/
         const scale = embeddedWebsiteEvent.scale ?? 1;
 
         iframe.src = absoluteUrl;
+        iframe.title = get(LL).a11y.frontEmbeddedWebsite();
         iframe.tabIndex = -1;
         iframe.style.width = embeddedWebsiteEvent.position.width / scale + "px";
         iframe.style.height = embeddedWebsiteEvent.position.height / scale + "px";

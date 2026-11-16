@@ -130,6 +130,7 @@ import { followUsersColorStore, followUsersStore } from "../../Stores/FollowStor
 import { axiosWithRetry, hideConnectionIssueMessage, showConnectionIssueMessage } from "../../Connection/AxiosUtils";
 import { StringUtils } from "../../Utils/StringUtils";
 import { PHASER_COLOR_DESIGN_SYSTEM_SECONDARY } from "../../Utils/DesignSystemPhaserColors";
+import { isReducedMotion } from "../../Utils/reducedMotion";
 
 import { SuperLoaderPlugin } from "../Services/SuperLoaderPlugin";
 import { embedScreenLayoutStore } from "../../Stores/EmbedScreenLayoutStore";
@@ -3005,7 +3006,7 @@ ${escapedMessage}
                 html += buttonContainer;
                 let id = 0;
                 for (const button of openPopupEvent.buttons) {
-                    html += `<div class="flex w-full"><button type="button" class="btn btn-xs hover:bg-contrast-600/50 justify-center w-full pb-4 ${HtmlUtils.escapeHtml(
+                    html += `<div class="flex w-full"><button type="button" class="btn btn-xs hover:bg-contrast-600/50 focus-visible:ring-2 focus-visible:ring-white justify-center w-full pb-4 ${HtmlUtils.escapeHtml(
                         button.className ?? "",
                     )}" id="popup-${openPopupEvent.popupId}-${id}">${HtmlUtils.escapeHtml(button.label)}</button>`;
                     id++;
@@ -3043,7 +3044,8 @@ ${escapedMessage}
                     targets: domElement,
                     scale: 1,
                     ease: "EaseOut",
-                    duration: 400,
+                    // The popup grows in; with reduced motion it just appears (1 ms, as a 0 ms tween has no progress).
+                    duration: isReducedMotion() ? 1 : 400,
                 });
 
                 this.popUpElements.set(openPopupEvent.popupId, domElement);
