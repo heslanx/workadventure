@@ -3,7 +3,7 @@
     import { get } from "svelte/store";
     import { LL } from "../../../../i18n/i18n-svelte";
     import { currentRoomStore } from "../../../Stores/CurrentRoomStore";
-    import { shellActiveStore, shellEnabledStore } from "../stores/shellStore";
+    import { shellActiveStore } from "../stores/shellStore";
     import { gameViewportBounds } from "../../../ExternalModule/ClientExtensionPoints";
     import type { ViewportBounds } from "../../../Stores/CoWebsiteLayout";
     import { toGameViewport } from "../domain/gameViewport";
@@ -131,7 +131,6 @@
 
 <div
     class="office-frame"
-    class:office-tokens={$shellEnabledStore}
     class:konclui={$shellActiveStore}
     class:panel-open={view !== "closed"}
     data-testid={$shellActiveStore ? "konclui-shell" : undefined}
@@ -231,40 +230,25 @@
         min-width: 0;
         min-height: 0;
     }
-    /* Tokens follow the room's configuration, so the dock that replaces the action bar is styled before the
-       chrome turns on. */
-    .office-tokens {
-        --office-bg: #03051a;
-        --office-card: #0e2236;
-        --office-fg: #f0f5fb;
-        --office-muted: #98a3b3;
-        --office-accent: #53ffc8;
-        --office-glass: linear-gradient(
-            180deg,
-            rgba(40, 54, 72, 0.95),
-            rgba(26, 40, 58, 0.95) 45%,
-            rgba(18, 32, 52, 0.96)
-        );
-    }
     .konclui {
         display: grid;
         grid-template-columns: 60px minmax(0, 1fr);
         gap: 0;
         padding: 6px 6px 6px 0;
         box-sizing: border-box;
-        background: var(--office-bg);
-        color: var(--office-fg);
+        background: var(--k-page);
+        color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
     }
     .konclui.panel-open {
         grid-template-columns: 60px 296px minmax(0, 1fr);
     }
     .konclui .viewport {
-        border-radius: 16px;
-        background: var(--office-card);
+        border-radius: var(--k-radius-surface);
+        background: var(--k-card);
     }
     .konclui :global(#game > canvas) {
-        border-radius: 16px;
+        border-radius: var(--k-radius-surface);
     }
     .rail {
         display: flex;
@@ -283,7 +267,7 @@
         justify-content: center;
     }
     button:focus-visible {
-        outline: 2px solid var(--office-accent);
+        outline: 2px solid var(--k-accent);
         outline-offset: 2px;
     }
     .rail button {
@@ -294,10 +278,10 @@
     }
     .rail button:hover,
     .rail button[aria-pressed="true"] {
-        background: #182c41;
+        background: var(--k-elevated);
     }
     .rail button[aria-pressed="true"] {
-        color: var(--office-accent);
+        color: var(--k-accent);
     }
     .logo svg {
         width: 24px;
@@ -314,8 +298,8 @@
         margin-right: 6px;
         min-width: 0;
         min-height: 0;
-        border-radius: 16px;
-        background: var(--office-card);
+        border-radius: var(--k-radius-surface);
+        background: var(--k-card);
         overflow: hidden;
     }
     .side-panel.closed {
@@ -333,15 +317,15 @@
     header button {
         width: 30px;
         height: 30px;
-        border-radius: 8px;
+        border-radius: var(--k-radius-inner);
         background: transparent;
     }
     header button:hover {
-        background: #1f3349;
+        background: var(--k-hover);
     }
     .notice {
         margin: 0 18px 18px;
-        color: #b4bdcc;
+        color: var(--k-fg-2);
         font-size: 13px;
         line-height: 1.5;
     }
@@ -370,7 +354,7 @@
             gap: 6px;
             padding: 8px 12px;
             border-radius: 22px;
-            background: var(--office-glass);
+            background: var(--k-glass);
             font: inherit;
             font-size: 13px;
         }

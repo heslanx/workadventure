@@ -132,12 +132,12 @@
         max-width: 100%;
         min-height: 48px;
         padding: 6px;
-        border-radius: 16px;
-        border: 1px solid #2d3746;
-        background: var(--office-glass);
+        border-radius: var(--k-radius-surface);
+        border: 1px solid var(--k-border-subtle);
+        background: var(--k-glass);
         box-shadow: 0 4px 12px #0003;
         box-sizing: border-box;
-        color: var(--office-fg);
+        color: var(--k-fg);
         pointer-events: auto;
     }
     .dock-controls {
@@ -210,7 +210,7 @@
     }
     .dock-profile:focus-visible,
     .dock :global(button:focus-visible) {
-        outline: 2px solid var(--office-accent);
+        outline: 2px solid var(--k-accent);
         outline-offset: 2px;
     }
     @media (prefers-reduced-motion: reduce) {
