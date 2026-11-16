@@ -3,6 +3,9 @@
 
 @reference "@workadventure/design-system/theme.css";
 
+/* After the reference: the design system's theme is read again there, and the last `@theme` value wins. */
+@import "./konclui.css";
+
 @plugin "@tailwindcss/forms";
 
 @theme {

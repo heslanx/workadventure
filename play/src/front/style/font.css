@@ -4,6 +4,19 @@
 @import "@fontsource/press-start-2p";
 @import "@fontsource-variable/oswald";
 
+/* Urbanist, the Konclui UI face: variable 400-800, latin subset, SIL OFL (fonts/urbanist/OFL.txt). Other scripts
+   fall back to the next family in --font-main. Vite fingerprints the file. */
+@font-face {
+    font-family: "Urbanist";
+    src: url("./fonts/urbanist/urbanist-latin.woff2") format("woff2");
+    font-weight: 400 800;
+    font-style: normal;
+    font-display: swap;
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191,
+        U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* Custom font Comic Jens for Speech / Think bubbles */
 @font-face {
     font-family: "Comic Jens";

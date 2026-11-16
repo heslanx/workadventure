@@ -1,0 +1,210 @@
+/* Konclui tokens for every room; imported by index.css right after the design system. Overrides win by source order
+   inside the design system's own layers: `theme, base, components, utilities`. */
+
+/* Unlayered on purpose: the pusher writes a map's `--secondary-*` and `--contrast-*` as an unlayered `:root` block after
+   <body>, which beats every layered rule. `html:root` outranks that block by specificity, so no `!important`. The
+   light contrast steps keep the design system's values: pinned here only so that a map cannot move them. */
+html:root,
+html [data-theme="default"] {
+  --secondary-100: 152 76% 96%;
+  --secondary-200: 154 80% 91%;
+  --secondary-300: 156 90% 85%;
+  --secondary-400: 158 100% 79%;
+  --secondary-500: 160 100% 73%;
+  --secondary-600: 160.5 100% 62%;
+  --secondary: 160.8 100% 66.3%; /* #53ffc8 */
+  --secondary-800: 163.8 100% 45.1%;
+  --secondary-900: 163.7 100% 36.1%;
+  --secondary-1000: 162.9 93.5% 24.3%; /* #047857 */
+  --secondary-1100: 163.1 88.1% 19.8%;
+
+  --contrast-100: 216 41% 88%;
+  --contrast-200: 216 41% 76%;
+  --contrast-300: 216 51% 65%;
+  --contrast-400: 211.4 28% 27%;
+  --contrast-500: 211.4 40.4% 20.4%;
+  --contrast-600: 210.7 46.1% 17.5%;
+  --contrast: 210 58.8% 13.3%;
+  --contrast-800: 210 58.8% 13.3%;
+  --contrast-900: 218.4 53.2% 9.2%;
+  --contrast-1000: 234.8 79.3% 5.7%;
+  --contrast-1100: 234.8 79.3% 4.5%;
+}
+
+@layer theme {
+  :root,
+  [data-theme="default"] {
+    /* Primary is the same mint as secondary. */
+    --primary-100: var(--secondary-100);
+    --primary-200: var(--secondary-200);
+    --primary-300: var(--secondary-300);
+    --primary-400: var(--secondary-400);
+    --primary-500: var(--secondary-500);
+    --primary-600: var(--secondary-600);
+    --primary: var(--secondary);
+    --primary-800: var(--secondary-800);
+    --primary-900: var(--secondary-900);
+    --primary-1000: var(--secondary-1000);
+    --primary-1100: var(--secondary-1100);
+    --primary-1200: var(--secondary-1100);
+    --primary-1300: var(--secondary-1100);
+
+    --danger: 3.4 67.8% 46.3%;
+    --danger-800: 5.2 61% 37.5%;
+    --success: 160.1 84.1% 39.4%;
+    --success-800: 160.1 84.1% 32%;
+
+    --k-page: #03051a;
+    --k-card: #0e2236;
+    --k-elevated: #182c41;
+    --k-hover: #1f3349;
+
+    --k-fg: #f0f5fb;
+    --k-fg-2: #b4bdcc;
+    --k-fg-muted: #98a3b3;
+
+    --k-border-subtle: #2d3746;
+    --k-border: #3e4858;
+    --k-border-strong: #768395;
+
+    --k-accent: #53ffc8;
+    --k-accent-hover: #3dffc0;
+    --k-accent-active: #00e6a8;
+    --k-on-accent: #1a1f1e;
+    --k-accent-ink: #047857;
+
+    --k-danger: #c62f26;
+    --k-on-danger: #ffffff;
+    --k-success: #10b981;
+
+    /* `--color-pop-red-text` is only emitted when a utility uses it, hence the fallback. */
+    --k-danger-text: var(--color-pop-red-text, #ff8591);
+    --k-success-text: #34d399;
+
+    --k-glass: linear-gradient(180deg, rgb(40 54 72 / 0.95), rgb(26 40 58 / 0.95) 45%, rgb(18 32 52 / 0.96));
+    --k-glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.1);
+    --k-shadow: 0 8px 32px rgb(0 0 0 / 0.32);
+
+    --k-radius-row: 6px;
+    --k-radius-inner: 8px;
+    --k-radius-menu: 12px;
+    --k-radius-surface: 16px;
+    --k-radius-pill: 9999px;
+
+    --k-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --k-ease-sheet: cubic-bezier(0.22, 1, 0.36, 1);
+    --k-dur-press: 160ms;
+    --k-dur-fast: 150ms;
+    --k-dur-normal: 200ms;
+    --k-dur-settle: 280ms;
+    --k-dur-moderate: 300ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root,
+    [data-theme="default"] {
+      --k-dur-press: 0.01ms;
+      --k-dur-fast: 0.01ms;
+      --k-dur-normal: 0.01ms;
+      --k-dur-settle: 0.01ms;
+      --k-dur-moderate: 0.01ms;
+    }
+  }
+}
+
+/* Fonts and radii are literals in the design system's `@theme inline`; only a later block overrides them. */
+@theme inline {
+  --font-main: "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-title: "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-content: "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--k-page);
+  }
+}
+
+/* Same specificity as the design system rules they replace; they win by coming later. */
+@layer components {
+  /* Filled mint and green controls take dark ink. */
+  .btn:is(.btn-primary, .btn-secondary, .btn-success):not(.btn-border, .btn-ghost),
+  .btn:is(.btn-primary, .btn-secondary, .btn-success):not(.btn-border, .btn-ghost) .btn-label,
+  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(.chip-border, .chip-ghost),
+  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(.chip-border, .chip-ghost) > .chip-label,
+  .notification:is(.notification-primary, .notification-secondary):not(.notification-border) > .notification-value {
+    color: var(--k-on-accent);
+    stroke: var(--k-on-accent);
+    fill: var(--k-on-accent);
+  }
+
+  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(.chip-border, .chip-ghost) > svg {
+    stroke: var(--k-on-accent);
+  }
+
+  /* Outlined and ghost danger and success: the fill color is too dark to read as text. */
+  .btn:is(.btn-border, .btn-ghost).btn-danger,
+  .btn:is(.btn-border, .btn-ghost).btn-danger .btn-label {
+    color: var(--k-danger-text);
+    stroke: var(--k-danger-text);
+    fill: var(--k-danger-text);
+  }
+
+  .btn:is(.btn-border, .btn-ghost).btn-success,
+  .btn:is(.btn-border, .btn-ghost).btn-success .btn-label {
+    color: var(--k-success-text);
+    stroke: var(--k-success-text);
+    fill: var(--k-success-text);
+  }
+
+  .chip:is(.chip-border, .chip-ghost).chip-danger > .chip-label {
+    color: var(--k-danger-text);
+  }
+
+  .chip:is(.chip-border, .chip-ghost).chip-danger > svg {
+    stroke: var(--k-danger-text);
+  }
+
+  .chip:is(.chip-border, .chip-ghost).chip-success > .chip-label {
+    color: var(--k-success-text);
+  }
+
+  .chip:is(.chip-border, .chip-ghost).chip-success > svg {
+    stroke: var(--k-success-text);
+  }
+}
+
+/* Only a rule in this layer beats a utility class such as `text-white`. */
+@layer utilities {
+  .bg-primary:is(button, a),
+  .bg-secondary:is(button, a),
+  :is(.bg-primary, .bg-secondary).text-white {
+    color: var(--k-on-accent);
+    stroke: var(--k-on-accent);
+    fill: var(--k-on-accent);
+  }
+
+  /* A filled danger control is dark red here: it takes light ink, even where a utility asks for dark text. */
+  .btn.btn-danger:not(.btn-border, .btn-ghost),
+  .btn.btn-danger:not(.btn-border, .btn-ghost) .btn-label {
+    color: var(--k-on-danger);
+    stroke: var(--k-on-danger);
+    fill: var(--k-on-danger);
+  }
+
+  /* The danger fill is too dark to read as text on navy (3.7:1). */
+  .text-danger {
+    color: var(--k-danger-text);
+  }
+
+  /* Mint text on a white surface needs the ink variant. */
+  .bg-white:is(.text-primary, .text-secondary) {
+    color: var(--k-accent-ink);
+  }
+}

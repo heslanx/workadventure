@@ -21,6 +21,7 @@
     "tailwindcss": "^4.3.0"
   },
   "files": [
-    "style/index.css"
+    "style/index.css",
+    "style/konclui.css"
   ]
 }
