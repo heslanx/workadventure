@@ -13,7 +13,7 @@ vi.mock("../../../src/front/Phaser/Game/GameManager", () => ({
 vi.mock("../../../src/i18n/i18n-svelte", async () => {
     const { readable } = await import("svelte/store");
     const messages = new Proxy({}, { get: () => () => "Test label" });
-    return { LL: readable({ warning: { pwaInstall: messages } }) };
+    return { LL: readable({ a11y: messages, warning: { pwaInstall: messages } }) };
 });
 vi.mock("../../../src/front/Administration/AnalyticsClient", () => ({
     analyticsClient: { trackAdminEvent: vi.fn() },

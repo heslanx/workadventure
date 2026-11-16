@@ -31,8 +31,10 @@ import onboarding from "./onboarding";
 import recording from "./recording";
 import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
+import a11y from "./a11y";
 
 const th_TH = deepmerge(en_US, {
+    a11y,
     area,
     audio,
     camera,

@@ -31,8 +31,10 @@ import onboarding from "./onboarding";
 import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
 import recording from "./recording";
+import a11y from "./a11y";
 
 const hsb_DE = deepmerge(en_US, {
+    a11y,
     audio,
     camera,
     chat,
