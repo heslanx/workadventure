@@ -4,6 +4,7 @@
     import LL from "../../../i18n/i18n-svelte";
     import { coWebsiteRatio, coWebsites, fullScreenCowebsite } from "../../Stores/CoWebsiteStore";
     import { coWebsiteRatioAtPointer } from "../../Stores/CoWebsiteLayout";
+    import { gameViewportBounds } from "../../ExternalModule/ClientExtensionPoints";
     import JitsiCowebsiteComponent from "../Cowebsites/JistiCowebsiteComponent.svelte";
     import SimpleCowebsiteComponent from "../Cowebsites/SimpleCowebsiteComponent.svelte";
     import ImageCowebsiteComponent from "../Cowebsites/ImageCowebsiteComponent.svelte";
@@ -48,7 +49,7 @@
     const handleMove = (clientX: number, clientY: number) => {
         coWebsiteRatio.set(
             coWebsiteRatioAtPointer(
-                { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight },
+                $gameViewportBounds ?? { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight },
                 { x: clientX, y: clientY },
                 $screenOrientationStore === "portrait",
                 document.documentElement.dir === "rtl",

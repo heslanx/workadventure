@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyticsClient } from "../../../src/front/Administration/AnalyticsClient";
+import { gameViewportBounds } from "../../../src/front/ExternalModule/ClientExtensionPoints";
 import type { CoWebsite } from "../../../src/front/WebRtc/CoWebsite/CoWebsite";
 import {
     canvasSize,
@@ -187,6 +188,7 @@ describe("CoWebsiteStore viewport sizes", () => {
         coWebsites.removeAll();
         fullScreenCowebsite.set(false);
         coWebsiteRatio.set(0.5);
+        gameViewportBounds.set(undefined);
         setWindowSize(originalWidth, originalHeight, false);
     });
 
@@ -239,6 +241,55 @@ describe("CoWebsiteStore viewport sizes", () => {
 
         expect(canvas()).toEqual({ width: 0, height: 0 });
         expect(panel()).toEqual(panelBefore);
+        expect(panel()).toEqual({ width: 500, height: 800 });
+    });
+
+    it("gives the game the area an extension measured, and only its size, when no cowebsite is open", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        setWindowSize(1000, 800, true);
+
+        gameViewportBounds.set({ left: 362, top: 6, width: 1072, height: 788 });
+
+        expect(canvas()).toEqual({ width: 1072, height: 788 });
+        expect(panel()).toEqual({ width: 0, height: 0 });
+    });
+
+    it("splits the measured area instead of the window when a cowebsite is open", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        setWindowSize(1000, 800, true);
+        coWebsites.add(fakeCoWebsite("cowebsite-1"));
+        coWebsiteRatio.set(0.25);
+
+        gameViewportBounds.set({ left: 296, top: 0, width: 704, height: 788 });
+
+        expect(canvas()).toEqual({ width: 528, height: 788 });
+        expect(panel()).toEqual({ width: 176, height: 788 });
+    });
+
+    it("keeps splitting along the window orientation when the measured area has the other one", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        setWindowSize(1000, 800, true);
+        coWebsites.add(fakeCoWebsite("cowebsite-1"));
+
+        gameViewportBounds.set({ left: 600, top: 0, width: 400, height: 800 });
+
+        expect(canvas()).toEqual({ width: 200, height: 800 });
+        expect(panel()).toEqual({ width: 200, height: 800 });
+    });
+
+    it("goes back to the window when the extension clears the measured area", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        setWindowSize(1000, 800, true);
+        coWebsites.add(fakeCoWebsite("cowebsite-1"));
+        gameViewportBounds.set({ left: 296, top: 0, width: 704, height: 788 });
+
+        gameViewportBounds.set(undefined);
+
+        expect(canvas()).toEqual({ width: 500, height: 800 });
         expect(panel()).toEqual({ width: 500, height: 800 });
     });
 });

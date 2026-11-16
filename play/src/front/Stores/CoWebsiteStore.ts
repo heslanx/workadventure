@@ -4,6 +4,7 @@ import type { CowebsiteOpenedAnalyticsContext } from "../Administration/Cowebsit
 import { buildCowebsiteOpenedProperties } from "../Administration/CowebsiteAnalyticsProperties";
 import { analyticsClient } from "../Administration/AnalyticsClient";
 import { TimedEventsByKey } from "../Administration/TimedAnalyticsEvent";
+import { gameViewportBounds } from "../ExternalModule/ClientExtensionPoints";
 import { splitGameViewport } from "./CoWebsiteLayout";
 
 export function createCoWebsiteStore() {
@@ -143,19 +144,24 @@ export const windowSize = readable({ width: window.innerWidth, height: window.in
 export const coWebsiteRatio = writable(0.5);
 
 const viewportLayout = derived(
-    [coWebsites, windowSize, coWebsiteRatio, fullScreenCowebsite],
-    ([$coWebsites, $windowSize, $coWebsiteRatio, $fullScreenCowebsite]) =>
-        splitGameViewport(
-            // Without a co-website the game owns the whole window. It is read live because windowSize
-            // only follows resize events while something subscribes to it.
-            $coWebsites.length === 0 ? { width: window.innerWidth, height: window.innerHeight } : $windowSize,
-            {
-                visible: $coWebsites.length > 0,
-                fullscreen: $fullScreenCowebsite,
-                ratio: $coWebsiteRatio,
-                vertical: $windowSize.width <= $windowSize.height,
-            },
-        ),
+    [coWebsites, windowSize, coWebsiteRatio, fullScreenCowebsite, gameViewportBounds],
+    ([$coWebsites, $windowSize, $coWebsiteRatio, $fullScreenCowebsite, $gameViewportBounds]) => {
+        // The game is split inside the area an extension measured, or else inside the window. Without a
+        // co-website that window is read live because windowSize only follows resize events while
+        // something subscribes to it.
+        let available =
+            $coWebsites.length === 0 ? { width: window.innerWidth, height: window.innerHeight } : $windowSize;
+        if ($gameViewportBounds) {
+            available = { width: $gameViewportBounds.width, height: $gameViewportBounds.height };
+        }
+        return splitGameViewport(available, {
+            visible: $coWebsites.length > 0,
+            fullscreen: $fullScreenCowebsite,
+            ratio: $coWebsiteRatio,
+            // The orientation is the screen's, not the area's: it is the one the resize bar follows.
+            vertical: $windowSize.width <= $windowSize.height,
+        });
+    },
 );
 
 export const canvasSize = derived(viewportLayout, ($viewportLayout) => $viewportLayout.game);

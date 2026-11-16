@@ -5,6 +5,7 @@ import { localUserStore } from "../Connection/LocalUserStore";
 import { mapEditorSideBarWidthStore } from "../Components/MapEditor/MapEditorSideBarWidthStore";
 import { mapEditorModeStore } from "../Stores/MapEditorStore";
 import { sidePanelWidthStore } from "../Stores/SidePanelStore";
+import { gameViewportBounds } from "../ExternalModule/ClientExtensionPoints";
 import { CHAT_SIDEBAR_MAX_WIDTH, CHAT_SIDEBAR_MIN_WIDTH } from "./ChatSidebarWidth";
 import { clampRoomListWidth, ROOM_LIST_DEFAULT_WIDTH } from "./Components/RoomListLayout";
 
@@ -40,6 +41,7 @@ export const hideActionBarStoreBecauseOfChatBar = derived(
         mapEditorSideBarWidthStore,
         mapEditorModeStore,
         sidePanelWidthStore,
+        gameViewportBounds,
     ],
     ([
         $chatVisibilityStore,
@@ -48,13 +50,16 @@ export const hideActionBarStoreBecauseOfChatBar = derived(
         $mapEditorWidthStore,
         $mapEditorModeStore,
         $sidePanelWidthStore,
+        $gameViewportBounds,
     ]) => {
         if (!$chatVisibilityStore && !$mapEditorModeStore) {
             return false;
         }
         return (
-            $windowSize.width -
-                ($chatVisibilityStore ? $chatSidebarWidthStore : 0) -
+            // A measured viewport already leaves out the chat its extension hosts, so the chat only counts
+            // against the window.
+            ($gameViewportBounds?.width ?? $windowSize.width) -
+                ($chatVisibilityStore && !$gameViewportBounds ? $chatSidebarWidthStore : 0) -
                 ($mapEditorModeStore ? $mapEditorWidthStore : 0) -
                 $sidePanelWidthStore <
             285
