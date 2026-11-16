@@ -309,7 +309,8 @@
 </script>
 
 <div bind:this={parentDivElement} class="h-full w-full">
-    <div bind:this={divElement} class="h-full w-full bg-contrast-1100">
+    <!-- The backdrop belongs to the mini window: in the page this wrapper lies over the game. -->
+    <div bind:this={divElement} class="h-full w-full" class:bg-contrast-1100={$activePictureInPictureStore}>
         {#if $activePictureInPictureStore}
             <div
                 class="pip-map-background fixed z-0 top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-20 bg-black"
