@@ -28,8 +28,8 @@
     "precommit": "lint-staged",
     "test": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest",
     "test:coverage": "PLAY_URL=http://play.workadventure.localhost ADMIN_URL= vitest --coverage",
-    "svelte-check-watch": "cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --threshold error --compiler-warnings \"a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore\" --watch",
-    "svelte-check": "cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --compiler-warnings \"a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore\"",
+    "svelte-check-watch": "cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings --threshold error --watch",
+    "svelte-check": "cross-env NODE_PATH=./node_modules svelte-check --fail-on-warnings",
     "lint": "eslint src/ tests/",
     "lint-fix": "eslint --fix src/ tests/",
     "pretty": "prettier --write 'src/**/*.{ts,svelte}'",
@@ -41,7 +41,7 @@
   },
   "lint-staged": {
     "*.svelte": [
-      "cross-env NODE_PATH=./node_modules svelte-check --compiler-warnings \"a11y-media-has-caption:ignore,a11y-no-onchange:ignore,a11y-autofocus:ignore,a11y-media-has-caption:ignore,a11y-click-events-have-key-events:ignore,security-anchor-rel-noreferrer:ignore\""
+      "cross-env NODE_PATH=./node_modules svelte-check"
     ],
     "*.{ts,svelte}": [
       "eslint --fix",
