@@ -43,19 +43,26 @@ textarea,
     body [role="menuitem"]:focus-visible,
     body [role="radio"]:focus-visible,
     body [role="tab"]:focus-visible,
+    body [role="switch"]:focus-visible,
+    body [role="checkbox"]:focus-visible,
+    body [role="link"]:focus-visible,
     body summary:focus-visible,
     body a:focus-visible {
         outline: 2px solid rgb(255 255 255 / 0.8);
         outline-offset: 2px;
+        /* A dark halo fills the 2px offset gap, so the ring stays visible (3:1) on light surfaces too, where the
+           white outline alone vanishes. On the dark panels the halo blends in. */
+        box-shadow: 0 0 0 2px hsl(var(--contrast));
     }
 }
 
 /* Honour the system "reduce motion" setting for every CSS animation and transition. Loading spinners keep
-   turning, since they are the progress indicator and WCAG treats them as essential motion. */
+   turning, since they are the progress indicator and WCAG treats them as essential motion. A looping
+   spinner that is not `animate-spin` (it is the only progress signal) opts out with `motion-essential`. */
 @media (prefers-reduced-motion: reduce) {
-    *:not(.animate-spin),
-    *:not(.animate-spin)::before,
-    *:not(.animate-spin)::after {
+    *:not(.animate-spin, .motion-essential),
+    *:not(.animate-spin, .motion-essential)::before,
+    *:not(.animate-spin, .motion-essential)::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
@@ -584,7 +591,7 @@ div.action.warning p.action-body {
 
 div.action.danger p.action-body {
     background-color: #da0000e3;
-    color: #000;
+    color: #fff;
 }
 
 @keyframes mymove {
@@ -967,5 +974,19 @@ div.emoji-picker {
         box-shadow:
             0 0 0 calc(var(--username-dom-scale, 1) * 1.5px) rgba(255, 240, 180, 0.4),
             0 0 0 calc(var(--username-dom-scale, 1) * 1.5px) rgba(255, 240, 180, 0);
+    }
+}
+
+/* The sonar ring tells who is talking / the active speaker, so it is state, not decoration. The global
+   reduced-motion rule would end the animation on a bare name tag and lose that signal: show a still ring. */
+@media (prefers-reduced-motion: reduce) {
+    .username-display.talking {
+        animation: none;
+        box-shadow: 0 0 0 calc(var(--username-dom-scale, 1) * 1.5px) rgba(255, 255, 255, 0.7);
+    }
+
+    .username-display.speaker {
+        animation: none;
+        box-shadow: 0 0 0 calc(var(--username-dom-scale, 1) * 1.5px) rgba(255, 240, 180, 0.7);
     }
 }

@@ -18,7 +18,9 @@
   --color-medium-purple: #38384a;
   --color-light-purple: #4d4b67;
   --color-lighter-purple: #928ebb;
-  --color-light-purple-alt: #7d7b9e;
+  /* Was #7d7b9e (4.21:1 on dark-purple, 3.34:1 on brand-blue). Same hue, lighter: >= 4.5:1 on dark-purple, dark-blue,
+     dark, contrast and brand-blue. Nothing uses it as a background or border, so it is a text color. */
+  --color-light-purple-alt: #9795b1;
   --color-dark-blue: #1b1b29;
   --color-light-blue: #56eaff;
   --color-brand-blue: #14304c;
@@ -28,6 +30,25 @@
   --color-pop-red: #ff475a;
   --color-grey: #f6f6f6;
   --color-dark: #0f1f2d;
+
+  /* Contrast-safe companions. pop-red / pop-green stay as they are for borders, fills and icons, but white on
+     pop-red is 3.33:1 and white on pop-green is 1.51:1. Use dark-purple text on pop-green (11.23:1). */
+  /* Red used as TEXT on a dark surface: >= 4.5:1 on contrast, dark-purple, brand-blue, medium-purple and bg-white/10. */
+  --color-pop-red-text: #ff8591;
+  /* Red used as a BACKGROUND under white text: white on it is 5.43:1. */
+  --color-pop-red-strong: #d60016;
+
+  /* Text sizes in rem so text follows the browser font size (HIG Dynamic Type). The values are the design-system
+     ones (which are px), so nothing changes at the default 16px. text-xxs (11px) is the smallest text allowed. */
+  --text-xxs: 0.6875rem;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.125rem;
+  --text-4xl: 2.625rem;
 
   --animate-shake: shake 0.6s ease-in-out infinite;
   --animate-pulse-bg: pulse-bg 3s ease-in-out infinite;
@@ -90,6 +111,41 @@
 
 @utility scale-140 {
   scale: 1.4;
+}
+
+/* Invisible hit-area expansion (HIG: controls 44, never below 28). Grows the clickable area to a centred square of at
+   least 1.75rem (hit-area) or 2.75rem (hit-area-lg) without moving or resizing anything. It uses ::before, so it
+   does not work on <input>/<img>, with an existing ::before or before: utilities, or inside overflow:hidden. */
+@utility hit-area {
+  :where(&) {
+    position: relative;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 1.75rem);
+    height: max(100%, 1.75rem);
+    translate: -50% -50%;
+  }
+}
+
+@utility hit-area-lg {
+  :where(&) {
+    position: relative;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 2.75rem);
+    height: max(100%, 2.75rem);
+    translate: -50% -50%;
+  }
 }
 
 /* RESET HUA */
@@ -158,9 +214,10 @@
     width: 1rem;
   }
 
+  /* White, not the dark #053a5f the track uses: that is 1.4:1 on the dark panels, so the focus ring was invisible. */
   input[type="range"]:focus::-moz-range-thumb {
-    border: 1px solid #053a5f;
-    outline: 3px solid #053a5f;
+    border: 1px solid #fff;
+    outline: 3px solid #fff;
     outline-offset: 0.125rem;
   }
 }

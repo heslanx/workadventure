@@ -267,7 +267,7 @@
 }
 .message-bubble a {
     text-decoration: underline;
-    opacity: 0.75;
+    opacity: 0.9;
 }
 /* Mention pills: as our composer writes them, and as Element sends them. */
 .message-bubble a[data-mention],
@@ -328,7 +328,7 @@ pre {
     margin: 0.4em 0;
     padding-inline-start: 0.6em;
     border-inline-start: 3px solid rgb(255 255 255 / 0.3);
-    color: rgb(255 255 255 / 0.8);
+    color: rgb(255 255 255 / 0.9);
 }
 .message-bubble hr {
     margin: 0.5em 0;
