@@ -41,6 +41,24 @@ describe("BiggestAvailableAreaStore", () => {
         });
     });
 
+    it("reads blocker bounds relative to a game container that is not at the window origin", () => {
+        const game = document.querySelector<HTMLElement>("#game");
+        if (!game) throw new Error("no game container");
+        game.getBoundingClientRect = () => new DOMRect(40, 10, 100, 100);
+        const store = createBiggestAvailableAreaStore();
+        const besideTheGame = document.createElement("div");
+        const overTheGame = document.createElement("div");
+        document.body.append(besideTheGame, overTheGame);
+        store.registerBlocker(besideTheGame);
+        store.registerBlocker(overTheGame);
+        store.updateBlockerBox(besideTheGame, { xStart: 0, yStart: 0, xEnd: 40, yEnd: 110 });
+        store.updateBlockerBox(overTheGame, { xStart: 110, yStart: 10, xEnd: 140, yEnd: 110 });
+
+        store.recompute();
+
+        expect(get(store)).toEqual({ xStart: 0, yStart: 0, xEnd: 70, yEnd: 100 });
+    });
+
     it("removes blocker bounds after unregistering the blocker", () => {
         const store = createBiggestAvailableAreaStore();
         const blocker = document.createElement("div");

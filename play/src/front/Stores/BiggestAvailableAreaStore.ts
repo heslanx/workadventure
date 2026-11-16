@@ -150,6 +150,14 @@ function isBoxEmpty(box: Box): boolean {
     return box.xEnd <= box.xStart || box.yEnd <= box.yStart;
 }
 
+/** A box measured in the window, moved into the game container and cut to it. Empty when it lies outside. */
+export function toGameArea(box: Box, left: number, top: number, gameSize: { width: number; height: number }): Box {
+    return clampBoxToScreen(
+        { xStart: box.xStart - left, yStart: box.yStart - top, xEnd: box.xEnd - left, yEnd: box.yEnd - top },
+        { xStart: 0, yStart: 0, xEnd: gameSize.width, yEnd: gameSize.height },
+    );
+}
+
 export function createBiggestAvailableAreaStore() {
     const { subscribe, set } = writable<Box>({ xStart: 0, yStart: 0, xEnd: 1, yEnd: 1 });
     const blockingElements = new Map<HTMLElement, Box | undefined>();
@@ -195,9 +203,13 @@ export function createBiggestAvailableAreaStore() {
                 height: gameContainer.offsetHeight,
             };
 
+            // Blockers are measured in the window, the area in the game container: they differ once something
+            // (an app frame) moves the container off the window origin.
+            const { left, top } = gameContainer.getBoundingClientRect();
             const blockingBoxes = Array.from(blockingElements.entries())
                 .filter(([element, box]) => element.isConnected && box !== undefined && !isBoxEmpty(box))
-                .map(([, box]) => box as Box);
+                .map(([, box]) => toGameArea(box as Box, left, top, gameSize))
+                .filter((box) => !isBoxEmpty(box));
 
             set(findBiggestAvailableArea(gameSize, blockingBoxes));
         },
