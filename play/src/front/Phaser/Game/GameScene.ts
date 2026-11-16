@@ -253,6 +253,7 @@ import { LocateManager } from "./LocateManager";
 import { uiWebsiteManager } from "./UI/UIWebsiteManager";
 import { ScriptingVideoManager } from "./ScriptingVideoManager";
 import { UsernameDomLayer } from "./UsernameDomLayer";
+import { ThinWallsController } from "./ThinWallsController";
 
 import Tileset = Phaser.Tilemaps.Tileset;
 import Tilemap = Phaser.Tilemaps.Tilemap;
@@ -360,6 +361,7 @@ export class GameScene extends DirtyScene {
     private iframeSubscriptionList: Array<Subscription> = [];
     private gameMapChangedSubscription!: Subscription;
     private tileAnimationRefreshEvent: Phaser.Time.TimerEvent | undefined;
+    private readonly thinWallsController = new ThinWallsController();
     private messageSubscription: Subscription | null = null;
     private rxJsSubscriptions: Array<Subscription> = [];
     // Player ids of remote players whose raised hand is currently shown above their woka (to diff on store updates).
@@ -1248,6 +1250,9 @@ export class GameScene extends DirtyScene {
         this.outlineManager?.clear();
         this.tileAnimationRefreshEvent?.remove(false);
         this.tileAnimationRefreshEvent = undefined;
+        if (this.pathfindingManager) {
+            this.thinWallsController.destroy(this.pathfindingManager);
+        }
         this.userInputManager?.destroy();
         this.isLiveStreamingUnsubscriber?.();
         this.shouldPublishScreenShareUnsubscriber?.();
@@ -3395,6 +3400,7 @@ ${escapedMessage}
         this.iframeSubscriptionList.push(
             iframeListener.showLayerStream.subscribe((layerEvent) => {
                 this.gameMapFrontWrapper.setLayerVisibility(layerEvent.name, true);
+                this.rebuildThinWalls();
                 this.markDirty();
             }),
         );
@@ -3402,6 +3408,7 @@ ${escapedMessage}
         this.iframeSubscriptionList.push(
             iframeListener.hideLayerStream.subscribe((layerEvent) => {
                 this.gameMapFrontWrapper.setLayerVisibility(layerEvent.name, false);
+                this.rebuildThinWalls();
                 this.markDirty();
             }),
         );
@@ -3547,9 +3554,17 @@ ${escapedMessage}
         });
         this.iframeSubscriptionList.push(
             iframeListener.setTilesStream.subscribe((eventTiles) => {
+                let wallEdgesChanged = false;
                 for (const eventTile of eventTiles) {
-                    this.gameMapFrontWrapper.putTile(eventTile.tile, eventTile.x, eventTile.y, eventTile.layer);
+                    const changed = this.gameMapFrontWrapper.putTile(
+                        eventTile.tile,
+                        eventTile.x,
+                        eventTile.y,
+                        eventTile.layer,
+                    );
+                    wallEdgesChanged = changed || wallEdgesChanged;
                 }
+                if (wallEdgesChanged) this.rebuildThinWalls();
                 // Tiles changed by a script must repaint even when nothing else moves (the render loop
                 // skips frames until a scene is dirty; without this, script-driven tile changes only
                 // became visible on the next local player input).
@@ -3647,6 +3662,7 @@ ${escapedMessage}
                                 console.warn(`Failed to add TilesetImage ${jsonTileset.name}: ${imageUrl}`);
                             }
                             //destroy the tilemaplayer because they are unique and we need to reuse their key and layerData
+                            this.thinWallsController.destroy(this.pathfindingManager);
                             for (const layer of this.Map.layers) {
                                 layer.tilemapLayer.destroy(false);
                             }
@@ -4383,6 +4399,19 @@ ${escapedMessage}
             }
             //});
         }
+        this.rebuildThinWalls();
+    }
+
+    private rebuildThinWalls(): void {
+        this.thinWallsController.rebuild({
+            layers: this.gameMapFrontWrapper.phaserLayers,
+            width: this.gameMapFrontWrapper.phaserMap.width,
+            height: this.gameMapFrontWrapper.phaserMap.height,
+            tileIndex: this.gameMapFrontWrapper.getCollisionTileIndex(),
+            createLayer: (name) => this.gameMapFrontWrapper.phaserMap.createBlankLayer(name, this.Terrains),
+            addCollider: (layer) => this.physics.add.collider(this.CurrentPlayer, layer),
+            pathfinding: this.pathfindingManager,
+        });
     }
 
     private createCurrentPlayer(startPosition: PositionInterface) {

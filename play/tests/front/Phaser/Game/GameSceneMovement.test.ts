@@ -3,6 +3,7 @@ import * as Phaser from "phaser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock, MockInstance } from "vitest";
 import { NEVER } from "rxjs";
+import type { Subject } from "rxjs";
 import { PositionMessage_Direction } from "@workadventure/messages";
 import type { PositionMessage } from "@workadventure/messages";
 import type { Movable, SpatialMap } from "@workadventure/shared-utils";
@@ -637,5 +638,143 @@ describe("GameScene remote-player drift", () => {
             ],
             ["Cannot remove a remote player that is not in the scene", { userId: 11, repositoryPlayers: 10, ...sizes }],
         ]);
+    });
+});
+
+describe("GameScene thin walls (script-driven tile and layer changes)", () => {
+    // Thin walls are derived from the visible layers' `wallEdges` tile property, so the scene rebuilds them whenever a
+    // script changes what is visible or which tiles carry the property. A rebuild that is skipped leaves the player
+    // walking through a wall that a script just raised, or blocked by one that was removed.
+    interface ScriptStreams {
+        _showLayerStream: Subject<{ name: string }>;
+        _hideLayerStream: Subject<{ name: string }>;
+        _setTilesStream: Subject<Array<{ tile: string | number | null; x: number; y: number; layer: string }>>;
+        answerers: Record<string, unknown>;
+        openMessagePortAnswerers: Record<string, unknown>;
+    }
+    const streams = iframeListener as unknown as ScriptStreams;
+    let teardown: Array<() => void> = [];
+
+    afterEach(() => {
+        for (const undo of teardown) undo();
+        teardown = [];
+    });
+
+    // Runs the scene's real script wiring (listenToIframeEvents) against a map wrapper reduced to the two calls it
+    // makes, then undoes what that wiring registered on the shared iframeListener.
+    function createSceneListeningToScripts(putTile: (x: number) => boolean) {
+        const { scene, internals } = createScene();
+        const rebuildThinWalls = vi.fn();
+        const setLayerVisibility = vi.fn();
+        const scripted = internals as unknown as {
+            gameMapFrontWrapper: unknown;
+            rebuildThinWalls: () => void;
+            iframeSubscriptionList: Array<{ unsubscribe(): void }>;
+            listenToIframeEvents(): void;
+        };
+        scripted.rebuildThinWalls = rebuildThinWalls;
+        scripted.gameMapFrontWrapper = {
+            putTile: vi.fn((_tile: unknown, x: number) => putTile(x)),
+            setLayerVisibility,
+        };
+        const answerersBefore = new Set(Object.keys(streams.answerers));
+        const portAnswerersBefore = new Set(Object.keys(streams.openMessagePortAnswerers));
+        teardown.push(() => {
+            for (const subscription of scripted.iframeSubscriptionList) subscription.unsubscribe();
+            for (const key of Object.keys(streams.answerers)) {
+                if (!answerersBefore.has(key)) Reflect.deleteProperty(streams.answerers, key);
+            }
+            for (const key of Object.keys(streams.openMessagePortAnswerers)) {
+                if (!portAnswerersBefore.has(key)) Reflect.deleteProperty(streams.openMessagePortAnswerers, key);
+            }
+        });
+        scripted.listenToIframeEvents();
+        const markDirty = vi.spyOn(scene, "markDirty").mockImplementation(() => {});
+        return { markDirty, rebuildThinWalls, setLayerVisibility };
+    }
+
+    it("builds the thin-wall helper layer for the player and the path restrictions from the visible wall edges", () => {
+        const { internals } = createScene();
+        const wallTile = { x: 1, y: 0, index: 7, properties: { wallEdges: "e" }, setCollision: vi.fn() };
+        const helperTile = { setCollision: vi.fn() };
+        const helperLayer = {
+            putTileAt: vi.fn(() => helperTile),
+            setVisible: vi.fn().mockReturnThis(),
+            setDepth: vi.fn().mockReturnThis(),
+            destroy: vi.fn(),
+        };
+        const collider = { destroy: vi.fn() };
+        const terrains = [{ name: "terrain" }];
+        const currentPlayer = { name: "local player" };
+        const createBlankLayer = vi.fn(() => helperLayer);
+        const addCollider = vi.fn(() => collider);
+        const setDirectionalCondition = vi.fn();
+        const clearDirectionalConditions = vi.fn();
+        Object.assign(internals, {
+            Terrains: terrains,
+            CurrentPlayer: currentPlayer,
+            physics: { add: { collider: addCollider } },
+            pathfindingManager: { setDirectionalCondition, clearDirectionalConditions },
+            gameMapFrontWrapper: {
+                phaserLayers: [
+                    { visible: true, layer: { name: "walls", width: 3, height: 1, data: [[null, wallTile, null]] } },
+                ],
+                phaserMap: { width: 3, height: 1, createBlankLayer },
+                getCollisionTileIndex: () => 42,
+            },
+        });
+
+        (internals as unknown as { rebuildThinWalls(): void }).rebuildThinWalls();
+
+        expect(createBlankLayer).toHaveBeenCalledWith(expect.stringMatching(/^__/), terrains);
+        expect(helperLayer.putTileAt).toHaveBeenCalledWith(42, 1, 0, false);
+        expect(addCollider).toHaveBeenCalledWith(currentPlayer, helperLayer);
+        const blockedFromTheWall = setDirectionalCondition.mock.calls.find(([x]) => x === 1);
+        expect(blockedFromTheWall?.[2]).not.toContain("RIGHT");
+        const blockedFromTheOtherSide = setDirectionalCondition.mock.calls.find(([x]) => x === 2);
+        expect(blockedFromTheOtherSide?.[2]).not.toContain("LEFT");
+    });
+
+    it("rebuilds the thin walls whenever it recreates the player's collisions", () => {
+        const { internals } = createScene();
+        const rebuildThinWalls = vi.fn();
+        Object.assign(internals, { rebuildThinWalls, gameMapFrontWrapper: { phaserLayers: [] } });
+
+        (internals as unknown as { createCollisionWithPlayer(): void }).createCollisionWithPlayer();
+
+        expect(rebuildThinWalls).toHaveBeenCalledTimes(1);
+    });
+
+    it("rebuilds once after a batch of tiles in which only an earlier tile changed the wall edges", () => {
+        const { markDirty, rebuildThinWalls } = createSceneListeningToScripts((x) => x === 0);
+
+        streams._setTilesStream.next([
+            { tile: "wall", x: 0, y: 0, layer: "walls" },
+            { tile: "floor", x: 1, y: 0, layer: "walls" },
+        ]);
+
+        expect(rebuildThinWalls).toHaveBeenCalledTimes(1);
+        expect(markDirty).toHaveBeenCalled();
+    });
+
+    it("does not rebuild after tiles that leave the wall edges as they were, but still repaints", () => {
+        const { markDirty, rebuildThinWalls } = createSceneListeningToScripts(() => false);
+
+        streams._setTilesStream.next([{ tile: "floor", x: 1, y: 0, layer: "floor" }]);
+
+        expect(rebuildThinWalls).not.toHaveBeenCalled();
+        expect(markDirty).toHaveBeenCalled();
+    });
+
+    it("rebuilds after a script shows or hides a layer", () => {
+        const { rebuildThinWalls, setLayerVisibility } = createSceneListeningToScripts(() => false);
+
+        streams._showLayerStream.next({ name: "walls" });
+        expect(setLayerVisibility).toHaveBeenLastCalledWith("walls", true);
+        expect(rebuildThinWalls).toHaveBeenCalledTimes(1);
+
+        streams._hideLayerStream.next({ name: "walls" });
+        expect(setLayerVisibility).toHaveBeenLastCalledWith("walls", false);
+        expect(rebuildThinWalls).toHaveBeenCalledTimes(2);
     });
 });
