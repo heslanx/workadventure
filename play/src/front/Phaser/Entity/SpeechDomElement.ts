@@ -139,11 +139,58 @@ function bubbleOuterStyle(type: "warning" | "message"): string {
     return base.join(";");
 }
 
+/** Once the pointer or the focus leaves a bubble that was paused, it stays at least this long. */
+const MIN_REMAINING_AFTER_PAUSE_MS = 3000;
+
+const ACTION_BUTTON_BASE_STYLE = [
+    "font:inherit",
+    "font-size:0.75rem",
+    "font-weight:600",
+    "line-height:1.2",
+    "min-height:28px",
+    "min-width:28px",
+    "padding:3px 10px",
+    "border-radius:6px",
+    "cursor:pointer",
+].join(";");
+
 export class SpeechDomElement extends DOMElement {
     private timeoutDestroyText: NodeJS.Timeout | null = null;
     private readonly span: HTMLSpanElement | null = null;
     /** Same reference passed to add/removeEventListener on the escape badge (ESLint listeners rules). */
     private escapeHintClickHandler: EventListener | null = null;
+    /** The on-screen alternatives to the Space and Escape keys, with the handlers to remove them with. */
+    private actionButtons: Array<{ button: HTMLButtonElement; handler: EventListener }> = [];
+
+    // Auto-dismissal: the countdown stops while the pointer or the focus is on the bubble, so it cannot vanish while
+    // it is being read or used.
+    private autoDestroyPending = false;
+    private autoDestroyRemainingMs = 0;
+    private autoDestroyStartedAt = 0;
+    private autoDestroyCallback: ((id: string) => void) | undefined;
+    private pointerInside = false;
+    private focusInside = false;
+
+    private readonly onPointerEnter = (): void => {
+        this.pointerInside = true;
+        this.pauseAutoDestroy();
+    };
+    private readonly onPointerLeave = (): void => {
+        this.pointerInside = false;
+        this.resumeAutoDestroy();
+    };
+    private readonly onFocusIn = (): void => {
+        this.focusInside = true;
+        this.pauseAutoDestroy();
+    };
+    private readonly onFocusOut = (event: FocusEvent): void => {
+        // Moving from one button of the bubble to the next is not leaving it.
+        if (event.relatedTarget instanceof Node && this.span?.contains(event.relatedTarget)) {
+            return;
+        }
+        this.focusInside = false;
+        this.resumeAutoDestroy();
+    };
 
     constructor(
         public readonly id: string,
@@ -176,6 +223,7 @@ export class SpeechDomElement extends DOMElement {
                 .then((resolvedText) => {
                     span.innerHTML = sanitizeHtml(resolvedText);
                     this.wireEscapeHintListener(span);
+                    this.appendActionButtons(span);
                 })
                 .catch((e) => console.error(e));
         } else {
@@ -188,10 +236,65 @@ export class SpeechDomElement extends DOMElement {
 
         this.span = span;
         this.span.addEventListener("click", this.callback);
+        this.span.addEventListener("mouseenter", this.onPointerEnter);
+        this.span.addEventListener("mouseleave", this.onPointerLeave);
+        this.span.addEventListener("focusin", this.onFocusIn);
+        this.span.addEventListener("focusout", this.onFocusOut);
         if (!(textMarked instanceof Promise)) {
             this.wireEscapeHintListener(span);
+            this.appendActionButtons(span);
         }
         this.setAlpha(0);
+    }
+
+    /**
+     * A bubble that asks a question (it has an Escape callback: the answer is Space for yes, Escape for no) also gets
+     * the two answers as real buttons, so it can be answered without the keys and found with Tab and a screen reader.
+     */
+    private appendActionButtons(span: HTMLSpanElement): void {
+        const escapeCallback = this.escapeCallback;
+        if (!escapeCallback) {
+            return;
+        }
+        this.removeActionButtons();
+
+        const actions = document.createElement("div");
+        actions.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-top:6px";
+
+        const addButton = (label: string, style: string, onActivate: () => void): void => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            button.style.cssText = `${ACTION_BUTTON_BASE_STYLE};${style}`;
+            // The bubble itself answers "yes" when it is clicked: a button must not also trigger that.
+            const handler: EventListener = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onActivate();
+            };
+            button.addEventListener("click", handler);
+            this.actionButtons.push({ button, handler });
+            actions.appendChild(button);
+        };
+
+        addButton(
+            get(LL).camera.webrtc.newDeviceSwitch(),
+            "background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1",
+            () => this.callback(),
+        );
+        addButton(
+            get(LL).camera.webrtc.newDeviceIgnore(),
+            "background:transparent;color:#ffedd5;border:1px solid #fb923c",
+            escapeCallback,
+        );
+        span.appendChild(actions);
+    }
+
+    private removeActionButtons(): void {
+        for (const { button, handler } of this.actionButtons) {
+            button.removeEventListener("click", handler);
+        }
+        this.actionButtons = [];
     }
 
     private wireEscapeHintListener(span: HTMLSpanElement): void {
@@ -234,21 +337,63 @@ export class SpeechDomElement extends DOMElement {
             duration: isReducedMotion() ? 1 : 1000,
             onComplete: () => {
                 if (duration < 1) return;
-                this.timeoutDestroyText = setTimeout(() => {
-                    this.destroy();
-                    if (callback) callback(this.id);
-                }, duration);
+                this.autoDestroyPending = true;
+                this.autoDestroyRemainingMs = duration;
+                this.autoDestroyCallback = callback;
+                this.startAutoDestroyTimer();
             },
         });
+    }
+
+    /** Does nothing while the pointer or the focus is on the bubble: the countdown starts when they leave. */
+    private startAutoDestroyTimer(): void {
+        if (this.pointerInside || this.focusInside) {
+            return;
+        }
+        this.autoDestroyStartedAt = Date.now();
+        this.timeoutDestroyText = setTimeout(() => {
+            this.timeoutDestroyText = null;
+            this.autoDestroyPending = false;
+            const callback = this.autoDestroyCallback;
+            this.destroy();
+            if (callback) callback(this.id);
+        }, this.autoDestroyRemainingMs);
+    }
+
+    private pauseAutoDestroy(): void {
+        if (this.timeoutDestroyText === null) {
+            return;
+        }
+        clearTimeout(this.timeoutDestroyText);
+        this.timeoutDestroyText = null;
+        this.autoDestroyRemainingMs = Math.max(
+            0,
+            this.autoDestroyRemainingMs - (Date.now() - this.autoDestroyStartedAt),
+        );
+    }
+
+    private resumeAutoDestroy(): void {
+        if (!this.autoDestroyPending || this.timeoutDestroyText !== null || this.pointerInside || this.focusInside) {
+            return;
+        }
+        this.autoDestroyRemainingMs = Math.max(this.autoDestroyRemainingMs, MIN_REMAINING_AFTER_PAUSE_MS);
+        this.startAutoDestroyTimer();
     }
 
     public destroy() {
         if (this.span) {
             this.span.removeEventListener("click", this.callback);
+            this.span.removeEventListener("mouseenter", this.onPointerEnter);
+            this.span.removeEventListener("mouseleave", this.onPointerLeave);
+            this.span.removeEventListener("focusin", this.onFocusIn);
+            this.span.removeEventListener("focusout", this.onFocusOut);
             this.removeEscapeHintListener(this.span);
         }
+        this.removeActionButtons();
+        this.autoDestroyPending = false;
         if (this.timeoutDestroyText) {
             clearTimeout(this.timeoutDestroyText);
+            this.timeoutDestroyText = null;
         }
         super.destroy();
     }

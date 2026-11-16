@@ -3,12 +3,14 @@
     import LL from "../../../../i18n/i18n-svelte";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { isMobileOnboarding } from "../../../Stores/OnboardingStore";
+    import OnboardingNav from "../OnboardingNav.svelte";
 
     interface Props {
         onnext?: () => void;
+        onback?: () => void;
     }
 
-    const { onnext }: Props = $props();
+    const { onnext, onback }: Props = $props();
 
     const worldName = gameManager.getCurrentGameScene()?.room?.roomName ?? "WorkAdventure";
 
@@ -39,11 +41,13 @@
             <div class="flex justify-center gap-4 pt-4">
                 <button
                     class="px-5 py-3 sm:px-6 min-h-11 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
+                    data-onboarding-primary
                     onclick={handleNext}
                 >
                     {$LL.onboarding.complete.finish()}
                 </button>
             </div>
+            <OnboardingNav {onback} showSkip={false} />
         </div>
     </div>
 </div>

@@ -15,7 +15,8 @@
     import { SelectCompanionScene, SelectCompanionSceneName } from "../../../Phaser/Login/SelectCompanionScene";
     import type { RequestedStatus } from "../../../Rules/StatusRules/statusRules";
     import { loginSceneVisibleStore } from "../../../Stores/LoginSceneStore";
-    import { enableCameraSceneVisibilityStore } from "../../../Stores/MediaStore";
+    import { enableCameraSceneVisibilityStore, inBbbStore, inJitsiStore } from "../../../Stores/MediaStore";
+    import { requestedMegaphoneStore } from "../../../Stores/MegaphoneStore";
     import type { RightMenuItem } from "../../../Stores/MenuStore";
     import {
         openedMenuStore,
@@ -28,6 +29,7 @@
     import { pwaInstallProfileMenuEligibleStore } from "../../../Stores/PwaInstallStore";
     import { selectCharacterSceneVisibleStore } from "../../../Stores/SelectCharacterStore";
     import { selectCompanionSceneVisibleStore } from "../../../Stores/SelectCompanionStore";
+    import { isInActiveConversationStore } from "../../../Stores/StreamableCollectionStore";
     import { getStatusInformation } from "../../../Utils/AvailabilityStatus";
     import { LL } from "../../../../i18n/i18n-svelte";
     import ActionBarButton from "../ActionBarButton.svelte";
@@ -42,6 +44,8 @@
     import AdditionalMenuItems from "./AdditionalMenuItems.svelte";
     import ContextualMenuItems from "./ContextualMenuItems.svelte";
     import HeaderMenuItem from "./HeaderMenuItem.svelte";
+    import LeaveConversationConfirmModal from "./LeaveConversationConfirmModal.svelte";
+    import { modals } from "@wa-modals";
 
     interface Props {
         showContextualMenuItems: boolean;
@@ -65,25 +69,60 @@
         return connectionManager.currentRoom?.opidWokaNamePolicy !== "force_opid";
     }
 
+    /**
+     * Whether leaving the room now would cost the user something: a conversation (bubble or meeting) or a live they
+     * speak in. The tutorial simulates a bubble, in which nothing real is lost.
+     */
+    function isInConversation(): boolean {
+        if (get(onboardingStore) !== null) {
+            return false;
+        }
+        return get(isInActiveConversationStore) || get(inJitsiStore) || get(inBbbStore) || get(requestedMegaphoneStore);
+    }
+
+    /**
+     * These screens replace the room: leaving it ends the conversation, stops a live and turns the camera and the
+     * microphone off. Say so first, but only when something would be lost.
+     */
+    function leaveRoomThen(leave: () => void) {
+        if (!isInConversation()) {
+            leave();
+            return;
+        }
+        openedMenuStore.close("profileMenu");
+        modals.open(LeaveConversationConfirmModal, { onconfirm: leave });
+    }
+
     function openEditNameScene() {
-        loginSceneVisibleStore.set(true);
-        gameManager.leaveGame(LoginSceneName, new LoginScene());
+        leaveRoomThen(() => {
+            loginSceneVisibleStore.set(true);
+            gameManager.leaveGame(LoginSceneName, new LoginScene());
+            analyticsClient.trackAdminEvent("profile.name_edit_opened");
+        });
     }
 
     function openEditSkinScene() {
-        selectCharacterSceneVisibleStore.set(true);
-        gameManager.leaveGame(SelectCharacterSceneName, new SelectCharacterScene());
+        leaveRoomThen(() => {
+            selectCharacterSceneVisibleStore.set(true);
+            gameManager.leaveGame(SelectCharacterSceneName, new SelectCharacterScene());
+            analyticsClient.trackAdminEvent("profile.woka_edit_opened");
+        });
     }
 
     function openEditCompanionScene() {
-        selectCompanionSceneVisibleStore.set(true);
-        gameManager.leaveGame(SelectCompanionSceneName, new SelectCompanionScene());
+        leaveRoomThen(() => {
+            selectCompanionSceneVisibleStore.set(true);
+            gameManager.leaveGame(SelectCompanionSceneName, new SelectCompanionScene());
+            analyticsClient.trackAdminEvent("profile.companion_edit_opened");
+        });
     }
 
     function openEnableCameraScene() {
-        enableCameraSceneVisibilityStore.showEnableCameraScene();
-        gameManager.leaveGame(EnableCameraSceneName, new EnableCameraScene());
-        analyticsClient.trackAdminEvent("profile.camera_edit_opened");
+        leaveRoomThen(() => {
+            enableCameraSceneVisibilityStore.showEnableCameraScene();
+            gameManager.leaveGame(EnableCameraSceneName, new EnableCameraScene());
+            analyticsClient.trackAdminEvent("profile.camera_edit_opened");
+        });
     }
 
     async function openFeedbackScene() {
@@ -149,7 +188,7 @@
     function openPwaInstallPrompt(): void {
         analyticsClient.trackAdminEvent("pwa.install_from_profile_menu_clicked");
         openedMenuStore.close("profileMenu");
-        gameManager.leaveGame(PwaInstallSceneName, new PwaInstallScene());
+        leaveRoomThen(() => gameManager.leaveGame(PwaInstallSceneName, new PwaInstallScene()));
     }
 </script>
 
@@ -159,32 +198,14 @@
         <AvailabilityStatusList statusInformation={getStatusInformation(statusToShow)} />
         <HeaderMenuItem label={$LL.menu.sub.profile()} />
         {#if showWokaNameMenuItem()}
-            <ActionBarButton
-                label={$LL.actionbar.profil()}
-                onclick={() => {
-                    openEditNameScene();
-                    analyticsClient.trackAdminEvent("profile.name_edit_opened");
-                }}
-            >
+            <ActionBarButton label={$LL.actionbar.profil()} onclick={openEditNameScene}>
                 <ProfilIcon height="h-5" width="w-5" strokeWidth="2" />
             </ActionBarButton>
         {/if}
-        <ActionBarButton
-            label={$LL.actionbar.woka()}
-            onclick={() => {
-                openEditSkinScene();
-                analyticsClient.trackAdminEvent("profile.woka_edit_opened");
-            }}
-        >
+        <ActionBarButton label={$LL.actionbar.woka()} onclick={openEditSkinScene}>
             <Woka userId={-1} placeholderSrc="" customWidth="26px" />
         </ActionBarButton>
-        <ActionBarButton
-            label={$LL.actionbar.companion()}
-            onclick={() => {
-                openEditCompanionScene();
-                analyticsClient.trackAdminEvent("profile.companion_edit_opened");
-            }}
-        >
+        <ActionBarButton label={$LL.actionbar.companion()} onclick={openEditCompanionScene}>
             <Companion userId={-1} placeholderSrc="../static/images/default-companion.png" width="26px" height="26px" />
         </ActionBarButton>
 
@@ -267,7 +288,7 @@
                 <IconHelpCircle height="20" width="20" class="text-white" aria-hidden="true" />
             </div>
             <div class="text-start leading-4 text-white flex items-center">
-                {$LL.menu.profile.helpAndTips()}
+                {$LL.menu.profile.replayTutorial()}
             </div>
         </button>
 

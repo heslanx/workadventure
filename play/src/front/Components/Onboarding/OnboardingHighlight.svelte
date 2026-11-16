@@ -3,9 +3,12 @@
     import * as Phaser from "phaser";
     import { PositionMessage_Direction } from "@workadventure/messages";
     import { CancelablePromise } from "cancelable-promise";
+    import { get } from "svelte/store";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { MINIMUM_DISTANCE, WOKA_SPEED } from "../../Enum/EnvironmentVariable";
     import { onboardingStore } from "../../Stores/OnboardingStore";
+    import { liveAnnouncementStore } from "../../Stores/LiveAnnouncementStore";
+    import { LL } from "../../../i18n/i18n-svelte";
     import { currentPlayerGroupIdStore } from "../../Stores/CurrentPlayerGroupStore";
     import { type Avatar, ConversationBubble } from "../../Phaser/Entity/ConversationBubble";
     import { RemotePlayer } from "../../Phaser/Entity/RemotePlayer";
@@ -102,7 +105,9 @@
                 tryingToCreateSimulatedRemotePlayer = true;
             }
             if (step === "communication" && alreadyInRealBubble) {
-                onboardingStore.skip();
+                // Not the user's choice, so the tutorial is not marked as done. Say so: the panel just disappears.
+                onboardingStore.cancel();
+                liveAnnouncementStore.announce(get(LL).onboarding.cancelledByConversation());
             }
 
             // Update bubble users if simulated player was just created

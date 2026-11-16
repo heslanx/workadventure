@@ -1,15 +1,16 @@
 <script lang="ts">
-    import { fly, isReducedMotion } from "../../../Utils/reducedMotion";
+    import { fly } from "../../../Utils/reducedMotion";
     import LL from "../../../../i18n/i18n-svelte";
+    import OnboardingNav from "../OnboardingNav.svelte";
+    import OnboardingVideo from "../OnboardingVideo.svelte";
 
     interface Props {
         onnext?: () => void;
+        onback?: () => void;
+        onskip?: () => void;
     }
 
-    const { onnext }: Props = $props();
-
-    // A looping autoplay video is decorative motion: under reduced motion the user starts it from the controls.
-    const reducedMotion = isReducedMotion();
+    const { onnext, onback, onskip }: Props = $props();
 
     function handleNext() {
         onnext?.();
@@ -29,25 +30,19 @@
                 {$LL.onboarding.lockBubble.description()}
             </p>
             {#if $LL.onboarding.lockBubble.video()}
-                <video
-                    autoplay={!reducedMotion}
-                    muted
-                    loop={!reducedMotion}
-                    controls={reducedMotion}
-                    class="w-full rounded-lg mb-4"
-                >
-                    <source src={$LL.onboarding.lockBubble.video()} type="video/mp4" />
-                </video>
+                <OnboardingVideo src={$LL.onboarding.lockBubble.video()} />
             {/if}
             <p class="text-xs text-white/70 italic">
                 {$LL.onboarding.lockBubble.hint()}
             </p>
             <button
                 class="mt-4 px-4 py-2 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
+                data-onboarding-primary
                 onclick={handleNext}
             >
                 {$LL.onboarding.lockBubble.next()}
             </button>
+            <OnboardingNav {onback} {onskip} />
         </div>
     </div>
 </div>

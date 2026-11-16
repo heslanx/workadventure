@@ -25,6 +25,13 @@ export type OnboardingStep =
     | "complete"
     | null;
 
+/** The steps of one run, in order. The mobile run is shorter (joystick + communication + complete). */
+function getOnboardingSteps(mobile: boolean): OnboardingStep[] {
+    return mobile
+        ? ["welcome", "movement", "communication", "complete"]
+        : ["welcome", "movement", "communication", "lockBubble", "screenSharing", "pictureInPicture", "complete"];
+}
+
 function createOnboardingStore() {
     const { subscribe, set } = writable<OnboardingStep | null>(null);
 
@@ -62,11 +69,7 @@ function createOnboardingStore() {
         const current = get({ subscribe });
         if (current === null) return;
 
-        const mobile = get(isMobileOnboarding);
-        const steps: OnboardingStep[] = mobile
-            ? (["welcome", "movement", "communication", "complete"] as OnboardingStep[])
-            : ["welcome", "movement", "communication", "lockBubble", "screenSharing", "pictureInPicture", "complete"];
-
+        const steps = getOnboardingSteps(get(isMobileOnboarding));
         const currentIndex = steps.indexOf(current);
 
         if (currentIndex < steps.length - 1) {
@@ -76,16 +79,44 @@ function createOnboardingStore() {
         }
     };
 
+    /** Goes back one step. Does nothing on the first step. */
+    const back = () => {
+        const current = get({ subscribe });
+        if (current === null) return;
+
+        const steps = getOnboardingSteps(get(isMobileOnboarding));
+        const currentIndex = steps.indexOf(current);
+
+        if (currentIndex > 0) {
+            set(steps[currentIndex - 1]);
+        }
+    };
+
+    /** The user chose to leave the tutorial: it counts as done, so it does not come back on its own. */
     const skip = () => {
         complete();
     };
 
+    /**
+     * The tutorial stops for a reason the user did not choose (they walked into a real conversation): it is closed
+     * without being marked as done, so it is offered again on the next visit.
+     */
+    const cancel = () => {
+        close(false);
+    };
+
     const complete = () => {
+        close(true);
+    };
+
+    const close = (markAsDone: boolean) => {
         isMobileOnboarding.set(false);
         const scene = gameManager.getCurrentGameScene();
-        const manager = scene?.getPlayerVariablesManager?.();
-        if (manager) {
-            manager.setVariableFromApp(TUTORIAL_DONE_KEY, true, { persist: true, scope: "world" });
+        if (markAsDone) {
+            const manager = scene?.getPlayerVariablesManager?.();
+            if (manager) {
+                manager.setVariableFromApp(TUTORIAL_DONE_KEY, true, { persist: true, scope: "world" });
+            }
         }
         const cameraManager = scene?.getCameraManager();
         // Stop camera following for onboarding completion
@@ -118,7 +149,9 @@ function createOnboardingStore() {
         subscribe,
         start,
         next,
+        back,
         skip,
+        cancel,
         complete,
         reset,
         restart,
@@ -127,3 +160,15 @@ function createOnboardingStore() {
 }
 
 export const onboardingStore = createOnboardingStore();
+
+/** Position of the current step in the current run (1-based), or undefined when no tutorial is running. */
+export const onboardingProgressStore = derived(
+    [onboardingStore, isMobileOnboarding],
+    ([$onboardingStore, $isMobileOnboarding]) => {
+        if ($onboardingStore === null) return undefined;
+        const steps = getOnboardingSteps($isMobileOnboarding);
+        const index = steps.indexOf($onboardingStore);
+        if (index < 0) return undefined;
+        return { current: index + 1, total: steps.length };
+    },
+);

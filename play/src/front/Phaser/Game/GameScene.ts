@@ -124,6 +124,7 @@ import LoudEnvironmentToast from "../../Components/Toasts/LoudEnvironmentToast.s
 import { LL, locale } from "../../../i18n/i18n-svelte";
 import { toastStore } from "../../Stores/ToastStoreSingleton";
 import { audioInterruptedStore } from "../../Stores/AudioInterruptedStore";
+import { liveAnnouncementStore } from "../../Stores/LiveAnnouncementStore";
 import { loudEnvironmentWarningStore } from "../../Stores/LoudEnvironmentWarningStore";
 import { GameSceneUserInputHandler } from "../UserInput/GameSceneUserInputHandler";
 import { followUsersColorStore, followUsersStore } from "../../Stores/FollowStore";
@@ -309,6 +310,9 @@ const MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS = 10_000;
 
 // How many players the scene reports for one remote-player drift message.
 const MAX_REPORTED_PLAYERS_PER_DRIFT = 10;
+
+// How long the "new device detected" prompt stays over the character before it goes away unanswered.
+const NEW_MEDIA_DEVICE_PROMPT_DURATION_MS = 30_000;
 
 export class GameScene extends DirtyScene {
     Terrains: Array<Tileset>;
@@ -2884,13 +2888,23 @@ export class GameScene extends DirtyScene {
                     return devices;
                 }, []);
 
+                if (devicesToNotify.length > 0) {
+                    // The prompt is a bubble over the character, outside any live region: say it to screen readers too.
+                    liveAnnouncementStore.announce(
+                        get(LL).camera.webrtc.newDeviceAnnouncement({
+                            device: devicesToNotify.map((device) => device.label).join(", "),
+                        }),
+                    );
+                }
+
                 for (const device of devicesToNotify) {
                     const id = `${PLAYTEXT_NEW_MEDIA_DEVICE_PREFIX}${device.deviceId}`;
                     this.CurrentPlayer.destroyText(id);
                     this.CurrentPlayer.playText(
                         id,
                         get(LL).camera.webrtc.newDeviceDetected({ device: device.label }),
-                        5000,
+                        // Long enough to notice and answer; it waits while the pointer or the focus is on it.
+                        NEW_MEDIA_DEVICE_PROMPT_DURATION_MS,
                         () => {
                             this.CurrentPlayer.destroyText(id);
 
