@@ -21,6 +21,7 @@ import type { Observable } from "rxjs";
 import { Subject } from "rxjs";
 import { Deferred } from "@workadventure/shared-utils";
 import { get } from "svelte/store";
+import { isEditorPlacementTileAvailable } from "../MapEditor/EditorPlacement";
 import { PathTileType } from "../../../Utils/PathfindingManager";
 import { getAreaMapEditors, hasMeetingProperty } from "../../../Rules/MeetingRules";
 import { extensionModuleStore } from "../../../Stores/GameSceneStore";
@@ -1048,7 +1049,7 @@ export class GameMapFrontWrapper {
         if (yIndex >= height || yIndex < 0 || xIndex >= width || xIndex < 0) {
             return false;
         }
-        if (this.collisionGrid[yIndex][xIndex] !== 0) {
+        if (!isEditorPlacementTileAvailable(this.collisionGrid[yIndex][xIndex])) {
             return false;
         }
         return true;
