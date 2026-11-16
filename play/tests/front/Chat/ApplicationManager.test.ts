@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import type { ApplicationDefinitionInterface } from "@workadventure/messages";
 import { describe, expect, it, vi } from "vitest";
 

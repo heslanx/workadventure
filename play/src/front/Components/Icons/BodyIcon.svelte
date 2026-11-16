@@ -23,6 +23,7 @@
     viewBox="0 0 24 24"
     fill="currentColor"
     class="{height} {width} {strokeColor} {fillColor} {classList} {hover} icon icon-tabler icons-tabler-filled icon-tabler-man"
+    aria-hidden="true"
 >
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
     <path

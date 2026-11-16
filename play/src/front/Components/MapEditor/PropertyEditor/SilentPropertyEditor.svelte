@@ -17,7 +17,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconMicrophoneOff font-size="18" class="mr-2" />
+            <IconMicrophoneOff font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.silent.label()}
         </span>
     {/snippet}

@@ -25,8 +25,15 @@
                 class="grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-0 border-t border-solid border-white/10 first:border-t-0"
             >
                 <span class="flex min-w-0 flex-col">
-                    <span class="truncate font-title text-lg leading-tight">{event.title}</span>
-                    <span class="text-sm text-contrast-200">{formatTime(event.start)} – {formatTime(event.end)}</span>
+                    <span class="line-clamp-2 break-words font-title text-lg leading-tight" title={event.title}
+                        >{event.title}</span
+                    >
+                    <span class="text-sm text-contrast-200"
+                        >{$LL.externalModule.calendar.timeRange({
+                            start: formatTime(event.start),
+                            end: formatTime(event.end),
+                        })}</span
+                    >
                 </span>
                 <CalendarJoinButton {event} labelled />
             </li>

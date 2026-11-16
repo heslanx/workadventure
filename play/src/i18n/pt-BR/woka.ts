@@ -11,7 +11,7 @@ const woka: BaseTranslation = {
     },
     selectWoka: {
         title: "Selecionar seu personagem",
-        continue: "Continuar",
+        continue: "Usar este personagem",
         customize: "Customizar seu personagem",
         randomize: "Selecionar aleatoriamente",
     },

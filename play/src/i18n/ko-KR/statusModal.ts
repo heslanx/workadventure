@@ -11,6 +11,7 @@ const statusModal: DeepPartial<Translation["statusModal"]> = {
     audioPlaybackBlocked: "브라우저가 오디오 재생을 차단했습니다.",
     audioPlaybackInterrupted: "브라우저 또는 운영 체제에 의해 오디오 재생이 중단되었습니다.",
     turnSoundOn: "소리 켜기",
+    stayInCurrentStatus: "현재 상태 유지",
 };
 
 export default statusModal;

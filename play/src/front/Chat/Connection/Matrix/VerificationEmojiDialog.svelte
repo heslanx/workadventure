@@ -92,7 +92,7 @@
                 </div>
             {:else}
                 <div class="w-full py-12 flex justify-center">
-                    <IconVerify class="scale-[6]" stroke="2" />
+                    <IconVerify aria-hidden="true" class="scale-[6]" stroke="2" />
                 </div>
             {/if}
         </div>

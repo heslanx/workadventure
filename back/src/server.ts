@@ -1,3 +1,5 @@
+import { captureBackendException } from "@workadventure/shared-utils/src/Observability/PostHogErrors";
+import { isObservabilityActive } from "@workadventure/shared-utils/src/Observability/NodeTelemetry";
 // lib/server.ts
 import * as Sentry from "@sentry/node";
 import { runDrains } from "@workadventure/shared-utils";
@@ -21,10 +23,16 @@ if (SENTRY_DSN != undefined) {
     try {
         const sentryOptions: Sentry.NodeOptions = {
             dsn: SENTRY_DSN,
+            // The shared SDK owns OpenTelemetry when explicitly enabled.
+            skipOpenTelemetrySetup: isObservabilityActive(),
             release: SENTRY_RELEASE,
             environment: SENTRY_ENVIRONMENT,
             tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
             attachStacktrace: true,
+            beforeSend: (event, hint) => {
+                if (hint.originalException) captureBackendException(hint.originalException);
+                return event;
+            },
         };
 
         Sentry.init(sentryOptions);

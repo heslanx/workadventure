@@ -1,22 +1,23 @@
 import type { BaseTranslation } from "../i18n-types";
 
 const area: BaseTranslation = {
-    noAccess: "Sorry, you don't have access to this area.",
+    noAccess: "You don't have access to this area. Ask an administrator for access.",
     blocked: {
-        locked: "This area is locked. You cannot enter.",
-        maxUsers: "This area is full. You cannot enter.",
-        noAccess: "Sorry, you don't have access to this area.",
+        locked: "This area is locked. Ask an administrator to unlock it.",
+        maxUsers: "This area is full. Try again when someone leaves.",
+        noAccess: "You don't have access to this area. Ask an administrator for access.",
         unlockWithTrigger: "{trigger} to unlock this area.",
     },
     personalArea: {
-        claimDescription: "This is a personal area. Do you want to make it yours ?",
+        nameLabel: "Your name",
+        claimDescription: "This is a personal area. Do you want to make it yours?",
         buttons: {
-            yes: "Yes",
-            no: "No",
-            confirm: "Confirm",
+            yes: "Claim this area",
+            no: "Not now",
+            confirm: "Replace my area",
         },
         personalSpaceWithNames: "{name}'s personal space",
-        alreadyHavePersonalArea: "You already have a personal area. Will be deleted if you claim this one.",
+        alreadyHavePersonalArea: "You already have a personal area. It will be deleted if you claim this one.",
     },
 };
 

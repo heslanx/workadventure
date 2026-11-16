@@ -268,8 +268,8 @@
     <div class="flex flex-col gap-2">
         <div>
             {#if $selectCategoryStore === undefined}
-                <p class="text-[22px] m-0">{$LL.mapEditor.entityEditor.header.title()}</p>
-                <p class="m-0 opacity-50">{$LL.mapEditor.entityEditor.header.description()}</p>
+                <p class="text-[1.375rem] m-0">{$LL.mapEditor.entityEditor.header.title()}</p>
+                <p class="m-0 text-white/60">{$LL.mapEditor.entityEditor.header.description()}</p>
             {:else}
                 <div class="flex flex-row items-center gap-4">
                     <button
@@ -277,7 +277,7 @@
                         data-testid="clearCurrentSelection"
                         onclick={displayTagListAndClearCurrentSelection}
                     >
-                        <IconChevronLeft />{$LL.mapEditor.entityEditor.buttons.back()}
+                        <IconChevronLeft aria-hidden="true" />{$LL.mapEditor.entityEditor.buttons.back()}
                     </button>
                 </div>
             {/if}
@@ -287,6 +287,7 @@
                 rounded
                 bind:value={searchTerm}
                 placeholder={$LL.mapEditor.entityEditor.itemPicker.searchPlaceholder()}
+                aria-label={$LL.mapEditor.entityEditor.itemPicker.searchPlaceholder()}
             />
             <!--            <input-->
             <!--                class="flex-1 h-8 !border-solid !rounded-2xl !border-gray-400 !placeholder-gray-400"-->
@@ -313,7 +314,7 @@
         {:else}
             {#if pickedEntityVariant && pickedEntity}
                 <div
-                    class="fixed left-2 flex flex-row gap-2 items-center justify-center border-b-blue-50 p-4 mb-2 min-h-[200px] bg-white/20 backdrop-blur-xl rounded-2xl w-[calc(100%-16px)]"
+                    class="fixed left-2 flex flex-row gap-2 items-center justify-center border-b-blue-50 p-4 mb-2 min-h-[200px] bg-white/20 backdrop-blur-xl rounded-lg w-[calc(100%-16px)]"
                 >
                     {#if isEditingCustomEntity}
                         <CustomEntityEditionForm
@@ -353,7 +354,7 @@
                                 onclick={() => setIsEditingCustomEntity(true)}
                             >
                                 {#snippet icon()}
-                                    <IconPencil font-size={16} />
+                                    <IconPencil font-size={16} aria-hidden="true" />
                                 {/snippet}
                                 {$LL.mapEditor.entityEditor.buttons.editEntity()}
                             </Button>

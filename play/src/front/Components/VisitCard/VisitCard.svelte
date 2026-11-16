@@ -68,7 +68,7 @@
 </script>
 
 <section class="visitCard {isEmbedded ? 'w-full' : 'max-w-[320px]'}">
-    <div class="{isEmbedded ? '' : 'bg-contrast/80 rounded-lg'} relative backdrop-blur">
+    <div class="{isEmbedded ? '' : 'bg-contrast/95 rounded-lg'} relative backdrop-blur">
         {#if !isEmbedded}
             <div class="absolute top-2 {h > maxHeigth ? 'right-5' : ' right-2'}">
                 <ButtonClose size="xs" dataTestId="closeVisitCardButton" onclick={closeCard} />
@@ -81,7 +81,7 @@
         {/if}
         <div class={isEmbedded ? "" : "px-2 py-4"}>
             <iframe
-                title="visitCard"
+                title={$LL.woka.menu.businessCard()}
                 src="{visitCardUrl}&embed={isEmbedded}"
                 class="max-h-lg"
                 allow="clipboard-read; clipboard-write {visitCardUrl}"
@@ -101,16 +101,20 @@
                             onclick={openChat}
                         >
                             {#snippet icon()}
-                                <img src={chat} alt="chat" class="w-6 h-6 mx-2" draggable="false" />
+                                <img src={chat} alt="" class="w-6 h-6 mx-2" draggable="false" />
                             {/snippet}
                             {$LL.menu.visitCard.sendMessage()}
                         </Button>
                     {:else}
                         <button
+                            type="button"
                             class="light cursor-pointer px-3 mb-2 mr-0"
                             data-testid="sendMessagefromVisitCardButton"
+                            aria-label={$LL.menu.visitCard.sendMessage()}
+                            aria-busy="true"
+                            aria-disabled="true"
                         >
-                            <IconLoader class="animate-spin" />
+                            <IconLoader class="animate-spin" aria-hidden="true" />
                         </button>
                     {/if}
                 {/if}

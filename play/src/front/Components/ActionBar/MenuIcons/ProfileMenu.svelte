@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
+    import LL from "../../../../i18n/i18n-svelte";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { availabilityStatusStore, inBbbStore, inJitsiStore, inLivekitStore } from "../../../Stores/MediaStore";
     import { openedMenuStore } from "../../../Stores/MenuStore";
@@ -70,10 +71,23 @@
     <div
         class="group bg-contrast/80 backdrop-blur rounded-lg h-16 @sm/actions:h-14 @xl/actions:h-16 p-2 cursor-pointer"
         class:profile-menu-force-burger={forceBurgerMode}
+        role="button"
+        tabindex="0"
+        aria-label={[$LL.menu.sub.profile(), userName, getStatusLabel($availabilityStatusStore)]
+            .filter(Boolean)
+            .join(", ")}
+        aria-haspopup="menu"
+        aria-expanded={$openedMenuStore === "profileMenu"}
         bind:this={triggerElement}
         onclick={(event) => {
             event.preventDefault();
             openedMenuStore.toggle("profileMenu");
+        }}
+        onkeydown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openedMenuStore.toggle("profileMenu");
+            }
         }}
     >
         <span
@@ -85,9 +99,9 @@
             class="profile-menu-burger-icon h-12 w-12 @sm/actions:h-10 @sm/actions:w-10 @xl/actions:h-12 @xl/actions:w-12 p-1 m-0 items-center justify-center flex @md/actions:hidden"
         >
             {#if $openedMenuStore !== "profileMenu"}
-                <MenuBurgerIcon classList="pointer-events-none" />
+                <MenuBurgerIcon height="h-5" width="w-5" strokeWidth="2" classList="pointer-events-none" />
             {:else}
-                <XIcon classList="pointer-events-none" />
+                <XIcon height="h-5" width="w-5" strokeWidth="2" classList="pointer-events-none" />
             {/if}
         </div>
         <div
@@ -96,9 +110,10 @@
             <div class="overflow-hidden p-2 flex items-center justify-center rounded h-full aspect-square relative">
                 <Woka userId={-1} placeholderSrc="" customWidth="30px" />
             </div>
-            <div class="grow flex flex-row @xl/actions:flex-col justify-start text-start pr-2">
+            <div class="grow min-w-0 flex flex-row @xl/actions:flex-col justify-start text-start pr-2">
                 <div
-                    class="font-bold text-white leading-5 whitespace-nowrap select-none text-base @sm/actions:text-sm @xl/actions:text-base order-last @xl/actions:order-first flex items-center"
+                    class="max-w-[10rem] @xl/actions:max-w-[14rem] truncate font-bold text-white leading-5 select-none text-base @sm/actions:text-sm @xl/actions:text-base order-last @xl/actions:order-first flex items-center"
+                    title={userName}
                 >
                     {userName}
                 </div>
@@ -106,6 +121,7 @@
                     <div
                         class="aspect-square h-2 w-2 rounded-full me-1.5"
                         style="background-color: {getColorHexOfStatus($availabilityStatusStore)}"
+                        title={getStatusLabel($availabilityStatusStore)}
                     ></div>
                     <div
                         class="hidden @xl/actions:block"

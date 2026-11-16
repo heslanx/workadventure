@@ -18,6 +18,7 @@ const area: DeepPartial<Translation["area"]> = {
         },
         personalSpaceWithNames: "Không gian cá nhân của {name}",
         alreadyHavePersonalArea: "Bạn đã có một khu vực cá nhân. Nó sẽ bị xóa nếu bạn nhận khu vực này.",
+        nameLabel: "Tên của bạn",
     },
 };
 

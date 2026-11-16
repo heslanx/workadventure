@@ -101,7 +101,11 @@ export class S3FileSystem implements FileSystemInterface {
         }
     }
 
-    async deleteFilesExceptWAM(directory: string, filesFromZip: string[]): Promise<void> {
+    async deleteFilesExceptWAM(
+        directory: string,
+        filesFromZip: string[],
+        wamPathsToDelete: readonly string[],
+    ): Promise<void> {
         if (!directory.endsWith("/")) {
             directory += "/";
         }
@@ -123,8 +127,11 @@ export class S3FileSystem implements FileSystemInterface {
                 const filteredObjects = objects.filter((o) => {
                     if (o.Key?.includes(".wam")) {
                         const wamKey = o.Key?.slice().replace(directory, "");
+                        if (!wamPathsToDelete.includes(wamKey)) {
+                            return false;
+                        }
                         const tmjKey = wamKey.slice().replace(".wam", ".tmj");
-                        // do not delete existing .wam file if there's no new version in zip and .tmj file with the same name exists
+                        // Keep a WAM the upload planned to preserve while deleting the other snapshotted WAM files.
                         if (filesFromZip.includes(tmjKey) && !filesFromZip.includes(wamKey)) {
                             return false;
                         }

@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Ninguna cámara utilizable",
             noDeviceDesc:
                 "El navegador no detecta ninguna cámara utilizable. Prueba otro navegador, comprueba que la cámara esté conectada, revisa la configuración del equipo (privacidad, dispositivos) o reinicia el equipo si el dispositivo debería funcionar.",
+            deviceInUseTitle: "Cámara en uso",
+            deviceInUseDesc: "Otra aplicación está usando la cámara. Cierra esa aplicación y vuelve a intentarlo.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Ningún micrófono utilizable",
             noDeviceDesc:
                 "El navegador no detecta ningún micrófono utilizable. Prueba otro navegador, comprueba el micrófono, revisa la configuración del equipo (privacidad, dispositivos) o reinicia el equipo si el dispositivo debería funcionar.",
+            deviceInUseTitle: "Micrófono en uso",
+            deviceInUseDesc: "Otra aplicación está usando el micrófono. Cierra esa aplicación y vuelve a intentarlo.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -102,6 +106,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Pedir silenciar vídeo",
         muteVideoEveryBody: "Silenciar vídeo para todos",
         blockOrReportUser: "Bloquear o informar de usuario",
+        mutedAudioNotice: "El micrófono de {name} está silenciado. Solo esa persona puede volver a activarlo.",
+        askedMuteAudioNotice: "Se pidió a {name} que silenciara su micrófono.",
+        mutedVideoNotice: "La cámara de {name} está apagada. Solo esa persona puede volver a encenderla.",
+        askedMuteVideoNotice: "Se pidió a {name} que apagara su cámara.",
+        alreadyMuted: "Ya silenciado",
+        videoAlreadyOff: "Vídeo ya apagado",
+    },
+    startError: {
+        camera: "Tu cámara no se inició. Los demás no pueden verte. Cierra otras aplicaciones que la estén usando e inténtalo de nuevo.",
+        microphone:
+            "Tu micrófono no se inició. Los demás no pueden oírte. Cierra otras aplicaciones que lo estén usando e inténtalo de nuevo.",
     },
 };
 

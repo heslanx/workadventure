@@ -16,6 +16,7 @@
     import { screenSharingAvailableStore } from "../../Stores/ScreenSharingStore";
     import { isInRemoteConversation } from "../../Stores/StreamableCollectionStore";
     import { pictureInPictureSupportedStore } from "../../Stores/PeerStore";
+    import LL from "../../../i18n/i18n-svelte";
     import MediaSettingsList from "./MediaSettingsList/MediaSettingsList.svelte";
     import CameraMenuItem from "./MenuIcons/CameraMenuItem.svelte";
     import MicrophoneMenuItem from "./MenuIcons/MicrophoneMenuItem.svelte";
@@ -99,13 +100,14 @@
                                             : 'mobile:opacity-100'}
                                         {$mediaSettingsOpenStore || $isInRemoteConversation
                                             ? 'opacity-100'
-                                            : 'group-hover/hardware:opacity-100'}"
+                                            : 'group-hover/hardware:opacity-100 group-focus-within/hardware:opacity-100'}"
                                     >
-                                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                        <div
+                                        <button
+                                            type="button"
                                             data-testid="media-settings-toggle-button"
-                                            class="absolute bottom-1 start-0 end-0 m-auto hover:bg-white/10 h-5 w-5 flex items-center justify-center rounded-sm mobile:rotate-180"
+                                            aria-label={$LL.actionbar.mediaSettingsToggle()}
+                                            aria-expanded={$mediaSettingsOpenStore}
+                                            class="absolute bottom-1 start-0 end-0 m-auto p-0 hover:bg-white/10 h-5 w-5 flex items-center justify-center rounded-sm cursor-pointer mobile:rotate-180 before:absolute before:-inset-1"
                                             onclick={(event) => {
                                                 event.stopPropagation();
                                                 event.preventDefault();
@@ -113,12 +115,12 @@
                                             }}
                                         >
                                             <IconChevronUp
-                                                stroke="2"
+                                                aria-hidden="true"
                                                 class="aspect-square transition-all select-none {$mediaSettingsOpenStore
                                                     ? ''
                                                     : 'rotate-180'}"
                                             />
-                                        </div>
+                                        </button>
                                     </div>
                                 {/if}
                                 {#if $mediaSettingsOpenStore}

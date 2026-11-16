@@ -16,6 +16,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "Zwisk k serweru je so zhubił. Njemóžeš z druhimi rěčeć.",
+        retrying: "Awtomatisce so znowa spytuje. Tuta powěsć zmizny, hdyž serwer wotmołwi.",
     },
     errorDialog: {
         title: "Zmylk 😱",
@@ -24,6 +25,16 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "Móžeš tež do našu FAQ pohladać:",
         reload: "aktualizować",
         close: "začinić",
+    },
+    errorScreen: {
+        genericTitle: "Njemóžachmy tutón swět wočinić.",
+        genericNextStep:
+            "Začitaj stronu znowa, zo by hišće raz spytał. Jeli so to dale stawa, skontaktuj swojeho administratora.",
+        networkTitle: "Njemóžachmy serwer docpěć.",
+        networkNextStep: "Přepruwuj swój internetny zwisk a začitaj potom stronu znowa.",
+        reload: "Stronu znowa začitać",
+        showDetails: "Podrobnosće pokazać",
+        code: "Kod zmylka {code}",
     },
 };
 

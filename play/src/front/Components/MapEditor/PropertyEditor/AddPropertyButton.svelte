@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
+    import { fade } from "../../../Utils/reducedMotion";
     import type { WorkAdventureComponent } from "../../../../types/component";
     import { createFloatingUiActions } from "../../../Utils/svelte-floatingui";
 
@@ -48,6 +48,7 @@
     border border-solid border-white/25 text-gray-500 rounded-lg relative flex-col m-[0.25rem_0.125rem]"
     use:floatingUiRef
     data-testid={testId}
+    aria-label={headerText}
     {style}
     onclick={(event) => {
         if (disabled) return;
@@ -57,10 +58,10 @@
 >
     <div class="w-8 h-8 flex flex-wrap items-center justify-center" style={disabled ? `opacity: 0.5;` : ""}>
         {#if typeof img === "string"}
-            <img draggable="false" class="max-w-[75%] max-h-[75%]" src={img} alt="info icon" />
+            <img draggable="false" class="max-w-[75%] max-h-[75%]" src={img} alt="" />
         {:else if img !== undefined}
             {@const Image = img}
-            <Image class="text-white" font-size="20" />
+            <Image class="text-white" font-size="20" aria-hidden="true" />
         {/if}
     </div>
 </button>

@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Žana wužiwajomna kamera",
             noDeviceDesc:
                 "Wobhladowak namaka žanu kameru, kotruž móžeće wužiwać. Spytajće druhi wobhladowak, překontrolujće zwjazanje kamery, přepruwujće konfiguraciju kompjutra (datowy škit, graty) abo startujće kompjuter znowa, jeli hardware měł fungować.",
+            deviceInUseTitle: "Kamera so wužiwa",
+            deviceInUseDesc: "Wašu kameru wužiwa druha aplikacija. Začińće tu aplikaciju a spytajće to potom znowa.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Žadyn wužiwajomny mikrofon",
             noDeviceDesc:
                 "Wobhladowak namaka žadyn mikrofon, kotryž móžeće wužiwać. Spytajće druhi wobhladowak, překontrolujće mikrofon, přepruwujće konfiguraciju kompjutra (datowy škit, graty) abo startujće kompjuter znowa, jeli hardware měł fungować.",
+            deviceInUseTitle: "Mikrofon so wužiwa",
+            deviceInUseDesc: "Waš mikrofon wužiwa druha aplikacija. Začińće tu aplikaciju a spytajće to potom znowa.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -100,6 +104,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "prosyć, zo by video stummschalten",
         muteVideoEveryBody: "video za wšěch stummschalten",
         blockOrReportUser: "wužiwarja blokować abo pśihłasować",
+        mutedAudioNotice: "Mikrofon wosoby {name} je wupinjeny. Jenož tuta wosoba móže jón zaso zapinać.",
+        askedMuteAudioNotice: "{name} bu prošeny/-a, mikrofon wupinać.",
+        mutedVideoNotice: "Kamera wosoby {name} je wupinjena. Jenož tuta wosoba móže ju zaso zapinać.",
+        askedMuteVideoNotice: "{name} bu prošeny/-a, kameru wupinać.",
+        alreadyMuted: "Hižo wupinjeny",
+        videoAlreadyOff: "Widejo je hižo wupinjene",
+    },
+    startError: {
+        camera: "Twoja kamera njeje startowała. Druzy će njewidźa. Začiń druhe aplikacije, kotrež ju wužiwaja, a spytaj hišće raz.",
+        microphone:
+            "Twój mikrofon njeje startował. Druzy će njesłyša. Začiń druhe aplikacije, kotrež jón wužiwaja, a spytaj hišće raz.",
     },
 };
 

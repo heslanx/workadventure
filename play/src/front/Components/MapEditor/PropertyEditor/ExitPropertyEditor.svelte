@@ -95,7 +95,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconDoorOut font-size="18" class="mr-2" />
+            <IconDoorOut font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.exit.label()}
         </span>
     {/snippet}

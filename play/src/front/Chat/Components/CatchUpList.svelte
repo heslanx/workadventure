@@ -19,7 +19,7 @@
 {#if conversations.length === 0}
     <div class="flex flex-col flex-1 ps-4 items-center pt-8" data-testid="chatCatchUpEmpty">
         <div class="text-center px-3 max-w-md">
-            <img class="mx-auto" src={getCloseImg} alt={$LL.chat.getCloserTitle()} draggable="false" />
+            <img class="mx-auto" src={getCloseImg} alt="" draggable="false" />
             <div class="text-lg font-bold text-center">{$LL.chat.catchUpEmpty()}</div>
         </div>
     </div>
@@ -42,7 +42,7 @@
                             <span class="flex items-baseline gap-2">
                                 <span class="min-w-0 truncate text-sm font-bold">{name}</span>
                                 {#if item.lastMessageTimestamp > 0}
-                                    <span class="ms-auto shrink-0 text-xs text-white/50">
+                                    <span class="ms-auto shrink-0 text-xs text-white/60">
                                         {formatLastActivity(item.lastMessageTimestamp, new Date(), $locale)}
                                     </span>
                                 {/if}

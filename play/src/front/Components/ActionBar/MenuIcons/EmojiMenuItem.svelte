@@ -37,6 +37,9 @@
     desc={$LL.actionbar.help.emoji.desc()}
 >
     <EmojiIcon
+        height="h-5"
+        width="w-5"
+        strokeWidth="2"
         strokeColor={$activeSecondaryZoneActionBarStore === "emote"
             ? "stroke-contrast fill-white"
             : "stroke-white fill-transparent"}

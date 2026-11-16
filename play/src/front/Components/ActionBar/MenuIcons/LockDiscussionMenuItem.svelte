@@ -192,15 +192,16 @@
         tooltipDesc={$LL.actionbar.help.lock.desc()}
         disabledHelp={$openedMenuStore !== undefined || (showAreaLock && !canLockSomething)}
         state={buttonState}
+        pressed={lockState === undefined ? undefined : Boolean(lockState)}
         dataTestId="lock-button"
         media="./static/Videos/LockBubble.mp4"
         desc={$LL.actionbar.help.lock.desc()}
         bind:wrapperDiv={triggerElement}
     >
         {#if lockState}
-            <LockIcon />
+            <LockIcon height="h-5" width="w-5" strokeWidth="2" />
         {:else}
-            <LockOpenIcon />
+            <LockOpenIcon height="h-5" width="w-5" strokeWidth="2" />
         {/if}
     </ActionBarButton>
 {/if}

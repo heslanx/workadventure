@@ -16,9 +16,10 @@
     class="relative w-full aspect-square rounded-md border-2 transition-all hover:brightness-50"
     {onclick}
     title={label}
+    aria-current={isSelected ? "true" : undefined}
 >
     <div
-        class="absolute inset-0 rounded-sm overflow-hidden {isSelected
+        class="absolute inset-0 rounded overflow-hidden {isSelected
             ? 'border-white border-solid border-2'
             : 'border-transparent hover:border-white/30'}"
     >

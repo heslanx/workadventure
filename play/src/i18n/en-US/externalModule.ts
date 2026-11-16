@@ -24,7 +24,7 @@ const externalModule: BaseTranslation = {
             guestError: "You are not connected and cannot create Teams Online Meeting 😭",
             missingScope: "No meeting was created: your Microsoft account is not allowed to create meetings.",
             missingScopeExplain:
-                "Wait for a participant who can create it, or reconnect — if your administrator has just enabled it, reconnecting is enough.",
+                "Wait for a participant who can create it, or reconnect. If your administrator has just enabled it, reconnecting is enough.",
             error: "The Teams meeting could not be created.",
             errorExplain: "No worries, you can still join meetings when someone else creates one 🙏",
             reconnect: "Reconnect Teams",
@@ -48,7 +48,7 @@ const externalModule: BaseTranslation = {
         howToGetTokenButton: "How to get my discord login token",
         loggedIn: "Connected with:",
         saveSync: "Save and synchronize",
-        logout: "Logout",
+        logout: "Log out",
         back: "Back",
         tokenPlaceholder: "Your Discord Token",
         loginWithQrCode: "Login with QR Code",
@@ -64,9 +64,8 @@ const externalModule: BaseTranslation = {
         popupScopeToSyncTask: "Synchronize my tasks",
         popupCancel: "Cancel",
         isSyncronized: "Synchronized with Outlook",
-        popupScopeIsConnectedExplainText:
-            "You are already connected, please click on the button to logout and reconnect.",
-        popupScopeIsConnectedButton: "Logout",
+        popupScopeIsConnectedExplainText: "You are already connected. Log out, then connect again.",
+        popupScopeIsConnectedButton: "Log out",
         popupErrorTitle: "⚠️ Outlook or Teams module synchronization failed",
         popupErrorDescription:
             "Outlook or Teams module initialization synchronization has failed. To be connected, please try to reconnect.",
@@ -102,11 +101,11 @@ const externalModule: BaseTranslation = {
             missingScopeExplain: "Wait for a participant who can create it, or reconnect and allow meeting creation.",
             reconnect: "Reconnect Google",
         },
-        popupScopeIsConnectedButton: "Logout",
-        popupScopeIsConnectedExplainText:
-            "You are already connected, please click on the button to logout and reconnect.",
+        popupScopeIsConnectedButton: "Log out",
+        popupScopeIsConnectedExplainText: "You are already connected. Log out, then connect again.",
     },
     calendar: {
+        timeRange: "{start} to {end}",
         title: "Your upcoming meetings",
         joinMeeting: "Click here to join the meeting",
         joinMeetingInWorkAdventure: "Click here to join the meeting in WorkAdventure",
@@ -119,7 +118,7 @@ const externalModule: BaseTranslation = {
         goThere: "Go there",
         overlapping: "{count:number} meetings overlap",
         meetingCount: "{count:number} meeting{{s}}",
-        noMeetings: "No meetings in the next 7 days",
+        noMeetings: "No meetings in the next 7 days. Events you add to your calendar appear here.",
         days: "Days",
         meetingsInProgress: "{count:number} meetings in progress",
         inProgressCount: "{count:number} in progress",
@@ -143,7 +142,7 @@ const externalModule: BaseTranslation = {
         inProgress: "In progress",
         allLists: "All",
         lists: "Lists",
-        noTasks: "Nothing to do",
+        noTasks: "No tasks yet. Tasks you create in Outlook or Google Tasks appear here.",
         hasNote: "Has a note",
         recurrence: {
             daily: "Every day",

@@ -97,7 +97,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconFileMusic font-size="18" class="mr-2" />
+            <IconFileMusic font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.playAudio.label()}
         </span>
     {/snippet}
@@ -143,14 +143,26 @@
                         {/if}
                     </div>
                     {#if !playing}
-                        <button onclick={playAudio} class="ps-1 pe-0 pb-1 text-xl"> ▶️ </button>
+                        <button
+                            onclick={playAudio}
+                            class="ps-1 pe-0 pb-1 text-xl min-h-7 min-w-7"
+                            aria-label={$LL.a11y.mapEditorPlayAudio()}
+                        >
+                            <span aria-hidden="true">▶️</span>
+                        </button>
                     {:else}
-                        <button onclick={stopAudio} class="ps-1 pe-0 pb-1 text-xl"> ⏹️ </button>
+                        <button
+                            onclick={stopAudio}
+                            class="ps-1 pe-0 pb-1 text-xl min-h-7 min-w-7"
+                            aria-label={$LL.a11y.mapEditorStopAudio()}
+                        >
+                            <span aria-hidden="true">⏹️</span>
+                        </button>
                     {/if}
                 </div>
                 <audio use:audioOutput class="audio-manager-audioplayer" bind:this={HTMLAudioPlayer}></audio>
             </div>
-            <div class="value-input text-danger-800" class:invisible={!errorMessage}>
+            <div class="value-input text-danger-400" class:invisible={!errorMessage}>
                 ⚠️ {errorMessage}
             </div>
 

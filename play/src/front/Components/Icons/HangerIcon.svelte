@@ -30,6 +30,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     class="{height} {width} {strokeColor} {classList} {hover} icon icon-tabler icons-tabler-outline icon-tabler-hanger"
+    aria-hidden="true"
 >
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
     <path

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
 
     import tooltipArrow from "../images/arrow-top.svg";
 
@@ -48,7 +48,7 @@
             loading="eager"
             src={tooltipArrow}
             class="content-[''] absolute -top-1 start-0 end-0 m-auto w-2 h-1"
-            alt="Sub menu arrow"
+            alt=""
             style="visibility: hidden;"
             draggable="false"
         />

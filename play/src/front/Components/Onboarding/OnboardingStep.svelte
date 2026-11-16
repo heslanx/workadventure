@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import { fade } from "svelte/transition";
+    import { fade } from "../../Utils/reducedMotion";
     import { onboardingStore } from "../../Stores/OnboardingStore";
 
     interface Props {

@@ -84,7 +84,7 @@
             <!-- Ring drawn as an inset box-shadow, not a border, so it doesn't shrink the content
                  box and shift the magnified video off the cursor point. -->
             <div
-                class="absolute rounded-full shadow-lg overflow-hidden bg-black"
+                class="absolute rounded-full overflow-hidden bg-black"
                 style={`left: ${activeEffect.x * clientWidth - LOUPE_RADIUS}px; top: ${activeEffect.y * clientHeight - LOUPE_RADIUS}px; width: ${LOUPE_RADIUS * 2}px; height: ${LOUPE_RADIUS * 2}px; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.8), 0 4px 14px rgba(0,0,0,0.4);`}
             >
                 <!-- svelte-ignore a11y_media_has_caption -->

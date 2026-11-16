@@ -1,3 +1,7 @@
+import {
+    ObservabilityEnvironmentVariables,
+    PostHogEnvironmentVariables,
+} from "@workadventure/shared-utils/src/Observability/EnvironmentVariables";
 import { z } from "zod";
 import {
     AbsoluteOrRelativeUrl,
@@ -10,6 +14,8 @@ import {
 } from "@workadventure/shared-utils/src/EnvironmentVariables/EnvironmentVariableUtils";
 
 export const EnvironmentVariables = z.object({
+    ...ObservabilityEnvironmentVariables,
+    ...PostHogEnvironmentVariables,
     API_URL: z.string().min(1).describe("The URI(s) of the back server"),
     AWS_ACCESS_KEY_ID: z
         .string()

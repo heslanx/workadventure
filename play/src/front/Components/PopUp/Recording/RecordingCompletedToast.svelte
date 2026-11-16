@@ -49,7 +49,7 @@
                         </div>
                         <span class="step-text text-xxs">{$LL.actionbar.help.apps.title()}</span>
                     </div>
-                    <div class="step-arrow">→</div>
+                    <div class="step-arrow" aria-hidden="true">→</div>
                     <div class="step-item">
                         <span class="step-number">2</span>
                         <div class="step-icon">
@@ -113,7 +113,7 @@
 
     .recording-title {
         font-weight: 600;
-        font-size: 16px;
+        font-size: 1rem;
         color: white;
         line-height: 1.4;
         margin: 0;
@@ -124,9 +124,9 @@
     }
 
     .recording-subtitle {
-        font-size: 13px;
+        font-size: 0.8125rem;
         color: rgba(255, 255, 255, 0.8);
-        line-height: 1.3;
+        line-height: 1.5;
         margin: 0;
     }
 
@@ -138,7 +138,7 @@
     }
 
     .instructions-text {
-        font-size: 13px;
+        font-size: 0.8125rem;
         color: rgba(255, 255, 255, 0.9);
         margin: 0 0 12px 0;
         font-weight: 500;
@@ -169,10 +169,10 @@
         width: 24px;
         height: 24px;
         background: rgba(34, 197, 94, 0.2);
-        color: #22c55e;
+        color: #4ade80;
         border-radius: 50%;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 0.75rem;
         flex-shrink: 0;
     }
 
@@ -190,18 +190,18 @@
 
     .step-arrow {
         color: rgba(255, 255, 255, 0.5);
-        font-size: 18px;
+        font-size: 1.125rem;
         font-weight: bold;
         flex-shrink: 0;
     }
 
     @media (max-width: 768px) {
         .recording-title {
-            font-size: 15px;
+            font-size: 0.9375rem;
         }
 
         .recording-subtitle {
-            font-size: 12px;
+            font-size: 0.75rem;
         }
 
         .instructions-steps {

@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "حظر أي تواصل مع {userName}. يمكن التراجع عنه في أي وقت.", // Block any communication with {userName}. Can be undone at any time.
         unblock: "رفع الحظر عن هذا المستخدم", // Unblock this user
         block: "حظر هذا المستخدم", // Block this user
+        blockedNotice: "تم حظر {userName}. لم يعد بإمكانكما رؤية بعضكما أو سماع بعضكما.",
+        unblockedNotice: "تم إلغاء حظر {userName}.",
+        undoBlock: "إلغاء الحظر",
+        undoUnblock: "الحظر مرة أخرى",
     },
     title: "الإبلاغ", // Report
     content: "قم بكتابة تقرير إلى مديري هذه الغرفة. يمكنهم بعد ذلك حظر المستخدم.", // Write a report to the administrators of this room. They can then ban the user.
@@ -67,6 +71,7 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "حظر هؤلاء الأشخاص الـ {count}",
             },
         },
+        sendFailed: "لم يُرسل: الاتصال بالخادم مقطوع. نصك محفوظ؛ حاول مرة أخرى بعد قليل.",
     },
     kicked: {
         title: "تم إخراجك",

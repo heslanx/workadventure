@@ -3,11 +3,12 @@
     import { onDestroy, onMount } from "svelte";
     import { on } from "svelte/events";
     import { computePosition, flip, shift, offset, autoUpdate } from "@floating-ui/dom";
+    import type { Snippet } from "svelte";
     import type { Readable } from "svelte/store";
     import { AskPositionMessage_AskType } from "@workadventure/messages";
     import teleport from "../../images/teleport.svg";
     import businessCard from "../../images/business-cards.svg";
-    import type { ChatUser } from "../../Connection/ChatConnection";
+    import type { AnyKindOfUser, ChatUser } from "../../Connection/ChatConnection";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { scriptUtils } from "../../../Api/ScriptUtils";
     import { requestVisitCardsStore } from "../../../Stores/GameStore";
@@ -19,14 +20,19 @@
     import { IconForbid, IconDots, IconCamera, IconMapPin, IconUserPlus } from "@wa-icons";
 
     interface Props {
-        user: ChatUser;
+        /** A message sender may be an admin user without a chat id: it is matched by uuid then. */
+        user: AnyKindOfUser;
+        /** Replaces the "..." icon, e.g. a sender name in a message. Rendered as plain content when no action applies. */
+        trigger?: Snippet;
+        /** Accessible name of the trigger button when `trigger` is set. */
+        triggerLabel?: string;
     }
 
-    let { user }: Props = $props();
+    let { user: userProp, trigger, triggerLabel }: Props = $props();
 
     let popoversElement: HTMLDivElement | undefined = $state();
 
-    let buttonElement: HTMLButtonElement;
+    let buttonElement: HTMLButtonElement | undefined = $state();
 
     let chatMenuActive = $state(false);
 
@@ -62,11 +68,21 @@
             return usersList;
         })(),
     );
+    // A message sender carries only its chat identity: complete it with the user list entry (room, uuid, card).
+    let user = $derived(
+        usersWithRoomPlayUri.find(
+            (u) => (!!userProp.chatId && u.chatId === userProp.chatId) || (!!userProp.uuid && u.uuid === userProp.uuid),
+        ) ?? userProp,
+    );
     let userToLocate = $derived(usersWithRoomPlayUri.find((u) => u.uuid === user.uuid));
 
     const { connection, roomUrl } = gameManager.getCurrentGameScene();
 
     let isInTheSameMap = $derived(user.playUri === roomUrl);
+    // Same conditions as the menu entries below: a trigger never opens an empty menu.
+    let hasActions = $derived(
+        isInTheSameMap || !!user.playUri || !!user.visitCardUrl || (!!user.username && !!user.uuid),
+    );
 
     const goTo = (type: string, playUri: string, uuid: string) => {
         analyticsClient.trackAdminEvent("user.go_to_clicked");
@@ -193,27 +209,39 @@
     }
 </script>
 
-<div class="wa-dropdown">
-    <button
-        class="m-0 p-2 flex items-center rounded-md hover:bg-white/10 bg-transparent !text-white"
-        bind:this={buttonElement}
-        onclick={(event) => {
-            event.stopPropagation();
-            toggleChatUSerMenu();
-        }}
-    >
-        <IconDots font-size="16" />
-    </button>
+<div class={trigger ? "wa-dropdown inline-flex min-w-0" : "wa-dropdown"}>
+    {#if trigger && !hasActions}
+        {@render trigger()}
+    {:else}
+        <button
+            class={trigger
+                ? "m-0 p-0 inline-flex min-w-0 items-end rounded bg-transparent border-0 cursor-pointer !text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                : "m-0 p-2 flex items-center rounded hover:bg-white/10 bg-transparent !text-white"}
+            type="button"
+            aria-label={trigger ? triggerLabel : $LL.chat.manageRoomUsers.actions()}
+            aria-expanded={chatMenuActive}
+            bind:this={buttonElement}
+            onclick={(event) => {
+                event.stopPropagation();
+                toggleChatUSerMenu();
+            }}
+        >
+            {#if trigger}
+                {@render trigger()}
+            {:else}
+                <IconDots aria-hidden="true" font-size="16" />
+            {/if}
+        </button>
+    {/if}
     <!-- onmouseleave={closeChatUserMenu} -->
     {#if chatMenuActive}
         <div
             bind:this={popoversElement}
-            class="wa-dropdown-menu z-10 mr-1 fixed bg-contrast/80 backdrop-blur-md rounded-md p-1"
+            class="wa-dropdown-menu z-10 mr-1 fixed bg-contrast/95 backdrop-blur-md rounded-md p-1"
         >
             {#if isInTheSameMap}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <span
+                <button
+                    type="button"
                     class="walk-to wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded"
                     onclick={(event) => {
                         event.stopPropagation();
@@ -221,26 +249,25 @@
                         closeChatUserMenu();
                     }}
                 >
-                    <IconCamera class="w-4" />
-                    {$LL.chat.userList.TalkTo()}</span
+                    <IconCamera aria-hidden="true" class="w-4" />
+                    {$LL.chat.userList.TalkTo()}</button
                 >
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <span
+                <button
+                    type="button"
+                    disabled={userToLocate == undefined}
                     class={`follow wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded ${
-                        userToLocate == undefined ? "opacity-50 cursor-not-allowed pointer-events-none" : ""
+                        userToLocate == undefined ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                     onclick={(event) => {
                         event.stopPropagation();
                         locateUser();
                     }}
                 >
-                    <IconMapPin class="w-4" />
+                    <IconMapPin aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.follow()}
-                </span>
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <span
+                </button>
+                <button
+                    type="button"
                     class="invite wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded"
                     data-testid="user-list-invite"
                     onclick={(event) => {
@@ -260,32 +287,23 @@
                         closeChatUserMenu();
                     }}
                 >
-                    <IconUserPlus class="w-4" />
+                    <IconUserPlus aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.invite()}
-                </span>
+                </button>
             {:else if user.playUri}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <span
+                <button
+                    type="button"
                     class="teleport wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded"
                     onclick={(event) => {
                         event.stopPropagation();
                         goTo("room", user.playUri ?? "", user.uuid ?? "");
                         closeChatUserMenu();
                     }}
-                    ><img
-                        class="noselect"
-                        src={teleport}
-                        alt={$LL.chat.userList.teleport()}
-                        height="13"
-                        width="13"
-                        draggable="false"
-                    />
-                    {$LL.chat.userList.teleport()}</span
+                    ><img class="noselect" src={teleport} alt="" height="13" width="13" draggable="false" />
+                    {$LL.chat.userList.teleport()}</button
                 >
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <span
+                <button
+                    type="button"
                     class="invite wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded"
                     data-testid="user-list-invite"
                     onclick={(event) => {
@@ -305,41 +323,32 @@
                         closeChatUserMenu();
                     }}
                 >
-                    <IconUserPlus class="w-4" />
+                    <IconUserPlus aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.invite()}
-                </span>
+                </button>
             {/if}
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
             {#if user.visitCardUrl}
-                <span
+                <button
+                    type="button"
                     class="businessCard wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded"
                     onclick={(event) => {
                         event.stopPropagation();
                         showBusinessCard(user.visitCardUrl);
                     }}
-                    ><img
-                        class="noselect"
-                        src={businessCard}
-                        alt={$LL.chat.userList.businessCard()}
-                        height="13"
-                        width="13"
-                        draggable="false"
-                    />
-                    {$LL.chat.userList.businessCard()}</span
+                    ><img class="noselect" src={businessCard} alt="" height="13" width="13" draggable="false" />
+                    {$LL.chat.userList.businessCard()}</button
                 >
             {/if}
 
             {#if user.username && user.uuid}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <span
+                <button
+                    type="button"
                     class="ban wa-dropdown-item text-nowrap flex gap-2 items-center hover:bg-white/10 m-0 p-2 w-full text-sm rounded"
                     onclick={(event) => {
                         event.stopPropagation();
                         openModerationModal(user.uuid ?? "", user.username ?? "");
                         closeChatUserMenu();
-                    }}><IconForbid font-size="13" /> {$LL.report.moderate.action()}</span
+                    }}><IconForbid aria-hidden="true" font-size="13" /> {$LL.report.moderate.action()}</button
                 >
             {/if}
         </div>

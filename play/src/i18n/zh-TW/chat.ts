@@ -432,6 +432,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "更多選項",
         createRoom: "建立房間",
         createFolder: "建立資料夾",
+        nameRequired: "輸入名稱即可建立。",
     },
     createFolder: {
         title: "建立新資料夾",
@@ -576,6 +577,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "變更存取權限",
                 changePermissions: "變更權限",
             },
+            nothingToSave: "變更設定後才能儲存。",
+            nameRequiredToSave: "輸入房間名稱後才能儲存。",
         },
         pollsEmpty: "尚無投票",
         participantsEmpty: "尚無參與者",
@@ -586,6 +589,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "無法在時間軸中開啟此投票。",
         closeFolderMembers: "關閉資料夾成員",
         folderMembersHint: "資料夾成員可以加入其中對成員開放的房間。",
+        proximityParticipantsEmpty: "你附近沒有人。走近某人即可開始對話。",
     },
     roomMenu: {
         leaveRoom: {
@@ -832,6 +836,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "安全",
         securityHint: "備份金鑰可在新裝置上解鎖你的加密訊息。",
         advancedSection: "進階",
+        notSet: "未設定",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix 個人資料",
@@ -868,7 +873,22 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "結束此投票？",
         endPollMessage: "之後任何人都無法再投票，結果仍會顯示。",
         save: "儲存",
+        deleteMessageNamedTitle: "要刪除「{excerpt}」嗎?",
+        cannotUndo: "此操作無法復原。",
     },
+    chatTurnedOffInArea: "此區域已關閉聊天。離開該區域即可再次傳送訊息。",
+    searchFailed: "搜尋失敗。清單中可能缺少部分結果。",
+    searchRetry: "重新搜尋",
+    copyFailed: "無法複製",
+    directMessagesEmpty: "還沒有私人訊息。開啟使用者清單,選擇一個人開始聊天。",
+    roomsEmpty: "還沒有群組對話。建立一個房間來開始對話。",
+    folderEmpty: "此資料夾中還沒有房間。建立一個房間來開始對話。",
+    connectionErrorImpact: "重新連線之前,無法傳送或接收訊息。",
+    connectionErrorSince: "自 {time} 起無法使用。",
+    connectionRetrying: "正在重試聊天連線…",
+    connectionRetryFailed: "聊天仍然無法連線。請再試一次,如果持續失敗,請重新載入頁面。",
+    connectionRecovered: "聊天已恢復。它在 {from} 至 {to} 期間無法使用。",
+    connectionRecoveredDismiss: "關閉此通知",
 };
 
 export default chat;

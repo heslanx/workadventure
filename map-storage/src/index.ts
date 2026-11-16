@@ -1,4 +1,7 @@
 import * as fs from "fs";
+import { captureBackendException } from "@workadventure/shared-utils/src/Observability/PostHogErrors";
+import { runDrains } from "@workadventure/shared-utils/src/ShutdownDrains";
+import { isObservabilityActive } from "@workadventure/shared-utils/src/Observability/NodeTelemetry";
 import * as Sentry from "@sentry/node";
 import * as grpc from "@grpc/grpc-js";
 import express from "express";
@@ -33,10 +36,16 @@ if (SENTRY_DSN != undefined) {
     try {
         const sentryOptions: Sentry.NodeOptions = {
             dsn: SENTRY_DSN,
+            // The shared SDK owns OpenTelemetry when explicitly enabled.
+            skipOpenTelemetrySetup: isObservabilityActive(),
             release: SENTRY_RELEASE,
             environment: SENTRY_ENVIRONMENT,
             tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
             attachStacktrace: true,
+            beforeSend: (event, hint) => {
+                if (hint.originalException) captureBackendException(hint.originalException);
+                return event;
+            },
         };
 
         Sentry.init(sentryOptions);
@@ -212,6 +221,7 @@ Sentry.setupExpressErrorHandler(app);
 // (e.g. a transient S3 outage) the request ends up here as a 500. Without overriding the header,
 // the browser/CDN would cache that 500 for up to a year and keep serving it even after S3 recovers.
 app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    captureBackendException(err);
     if (!res.headersSent) {
         res.setHeader("Cache-Control", "no-store");
     }
@@ -220,4 +230,20 @@ app.use((err: unknown, req: express.Request, res: express.Response, next: expres
 
 app.listen(3000, () => {
     console.info(`[${new Date().toISOString()}] Application is running on port 3000`);
+});
+
+let shuttingDown = false;
+const shutdown = (exitCode: number): void => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    runDrains(5000)
+        .finally(() => process.exit(exitCode))
+        .catch(() => process.exit(1));
+};
+process.once("SIGTERM", () => shutdown(0));
+process.once("SIGINT", () => shutdown(0));
+process.once("uncaughtException", (error) => {
+    captureBackendException(error);
+    console.error("Map storage crashed", error);
+    shutdown(1);
 });

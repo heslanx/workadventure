@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EnvironmentVariables } from "../../src/pusher/enums/EnvironmentVariableValidator";
 
 describe("OIDC redirect URLs", () => {
     beforeEach(() => {
@@ -94,5 +95,16 @@ describe("Boolean feature flags defaulting to true", () => {
         expect(ENABLE_ISSUE_REPORT).toBe(value);
         expect(FRONT_ENVIRONMENT_VARIABLES.ENABLE_SAY).toBe(value);
         expect(FRONT_ENVIRONMENT_VARIABLES.ENABLE_ISSUE_REPORT).toBe(value);
+    });
+});
+
+describe("PostHog session replay", () => {
+    it.each([
+        [undefined, false],
+        ["", false],
+        ["false", false],
+        ["true", true],
+    ])("is allowed only when POSTHOG_REPLAY_ENABLED is set to true (%s)", (raw, expected) => {
+        expect(EnvironmentVariables.shape.POSTHOG_REPLAY_ENABLED.parse(raw)).toBe(expected);
     });
 });

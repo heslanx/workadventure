@@ -134,6 +134,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Wobłuk za zawrěćenje/wotewrjenje wubrać",
             bubbleLabel: "Diskusijowa balonka",
             unnamedArea: "Wobłuk běz mjena",
+            noPermission: "Njemóžeš tutón wobłuk zawrěć. Proš administratora wo prawo, jón zawrěć.",
         },
         giveBackFloor: {
             title: "Słowo wróćo dać",
@@ -229,6 +230,20 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Nimaće hišće wosobinske pisaće blidko",
         errorMoving: "Wosobinske pisaće blidko njeje so docpěło",
         errorUnclaiming: "Wosobinske pisaće blidko njeje so wotwołało",
+        unclaimConfirmTitle: "Twoje pisanske blido „{name}“ wuswobodźić?",
+        unclaimConfirmMessage:
+            "Budźe hnydom swobodne. Kóždy móže sej jo wzać, a ty dóstanješ jo jenož wróćo, hdyž sej jo znowa wozmješ, jeli je hišće swobodne.",
+    },
+    mediaSettingsToggle: "Nastajenja kamery a mikrofona",
+    blocked: {
+        calendarOff:
+            "Protyka njeje w tutym swěće zwjazana. Administrator móže ju w administraciskich nastajenjach zmóžnić.",
+        todoListOff:
+            "Lisćina nadawkow njeje w tutym swěće zwjazana. Administrator móže ju w administraciskich nastajenjach zmóžnić.",
+        roomListOff: "Tuta karta je lisćinu rumow znjemóžniła. Proš wobsedźerja karty, ju zaso zmóžnić.",
+        screenSharingOff: "Tuta karta je dźělenje wobrazowki tu znjemóžniła. Proš wobsedźerja karty, jo zaso zmóžnić.",
+        chatConnecting: "Chat so hišće zwjazuje. Spytaj za někotre sekundy hišće raz.",
+        alreadyAtDesk: "Sy hižo při swojim pisanskim blidźe.",
     },
 };
 

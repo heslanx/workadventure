@@ -72,7 +72,7 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col bg-white/[0.02]" data-testid="proximityRoomSidePanelQuestions">
-    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-4 py-4">
+    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-3 py-4">
         <form
             class="flex flex-col gap-2"
             onsubmit={(event) => {
@@ -80,12 +80,12 @@
                 createQuestion();
             }}
         >
-            <label class="text-xs font-bold uppercase tracking-widest text-white/55" for="proximity-question-input">
+            <label class="text-xs font-bold uppercase tracking-widest text-white/60" for="proximity-question-input">
                 {$LL.chat.question.ask()}
             </label>
             <textarea
                 id="proximity-question-input"
-                class="m-0 min-h-20 resize-none rounded-lg border border-solid border-white/10 bg-black/20 p-3 text-sm text-white placeholder:text-white/35 focus:border-white/25 focus:outline-none"
+                class="m-0 min-h-20 resize-none rounded-md border border-solid border-white/10 bg-black/20 p-3 text-sm text-white placeholder:text-white/60 focus:border-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 maxlength={maxQuestionLength}
                 placeholder={$LL.chat.question.placeholder()}
                 bind:value={draftQuestion}
@@ -93,7 +93,7 @@
                 data-testid="proximityQuestionInput"
             ></textarea>
             <div class="flex items-center justify-between gap-3">
-                <span class="text-xs text-white/45">{draftQuestion.trim().length}/{maxQuestionLength}</span>
+                <span class="text-xs text-white/70">{draftQuestion.trim().length}/{maxQuestionLength}</span>
                 <button
                     type="submit"
                     class="m-0 rounded-lg border border-solid border-white/10 bg-white/[0.08] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/[0.14] disabled:cursor-not-allowed disabled:opacity-45"
@@ -127,7 +127,7 @@
 
     <div class="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
         {#if filteredQuestionRows.length === 0}
-            <div class="rounded-lg border border-solid border-white/10 bg-white/[0.04] p-4 text-sm text-white/55">
+            <div class="rounded-lg border border-solid border-white/10 bg-white/[0.04] p-4 text-sm text-white/70">
                 {activeFilter === "open" ? $LL.chat.question.emptyOpen() : $LL.chat.question.emptyAnswered()}
             </div>
         {:else}
@@ -140,7 +140,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0 flex-1">
                                 <p class="m-0 whitespace-pre-wrap text-sm leading-5">{state.body}</p>
-                                <div class="mt-2 text-xs text-white/45">
+                                <div class="mt-2 text-xs text-white/70">
                                     {state.senderName ?? $LL.chat.question.unknownAuthor()} · {new Date(
                                         state.createdAt,
                                     ).toLocaleTimeString()}

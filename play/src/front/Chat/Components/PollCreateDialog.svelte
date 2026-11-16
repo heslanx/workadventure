@@ -28,6 +28,10 @@
     let answers = $state((() => Array.from({ length: limits.minAnswers }, () => ""))());
     let errorMessage: string | undefined = $state();
     let isSubmitting = $state(false);
+    let created = false;
+    // A typed question or answer is work: closing asks before it is lost.
+    const hasTypedContent = () =>
+        !created && (question.trim().length > 0 || answers.some((answer) => answer.trim().length > 0));
 
     let normalizedAnswers = $derived(answers.map((answer) => answer.trim()).filter((answer) => answer.length > 0));
     let canAddAnswer = $derived(answers.length < limits.maxAnswers);
@@ -40,6 +44,12 @@
             normalizedAnswers.length >= limits.minAnswers &&
             !hasInvalidAnswerLength &&
             !isSubmitting,
+    );
+    // The blocks a person can fix in this form; the others (no right, sending) keep a plain disabled button.
+    let submitBlockedReason = $derived(
+        question.trim().length === 0 || normalizedAnswers.length < limits.minAnswers
+            ? $LL.chat.poll.create.validationError()
+            : undefined,
     );
 
     function focusChatInput() {
@@ -83,6 +93,7 @@
                 answers: normalizedAnswers,
                 kind: selectedKind,
             });
+            created = true;
             modals.close();
         } catch (error) {
             console.error("Failed to create poll", error);
@@ -94,10 +105,10 @@
 </script>
 
 {#snippet submitSpinner()}
-    <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={16} />
+    <IconLoader aria-hidden="true" class="animate-[spin_2s_linear_infinite]" font-size={16} />
 {/snippet}
 
-<Popup isOpen withAction>
+<Popup isOpen withAction isDirty={hasTypedContent}>
     {#snippet title()}
         <h1 class="text-2xl font-bold">{$LL.chat.poll.create.title()}</h1>
     {/snippet}
@@ -125,7 +136,7 @@
                     <InputGroupLabel id="poll-answers-label">{$LL.chat.poll.create.answers()}</InputGroupLabel>
                     <Button variant="light" appearance="ghost" size="sm" disabled={!canAddAnswer} onclick={addAnswer}>
                         {#snippet icon()}
-                            <IconPlus font-size={16} />
+                            <IconPlus aria-hidden="true" font-size={16} />
                         {/snippet}
                         {$LL.chat.poll.create.addAnswer()}
                     </Button>
@@ -152,7 +163,7 @@
                                 onclick={() => removeAnswer(index)}
                             >
                                 {#snippet icon()}
-                                    <IconTrash font-size={16} />
+                                    <IconTrash aria-hidden="true" font-size={16} />
                                 {/snippet}
                             </Button>
                         </div>
@@ -201,7 +212,7 @@
     {/snippet}
 
     {#snippet action()}
-        <div class="flex w-full gap-3">
+        <div class="flex flex-wrap w-full gap-3">
             <Button variant="light" appearance="ghost" class="flex-1" onclick={() => modals.close()}>
                 {$LL.chat.poll.create.cancel()}
             </Button>
@@ -211,6 +222,7 @@
                 dataTestId="submitCreatePollButton"
                 icon={isSubmitting ? submitSpinner : undefined}
                 disabled={!canSubmit}
+                disabledReason={submitBlockedReason}
                 onclick={createPoll}
             >
                 {$LL.chat.poll.create.submit()}

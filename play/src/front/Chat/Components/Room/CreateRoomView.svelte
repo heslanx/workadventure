@@ -1,4 +1,13 @@
+<script lang="ts" module>
+    import type { CreateRoomOptions as DraftOptions } from "../../Connection/ChatConnection";
+
+    // What was typed before going back or closing the chat, per kind and parent folder, until it is created.
+    // A plain cache read once per opening, not reactive state.
+    const drafts: Record<string, DraftOptions | undefined> = {};
+</script>
+
 <script lang="ts">
+    import { onDestroy } from "svelte";
     import { get } from "svelte/store";
     import type { CreateRoomOptions, historyVisibility } from "../../Connection/ChatConnection";
     import { historyVisibilityOptions } from "../../Connection/ChatConnection";
@@ -29,18 +38,34 @@
     let { kind, parentID, parentName = "" }: Props = $props();
 
     // The same fields wherever the view is opened from: only "who can join" depends on having a parent folder.
+    const draftKey = (() => `${kind}:${parentID ?? ""}`)();
     let options: CreateRoomOptions = $state(
-        (() => ({
-            name: "",
-            description: "",
-            visibility: parentID ? "restricted" : "private",
-            parentSpaceID: parentID,
-            historyVisibility: historyVisibilityOptions[0],
-            invite: [],
-        }))(),
+        (() =>
+            drafts[draftKey] ?? {
+                name: "",
+                description: "",
+                visibility: parentID ? "restricted" : "private",
+                parentSpaceID: parentID,
+                historyVisibility: historyVisibilityOptions[0],
+                invite: [],
+            })(),
     );
     let error: string | undefined = $state(undefined);
     let creating = $state(false);
+    let created = false;
+
+    // Back, Esc and closing the chat all unmount this view: keep the typed fields for the next opening.
+    onDestroy(() => {
+        const typed =
+            (options.name ?? "").trim() !== "" ||
+            (options.description ?? "").trim() !== "" ||
+            (options.invite?.length ?? 0) > 0;
+        if (!created && typed) {
+            drafts[draftKey] = $state.snapshot(options);
+        } else {
+            drafts[draftKey] = undefined;
+        }
+    });
 
     const chat = gameManager.chatConnection;
 
@@ -74,12 +99,14 @@
         try {
             if (kind === "room") {
                 const { room } = await chat.createRoom(payload);
+                created = true;
                 notificationPlayingStore.playNotification($LL.chat.createRoom.creationSuccessNotification());
                 navChat.switchToChat();
                 // Open the new room right away instead of leaving the user to find it (maybe in a closed folder).
                 if (room) selectedRoomStore.set(room);
             } else {
                 await chat.createFolder(payload);
+                created = true;
                 analyticsClient.trackAdminEvent("chat.matrix_folder.created");
                 notificationPlayingStore.playNotification($LL.chat.createFolder.creationSuccessNotification());
                 navChat.switchToChat();
@@ -140,7 +167,7 @@
             aria-label={$LL.chat.roomPanel.back()}
             onclick={back}
         >
-            <IconChevronLeft font-size="20" />
+            <IconChevronLeft aria-hidden="true" font-size="20" />
         </button>
         <h2 class="m-0 min-w-0 flex-1 truncate text-base font-bold">{heading}</h2>
     </div>
@@ -265,12 +292,13 @@
             class="w-full"
             dataTestId={kind === "room" ? "createRoomButton" : "createFolderButton"}
             disabled={!canSubmit}
+            disabledReason={creating ? undefined : $LL.chat.createView.nameRequired()}
             onclick={() => {
                 create().catch((e) => console.error(e));
             }}
         >
             {#if creating}
-                <IconLoader class="animate-spin" font-size="16" />
+                <IconLoader aria-hidden="true" class="animate-spin" font-size="16" />
             {/if}
             {kind === "room" ? $LL.chat.createView.createRoom() : $LL.chat.createView.createFolder()}
         </Button>

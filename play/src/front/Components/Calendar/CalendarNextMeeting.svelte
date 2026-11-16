@@ -25,10 +25,14 @@
     class="flex flex-col gap-2 rounded-lg bg-contrast-600 p-3"
 >
     <div class="flex items-center gap-2">
+        <!-- The countdown is what the card is for: it outweighs its caption and the time range below. -->
         <span class="text-sm text-contrast-200">
-            {started
-                ? $LL.externalModule.calendar.inProgress()
-                : `${$LL.externalModule.calendar.nextMeeting()} · ${formatTimeUntil(event.start, now)}`}
+            {#if started}
+                <span class="font-bold text-danger-400">{$LL.externalModule.calendar.inProgress()}</span>
+            {:else}
+                {$LL.externalModule.calendar.nextMeeting()} ·
+                <span class="font-bold text-white">{formatTimeUntil(event.start, now)}</span>
+            {/if}
         </span>
         {#if reminder > now}
             <span class="ms-auto flex items-center gap-1 text-xs text-contrast-200">
@@ -41,9 +45,10 @@
     <div class="flex flex-col">
         <span class="font-title text-xl leading-tight">{event.title}</span>
         <span class="text-sm text-contrast-200">
-            {isToday ? "" : `${formatDayName(startOfDay(event.start), now)} · `}{formatTime(event.start)} – {formatTime(
-                event.end,
-            )}
+            {isToday ? "" : `${formatDayName(startOfDay(event.start), now)} · `}{$LL.externalModule.calendar.timeRange({
+                start: formatTime(event.start),
+                end: formatTime(event.end),
+            })}
         </span>
     </div>
 

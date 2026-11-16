@@ -538,10 +538,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "Zur Entität {name} bewegen",
             moveToArea: "Zum Bereich {name} bewegen",
             errorMovingToObject: "Das Objekt ist noch nicht zugänglich 🚫",
+            show: "Details von {name} anzeigen",
         },
         zoomIn: "Vergrößern +",
         zoomOut: "Verkleinern -",
         showMyLocation: "Meinen Standort anzeigen",
+        noEntitiesMatch: "Keine Objekte entsprechen deiner Suche. Lösche die Suche, um alle Objekte zu sehen.",
+        noAreasMatch: "Keine Bereiche entsprechen deiner Suche. Lösche die Suche, um alle Bereiche zu sehen.",
+        entitiesList: "Objektliste",
+        areasList: "Bereichsliste",
     },
     listRoom: {
         isFetching: "Raumliste wird geladen... ⤵️",
@@ -551,6 +556,13 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Zum Raum wechseln: {roomNameSelected}... Bis bald... 🫡",
         searchLabel: "Einen Raum suchen",
         searchPlaceholder: "Schreiben...",
+        noRoomAvailable: "In dieser Welt ist noch kein Raum verfügbar.",
+        noRoomMatch: "Kein Raum entspricht „{search}“.",
+        clearSearch: "Suche löschen",
+        fetchFailedTitle: "Die Raumliste konnte nicht geladen werden",
+        fetchFailedDetail:
+            "Du bleibst in deinem aktuellen Raum. Überprüfe deine Verbindung und versuche es dann erneut.",
+        retryFetch: "Räume erneut laden",
     },
 };
 

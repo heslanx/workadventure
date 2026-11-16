@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import type { ExternalComponentZones } from "../../Stores/Utils/externalSvelteComponentService";
     import { externalSvelteComponentService } from "../../Stores/Utils/externalSvelteComponentService";
 

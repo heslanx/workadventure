@@ -126,6 +126,7 @@ const externalModule: DeepPartial<Translation["externalModule"]> = {
         startsNow: "Bắt đầu ngay",
         startedAgo: "Đã bắt đầu {ago}",
         noLink: "Không có liên kết cuộc họp",
+        timeRange: "{start} đến {end}",
     },
     todoList: {
         title: "Việc cần làm",

@@ -153,7 +153,7 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col bg-white/[0.02]" data-testid="roomSidePanelHome">
-    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-4 py-5">
+    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-3 py-5">
         <div class="flex items-center gap-3">
             <div class="relative shrink-0">
                 <Avatar
@@ -174,7 +174,7 @@
                         {$roomTopic}
                     </div>
                 {/if}
-                <div class="mt-1 flex flex-wrap gap-1.5 text-xs text-white/65">
+                <div class="mt-1 flex flex-wrap gap-1.5 text-xs text-white/70">
                     <span class="rounded-full bg-white/10 px-2 py-0.5">
                         {$roomType === "direct"
                             ? $LL.chat.roomPanel.home.directRoom()
@@ -189,7 +189,7 @@
         <button
             type="button"
             data-testid="roomID"
-            class="group m-0 mt-3 flex w-full items-center gap-2 rounded-lg border border-solid border-white/10 bg-white/[0.04] px-3 py-2 text-start text-xs text-white/65 transition-colors hover:bg-white/[0.08]"
+            class="group m-0 mt-3 flex w-full items-center gap-2 rounded-lg border border-solid border-white/10 bg-white/[0.04] px-3 py-2 text-start text-xs text-white/70 transition-colors hover:bg-white/[0.08]"
             title={$LL.chat.roomPanel.home.copyRoomId()}
             onclick={copyRoomId}
         >
@@ -210,9 +210,9 @@
                 data-testid="roomSidePanelHomeParticipants"
                 onclick={() => openSection("participants")}
             >
-                <IconUsersGroup font-size={18} />
+                <IconUsersGroup aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.participants()}</div>
-                <div class="mt-1 text-xs text-white/55">{participantBadgeCount}</div>
+                <div class="mt-1 text-base font-bold text-white/70">{participantBadgeCount}</div>
             </button>
 
             <button
@@ -222,7 +222,7 @@
                 onclick={() => openSection("threads")}
             >
                 <div class="flex items-center justify-between gap-2">
-                    <IconMessageCircle2 font-size={18} />
+                    <IconMessageCircle2 aria-hidden="true" font-size={18} />
                     {#if unreadThreadCount > 0}
                         <span class="rounded-full bg-success px-1.5 py-0.5 text-xs font-bold text-contrast">
                             {unreadThreadCount > 9 ? "9+" : unreadThreadCount}
@@ -230,15 +230,19 @@
                     {/if}
                 </div>
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.threads()}</div>
-                <div class="mt-1 flex min-h-4 items-center text-xs text-white/55">
+                <div class="mt-1 flex min-h-4 items-center text-base font-bold text-white/70">
                     {#if room.threadsHydrationState != null && ($threadsHydrationState.status === "loading" || $threadsHydrationState.status === "idle")}
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={14}
+                        />
                     {:else}
                         {threadCardValue}
                     {/if}
                 </div>
                 {#if threadCardHint}
-                    <div class="mt-1 text-xs text-white/45">{threadCardHint}</div>
+                    <div class="mt-1 text-xs text-white/70">{threadCardHint}</div>
                 {/if}
             </button>
 
@@ -248,17 +252,21 @@
                 data-testid="roomSidePanelHomePolls"
                 onclick={() => openSection("polls")}
             >
-                <IconCheckList font-size={18} />
+                <IconCheckList aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.polls()}</div>
-                <div class="mt-1 flex min-h-4 items-center text-xs text-white/55">
+                <div class="mt-1 flex min-h-4 items-center text-base font-bold text-white/70">
                     {#if room.pollCatalogueHydrationState != null && ($pollCatalogueHydrationState.status === "loading" || $pollCatalogueHydrationState.status === "idle")}
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={14}
+                        />
                     {:else}
                         {pollCardValue}
                     {/if}
                 </div>
                 {#if pollCardHint}
-                    <div class="mt-1 text-xs text-white/45">{pollCardHint}</div>
+                    <div class="mt-1 text-xs text-white/70">{pollCardHint}</div>
                 {/if}
             </button>
 
@@ -268,10 +276,10 @@
                 data-testid="roomSidePanelHomeSettings"
                 onclick={() => openSection("settings")}
             >
-                <IconSettings font-size={18} />
+                <IconSettings aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.settings()}</div>
                 {#if !hasAnyEditableSettingsField}
-                    <div class="mt-1 text-xs text-white/55">{$LL.chat.roomPanel.home.readOnly()}</div>
+                    <div class="mt-1 text-xs text-white/70">{$LL.chat.roomPanel.home.readOnly()}</div>
                 {/if}
             </button>
         </div>
@@ -284,7 +292,7 @@
                     data-testid="roomSidePanelHomeInvite"
                     onclick={openManageParticipantsModal}
                 >
-                    <IconUserPlus font-size={17} />
+                    <IconUserPlus aria-hidden="true" font-size={17} />
                     {$LL.chat.manageRoomUsers.buttons.invite()}
                 </button>
             {/if}
@@ -296,10 +304,10 @@
                 onclick={toggleMute}
             >
                 {#if $areNotificationsMuted}
-                    <IconUnMute font-size={17} />
+                    <IconUnMute aria-hidden="true" font-size={17} />
                     {$LL.chat.roomMenu.unmuteRoom()}
                 {:else}
-                    <IconBellOff font-size={17} />
+                    <IconBellOff aria-hidden="true" font-size={17} />
                     {$LL.chat.roomMenu.muteRoom()}
                 {/if}
             </button>
@@ -310,7 +318,7 @@
                 data-testid="roomSidePanelHomeLeave"
                 onclick={leaveRoom}
             >
-                <IconLogout font-size={17} />
+                <IconLogout aria-hidden="true" font-size={17} />
                 {$LL.chat.roomMenu.leaveRoom.label()}
             </button>
         </div>

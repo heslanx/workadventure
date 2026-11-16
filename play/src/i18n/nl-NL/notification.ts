@@ -35,6 +35,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "Kan schermdeling niet starten",
     recordingStarted: "Een persoon in de discussie heeft een opname gestart.",
     urlCopiedToClipboard: "URL gekopieerd naar klembord",
+    muteRequest: {
+        acceptMicrophone: "Mijn microfoon dempen",
+        acceptCamera: "Mijn camera uitzetten",
+        refuse: "Aan laten",
+    },
+    copyFailed:
+        "Kopiëren mislukt: de browser heeft het klembord geblokkeerd. Selecteer de tekst en druk op Ctrl+C (Cmd+C op Mac).",
+    closeToast: "Melding sluiten",
 };
 
 export default notification;

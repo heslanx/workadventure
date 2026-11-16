@@ -61,7 +61,7 @@
 
 {#if actionsMenuData}
     <div
-        class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/80 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
+        class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/95 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
         data-testid="actions-menu"
     >
         <div>
@@ -95,7 +95,7 @@
                 {/if}
             </div>
             {#if actionsMenuData.menuDescription}
-                <p class="text-sm opacity-50 text-white px-4">
+                <p class="text-sm opacity-60 text-white px-4">
                     {actionsMenuData.menuDescription}
                 </p>
             {/if}
@@ -129,6 +129,7 @@
                             {#if action.actionIcon}
                                 <div
                                     class="w-6 h-6"
+                                    aria-hidden="true"
                                     style="background-color: {action.iconColor ?? 'white'};
                                 -webkit-mask: url({action.actionIcon}) no-repeat center;
                                     mask: url({action.actionIcon}) no-repeat center;"

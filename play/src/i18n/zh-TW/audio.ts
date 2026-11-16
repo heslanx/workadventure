@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ 音訊未允許。按 [空白鍵] 或點選此處播放！",
     },
     disable: "關閉你的麥克風",
+    mute: "靜音",
 };
 
 export default audio;

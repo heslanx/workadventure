@@ -50,6 +50,45 @@ describe("SocketManager space state queries", () => {
         expect(querySend).not.toHaveBeenCalled();
     });
 
+    // SM-09: the two messages below reach the log, Sentry and the browser, so they name the space, the user and the case.
+    it("SM-09 (fixed): rejects a query from a socket without a space user id, naming the space and the user", async () => {
+        const querySend = vi.fn();
+        const manager = createManager(querySend);
+
+        await expect(
+            manager.handleSpaceStateQuery(
+                createClient({ spaceUserId: "", userUuid: "uuid-alice" }),
+                "world.space-name",
+                { query: { $case: "raiseHand", raiseHand: { raised: true } } },
+                { signal: new AbortController().signal },
+            ),
+        ).rejects.toHaveProperty(
+            "message",
+            'Cannot query the state of space "world.space-name": user uuid-alice has no space user id',
+        );
+        expect(querySend).not.toHaveBeenCalled();
+    });
+
+    it("SM-09 (fixed): rejects an answer of another case from the space back, naming the space and the case", async () => {
+        const querySend = vi.fn().mockResolvedValue({
+            $case: "addSpaceUserAnswer",
+            addSpaceUserAnswer: { spaceName: "world.space-name", spaceUserId: "space-user-1" },
+        });
+        const manager = createManager(querySend);
+
+        await expect(
+            manager.handleSpaceStateQuery(
+                createClient(),
+                "world.space-name",
+                { query: { $case: "raiseHand", raiseHand: { raised: true } } },
+                { signal: new AbortController().signal },
+            ),
+        ).rejects.toHaveProperty(
+            "message",
+            'Unexpected "addSpaceUserAnswer" answer to the state query of space "world.space-name"',
+        );
+    });
+
     it("forwards a query with the socket space user id, and the recording timeout for recording", async () => {
         const querySend = vi.fn().mockResolvedValue({ $case: "spaceStateAnswer", spaceStateAnswer: {} });
         const manager = createManager(querySend);

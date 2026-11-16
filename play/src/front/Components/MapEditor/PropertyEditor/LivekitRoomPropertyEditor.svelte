@@ -54,7 +54,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconUsersGroup font-size="18" class="mr-2" />
+            <IconUsersGroup font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.livekitRoomProperty.label()}
         </span>
     {/snippet}

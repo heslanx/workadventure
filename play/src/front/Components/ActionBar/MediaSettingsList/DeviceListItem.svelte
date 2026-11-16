@@ -12,7 +12,7 @@
 </script>
 
 <button
-    class="group flex items-center relative z-10 p-1 pl-2 overflow-hidden rounded {isSelected
+    class="group flex items-center relative z-10 p-1 pl-2 min-h-7 overflow-hidden rounded {isSelected
         ? 'bg-secondary'
         : 'hover:bg-white/10'}"
     onclick={(event) => {
@@ -20,6 +20,7 @@
         event.preventDefault();
         onclick();
     }}
+    aria-current={isSelected ? "true" : undefined}
 >
     <div
         class="grow text-left text-sm text-ellipsis overflow-hidden whitespace-nowrap {isSelected
@@ -31,6 +32,6 @@
     </div>
 
     {#if isSelected}
-        <IconCheck font-size="20" />
+        <IconCheck font-size="20" aria-hidden="true" />
     {/if}
 </button>

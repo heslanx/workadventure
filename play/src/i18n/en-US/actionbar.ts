@@ -5,7 +5,7 @@ const actionbar: BaseTranslation = {
     edit: "Edit",
     cancel: "Cancel",
     close: "Close",
-    login: "Login",
+    login: "Log in",
     map: "Tools",
     participantListPlaceholder: "Participants list",
     participantSendMessage: "Send a message",
@@ -19,7 +19,8 @@ const actionbar: BaseTranslation = {
     woka: "Customize your avatar",
     companion: "Add companion",
     //megaphone: "Use megaphone",
-    editCamMic: "Edit cam / mic",
+    editCamMic: "Edit camera and microphone",
+    mediaSettingsToggle: "Camera and microphone settings",
     allSettings: "All settings",
     installPwa: "Install Web App",
     sendAnnouncement: "Send an announcement",
@@ -34,12 +35,12 @@ const actionbar: BaseTranslation = {
     mapEditorLocked: "Map editor is locked 🔐",
     app: "Third applications",
     camera: {
-        disabled: "Your camera is disabled",
-        activate: "Activate your camera",
+        disabled: "Your camera is off",
+        activate: "Turn on your camera",
     },
     microphone: {
-        disabled: "Your microphone is disabled",
-        activate: "Activate your microphone",
+        disabled: "Your microphone is off",
+        activate: "Turn on your microphone",
         noSoundWarning:
             "No sound detected from your microphone. There may be a problem; try changing your microphone in settings.",
         advancedNoiseReduction: "Advanced noise reduction",
@@ -53,7 +54,7 @@ const actionbar: BaseTranslation = {
         ignore: "Ignore",
     },
     speaker: {
-        disabled: "Your speaker is disabled",
+        disabled: "Your speaker is off",
         test: "Test audio output",
         noDevices: "No speaker device found",
         noDevicesDesc:
@@ -133,6 +134,7 @@ const actionbar: BaseTranslation = {
             areaPickerTitle: "Choose area to lock/unlock",
             bubbleLabel: "Discussion bubble",
             unnamedArea: "Unnamed Area",
+            noPermission: "You cannot lock this area. Ask an admin for the right to lock it.",
         },
         giveBackFloor: {
             title: "Give back the floor",
@@ -143,7 +145,7 @@ const actionbar: BaseTranslation = {
             desc: "Stop broadcasting your message to all users.",
         },
         mic: {
-            title: "Enable/disable your microphone",
+            title: "Turn your microphone on or off",
             desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
         },
         micDisabledByStatus: {
@@ -151,7 +153,7 @@ const actionbar: BaseTranslation = {
             desc: 'Your microphone is disabled because you are in "{status}" status.',
         },
         cam: {
-            title: "Enable/disable your camera",
+            title: "Turn your camera on or off",
             desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
         },
         camDisabledByStatus: {
@@ -213,13 +215,21 @@ const actionbar: BaseTranslation = {
         descriptionPlaceholder: "What's the issue? What did you expect?",
         submitButtonLabel: "Send Bug Report",
         cancelButtonLabel: "Cancel",
-        confirmButtonLabel: "Confirm",
+        confirmButtonLabel: "Save screenshot",
         addScreenshotButtonLabel: "Add a Screenshot",
         removeScreenshotButtonLabel: "Remove Screenshot",
         successMessageText: "Thank you for your report! We will review it as soon as possible.",
         highlightToolText: "Highlight",
         hideToolText: "Hide",
         removeHighlightText: "Remove",
+    },
+    blocked: {
+        calendarOff: "The calendar is not connected in this world. An admin can turn it on in the admin settings.",
+        todoListOff: "The to-do list is not connected in this world. An admin can turn it on in the admin settings.",
+        roomListOff: "This map turned off the room list. Ask the map owner to turn it back on.",
+        screenSharingOff: "This map turned off screen sharing here. Ask the map owner to turn it back on.",
+        chatConnecting: "The chat is still connecting. Try again in a few seconds.",
+        alreadyAtDesk: "You are already at your desk.",
     },
     personalDesk: {
         label: "Walk to my desk",
@@ -228,6 +238,9 @@ const actionbar: BaseTranslation = {
         errorNotFound: "You don't have a personal desk yet",
         errorMoving: "Unable to reach your personal desk",
         errorUnclaiming: "Unable to unclaim your personal desk",
+        unclaimConfirmTitle: "Unclaim your desk “{name}”?",
+        unclaimConfirmMessage:
+            "It becomes free right away. Anyone can claim it, and you get it back only by claiming it again while it is still free.",
     },
 };
 export default actionbar;

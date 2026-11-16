@@ -34,7 +34,9 @@
                 · {$LL.externalModule.calendar.inProgressCount({ count: inProgressCount })}
             </span>
         {/if}
-        <span class="ms-auto tabular-nums text-contrast-200">{formatTime(start)} – {formatTime(end)}</span>
+        <span class="ms-auto tabular-nums text-contrast-200"
+            >{$LL.externalModule.calendar.timeRange({ start: formatTime(start), end: formatTime(end) })}</span
+        >
     </div>
 
     <!-- When each meeting runs, against the others: what the list below cannot show. -->
@@ -55,15 +57,19 @@
     <ul class="m-0 flex list-none flex-col p-0">
         {#each events as event, index (event.id)}
             <li
-                class="grid min-h-9 grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-2 border-0 border-t border-solid border-white/10"
+                class="grid min-h-9 grid-cols-[5.5rem_1rem_minmax(0,1fr)_minmax(2rem,auto)] items-center gap-2 border-0 border-t border-solid border-white/10"
             >
                 <span class="text-xs tabular-nums text-contrast-200">
-                    {formatTime(event.start)}–{formatTime(event.end)}
+                    {$LL.externalModule.calendar.timeRange({
+                        start: formatTime(event.start),
+                        end: formatTime(event.end),
+                    })}
                 </span>
-                <span class="flex min-w-0 items-center gap-1.5">
-                    <span class="h-2 w-2 shrink-0 rounded-full {COLORS[index % COLORS.length]}"></span>
-                    <span class="truncate text-sm">{event.title}</span>
+                <!-- Same columns as CalendarEventRow: titles of both row types start on one edge. -->
+                <span class="flex justify-center">
+                    <span class="h-2 w-2 rounded-full {COLORS[index % COLORS.length]}"></span>
                 </span>
+                <span class="truncate text-sm" title={event.title}>{event.title}</span>
                 <CalendarJoinButton {event} />
             </li>
         {/each}

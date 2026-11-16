@@ -14,6 +14,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "서버 연결이 끊어졌습니다. 다른 사람들과 말할 수 없습니다.",
+        retrying: "자동으로 다시 시도하는 중입니다. 서버가 응답하면 이 메시지는 사라집니다.",
     },
     errorDialog: {
         title: "오류 😱",
@@ -22,6 +23,15 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "다음도 확인할 수 있습니다:",
         reload: "새로 고침",
         close: "닫기",
+    },
+    errorScreen: {
+        genericTitle: "이 월드를 열 수 없습니다.",
+        genericNextStep: "페이지를 새로 고쳐 다시 시도하세요. 문제가 계속되면 관리자에게 문의하세요.",
+        networkTitle: "서버에 연결할 수 없습니다.",
+        networkNextStep: "인터넷 연결을 확인한 다음 페이지를 새로 고치세요.",
+        reload: "페이지 새로 고침",
+        showDetails: "세부 정보 보기",
+        code: "오류 코드 {code}",
     },
 };
 

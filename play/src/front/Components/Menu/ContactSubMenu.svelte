@@ -17,7 +17,7 @@
     <section>
         {#if $contactPageStore}
             <iframe
-                title="contact"
+                title={$LL.menu.sub.contact()}
                 src={$contactPageStore}
                 allow="clipboard-read; clipboard-write self {$contactPageStore}"
                 allowfullscreen
@@ -30,7 +30,7 @@
                 <h3 class="blue-title">{$LL.menu.contact.gettingStarted.title()}</h3>
                 <p>{$LL.menu.contact.gettingStarted.description()}</p>
                 <div class="centered-column">
-                    <button type="button" class="light" onclick={goToGettingStarted}>
+                    <button type="button" class="light hit-area" onclick={goToGettingStarted}>
                         {$LL.menu.contact.gettingStarted.title()}</button
                     >
                 </div>
@@ -40,7 +40,7 @@
                 <h3 class="blue-title">{$LL.menu.contact.createMap.title()}</h3>
                 <p>{$LL.menu.contact.createMap.description()}</p>
                 <div class="centered-column">
-                    <button type="button" class="light" onclick={goToBuildingMap}>
+                    <button type="button" class="light hit-area" onclick={goToBuildingMap}>
                         {$LL.menu.contact.createMap.title()}</button
                     >
                 </div>

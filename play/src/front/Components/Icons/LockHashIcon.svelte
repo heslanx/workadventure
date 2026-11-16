@@ -18,6 +18,7 @@
     stroke-linejoin="round"
     {width}
     {height}
+    aria-hidden="true"
     {...rest}
 >
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />

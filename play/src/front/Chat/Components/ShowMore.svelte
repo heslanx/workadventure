@@ -11,6 +11,8 @@
         maxNumber?: number;
         idKey?: keyof T;
         showNothingToDisplayMessage?: boolean;
+        /** Says why the list is empty and what to do next. Defaults to a generic "Nothing to display". */
+        emptyMessage?: string;
         /**
          * When given, items with unread messages come first so they are not hidden behind "Show more",
          * and the button shows how many unread messages the items still hidden hold.
@@ -24,6 +26,7 @@
         maxNumber = 8,
         idKey = "id" as keyof T,
         showNothingToDisplayMessage = true,
+        emptyMessage,
         getUnreadCount,
         children,
     }: Props<T> = $props();
@@ -51,7 +54,7 @@
 {#if items.length > maxNumber}
     <div class="flex justify-center">
         <button
-            class="flex items-center justify-center gap-1.5 p-0 m-0 text-gray-400 text-center w-full text-sm"
+            class="hit-area flex items-center justify-center gap-1.5 p-0 m-0 text-neutral-500 text-center w-full text-sm"
             onclick={() => (showMore = !showMore)}
         >
             {showMore ? $LL.chat.showLess() : $LL.chat.showMore({ number: items.length - maxNumber })}
@@ -66,5 +69,5 @@
     </div>
 {/if}
 {#if showNothingToDisplayMessage && items.length === 0}
-    <p class="pt-1.5 pb-3 px-3 m-0 text-white/50 italic">{$LL.chat.nothingToDisplay()}</p>
+    <p class="pt-1.5 pb-3 px-3 m-0 text-white/60 italic">{emptyMessage ?? $LL.chat.nothingToDisplay()}</p>
 {/if}

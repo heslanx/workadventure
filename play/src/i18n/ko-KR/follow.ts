@@ -22,6 +22,14 @@ const follow: DeepPartial<Translation["follow"]> = {
         },
         yes: "예",
         no: "아니오",
+        buttons: {
+            follow: "{leader}님 따라가기",
+            notNow: "나중에",
+            stopLeading: "안내 중지",
+            keepLeading: "계속 안내하기",
+            stopFollowing: "따라가기 중지",
+            keepFollowing: "계속 따라가기",
+        },
     },
     actionName: "위치 찾기",
 };

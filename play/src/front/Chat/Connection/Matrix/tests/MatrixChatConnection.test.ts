@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import type { MatrixClient, Room } from "matrix-js-sdk";
 import {
     ClientEvent,

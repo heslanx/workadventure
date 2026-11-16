@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Không có camera khả dụng",
             noDeviceDesc:
                 "Trình duyệt của bạn không tìm thấy camera nào có thể dùng. Hãy thử trình duyệt khác, kiểm tra camera đã được kết nối chưa, kiểm tra cài đặt máy tính (quyền riêng tư, thiết bị), hoặc khởi động lại máy nếu thiết bị lẽ ra phải hoạt động.",
+            deviceInUseTitle: "Camera đang được sử dụng",
+            deviceInUseDesc: "Một ứng dụng khác đang sử dụng camera của bạn. Hãy đóng ứng dụng đó rồi thử lại.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Không có micrô khả dụng",
             noDeviceDesc:
                 "Trình duyệt của bạn không tìm thấy micrô nào có thể dùng. Hãy thử trình duyệt khác, kiểm tra micrô đã được kết nối chưa, kiểm tra cài đặt máy tính (quyền riêng tư, thiết bị), hoặc khởi động lại máy nếu thiết bị lẽ ra phải hoạt động.",
+            deviceInUseTitle: "Micrô đang được sử dụng",
+            deviceInUseDesc: "Một ứng dụng khác đang sử dụng micrô của bạn. Hãy đóng ứng dụng đó rồi thử lại.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -101,6 +105,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Yêu cầu tắt video",
         muteVideoEveryBody: "Tắt video của tất cả mọi người",
         blockOrReportUser: "Kiểm duyệt",
+        mutedAudioNotice: "Micrô của {name} đang tắt tiếng. Chỉ người đó mới có thể bật lại.",
+        askedMuteAudioNotice: "Đã yêu cầu {name} tắt tiếng micrô.",
+        mutedVideoNotice: "Camera của {name} đang tắt. Chỉ người đó mới có thể bật lại.",
+        askedMuteVideoNotice: "Đã yêu cầu {name} tắt camera.",
+        alreadyMuted: "Đã tắt tiếng",
+        videoAlreadyOff: "Video đã tắt",
+    },
+    startError: {
+        camera: "Camera của bạn không khởi động được. Người khác không thể nhìn thấy bạn. Hãy đóng các ứng dụng khác đang dùng camera và thử lại.",
+        microphone:
+            "Micrô của bạn không khởi động được. Người khác không thể nghe thấy bạn. Hãy đóng các ứng dụng khác đang dùng micrô và thử lại.",
     },
 };
 

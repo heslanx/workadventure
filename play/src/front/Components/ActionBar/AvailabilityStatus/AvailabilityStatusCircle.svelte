@@ -10,7 +10,7 @@
     let { colorHex, position, cursorType = "auto", componentClass = "", isActive = false }: Props = $props();
 </script>
 
-<div class="relative cursor-{cursorType} {componentClass}" style="--color:{colorHex}">
+<div class="relative cursor-{cursorType} {componentClass}" style="--color:{colorHex}" aria-hidden="true">
     <div
         class="h-3 w-3 bg-green cursor-{cursorType}  {position === 'absolute'
             ? `${position} -top-8 -start-4`

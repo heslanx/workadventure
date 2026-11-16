@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ 오디오가 허용되지 않았습니다. [SPACE] 키를 누르거나 여기를 클릭해 재생하세요!",
     },
     disable: "마이크 끄기",
+    mute: "오디오 음소거",
 };
 
 export default audio;

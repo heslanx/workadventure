@@ -1,5 +1,11 @@
 import fs from "fs";
 import process from "process";
+import {
+    captureBackendException,
+    isPostHogErrorsActive,
+} from "@workadventure/shared-utils/src/Observability/PostHogErrors";
+import { readPostHogConfiguration } from "@workadventure/shared-utils/src/Observability/Configuration";
+import { isObservabilityActive } from "@workadventure/shared-utils/src/Observability/NodeTelemetry";
 import * as Sentry from "@sentry/node";
 import { Server, ServerCredentials } from "@grpc/grpc-js";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
@@ -9,6 +15,7 @@ import { PostHog } from "posthog-node";
 import { RoomApiService } from "@workadventure/messages/src/ts-proto-generated/room-api";
 import { setErrorHandler } from "@workadventure/shared-utils";
 import { runDrains } from "@workadventure/shared-utils";
+import { sanitizePostHogException } from "@workadventure/shared-utils/src/Observability/PostHogPrivacy";
 import app from "./pusher/app";
 import {
     PUSHER_HTTP_PORT,
@@ -27,7 +34,6 @@ import {
 } from "./pusher/enums/EnvironmentVariable";
 import RoomApiServer from "./room-api/RoomApiServer";
 import { analyticsTimedEventTracker } from "./pusher/services/AnalyticsTimedEventTracker";
-import { sanitizePostHogException } from "./pusher/services/PostHogPrivacy";
 
 // In production, the current working directory is "dist".
 if (fs.existsSync("dist") && !fs.existsSync("src")) {
@@ -38,33 +44,33 @@ const missingPostHogVariables = [!POSTHOG_API_KEY && "POSTHOG_API_KEY", !POSTHOG
     (variable): variable is string => Boolean(variable),
 );
 
+const posthogConfiguration = readPostHogConfiguration(POSTHOG_API_KEY, POSTHOG_URL);
 const posthog =
-    missingPostHogVariables.length === 0
-        ? new PostHog(POSTHOG_API_KEY as string, {
-              host: POSTHOG_URL,
+    !isPostHogErrorsActive() && posthogConfiguration
+        ? new PostHog(posthogConfiguration.apiKey, {
+              host: posthogConfiguration.host,
               enableExceptionAutocapture: true,
               before_send: sanitizePostHogException,
           })
         : undefined;
 
-const posthogLogProvider =
-    missingPostHogVariables.length === 0
-        ? new LoggerProvider({
-              resource: resourceFromAttributes({
-                  "service.name": "workadventure-pusher",
-              }),
-              processors: [
-                  new BatchLogRecordProcessor({
-                      exporter: new OTLPLogExporter({
-                          url: new URL("/i/v1/logs", POSTHOG_URL).toString(),
-                          headers: {
-                              Authorization: `Bearer ${POSTHOG_API_KEY}`,
-                          },
-                      }),
+const posthogLogProvider = posthogConfiguration
+    ? new LoggerProvider({
+          resource: resourceFromAttributes({
+              "service.name": "workadventure-pusher",
+          }),
+          processors: [
+              new BatchLogRecordProcessor({
+                  exporter: new OTLPLogExporter({
+                      url: new URL("/i/v1/logs", posthogConfiguration.host).toString(),
+                      headers: {
+                          Authorization: `Bearer ${posthogConfiguration.apiKey}`,
+                      },
                   }),
-              ],
-          })
-        : undefined;
+              }),
+          ],
+      })
+    : undefined;
 const posthogLog = posthogLogProvider?.getLogger("workadventure.posthog.lifecycle");
 
 const shutdownPostHogLogs = async (): Promise<void> => {
@@ -92,6 +98,7 @@ if (missingPostHogVariables.length > 0 && process.env.NODE_ENV !== "production")
 setErrorHandler((error: Error) => {
     console.error(error);
     Sentry.captureException(error);
+    captureBackendException(error);
     posthog?.captureException(error, "server");
 });
 
@@ -100,10 +107,16 @@ if (SENTRY_DSN != undefined) {
     try {
         const sentryOptions: Sentry.NodeOptions = {
             dsn: SENTRY_DSN,
+            // The shared SDK owns OpenTelemetry when explicitly enabled.
+            skipOpenTelemetrySetup: isObservabilityActive(),
             release: SENTRY_RELEASE,
             environment: SENTRY_ENVIRONMENT,
             tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
             attachStacktrace: true,
+            beforeSend: (event, hint) => {
+                if (hint.originalException) captureBackendException(hint.originalException);
+                return event;
+            },
         };
 
         Sentry.init(sentryOptions);
@@ -132,6 +145,7 @@ if (SENTRY_DSN != undefined) {
 })().catch((e) => {
     console.error(e);
     Sentry.captureException(e);
+    captureBackendException(e);
     posthog?.captureException(e, "server");
     posthogLog?.emit({ severityText: "ERROR", body: "pusher_application_start_failed" });
 });

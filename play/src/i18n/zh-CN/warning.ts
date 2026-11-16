@@ -65,6 +65,22 @@ const warning: DeepPartial<Translation["warning"]> = {
     },
     otherMeetingMuted: "你现在正在这里开会。你在 {world} 中的麦克风、摄像头和屏幕共享已关闭。",
     desktopAppOutdated: "WorkAdventure 应用有新版本可用：{url}",
+    connectionLostDetail: "正在自动重试。你输入的内容会保留。",
+    reconnectNow: "立即重试",
+    limitMap: "此地图可使用 2 天。",
+    registerDomain: "注册你的域名以保留它",
+    popUp: {
+        close: "关闭",
+        closeMessage: "关闭消息",
+        openInNewTab: "在新标签页中打开",
+        joinJitsi: "加入 Jitsi 会议",
+        openWebsite: "打开网站",
+    },
+    limitRoom: {
+        title: "此地图有时间限制。",
+        content: "要在这里继续使用 WorkAdventure,请创建你的账户。",
+        createAccount: "创建我的账户",
+    },
 };
 
 export default warning;

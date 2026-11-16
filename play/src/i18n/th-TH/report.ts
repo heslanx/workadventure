@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "บล็อกการสื่อสารทั้งหมดจากและถึง {userName} สามารถยกเลิกได้ภายหลัง",
         unblock: "เลิกบล็อกผู้ใช้นี้",
         block: "บล็อกผู้ใช้นี้",
+        blockedNotice: "บล็อก {userName} แล้ว คุณทั้งสองจะไม่เห็นและไม่ได้ยินกันอีก",
+        unblockedNotice: "เลิกบล็อก {userName} แล้ว",
+        undoBlock: "เลิกบล็อก",
+        undoUnblock: "บล็อกอีกครั้ง",
     },
     title: "รายงาน",
     content: "ส่งข้อความรายงานถึงผู้ดูแลของห้องนี้ ผู้ดูแลอาจแบนผู้ใช้นี้ในภายหลัง",
@@ -67,6 +71,7 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "แบนทั้ง {count} คนนี้",
             },
         },
+        sendFailed: "ส่งไม่สำเร็จ: การเชื่อมต่อกับเซิร์ฟเวอร์ขาดหาย ข้อความของคุณยังถูกเก็บไว้ ลองอีกครั้งในอีกสักครู่",
     },
     kicked: {
         title: "ถูกนำออก",

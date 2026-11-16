@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../../Utils/reducedMotion";
     import LL from "../../../../i18n/i18n-svelte";
     import { isMobileOnboarding, pressedKeysStore } from "../../../Stores/OnboardingStore";
     import { touchScreenManager } from "../../../Touch/TouchScreenManager";
@@ -105,7 +105,7 @@
         : 'fixed top-1/2 -right-10 transform -translate-x-14 -translate-y-1/2'}"
 >
     <div
-        class="bg-contrast/90 backdrop-blur-lg rounded-xl p-4 sm:p-6 w-full max-w-lg shadow-2xl border border-white/20 {$isMobileOnboarding
+        class="bg-contrast/90 backdrop-blur-lg rounded-lg p-4 sm:p-6 w-full max-w-lg shadow-lg border border-white/20 {$isMobileOnboarding
             ? 'mx-auto max-h-[35vh] overflow-y-auto'
             : ''}"
         in:fly={{ y: $isMobileOnboarding ? -10 : 10, duration: 400 }}
@@ -123,28 +123,28 @@
                 <div class="flex items-center gap-2 text-xs text-white/70 flex-wrap">
                     <kbd
                         class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has('KeyW')
-                            ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                            ? 'bg-yellow-400/80 text-black scale-110'
                             : ''}"
                     >
                         {getKeyLabel("KeyW")}
                     </kbd>
                     <kbd
                         class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has('KeyA')
-                            ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                            ? 'bg-yellow-400/80 text-black scale-110'
                             : ''}"
                     >
                         {getKeyLabel("KeyA")}
                     </kbd>
                     <kbd
                         class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has('KeyS')
-                            ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                            ? 'bg-yellow-400/80 text-black scale-110'
                             : ''}"
                     >
                         {getKeyLabel("KeyS")}
                     </kbd>
                     <kbd
                         class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has('KeyD')
-                            ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                            ? 'bg-yellow-400/80 text-black scale-110'
                             : ''}"
                     >
                         {getKeyLabel("KeyD")}
@@ -155,7 +155,7 @@
                             class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has(
                                 'ArrowUp',
                             )
-                                ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                                ? 'bg-yellow-400/80 text-black scale-110'
                                 : ''}"
                         >
                             ↑
@@ -164,7 +164,7 @@
                             class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has(
                                 'ArrowLeft',
                             )
-                                ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                                ? 'bg-yellow-400/80 text-black scale-110'
                                 : ''}"
                         >
                             ←
@@ -173,7 +173,7 @@
                             class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has(
                                 'ArrowDown',
                             )
-                                ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                                ? 'bg-yellow-400/80 text-black scale-110'
                                 : ''}"
                         >
                             ↓
@@ -182,7 +182,7 @@
                             class="px-2 py-1 bg-white/10 rounded transition-all duration-150 {$pressedKeysStore.has(
                                 'ArrowRight',
                             )
-                                ? 'bg-yellow-400/80 text-black scale-110 shadow-lg'
+                                ? 'bg-yellow-400/80 text-black scale-110'
                                 : ''}"
                         >
                             →
@@ -191,7 +191,7 @@
                 </div>
             {/if}
             <button
-                class="mt-4 px-4 py-2 bg-secondary hover:bg-secondary-600 text-white rounded-lg font-semibold transition-all"
+                class="mt-4 px-4 py-2 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
                 onclick={handleNext}
             >
                 {$LL.onboarding.movement.next()}

@@ -95,6 +95,7 @@ const menu: DeepPartial<Translation["menu"]> = {
             wobble: "우블",
         },
         displayVideoQualityStats: "비디오 품질 통계 표시",
+        saving: "설정 저장 중",
     },
     invite: {
         description: "방 링크를 공유하세요!",

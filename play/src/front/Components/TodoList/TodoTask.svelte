@@ -39,7 +39,7 @@
                 </span>
             {/if}
             {#if task.description && !open}
-                <IconNotes class="h-3.5 w-3.5 shrink-0" aria-label={$LL.externalModule.todoList.hasNote()} />
+                <IconNotes class="h-3.5 w-3.5 shrink-0" role="img" aria-label={$LL.externalModule.todoList.hasNote()} />
             {/if}
         </span>
     </span>

@@ -78,11 +78,11 @@
     </div>
     <div class="flex flex-col min-w-0 grow">
         <div class="m-0 text-sm font-bold truncate">{$roomName}</div>
-        <div class="text-xs text-white/50 truncate">{subtitle}</div>
+        <div class="text-xs text-white/60 truncate">{subtitle}</div>
     </div>
     {#if loadingInvitation}
-        <div class="flex shrink-0 items-center px-3">
-            <IconLoader class="animate-spin" />
+        <div class="flex shrink-0 items-center px-3" role="status" aria-label={$LL.chat.loader()}>
+            <IconLoader aria-hidden="true" class="animate-spin" />
         </div>
     {:else}
         <!-- Accept next to the name, decline at the edge where a dismiss is expected. -->
@@ -100,7 +100,7 @@
                 onclick={() => leaveRoom()}
             >
                 {#snippet icon()}
-                    <IconX font-size="16" />
+                    <IconX aria-hidden="true" font-size="16" />
                 {/snippet}
             </Button>
         </div>

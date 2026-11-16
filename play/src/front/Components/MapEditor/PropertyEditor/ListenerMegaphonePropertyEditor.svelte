@@ -76,7 +76,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconEar font-size="18" class="mr-2" />
+            <IconEar font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.listenerMegaphone.label()}
         </span>
     {/snippet}
@@ -101,10 +101,10 @@
                 onchange={verifyMediaLink}
             />
             {#if linkError}
-                <p data-testid="applicationLinkError" class="text-xs text-red-500 p-0 m-0 h-fit w-full">
+                <p data-testid="applicationLinkError" class="text-xs text-danger-400 p-0 m-0 h-fit w-full">
                     {$LL.mapEditor.properties.listenerMegaphone.waitingMedialLinkError()}
                 </p>
-                <p data-testid="applicationLinkError" class="text-xs text-red-500 p-0 m-0 h-fit w-full">
+                <p data-testid="applicationLinkError" class="text-xs text-danger-400 p-0 m-0 h-fit w-full">
                     {$LL.mapEditor.properties.listenerMegaphone.waitingMedialLinkHelp()}
                 </p>
             {/if}

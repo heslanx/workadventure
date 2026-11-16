@@ -47,6 +47,7 @@
     classList="group/btn-picture-in-picture"
     disabledHelp={$openedMenuStore !== undefined}
     state={$activePictureInPictureStore ? "active" : "normal"}
+    pressed={Boolean($activePictureInPictureStore)}
     dataTestId="pictureInPictureButton"
     tooltipTitle={$LL.actionbar.help.pictureInPicture.title()}
     desc={$LL.actionbar.help.pictureInPicture.desc()}
@@ -54,8 +55,8 @@
     onclick={pictureInPictureClick}
 >
     {#if $activePictureInPictureStore}
-        <PictureInPictureOffIcon />
+        <PictureInPictureOffIcon height="h-5" width="w-5" strokeWidth="2" />
     {:else}
-        <PictureInPictureIcon />
+        <PictureInPictureIcon height="h-5" width="w-5" strokeWidth="2" />
     {/if}
 </ActionBarButton>

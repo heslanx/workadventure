@@ -47,7 +47,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconShieldLock class="w-6 mr-1" />
+            <IconShieldLock class="w-6 mr-1" aria-hidden="true" />
             {$LL.mapEditor.properties.restrictedRightsPropertyData.label()}
         </span>
     {/snippet}
@@ -62,7 +62,7 @@
             >
                 {#snippet info()}
                     <span>
-                        <IconInfoCircle font-size="15" />
+                        <IconInfoCircle font-size="15" aria-hidden="true" />
                         {$LL.mapEditor.properties.restrictedRightsPropertyData.rightWriteDescription()}
                     </span>
                 {/snippet}
@@ -77,7 +77,7 @@
             >
                 {#snippet info()}
                     <span>
-                        <IconInfoCircle font-size="15" />
+                        <IconInfoCircle font-size="15" aria-hidden="true" />
                         {$LL.mapEditor.properties.restrictedRightsPropertyData.rightReadDescription()}
                     </span>
                 {/snippet}

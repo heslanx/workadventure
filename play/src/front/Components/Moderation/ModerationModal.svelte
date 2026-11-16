@@ -14,6 +14,8 @@
     import { mediaSynchronizedSpacesStore } from "../../Stores/PeerStore";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import { meetingOf } from "../../Administration/CurrentMeeting";
+    import { toastStore } from "../../Stores/ToastStoreSingleton";
+    import UndoToast from "../Toasts/UndoToast.svelte";
     import { modals } from "@wa-modals";
     import {
         IconAlertTriangle,
@@ -40,6 +42,11 @@
     /** The one text field of the modal: the report message, or the reason of a kick / ban. */
     let text = $state("");
     let textIsEmpty = $state(false);
+    /** The report, kick or ban could not leave: the server connection is gone. The text stays for a retry. */
+    let sendFailed = $state(false);
+    let submitted = false;
+    // A report or a reason is typed work: closing asks before it is lost.
+    const hasTypedText = () => !submitted && step !== undefined && text.trim() !== "";
 
     const canReport = connectionManager.currentRoom?.canReport ?? false;
 
@@ -97,12 +104,25 @@
             });
     }
 
-    function toggleBlock() {
-        if (userIsBlocked) {
-            blackListManager.cancelBlackList(userUuid);
-        } else {
+    function setBlocked(blocked: boolean) {
+        if (blocked) {
             blackListManager.blackList(userUuid);
+        } else {
+            blackListManager.cancelBlackList(userUuid);
         }
+    }
+
+    // Blocking is reversible with the same API: say who, and offer the way back right in the notice.
+    function toggleBlock() {
+        const blocked = !userIsBlocked;
+        setBlocked(blocked);
+        toastStore.addToast(UndoToast, {
+            message: blocked
+                ? $LL.report.block.blockedNotice({ userName })
+                : $LL.report.block.unblockedNotice({ userName }),
+            actionLabel: blocked ? $LL.report.block.undoBlock() : $LL.report.block.undoUnblock(),
+            onAction: () => setBlocked(!blocked),
+        });
         modals.close();
     }
 
@@ -122,6 +142,12 @@
 
     function submit() {
         const connection = gameManager.getCurrentGameScene().connection;
+        // Nothing can reach the server: say so and keep the text, instead of closing as if it was sent.
+        if (step !== "remove" && (!connection || connection.closed)) {
+            sendFailed = true;
+            return;
+        }
+        sendFailed = false;
         if (step === "remove") {
             removeFromConversation();
         } else if (step === "report") {
@@ -147,16 +173,17 @@
                 step === "ban" && banScope === "ip" && canBanIp,
             );
         }
+        submitted = true;
         modals.close();
     }
 </script>
 
-{#snippet forbidIcon()}<IconForbid font-size="24" />{/snippet}
-{#snippet alertIcon()}<IconAlertTriangle font-size="24" />{/snippet}
-{#snippet removeIcon()}<IconUserMinus font-size="24" />{/snippet}
-{#snippet doorIcon()}<IconDoorExit font-size="24" />{/snippet}
-{#snippet banIcon()}<IconForbid2 font-size="24" />{/snippet}
-{#snippet backIcon()}<IconChevronLeft font-size="20" />{/snippet}
+{#snippet forbidIcon()}<IconForbid font-size="24" aria-hidden="true" />{/snippet}
+{#snippet alertIcon()}<IconAlertTriangle font-size="24" aria-hidden="true" />{/snippet}
+{#snippet removeIcon()}<IconUserMinus font-size="24" aria-hidden="true" />{/snippet}
+{#snippet doorIcon()}<IconDoorExit font-size="24" aria-hidden="true" />{/snippet}
+{#snippet banIcon()}<IconForbid2 font-size="24" aria-hidden="true" />{/snippet}
+{#snippet backIcon()}<IconChevronLeft font-size="20" aria-hidden="true" />{/snippet}
 
 {#snippet actionRow(label: string, hint: string, icon: Snippet, onclick: () => void, testId: string)}
     <button
@@ -173,7 +200,7 @@
     </button>
 {/snippet}
 
-<Popup {isOpen} withAction={step !== undefined}>
+<Popup {isOpen} withAction={step !== undefined} isDirty={hasTypedText}>
     {#snippet title()}
         <div class="flex flex-row items-center gap-2 pb-2">
             {#if step !== undefined}
@@ -181,6 +208,7 @@
                     appearance="ghost"
                     square={true}
                     icon={backIcon}
+                    aria-label={$LL.recording.back()}
                     dataTestId="moderation-back"
                     onclick={() => (step = undefined)}
                 />
@@ -230,7 +258,7 @@
                     )}
                 {/if}
                 {#if $userIsAdminStore}
-                    <div class="flex flex-row items-center gap-3 text-xs uppercase opacity-50">
+                    <div class="flex flex-row items-center gap-3 text-xs uppercase opacity-60">
                         <span class="h-px grow bg-white/20"></span>
                         {$LL.report.moderate.adminOnly()}
                         <span class="h-px grow bg-white/20"></span>
@@ -312,7 +340,7 @@
                                 <p class="mb-0 text-sm">{$LL.report.moderate.ban.scope.nobody()}</p>
                             {:else}
                                 <p class="mb-0 flex flex-row items-center gap-2 text-sm font-semibold">
-                                    <IconAlertTriangle font-size="20" class="shrink-0" />
+                                    <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                                     {$LL.report.moderate.ban.scope.others({ count: ipPreview.users.length })}
                                 </p>
                                 <ul class="mb-0 flex flex-col gap-1 max-h-40 overflow-y-auto list-none p-0 pl-7">
@@ -324,7 +352,7 @@
                         </div>
                     {/if}
                     <p class="mb-0 flex flex-row items-center gap-2 font-semibold">
-                        <IconAlertTriangle font-size="20" class="shrink-0" />
+                        <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                         {$LL.report.moderate.ban.confirmContent()}
                     </p>
                 {/if}
@@ -335,15 +363,25 @@
                         placeHolder={step === "report" ? "" : $LL.report.moderate.reason.placeholder({ userName })}
                         bind:value={text}
                         optional={step !== "report"}
-                        height="h-[80px]"
+                        height="min-h-[5rem]"
                         maxlength={500}
                         onkeypress={() => (textIsEmpty = false)}
                         dataTestId="moderation-text"
                     />
                 {/if}
+                {#if sendFailed}
+                    <p
+                        class="mb-0 flex flex-row items-center gap-2 font-semibold"
+                        role="alert"
+                        data-testid="moderation-send-failed"
+                    >
+                        <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
+                        {$LL.report.moderate.sendFailed()}
+                    </p>
+                {/if}
                 {#if textIsEmpty}
                     <p class="mb-0 flex flex-row items-center gap-2 font-semibold" role="alert">
-                        <IconAlertTriangle font-size="20" class="shrink-0" />
+                        <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                         {$LL.report.message.empty()}
                     </p>
                 {/if}

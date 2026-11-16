@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { get } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isActivatedStore, isCalendarVisibleStore } from "../../../src/front/Stores/CalendarStore";

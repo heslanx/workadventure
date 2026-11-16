@@ -535,10 +535,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "Vai all'entità {name}",
             moveToArea: "Vai all'area {name}",
             errorMovingToObject: "L'oggetto non è ancora accessibile 🚫",
+            show: "Mostra i dettagli di {name}",
         },
         zoomIn: "Zoom In +",
         zoomOut: "Zoom Out -",
         showMyLocation: "Mostra la mia posizione",
+        noEntitiesMatch: "Nessun oggetto corrisponde alla ricerca. Cancella la ricerca per vedere tutti gli oggetti.",
+        noAreasMatch: "Nessuna area corrisponde alla ricerca. Cancella la ricerca per vedere tutte le aree.",
+        entitiesList: "Elenco degli oggetti",
+        areasList: "Elenco delle aree",
     },
     listRoom: {
         isFetching: "Elenco stanze in caricamento... ⤵️",
@@ -548,6 +553,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Spostamento nella stanza: {roomNameSelected}... A presto... 🫡",
         searchLabel: "Cerca una stanza",
         searchPlaceholder: "Scrivi...",
+        noRoomAvailable: "Non ci sono ancora stanze disponibili in questo mondo.",
+        noRoomMatch: "Nessuna stanza corrisponde a “{search}”.",
+        clearSearch: "Cancella la ricerca",
+        fetchFailedTitle: "Impossibile caricare l'elenco delle stanze",
+        fetchFailedDetail: "Resti nella tua stanza attuale. Controlla la connessione, poi riprova.",
+        retryFetch: "Ricarica le stanze",
     },
 };
 

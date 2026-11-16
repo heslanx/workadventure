@@ -3,8 +3,3 @@ export enum CommunicationType {
     WEBRTC = "WEBRTC",
     LIVEKIT = "LIVEKIT",
 }
-
-export interface IWebRTCCredentials {
-    webRtcUserName: string;
-    webRtcPassword: string;
-}

@@ -106,6 +106,7 @@ const desktop: DeepPartial<Translation["desktop"]> = {
         kick: "移出會議",
         visitCard: "名片",
         blockOrReport: "封鎖或檢舉",
+        todayWithSoonMeeting: "今天,即將開始的會議:{title}",
     },
     meetingBar: {
         switchSharedScreenDialog: "變更分享內容",

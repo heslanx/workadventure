@@ -15,12 +15,62 @@ import { WEB_HOOK_URL } from "./Enum/EnvironmentVariable";
  */
 const EDITION_LOCK_TIMEOUT_MS = 10_000;
 
+/**
+ * Save lifecycle of a map whose in-memory WAM is not on storage yet. A map without a state is clean.
+ *
+ * - "dirty": unsaved edits, a write starts when the timer fires.
+ * - "retrying": the last write failed, the next attempt starts when the timer fires.
+ * - "saving": the only write of this map is in flight, the timer fails it if it does not settle in
+ *   time. `editedDuringWrite` is set when an edit landed after that write started: its completion
+ *   must not make the map clean.
+ *
+ * Completion handlers change the state before they log or report, so a throwing logger cannot leave
+ * a map "saving" without a timer.
+ *
+ * `lastEditAt` is the time of the newest unsaved edit, from which the retry horizon is measured.
+ */
+type MapSaveState =
+    | {
+          status: "dirty" | "retrying";
+          timer: NodeJS.Timeout;
+          lastEditAt: number;
+          failedAttempts: number;
+      }
+    | {
+          status: "saving";
+          timer: NodeJS.Timeout;
+          writeStartedAt: number;
+          editedDuringWrite: boolean;
+          lastEditAt: number;
+          failedAttempts: number;
+      };
+
 class MapsManager {
     private loadedMaps: Map<string, WamFile>;
     private loadedMapsCommandsQueue: Map<string, EditMapCommandMessage[]>;
 
-    private saveMapIntervals: Map<string, NodeJS.Timeout>;
-    private mapLastChangeTimestamp: Map<string, number>;
+    private mapSaveStates: Map<string, MapSaveState>;
+
+    /**
+     * Writes handed to storage that have not settled, per map. Kept apart from the save states: a write
+     * outlives its state when it times out or when the map is cleared, and can still land.
+     */
+    private readonly writesInFlight = new Map<string, Set<Promise<void>>>();
+
+    /**
+     * Replacements of stored maps that have not finished, per map, from the moment they were requested. A
+     * replacement waits for the earlier ones of its maps, so the replacements of a map run in request order.
+     */
+    private readonly replacementsRequested = new Map<string, Set<Promise<void>>>();
+
+    /**
+     * Replacements of stored maps that dropped their maps and have not finished, per map. Loading such a map
+     * waits for them: a copy loaded before the replacement is the old map, and its next write would restore it.
+     */
+    private readonly replacementsInProgress = new Map<string, Set<Promise<void>>>();
+
+    /** Number of replacements that ever dropped their maps, so a load can tell that one did while it was reading. */
+    private replacementsStarted = 0;
 
     private readonly editionLocks = new LockByKey<string>(
         (error, key, timeoutMs) => {
@@ -40,7 +90,8 @@ class MapsManager {
     private mapListService: MapListService;
 
     /**
-     * Attempt to save the map from memory to file every time interval
+     * Delay between a map becoming dirty and its save, between two consecutive saves of a map that
+     * keeps being edited, and between two attempts of a failing save.
      */
     private readonly AUTO_SAVE_INTERVAL_MS: number = 15 * 1000; // 15 seconds
     /**
@@ -48,15 +99,32 @@ class MapsManager {
      */
     private readonly COMMAND_TIME_IN_QUEUE_MS: number = this.AUTO_SAVE_INTERVAL_MS * 2;
     /**
-     * Kill saving map interval after given time of no changes done to the map
+     * Time without a new edit after which a failing save is abandoned, so maps edited during a storage
+     * outage are not kept in memory forever. Measured from the newest unsaved edit: a map that is still
+     * being edited keeps being retried.
      */
-    private readonly NO_CHANGE_DETECTED_MS: number = 1 * 20 * 1000; // 20 seconds
+    private readonly SAVE_RETRY_HORIZON_MS: number = 60 * 60 * 1000; // 1 hour
+    /**
+     * Time after which a write that has not settled is counted as failed, so a hung storage call cannot
+     * leave a map unsaved and unretried forever. Above the 60 s default S3 request timeout.
+     */
+    private readonly SAVE_WRITE_TIMEOUT_MS: number = 5 * 60 * 1000; // 5 minutes
+    /**
+     * During an outage, a failing save is logged on its first attempt and then once every this many
+     * attempts (every 5 minutes at the autosave interval), not on every attempt of every dirty map.
+     */
+    private readonly SAVE_FAILURE_LOG_EVERY_ATTEMPTS: number = 20;
+    /**
+     * How long a delete or an upload of a map waits for the writes of that map in flight before it is
+     * rejected. Below the 100 s origin timeout of Cloudflare, which production sits behind, so the client
+     * receives the rejection rather than a proxy timeout while the request still waits.
+     */
+    private readonly REPLACEMENT_WAIT_MS: number = 60 * 1000;
 
     constructor() {
         this.loadedMaps = new Map<string, WamFile>();
         this.loadedMapsCommandsQueue = new Map<string, EditMapCommandMessage[]>();
-        this.saveMapIntervals = new Map<string, NodeJS.Timeout>();
-        this.mapLastChangeTimestamp = new Map<string, number>();
+        this.mapSaveStates = new Map<string, MapSaveState>();
         this.mapListService = new MapListService(fileSystem, new WebHookService(WEB_HOOK_URL));
     }
 
@@ -69,11 +137,13 @@ class MapsManager {
         if (!wamFile) {
             throw new Error('Could not find WAM file with key "' + mapKey + '"');
         }
-        this.mapLastChangeTimestamp.set(mapKey, +new Date());
-        if (!this.saveMapIntervals.has(mapKey)) {
-            this.startSavingMapInterval(mapKey, this.AUTO_SAVE_INTERVAL_MS);
+        let updatedWamFile: Awaited<ReturnType<Command["execute"]>>;
+        try {
+            updatedWamFile = await command.execute();
+        } finally {
+            // Marked after the command ran, so a write that started while it was running is known to be stale.
+            this.markUnsaved(mapKey);
         }
-        const updatedWamFile = await command.execute();
 
         // Security check: Check that the map is valid after the change (it should be, but better safe than sorry)
         WAMFileFormat.parse(wamFile.getWam());
@@ -121,7 +191,23 @@ class MapsManager {
     }
 
     public async loadWAMToMemory(key: string): Promise<WamFile> {
+        const replacements = this.replacementsInProgress.get(key);
+        if (replacements !== undefined) {
+            await Promise.allSettled(replacements);
+            return this.loadWAMToMemory(key);
+        }
+        const replacementsStartedBeforeRead = this.replacementsStarted;
         const file = await fileSystem.readFileAsString(key);
+        if (this.replacementsStarted !== replacementsStartedBeforeRead) {
+            // A replacement started during the read, which may have returned the old map.
+            return this.loadWAMToMemory(key);
+        }
+        // A concurrent load, such as one that waited for the same replacement, may have finished first. Its
+        // callers may already have edited that copy, so it stays the loaded one.
+        const loaded = this.loadedMaps.get(key);
+        if (loaded !== undefined) {
+            return loaded;
+        }
         const wam = WAMFileFormat.parse(wamFileMigration.migrate(JSON.parse(file)));
 
         const wamFile = new WamFile(wam);
@@ -134,7 +220,98 @@ class MapsManager {
         console.info(`[${new Date().toISOString()}] UPLOAD/DELETE DETECTED. CLEAR CACHE FOR: ${key}`);
         this.loadedMaps.delete(key);
         this.loadedMapsCommandsQueue.delete(key);
-        this.clearSaveMapInterval(key);
+        // The in-memory map is obsolete: no further write of it may start. A write already handed to
+        // the storage cannot be cancelled: its completion is ignored. replaceStoredMaps calls this only once
+        // no write of the map is in flight.
+        const saveState = this.mapSaveStates.get(key);
+        if (saveState) {
+            clearTimeout(saveState.timer);
+        }
+        this.mapSaveStates.delete(key);
+    }
+
+    /**
+     * Deletes or replaces the stored files of maps, `replace` doing it. A write already handed to storage
+     * cannot be cancelled, and one landing after `replace` would restore the old map. So this waits for the
+     * earlier replacements of these maps, which run in the order they were requested, then until none of
+     * their writes is in flight. Then it drops the in-memory maps, holds back their loads and runs `replace`.
+     * The maps stay loaded and editable while it waits. When an earlier replacement or a write is still in
+     * flight REPLACEMENT_WAIT_MS after the call, `replace` does not run and the maps stay loaded: storage is
+     * left unchanged, the next autosave stores their edits, and the caller must reject the request.
+     *
+     * Edits that no write carried when the maps are dropped are dropped with them. For a delete or an upload
+     * this is intended: the request is the later operation and supersedes them. A move keeps the edits of the
+     * moved map by naming it in `saveFirst`, one of `keys`: its unsaved edits are saved now rather than at
+     * the next autosave, and the maps are dropped only once it has none left. When that save fails, the
+     * request is rejected as above.
+     */
+    public async replaceStoredMaps(
+        keys: readonly string[],
+        replace: () => Promise<void>,
+        { saveFirst = [] }: { saveFirst?: readonly string[] } = {},
+    ): Promise<"replaced" | "writesInFlight"> {
+        const deadline = Date.now() + this.REPLACEMENT_WAIT_MS;
+        const earlierReplacements = keys.flatMap((key) => [...(this.replacementsRequested.get(key) ?? [])]);
+        let finish = (): void => undefined;
+        const replacement = new Promise<void>((resolve) => {
+            finish = resolve;
+        });
+        for (const key of keys) {
+            trackUntilSettled(this.replacementsRequested, key, replacement);
+        }
+        try {
+            let ready = await settledBefore(earlierReplacements, deadline);
+            while (
+                ready &&
+                (keys.some((key) => this.writesInFlight.has(key)) ||
+                    saveFirst.some((key) => this.mapSaveStates.has(key)))
+            ) {
+                // Checked again after each batch rather than trusting one snapshot: an edit made meanwhile can
+                // start a write or leave an edit unsaved. The last check and the drop below run in one
+                // synchronous block.
+                // eslint-disable-next-line no-await-in-loop
+                ready = await this.saveAndSettle(keys, saveFirst, deadline);
+            }
+            if (!ready) {
+                const message = `A write of map ${keys.join(", ")} did not settle within ${this.REPLACEMENT_WAIT_MS}ms, or failed. The delete, upload or move is rejected, storage is left unchanged`;
+                console.error(`[${new Date().toISOString()}] ${message}`);
+                Sentry.captureException(new Error(message), {
+                    tags: { location: "replaceStoredMaps" },
+                    extra: { keys },
+                });
+                return "writesInFlight";
+            }
+            this.replacementsStarted++;
+            for (const key of keys) {
+                trackUntilSettled(this.replacementsInProgress, key, replacement);
+                this.clearAfterUpload(key);
+            }
+            await replace();
+            return "replaced";
+        } finally {
+            finish();
+        }
+    }
+
+    /**
+     * Starts the save of the unsaved edits of `saveFirst` now, then waits for the writes of `keys`. Resolves
+     * false at the deadline, or at once when the last write of a map of `saveFirst` failed.
+     */
+    private saveAndSettle(keys: readonly string[], saveFirst: readonly string[], deadline: number): Promise<boolean> {
+        for (const key of saveFirst) {
+            const saveState = this.mapSaveStates.get(key);
+            if (saveState?.status === "retrying") {
+                return Promise.resolve(false);
+            }
+            if (saveState?.status === "dirty") {
+                clearTimeout(saveState.timer);
+                this.startSave(key, saveState);
+            }
+        }
+        return settledBefore(
+            keys.flatMap((key) => [...(this.writesInFlight.get(key) ?? [])]),
+            deadline,
+        );
     }
 
     public addCommandToQueue(mapKey: string, message: EditMapCommandMessage): void {
@@ -145,18 +322,13 @@ class MapsManager {
         }
         queue.push(message);
         this.setCommandDeletionTimeout(mapKey, message.id);
-        this.loadedMaps.get(mapKey)?.updateLastCommandIdProperty(message.id);
-    }
-
-    private clearSaveMapInterval(key: string): boolean {
-        const interval = this.saveMapIntervals.get(key);
-        if (interval) {
-            clearInterval(interval);
-            this.saveMapIntervals.delete(key);
-            this.mapLastChangeTimestamp.delete(key);
-            return true;
+        const wamFile = this.loadedMaps.get(mapKey);
+        if (wamFile) {
+            wamFile.updateLastCommandIdProperty(message.id);
+            // The WAM changed (its last command id, and the map for commands that do not run through
+            // executeCommand, such as custom entity deletion), so it must be saved.
+            this.markUnsaved(mapKey);
         }
-        return false;
     }
 
     private setCommandDeletionTimeout(mapKey: string, commandId: string): void {
@@ -169,29 +341,8 @@ class MapsManager {
                 queue.splice(0, 1);
 
                 // If we don't have any commands anymore, let's remove the map from memory.
-                // We acquire the per-map lock to ensure we don't evict while a command is
-                // executing or about to be queued (addCommandToQueue is called synchronously
-                // after executeCommand inside the same lock).
                 if (queue.length === 0) {
-                    this.editionLocks
-                        .waitForLock(
-                            mapKey,
-                            () => {
-                                // Re-check after acquiring the lock: a new command may have been
-                                // added while we were waiting.
-                                const currentQueue = this.loadedMapsCommandsQueue.get(mapKey);
-                                if (!currentQueue || currentQueue.length === 0) {
-                                    this.loadedMapsCommandsQueue.delete(mapKey);
-                                    this.loadedMaps.delete(mapKey);
-                                }
-                                return Promise.resolve();
-                            },
-                            EDITION_LOCK_TIMEOUT_MS,
-                        )
-                        .catch((e) => {
-                            console.error("Error while acquiring or processing lock for cleaning map key ", mapKey, e);
-                            Sentry.captureException(e);
-                        });
+                    this.evictIfIdle(mapKey);
                 }
             } else {
                 console.error(
@@ -201,34 +352,209 @@ class MapsManager {
         }, this.COMMAND_TIME_IN_QUEUE_MS);
     }
 
-    private startSavingMapInterval(key: string, intervalMS: number): void {
-        this.saveMapIntervals.set(
-            key,
-            setInterval(() => {
-                (async () => {
-                    console.info(`[${new Date().toISOString()}] saving map ${key}`);
-                    const wamFile = this.loadedMaps.get(key);
-                    if (wamFile) {
-                        await fileSystem.writeStringAsFile(key, JSON.stringify(wamFile.getWam()));
+    /**
+     * Removes the map from memory once it has no queued commands, no unsaved changes and no write in
+     * flight. Storage is then the only copy, so a map that is not saved yet must stay loaded, and so must
+     * a map whose timed-out write can still land over a newer one (see onSaveSucceeded).
+     *
+     * We acquire the per-map lock to ensure we don't evict while a command is executing or about to
+     * be queued (addCommandToQueue is called synchronously after executeCommand inside the same lock).
+     */
+    private evictIfIdle(mapKey: string): void {
+        this.editionLocks
+            .waitForLock(
+                mapKey,
+                () => {
+                    // Re-check after acquiring the lock: a new command may have been added while we
+                    // were waiting.
+                    const queue = this.loadedMapsCommandsQueue.get(mapKey);
+                    if (
+                        (!queue || queue.length === 0) &&
+                        !this.mapSaveStates.has(mapKey) &&
+                        !this.writesInFlight.has(mapKey)
+                    ) {
+                        this.loadedMapsCommandsQueue.delete(mapKey);
+                        this.loadedMaps.delete(mapKey);
                     }
-                    const lastChangeTimestamp = this.mapLastChangeTimestamp.get(key);
-                    if (lastChangeTimestamp === undefined) {
-                        return;
-                    }
-                    if (lastChangeTimestamp + this.NO_CHANGE_DETECTED_MS < +new Date()) {
-                        console.info(
-                            `[${new Date().toISOString()}] NO CHANGES ON THE MAP ${key} DETECTED. STOP AUTOSAVING`,
-                        );
-                        this.clearSaveMapInterval(key);
-                    }
-                })().catch((e) => {
-                    console.error(`[${new Date().toISOString()}]`, e, "STOP AUTOSAVING");
-                    this.clearSaveMapInterval(key);
-                    Sentry.captureException(e);
-                });
-            }, intervalMS),
-        );
+                    return Promise.resolve();
+                },
+                EDITION_LOCK_TIMEOUT_MS,
+            )
+            .catch((e) => {
+                console.error("Error while acquiring or processing lock for cleaning map key ", mapKey, e);
+                Sentry.captureException(e);
+            });
     }
+
+    private markUnsaved(mapKey: string): void {
+        const now = Date.now();
+        const saveState = this.mapSaveStates.get(mapKey);
+        if (saveState === undefined) {
+            this.scheduleSave(mapKey, "dirty", this.AUTO_SAVE_INTERVAL_MS, now, 0);
+            return;
+        }
+        // A scheduled write saves the map as it is when it starts, so only the edit time changes.
+        saveState.lastEditAt = now;
+        if (saveState.status === "saving") {
+            saveState.editedDuringWrite = true;
+        }
+    }
+
+    private scheduleSave(
+        mapKey: string,
+        status: "dirty" | "retrying",
+        delayMs: number,
+        lastEditAt: number,
+        failedAttempts: number,
+    ): void {
+        const state: MapSaveState = {
+            status,
+            timer: setTimeout(() => this.startSave(mapKey, state), delayMs),
+            lastEditAt,
+            failedAttempts,
+        };
+        this.mapSaveStates.set(mapKey, state);
+    }
+
+    private startSave(mapKey: string, scheduled: MapSaveState): void {
+        const wamFile = this.loadedMaps.get(mapKey);
+        if (!wamFile) {
+            this.mapSaveStates.delete(mapKey);
+            return;
+        }
+        const saving: MapSaveState & { status: "saving" } = {
+            status: "saving",
+            timer: setTimeout(() => {
+                this.onSaveFailed(
+                    mapKey,
+                    saving,
+                    new Error(`Write of map ${mapKey} did not settle within ${this.SAVE_WRITE_TIMEOUT_MS}ms`),
+                );
+            }, this.SAVE_WRITE_TIMEOUT_MS),
+            writeStartedAt: Date.now(),
+            editedDuringWrite: false,
+            // Read when the write starts: edits made while it was scheduled updated the scheduled state.
+            lastEditAt: scheduled.lastEditAt,
+            failedAttempts: scheduled.failedAttempts,
+        };
+        this.mapSaveStates.set(mapKey, saving);
+        console.info(`[${new Date().toISOString()}] saving map ${mapKey}`);
+        const write = (async () => {
+            await fileSystem.writeStringAsFile(mapKey, JSON.stringify(wamFile.getWam()));
+        })();
+        trackUntilSettled(this.writesInFlight, mapKey, write);
+        write
+            .then(
+                () => this.onSaveSucceeded(mapKey, saving, wamFile),
+                (e: unknown) => this.onSaveFailed(mapKey, saving, e),
+            )
+            .catch((e: unknown) => {
+                console.error(`[${new Date().toISOString()}] Error while handling the save of map ${mapKey}`, e);
+                Sentry.captureException(e, { tags: { key: mapKey, location: "autosaveCompletion" } });
+            });
+    }
+
+    private onSaveSucceeded(mapKey: string, saving: MapSaveState & { status: "saving" }, wamFile: WamFile): void {
+        if (this.mapSaveStates.get(mapKey) !== saving) {
+            // The map was replaced or deleted, or this write timed out, while it was in flight. A write
+            // that timed out may have landed over a newer one: save the map again while it is loaded.
+            if (this.loadedMaps.get(mapKey) === wamFile) {
+                this.markUnsaved(mapKey);
+            } else {
+                this.evictIfIdle(mapKey);
+            }
+            return;
+        }
+        clearTimeout(saving.timer);
+        if (!saving.editedDuringWrite) {
+            this.mapSaveStates.delete(mapKey);
+            this.evictIfIdle(mapKey);
+        } else {
+            // The write that just finished misses the newer edits. Save them one interval after that
+            // write started, as a map that keeps being edited was saved until now.
+            const sinceWriteStarted = Date.now() - saving.writeStartedAt;
+            this.scheduleSave(
+                mapKey,
+                "dirty",
+                Math.max(0, this.AUTO_SAVE_INTERVAL_MS - sinceWriteStarted),
+                saving.lastEditAt,
+                0,
+            );
+        }
+        if (saving.failedAttempts > 0) {
+            console.info(
+                `[${new Date().toISOString()}] Saving map ${mapKey} succeeded after ${saving.failedAttempts} failed attempts`,
+            );
+        }
+    }
+
+    private onSaveFailed(mapKey: string, saving: MapSaveState & { status: "saving" }, error: unknown): void {
+        if (this.mapSaveStates.get(mapKey) !== saving) {
+            // The map was replaced or deleted, or this write timed out, while it was in flight. Nothing
+            // landed, but the map may have stayed loaded for this write.
+            this.evictIfIdle(mapKey);
+            return;
+        }
+        clearTimeout(saving.timer);
+        const failedAttempts = saving.failedAttempts + 1;
+        const sinceLastEditMs = Date.now() - saving.lastEditAt;
+        if (sinceLastEditMs >= this.SAVE_RETRY_HORIZON_MS) {
+            this.mapSaveStates.delete(mapKey);
+            this.evictIfIdle(mapKey);
+            console.error(
+                `[${new Date().toISOString()}] SAVING MAP ${mapKey} FAILED ${failedAttempts} TIMES, LAST EDIT ${sinceLastEditMs}ms AGO. GIVING UP, UNSAVED CHANGES ARE LOST UNLESS THE MAP IS EDITED AGAIN`,
+                error,
+            );
+            Sentry.captureException(error, {
+                tags: { key: mapKey, location: "autosaveAbandoned" },
+                extra: { failedAttempts, sinceLastEditMs },
+            });
+            return;
+        }
+        this.scheduleSave(mapKey, "retrying", this.AUTO_SAVE_INTERVAL_MS, saving.lastEditAt, failedAttempts);
+        if (failedAttempts === 1 || failedAttempts % this.SAVE_FAILURE_LOG_EVERY_ATTEMPTS === 0) {
+            console.error(
+                `[${new Date().toISOString()}] Saving map ${mapKey} failed (attempt ${failedAttempts}, last edit ${sinceLastEditMs}ms ago). Retrying every ${this.AUTO_SAVE_INTERVAL_MS}ms, logging every ${this.SAVE_FAILURE_LOG_EVERY_ATTEMPTS} attempts`,
+                error,
+            );
+        }
+        if (failedAttempts === 1) {
+            // Once per failing streak: an outage must not report every attempt of every dirty map.
+            Sentry.captureException(error, {
+                tags: { key: mapKey, location: "autosaveFailed" },
+            });
+        }
+    }
+}
+
+/** Resolves true once every promise settled, false at the deadline if one has not. */
+async function settledBefore(promises: readonly Promise<void>[], deadline: number): Promise<boolean> {
+    if (promises.length === 0) {
+        return true;
+    }
+    let timer: NodeJS.Timeout | undefined;
+    const settled = await Promise.race([
+        Promise.allSettled(promises).then(() => true),
+        new Promise<false>((resolve) => {
+            timer = setTimeout(() => resolve(false), deadline - Date.now());
+        }),
+    ]);
+    clearTimeout(timer);
+    return settled;
+}
+
+/** Keeps `promise` in the set of `key` until it settles, and drops the set once it is empty. */
+function trackUntilSettled(registry: Map<string, Set<Promise<void>>>, key: string, promise: Promise<void>): void {
+    const promises = registry.get(key) ?? new Set<Promise<void>>();
+    registry.set(key, promises);
+    promises.add(promise);
+    const untrack = (): void => {
+        promises.delete(promise);
+        if (promises.size === 0 && registry.get(key) === promises) {
+            registry.delete(key);
+        }
+    };
+    promise.then(untrack, untrack);
 }
 
 export const mapsManager = new MapsManager();

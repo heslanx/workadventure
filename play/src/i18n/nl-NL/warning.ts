@@ -70,6 +70,22 @@ const warning: DeepPartial<Translation["warning"]> = {
     otherMeetingMuted:
         "Je zit nu hier in een vergadering. Je microfoon, camera en schermdeling zijn uitgeschakeld in {world}.",
     desktopAppOutdated: "Er is een nieuwe versie van de WorkAdventure-app beschikbaar: {url}",
+    connectionLostDetail: "Automatisch opnieuw proberen. Wat je hebt getypt, blijft staan.",
+    reconnectNow: "Nu opnieuw proberen",
+    limitMap: "Deze kaart is 2 dagen beschikbaar.",
+    registerDomain: "Registreer je domein om hem te behouden",
+    popUp: {
+        close: "Sluiten",
+        closeMessage: "Bericht sluiten",
+        openInNewTab: "Openen in een nieuw tabblad",
+        joinJitsi: "Deelnemen aan de Jitsi-vergadering",
+        openWebsite: "De website openen",
+    },
+    limitRoom: {
+        title: "Deze kaart heeft een tijdslimiet.",
+        content: "Maak je account aan om WorkAdventure hier te blijven gebruiken.",
+        createAccount: "Mijn account aanmaken",
+    },
 };
 
 export default warning;

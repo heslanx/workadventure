@@ -3,8 +3,8 @@ import type { BaseTranslation } from "../i18n-types";
 const recording: BaseTranslation = {
     refresh: "Refresh",
     title: "Your recording list",
-    noRecordings: "No recordings found",
-    errorFetchingRecordings: "An error occurred while fetching recordings",
+    noRecordings: "No recordings yet. Start a recording from the action bar and it will appear here.",
+    errorFetchingRecordings: "Your recordings did not load. They are still saved. Close this window and open it again.",
     expireIn: "Expires in {days} day{s}",
     expiresOn: "Expires on {date}",
     download: "Download",
@@ -21,10 +21,10 @@ const recording: BaseTranslation = {
     notification: {
         deleteNotification: "Recording deleted successfully",
         deleteFailedNotification: "Failed to delete recording",
-        startFailedNotification: "Failed to start recording",
-        stopFailedNotification: "Failed to stop recording",
+        startFailedNotification: "The recording did not start. Nothing was recorded. Try again.",
+        stopFailedNotification: "The recording may still be running. Try stopping it again.",
         recordingStarted: "{name} has started a recording.",
-        downloadFailedNotification: "Failed to download recording",
+        downloadFailedNotification: "The download did not start. The recording is still saved. Try again.",
         recordingComplete: "Recording complete",
         recordingIsInProgress: "Recording is in progress",
         unexpectedlyStoppedNotification: "Recording stopped unexpectedly",
@@ -47,6 +47,7 @@ const recording: BaseTranslation = {
         spacePicker: {
             megaphone: "Record megaphone",
             discussion: "Record discussion",
+            recordedByOther: "Only one recording at a time here. You can start yours when this one ends.",
         },
     },
 };

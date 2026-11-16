@@ -435,6 +435,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "추가 옵션",
         createRoom: "방 만들기",
         createFolder: "폴더 만들기",
+        nameRequired: "만들려면 이름을 입력하세요.",
     },
     createFolder: {
         title: "새 폴더 만들기",
@@ -579,6 +580,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "접근 권한 변경",
                 changePermissions: "권한 변경",
             },
+            nothingToSave: "저장하려면 설정을 변경하세요.",
+            nameRequiredToSave: "저장하려면 방 이름을 입력하세요.",
         },
         pollsEmpty: "아직 투표가 없습니다",
         participantsEmpty: "아직 참가자가 없습니다",
@@ -589,6 +592,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "타임라인에서 이 투표를 열 수 없습니다.",
         closeFolderMembers: "폴더 멤버 닫기",
         folderMembersHint: "폴더 멤버는 멤버에게 공개된 폴더의 방에 참여할 수 있습니다.",
+        proximityParticipantsEmpty: "근처에 아무도 없습니다. 다른 사람에게 다가가 대화를 시작하세요.",
     },
     roomMenu: {
         leaveRoom: {
@@ -837,6 +841,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "보안",
         securityHint: "백업 키로 새 기기에서 암호화된 메시지를 열 수 있습니다.",
         advancedSection: "고급",
+        notSet: "설정되지 않음",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -874,7 +879,22 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "이 투표를 마감할까요?",
         endPollMessage: "더 이상 아무도 투표할 수 없습니다. 결과는 계속 표시됩니다.",
         save: "저장",
+        deleteMessageNamedTitle: "“{excerpt}”을(를) 삭제할까요?",
+        cannotUndo: "이 작업은 되돌릴 수 없습니다.",
     },
+    chatTurnedOffInArea: "이 영역에서는 채팅이 꺼져 있습니다. 영역을 벗어나면 다시 작성할 수 있습니다.",
+    searchFailed: "검색에 실패했습니다. 목록에 일부 결과가 빠져 있을 수 있습니다.",
+    searchRetry: "다시 검색",
+    copyFailed: "복사할 수 없습니다",
+    directMessagesEmpty: "아직 다이렉트 메시지가 없습니다. 사용자 목록을 열고 메시지를 보낼 사람을 선택하세요.",
+    roomsEmpty: "아직 그룹 대화가 없습니다. 방을 만들어 대화를 시작하세요.",
+    folderEmpty: "이 폴더에는 아직 방이 없습니다. 방을 만들어 대화를 시작하세요.",
+    connectionErrorImpact: "다시 연결될 때까지 메시지를 보내거나 받을 수 없습니다.",
+    connectionErrorSince: "{time}부터 사용할 수 없습니다.",
+    connectionRetrying: "채팅 연결을 다시 시도하는 중…",
+    connectionRetryFailed: "채팅에 여전히 연결할 수 없습니다. 다시 시도하거나, 계속 실패하면 페이지를 새로 고치세요.",
+    connectionRecovered: "채팅이 복구되었습니다. {from}부터 {to}까지 사용할 수 없었습니다.",
+    connectionRecoveredDismiss: "이 알림 닫기",
 };
 
 export default chat;

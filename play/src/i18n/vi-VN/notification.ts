@@ -35,6 +35,13 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "Không thể bắt đầu chia sẻ màn hình",
     recordingStarted: "Một người trong cuộc trò chuyện đã bắt đầu ghi hình.",
     urlCopiedToClipboard: "Đã sao chép liên kết vào bộ nhớ tạm",
+    muteRequest: {
+        acceptMicrophone: "Tắt tiếng micrô của tôi",
+        acceptCamera: "Tắt camera của tôi",
+        refuse: "Giữ bật",
+    },
+    copyFailed: "Không thể sao chép: trình duyệt đã chặn bộ nhớ tạm. Hãy chọn văn bản và nhấn Ctrl+C (Cmd+C trên Mac).",
+    closeToast: "Đóng thông báo",
 };
 
 export default notification;

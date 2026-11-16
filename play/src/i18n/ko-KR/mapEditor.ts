@@ -530,10 +530,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "오브젝트로 이동: {name}",
             moveToArea: "영역으로 이동: {name}",
             errorMovingToObject: "아직 이동할 수 없는 오브젝트입니다 🚫",
+            show: "{name} 세부 정보 보기",
         },
         zoomIn: "확대 +",
         zoomOut: "축소 -",
         showMyLocation: "내 위치로 이동",
+        noEntitiesMatch: "검색과 일치하는 개체가 없습니다. 검색어를 지우면 모든 개체를 볼 수 있습니다.",
+        noAreasMatch: "검색과 일치하는 영역이 없습니다. 검색어를 지우면 모든 영역을 볼 수 있습니다.",
+        entitiesList: "개체 목록",
+        areasList: "영역 목록",
     },
     listRoom: {
         isFetching: "방 목록을 불러오는 중입니다... ⤵️",
@@ -543,6 +548,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "선택한 방으로 이동 중입니다: {roomNameSelected}... 곧 만나요... 🫡",
         searchLabel: "방 검색",
         searchPlaceholder: "검색어를 입력하세요...",
+        noRoomAvailable: "이 월드에는 아직 사용할 수 있는 방이 없습니다.",
+        noRoomMatch: "“{search}”와(과) 일치하는 방이 없습니다.",
+        clearSearch: "검색어 지우기",
+        fetchFailedTitle: "방 목록을 불러올 수 없습니다",
+        fetchFailedDetail: "현재 방에 그대로 있습니다. 연결을 확인한 다음 다시 시도하세요.",
+        retryFetch: "방 다시 불러오기",
     },
 };
 

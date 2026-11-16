@@ -11,12 +11,28 @@ const warning: BaseTranslation = {
     },
     connectionLost: "Conexão perdida. Reconectando...",
     connectionLostTitle: "Conexão perdida",
+    connectionLostDetail: "Tentando de novo automaticamente. O que você digitou continua no lugar.",
+    reconnectNow: "Tentar agora",
+    limitMap: "Este mapa fica disponível por 2 dias.",
+    registerDomain: "Registre seu domínio para mantê-lo",
     connectionLostSubtitle: "Reconectando",
     waitingConnectionTitle: "Aguardando a conexão",
     waitingConnectionSubtitle: "Conectando",
-    megaphoneNeeds: "Para usar o megafone, você deve ativar sua câmera ou seu microfone ou compartilhar sua tela.",
+    megaphoneNeeds: "Para entrar ao vivo, ligue a câmera ou o microfone, ou compartilhe a tela.",
     mapEditorShortCut: "Houve um erro ao tentar abrir o editor de mapas.",
     mapEditorNotEnabled: "O editor de mapas não está habilitado neste mundo.",
+    popUp: {
+        close: "Fechar",
+        closeMessage: "Fechar aviso",
+        openInNewTab: "Abrir em nova aba",
+        joinJitsi: "Entrar na reunião Jitsi",
+        openWebsite: "Abrir o site",
+    },
+    limitRoom: {
+        title: "Este mapa tem limite de tempo.",
+        content: "Para continuar usando o WorkAdventure aqui, crie sua conta.",
+        createAccount: "Criar minha conta",
+    },
     backgroundProcessing: {
         failedToApply: "Falha ao aplicar efeitos de fundo",
         notSupportedOnThisBrowser: "Efeitos de fundo não são suportados neste navegador",
@@ -24,7 +40,7 @@ const warning: BaseTranslation = {
     popupBlocked: {
         title: "Bloqueador de pop-up",
         content: "Por favor, permita pop-ups para este site nas configurações do seu navegador.",
-        done: "Ok",
+        done: "Fechar",
     },
     duplicateUserConnected: {
         title: "Já conectado",

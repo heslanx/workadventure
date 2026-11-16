@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ Âm thanh chưa được cho phép. Nhấn [PHÍM CÁCH] hoặc bấm vào đây để phát!",
     },
     disable: "Tắt micrô của bạn",
+    mute: "Tắt tiếng",
 };
 
 export default audio;

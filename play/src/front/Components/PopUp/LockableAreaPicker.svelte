@@ -52,7 +52,7 @@
 
 <div
     data-testid="lockable-area-picker"
-    class="bg-contrast/80 backdrop-blur-md rounded-md shadow-lg p-2 max-w-96 overflow-auto flex flex-col gap-1"
+    class="bg-contrast/95 backdrop-blur-md rounded-md shadow-lg p-2 max-w-96 overflow-auto flex flex-col gap-1"
     use:clickOutside={handleClose}
 >
     <div class="text-sm font-semibold text-white px-2 pb-1">
@@ -62,10 +62,11 @@
     {#if showBubbleRow}
         <button
             type="button"
-            class="w-full text-left p-2 rounded transition-colors flex flex-row items-center gap-2 {groupLockState
-                ? 'bg-red-500/30 hover:bg-red-500/40'
-                : 'hover:bg-white/10'}"
+            class="w-full text-left p-2 rounded-sm transition-colors flex flex-row items-center gap-2 {groupLockState
+                ? 'bg-red-500/30 hover:bg-red-500/40 aria-disabled:hover:bg-red-500/30'
+                : 'hover:bg-white/10 aria-disabled:hover:bg-transparent'} aria-disabled:cursor-not-allowed"
             data-testid="lockable-area-option-bubble"
+            aria-pressed={groupLockState}
             onclick={handleSelectGroupLock}
         >
             {#if groupLockState}
@@ -82,23 +83,33 @@
     {#each areas as entry, index (entryKey(entry))}
         <button
             type="button"
-            class="w-full text-left p-2 rounded transition-colors flex flex-row items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed {entry.lockState
-                ? 'bg-red-500/30 hover:bg-red-500/40'
-                : 'hover:bg-white/10'}"
+            class="w-full text-left p-2 rounded-sm transition-colors flex flex-row items-center gap-2 {entry.lockState
+                ? 'bg-red-500/30 hover:bg-red-500/40 aria-disabled:hover:bg-red-500/30'
+                : 'hover:bg-white/10 aria-disabled:hover:bg-transparent'} aria-disabled:cursor-not-allowed"
             data-testid="lockable-area-option-{index}"
-            disabled={!canLock(entry)}
+            aria-pressed={entry.lockState}
+            aria-disabled={!canLock(entry) || undefined}
             onclick={() => canLock(entry) && handleSelect(entry)}
         >
-            {#if entry.lockState}
-                <LockIcon />
-            {:else}
-                <LockOpenIcon />
-            {/if}
-            <span
-                class="text-sm text-white flex-1 truncate"
-                title={entry.areaName?.trim() || $LL.actionbar.help.lock.unnamedArea()}
-            >
-                {entry.areaName?.trim() || $LL.actionbar.help.lock.unnamedArea()}
+            <span class="flex {canLock(entry) ? '' : 'opacity-50'}">
+                {#if entry.lockState}
+                    <LockIcon />
+                {:else}
+                    <LockOpenIcon />
+                {/if}
+            </span>
+            <span class="flex-1 min-w-0 flex flex-col">
+                <span
+                    class="text-sm text-white truncate {canLock(entry) ? '' : 'opacity-50'}"
+                    title={entry.areaName?.trim() || $LL.actionbar.help.lock.unnamedArea()}
+                >
+                    {entry.areaName?.trim() || $LL.actionbar.help.lock.unnamedArea()}
+                </span>
+                {#if !canLock(entry)}
+                    <span class="text-xs text-white/80" data-testid="lockable-area-option-{index}-reason">
+                        {$LL.actionbar.help.lock.noPermission()}
+                    </span>
+                {/if}
             </span>
         </button>
     {/each}

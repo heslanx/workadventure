@@ -31,9 +31,14 @@
         room.ensureThreadsHydrated?.().catch((error) => console.error("Failed to retry thread hydration", error));
     }
 
+    // Kept on the thread row after the toast expires, so the failure stays visible where it happened.
+    let failedThreadId: string | undefined = $state(undefined);
+
     async function openThread(rootMessageId: string) {
+        failedThreadId = undefined;
         const thread = await room.openThread?.(rootMessageId);
         if (!thread) {
+            failedThreadId = rootMessageId;
             toastStore.addToast(TextToast, { message: $LL.chat.thread.openError() }, undefined);
             return;
         }
@@ -76,9 +81,15 @@
                 <div
                     class="rounded-lg border border-dashed border-white/10 px-4 py-6 text-center text-sm opacity-60"
                     data-testid="threadPanelLoading"
+                    role="status"
+                    aria-label={$LL.chat.loader()}
                 >
                     <div class="flex items-center justify-center text-white/80">
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={24} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={24}
+                        />
                     </div>
                 </div>
             {:else if $threadHydrationState.status === "error"}
@@ -157,7 +168,7 @@
                                     class="mt-2 flex items-center gap-2 text-xs font-semibold opacity-75"
                                     data-testid={`threadPanelItemCount-${summary.rootMessageId}`}
                                 >
-                                    <IconMessageCircle2 font-size={14} />
+                                    <IconMessageCircle2 aria-hidden="true" font-size={14} />
                                     <span
                                         >{summary.replyCount === 1
                                             ? $LL.chat.thread.replySingular()
@@ -165,7 +176,7 @@
                                     >
                                 </div>
                                 {#if summary.isDegraded}
-                                    <div class="mt-2 text-xs text-white/55">
+                                    <div class="mt-2 text-xs text-white/60">
                                         {$LL.chat.thread.degradedBadge()}
                                     </div>
                                 {/if}
@@ -173,6 +184,14 @@
                                     <div class="mt-2 truncate text-xs opacity-60">
                                         {#if summary.lastReplySenderName}{summary.lastReplySenderName}:
                                         {/if}{summary.lastReplyPreview}
+                                    </div>
+                                {/if}
+                                {#if failedThreadId === summary.rootMessageId}
+                                    <div
+                                        class="mt-2 text-xs font-normal text-danger-400"
+                                        data-testid={`threadPanelItemError-${summary.rootMessageId}`}
+                                    >
+                                        {$LL.chat.thread.openError()}
                                     </div>
                                 {/if}
                             </button>

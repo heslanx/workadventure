@@ -38,6 +38,7 @@ import { iframeListener } from "../../../Api/IframeListener";
 import type { SpaceInterface, SpaceUserExtended } from "../../../Space/SpaceInterface";
 import type { MeetingParticipant } from "../../../Stores/MeetingInvitationStore";
 import type { SpaceRegistryInterface } from "../../../Space/SpaceRegistry/SpaceRegistryInterface";
+import { liveAnnouncementStore } from "../../../Stores/LiveAnnouncementStore";
 import { chatVisibilityStore } from "../../../Stores/ChatStore";
 import {
     isAChatRoomIsVisible,
@@ -476,6 +477,12 @@ export class ProximityChatRoom implements ChatRoom {
         }
     }
 
+    /** Bubble joins and leaves also reach screen readers: the chat with this line may be closed. */
+    private sendAndAnnounceMembershipMessage(message: string, action: "incoming" | "outcoming"): void {
+        this.sendMessage(message, action, false);
+        liveAnnouncementStore.announce(message);
+    }
+
     private addEnteringChatWithUsers(users: SpaceUserExtended[]) {
         // No peer to announce (e.g. getFirstUsers hit its backstop while alone). A late peer will
         // be announced by the observeUserJoined observers instead, so skip the empty message here.
@@ -490,15 +497,18 @@ export class ProximityChatRoom implements ChatRoom {
             // For old browsers
             userNames = users.map((user) => user.name).join(", ");
         }
-        this.sendMessage(get(LL).chat.timeLine.newDiscussion({ userNames }), "incoming", false);
+        this.sendAndAnnounceMembershipMessage(get(LL).chat.timeLine.newDiscussion({ userNames }), "incoming");
     }
 
     private addIncomingUser(spaceUser: SpaceUserExtended): void {
-        this.sendMessage(get(LL).chat.timeLine.incoming({ userName: spaceUser.name }), "incoming", false);
+        this.sendAndAnnounceMembershipMessage(get(LL).chat.timeLine.incoming({ userName: spaceUser.name }), "incoming");
     }
 
     private addOutcomingUser(spaceUser: SpaceUserExtended): void {
-        this.sendMessage(get(LL).chat.timeLine.outcoming({ userName: spaceUser.name }), "outcoming", false);
+        this.sendAndAnnounceMembershipMessage(
+            get(LL).chat.timeLine.outcoming({ userName: spaceUser.name }),
+            "outcoming",
+        );
         this.removeTypingUserbyID(spaceUser.spaceUserId.toString());
     }
 

@@ -138,7 +138,7 @@
 </script>
 
 <div class="px-3">
-    <div data-testid="pollCard" class="poll-card rounded-2xl bg-contrast/90 border border-white/10 p-4 max-w-2xl">
+    <div data-testid="pollCard" class="poll-card rounded-lg bg-contrast/90 border border-white/10 p-4 max-w-2xl">
         <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
                 <span
@@ -148,16 +148,16 @@
                 >
                     {$pollState.isEnded ? $LL.chat.poll.status.closed() : $LL.chat.poll.status.open()}
                 </span>
-                <span class="text-xs text-white/50" data-testid="pollParticipantsCount">
+                <span class="text-xs text-white/60" data-testid="pollParticipantsCount">
                     {$LL.chat.poll.participants({ count: $pollState.totalVotes })}
                 </span>
                 {#if $pollState.maxSelections > 1}
-                    <span class="text-xs text-white/50">
+                    <span class="text-xs text-white/60">
                         {$LL.chat.poll.multiSelect({ count: $pollState.maxSelections })}
                     </span>
                 {/if}
                 {#if $pollState.spoiledVotes > 0}
-                    <span class="text-xs text-white/50">
+                    <span class="text-xs text-white/60">
                         {$LL.chat.poll.spoiledVotes({ count: $pollState.spoiledVotes })}
                     </span>
                 {/if}
@@ -168,7 +168,7 @@
             </div>
 
             {#if senderDisplayName || date}
-                <div class="mt-2 flex flex-wrap gap-2 text-xs text-white/55">
+                <div class="mt-2 flex flex-wrap gap-2 text-xs text-white/60">
                     {#if senderDisplayName}
                         <span data-testid="pollCreatorName">{senderDisplayName}</span>
                     {/if}
@@ -205,15 +205,19 @@
                                     : 'border-white/20'}"
                             >
                                 {#if selected}
-                                    <IconCheck font-size={12} />
+                                    <IconCheck aria-hidden="true" font-size={12} />
                                 {/if}
                             </span>
                             <span class="truncate">{answer.text}</span>
                         </span>
                         {#if isSubmittingVote && selected}
-                            <IconLoader class="shrink-0 animate-[spin_2s_linear_infinite]" font-size={13} />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="shrink-0 animate-[spin_2s_linear_infinite]"
+                                font-size={13}
+                            />
                         {:else if $pollState.resultsVisible}
-                            <span class="shrink-0 text-white/60">{getAnswerResult(answer)}</span>
+                            <span class="shrink-0 text-sm font-semibold text-white/60">{getAnswerResult(answer)}</span>
                         {/if}
                     </button>
                 {/each}
@@ -226,7 +230,7 @@
                             <span class="truncate {answer.isWinning ? 'font-semibold text-white' : ''}">
                                 {answer.text}
                             </span>
-                            <span class="shrink-0">{getAnswerResult(answer)}</span>
+                            <span class="shrink-0 text-sm font-semibold">{getAnswerResult(answer)}</span>
                         </div>
                         <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
                             <div
@@ -240,7 +244,7 @@
         {/if}
 
         {#if !$pollState.resultsVisible && !$pollState.isEnded}
-            <div class="mt-3 text-xs text-white/50">
+            <div class="mt-3 text-xs text-white/60">
                 {$pollState.kind === "open" ? $LL.chat.poll.resultsAfterVote() : $LL.chat.poll.resultsWhenClosed()}
             </div>
         {/if}
@@ -252,7 +256,7 @@
         {/if}
 
         {#if $pollState.isEnded && $pollState.closingMessage}
-            <div class="mt-2 rounded-lg bg-white/5 px-2.5 py-2 text-xs text-white/65">
+            <div class="mt-2 rounded-lg bg-white/5 px-2.5 py-2 text-xs text-white/70">
                 {$pollState.closingMessage}
             </div>
         {/if}
@@ -272,7 +276,11 @@
                         onclick={confirmEndPoll}
                     >
                         {#if isEndingPoll}
-                            <IconLoader class="animate-[spin_2s_linear_infinite] mr-2" font-size={16} />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="animate-[spin_2s_linear_infinite] mr-2"
+                                font-size={16}
+                            />
                         {/if}
                         {$LL.chat.poll.end.cta()}
                     </button>
@@ -286,9 +294,13 @@
                         onclick={() => confirmDelete("poll", deletePoll)}
                     >
                         {#if isDeletingPoll}
-                            <IconLoader class="animate-[spin_2s_linear_infinite] mr-2" font-size={16} />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="animate-[spin_2s_linear_infinite] mr-2"
+                                font-size={16}
+                            />
                         {:else}
-                            <IconTrash class="mr-2" font-size={16} />
+                            <IconTrash aria-hidden="true" class="mr-2" font-size={16} />
                         {/if}
                         {$LL.chat.delete()}
                     </button>

@@ -3,7 +3,8 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
 import type { ErrorType, MapValidation } from "../../src/GameMap/MapValidator";
-import { isFailure, MapValidator } from "../../src/GameMap/MapValidator";
+import { MapValidator } from "../../src/GameMap/MapValidator";
+import { isFailure } from "../../src/FunctionalTypes/Result";
 import { ZipFileFetcher } from "../../src/GameMap/Validator/ZipFileFetcher";
 
 async function loadMap(mapPath: string, logLevel: ErrorType = "info"): Promise<MapValidation> {

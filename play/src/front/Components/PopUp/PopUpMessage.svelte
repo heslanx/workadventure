@@ -43,7 +43,7 @@
             <p class="text-center text-sm font-semibold mt-0">New Message</p>
         </div>
     </div>
-    <div class="max-h-[140px] overflow-y-auto overflow-x-hidden pointer-events-auto">
+    <div class="max-h-[8.75rem] overflow-y-auto overflow-x-hidden pointer-events-auto">
         <div class="break-words">
             <TextGlobalMessage />
         </div>

@@ -28,6 +28,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraAndMicPaused: "Camera và micro tạm dừng đến khi quay lại",
         cameraPaused: "Camera tạm dừng đến khi quay lại",
     },
+    enlarge: "Phóng to video",
 };
 
 export default video;

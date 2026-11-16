@@ -18,6 +18,7 @@ const area: DeepPartial<Translation["area"]> = {
         },
         personalSpaceWithNames: "{name}的個人空間",
         alreadyHavePersonalArea: "您已有一個個人區域。如果您認領此區域，先前的將被刪除。",
+        nameLabel: "你的名字",
     },
 };
 

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import * as Phaser from "phaser";
 import { describe, expect, it, vi } from "vitest";
 import { WalkDestinationMarker } from "../../../../src/front/Phaser/Components/WalkDestinationMarker";

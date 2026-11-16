@@ -75,8 +75,10 @@
                         : $LL.chat.messageBanner.wroteToYou({ name: banner.senderName })}
                 </span>
                 {#if banner.roomName}
-                    <span class="shrink-0 rounded-full bg-white/10 px-2 py-0.5" data-testid="chatMessageBannerRoom"
-                        >{banner.roomName}</span
+                    <span
+                        class="min-w-0 max-w-[45%] truncate rounded-full bg-white/10 px-2 py-0.5"
+                        title={banner.roomName}
+                        data-testid="chatMessageBannerRoom">{banner.roomName}</span
                     >
                 {/if}
             </div>
@@ -113,7 +115,7 @@
             dataTestId="chatMessageBannerDismiss"
         >
             {#snippet icon()}
-                <IconX font-size="16" />
+                <IconX aria-hidden="true" font-size="16" />
             {/snippet}
         </Button>
     </div>

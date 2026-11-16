@@ -2,6 +2,8 @@ import type { BaseTranslation } from "../i18n-types";
 
 const megaphone: BaseTranslation = {
     announcement: {
+        sendFailed:
+            "Não enviado: a conexão com o servidor caiu. Seu texto continua aqui; envie de novo quando reconectar.",
         title: "Enviar um anúncio",
         audience: "Quem recebe?",
         thisRoom: "Esta sala",
@@ -22,6 +24,7 @@ const megaphone: BaseTranslation = {
         placeNotFound: "Este lugar não existe mais no mapa.",
         admin: "Administrador",
         more: "Anúncios em espera: {count}",
+        emptyMessage: "Escreva uma mensagem para enviar.",
     },
     modal: {
         liveMessage: {
@@ -34,6 +37,7 @@ const megaphone: BaseTranslation = {
             wholeWorld: "Todas as salas do mundo",
             live: "Ao vivo",
             stop: "Parar",
+            enableMicrophone: "Ligar microfone",
             title: "Mensagem ao vivo",
         },
     },

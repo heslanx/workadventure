@@ -436,6 +436,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "Weitere Optionen",
         createRoom: "Raum erstellen",
         createFolder: "Ordner erstellen",
+        nameRequired: "Gib einen Namen ein, um ihn zu erstellen.",
     },
     createFolder: {
         title: "Neuen Ordner erstellen",
@@ -581,6 +582,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "Zugriff ändern",
                 changePermissions: "Berechtigungen ändern",
             },
+            nothingToSave: "Ändere eine Einstellung, um sie zu speichern.",
+            nameRequiredToSave: "Gib einen Raumnamen ein, um zu speichern.",
         },
         pollsEmpty: "Noch keine Umfragen",
         participantsEmpty: "Noch keine Teilnehmenden",
@@ -591,6 +594,8 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "Diese Umfrage konnte in der Zeitleiste nicht geöffnet werden.",
         closeFolderMembers: "Ordnermitglieder schließen",
         folderMembersHint: "Ordnermitglieder können seinen Räumen beitreten, die für Mitglieder offen sind.",
+        proximityParticipantsEmpty:
+            "Niemand ist in deiner Nähe. Geh zu jemandem hin, um eine Unterhaltung zu beginnen.",
     },
     roomMenu: {
         leaveRoom: {
@@ -844,6 +849,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "Sicherheit",
         securityHint: "Dein Sicherungsschlüssel entsperrt deine verschlüsselten Nachrichten auf einem neuen Gerät.",
         advancedSection: "Erweitert",
+        notSet: "Nicht festgelegt",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -882,7 +888,25 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "Diese Umfrage beenden?",
         endPollMessage: "Niemand kann dann mehr abstimmen. Die Ergebnisse bleiben sichtbar.",
         save: "Speichern",
+        deleteMessageNamedTitle: "„{excerpt}“ löschen?",
+        cannotUndo: "Das kann nicht rückgängig gemacht werden.",
     },
+    chatTurnedOffInArea: "Der Chat ist in diesem Bereich deaktiviert. Verlasse den Bereich, um wieder zu schreiben.",
+    searchFailed: "Die Suche ist fehlgeschlagen. In der Liste fehlen möglicherweise Ergebnisse.",
+    searchRetry: "Erneut suchen",
+    copyFailed: "Kopieren nicht möglich",
+    directMessagesEmpty:
+        "Noch keine Direktnachrichten. Öffne die Benutzerliste und wähle jemanden aus, dem du schreiben möchtest.",
+    roomsEmpty: "Noch keine Gruppenunterhaltungen. Erstelle einen Raum, um eine zu beginnen.",
+    folderEmpty: "Dieser Ordner enthält noch keine Räume. Erstelle einen Raum, um eine Unterhaltung zu beginnen.",
+    connectionErrorImpact:
+        "Nachrichten können erst wieder gesendet oder empfangen werden, wenn die Verbindung wiederhergestellt ist.",
+    connectionErrorSince: "Nicht verfügbar seit {time}.",
+    connectionRetrying: "Chat-Verbindung wird erneut versucht…",
+    connectionRetryFailed:
+        "Der Chat ist weiterhin nicht erreichbar. Versuche es erneut oder lade die Seite neu, wenn es weiterhin fehlschlägt.",
+    connectionRecovered: "Der Chat ist wieder da. Er war von {from} bis {to} nicht verfügbar.",
+    connectionRecoveredDismiss: "Diesen Hinweis schließen",
 };
 
 export default chat;

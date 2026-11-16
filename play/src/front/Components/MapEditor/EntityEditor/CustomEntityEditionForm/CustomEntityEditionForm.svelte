@@ -130,6 +130,7 @@
                 <div class="rotate-[270deg]" style="width: 30px;margin-top: {(entityImageRef?.height ?? 0) - 30}px">
                     <input
                         class="!cursor-grab active:!cursor-grabbing slider"
+                        aria-label={$LL.mapEditor.entityEditor.customEntityEditorForm.depth()}
                         style="width: {entityImageRef?.height ?? 0}px"
                         bind:value={depthOffset}
                         type="range"
@@ -142,15 +143,16 @@
     </div>
     {#if !floatingObject}
         <div>
-            <img draggable="false" src={LogoCollisionGrid} alt="Logo collision grid" width="28px" />
+            <img draggable="false" src={LogoCollisionGrid} alt="" width="28px" />
             <p class="text-xs m-0 p-0">{$LL.mapEditor.entityEditor.customEntityEditorForm.collision()}</p>
         </div>
     {/if}
     <div>
-        <label class="mb-2 block" for="id"><b>{$LL.mapEditor.entityEditor.customEntityEditorForm.imageName()}</b></label
+        <label class="mb-2 block" for="name"
+            ><b>{$LL.mapEditor.entityEditor.customEntityEditorForm.imageName()}</b></label
         >
         <Input
-            class="px-2 py-2.5 text-[16px] rounded-md bg-contrast border-solid border border-contrast-400 text-white min-w-full"
+            class="px-2 py-2.5 text-base rounded-md bg-contrast border-solid border border-contrast-400 text-white min-w-full"
             bind:value={name}
             id="name"
             data-testid="name"

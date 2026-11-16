@@ -84,28 +84,31 @@
     // The app's look (ActionBarButton, the desktop meeting bar), with the theme's colors. Rings, not outlines:
     // the app removes the outline of a focused button.
     const baseButton =
-        "inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-[6px] p-1.5 text-neutral-100 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white";
-    const button = `${baseButton} aria-pressed:bg-secondary aria-pressed:hover:bg-secondary-600`;
+        "inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-sm p-1.5 text-neutral-100 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white";
+    const button = `${baseButton} aria-pressed:bg-secondary aria-pressed:hover:bg-secondary-800`;
     const separator = "mx-0.5 h-6 w-px bg-neutral-800";
 </script>
 
 <div
     class={[
-        "pointer-events-auto absolute left-1/2 z-[255] flex w-max max-w-[calc(100%-24px)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-md border border-solid border-neutral-800 bg-contrast/90 p-2 text-neutral-100 shadow-[0_4px_16px_#0006] backdrop-blur",
+        "pointer-events-auto absolute left-1/2 z-[255] flex w-max max-w-[calc(100%-24px)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-md border border-solid border-neutral-800 bg-contrast/90 p-2 text-neutral-100 shadow-lg backdrop-blur",
         placement === "top" ? "top-3" : "bottom-3",
     ]}
     data-testid="annotation-toolbar"
 >
     <button
         type="button"
-        class="{baseButton} aria-pressed:bg-danger aria-pressed:hover:bg-danger-600"
+        class="{baseButton} aria-pressed:bg-danger aria-pressed:text-contrast-900 aria-pressed:hover:bg-danger-600"
         data-testid="annotation-toggle"
         aria-pressed={active}
         title={active ? $LL.screenAnnotation.stopAnnotating() : $LL.screenAnnotation.startAnnotating()}
         aria-label={active ? $LL.screenAnnotation.stopAnnotating() : $LL.screenAnnotation.startAnnotating()}
         onclick={toggleActive}
     >
-        {#if active}<IconX font-size="20" />{:else}<IconPencil font-size="20" />{/if}
+        {#if active}<IconX font-size="20" aria-hidden="true" />{:else}<IconPencil
+                font-size="20"
+                aria-hidden="true"
+            />{/if}
     </button>
     {#if active}
         <span class={separator} aria-hidden="true"></span>
@@ -118,7 +121,7 @@
                 aria-pressed={currentTool === toolItem.id}
                 title={toolItem.label}
                 aria-label={toolItem.label}
-                onclick={() => selectTool(toolItem.id)}><ToolIcon font-size="20" /></button
+                onclick={() => selectTool(toolItem.id)}><ToolIcon font-size="20" aria-hidden="true" /></button
             >
         {/each}
         <span class={separator} aria-hidden="true"></span>
@@ -126,7 +129,7 @@
             {#each ANNOTATION_COLORS as color (color)}
                 <button
                     type="button"
-                    class="size-5.5 shrink-0 rounded-full border-2 border-solid border-neutral-800 focus-visible:ring-2 focus-visible:ring-white aria-pressed:border-white aria-pressed:ring-2 aria-pressed:ring-secondary aria-pressed:ring-offset-2 aria-pressed:ring-offset-contrast"
+                    class="hit-area size-5.5 shrink-0 rounded-full border-2 border-solid border-neutral-800 focus-visible:ring-2 focus-visible:ring-white aria-pressed:border-white aria-pressed:ring-2 aria-pressed:ring-secondary aria-pressed:ring-offset-2 aria-pressed:ring-offset-contrast"
                     style:background-color={color}
                     aria-pressed={currentColor === color}
                     title={$LL.screenAnnotation.color()}
@@ -147,9 +150,9 @@
                     onclick={() =>
                         presenterToolStore.set($presenterToolStore === presenterTool ? "none" : presenterTool)}
                 >
-                    {#if presenterTool === "laser"}<IconPointer font-size="20" />
-                    {:else if presenterTool === "spotlight"}<IconFocusCentered font-size="20" />
-                    {:else}<IconSearch font-size="20" />{/if}
+                    {#if presenterTool === "laser"}<IconPointer font-size="20" aria-hidden="true" />
+                    {:else if presenterTool === "spotlight"}<IconFocusCentered font-size="20" aria-hidden="true" />
+                    {:else}<IconSearch font-size="20" aria-hidden="true" />{/if}
                 </button>
             {/each}
         {/if}
@@ -160,7 +163,7 @@
             data-testid="annotation-undo"
             title={$LL.screenAnnotation.undo()}
             aria-label={$LL.screenAnnotation.undo()}
-            onclick={undo}><IconArrowBackUp font-size="20" /></button
+            onclick={undo}><IconArrowBackUp font-size="20" aria-hidden="true" /></button
         >
         <button
             type="button"
@@ -168,7 +171,7 @@
             title={$LL.desktop.meetingBar.redo()}
             aria-label={$LL.desktop.meetingBar.redo()}
             onclick={() => screenAnnotationManager.redoLastLocalElement(targetUserId)}
-            ><IconArrowForwardUp font-size="20" /></button
+            ><IconArrowForwardUp font-size="20" aria-hidden="true" /></button
         >
         <button
             type="button"
@@ -177,7 +180,7 @@
             aria-label={$LL.desktop.meetingBar.hideAnnotations()}
             aria-pressed={$screenAnnotationLocallyHiddenStore}
             onclick={() => screenAnnotationLocallyHiddenStore.set(!$screenAnnotationLocallyHiddenStore)}
-            ><IconEyeOff font-size="20" /></button
+            ><IconEyeOff font-size="20" aria-hidden="true" /></button
         >
     {/if}
     {#if isPresenter}
@@ -190,7 +193,7 @@
             title={othersAllowed ? $LL.screenAnnotation.disallowAnnotations() : $LL.screenAnnotation.allowAnnotations()}
             onclick={toggleOthersAllowed}
         >
-            <IconUsersGroup font-size="20" />
+            <IconUsersGroup font-size="20" aria-hidden="true" />
             <span
                 >{othersAllowed
                     ? $LL.screenAnnotation.disallowAnnotations()
@@ -203,7 +206,7 @@
             data-testid="annotation-clear-all"
             title={$LL.screenAnnotation.clearAll()}
             aria-label={$LL.screenAnnotation.clearAll()}
-            onclick={clearAll}><IconTrash font-size="20" /></button
+            onclick={clearAll}><IconTrash font-size="20" aria-hidden="true" /></button
         >
     {/if}
 </div>

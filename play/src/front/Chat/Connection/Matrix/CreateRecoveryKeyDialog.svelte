@@ -99,7 +99,7 @@
                 type="password"
                 autocomplete="new-password"
                 data-testid="passphraseInput"
-                class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-light-purple border border-solid bg-contrast"
+                class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-lighter-purple border border-solid bg-contrast"
                 bind:value={passphraseInput}
                 disabled={generatedSecretStorageKey !== undefined}
                 onfocusin={focusChatInput}
@@ -111,7 +111,7 @@
                 type="password"
                 autocomplete="new-password"
                 data-testid="passphraseConfirmInput"
-                class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-light-purple border border-solid bg-contrast"
+                class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-lighter-purple border border-solid bg-contrast"
                 bind:value={passphraseConfirmInput}
                 disabled={generatedSecretStorageKey !== undefined}
                 onfocusin={focusChatInput}
@@ -127,12 +127,13 @@
                         {generatedSecretStorageKey.encodedPrivateKey}
                     </p>
                     <button
+                        class="hit-area"
                         data-testid="downloadRecoveryKeyButton"
                         aria-label={$LL.chat.e2ee.createRecoveryKey.download()}
                         title={$LL.chat.e2ee.createRecoveryKey.download()}
                         onclick={downloadPrivateKeyFile}
                     >
-                        <IconFileDownload />
+                        <IconFileDownload aria-hidden="true" />
                     </button>
                 </div>
                 {#if isPrivateKeyDownloaded}
@@ -140,7 +141,7 @@
                 {/if}
             {/if}
             {#if error}
-                <p class="text-red-500">{$LL.chat.e2ee.createRecoveryKey.error()}</p>
+                <p class="text-danger-400">{$LL.chat.e2ee.createRecoveryKey.error()}</p>
             {/if}
         </div>
     {/snippet}

@@ -535,10 +535,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "Ir a la entidad {name}",
             moveToArea: "Ir a la zona {name}",
             errorMovingToObject: "El objeto aún no es accesible 🚫",
+            show: "Mostrar detalles de {name}",
         },
         zoomIn: "Acercar +",
         zoomOut: "Alejar -",
         showMyLocation: "Mostrar mi ubicación",
+        noEntitiesMatch: "Ningún objeto coincide con tu búsqueda. Borra la búsqueda para ver todos los objetos.",
+        noAreasMatch: "Ninguna zona coincide con tu búsqueda. Borra la búsqueda para ver todas las zonas.",
+        entitiesList: "Lista de objetos",
+        areasList: "Lista de zonas",
     },
     listRoom: {
         isFetching: "Obteniendo lista de salas... ⤵️",
@@ -548,6 +553,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Moviéndose a la sala: {roomNameSelected}... Hasta pronto... 🫡",
         searchLabel: "Buscar una sala",
         searchPlaceholder: "Escriba palabras clave...",
+        noRoomAvailable: "Aún no hay ninguna sala disponible en este mundo.",
+        noRoomMatch: "Ninguna sala coincide con «{search}».",
+        clearSearch: "Borrar búsqueda",
+        fetchFailedTitle: "No se pudo cargar la lista de salas",
+        fetchFailedDetail: "Permaneces en tu sala actual. Comprueba tu conexión e inténtalo de nuevo.",
+        retryFetch: "Volver a cargar las salas",
     },
 };
 

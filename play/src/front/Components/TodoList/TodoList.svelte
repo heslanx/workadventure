@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { get } from "svelte/store";
     import type { TodoListInterface } from "@workadventure/shared-utils";
+    import { fly } from "../../Utils/reducedMotion";
     import { isTodoListVisibleStore, todoListsStore } from "../../Stores/TodoListStore";
     import LL from "../../../i18n/i18n-svelte";
     import todoListPng from "../images/applications/todolist.png";
@@ -68,7 +68,7 @@
 
 <div class="todolist select-text flex">
     <div
-        class="sidebar p-3 h-full bg-contrast/80 backdrop-blur w-96 max-md:w-screen"
+        class="sidebar p-3 h-full bg-contrast/95 backdrop-blur w-96 max-md:w-screen"
         in:fly={{ x: 100, duration: 250, delay: 200 }}
         out:fly={{ x: 100, duration: 200 }}
         {@attach blocker}
@@ -79,9 +79,9 @@
                     {#if get(externalSvelteComponentService.getComponentsByZone("todoListImage")).size > 0}
                         <ExternalComponents zone="todoListImage" />
                     {:else}
-                        <img draggable="false" src={todoListPng} class="w-6" alt={$LL.menu.icon.open.todoList()} />
+                        <img draggable="false" src={todoListPng} class="w-6" alt="" />
                         <span>/</span>
-                        <img draggable="false" src={taskPng} class="w-6" alt={$LL.menu.icon.open.todoList()} />
+                        <img draggable="false" src={taskPng} class="w-6" alt="" />
                     {/if}
                     <h3 class="m-0 text-lg normal-case leading-none">{$LL.externalModule.todoList.title()}</h3>
                     <span class="rounded-sm bg-white px-1 py-0.5 text-xxs font-bold text-secondary">Beta</span>
@@ -114,7 +114,7 @@
                                 {$LL.externalModule.todoList.forToday()}
                             </h4>
                             {#if overdueCount > 0}
-                                <span class="rounded-sm bg-danger-600/20 px-2 py-0.5 text-xs font-bold text-danger-600">
+                                <span class="rounded-sm bg-danger-600/20 px-2 py-0.5 text-xs font-bold text-danger-400">
                                     {$LL.externalModule.todoList.overdueCount({ count: overdueCount })}
                                 </span>
                             {/if}

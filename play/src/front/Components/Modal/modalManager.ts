@@ -1,4 +1,4 @@
-import { Modals, modals as svelteModals, onBeforeClose } from "svelte-modals";
+import { getModal, Modals, modals as svelteModals, onBeforeClose } from "svelte-modals";
 
 type ModalOpenOptions = Parameters<typeof svelteModals.open>[2];
 type SvelteModalComponent = Parameters<typeof svelteModals.open>[0];
@@ -27,4 +27,4 @@ export const modals = {
     },
 };
 
-export { Modals, onBeforeClose };
+export { getModal, Modals, onBeforeClose };

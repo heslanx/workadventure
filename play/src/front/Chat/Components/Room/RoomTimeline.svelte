@@ -7,10 +7,8 @@
     import {
         hasProximityChatSidePanel,
         type ChatConversation,
-        type ChatMessage,
         type ChatRoom,
         type ChatThreadSummary,
-        type ChatTimelineItem,
     } from "../../Connection/ChatConnection";
     import getCloseImg from "../../images/get-close.png";
     import { shouldRestoreChatStateStore } from "../../Stores/ChatStore";
@@ -45,6 +43,11 @@
     import RoomTimelineLoading from "./RoomTimelineLoading.svelte";
     import { shouldReserveFloatingCloseButtonSpace, shouldShowBackToRoomList } from "./RoomTimelineHeaderLayout";
     import { countIncomingMessagesAfter, findFirstUnreadKey, isReadMarkerLoaded } from "./RoomTimelineNewMessages";
+    import {
+        buildRenderItems,
+        reuseUnchangedRenderItems,
+        type RoomTimelineRenderItem,
+    } from "./RoomTimelineRenderItems";
     import {
         IconArrowDown,
         IconChevronLeft,
@@ -81,9 +84,6 @@
     const shouldRetrySendingEvents = chatConnection.shouldRetrySendingEvents;
     let myChatID = localUserStore.getChatId();
 
-    // Time gap threshold for message grouping (5 minutes)
-    const TIME_GAP_THRESHOLD = 5 * 60 * 1000;
-
     const AUTO_SCROLL_THRESHOLD_PX = 20;
     /** The jump button is 32 px tall and sits 12 px above the input: below this, it covers the header. */
     const JUMP_BUTTON_MIN_LIST_HEIGHT_PX = 48;
@@ -109,10 +109,14 @@
     let messageInputBarRef: MessageInputBar | undefined = $state();
     let lastTimelineFocusSequence = $state(0);
     let initialMessagesLoaded = $state(false);
+    /** The open or its retry has placed the list (bottom, "New messages" line, focused message): no receipt before. */
+    let positionedOnOpen = $state(false);
     /** The room opened but its history did not come: the list is empty for that reason, not because the room is. */
     let historyLoadFailed = $state(false);
     /** Messages from others that arrived while the user was reading history (autoScroll off). */
     let newMessagesCount = $state(0);
+    /** Screen-reader line for the latest message from someone else; history pages are never announced. */
+    let incomingMessageAnnouncement: { key: string; text: string } | undefined = $state(undefined);
     /** More than a screen above the bottom: worth offering a way back even with nothing new. */
     let farFromBottom = $state(false);
     /** Height of the visible list: the applications panel can squeeze it down to nothing. */
@@ -126,6 +130,7 @@
     let anchorIdleReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     let anchorHardReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     let lastSeenLastItemKey: string | undefined;
+    let focusing: { sequence: number; done: Promise<boolean> } | undefined;
     let contentResizeObserver: ResizeObserver | undefined;
     const observedItems = new WeakSet<Element>();
 
@@ -235,108 +240,13 @@
         }
     });
 
-    type RenderItem =
-        | { kind: "separator"; key: string; label: string }
-        | { kind: "item"; key: string; timelineItem: ChatTimelineItem; showHeader: boolean; showTime: boolean };
-
-    function isValidDate(d: Date) {
-        return d instanceof Date && !Number.isNaN(d.getTime());
-    }
-
-    function getTimelineItemDate(timelineItem: ChatTimelineItem): Date | undefined {
-        if (timelineItem?.date && isValidDate(timelineItem.date)) {
-            return timelineItem.date;
-        }
-        return undefined;
-    }
-
-    function isSameLocalDay(a: Date, b: Date): boolean {
-        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-    }
-
-    function dayLabel(d: Date): string {
-        const today = new Date();
-        // eslint-disable-next-line svelte/prefer-svelte-reactivity
-        const yesterday = new Date();
-        yesterday.setDate(today.getDate() - 1);
-
-        const labels = get(LL);
-        if (isSameLocalDay(d, today)) return labels.chat.timeLine.today();
-        if (isSameLocalDay(d, yesterday)) return labels.chat.timeLine.yesterday();
-
-        return new Intl.DateTimeFormat(undefined, {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-        }).format(d);
-    }
-
-    function dayKey(d: Date): string {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${dd}`;
-    }
+    /** Rows of the last render, read only to reuse them in the next one: deliberately not $state. */
+    let previousRenderItems: readonly RoomTimelineRenderItem[] = [];
 
     let renderItems = $derived.by(() => {
-        const out: RenderItem[] = [];
-        let lastDayKey: string | null = null;
-        let previousMessage: ChatMessage | undefined = undefined;
-        const currentTimelineItems = $timelineItems ?? [];
-
-        for (const timelineItem of currentTimelineItems) {
-            const d = getTimelineItemDate(timelineItem);
-            let insertedSeparator = false;
-
-            if (d && isValidDate(d)) {
-                const k = dayKey(d);
-                if (k !== lastDayKey) {
-                    out.push({
-                        kind: "separator",
-                        key: `sep-${k}`,
-                        label: dayLabel(d),
-                    });
-                    lastDayKey = k;
-                    insertedSeparator = true;
-                }
-            }
-
-            if (insertedSeparator) {
-                previousMessage = undefined;
-            }
-
-            const currentMessage = timelineItem.kind === "message" ? timelineItem.message : undefined;
-            const previousMessageUserId = previousMessage?.sender?.spaceUserId ?? previousMessage?.sender?.chatId;
-            const currentMessageUserId = currentMessage?.sender?.spaceUserId ?? currentMessage?.sender?.chatId;
-            const timeDiff =
-                currentMessage?.date && previousMessage?.date
-                    ? currentMessage.date.getTime() - previousMessage.date.getTime()
-                    : Infinity;
-            const isRepeatedSender =
-                !!currentMessage &&
-                !!previousMessageUserId &&
-                previousMessageUserId === currentMessageUserId &&
-                timeDiff < TIME_GAP_THRESHOLD;
-
-            out.push({
-                kind: "item",
-                key: `${timelineItem.kind}-${timelineItem.id}`,
-                timelineItem,
-                showHeader: !isRepeatedSender,
-                showTime: true,
-            });
-            previousMessage = currentMessage;
-        }
-
-        // A run of messages from one sender shows its time once, on its last message.
-        out.forEach((item, index) => {
-            const next = out[index + 1];
-            if (item.kind === "item" && next?.kind === "item" && !next.showHeader) {
-                item.showTime = false;
-            }
-        });
-
-        return out;
+        const out = buildRenderItems($timelineItems ?? []);
+        previousRenderItems = reuseUnchangedRenderItems(out, previousRenderItems);
+        return previousRenderItems;
     });
 
     const MAX_INITIAL_FILL_ROUNDS = 5;
@@ -366,7 +276,10 @@
 
         initMessages()
             .catch((error) => console.error(error))
-            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)));
+            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)))
+            .finally(() => {
+                positionedOnOpen = true;
+            });
 
         return () => contentResizeObserver?.disconnect();
     });
@@ -442,9 +355,13 @@
 
     // Reruns the whole open: initMessages() retries the initialization too, then fetches the first pages.
     function retryLoading() {
+        positionedOnOpen = false;
         initMessages()
             .catch((error) => console.error(error))
-            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)));
+            .finally(() => focusPendingTimelineRequestOrScrollToBottom().catch((error) => console.error(error)))
+            .finally(() => {
+                positionedOnOpen = true;
+            });
     }
 
     function hasPendingTimelineFocusRequest(
@@ -456,8 +373,8 @@
     async function focusPendingTimelineRequestOrScrollToBottom() {
         const pendingFocusRequest = get(roomTimelineFocusStore);
 
-        if (hasPendingTimelineFocusRequest(pendingFocusRequest)) {
-            await focusTimelineEvent(pendingFocusRequest);
+        // A message that cannot be found leaves the list where it was: the open places it as without the request.
+        if (hasPendingTimelineFocusRequest(pendingFocusRequest) && (await focusTimelineEvent(pendingFocusRequest))) {
             return;
         }
 
@@ -485,9 +402,13 @@
     }
 
     // The read receipt clears the unread count and the "new messages" line: send one for what is on screen.
-    // On opening, on every new message while the room stays open, and on coming back to a hidden tab.
+    // Only at the bottom of a visible list: on opening, on a new message there, and on getting back to the
+    // bottom or to a hidden tab after new messages or while the room counts unread ones it shows no row for
+    // (a thread reply). Not while the user reads history: the jump button counts those as new.
     let pageVisible = $state(document.visibilityState === "visible");
     let lastRenderedKey = $derived(renderItems[renderItems.length - 1]?.key);
+    /** Deliberately not $state: only the receipt effect reads and writes it. */
+    let lastMarkedKey: string | undefined;
 
     let readReceipts = $derived(room.readReceipts);
     let roomType = $derived(room.type);
@@ -501,8 +422,18 @@
         }
         return undefined;
     });
+    // The room's unread state is read, not tracked: this receipt does not clear a thread's count on the server,
+    // whose next sync reports it again, so reacting to it would send a receipt per sync.
     $effect(() => {
-        if ($initializationState === "ready" && pageVisible && lastRenderedKey !== undefined) {
+        if (
+            $initializationState === "ready" &&
+            pageVisible &&
+            positionedOnOpen &&
+            autoScroll &&
+            lastRenderedKey !== undefined &&
+            (lastRenderedKey !== lastMarkedKey || untrack(() => get(room.hasUnreadMessages)))
+        ) {
+            lastMarkedKey = lastRenderedKey;
             untrack(() => room.setTimelineAsRead());
         }
     });
@@ -536,6 +467,23 @@
             lastItem?.kind === "item" && lastItem.timelineItem.kind === "message"
                 ? lastItem.timelineItem.message
                 : undefined;
+
+        const incomingSenderName = lastMessage?.sender?.username;
+        // The count is 0 when the timeline was rebuilt: an old message must not be read as a new one.
+        if (
+            isNewLastItem &&
+            lastKey !== undefined &&
+            incomingSenderName &&
+            lastMessage?.sender?.chatId !== myChatID &&
+            countIncomingMessagesAfter(items, previousLastKey, myChatID) > 0
+        ) {
+            untrack(() => {
+                incomingMessageAnnouncement = {
+                    key: lastKey,
+                    text: $LL.notification.message({ name: incomingSenderName }),
+                };
+            });
+        }
 
         if (isNewLastItem && lastMessage?.sender?.chatId === myChatID) {
             // I just sent this: jump to it even if I was reading history.
@@ -737,9 +685,21 @@
         }
     }
 
-    async function focusTimelineEvent(request: RoomTimelineFocusRequest) {
+    // A request pending at open is asked for twice, by the open and by the $roomTimelineFocusStore effect.
+    // The second ask waits for the first: the open has not placed the list until the focus has.
+    function focusTimelineEvent(request: RoomTimelineFocusRequest): Promise<boolean> {
+        if (focusing && focusing.sequence === request.sequence) return focusing.done;
+        const done = scrollToTimelineEvent(request).finally(() => {
+            focusing = undefined;
+        });
+        focusing = { sequence: request.sequence, done };
+        return done;
+    }
+
+    /** True when the list now shows the requested message. */
+    async function scrollToTimelineEvent(request: RoomTimelineFocusRequest): Promise<boolean> {
         if (!hasPendingTimelineFocusRequest(request)) {
-            return;
+            return false;
         }
 
         await tick();
@@ -759,7 +719,7 @@
         }
 
         if (!target) {
-            return;
+            return false;
         }
 
         lastTimelineFocusSequence = request.sequence;
@@ -769,10 +729,14 @@
         releaseScrollAnchor();
         beginProgrammaticScroll("resync");
         target.scrollIntoView({ block: "center", behavior: "smooth" });
-        target.classList.remove("highlight-message");
-        // // Force the highlight animation to restart when the same poll is clicked again.
-        // target.offsetWidth;
-        target.classList.add("highlight-message");
+        target.classList.add("highlight-message", "highlight-message-pulse");
+        return true;
+    }
+
+    /** The pulse plays when its class is added: it goes when it ends, so the next focus plays it again. */
+    function endHighlightPulse(event: AnimationEvent) {
+        // Only the row carries the class: an animation ending inside a message leaves the pulse alone.
+        if (event.target instanceof Element) event.target.classList.remove("highlight-message-pulse");
     }
 </script>
 
@@ -816,16 +780,16 @@
                                 onclick={goBackAndClearSelectedChatMessage}
                             >
                                 {#if direction === "rtl"}
-                                    <IconChevronRight font-size="20" />
+                                    <IconChevronRight aria-hidden="true" font-size="20" />
                                 {:else}
-                                    <IconChevronLeft font-size="20" />
+                                    <IconChevronLeft aria-hidden="true" font-size="20" />
                                 {/if}
                             </button>
                             {#if $unreadElsewhereStore > 0}
                                 <!-- A target of its own: the arrow always goes back to the list, the count jumps to a conversation. -->
                                 <button
                                     type="button"
-                                    class="absolute top-0 end-0 rounded-full p-0.5"
+                                    class="absolute top-0 end-0 rounded-full p-0.5 before:absolute before:-inset-1"
                                     data-testid="unreadElsewhereButton"
                                     aria-label={$LL.chat.a11y.showUnreadConversations()}
                                     aria-haspopup="true"
@@ -858,7 +822,11 @@
                         </span>
                     {/if}
                     <div class="min-w-0 grow px-2 {roomListVisible ? 'text-start' : 'text-center'}">
-                        <div class="text-sm font-bold truncate" data-testid="roomName">
+                        <div
+                            class="text-sm font-bold line-clamp-2 break-words"
+                            title={$roomName}
+                            data-testid="roomName"
+                        >
                             {$roomName}
                         </div>
                         <ConversationSubtitle {room} centered={!roomListVisible} />
@@ -899,12 +867,20 @@
                             aria-pressed={roomSidePanelToggleIsOpen}
                             onclick={() => roomSidePanelStore.toggle()}
                         >
-                            <IconInfoCircle font-size="20" />
+                            <IconInfoCircle aria-hidden="true" font-size="20" />
+                            <span class="sr-only"
+                                >{roomSidePanelToggleIsOpen
+                                    ? $LL.chat.roomPanel.toggleClose()
+                                    : $LL.chat.roomPanel.toggleOpen()}</span
+                            >
                             {#if unreadSidePanelCount > 0}
                                 <span
                                     class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border border-solid border-contrast bg-success"
                                     data-testid="toggleRoomSidePanelUnreadBadge"
-                                ></span>
+                                    ><span class="sr-only"
+                                        >{$LL.chat.a11y.unreadCount({ count: unreadSidePanelCount })}</span
+                                    ></span
+                                >
                             {/if}
                         </button>
                     {:else if !roomListVisible}
@@ -914,12 +890,27 @@
                 <EnteredZoneBanner {room} />
                 <ChatMessageBanner />
                 {#if shouldDisplayLoader}
-                    <div class="flex justify-center items-center w-full pb-1 bg-transparent">
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={25} />
+                    <div
+                        class="flex justify-center items-center w-full pb-1 bg-transparent"
+                        role="status"
+                        aria-label={$LL.chat.loader()}
+                    >
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={25}
+                        />
                     </div>
                 {/if}
             </div>
         {/if}
+        <div class="sr-only" aria-live="polite" aria-atomic="true">
+            {#if incomingMessageAnnouncement}
+                {#key incomingMessageAnnouncement.key}
+                    <span>{incomingMessageAnnouncement.text}</span>
+                {/key}
+            {/if}
+        </div>
         <div
             bind:this={messageListRef}
             bind:clientHeight={messageListHeight}
@@ -927,6 +918,7 @@
             onscroll={handleScroll}
             onwheel={cancelProgrammaticScroll}
             ontouchstart={cancelProgrammaticScroll}
+            onanimationend={endHighlightPulse}
         >
             <ul
                 class="list-none p-0 flex-1 min-w-0 flex flex-col max-h-full pt-10 gap-1 {$timelineItems.length === 0
@@ -957,7 +949,7 @@
                 {:else if $timelineItems.length === 0}
                     {#if room instanceof ProximityChatRoom}
                         <li class="text-center px-3 max-w-md">
-                            <img class="mx-auto" draggable="false" src={getCloseImg} alt={$LL.chat.getCloserTitle()} />
+                            <img class="mx-auto" draggable="false" src={getCloseImg} alt="" />
                             <div class="text-lg font-bold text-center">{$LL.chat.getCloserTitle()}</div>
                             <div class="text-sm opacity-50 text-center">
                                 {$LL.chat.getCloserDesc()}
@@ -965,7 +957,7 @@
                         </li>
                     {:else}
                         <li class="text-center px-3 max-w-md relative">
-                            <IconMailBox font-size="40" />
+                            <IconMailBox aria-hidden="true" font-size="40" />
                             <div class="text-lg font-bold text-center">{$LL.chat.noMessage()}</div>
                             <div class="text-sm opacity-50 text-center">{$LL.chat.beFirst()}</div>
                             <div class="absolute w-10 h-10 -bottom-1.5 -left-10">
@@ -975,6 +967,7 @@
                                     viewBox="0 0 51 45"
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         d="M7.46934 42.1088C7.31199 42.9222 7.84378 43.7091 8.65713 43.8664C9.47048 44.0238 10.2574 43.492 10.4147 42.6786L7.46934 42.1088ZM48.8329 3.45148C49.6538 3.34051 50.2294 2.58502 50.1184 1.76406C50.0074 0.943102 49.2519 0.367545 48.431 0.47852L48.8329 3.45148ZM3.03603 31.9911C2.60916 31.2811 1.68756 31.0516 0.977578 31.4785C0.267597 31.9053 0.038091 32.8269 0.464962 33.5369L3.03603 31.9911ZM7.22548 41.8701L5.93995 42.643L5.94067 42.6442L7.22548 41.8701ZM10.842 42.9209L10.2291 41.5518L10.2278 41.5524L10.842 42.9209ZM21.7611 39.6758C22.5172 39.3373 22.8557 38.4499 22.5172 37.6938C22.1787 36.9377 21.2913 36.5992 20.5352 36.9377L21.7611 39.6758ZM8.94203 42.3937C10.4147 42.6786 10.4147 42.679 10.4146 42.6792C10.4146 42.6792 10.4146 42.6794 10.4146 42.6794C10.4146 42.6794 10.4146 42.6792 10.4147 42.6786C10.4149 42.6776 10.4153 42.6755 10.416 42.6723C10.4172 42.666 10.4193 42.6556 10.4222 42.641C10.4281 42.612 10.4375 42.5667 10.4504 42.5059C10.4762 42.3842 10.5163 42.2006 10.5721 41.9611C10.6837 41.4819 10.8576 40.7796 11.1039 39.9023C11.5969 38.1466 12.3779 35.6973 13.5261 32.9384C15.8321 27.3978 19.5724 20.7218 25.3326 15.8605L23.3977 13.5678C17.1251 18.8616 13.1538 26.0254 10.7564 31.7857C9.55296 34.6773 8.73434 37.2439 8.21562 39.0914C7.95608 40.0157 7.77112 40.7618 7.6503 41.2807C7.58987 41.5402 7.54545 41.743 7.51573 41.883C7.50087 41.953 7.48968 42.0074 7.48201 42.0452C7.47817 42.0642 7.47521 42.079 7.4731 42.0896C7.47205 42.095 7.47121 42.0992 7.47059 42.1024C7.47027 42.104 7.47001 42.1054 7.46981 42.1064C7.4697 42.107 7.46959 42.1076 7.46953 42.1078C7.46943 42.1084 7.46934 42.1088 8.94203 42.3937ZM25.3326 15.8605C37.1451 5.89135 46.5336 3.76229 48.8329 3.45148L48.431 0.47852C45.5724 0.86493 35.6508 3.2269 23.3977 13.5678L25.3326 15.8605ZM0.464962 33.5369L5.93995 42.643L8.51102 41.0972L3.03603 31.9911L0.464962 33.5369ZM5.94067 42.6442C7.08293 44.54 9.46921 45.1811 11.4562 44.2894L10.2278 41.5524C9.52671 41.8671 8.81489 41.6015 8.51029 41.096L5.94067 42.6442ZM11.4549 44.29L21.7611 39.6758L20.5352 36.9377L10.2291 41.5518L11.4549 44.29Z"
@@ -1012,12 +1005,13 @@
                         {:else if item.timelineItem.kind === "question"}
                             <QuestionCard question={item.timelineItem.question} />
                         {:else}
+                            <!-- Only my messages show receipts: the others' rows must not update on every receipt. -->
                             <Message
                                 message={item.timelineItem.message}
                                 showHeader={item.showHeader}
                                 membersForMessageAvatars={room.membersForMessageAvatars}
                                 showThreadSummary={room.conversationKind === "room"}
-                                readReceipts={$readReceipts}
+                                readReceipts={item.timelineItem.message.isMyMessage ? $readReceipts : undefined}
                                 showReaders={$roomType === "multiple" &&
                                     item.timelineItem.message.id === lastOwnMessageId}
                                 isDirect={$roomType === "direct"}
@@ -1049,7 +1043,7 @@
                     onclick={() => scrollToMessageListBottom()}
                 >
                     {#snippet icon()}
-                        <IconArrowDown font-size="16" />
+                        <IconArrowDown aria-hidden="true" font-size="16" />
                     {/snippet}
                 </Button>
             </div>
@@ -1081,6 +1075,10 @@
     :global(li.highlight-message) {
         background-color: rgba(255, 255, 255, 0.1);
         border-radius: 8px;
+    }
+
+    /* A class of its own, so the next focus can play it again: it ends on the tint, which stays. */
+    :global(li.highlight-message-pulse) {
         animation: highlight-pulse 2s ease-out;
     }
 

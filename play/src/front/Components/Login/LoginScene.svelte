@@ -100,7 +100,7 @@
     <img
         draggable="false"
         src={logo}
-        alt="logo"
+        alt={$LL.a11y.compRoomLogo()}
         class="main-logo inline mt-8 {gameManager.currentStartedRoom.loginSceneLogo
             ? 'max-h-[200px] object-cover'
             : ''}"
@@ -127,8 +127,9 @@
                 type="text"
                 name="fname"
                 data-testid="loginSceneNameInput"
+                aria-label={$LL.login.input.name.placeholder()}
                 placeholder={$LL.login.input.name.placeholder()}
-                class="w-52 md:w-96 h-12 text text-center bg-contrast rounded border border-solid border-white/20 mt-4 mb-0"
+                class="w-52 md:w-96 h-12 text text-center bg-contrast rounded-md border border-solid border-white/20 mt-4 mb-0"
                 autofocus
                 maxlength={MAX_USERNAME_LENGTH}
                 bind:value={name}
@@ -138,7 +139,7 @@
                 class:border-danger={(name.trim() === "" && startValidating) || errorName !== ""}
             />
             {#if (name.trim() === "" && startValidating) || errorName !== ""}
-                <p class="err text-xs text-danger italic pt-2 mb-0">
+                <p class="err text-xs text-danger-400 italic pt-2 mb-0" role="alert">
                     {#if errorName}{errorName}{:else}{$LL.login.input.name.empty()}{/if}
                 </p>
             {/if}
@@ -159,7 +160,7 @@
         </section>
         {#if legalString}
             <section class="terms-and-conditions h-fit text-center w-full">
-                <p class="text-white text-xs italic opacity-50">
+                <p class="text-white text-xs italic opacity-70">
                     {@html $LL.login.terms({
                         links: legalString,
                     })}
@@ -169,7 +170,12 @@
     </div>
     {#if logo !== logoImg && gameManager.currentStartedRoom.showPoweredBy !== false}
         <section class="text-right flex powered-by justify-center items-end">
-            <img draggable="false" src={poweredByWorkAdventureImg} alt="Powered by WorkAdventure" class="h-14" />
+            <img
+                draggable="false"
+                src={poweredByWorkAdventureImg}
+                alt={$LL.a11y.compPoweredByWorkAdventure()}
+                class="h-14"
+            />
         </section>
     {/if}
 </form>

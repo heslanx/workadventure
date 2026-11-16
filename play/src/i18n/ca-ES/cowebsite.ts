@@ -6,6 +6,7 @@ const companion: DeepPartial<Translation["cowebsite"]> = {
     close: "Tanca",
     bigBlueButton: "BigBlueButton",
     jitsi: "Jitsi",
+    resize: "Canvia la mida del tauler del lloc web (tecles de fletxa per canviar la mida)",
 };
 
 export default companion;

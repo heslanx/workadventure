@@ -33,6 +33,13 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "無法開始螢幕分享",
     recordingStarted: "討論中的一個人已開始錄製。",
     urlCopiedToClipboard: "URL 已複製到剪貼簿",
+    muteRequest: {
+        acceptMicrophone: "將我的麥克風靜音",
+        acceptCamera: "關閉我的攝影機",
+        refuse: "保持開啟",
+    },
+    copyFailed: "無法複製:瀏覽器封鎖了剪貼簿。請選取文字並按 Ctrl+C(Mac 上按 Cmd+C)。",
+    closeToast: "關閉通知",
 };
 
 export default notification;

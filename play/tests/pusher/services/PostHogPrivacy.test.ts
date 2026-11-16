@@ -1,16 +1,27 @@
 // @vitest-environment node
 import { gunzipSync } from "node:zlib";
 import { createRequire } from "node:module";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import type { EventEmitter } from "node:events";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PostHog, PostHogOptions } from "posthog-node";
 import type * as PostHogSDK from "posthog-node";
 import { exceptionWithSourceContext } from "../fixtures/postHogError";
 
-const state = vi.hoisted(() => ({
-    clients: [] as PostHog[],
-    batches: [] as { batch: { event: string; properties: Record<string, unknown> }[] }[],
-    errorHandler: undefined as ((error: Error) => void) | undefined,
-}));
+const state = vi.hoisted(() => {
+    const configuration: { apiKey?: string; host?: string } = {
+        apiKey: "phc_synthetic_test",
+        host: "https://example.invalid",
+    };
+    return {
+        clients: [] as PostHog[],
+        batches: [] as { batch: { event: string; properties: Record<string, unknown> }[] }[],
+        errorHandler: undefined as ((error: Error) => void) | undefined,
+        sharedActive: false,
+        sharedCapture: vi.fn(),
+        ...configuration,
+        loggerProviders: 0,
+    };
+});
 
 vi.mock("posthog-node", async (importOriginal) => {
     const actual = await importOriginal<typeof PostHogSDK>();
@@ -36,6 +47,14 @@ vi.mock("posthog-node", async (importOriginal) => {
         },
     };
 });
+
+vi.mock("@workadventure/shared-utils/src/Observability/PostHogErrors", () => ({
+    isPostHogErrorsActive: () => state.sharedActive,
+    captureBackendException: state.sharedCapture,
+}));
+vi.mock("@workadventure/shared-utils/src/Observability/NodeTelemetry", () => ({
+    isObservabilityActive: () => false,
+}));
 
 vi.mock("process", () => ({ default: { env: { NODE_ENV: "test" }, once: vi.fn() } }));
 vi.mock("@sentry/node", () => ({ captureException: vi.fn() }));
@@ -67,8 +86,12 @@ vi.mock("../../../src/pusher/enums/EnvironmentVariable", () => ({
     SENTRY_TRACES_SAMPLE_RATE: undefined,
     SENTRY_ENVIRONMENT: undefined,
     DRAIN_TIMEOUT_MS: 3000,
-    POSTHOG_API_KEY: "phc_synthetic_test",
-    POSTHOG_URL: "https://example.invalid",
+    get POSTHOG_API_KEY() {
+        return state.apiKey;
+    },
+    get POSTHOG_URL() {
+        return state.host;
+    },
 }));
 vi.mock("../../../src/room-api/RoomApiServer", () => ({ default: {} }));
 vi.mock("../../../src/pusher/services/AnalyticsTimedEventTracker", () => ({ analyticsTimedEventTracker: {} }));
@@ -77,6 +100,9 @@ vi.mock("@opentelemetry/resources", () => ({ resourceFromAttributes: vi.fn() }))
 vi.mock("@opentelemetry/sdk-logs", () => ({
     BatchLogRecordProcessor: class {},
     LoggerProvider: class {
+        constructor() {
+            state.loggerProviders++;
+        }
         getLogger() {
             return { emit: vi.fn() };
         }
@@ -84,7 +110,7 @@ vi.mock("@opentelemetry/sdk-logs", () => ({
 }));
 
 describe("pusher PostHog exception transport", () => {
-    const nativeProcess = createRequire(import.meta.url)("node:process") as typeof process;
+    const nativeProcess = createRequire(import.meta.url)("node:process") as EventEmitter;
     const processEvents = [
         "newListener",
         "removeListener",
@@ -92,7 +118,24 @@ describe("pusher PostHog exception transport", () => {
         "uncaughtException",
         "uncaughtExceptionMonitor",
     ] as const;
-    const originalListeners = new Map<string, ReturnType<typeof process.listeners>>();
+    const originalListeners = new Map<string, ReturnType<EventEmitter["listeners"]>>();
+
+    const testListeners = new Map<string, ReturnType<EventEmitter["listeners"]>>();
+
+    beforeEach(() => {
+        for (const event of processEvents) testListeners.set(event, nativeProcess.listeners(event));
+    });
+
+    afterEach(() => {
+        for (const event of processEvents) {
+            const original = testListeners.get(event) ?? [];
+            for (const listener of nativeProcess.listeners(event)) {
+                if (!original.includes(listener))
+                    nativeProcess.removeListener(event, listener as Parameters<EventEmitter["removeListener"]>[1]);
+            }
+            expect(nativeProcess.listeners(event)).toEqual(original);
+        }
+    });
 
     beforeAll(async () => {
         for (const event of processEvents) originalListeners.set(event, nativeProcess.listeners(event));
@@ -106,7 +149,8 @@ describe("pusher PostHog exception transport", () => {
         for (const event of processEvents) {
             const original = originalListeners.get(event) ?? [];
             for (const listener of nativeProcess.listeners(event)) {
-                if (!original.includes(listener)) nativeProcess.removeListener(event, listener);
+                if (!original.includes(listener))
+                    nativeProcess.removeListener(event, listener as Parameters<EventEmitter["removeListener"]>[1]);
             }
             expect(nativeProcess.listeners(event)).toEqual(original);
         }
@@ -237,7 +281,11 @@ describe("pusher PostHog exception transport", () => {
             .find((candidate) => !original.includes(candidate));
         expect(listener).toBeDefined();
 
-        listener?.(new Error("Unhandled token=synthetic-autocapture-secret"), Promise.resolve());
+        if (listener)
+            Reflect.apply(listener, nativeProcess, [
+                new Error("Unhandled token=synthetic-autocapture-secret"),
+                Promise.resolve(),
+            ]);
         await state.clients[0].flush();
 
         const event = state.batches.flatMap((batch) => batch.batch).find((event) => event.event === "$exception");
@@ -249,5 +297,42 @@ describe("pusher PostHog exception transport", () => {
                 mechanism: expect.objectContaining({ type: "onunhandledrejection", handled: false }),
             }),
         ]);
+    });
+    it("reuses the bootstrapped error client instead of creating a second client", async () => {
+        const clientCount = state.clients.length;
+        state.sharedActive = true;
+        state.sharedCapture.mockClear();
+        vi.resetModules();
+
+        await import("../../../src/server");
+        const error = new Error("Bootstrapped service failure");
+        state.errorHandler?.(error);
+
+        expect(state.clients).toHaveLength(clientCount);
+        expect(state.sharedCapture).toHaveBeenCalledExactlyOnceWith(error);
+        state.sharedActive = false;
+    });
+    it.each([
+        { apiKey: "phx_synthetic_personal", host: "https://example.invalid" },
+        { apiKey: "phc_synthetic_test", host: "https://user:password@example.invalid" },
+        { apiKey: "phc_synthetic_test", host: "https://example.invalid?token=synthetic" },
+        { apiKey: "phc_synthetic_test", host: "https://example.invalid#fragment" },
+        { apiKey: "phc_synthetic_test", host: "invalid-url" },
+        { apiKey: "phc_synthetic_test", host: "ftp://example.invalid" },
+        { apiKey: undefined, host: "https://example.invalid" },
+    ])("does not bypass rejected PostHog configuration: $host", async ({ apiKey, host }) => {
+        const clientCount = state.clients.length;
+        const loggerCount = state.loggerProviders;
+        state.apiKey = apiKey;
+        state.host = host;
+        vi.resetModules();
+        try {
+            await import("../../../src/server");
+            expect(state.clients).toHaveLength(clientCount);
+            expect(state.loggerProviders).toBe(loggerCount);
+        } finally {
+            state.apiKey = "phc_synthetic_test";
+            state.host = "https://example.invalid";
+        }
     });
 });

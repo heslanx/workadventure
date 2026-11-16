@@ -29,7 +29,7 @@
 {#if canDisplayImage}
     <div class="cursor-pointer relative group block p-1 pb-0">
         <div
-            class="bg-contrast/50 p-1 rounded absolute top-2 right-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all h-fit w-fit z-10"
+            class="bg-contrast/50 p-1 rounded absolute top-2 right-2 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all h-fit w-fit z-10"
             role="group"
             aria-label={$LL.chat.imagePreview.imageActions()}
         >
@@ -38,7 +38,7 @@
                     href={previewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="hover:bg-white/10 rounded-sm p-1"
+                    class="hit-area hover:bg-white/10 rounded-sm p-1"
                     onclick={(event) => {
                         event.stopPropagation();
                     }}
@@ -55,6 +55,7 @@
                         fill="none"
                         stroke-linecap="round"
                         stroke-linejoin="round"
+                        aria-hidden="true"
                     >
                         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                         <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />

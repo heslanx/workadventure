@@ -27,6 +27,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     viewBox="0 0 24 24"
+    aria-hidden="true"
 >
     <!-- tabler "hand-stop": an open raised hand. It is the single visual used everywhere the
          raise-hand feature is represented (action bar, host dock, video badge, Woka name). -->

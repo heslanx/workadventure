@@ -38,14 +38,16 @@
             : $requestedScreenSharingState && !$silentStore
               ? "active"
               : "normal"}
+        pressed={Boolean($requestedScreenSharingState && !$silentStore)}
+        blockedReason={$LL.actionbar.blocked.screenSharingOff()}
         dataTestId="screenShareButton"
         media="./static/images/screensharing.mp4"
         desc={$LL.actionbar.help.share.desc()}
     >
         {#if $requestedScreenSharingState && !$silentStore}
-            <ScreenShareOffIcon />
+            <ScreenShareOffIcon height="h-5" width="w-5" strokeWidth="2" />
         {:else}
-            <ScreenShareIcon />
+            <ScreenShareIcon height="h-5" width="w-5" strokeWidth="2" />
         {/if}
     </ActionBarButton>
 {/if}

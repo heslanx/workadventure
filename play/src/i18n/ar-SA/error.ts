@@ -14,6 +14,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "فُقد الاتصال بالخادم. لن تتمكن من التحدث مع الآخرين.", // Connection to server lost. You won't be able to speak to others.
+        retrying: "تتم إعادة المحاولة تلقائيًا. ستختفي هذه الرسالة عندما يستجيب الخادم.",
     },
     errorDialog: {
         title: "خطأ 😱", // Error 😱
@@ -22,6 +23,15 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "يمكنك أيضًا قراءة الأسئلة الشائعة لدينا:", // You can also read our FAQ:
         reload: "إعادة تحميل", // Reload
         close: "إغلاق", // Close
+    },
+    errorScreen: {
+        genericTitle: "تعذر علينا فتح هذا العالم.",
+        genericNextStep: "أعد تحميل الصفحة للمحاولة مرة أخرى. إذا تكرر ذلك، فتواصل مع المسؤول.",
+        networkTitle: "تعذر علينا الوصول إلى الخادم.",
+        networkNextStep: "تحقق من اتصالك بالإنترنت، ثم أعد تحميل الصفحة.",
+        reload: "إعادة تحميل الصفحة",
+        showDetails: "عرض التفاصيل",
+        code: "رمز الخطأ {code}",
     },
 };
 

@@ -36,7 +36,7 @@
             aria-label={$LL.chat.roomPanel.closeFolderMembers()}
             onclick={close}
         >
-            <IconChevronLeft font-size="20" />
+            <IconChevronLeft aria-hidden="true" font-size="20" />
         </button>
         <div class="min-w-0 flex-1">
             <h2 class="m-0 truncate text-base font-bold">{$LL.chat.manageRoomUsers.sectionJoined()}</h2>

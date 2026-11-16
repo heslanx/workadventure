@@ -35,7 +35,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^24.19.2",
     "@workadventure/eslint-config": "1.0.0",
     "eslint": "^9.39.4",
     "lint-staged": "^17.0.5",

@@ -18,6 +18,7 @@ const area: DeepPartial<Translation["area"]> = {
         },
         personalSpaceWithNames: "Persoonlijke ruimte van {name}",
         alreadyHavePersonalArea: "Je hebt al een persoonlijk gebied. Het wordt verwijderd als je dit gebied claimt.",
+        nameLabel: "Je naam",
     },
 };
 

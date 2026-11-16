@@ -103,7 +103,7 @@
         aria-disabled={!$canReact}
         aria-label={label}
         aria-pressed={$reacted}
-        class="reaction group flex flex-row items-center gap-1 py-0.5 px-2 m-0 border border-solid text-white rounded-full select-none {$reacted
+        class="reaction group hit-area flex flex-row items-center gap-1 py-0.5 px-2 m-0 border border-solid text-white rounded-full select-none {$reacted
             ? 'border-white/75 bg-linear-to-b from-white/20 to-white/20 hover:from-white/30 hover:to-white/30 focus-visible:from-white/30 focus-visible:to-white/30'
             : 'border-white/10 hover:bg-white/20 focus-visible:bg-white/20'}"
         class:opacity-50={!$canReact}

@@ -29,12 +29,12 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col bg-white/[0.02]" data-testid="proximityRoomSidePanelParticipants">
-    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-4 py-5">
+    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-3 py-5">
         <div class="flex items-center justify-between gap-3">
             <div class="text-sm font-bold tracking-widest uppercase opacity-75">
                 {$LL.chat.roomPanel.sections.participants()}
             </div>
-            <div class="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/65">
+            <div class="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70">
                 {participants.length}
             </div>
         </div>
@@ -46,7 +46,7 @@
                 class="rounded-lg border border-dashed border-white/10 px-4 py-6 text-center text-sm opacity-60"
                 data-testid="proximityRoomSidePanelParticipantsEmpty"
             >
-                {$LL.chat.roomPanel.participantsEmpty()}
+                {$LL.chat.roomPanel.proximityParticipantsEmpty()}
             </div>
         {:else}
             <div class="flex flex-col gap-2">

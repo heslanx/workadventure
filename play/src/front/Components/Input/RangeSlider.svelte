@@ -4,6 +4,8 @@
     interface Props {
         id?: string;
         label?: string;
+        // The name of the slider when there is no visible `label`.
+        ariaLabel?: string;
         placeholder?: string;
         min: number;
         value?: number;
@@ -23,6 +25,7 @@
     let {
         id = undefined,
         label = undefined,
+        ariaLabel = undefined,
         placeholder = "",
         min = 0,
         value = $bindable<number>(),
@@ -56,16 +59,19 @@
 
 <div class={wrapperMargins ? "mx-2.5" : "w-full"}>
     <div
-        class="input-range relative"
+        class="input-range relative group/slider"
         class:input-range-light={variant === "light"}
         class:input-range-secondary={variant === "secondary"}
         class:input-range-square={buttonShape === "square"}
     >
         <!-- remove the -10px so that the slider does not extend out of the bar -->
         <div class="input-range-slider" style="width: calc({((displayValue - min) / (max - min)) * 100}% - 10px);">
-            <div class="input-range-btn group/range -end-5">
+            <div
+                class="input-range-btn group/range -end-5 group-has-[input:focus-visible]/slider:ring-2 group-has-[input:focus-visible]/slider:ring-white group-has-[input:focus-visible]/slider:ring-offset-2 group-has-[input:focus-visible]/slider:ring-offset-contrast"
+            >
                 {#if buttonShape === "square"}
                     <svg
+                        aria-hidden="true"
                         class="input-range-dot absolute stroke-secondary left-0 m-auto right-0 group-hover/range:stroke-white"
                         fill="none"
                         height="20"
@@ -91,7 +97,8 @@
         <input
             id={uniqueId}
             type="range"
-            class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            class="absolute inset-x-0 -top-2.5 opacity-0 w-full h-7 cursor-pointer"
+            aria-label={label ? undefined : ariaLabel}
             {placeholder}
             {min}
             {max}

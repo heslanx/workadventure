@@ -85,7 +85,7 @@
 
 {#if wokaMenuData}
     <div
-        class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/80 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
+        class="m-auto my-0 h-fit min-h-fit max-w-lg min-w-48 max-sm:max-w-[89%] z-50 bg-contrast/95 transition-all backdrop-blur rounded-lg pointer-events-auto overflow-hidden md:mr-0"
         data-testid="actions-menu"
     >
         <div>
@@ -108,14 +108,15 @@
                                 />
                             </div>
                         {/if}
-                        <div class=" w-max mt-[29px]">
-                            <h3>{wokaMenuData.wokaName}</h3>
+                        <div class="max-w-full min-w-0 px-10 mt-[29px]">
+                            <h3 class="wrap-anywhere">{wokaMenuData.wokaName}</h3>
                         </div>
                         {#if remotePlayer}
                             <div class="my-2">
                                 <div class="text-xxs bold whitespace-nowrap select-none flex items-center">
                                     <div
                                         class="aspect-square h-2 w-2 rounded-full me-2.5"
+                                        aria-hidden="true"
                                         style="background-color: {getColorHexOfStatus(remotePlayer.availabilityStatus)}"
                                     ></div>
                                     <div
@@ -142,13 +143,20 @@
 
                 {#if $wokaMenuProgressStore}
                     <div class="px-4 pb-4 pt-2">
-                        <div class="w-full bg-white/10 rounded-full h-2 mb-2">
+                        <div
+                            class="w-full bg-white/10 rounded-full h-2 mb-2"
+                            role="progressbar"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={$wokaMenuProgressStore.progress}
+                            aria-labelledby="woka-menu-progress-message"
+                        >
                             <div
-                                class="bg-primary h-2 rounded-full transition-all duration-300"
+                                class="bg-secondary-400 h-2 rounded-full transition-all duration-300"
                                 style="width: {$wokaMenuProgressStore.progress}%"
                             ></div>
                         </div>
-                        <p class="text-white/80 text-sm text-center animate-pulse">
+                        <p id="woka-menu-progress-message" class="text-white/80 text-sm text-center animate-pulse">
                             {$wokaMenuProgressStore.message}
                         </p>
                     </div>
@@ -187,7 +195,7 @@
                                 </div>
                             {:else if action.actionIcon && typeof action.actionIcon === "function"}
                                 {@const ActionIcon = action.actionIcon}
-                                <ActionIcon class="w-6 h-6" />
+                                <ActionIcon class="w-6 h-6" aria-hidden="true" />
                             {/if}
                             {action.actionName}
                         </span>

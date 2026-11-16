@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
+    import { fade } from "../../Utils/reducedMotion";
     import type { Message } from "../../Stores/TypeMessageStore/MessageStore";
     import { textMessageStore } from "../../Stores/TypeMessageStore/TextMessageStore";
     import AnnouncementCard from "../Announcement/AnnouncementCard.svelte";

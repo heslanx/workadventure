@@ -38,5 +38,5 @@
     media="./static/Videos/Follow.mp4"
     desc={$followStateStore === "active" ? $LL.actionbar.help.unfollow.desc() : $LL.actionbar.help.follow.desc()}
 >
-    <FollowIcon />
+    <FollowIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>

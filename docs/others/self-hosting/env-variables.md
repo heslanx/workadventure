@@ -10,6 +10,13 @@ Environment variables for the Play service (frontend and pusher).
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `OBSERVABILITY_ENABLED` | No | Set to true to export OpenTelemetry traces, logs and metrics. Defaults to false. |
+| `OBSERVABILITY_SAMPLE_RATE` | No | Root trace sampling probability from 0 to 1. Defaults to 0.1; metrics are not sampled. |
+| `OBSERVABILITY_ENVIRONMENT` | No | Telemetry deployment environment. Defaults to NODE_ENV or development. |
+| `OBSERVABILITY_RELEASE` | No | Immutable release identifier, usually the deployed Git SHA. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | Optional OTLP HTTP collector base URL. When absent, uses POSTHOG_URL/i. A custom collector receives no PostHog token. |
+| `POSTHOG_API_KEY` | No | PostHog public project token for event ingestion; never a personal API key. |
+| `POSTHOG_URL` | No | PostHog ingestion URL for the project's region, e.g. https://eu.i.posthog.com. No region is assumed. |
 | `DESKTOP_APP_RECOMMENDED_VERSION` | No | Desktop release validated for this instance (exact X.Y.Z). |
 | `DESKTOP_APP_MINIMUM_VERSION` | No | Minimum supported desktop release; shows a non-blocking warning. |
 | `DESKTOP_APP_DOWNLOAD_URL` | No | Approved desktop download page for this instance. Required when a version is configured. |
@@ -93,8 +100,8 @@ Environment variables for the Play service (frontend and pusher).
 | `MAX_DISPLAYED_VIDEOS` | No | An approximation of the maximum number of videos displayed at once. If there are more videos to display, the user will have to scroll. The number of videos can sometimes be slightly greater (MAX_DISPLAYED_VIDEOS + number of videos to display % number of videos per row). This is useful to avoid overloading the Livekit server when a lot of people are in the same room. |
 | `NODE_ENV` | No | Node.js environment: 'development', 'production', or 'test' |
 | `CONTACT_URL` | No | URL for users to contact support or administrators |
-| `POSTHOG_API_KEY` | No | PostHog API key for analytics tracking |
-| `POSTHOG_URL` | No | PostHog server URL for analytics. Defaults to PostHog cloud |
+| `POSTHOG_REPLAY_ENABLED` | No | Allow masked PostHog session replay. Defaults to false; project replay settings must also enable it. |
+| `POSTHOG_REPLAY_SAMPLE_RATE` | No | Fraction of eligible browser sessions recorded, from 0 to 1. Defaults to 0.1. |
 | `FALLBACK_LOCALE` | No | Default locale/language code when user's locale is not available (e.g., 'en', 'fr') |
 | `ENABLE_REPORT_ISSUES_MENU` | No | Enable the 'Report Issues' menu option. Defaults to false |
 | `REPORT_ISSUES_URL` | Yes | URL where users can report issues (e.g., GitHub issues, support portal) |
@@ -149,6 +156,13 @@ Environment variables for the Back service (backend API).
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `OBSERVABILITY_ENABLED` | No | Set to true to export OpenTelemetry traces, logs and metrics. Defaults to false. |
+| `OBSERVABILITY_SAMPLE_RATE` | No | Root trace sampling probability from 0 to 1. Defaults to 0.1; metrics are not sampled. |
+| `OBSERVABILITY_ENVIRONMENT` | No | Telemetry deployment environment. Defaults to NODE_ENV or development. |
+| `OBSERVABILITY_RELEASE` | No | Immutable release identifier, usually the deployed Git SHA. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | Optional OTLP HTTP collector base URL. When absent, uses POSTHOG_URL/i. A custom collector receives no PostHog token. |
+| `POSTHOG_API_KEY` | No | PostHog public project token for event ingestion; never a personal API key. |
+| `POSTHOG_URL` | No | PostHog ingestion URL for the project's region, e.g. https://eu.i.posthog.com. No region is assumed. |
 | `PLAY_URL` | Yes | Public URL of the play/frontend service |
 | `MINIMUM_DISTANCE` | No | Minimum distance (in pixels) before users are considered to be in proximity. Defaults to 64 |
 | `GROUP_RADIUS` | No | Radius (in pixels) of a group/bubble. Defaults to 48 |
@@ -201,6 +215,13 @@ Environment variables for the Map Storage service.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `OBSERVABILITY_ENABLED` | No | Set to true to export OpenTelemetry traces, logs and metrics. Defaults to false. |
+| `OBSERVABILITY_SAMPLE_RATE` | No | Root trace sampling probability from 0 to 1. Defaults to 0.1; metrics are not sampled. |
+| `OBSERVABILITY_ENVIRONMENT` | No | Telemetry deployment environment. Defaults to NODE_ENV or development. |
+| `OBSERVABILITY_RELEASE` | No | Immutable release identifier, usually the deployed Git SHA. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | Optional OTLP HTTP collector base URL. When absent, uses POSTHOG_URL/i. A custom collector receives no PostHog token. |
+| `POSTHOG_API_KEY` | No | PostHog public project token for event ingestion; never a personal API key. |
+| `POSTHOG_URL` | No | PostHog ingestion URL for the project's region, e.g. https://eu.i.posthog.com. No region is assumed. |
 | `API_URL` | Yes | The URI(s) of the back server |
 | `AWS_ACCESS_KEY_ID` | No | AWS access key ID for S3 storage. If empty, local storage is used instead. |
 | `AWS_SECRET_ACCESS_KEY` | No | AWS secret access key for S3 storage. If empty, local storage is used instead. |

@@ -40,12 +40,12 @@
 
 <div
     data-testid="recording-space-picker"
-    class="bg-contrast/80 backdrop-blur-md rounded-md shadow-lg p-2 max-w-96 overflow-auto flex flex-col gap-2"
+    class="bg-contrast/95 backdrop-blur-md rounded-md shadow-lg p-2 max-w-96 overflow-auto flex flex-col gap-2"
     use:clickOutside={handleClose}
 >
     {#each $rowsStore as row (row.spaceName)}
         <div
-            class="w-full rounded border border-white/10 bg-white/5 p-3 flex flex-row items-center gap-3 {row.disabled ||
+            class="w-full rounded-sm border border-white/10 bg-white/5 p-3 flex flex-row items-center gap-3 {row.disabled ||
             !row.action
                 ? 'opacity-80'
                 : ''}"
@@ -74,17 +74,23 @@
                         {$LL.recording.actionbar.desc.advert()}
                     {/if}
                 </span>
+                {#if row.status === "recording-other"}
+                    <!-- No Start button on this row: say why, and when it comes back. -->
+                    <span class="text-xs text-white/80" data-testid="recording-space-blocked-reason">
+                        {$LL.recording.actionbar.spacePicker.recordedByOther()}
+                    </span>
+                {/if}
             </div>
 
             {#if row.action}
                 <button
                     type="button"
                     data-testid={getActionTestId(row)}
-                    class="shrink-0 rounded border px-2 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 {row.action ===
+                    class="hit-area-lg shrink-0 rounded border px-2 py-1 text-xs font-semibold transition-colors aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent {row.action ===
                     'stop'
                         ? 'border-red-400/60 text-red-200 hover:bg-red-500/10'
                         : 'border-white/20 text-white hover:bg-white/10'}"
-                    disabled={row.disabled}
+                    aria-disabled={row.disabled || undefined}
                     onclick={() => handleSelect(row)}
                 >
                     {row.action === "stop"

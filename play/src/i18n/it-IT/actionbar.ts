@@ -134,6 +134,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Scegli l'area da bloccare/sbloccare",
             bubbleLabel: "Bolla di discussione",
             unnamedArea: "Area senza nome",
+            noPermission: "Non puoi bloccare quest'area. Chiedi a un amministratore il permesso di bloccarla.",
         },
         giveBackFloor: {
             title: "Restituire la parola",
@@ -229,6 +230,22 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Non hai ancora una scrivania personale",
         errorMoving: "Impossibile raggiungere la tua scrivania personale",
         errorUnclaiming: "Impossibile liberare la tua scrivania personale",
+        unclaimConfirmTitle: "Liberare la tua scrivania “{name}”?",
+        unclaimConfirmMessage:
+            "Diventa subito libera. Chiunque può prenderla e la riavrai solo se la prenoti di nuovo mentre è ancora libera.",
+    },
+    mediaSettingsToggle: "Impostazioni di fotocamera e microfono",
+    blocked: {
+        calendarOff:
+            "Il calendario non è collegato in questo mondo. Un amministratore può attivarlo nelle impostazioni di amministrazione.",
+        todoListOff:
+            "La lista delle cose da fare non è collegata in questo mondo. Un amministratore può attivarla nelle impostazioni di amministrazione.",
+        roomListOff:
+            "Questa mappa ha disattivato l'elenco delle stanze. Chiedi al proprietario della mappa di riattivarlo.",
+        screenSharingOff:
+            "Questa mappa ha disattivato qui la condivisione dello schermo. Chiedi al proprietario della mappa di riattivarla.",
+        chatConnecting: "La chat si sta ancora connettendo. Riprova tra qualche secondo.",
+        alreadyAtDesk: "Sei già alla tua scrivania.",
     },
 };
 

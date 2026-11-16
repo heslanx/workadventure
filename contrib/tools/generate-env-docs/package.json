@@ -9,7 +9,7 @@
     "check": "tsx src/check.ts"
   },
   "dependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^24.19.2",
     "@workadventure/messages": "1.0.0",
     "@workadventure/shared-utils": "1.0.0",
     "tsx": "^4.22.3",

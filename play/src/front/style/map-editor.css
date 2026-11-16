@@ -7,7 +7,7 @@ p.help-text{
   }
   &:hover {
     svg {
-      @apply rotate-180;
+      @apply rotate-180 motion-reduce:rotate-0;
     }
   }
   &.success {
@@ -71,7 +71,7 @@ p.help-text{
 
     .header {
       display: flex;
-      font-size: 25px;
+      font-size: 1.5625rem;
       flex-direction: row;
       justify-content: space-between;
       align-items: center;

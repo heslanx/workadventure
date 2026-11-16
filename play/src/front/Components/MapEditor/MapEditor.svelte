@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { onMount } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import { EditorToolName } from "../../Phaser/Game/MapEditor/MapEditorModeManager";
     import { mapEditorSelectedToolStore, mapEditorVisibilityStore } from "../../Stores/MapEditorStore";
     import Explorer from "../Exploration/Explorer.svelte";
@@ -69,7 +69,7 @@
                 />
             </div>
             <div
-                class="sidebar h-dvh bg-contrast/80 backdrop-blur-md p-2 md:p-4"
+                class="sidebar h-dvh bg-contrast/95 backdrop-blur-md p-2 md:p-4"
                 in:fly={{ x: 100, duration: 200, delay: 200 }}
                 out:fly={{ x: 100, duration: 200 }}
             >

@@ -2,6 +2,11 @@ import type { BaseTranslation } from "../i18n-types";
 
 const camera: BaseTranslation = {
     editCam: "Editar câmera",
+    startError: {
+        camera: "Sua câmera não iniciou. Os outros não conseguem ver você. Feche outros apps que a usam e tente de novo.",
+        microphone:
+            "Seu microfone não iniciou. Os outros não conseguem ouvir você. Feche outros apps que o usam e tente de novo.",
+    },
     editSpeaker: "Editar saída de áudio",
     active: "Ativo",
     disabled: "Desabilitado",
@@ -22,12 +27,12 @@ const camera: BaseTranslation = {
         microphoneContent: "Você deve permitir o acesso ao microfone em seu navegador.",
         firefoxContent:
             'Por favor, clique na caixa de seleção "Lembrar esta decisão", se você não quiser que o Firefox continue pedindo a autorização.',
-        allow: "Permitir webcam",
+        allow: "Permitir câmera",
         allowMicrophone: "Permitir microfone",
-        allowCameraMicrophone: "Permitir webcam e microfone",
-        continue: "Continuar sem webcam",
+        allowCameraMicrophone: "Permitir câmera e microfone",
+        continue: "Continuar sem câmera",
         continueWithoutMicrophone: "Continuar sem microfone",
-        continueCameraMicrophone: "Continuar sem webcam e microfone",
+        continueCameraMicrophone: "Continuar sem câmera e microfone",
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -39,6 +44,8 @@ const camera: BaseTranslation = {
             noDeviceTitle: "Nenhuma câmera utilizável",
             noDeviceDesc:
                 "O navegador não detecta nenhuma câmera utilizável. Tente outro navegador, verifique se a câmera está conectada, verifique as configurações do computador (privacidade, dispositivos) ou reinicie o computador se o dispositivo deveria funcionar.",
+            deviceInUseTitle: "Câmera em uso",
+            deviceInUseDesc: "Outro aplicativo está usando a câmera. Feche esse aplicativo e tente novamente.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +61,8 @@ const camera: BaseTranslation = {
             noDeviceTitle: "Nenhum microfone utilizável",
             noDeviceDesc:
                 "O navegador não detecta nenhum microfone utilizável. Tente outro navegador, verifique o microfone, verifique as configurações do computador (privacidade, dispositivos) ou reinicie o computador se o dispositivo deveria funcionar.",
+            deviceInUseTitle: "Microfone em uso",
+            deviceInUseDesc: "Outro aplicativo está usando o microfone. Feche esse aplicativo e tente novamente.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -64,11 +73,10 @@ const camera: BaseTranslation = {
         },
     },
     webrtc: {
-        title: "Erro de conexão do servidor de retransmissão de vídeo",
+        title: "Problema na conexão de vídeo",
         titlePending: "Conexão do servidor de retransmissão de vídeo pendente",
-        error: "Servidor TURN não está acessível",
-        content:
-            "O servidor de retransmissão de vídeo não pode ser alcançado. Você pode não conseguir se comunicar com outros usuários.",
+        error: "O vídeo não alcança algumas pessoas. Elas podem não ver nem ouvir você. Confira sua rede ou VPN e recarregue.",
+        content: "Não foi possível falar com o servidor de vídeo. Tente uma das opções abaixo.",
         solutionVpn:
             "Se você está <strong>conectando via VPN</strong>, por favor desconecte da sua VPN e atualize a página web.",
         solutionVpnNotAskAgain: "Entendido. Não me avise novamente 🫡",
@@ -89,6 +97,10 @@ const camera: BaseTranslation = {
     },
     disable: "Desligue sua câmera",
     menu: {
+        mutedAudioNotice: "O microfone de {name} foi silenciado. Só a própria pessoa pode religá-lo.",
+        askedMuteAudioNotice: "{name} recebeu o pedido para silenciar o microfone.",
+        mutedVideoNotice: "A câmera de {name} foi desligada. Só a própria pessoa pode religá-la.",
+        askedMuteVideoNotice: "{name} recebeu o pedido para desligar a câmera.",
         moreAction: "Mais ações",
         closeMenu: "Fechar menu",
         senPrivateMessage: "Enviar mensagem privada (em breve)",
@@ -97,9 +109,11 @@ const camera: BaseTranslation = {
         muteAudioUser: "Silenciar áudio",
         askToMuteAudioUser: "Pedir para silenciar áudio",
         muteAudioEveryBody: "Silenciar áudio para todos",
-        muteVideoUser: "Silenciar vídeo",
-        askToMuteVideoUser: "Pedir para silenciar vídeo",
-        muteVideoEveryBody: "Silenciar vídeo para todos",
+        muteVideoUser: "Desligar vídeo",
+        askToMuteVideoUser: "Pedir para desligar vídeo",
+        muteVideoEveryBody: "Desligar vídeo para todos",
+        alreadyMuted: "Já está sem áudio",
+        videoAlreadyOff: "Vídeo já desligado",
         blockOrReportUser: "Moderação",
     },
 };

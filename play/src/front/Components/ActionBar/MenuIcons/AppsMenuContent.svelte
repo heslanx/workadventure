@@ -63,7 +63,12 @@
         state="normal"
         dataTestId="recordingButton-list"
     >
-        <RecordingIcon width="20" height="20" hoverClass="group-hover/btn-recording-list:text-red-500" />
+        <RecordingIcon
+            width="20"
+            height="20"
+            strokeWidth="2.3"
+            hoverClass="group-hover/btn-recording-list:text-red-500"
+        />
     </ActionBarButton>
 {/if}
 
@@ -73,8 +78,9 @@
         onclick={openExternalModuleCalendar}
         label={$LL.actionbar.calendar()}
         state={$isCalendarActivatedStore ? "normal" : "disabled"}
+        blockedReason={$LL.actionbar.blocked.calendarOff()}
     >
-        <IconCalendar width="20" height="20" />
+        <IconCalendar width="20" height="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 
@@ -83,8 +89,9 @@
         onclick={openExternalModuleTodoList}
         label={$LL.actionbar.todoList()}
         state={$isTodoListActivatedStore ? "normal" : "disabled"}
+        blockedReason={$LL.actionbar.blocked.todoListOff()}
     >
-        <IconCheckList width="20" height="20" />
+        <IconCheckList width="20" height="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 

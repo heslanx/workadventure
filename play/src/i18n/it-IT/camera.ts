@@ -40,6 +40,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Nessuna fotocamera utilizzabile",
             noDeviceDesc:
                 "Il browser non rileva alcuna fotocamera utilizzabile. Prova un altro browser, verifica che la fotocamera sia collegata, controlla le impostazioni del computer (privacy, dispositivi) o riavvia il computer se il dispositivo dovrebbe funzionare.",
+            deviceInUseTitle: "Fotocamera in uso",
+            deviceInUseDesc: "Un’altra applicazione sta usando la fotocamera. Chiudi quell’applicazione, poi riprova.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -55,6 +57,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Nessun microfono utilizzabile",
             noDeviceDesc:
                 "Il browser non rileva alcun microfono utilizzabile. Prova un altro browser, verifica il microfono, controlla le impostazioni del computer (privacy, dispositivi) o riavvia il computer se il dispositivo dovrebbe funzionare.",
+            deviceInUseTitle: "Microfono in uso",
+            deviceInUseDesc: "Un’altra applicazione sta usando il microfono. Chiudi quell’applicazione, poi riprova.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -102,6 +106,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Chiedi di disattivare il video",
         muteVideoEveryBody: "Disattiva video per tutti",
         blockOrReportUser: "Blocca o segnala utente",
+        mutedAudioNotice: "Il microfono di {name} è disattivato. Solo questa persona può riattivarlo.",
+        askedMuteAudioNotice: "È stato chiesto a {name} di disattivare il microfono.",
+        mutedVideoNotice: "La fotocamera di {name} è spenta. Solo questa persona può riaccenderla.",
+        askedMuteVideoNotice: "È stato chiesto a {name} di spegnere la fotocamera.",
+        alreadyMuted: "Già disattivato",
+        videoAlreadyOff: "Video già spento",
+    },
+    startError: {
+        camera: "La tua fotocamera non si è avviata. Gli altri non possono vederti. Chiudi le altre app che la usano e riprova.",
+        microphone:
+            "Il tuo microfono non si è avviato. Gli altri non possono sentirti. Chiudi le altre app che lo usano e riprova.",
     },
 };
 

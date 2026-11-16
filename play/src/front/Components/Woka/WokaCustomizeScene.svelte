@@ -272,12 +272,20 @@
     >
         {#if isLoading}
             <div class="flex items-center justify-center h-64">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <div
+                    class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"
+                    role="status"
+                    aria-label={$LL.a11y.compLoading()}
+                ></div>
             </div>
         {:else if error}
-            <div class="text-center text-red-600 mb-4">
+            <div class="text-center text-danger-400 mb-4" role="alert">
                 <p>{error}</p>
-                <button class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick={loadWokaData}>
+                <button
+                    type="button"
+                    class="mt-2 px-4 py-2 bg-secondary text-white rounded hover:bg-secondary-800"
+                    onclick={loadWokaData}
+                >
                     Retry
                 </button>
             </div>
@@ -316,7 +324,8 @@
                                 class="flex-1 px-4 py-2 flex-grow capitalize flex flex-row items-center justify-center gap-2 border-b-2 {selectedBodyPart ===
                                 bodyPart
                                     ? 'text-white border-white'
-                                    : 'text-white/50 border-white/10'}"
+                                    : 'text-white/60 border-white/10'}"
+                                aria-pressed={selectedBodyPart === bodyPart}
                                 onclick={() => (selectedBodyPart = bodyPart)}
                                 style="border-bottom-style: solid;"
                             >
@@ -340,7 +349,8 @@
                                 class="flex-1 px-4 py-2 capitalize flex flex-row items-center justify-center gap-2 border-b-2 {selectedBodyPart ===
                                 bodyPart
                                     ? 'text-white border-white'
-                                    : 'text-white/50 border-white/10'}"
+                                    : 'text-white/60 border-white/10'}"
+                                aria-pressed={selectedBodyPart === bodyPart}
                                 onclick={() => selectBodyPart(bodyPart)}
                                 style="border-bottom-style: solid;"
                             >
@@ -363,7 +373,7 @@
                             class="flex-none lg:flex-1 flex flex-col items-start gap-0 min-h-0 min-w-0 max-h-full overflow-y-scroll overflow-x-auto scroll-mask py-[20px]"
                         >
                             {#each wokaData?.[selectedBodyPart]?.collections || [] as collection, collectionIndex (collection.name)}
-                                <p class="text-sm text-gray-500 mb-1 mt-4 p-0">{collection.name}</p>
+                                <p class="text-sm text-white/60 mb-1 mt-4 p-0">{collection.name}</p>
                                 <div
                                     class="w-full flex flex-row flex-wrap items-start justify-start gap-3"
                                     id={`woka-line-${collectionIndex}`}
@@ -377,6 +387,8 @@
                                                 : 'bg-white/10 hover:bg-white/20 border-transparent'}"
                                             onclick={() => selectTexture(selectedBodyPart, texture.id)}
                                             id={`texture-${selectedBodyPart}-${texture.id}`}
+                                            aria-label={texture.name}
+                                            aria-pressed={selectedTextures[selectedBodyPart] === texture.id}
                                         >
                                             <WokaImage
                                                 selectedTextures={{ [selectedBodyPart]: texture.id }}
@@ -401,7 +413,7 @@
                     {$LL.woka.customWoka.navigation.backToDefaultWoka()}
                 </button>
                 <button
-                    class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-600"
+                    class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-800"
                     onclick={handlerSaveAndContinue}
                 >
                     {$LL.woka.customWoka.navigation.finish()}

@@ -92,6 +92,7 @@ const menu: DeepPartial<Translation["menu"]> = {
             wobble: "搖動",
         },
         displayVideoQualityStats: "顯示視訊品質統計",
+        saving: "正在儲存設定",
     },
     invite: {
         description: "分享該房間的連結！",

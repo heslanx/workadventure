@@ -14,6 +14,7 @@
     import type { Streamable } from "../../Space/Streamable";
     import { hasMovedEventName } from "../../Phaser/Player/Player";
     import type { GameScene } from "../../Phaser/Game/GameScene";
+    import { isReducedMotion } from "../../Utils/reducedMotion";
 
     let highlightElement: HTMLElement | null = $state(null);
     let previousElement: HTMLElement | null = null;
@@ -21,6 +22,8 @@
     let highlightVisible = $state(false);
     let highlightGraphics: Phaser.GameObjects.Graphics | null = $state(null);
     let pulseAnimationTime = 0;
+    // Read once when the highlight is created: the pulse is redrawn every frame.
+    let pulseDisabled = false;
     let phaserUpdateCallback: (() => void) | null = null;
 
     // Shared bubble instance across components (module-level variable)
@@ -148,6 +151,7 @@
         const scene = gameManager.getCurrentGameScene();
         if (!scene) return;
 
+        pulseDisabled = isReducedMotion();
         highlightGraphics = scene.add.graphics();
         highlightGraphics.setDepth(10000); // Very high depth to be on top
 
@@ -169,7 +173,8 @@
 
         if ($onboardingStore === "movement") {
             // Update animation time for pulsing effect
-            pulseAnimationTime += 0.05; // Adjust speed of animation
+            // With reduced motion the ring stays still at its base radius and opacity.
+            if (!pulseDisabled) pulseAnimationTime += 0.05; // Adjust speed of animation
 
             // Calculate pulsing radius (oscillates between 27 and 37 pixels, ~10cm variation)
             const baseRadius = 32;
@@ -344,8 +349,8 @@
 
             newSimulatedPlayer.setVisible(false);
 
-            // Note: We don't add the simulated player to MapPlayersByKey to avoid
-            // the "Not the same count of players" error, as it's not in the remotePlayersRepository
+            // Note: We don't add the simulated player to MapPlayersByKey: it is not in the remotePlayersRepository,
+            // so the scene would report "The scene and the repository have a different number of remote players".
             // The player will still be rendered as it's added to the Phaser scene via RemotePlayer constructor
 
             // Assign to shared variable immediately to avoid race condition
@@ -553,7 +558,7 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-        class="fixed z-[2999] pointer-events-none rounded-lg border-4 border-solid border-red-500 animate-pulse"
+        class="fixed z-[2999] pointer-events-none rounded-lg border-4 border-solid border-red-500 animate-pulse motion-reduce:animate-none"
         style={highlightStyle}
         data-testid={`onboarding-highlight-${$onboardingStore}`}
     ></div>

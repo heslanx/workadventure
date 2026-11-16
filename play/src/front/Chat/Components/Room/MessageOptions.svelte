@@ -31,11 +31,15 @@
     }
 
     function removeMessage() {
-        confirmDelete("message", async () => {
-            await message.remove();
-            // The options go away with the message content: keep the focus on what is left of it.
-            messageRef?.focus();
-        });
+        confirmDelete(
+            "message",
+            async () => {
+                await message.remove();
+                // The options go away with the message content: keep the focus on what is left of it.
+                messageRef?.focus();
+            },
+            $content.body,
+        );
     }
 
     function selectMessageToEdit() {
@@ -124,7 +128,7 @@
         {#each QUICK_REACTIONS as emoji (emoji)}
             <button
                 type="button"
-                class="p-0 m-0 w-7 h-7 grid place-items-center rounded-md text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer text-base leading-none"
+                class="p-0 m-0 w-7 h-7 grid place-items-center rounded text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer text-base leading-none"
                 aria-label={$LL.chat.messageActions.reactWith({ emoji })}
                 title={$LL.chat.messageActions.reactWith({ emoji })}
                 onclick={() => addReaction(emoji)}
@@ -140,19 +144,19 @@
     {#if $canReply}
         <button
             type="button"
-            class="p-0 m-0 w-7 h-7 grid place-items-center rounded-md text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer"
+            class="p-0 m-0 w-7 h-7 grid place-items-center rounded text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer"
             data-testid="replyToMessageButton"
             aria-label={$LL.chat.reply()}
             title={$LL.chat.reply()}
             onclick={replyToMessage}
         >
-            <IconArrowBackUp font-size={18} />
+            <IconArrowBackUp aria-hidden="true" font-size={18} />
         </button>
     {/if}
     {#if hasMoreActions}
         <button
             type="button"
-            class="p-0 m-0 w-7 h-7 grid place-items-center rounded-md text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer"
+            class="p-0 m-0 w-7 h-7 grid place-items-center rounded text-white/80 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70 transition-all cursor-pointer"
             data-testid="moreMessageActionsButton"
             aria-label={$LL.chat.messageActions.label()}
             title={$LL.chat.messageActions.label()}
@@ -160,7 +164,7 @@
             bind:this={moreButton}
             onclick={toggleMoreMenu}
         >
-            <IconDots font-size={18} />
+            <IconDots aria-hidden="true" font-size={18} />
         </button>
     {/if}
 </div>

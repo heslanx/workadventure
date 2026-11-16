@@ -109,7 +109,10 @@
         data-testid="roomSubtitle"
     >
         {#if peer && peerIsConnected && $roomTypeStore === "direct"}
-            <span class="h-2 w-2 rounded-full shrink-0" style="background-color: {getColorHexOfStatus(peerStatus)}"
+            <span
+                class="h-2 w-2 rounded-full shrink-0"
+                style="background-color: {getColorHexOfStatus(peerStatus)}"
+                aria-hidden="true"
             ></span>
         {/if}
         <span class="truncate">{subtitle}</span>

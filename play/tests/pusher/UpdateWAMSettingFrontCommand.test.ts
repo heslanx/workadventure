@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { writable } from "svelte/store";
 import type { WAMFileFormat } from "@workadventure/map-editor";

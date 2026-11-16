@@ -34,15 +34,10 @@
 
     const shortcut = ["c"];
 
-    let chatAvailable = $state(false);
-    gameManager
-        .getChatConnection()
-        .then(() => {
-            chatAvailable = true;
-        })
-        .catch((e: unknown) => {
-            console.error("Could not get chat", e);
-        });
+    // The game scene opens the chat connection. A failed attempt still opens the panel, which explains the
+    // failure and offers Retry; only a pending attempt keeps the button disabled.
+    const chatConnectionAttemptStore = gameManager.chatConnectionAttemptStore;
+    let chatAvailable = $derived($chatConnectionAttemptStore === "ready" || $chatConnectionAttemptStore === "failed");
 
     // Calculate total unread count and format it (max 99+)
     let totalUnreadCount = $derived($matrixUnreadMessagesCountStore + $unreadMessagesCount);
@@ -78,14 +73,16 @@
     tooltipShortcuts={shortcut}
     dataTestId="chat-btn"
     state={chatAvailable ? "normal" : "disabled"}
+    blockedReason={chatAvailable ? undefined : $LL.actionbar.blocked.chatConnecting()}
     {last}
     disabledHelp={false}
 >
-    <MessageCircleIcon />
+    <MessageCircleIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>
 {#if $chatZoneLiveStore || totalUnreadCount > 0}
-    <div>
-        <span class="w-4 h-4 block rounded-full absolute -top-1 -start-1 animate-ping bg-white"></span>
+    <div aria-hidden="true">
+        <span class="w-4 h-4 block rounded-full absolute -top-1 -start-1 animate-ping motion-reduce:hidden bg-white"
+        ></span>
         <span class="w-3 h-3 block rounded-full absolute -top-0.5 -start-0.5 bg-white"></span>
     </div>
 {/if}
@@ -93,10 +90,12 @@
     <div
         class="absolute -top-2 -start-2 aspect-square flex w-5 h-5 items-center justify-center text-sm font-bold leading-none text-contrast bg-success rounded-full z-10"
         data-testid="unreadMessagesCount"
+        aria-hidden="true"
     >
         <span>{displayCount}</span>
         {#if totalUnreadCount > 99}
             <span class="text-xxs">+</span>
         {/if}
     </div>
+    <span class="sr-only">{$LL.chat.a11y.unreadCount({ count: totalUnreadCount })}</span>
 {/if}

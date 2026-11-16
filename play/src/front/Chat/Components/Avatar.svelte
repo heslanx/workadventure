@@ -28,12 +28,32 @@
         tiny = false,
     }: Props = $props();
 
+    // The generated avatar colours are pastels (HSL 0.5/0.6): white initials on them miss 4.5:1 for most hues. Up to a
+    // relative luminance of 0.183 white still reads; on anything lighter the initial turns black.
+    function relativeLuminance(hex: string): number | undefined {
+        const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+        if (!match) {
+            return undefined;
+        }
+        const digits = match[1].length === 3 ? match[1].replace(/./g, "$&$&") : match[1];
+        const [r, g, b] = [0, 2, 4].map((offset) => {
+            const channel = parseInt(digits.slice(offset, offset + 2), 16) / 255;
+            return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    function initialColor(background: string | null | undefined): string | undefined {
+        const luminance = background ? relativeLuminance(background) : undefined;
+        return luminance !== undefined && luminance > 0.183 ? "#000" : undefined;
+    }
+
     let forceFallback = $state(false);
     let previousPictureUrl: string | undefined = $state();
 
     let sizeClass = $derived(
         tiny
-            ? "h-4 w-4 min-h-4 min-w-4 shrink-0 rounded-full overflow-hidden text-[8px]"
+            ? "h-4 w-4 min-h-4 min-w-4 shrink-0 rounded-full overflow-hidden text-xxs"
             : compact
               ? "h-7 w-7 min-h-[1.75rem] min-w-[1.75rem] shrink-0 rounded-md overflow-hidden"
               : "h-10 w-10 min-h-10 min-w-10 shrink-0 rounded-sm overflow-hidden",
@@ -110,6 +130,7 @@
         class="text-center uppercase text-white flex items-center justify-center font-bold aspect-square {sizeClass}"
         draggable="false"
         style:background-color={`${color ? color : getColorByString(fallbackName)}`}
+        style:color={initialColor(color ? color : getColorByString(fallbackName))}
     >
         {fallbackName.charAt(0)}
     </div>

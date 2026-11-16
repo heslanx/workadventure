@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { get } from "svelte/store";
 import type { WorkAdventureComponent } from "../../types/component";

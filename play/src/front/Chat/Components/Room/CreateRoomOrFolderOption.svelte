@@ -59,7 +59,7 @@
 <ChatMenu
     label={$LL.chat.a11y.optionsFor({ name: parentName || $LL.chat.rooms() })}
     dataTestId={`openOptionToCreateRoomOrFolder${parentName}`}
-    buttonClass="m-0 p-1 rounded-lg hover:bg-white/10 aspect-square flex items-center justify-center"
+    buttonClass="hit-area m-0 p-1 rounded hover:bg-white/10 aspect-square flex items-center justify-center"
     menuClass="bg-contrast/50 backdrop-blur-md rounded-md overflow-hidden z-50 w-max end-4 top-10 p-1"
 >
     {#if $hasPermissionToCreateRoom || !folder}
@@ -90,7 +90,7 @@
         <RoomOption
             IconComponent={IconLogout}
             title={$LL.chat.folderMenu.leaveFolder.label()}
-            bg="bg-danger-900 hover:bg-danger"
+            bg="bg-danger-1000 hover:bg-danger-1100"
             onclick={closeMenuAndLeaveFolder}
         />
     {/if}

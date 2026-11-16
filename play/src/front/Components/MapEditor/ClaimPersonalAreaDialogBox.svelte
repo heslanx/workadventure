@@ -78,7 +78,7 @@
             <Input
                 id="claimPersonalAreaInput"
                 type="text"
-                label="Your Name"
+                label={$LL.area.personalArea.nameLabel()}
                 bind:value={name}
                 onkeydown={emitKeypressEvents}
             />

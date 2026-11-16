@@ -134,6 +134,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Tria la zona per bloquejar/desbloquejar",
             bubbleLabel: "Bombolla de discussió",
             unnamedArea: "Zona sense nom",
+            noPermission: "No pots bloquejar aquesta zona. Demana a un administrador el permís per bloquejar-la.",
         },
         giveBackFloor: {
             title: "Retornar la paraula",
@@ -229,6 +230,22 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Encara no teniu un escriptori personal",
         errorMoving: "No es pot arribar al vostre escriptori personal",
         errorUnclaiming: "No es pot alliberar el vostre escriptori personal",
+        unclaimConfirmTitle: "Vols alliberar el teu escriptori «{name}»?",
+        unclaimConfirmMessage:
+            "Queda lliure de seguida. Qualsevol el pot reclamar, i només el recuperaràs si el tornes a reclamar mentre encara estigui lliure.",
+    },
+    mediaSettingsToggle: "Configuració de la càmera i el micròfon",
+    blocked: {
+        calendarOff:
+            "El calendari no està connectat en aquest món. Un administrador el pot activar a la configuració d'administració.",
+        todoListOff:
+            "La llista de tasques no està connectada en aquest món. Un administrador la pot activar a la configuració d'administració.",
+        roomListOff:
+            "Aquest mapa ha desactivat la llista de sales. Demana al propietari del mapa que la torni a activar.",
+        screenSharingOff:
+            "Aquest mapa ha desactivat aquí la compartició de pantalla. Demana al propietari del mapa que la torni a activar.",
+        chatConnecting: "El xat encara s'està connectant. Torna-ho a provar d'aquí a uns segons.",
+        alreadyAtDesk: "Ja ets al teu escriptori.",
     },
 };
 

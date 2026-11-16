@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ L'audio non è consentito. Premi [SPAZIO] o fai clic qui per riprodurlo!",
     },
     disable: "Spegni il microfono",
+    mute: "Disattiva audio",
 };
 
 export default audio;

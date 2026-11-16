@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import { visibleRaisedHandSectionsStore } from "../../Stores/RaisedHandsAdminVisibleStore";
     import Badge from "../UI/Badge.svelte";
@@ -24,7 +24,7 @@
         transition:fly={{ x: 210, duration: 500 }}
     >
         <div class="w-2 shrink-0 rounded-lg bg-secondary my-1"></div>
-        <div class="grow overflow-hidden rounded-lg bg-contrast/50 text-white backdrop-blur-md">
+        <div class="grow overflow-hidden rounded-lg bg-contrast/80 text-white backdrop-blur-md">
             <button
                 type="button"
                 class="flex w-full items-center gap-2 p-2 transition-colors hover:bg-white/10"

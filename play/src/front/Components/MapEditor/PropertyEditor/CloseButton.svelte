@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { LL } from "../../../../i18n/i18n-svelte";
+
     interface Props {
         onclick?: (event: MouseEvent) => void;
     }
@@ -7,12 +9,14 @@
 </script>
 
 <button
-    class="close-button"
+    class="close-button min-h-7 min-w-7"
+    type="button"
+    aria-label={$LL.actionbar.close()}
     onclick={(event) => {
         onclick?.(event);
     }}
 >
-    x
+    <span aria-hidden="true">x</span>
 </button>
 
 <style>

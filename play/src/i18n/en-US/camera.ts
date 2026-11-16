@@ -2,6 +2,10 @@ import type { BaseTranslation } from "../i18n-types";
 
 const camera: BaseTranslation = {
     editCam: "Edit camera",
+    startError: {
+        camera: "Your camera did not start. Others cannot see you. Close other apps using it and try again.",
+        microphone: "Your microphone did not start. Others cannot hear you. Close other apps using it and try again.",
+    },
     editSpeaker: "Edit audio output",
     active: "Active",
     disabled: "Disabled",
@@ -22,12 +26,12 @@ const camera: BaseTranslation = {
         microphoneContent: "You must allow microphone access in your browser.",
         firefoxContent:
             'Please click the "Remember this decision" checkbox, if you don\'t want Firefox to keep asking you the authorization.',
-        allow: "Allow webcam",
+        allow: "Allow camera",
         allowMicrophone: "Allow microphone",
-        allowCameraMicrophone: "Allow webcam and microphone",
-        continue: "Continue without webcam",
+        allowCameraMicrophone: "Allow camera and microphone",
+        continue: "Continue without camera",
         continueWithoutMicrophone: "Continue without microphone",
-        continueCameraMicrophone: "Continue without webcam and microphone",
+        continueCameraMicrophone: "Continue without camera and microphone",
         screen: {
             firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
             chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -39,6 +43,9 @@ const camera: BaseTranslation = {
             noDeviceTitle: "No usable camera",
             noDeviceDesc:
                 "Your browser does not see any camera you can use. Try another browser, check that a camera is connected, check your computer's settings (privacy, devices), or restart your computer if the device should work.",
+            deviceInUseTitle: "Camera in use",
+            deviceInUseDesc:
+                "Your camera is being used by another application. Close that application, then try again.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +61,9 @@ const camera: BaseTranslation = {
             noDeviceTitle: "No usable microphone",
             noDeviceDesc:
                 "Your browser does not see any microphone you can use. Try another browser, check that a microphone is connected, check your computer's settings (privacy, devices), or restart your computer if the device should work.",
+            deviceInUseTitle: "Microphone in use",
+            deviceInUseDesc:
+                "Your microphone is being used by another application. Close that application, then try again.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -64,10 +74,10 @@ const camera: BaseTranslation = {
         },
     },
     webrtc: {
-        title: "Video relay server connection error",
+        title: "Video connection problem",
         titlePending: "Video relay server connection pending",
-        error: "TURN server isn't reachable",
-        content: "The video relay server cannot be reached. You may be unable to communicate with other users.",
+        error: "Video cannot reach some people. They may not see or hear you. Check your network or VPN and reload.",
+        content: "We could not reach the video server. Try one of the options below.",
         solutionVpn:
             "If you are <strong>connecting via a VPN</strong>, please disconnect from you VPN and refresh the web page.",
         solutionVpnNotAskAgain: "Understood. Don't warn me again 🫡",
@@ -88,6 +98,10 @@ const camera: BaseTranslation = {
     },
     disable: "Turn off your camera",
     menu: {
+        mutedAudioNotice: "{name}'s microphone is muted. Only they can turn it back on.",
+        askedMuteAudioNotice: "{name} was asked to mute their microphone.",
+        mutedVideoNotice: "{name}'s camera is off. Only they can turn it back on.",
+        askedMuteVideoNotice: "{name} was asked to turn off their camera.",
         moreAction: "More actions",
         closeMenu: "Close menu",
         senPrivateMessage: "Send a private message (coming soon)",
@@ -99,6 +113,8 @@ const camera: BaseTranslation = {
         muteVideoUser: "Turn off video",
         askToMuteVideoUser: "Ask to turn off video",
         muteVideoEveryBody: "Turn off video for everybody",
+        alreadyMuted: "Already muted",
+        videoAlreadyOff: "Video already off",
         blockOrReportUser: "Moderation",
     },
 };

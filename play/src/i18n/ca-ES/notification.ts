@@ -35,6 +35,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "No es pot iniciar el compartir de pantalla",
     recordingStarted: "Una persona de la discussió ha començat un enregistrament.",
     urlCopiedToClipboard: "URL copiada al porta-retalls",
+    muteRequest: {
+        acceptMicrophone: "Silencia el meu micròfon",
+        acceptCamera: "Apaga la meva càmera",
+        refuse: "Mantén-ho activat",
+    },
+    copyFailed:
+        "No s'ha pogut copiar: el navegador ha bloquejat el porta-retalls. Selecciona el text i prem Ctrl+C (Cmd+C al Mac).",
+    closeToast: "Tanca la notificació",
 };
 
 export default notification;

@@ -14,6 +14,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "與伺服器的連線已中斷。你將無法與其他人交談。",
+        retrying: "正在自動重試。伺服器回應後,此訊息將會消失。",
     },
     errorDialog: {
         title: "錯誤 😱",
@@ -22,6 +23,15 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "你也可以查看我們的：",
         reload: "重新載入",
         close: "關閉",
+    },
+    errorScreen: {
+        genericTitle: "我們無法開啟此世界。",
+        genericNextStep: "請重新載入頁面再試一次。如果問題持續發生,請聯絡你的管理員。",
+        networkTitle: "我們無法連線到伺服器。",
+        networkNextStep: "請檢查你的網路連線,然後重新載入頁面。",
+        reload: "重新載入頁面",
+        showDetails: "顯示詳細資料",
+        code: "錯誤代碼 {code}",
     },
 };
 

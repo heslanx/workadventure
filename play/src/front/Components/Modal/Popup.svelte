@@ -1,8 +1,10 @@
 <script lang="ts">
-    import type { Snippet } from "svelte";
-    import { fly } from "svelte/transition";
+    import { onMount, tick, type Snippet } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import ButtonClose from "../Input/ButtonClose.svelte";
-    import { modals } from "@wa-modals";
+    import Button from "../UI/Button.svelte";
+    import { LL } from "../../../i18n/i18n-svelte";
+    import { getModal, modals } from "@wa-modals";
 
     interface Props {
         isOpen?: boolean;
@@ -10,9 +12,45 @@
         title?: Snippet;
         content?: Snippet;
         action?: Snippet;
+        /**
+         * True while the popup holds typed work that a close would lose. When set, every close path (Esc, the
+         * backdrop, the close button, Cancel) first asks "Discard?". Dialogs that register their own
+         * onBeforeClose must not pass it: there is one close guard per modal.
+         */
+        isDirty?: () => boolean;
     }
 
-    let { isOpen = false, withAction = true, title, content, action }: Props = $props();
+    let { isOpen = false, withAction = true, title, content, action, isDirty }: Props = $props();
+
+    // Read during init: the modal context only exists then.
+    const modal = getModal();
+    let confirmingDiscard = $state(false);
+    let discardConfirmed = false;
+    let keepEditingButton: HTMLButtonElement | undefined = $state();
+
+    onMount(() => {
+        if (!isDirty || !modal) return;
+        modal.onBeforeClose = () => {
+            if (discardConfirmed || !isDirty?.()) return true;
+            confirmingDiscard = true;
+            tick()
+                .then(() => keepEditingButton?.focus())
+                .catch((error: unknown) => console.error(error));
+            return false;
+        };
+        return () => {
+            modal.onBeforeClose = undefined;
+        };
+    });
+
+    function keepEditing() {
+        confirmingDiscard = false;
+    }
+
+    function discard() {
+        discardConfirmed = true;
+        modals.close();
+    }
 
     const titleId = `popup-title-${Math.random().toString(36).slice(2)}`;
     const FOCUSABLE =
@@ -46,6 +84,11 @@
         if (event.key === "Escape") {
             event.preventDefault();
             event.stopPropagation();
+            // A second Esc on the "Discard?" question means "no", never "yes".
+            if (confirmingDiscard) {
+                keepEditing();
+                return;
+            }
             modals.close();
             return;
         }
@@ -73,7 +116,7 @@
             aria-labelledby={title ? titleId : undefined}
             tabindex="-1"
             onkeydown={onKeyDown}
-            class="bg-contrast/75 backdrop-blur-md text-white z-[2001] w-[90%] m-auto left-0 right-0 sm:max-w-[668px] rounded-3xl max-h-full overflow-y-auto pointer-events-auto"
+            class="bg-contrast/95 backdrop-blur-md text-white z-[2001] w-[90%] m-auto left-0 right-0 sm:max-w-[668px] rounded-lg max-h-full overflow-y-auto pointer-events-auto"
             transition:fly={{ y: -1000, delay: 0, duration: 300 }}
         >
             <div class="p-8 flex flex-col justify-center items-center">
@@ -94,10 +137,31 @@
                 </div>
                 {@render content?.()}
             </div>
-            {#if withAction}
+            {#if confirmingDiscard}
                 <div
-                    class="footer flex flex-row justify-evenly items-center bg-contrast w-full p-4 gap-3 rounded-b-3xl"
+                    class="flex flex-col gap-3 sm:flex-row sm:items-center w-full px-8 pb-4"
+                    role="alert"
+                    data-testid="popupDiscardConfirm"
                 >
+                    <p class="m-0 grow text-sm">{$LL.form.discard.message()}</p>
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            class="btn btn-light btn-ghost btn-sm"
+                            bind:this={keepEditingButton}
+                            data-testid="popupKeepEditing"
+                            onclick={keepEditing}
+                        >
+                            {$LL.form.discard.keepEditing()}
+                        </button>
+                        <Button variant="danger" size="sm" dataTestId="popupDiscard" onclick={discard}>
+                            {$LL.form.discard.confirm()}
+                        </Button>
+                    </div>
+                </div>
+            {/if}
+            {#if withAction}
+                <div class="footer flex flex-row justify-evenly items-center bg-contrast w-full p-4 gap-3 rounded-b-lg">
                     {@render action?.()}
                 </div>
             {/if}

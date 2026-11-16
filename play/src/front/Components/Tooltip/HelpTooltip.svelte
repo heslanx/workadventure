@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly, isReducedMotion } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import { isMac } from "../../WebRtc/DeviceUtils";
     import tooltipArrow from "../images/arrow-top.svg";
@@ -43,7 +43,7 @@
     in:fly={{ delay: delayBeforeAppear, y: 40, duration: 150 }}
 >
     <img
-        alt="Sub menu arrow"
+        alt=""
         loading="eager"
         src={tooltipArrow}
         class="content-[''] absolute -top-1 start-9 m-auto w-2 h-1"
@@ -52,12 +52,12 @@
     <div class="relative z-10 pb-3 overflow-hidden flex flex-col gap-2">
         {#if helpMedia}
             {#if helpMedia.endsWith(".mp4")}
-                <video autoplay muted loop class="w-full rounded-md">
+                <video autoplay={!isReducedMotion()} muted loop class="w-full rounded-md">
                     <source src={helpMedia} type="video/mp4" />
                     {$LL.actionbar.help.videoNotSupported()}
                 </video>
             {:else}
-                <img alt="Help GIF" src={helpMedia} class="w-full rounded-md" loading="lazy" draggable="false" />
+                <img alt="" src={helpMedia} class="w-full rounded-md" loading="lazy" draggable="false" />
             {/if}
         {/if}
         <div class="flex flex-col gap-2 items-start px-1 pt-1">
@@ -69,7 +69,7 @@
                     <div class="ps-4 text-xs opacity-80 pb-1 flex flex-row items-center gap-1">
                         {#each shortcuts as shortcut, index (index)}
                             <div
-                                class="text-sm h-[26px] leading-none font-bold p-1.5 rounded border border-solid border-white/50 flex items-center justify-center w-fit shadow-white/50 shadow-[0_2px_0px_rgba(0,0,0,0.50)] mb-[2px] {shortcut.length <
+                                class="text-sm min-h-[1.625rem] leading-none font-bold p-1.5 rounded border border-solid border-white/50 flex items-center justify-center w-fit shadow-white/50 shadow-[0_2px_0px_rgba(0,0,0,0.50)] mb-[2px] {shortcut.length <
                                 2
                                     ? ' aspect-square'
                                     : ''}"

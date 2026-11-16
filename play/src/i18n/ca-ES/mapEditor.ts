@@ -535,10 +535,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "Moure's a l'entitat {name}",
             moveToArea: "Moure's a l'àrea {name}",
             errorMovingToObject: "L'objecte encara no és accessible 🚫",
+            show: "Mostra els detalls de {name}",
         },
         zoomIn: "Ampliar +",
         zoomOut: "Reduir -",
         showMyLocation: "Mostrar la meva ubicació",
+        noEntitiesMatch: "Cap objecte coincideix amb la cerca. Esborra la cerca per veure tots els objectes.",
+        noAreasMatch: "Cap zona coincideix amb la cerca. Esborra la cerca per veure totes les zones.",
+        entitiesList: "Llista d'objectes",
+        areasList: "Llista de zones",
     },
     listRoom: {
         isFetching: "S'està recuperant la llista de sales... ⤵️",
@@ -548,6 +553,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Movent-se a la sala: {roomNameSelected}... Fins aviat... 🫡",
         searchLabel: "Cercar una sala",
         searchPlaceholder: "Escriviu paraules clau...",
+        noRoomAvailable: "Encara no hi ha cap sala disponible en aquest món.",
+        noRoomMatch: "Cap sala coincideix amb «{search}».",
+        clearSearch: "Esborra la cerca",
+        fetchFailedTitle: "No s'ha pogut carregar la llista de sales",
+        fetchFailedDetail: "Et quedes a la sala actual. Comprova la connexió i torna-ho a provar.",
+        retryFetch: "Torna a carregar les sales",
     },
 };
 

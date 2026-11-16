@@ -8,7 +8,7 @@
         EntityDataPropertiesKeys,
         EntityDataProperty,
     } from "@workadventure/map-editor";
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { mapEditorModeStore, mapExplorationObjectSelectedStore } from "../../Stores/MapEditorStore";
     import { Entity } from "../../Phaser/ECS/Entity";
     import { AreaPreview } from "../../Phaser/Components/MapEditor/AreaPreview";
@@ -193,7 +193,7 @@
 
 <div class="absolute bottom-0 w-full h-fit flex flex-row justify-center">
     <div
-        class="object-menu min-h-fit rounded-3xl overflow-visible max-w-full w-full md:min-w-[360px] md:w-fit mx-1"
+        class="object-menu min-h-fit rounded-lg overflow-visible max-w-full w-full md:min-w-[360px] md:w-fit mx-1"
         transition:fly={{ y: 1000, duration: 500 }}
     >
         {#if $mapExplorationObjectSelectedStore instanceof Entity}
@@ -202,7 +202,7 @@
                 <img
                     src={$mapExplorationObjectSelectedStore?.getPrefab().imagePath}
                     id={$mapExplorationObjectSelectedStore.entityId}
-                    alt="Object"
+                    alt=""
                     class="w-32 h-32 mb-4 object-contain"
                     draggable="false"
                 />

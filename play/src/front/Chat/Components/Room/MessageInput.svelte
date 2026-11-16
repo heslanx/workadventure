@@ -123,6 +123,8 @@
         class={inputClass}
         data-text={dataText}
         role="textbox"
+        aria-multiline="true"
+        aria-label={dataText}
         tabindex="0"
         dir="auto"
         lang=""
@@ -135,6 +137,7 @@
         bind:this={messageInput}
         class={`${inputClass} opacity-50 cursor-not-allowed`}
         data-text={disabledText}
+        aria-label={disabledText}
         aria-disabled="true"
     ></div>
 {/if}
@@ -142,7 +145,7 @@
 <style>
     .message-input::before {
         content: attr(data-text);
-        color: rgba(211, 211, 211, 0.5);
+        color: rgba(211, 211, 211, 0.7);
         pointer-events: none;
         z-index: 0;
         transition: opacity 0.3s ease;

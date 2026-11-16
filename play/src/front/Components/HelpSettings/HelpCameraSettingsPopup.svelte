@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../Utils/reducedMotion";
     import { getNavigatorType, isAndroid as isAndroidFct, NavigatorType } from "../../WebRtc/DeviceUtils";
     import { LL } from "../../../i18n/i18n-svelte";
     import { mediaPermissionDeniedStore } from "../../Stores/MediaStatusStore";
@@ -26,7 +26,7 @@
 </script>
 
 <form
-    class="helpCameraSettings z-[600] bg-contrast/80 backdrop-filter text-center rounded-lg text-white self-center pointer-events-auto flex flex-col w-full md:w-2/3 xl:w-[380px] text-sm md:text-base overflow-hidden"
+    class="helpCameraSettings z-[600] bg-contrast/95 backdrop-filter text-center rounded-lg text-white self-center pointer-events-auto flex flex-col w-full md:w-[380px] text-sm md:text-base overflow-hidden"
     onsubmit={(event) => {
         event.preventDefault();
         close();
@@ -45,8 +45,8 @@
         </div>
         {#if showDetails}
             <div class="px-4 mt-4">
-                <p class="help-text !text-danger-800">
-                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" />
+                <p class="help-text !text-danger-400">
+                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" aria-hidden="true" />
                     {#if cameraAndMicrophoneDenied}
                         {$LL.camera.help.cameraMicrophonePermissionDenied()}
                     {:else if cameraDenied}
@@ -56,7 +56,7 @@
                     {/if}
                 </p>
             </div>
-            <div class="p-4 italic opacity-50 text-sm leading-4">
+            <div class="p-4 italic opacity-60 text-sm leading-6">
                 {#if cameraAndMicrophoneDenied}
                     {$LL.camera.help.content()}
                 {:else if cameraDenied}
@@ -75,26 +75,26 @@
                     <img
                         draggable="false"
                         src={$LL.camera.help.screen.firefox()}
-                        alt="help media setup"
+                        alt={$LL.a11y.compHelpCameraPermission()}
                         class="w-full m-auto"
                     />
                 {:else if isChrome && !isAndroid}
                     <img
                         draggable="false"
                         src={$LL.camera.help.screen.chrome()}
-                        alt="help media setup"
+                        alt={$LL.a11y.compHelpCameraPermission()}
                         class="w-full m-auto"
                     />
                 {/if}
             </div>
         {/if}
     </section>
-    <section class="flex row justify-center p-4 bg-contrast">
+    <section class="flex flex-col gap-2 p-4 bg-contrast">
         <Button
             variant="success"
             appearance="border"
             size="sm"
-            class="mr-2 w-full"
+            class="w-full whitespace-normal"
             onclick={(event) => {
                 event.preventDefault();
                 allow();
@@ -112,7 +112,7 @@
             type="submit"
             variant="danger"
             size="sm"
-            class="w-full"
+            class="w-full whitespace-normal"
             onclick={(event) => {
                 event.preventDefault();
                 close();

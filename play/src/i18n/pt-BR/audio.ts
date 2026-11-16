@@ -2,6 +2,7 @@ import type { BaseTranslation } from "../i18n-types";
 
 const audio: BaseTranslation = {
     volumeCtrl: "Alterar volume do áudio",
+    mute: "Silenciar áudio",
     manager: {
         reduce: "Diminua o volume do player de áudio enquanto fala",
         allow: "Permitir áudio",

@@ -85,7 +85,7 @@
                     </span>
                     {#if recipient.state !== "sending"}
                         <span
-                            class="absolute -right-[3px] -bottom-[3px] w-[15px] h-[15px] rounded-full border-2 border-solid border-secondary flex items-center justify-center text-[10px] font-bold
+                            class="absolute -right-[3px] -bottom-[3px] w-[15px] h-[15px] rounded-full border-2 border-solid border-secondary flex items-center justify-center text-xxs font-bold
                                 {recipient.state === 'waiting' ? 'bg-warning text-contrast-900' : ''}
                                 {recipient.state === 'received' ? 'bg-success text-contrast-900' : ''}
                                 {recipient.state === 'declined' ? 'bg-contrast-900 text-white' : ''}
@@ -93,19 +93,19 @@
                             aria-hidden="true"
                         >
                             {#if recipient.state === "waiting"}
-                                <IconClock font-size="9" />
+                                <IconClock aria-hidden="true" font-size="9" />
                             {:else if recipient.state === "received"}
-                                <IconCheck font-size="9" />
+                                <IconCheck aria-hidden="true" font-size="9" />
                             {:else if recipient.state === "declined"}
-                                <IconX font-size="8" />
+                                <IconX aria-hidden="true" font-size="8" />
                             {:else}
                                 !
                             {/if}
                         </span>
                     {/if}
                 </span>
-                <span class="text-[11px] max-w-full truncate">{recipient.name}</span>
-                <span class="text-[10px] leading-tight {labelClass[recipient.state]}">{label(recipient)}</span>
+                <span class="text-xxs max-w-full truncate">{recipient.name}</span>
+                <span class="text-xxs leading-tight {labelClass[recipient.state]}">{label(recipient)}</span>
             </li>
         {/each}
     </ul>

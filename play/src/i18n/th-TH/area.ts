@@ -18,6 +18,7 @@ const area: DeepPartial<Translation["area"]> = {
         },
         personalSpaceWithNames: "พื้นที่ส่วนตัวของ {name}",
         alreadyHavePersonalArea: "คุณมีพื้นที่ส่วนตัวอยู่แล้ว พื้นที่เดิมจะถูกลบหากคุณรับพื้นที่นี้",
+        nameLabel: "ชื่อของคุณ",
     },
 };
 

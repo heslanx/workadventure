@@ -434,6 +434,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "Dalše opcije",
         createRoom: "Rum załožić",
         createFolder: "Rjadowak załožić",
+        nameRequired: "Zapodaj mjeno, zo by jo wutworił.",
     },
     createFolder: {
         title: "Nowy zarěd napořeć",
@@ -578,6 +579,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "Přistup změnić",
                 changePermissions: "Prawa změnić",
             },
+            nothingToSave: "Změń nastajenje, zo by je składował.",
+            nameRequiredToSave: "Zapodaj mjeno ruma, zo by składował.",
         },
         pollsEmpty: "Hišće žane wothłosowanja",
         participantsEmpty: "Hišće žani wobdźělnicy",
@@ -588,6 +591,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "Tute wothłosowanje njeda so w časowej lince wočinić.",
         closeFolderMembers: "Čłonow zarjadnika začinić",
         folderMembersHint: "Čłonojo zarjadnika móža do jeho rumow zastupić, kotrež su za čłonow wotewrjene.",
+        proximityParticipantsEmpty: "Nichtó njeje blisko tebje. Dźi k někomu, zo by rozmołwu započał.",
     },
     roomMenu: {
         leaveRoom: {
@@ -837,6 +841,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "Wěstota",
         securityHint: "Twój zawěsćenski kluč wotewrje twoje zaklučowane powěsće na nowym graće.",
         advancedSection: "Rozšěrjene",
+        notSet: "Njepostajene",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -875,7 +880,23 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "Tute naprašowanje skónčić?",
         endPollMessage: "Nichtó njemóže potom hižo hłosować. Wuslědki wostanu widźomne.",
         save: "Składować",
+        deleteMessageNamedTitle: "„{excerpt}“ zhašeć?",
+        cannotUndo: "To njeda so cofnyć.",
     },
+    chatTurnedOffInArea: "Chat je w tutym wobłuku znjemóžnjeny. Wopušć wobłuk, zo by zaso pisał.",
+    searchFailed: "Pytanje je so njeporadźiło. W lisćinje móža wuslědki faluwać.",
+    searchRetry: "Znowa pytać",
+    copyFailed: "Kopěrowanje njemóžne",
+    directMessagesEmpty: "Hišće žane direktne powěsće. Wočiń lisćinu wužiwarjow a wubjer někoho, komuž chceš pisać.",
+    roomsEmpty: "Hišće žane skupinske rozmołwy. Wutwor rum, zo by jednu započał.",
+    folderEmpty: "Tutón rjadowak hišće rumy nima. Wutwor rum, zo by rozmołwu započał.",
+    connectionErrorImpact: "Powěsće njemóža so słać abo přijimać, doniž zwisk zaso njeje.",
+    connectionErrorSince: "K dispoziciji njeje wot {time}.",
+    connectionRetrying: "Zwisk z chatom so znowa spytuje…",
+    connectionRetryFailed:
+        "Chat hišće k docpěću njeje. Spytaj hišće raz abo začitaj stronu znowa, jeli so dale njeporadźi.",
+    connectionRecovered: "Chat je zaso tu. Wot {from} do {to} k dispoziciji njebě.",
+    connectionRecoveredDismiss: "Tutu powěsć začinić",
 };
 
 export default chat;

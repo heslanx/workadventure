@@ -9,11 +9,12 @@
     interface Props {
         sender: SpaceUserExtended | undefined;
         message: string;
+        acceptLabel: string;
         acceptRequest: () => void;
         refuseRequest: () => void;
     }
 
-    let { sender, message, acceptRequest, refuseRequest }: Props = $props();
+    let { sender, message, acceptLabel, acceptRequest, refuseRequest }: Props = $props();
 
     let pictureStore = $derived(sender ? sender.pictureStore : readable<string | undefined>(undefined));
 </script>
@@ -40,10 +41,10 @@
                 refuseRequest();
             }}
         >
-            {$LL.follow.interactMenu.no()}
+            {$LL.notification.muteRequest.refuse()}
         </Button>
         <Button variant="secondary" class="w-1/2 max-w-80 responsive-message accept-request" onclick={acceptRequest}>
-            {$LL.follow.interactMenu.yes()}
+            {acceptLabel}
         </Button>
     {/snippet}
 </PopUpContainer>

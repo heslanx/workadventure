@@ -64,16 +64,16 @@ test.describe("Action bar responsiveness @nomobile", () => {
         await Menu.closeMenu(page);
 
         await expect(page.getByText("Share")).toBeVisible();
-        await expect(page.getByText("Login")).toBeVisible();
+        await expect(page.getByText("Log in")).toBeVisible();
 
         await page.setViewportSize({ width: 345, height: 600 });
 
         await expect(page.getByText("Share")).toBeHidden();
-        await expect(page.getByText("Login")).toBeHidden();
+        await expect(page.getByText("Log in")).toBeHidden();
 
         await Menu.openMenu(page);
 
         await expect(page.getByTestId("profile-menu").getByText("Share")).toBeVisible();
-        await expect(page.getByTestId("profile-menu").getByText("Login")).toBeVisible();
+        await expect(page.getByTestId("profile-menu").getByText("Log in")).toBeVisible();
     });
 });

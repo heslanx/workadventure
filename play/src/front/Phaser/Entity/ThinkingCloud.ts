@@ -73,7 +73,8 @@ export class ThinkingCloud {
         // Ajouter le texte
         const textElement = document.createElement("div");
         textElement.classList.add("thinking-text");
-        textElement.style.fontSize = `${fontSize}px`;
+        // In rem, so the text follows the browser font size (16px = 1rem by default).
+        textElement.style.fontSize = `${fontSize / 16}rem`;
         textElement.textContent = text;
         this.element.appendChild(textElement);
 
@@ -88,7 +89,7 @@ export class ThinkingCloud {
         }
         if (!document.getElementById("cloudy-filter")) {
             const svgFilter = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true">
                 <defs>
                     <filter id="cloudy-filter">
                         <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="1" seed="0" stitchTiles="noStitch" result="feTurbulence-0f66a9e6"></feTurbulence>

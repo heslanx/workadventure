@@ -1,9 +1,9 @@
 <script lang="ts">
     import type { EmojiClickEvent } from "emoji-picker-element/shared";
     import * as Sentry from "@sentry/svelte";
-    import { fly } from "svelte/transition";
     import { clickOutside } from "svelte-outside";
     import { onDestroy } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import { LL } from "../../../i18n/i18n-svelte";
     import {
         emoteDataStore,
@@ -171,11 +171,12 @@
     }}
 >
     <div
-        class="bottom-action-bar bg-contrast/80 transition-all backdrop-blur-md rounded-md px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
+        class="bottom-action-bar bg-contrast/95 transition-all backdrop-blur-md rounded-md px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
     >
         <div class="flex animate flex-row items-center select-none">
             <div class="py-1 flex">
                 {#each [...$emoteDataStore.keys()] as key, index (index)}
+                    {@const editSelected = $emoteMenuStore && $emoteMenuSubCurrentEmojiSelectedStore === key}
                     <div class="transition-all bottom-action-button divide-x">
                         <button
                             onclick={(event) => {
@@ -184,19 +185,22 @@
                                 clickEmoji(key);
                             }}
                             id={`button-${$emoteDataStore.get(key)?.name}`}
-                            class="group emoji py-2 px-2 m-0 flex items-center transition-all rounded {$emoteMenuStore &&
-                            $emoteMenuSubCurrentEmojiSelectedStore === key
+                            class="group emoji py-2 px-2 m-0 flex items-center transition-all rounded {editSelected
                                 ? 'bg-secondary'
                                 : 'hover:bg-white/20'}"
                         >
                             <div
-                                class="emoji transition-all group-hover:-rotate-6 group-hover:scale-[2.5]"
+                                class="emoji transition-all group-hover:-rotate-6 group-hover:scale-[2.5] motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100"
                                 style="margin:auto"
                                 id={`icon-${$emoteDataStore.get(key)?.name}`}
                             >
                                 {$emoteDataStore.get(key)?.emoji}
                             </div>
-                            <div class="text-white/50 group-hover:text-white group-hover:bold font-xxs pl-1">
+                            <div
+                                class="{editSelected
+                                    ? 'text-white'
+                                    : 'text-white/60'} group-hover:text-white group-hover:bold font-xxs pl-1"
+                            >
                                 {key}
                             </div>
                         </button>
@@ -225,6 +229,7 @@
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
+                                aria-hidden="true"
                             >
                                 <circle
                                     class="opacity-25"
@@ -240,11 +245,12 @@
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                 />
                             </svg>
+                            <span class="sr-only">{$LL.chat.loading()}</span>
                         {:else if !$emoteMenuStore}
-                            <IconPencil stroke="1" font-size="12" class="text-white" />
+                            <IconPencil font-size="12" class="text-white" aria-hidden="true" />
                             <div>{$LL.actionbar.edit()}</div>
                         {:else}
-                            <IconXIcon stroke="1" font-size="16" class="text-white" />
+                            <IconXIcon font-size="16" class="text-white" aria-hidden="true" />
                             <div>{$LL.actionbar.cancel()}</div>
                         {/if}
                     </span>

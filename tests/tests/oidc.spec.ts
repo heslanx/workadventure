@@ -33,10 +33,10 @@ test.describe("OpenID connect @oidc @nomobile", () => {
 
         // Log out user
         await oidcLogout(page);
-        await expect(page.locator('button:has-text("Login")')).toBeVisible();
+        await expect(page.locator('button:has-text("Log in")')).toBeVisible();
         // Let's check the sign-in button is back here when we signed out
         await page.getByRole("button", { name: "Share" }).click();
-        await expect(page.locator('button:has-text("Login")')).toContainText("Login");
+        await expect(page.locator('button:has-text("Log in")')).toContainText("Log in");
     });
 
     test("can login with scripting API @nomobile @nowebkit", async ({ browser }) => {

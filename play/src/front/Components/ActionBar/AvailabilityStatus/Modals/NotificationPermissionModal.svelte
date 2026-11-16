@@ -42,14 +42,15 @@
 </script>
 
 <ConfirmationModal props={confirmationModalProps}>
-    <div id="notificationPermission" class="grow text-center text-xl">
+    <div id="notificationPermission" class="grow text-center text-xl leading-8">
         {$LL.statusModal.allowNotification()}
     </div>
     <div>
         {$LL.statusModal.allowNotificationExplanation()}
     </div>
     {#if loading}
-        <div class="absolute inset-0 bg-dark-purple/70 flex items-center justify-center">
+        <div class="absolute inset-0 bg-dark-purple/70 flex items-center justify-center" role="status">
+            <span class="sr-only">{$LL.chat.loading()}</span>
             <div
                 style="border-top-color:transparent"
                 class="w-16 h-16 border-2 border-white border-solid rounded-full animate-spin mb-5"

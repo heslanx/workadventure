@@ -6,10 +6,15 @@ const notification: BaseTranslation = {
     mention: "{name} mencionou você",
     askToMuteMicrophone: "Posso silenciar seu microfone?",
     askToMuteCamera: "Posso silenciar sua câmera?",
+    muteRequest: {
+        acceptMicrophone: "Silenciar meu microfone",
+        acceptCamera: "Desligar minha câmera",
+        refuse: "Manter ligado",
+    },
     microphoneMuted: "Seu microfone foi silenciado por um moderador",
     cameraMuted: "Sua câmera foi silenciada por um moderador",
     givenTheFloor: "É a sua vez de falar",
-    givenTheFloorEnableMicrophone: "É a sua vez de falar — ative o microfone",
+    givenTheFloorEnableMicrophone: "É a sua vez de falar. Ligue o microfone.",
     floorRevoked: "Você não tem mais a palavra",
     announcement: "Anúncio",
     help: {
@@ -30,10 +35,14 @@ const notification: BaseTranslation = {
     floorGivenBack: "Você devolveu a palavra",
     handLowered: "Um moderador baixou sua mão",
     removedFromConversation: "Um moderador tirou você da conversa.",
-    actionFailed: "Não foi possível concluir esta ação",
-    screenSharingError: "Não é possível iniciar o compartilhamento de tela",
+    actionFailed: "Não foi possível aplicar a mudança. Nada mudou para as outras pessoas. Tente de novo em instantes.",
+    screenSharingError:
+        "O compartilhamento de tela não começou. As outras pessoas não veem sua tela. Permita o compartilhamento de tela no navegador e tente de novo.",
     recordingStarted: "Uma pessoa na discussão iniciou uma gravação.",
     urlCopiedToClipboard: "URL copiada para a área de transferência",
+    copyFailed:
+        "Não foi possível copiar: o navegador bloqueou a área de transferência. Selecione o texto e pressione Ctrl+C (Cmd+C no Mac).",
+    closeToast: "Fechar notificação",
 };
 
 export default notification;

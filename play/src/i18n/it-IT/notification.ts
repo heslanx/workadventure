@@ -35,6 +35,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     screenSharingError: "Impossibile avviare la condivisione dello schermo",
     recordingStarted: "Una persona nella discussione ha avviato una registrazione.",
     urlCopiedToClipboard: "URL copiato negli appunti",
+    muteRequest: {
+        acceptMicrophone: "Disattiva il mio microfono",
+        acceptCamera: "Spegni la mia fotocamera",
+        refuse: "Lascia acceso",
+    },
+    copyFailed:
+        "Impossibile copiare: il browser ha bloccato gli appunti. Seleziona il testo e premi Ctrl+C (Cmd+C su Mac).",
+    closeToast: "Chiudi la notifica",
 };
 
 export default notification;

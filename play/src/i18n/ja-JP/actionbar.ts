@@ -133,6 +133,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "ロック/ロック解除するエリアを選択",
             bubbleLabel: "ディスカッション bubble",
             unnamedArea: "名前のないエリア",
+            noPermission: "このエリアはロックできません。ロックする権限を管理者に依頼してください。",
         },
         giveBackFloor: {
             title: "発言権を返す",
@@ -228,6 +229,19 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "まだ個人デスクがありません",
         errorMoving: "個人デスクに到達できません",
         errorUnclaiming: "個人デスクを解放できません",
+        unclaimConfirmTitle: "デスク「{name}」の確保を解除しますか?",
+        unclaimConfirmMessage: "すぐに空きになります。誰でも確保でき、空いている間に再度確保しない限り取り戻せません。",
+    },
+    mediaSettingsToggle: "カメラとマイクの設定",
+    blocked: {
+        calendarOff: "このワールドではカレンダーが連携されていません。管理者が管理設定で有効にできます。",
+        todoListOff: "このワールドではToDoリストが連携されていません。管理者が管理設定で有効にできます。",
+        roomListOff:
+            "このマップではルーム一覧がオフになっています。マップの所有者に再度オンにするよう依頼してください。",
+        screenSharingOff:
+            "このマップではここでの画面共有がオフになっています。マップの所有者に再度オンにするよう依頼してください。",
+        chatConnecting: "チャットはまだ接続中です。数秒後にもう一度お試しください。",
+        alreadyAtDesk: "すでに自分のデスクにいます。",
     },
 };
 

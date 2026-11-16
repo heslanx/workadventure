@@ -28,6 +28,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraAndMicPaused: "Càmera i micro en pausa fins que torni",
         cameraPaused: "Càmera en pausa fins que torni",
     },
+    enlarge: "Amplia el vídeo",
 };
 
 export default video;

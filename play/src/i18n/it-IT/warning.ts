@@ -71,6 +71,22 @@ const warning: DeepPartial<Translation["warning"]> = {
     otherMeetingMuted:
         "Ora sei in una riunione qui. Microfono, fotocamera e condivisione dello schermo sono stati disattivati in {world}.",
     desktopAppOutdated: "È disponibile una nuova versione dell'app WorkAdventure: {url}",
+    connectionLostDetail: "Nuovo tentativo automatico. Ciò che hai scritto resta al suo posto.",
+    reconnectNow: "Riprova ora",
+    limitMap: "Questa mappa è disponibile per 2 giorni.",
+    registerDomain: "Registra il tuo dominio per conservarla",
+    popUp: {
+        close: "Chiudi",
+        closeMessage: "Chiudi il messaggio",
+        openInNewTab: "Apri in una nuova scheda",
+        joinJitsi: "Partecipa alla riunione Jitsi",
+        openWebsite: "Apri il sito web",
+    },
+    limitRoom: {
+        title: "Questa mappa ha un limite di tempo.",
+        content: "Per continuare a usare WorkAdventure qui, crea il tuo account.",
+        createAccount: "Crea il mio account",
+    },
 };
 
 export default warning;

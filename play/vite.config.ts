@@ -4,10 +4,10 @@ import type { Plugin } from "vite";
 import { defineConfig, loadEnv } from "vite";
 import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import posthog from "@posthog/rollup-plugin";
 import { noiseSuppressionAudioWorkletVitePlugin } from "@workadventure/noise-suppression/vite";
 import tailwindcss from "@tailwindcss/vite";
 import Icons from "unplugin-icons/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { apiVersionHash } from "../libs/messages/src/JsonMessages/ApiVersion";
 
@@ -41,11 +41,16 @@ const matrixStaysLazy: Plugin = {
     },
 };
 
+function watchedDirGlob(relativeDir: string): string {
+    return fileURLToPath(new URL(relativeDir, import.meta.url)) + "/**";
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     // Load env file based on `mode` in the current working directory.
     // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
     const env = loadEnv(mode, process.cwd(), "");
+    const watchPolling = env.VITE_WATCH_POLLING === "true";
     const config = {
         // Relative base: every URL Vite emits resolves against the file that references it, so the build can be
         // served from any origin (the pusher itself, or an assets domain set at runtime with ASSETS_URL).
@@ -65,7 +70,27 @@ export default defineConfig(({ mode }) => {
                 host: "front.workadventure.localhost",
             },
             watch: {
-                ignored: ["./src/pusher"],
+                // Absolute globs: chokidar matches ignored paths against absolute ones, so "./src/pusher" ignored nothing.
+                // Vitest's watch mode reuses this watcher and must still see the pusher, hence the dev-only list.
+                ignored:
+                    mode === "test"
+                        ? []
+                        : [
+                              watchedDirGlob("./src/pusher"),
+                              // Polling stats every watched file, so it also skips the asset folders of public/ (a
+                              // third of the files): a new file in them is served after a restart of Vite, an edited
+                              // one at once. public/ itself stays watched for iframe_api.js, built while Vite runs.
+                              ...(watchPolling
+                                  ? ["./public/resources", "./public/static", "./public/collections"].map(
+                                        watchedDirGlob,
+                                    )
+                                  : []),
+                          ],
+                // Colima's mountInotify only forwards in-place writes; an editor that saves by renaming a temp file
+                // over the original never reaches the container. Polling catches those saves too, at a CPU cost.
+                ...(watchPolling
+                    ? { usePolling: true, interval: Number(env.VITE_WATCH_POLLING_INTERVAL) || 1000 }
+                    : {}),
             },
         },
         build: {
@@ -115,7 +140,6 @@ export default defineConfig(({ mode }) => {
             Icons({
                 compiler: "svelte",
             }),
-            tsconfigPaths(),
         ],
         resolve: {
             // Without this, vitest resolves Svelte to its server build and mount() is unavailable.
@@ -127,9 +151,16 @@ export default defineConfig(({ mode }) => {
             },
         },
         test: {
-            environment: "jsdom",
+            // Most tests need no DOM: a test that does declares it with `// @vitest-environment jsdom` on its
+            // first line. Starting jsdom for every file cost more than half of the suite's run time.
+            environment: "node",
             globals: true,
             setupFiles: ["./tests/setup/vitest.setup.ts"],
+            experimental: {
+                // Keeps transformed modules on disk between runs (node_modules/.experimental-vitest-cache):
+                // transform time drops from about 100 s to 30 s once the cache is warm.
+                fsModuleCache: true,
+            },
             coverage: {
                 all: true,
                 include: ["src/*.ts", "src/**/*.ts"],
@@ -138,9 +169,11 @@ export default defineConfig(({ mode }) => {
         },
         optimizeDeps: {
             exclude: ["svelte-modals"],
-            esbuildOptions: {
-                define: {
-                    global: "globalThis",
+            rolldownOptions: {
+                transform: {
+                    define: {
+                        global: "globalThis",
+                    },
                 },
             },
         },
@@ -172,6 +205,23 @@ export default defineConfig(({ mode }) => {
         );
     } else {
         console.info("Sentry plugin disabled");
+    }
+    if (env.POSTHOG_PERSONAL_API_KEY && env.POSTHOG_PROJECT_ID && env.POSTHOG_HOST) {
+        // PostHog supports Rolldown at runtime; its published types still use Rollup's PluginContext.
+        config.plugins.push(
+            posthog({
+                personalApiKey: env.POSTHOG_PERSONAL_API_KEY,
+                projectId: env.POSTHOG_PROJECT_ID,
+                host: env.POSTHOG_HOST,
+                sourcemaps: {
+                    enabled: true,
+                    releaseName: "workadventure-play",
+                    releaseVersion: env.OBSERVABILITY_RELEASE || env.SENTRY_RELEASE,
+                    // Sentry may upload the same maps; artifact removal belongs to deployment.
+                    deleteAfterUpload: false,
+                },
+            }) as Plugin,
+        );
     }
     return config;
 });

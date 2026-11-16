@@ -18,6 +18,7 @@ const area: DeepPartial<Translation["area"]> = {
         },
         personalSpaceWithNames: "Wosobinski rum {name}",
         alreadyHavePersonalArea: "Maće hižo wosobinski wokrjes. So zhaše, jeli tutón wokrjes přewzaće.",
+        nameLabel: "Twoje mjeno",
     },
 };
 

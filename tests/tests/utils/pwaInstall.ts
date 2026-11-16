@@ -28,7 +28,7 @@ export async function dismissPwaInstallScreenIfShown(page: Page, dontShowAgain: 
     const skip = page.getByTestId("pwa-install-skip");
     const neverShowAgain = page.getByTestId("pwa-install-never-show-input");
     const microphone = page.getByTestId("microphone-button");
-    const errorOccurred = page.getByText("An error occurred").first();
+    const errorOccurred = page.locator(".errorScreen:not([data-testid='reconnecting-error-screen'])").first();
 
     // One wait, not a Promise.race of three: the losers of a race keep polling for their full
     // timeout, and every extra in-flight operation can trigger a registered locator handler

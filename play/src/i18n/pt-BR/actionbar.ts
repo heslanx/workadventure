@@ -23,7 +23,8 @@ const actionbar: BaseTranslation = {
     woka: "Personalizar seu avatar",
     companion: "Adicionar companheiro",
     //megaphone: "Usar megafone",
-    editCamMic: "Editar câmera / microfone",
+    editCamMic: "Editar câmera e microfone",
+    mediaSettingsToggle: "Configurações de câmera e microfone",
     allSettings: "Todas as configurações",
     installPwa: "Instalar aplicativo web",
     sendAnnouncement: "Enviar um anúncio",
@@ -38,12 +39,12 @@ const actionbar: BaseTranslation = {
     mapEditorLocked: "Editor de mapa está bloqueado 🔐",
     app: "Aplicações de terceiros",
     camera: {
-        disabled: "Sua câmera está desabilitada",
-        activate: "Ativar sua câmera",
+        disabled: "Sua câmera está desligada",
+        activate: "Ligar sua câmera",
     },
     microphone: {
-        disabled: "Seu microfone está desabilitado",
-        activate: "Ativar seu microfone",
+        disabled: "Seu microfone está desligado",
+        activate: "Ligar seu microfone",
         noSoundWarning:
             "Nenhum som detectado do seu microfone. Pode haver um problema; tente trocar o microfone nas configurações.",
         advancedNoiseReduction: "Redução de ruído avançada",
@@ -58,7 +59,7 @@ const actionbar: BaseTranslation = {
         ignore: "Ignorar",
     },
     speaker: {
-        disabled: "Seu alto-falante está desabilitado",
+        disabled: "Seu alto-falante está desligado",
         test: "Testar saída de áudio",
         noDevices: "Nenhum dispositivo de alto-falante encontrado",
         noDevicesDesc:
@@ -138,6 +139,7 @@ const actionbar: BaseTranslation = {
             areaPickerTitle: "Escolher área para bloquear/desbloquear",
             bubbleLabel: "Bolha de discussão",
             unnamedArea: "Área sem nome",
+            noPermission: "Você não pode trancar esta área. Peça a um admin o direito de trancá-la.",
         },
         giveBackFloor: {
             title: "Devolver a palavra",
@@ -148,7 +150,7 @@ const actionbar: BaseTranslation = {
             desc: "Parar de transmitir sua mensagem para todos os usuários.",
         },
         mic: {
-            title: "Habilitar/desabilitar seu microfone",
+            title: "Ligar ou desligar seu microfone",
             desc: "Controle seu microfone para participar ou se silenciar nas conversas conforme necessário.",
         },
         micDisabledByStatus: {
@@ -156,7 +158,7 @@ const actionbar: BaseTranslation = {
             desc: 'Seu microfone está desabilitado porque você está no status "{status}".',
         },
         cam: {
-            title: "Habilitar/desabilitar sua câmera",
+            title: "Ligar ou desligar sua câmera",
             desc: "Controle sua câmera para participar visualmente ou manter privacidade conforme necessário.",
         },
         camDisabledByStatus: {
@@ -218,13 +220,22 @@ const actionbar: BaseTranslation = {
         descriptionPlaceholder: "Qual é o problema? O que você esperava?",
         submitButtonLabel: "Reportar um problema",
         cancelButtonLabel: "Cancelar",
-        confirmButtonLabel: "Confirmar",
+        confirmButtonLabel: "Salvar captura de tela",
         addScreenshotButtonLabel: "Adicionar uma captura de tela",
         removeScreenshotButtonLabel: "Remover a captura de tela",
         successMessageText: "Obrigado por seu relatório! Nós o revisaremos o mais rápido possível.",
         highlightToolText: "Destacar",
         hideToolText: "Ocultar",
         removeHighlightText: "Remover",
+    },
+    blocked: {
+        calendarOff: "O calendário não está conectado neste mundo. Um admin pode ativá-lo nas configurações de admin.",
+        todoListOff:
+            "A lista de tarefas não está conectada neste mundo. Um admin pode ativá-la nas configurações de admin.",
+        roomListOff: "Este mapa desativou a lista de salas. Peça ao dono do mapa para reativá-la.",
+        screenSharingOff: "Este mapa desativou o compartilhamento de tela aqui. Peça ao dono do mapa para reativá-lo.",
+        chatConnecting: "O chat ainda está conectando. Tente de novo em alguns segundos.",
+        alreadyAtDesk: "Você já está na sua mesa.",
     },
     personalDesk: {
         label: "Ir para minha mesa",
@@ -233,6 +244,9 @@ const actionbar: BaseTranslation = {
         errorNotFound: "Você ainda não tem uma mesa pessoal",
         errorMoving: "Não foi possível chegar à sua mesa pessoal",
         errorUnclaiming: "Não foi possível liberar sua mesa pessoal",
+        unclaimConfirmTitle: "Liberar sua mesa “{name}”?",
+        unclaimConfirmMessage:
+            "Ela fica livre na hora. Qualquer pessoa pode reivindicá-la, e você só a recupera reivindicando de novo enquanto ainda estiver livre.",
     },
 };
 

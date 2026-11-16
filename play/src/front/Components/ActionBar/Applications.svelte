@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import type { KlaxoonEvent } from "@workadventure/shared-utils/src/types";
     import { KlaxoonService } from "@workadventure/shared-utils";
+    import { fly } from "../../Utils/reducedMotion";
     import appOnImg from "../images/applications/appOn.png";
     import appOffImg from "../images/applications/appOff.png";
     import klaxoonImg from "../images/applications/icon_klaxoon.svg";
@@ -102,7 +102,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.klaxoonToolActivated}
                         >
-                            <img draggable="false" src={klaxoonImg} style="padding: 2px" alt="Klaxoon" />
+                            <img
+                                draggable="false"
+                                src={klaxoonImg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.klaxoon.label()}
+                            />
                         </button>
                     </div>
                 </div>
@@ -119,7 +124,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.googleDriveToolActivated}
                         >
-                            <img draggable="false" src={googleDriveSvg} style="padding: 2px" alt="Goodle Doc" />
+                            <img
+                                draggable="false"
+                                src={googleDriveSvg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.googleDrive.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -134,7 +144,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.googleDocsToolActivated}
                         >
-                            <img draggable="false" src={googleDocsSvg} style="padding: 2px" alt="Goodle Doc" />
+                            <img
+                                draggable="false"
+                                src={googleDocsSvg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.googleDocs.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -149,7 +164,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.googleSheetsToolActivated}
                         >
-                            <img draggable="false" src={googleSheetsSvg} style="padding: 2px" alt="Google Sheet" />
+                            <img
+                                draggable="false"
+                                src={googleSheetsSvg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.googleSheets.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -164,7 +184,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.googleSlidesToolActivated}
                         >
-                            <img draggable="false" src={googleSlidesSvg} style="padding: 2px" alt="Google Slide" />
+                            <img
+                                draggable="false"
+                                src={googleSlidesSvg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.googleSlides.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -179,7 +204,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.eraserToolActivated}
                         >
-                            <img draggable="false" src={eraserSvg} style="padding: 2px" alt="Eraser" />
+                            <img
+                                draggable="false"
+                                src={eraserSvg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.eraser.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -194,7 +224,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.excalidrawToolActivated}
                         >
-                            <img draggable="false" src={excalidrawSvg} style="padding: 2px" alt="Excalidraw" />
+                            <img
+                                draggable="false"
+                                src={excalidrawSvg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.excalidraw.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -209,7 +244,12 @@
                             id="button-app-klaxoon"
                             disabled={!applicationManager.cardsToolActivated}
                         >
-                            <img draggable="false" src={cardsPng} style="padding: 2px" alt="Excalidraw" />
+                            <img
+                                draggable="false"
+                                src={cardsPng}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.cards.label()}
+                            />
                         </button>
                     </div>
                 {/if}
@@ -224,7 +264,12 @@
                             id="button-app-tldraw"
                             disabled={!applicationManager.tldrawToolActivated}
                         >
-                            <img draggable="false" src={tldrawsJpeg} style="padding: 2px" alt="tldraw" />
+                            <img
+                                draggable="false"
+                                src={tldrawsJpeg}
+                                style="padding: 2px"
+                                alt={$LL.mapEditor.properties.tldraw.label()}
+                            />
                         </button>
                     </div>
                 {/if}

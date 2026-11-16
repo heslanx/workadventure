@@ -16,6 +16,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "Connexion au serveur perdue. Vous ne pourrez pas parler aux autres.",
+        retrying: "Nouvelle tentative automatique. Ce message disparaît dès que le serveur répond.",
     },
     errorDialog: {
         title: "Erreur 😱",
@@ -26,6 +27,15 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "Vous pouvez également consulter notre :",
         reload: "Recharger",
         close: "Fermer",
+    },
+    errorScreen: {
+        genericTitle: "Nous n'avons pas pu ouvrir ce monde.",
+        genericNextStep: "Rechargez la page pour réessayer. Si le problème persiste, contactez votre administrateur.",
+        networkTitle: "Nous n'avons pas pu joindre le serveur.",
+        networkNextStep: "Vérifiez votre connexion Internet, puis rechargez la page.",
+        reload: "Recharger la page",
+        showDetails: "Afficher les détails",
+        code: "Code d'erreur {code}",
     },
 };
 

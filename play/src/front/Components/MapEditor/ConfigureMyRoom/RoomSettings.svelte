@@ -96,7 +96,7 @@
     />
 
     <p class="help-text">
-        <IconInfoCircle font-size="18" />
+        <IconInfoCircle font-size="18" aria-hidden="true" />
         {$LL.mapEditor.settings.room.helps.description()}
     </p>
     <TextArea
@@ -106,12 +106,12 @@
         onkeypress={() => {}}
     />
     <p class="help-text">
-        <IconInfoCircle font-size="18" />
+        <IconInfoCircle font-size="18" aria-hidden="true" />
         {$LL.mapEditor.settings.room.helps.tags()}
     </p>
     <InputTags label={$LL.mapEditor.settings.room.inputs.tags()} options={_tag} bind:value={tags} />
     <p class="help-text">
-        <IconInfoCircle font-size="18" />
+        <IconInfoCircle font-size="18" aria-hidden="true" />
         {$LL.mapEditor.settings.room.helps.copyright()}
     </p>
     <TextArea
@@ -122,7 +122,7 @@
     />
 
     <div class="flex flex-row justify-center mt-4">
-        <div class="ml-2" class:text-danger-1000={dynamicStrings.error.confirmSave}>
+        <div class="ml-2" class:text-danger-400={dynamicStrings.error.confirmSave}>
             <InputCheckbox
                 label={$LL.mapEditor.settings.room.confirmSave()}
                 id="confirm-save"
@@ -132,6 +132,6 @@
     </div>
 
     <div class="flex flex-row justify-center cursor-pointer">
-        <ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText="Saving" />
+        <ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText={$LL.menu.settings.saving()} />
     </div>
 </div>

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { z, ZodError } from "zod";
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 import multer from "multer";
 import type { LimitFunction } from "p-limit";
 import pLimit from "p-limit";
@@ -36,6 +36,35 @@ import type { FileSystemInterface } from "./FileSystemInterface";
 import { FileNotFoundError } from "./FileNotFoundError";
 
 const limit = pLimit(10);
+
+/** Answers a delete or an upload of maps that was not run because a write of one of them is still in flight. */
+function rejectWhileMapIsSaving(res: Response): void {
+    res.status(503)
+        .set("Retry-After", "60")
+        .send("A map of this request is still being saved. Nothing was changed, retry later.");
+}
+
+/** The WAM files present when a zip upload decides what to replace. */
+interface WamUploadSnapshot {
+    existingPaths: string[];
+    deletedPaths: string[];
+}
+
+/** Thrown by a move whose destination appeared while it waited for the earlier writes of its maps. */
+class DestinationExistsError extends Error {}
+
+/** Deletes the temporary file Multer stored the upload in. */
+function removeUploadedFile(file: Request["file"]): void {
+    if (file === undefined) {
+        return;
+    }
+    fs.unlink(file.path, (err) => {
+        if (err) {
+            console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
+            Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
+        }
+    });
+}
 
 const upload = multer({
     storage: multer.diskStorage({}),
@@ -228,39 +257,59 @@ export class UploadController {
                         .filter((zipEntry) => zipEntry.path.includes(".wam") || zipEntry.path.includes(".tmj"))
                         .map((zipEntry) => zipEntry.path);
 
-                    // Delete all files in the given filesystem (disk or s3) with the exception of some .wam files
-                    await this.fileSystem.deleteFilesExceptWAM(mapPath(directory, req), filesPathsFromZip);
-
-                    const promises: Promise<void>[] = [];
                     const wamToPurge: string[] = [];
                     const wamFilesNames = zipEntries
                         .filter((zipEntry) => zipEntry.path.includes(".wam"))
                         .map((zipEntry) => path.parse(zipEntry.path).name);
-                    // Iterate over the entries in the ZIP archive
-                    for (const zipEntry of zipEntries) {
-                        const key = mapPath(path.join(directory, zipEntry.path), req);
-                        // Store the file
-                        promises.push(this.fileSystem.writeFile(zipEntry, key));
-                        if (path.extname(key) === ".tmj") {
-                            if (!wamFilesNames.includes(path.parse(zipEntry.path).name)) {
-                                promises.push(this.createWAMFileIfMissing(key, zipEntry, zipDirectory));
+                    const virtualDirectory = mapPath(directory, req);
+                    const wamSnapshot = await this.wamUploadSnapshot(virtualDirectory, filesPathsFromZip);
+                    const wamPathsToCreate = zipEntries
+                        .filter(
+                            (zipEntry) =>
+                                path.extname(zipEntry.path) === ".tmj" &&
+                                !wamFilesNames.includes(path.parse(zipEntry.path).name),
+                        )
+                        .map((zipEntry) => zipEntry.path.replace(/\.tmj$/, ".wam"))
+                        .filter((wamPath) => !wamSnapshot.existingPaths.includes(wamPath));
+                    const replacedWamKeys = [
+                        ...zipEntries
+                            .map((zipEntry) => mapPath(path.join(directory, zipEntry.path), req))
+                            .filter((key) => path.extname(key) === ".wam"),
+                        ...wamSnapshot.deletedPaths.map((wamPath) => path.join(virtualDirectory, wamPath)),
+                        ...wamPathsToCreate.map((wamPath) => path.join(virtualDirectory, wamPath)),
+                    ];
+                    const outcome = await mapsManager.replaceStoredMaps(replacedWamKeys, async () => {
+                        // Delete non-WAM files and only the WAM files recorded in this upload's snapshot.
+                        await this.fileSystem.deleteFilesExceptWAM(
+                            virtualDirectory,
+                            filesPathsFromZip,
+                            wamSnapshot.deletedPaths,
+                        );
+
+                        const promises: Promise<void>[] = [];
+                        // Iterate over the entries in the ZIP archive
+                        for (const zipEntry of zipEntries) {
+                            const key = mapPath(path.join(directory, zipEntry.path), req);
+                            // Store the file
+                            promises.push(this.fileSystem.writeFile(zipEntry, key));
+                            if (path.extname(key) === ".tmj") {
+                                if (!wamFilesNames.includes(path.parse(zipEntry.path).name)) {
+                                    promises.push(this.createWAMFileIfMissing(key, zipEntry, zipDirectory));
+                                }
+                            } else if (path.extname(key) === ".wam") {
+                                const wamUrl = `${req.protocol}://${getRequestDomain(req)}${directory}/${zipEntry.path}`;
+                                wamToPurge.push(wamUrl);
                             }
-                        } else if (path.extname(key) === ".wam") {
-                            const wamUrl = `${req.protocol}://${getRequestDomain(req)}${directory}/${zipEntry.path}`;
-                            wamToPurge.push(wamUrl);
                         }
+
+                        await Promise.all(promises);
+                    });
+                    if (outcome === "writesInFlight") {
+                        rejectWhileMapIsSaving(res);
+                        return;
                     }
 
-                    await Promise.all(promises);
-
                     // No need to close the directory with unzipper
-                    // Delete the uploaded ZIP file from the disk
-                    fs.unlink(zipFile.path, (err) => {
-                        if (err) {
-                            console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
-                            Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
-                        }
-                    });
                     for (const wamUrl of wamToPurge) {
                         uploadDetector.refresh(wamUrl).catch((err) => {
                             console.error(`[${new Date().toISOString()}]`, err);
@@ -275,7 +324,10 @@ export class UploadController {
                 if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
                     this.uploadLimiter.delete(virtualDirectory);
                 }
-            })().catch((e) => next(e));
+            })()
+                // Every exit, the rejected and failed ones included.
+                .finally(() => removeUploadedFile(req.file))
+                .catch((e) => next(e));
         });
     }
 
@@ -404,16 +456,16 @@ export class UploadController {
                         }
 
                         // TODO: create a "stream" version of this method to avoid loading the whole file in memory
-                        await this.fileSystem.writeStringAsFile(virtualPath, content);
-
-                        // Delete the uploaded file from the disk
-                        if (file) {
-                            fs.unlink(file.path, (err) => {
-                                if (err) {
-                                    console.error(`[${new Date().toISOString()}] Error deleting file:`, err);
-                                    Sentry.captureException(`Error deleting file: ${JSON.stringify(err)}`);
-                                }
-                            });
+                        if (extension === ".wam") {
+                            const outcome = await mapsManager.replaceStoredMaps([virtualPath], () =>
+                                this.fileSystem.writeStringAsFile(virtualPath, content),
+                            );
+                            if (outcome === "writesInFlight") {
+                                rejectWhileMapIsSaving(res);
+                                return;
+                            }
+                        } else {
+                            await this.fileSystem.writeStringAsFile(virtualPath, content);
                         }
 
                         if (extension === ".wam" && wamFile) {
@@ -430,11 +482,14 @@ export class UploadController {
                     if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
                         this.uploadLimiter.delete(virtualPath);
                     }
-                })().catch((e) => {
-                    console.error(`[${new Date().toISOString()}]`, e);
-                    Sentry.captureException(e);
-                    next(e);
-                });
+                })()
+                    // Every exit, the rejected and failed ones included.
+                    .finally(() => removeUploadedFile(req.file))
+                    .catch((e) => {
+                        console.error(`[${new Date().toISOString()}]`, e);
+                        Sentry.captureException(e);
+                        next(e);
+                    });
             },
         );
     }
@@ -535,7 +590,13 @@ export class UploadController {
                         return;
                     }
 
-                    await this.fileSystem.writeStringAsFile(virtualPath, patchedContentString);
+                    const outcome = await mapsManager.replaceStoredMaps([virtualPath], () =>
+                        this.fileSystem.writeStringAsFile(virtualPath, patchedContentString),
+                    );
+                    if (outcome === "writesInFlight") {
+                        rejectWhileMapIsSaving(res);
+                        return;
+                    }
 
                     uploadDetector.refresh(this.getFullUrlFromRequest(req)).catch((err) => {
                         console.error(`[${new Date().toISOString()}]`, err);
@@ -556,6 +617,38 @@ export class UploadController {
                 next(e);
             });
         });
+    }
+
+    /** Captures existing WAM paths and the subset this zip replaces or deletes. */
+    private async wamUploadSnapshot(
+        virtualDirectory: string,
+        filesPathsFromZip: string[],
+    ): Promise<WamUploadSnapshot> {
+        const existingPaths = (await this.fileSystem.listFiles(virtualDirectory, ".wam")).filter(
+            (wamPath) => !wamPath.startsWith(".."),
+        );
+        const deletedPaths = existingPaths.filter(
+            (wamPath) =>
+                !(
+                    filesPathsFromZip.includes(wamPath.replace(".wam", ".tmj")) &&
+                    !filesPathsFromZip.includes(wamPath)
+                ),
+        );
+        return { existingPaths, deletedPaths };
+    }
+
+    /**
+     * Storage keys of the .wam files under `virtualDirectory`, the directory itself when it is one. A move or
+     * a copy of a directory carries its maps with it, so they have to be held like a single moved map.
+     */
+    private async wamKeysUnder(virtualDirectory: string): Promise<string[]> {
+        if (path.extname(virtualDirectory) === ".wam") {
+            return [virtualDirectory];
+        }
+        const wamPaths = await this.fileSystem.listFiles(virtualDirectory, ".wam");
+        return wamPaths
+            .filter((wamPath) => !wamPath.startsWith(".."))
+            .map((wamPath) => path.join(virtualDirectory, wamPath));
     }
 
     private async createWAMFileIfMissing(tmjKey: string, zipEntry: File, zip: CentralDirectory): Promise<void> {
@@ -739,32 +832,38 @@ export class UploadController {
                 if (isWamFile) {
                     const wamFile = await mapsManager.getOrLoadWamFile(virtualPath);
                     const areas = wamFile.getGameMapAreas().getAreas().values();
+                    const outcome = await mapsManager.replaceStoredMaps([virtualPath], async () => {
+                        // Inside the replacement, so a rejected delete leaves the area resources too.
+                        if (areas) {
+                            const promises = Array.from(areas).reduce((acc, currArea) => {
+                                currArea.properties.forEach((property) => {
+                                    const resourceUrl = property.resourceUrl;
+                                    if (resourceUrl) {
+                                        acc.push(limit(() => _axios.delete(resourceUrl, { data: property })));
+                                    }
+                                });
+                                return acc;
+                            }, [] as Promise<unknown>[]);
 
-                    if (areas) {
-                        const promises = Array.from(areas).reduce((acc, currArea) => {
-                            currArea.properties.forEach((property) => {
-                                const resourceUrl = property.resourceUrl;
-                                if (resourceUrl) {
-                                    acc.push(limit(() => _axios.delete(resourceUrl, { data: property })));
-                                }
-                            });
-                            return acc;
-                        }, [] as Promise<unknown>[]);
-
-                        try {
-                            await Promise.all(promises);
-                        } catch (error) {
-                            console.error(
-                                `[${new Date().toISOString()}] Failed to execute all request on resourceUrl`,
-                                error,
-                            );
+                            try {
+                                await Promise.all(promises);
+                            } catch (error) {
+                                console.error(
+                                    `[${new Date().toISOString()}] Failed to execute all request on resourceUrl`,
+                                    error,
+                                );
+                            }
                         }
+
+                        await this.fileSystem.deleteFiles(virtualPath);
+                    });
+                    if (outcome === "writesInFlight") {
+                        rejectWhileMapIsSaving(res);
+                        return;
                     }
-
-                    mapsManager.clearAfterUpload(virtualPath);
+                } else {
+                    await this.fileSystem.deleteFiles(virtualPath);
                 }
-
-                await this.fileSystem.deleteFiles(virtualPath);
 
                 await this.mapListService.generateCacheFile(req.hostname);
 
@@ -819,10 +918,33 @@ export class UploadController {
                     return;
                 }
 
-                await this.fileSystem.move(virtualPath, newVirtualPath);
+                // A move carries the .wam files under its source, and the ones under its destination are
+                // overwritten: both sets are held, so a loaded dirty map is not saved back over the move. The
+                // destination is checked again once the earlier writes are waited for, since two moves to one
+                // path both pass the check above and then run in order.
+                const movedWamKeys = await this.wamKeysUnder(virtualPath);
+                const overwrittenWamKeys = await this.wamKeysUnder(newVirtualPath);
+                const outcome = await mapsManager.replaceStoredMaps(
+                    [...movedWamKeys, ...overwrittenWamKeys],
+                    async () => {
+                        if (await this.fileSystem.exist(newVirtualPath)) {
+                            throw new DestinationExistsError();
+                        }
+                        await this.fileSystem.move(virtualPath, newVirtualPath);
+                    },
+                    { saveFirst: movedWamKeys },
+                );
+                if (outcome === "writesInFlight") {
+                    rejectWhileMapIsSaving(res);
+                    return;
+                }
                 await this.mapListService.generateCacheFile(req.hostname);
                 res.sendStatus(200);
             })().catch((e) => {
+                if (e instanceof DestinationExistsError) {
+                    res.status(409).send("Destination already exist!");
+                    return;
+                }
                 console.error(`[${new Date().toISOString()}]`, e);
                 Sentry.captureException(e);
                 next(e);
@@ -861,7 +983,17 @@ export class UploadController {
                     return;
                 }
 
-                await this.fileSystem.copy(virtualPath, newVirtualPath);
+                // A copy overwrites the .wam files under its destination and carries the ones under its
+                // source: both sets are held, as a move does.
+                const copiedWamKeys = await this.wamKeysUnder(virtualPath);
+                const overwrittenWamKeys = await this.wamKeysUnder(newVirtualPath);
+                const outcome = await mapsManager.replaceStoredMaps([...copiedWamKeys, ...overwrittenWamKeys], () =>
+                    this.fileSystem.copy(virtualPath, newVirtualPath),
+                );
+                if (outcome === "writesInFlight") {
+                    rejectWhileMapIsSaving(res);
+                    return;
+                }
                 await this.mapListService.generateCacheFile(req.hostname);
                 res.sendStatus(201);
             })().catch((e) => {

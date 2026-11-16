@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ Zwuk njeje dowoleny. Tłóčće [SPACE] abo klikńće tu, zo by so wothrał!",
     },
     disable: "hasńće swój mikrofon",
+    mute: "Zwuk wupinać",
 };
 
 export default audio;

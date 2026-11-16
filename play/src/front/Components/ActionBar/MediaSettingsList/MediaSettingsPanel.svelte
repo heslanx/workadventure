@@ -13,6 +13,8 @@
         usedMicrophoneDeviceIdStore,
         cameraAccessIssueStore,
         microphoneAccessIssueStore,
+        cameraAccessDeniedStore,
+        microphoneAccessDeniedStore,
         devicesNotLoaded,
         rawLocalStreamStore,
         mediaStreamConstraintsStore,
@@ -88,15 +90,6 @@
         $noiseSuppressionStateStore.status === "error" || $noiseSuppressionStateStore.status === "unsupported",
     );
 
-    let cameraDenied = $derived(
-        $cameraPermissionStateStore === "denied" ||
-            ($cameraAccessIssueStore === "permission_denied" && $cameraPermissionStateStore !== "granted"),
-    );
-    let microphoneDenied = $derived(
-        $microphonePermissionStateStore === "denied" ||
-            ($microphoneAccessIssueStore === "permission_denied" && $microphonePermissionStateStore !== "granted"),
-    );
-
     let cameraLoaded = $derived(
         ($rawLocalStreamStore.type === "success" &&
             $rawLocalStreamStore.stream &&
@@ -116,7 +109,7 @@
     <div class="flex flex-col gap-1">
         <SectionTitle>
             <div class="flex items-center gap-1">
-                <IconCamera font-size="14" />
+                <IconCamera font-size="14" aria-hidden="true" />
                 {$LL.actionbar.subtitle.camera()}
             </div>
         </SectionTitle>
@@ -134,18 +127,21 @@
         {:else}
             <div class="group flex items-center relative z-10 px-2 font-sm justify-center">
                 <div class="text-sm italic text-center">
-                    {#if cameraDenied}
+                    {#if $cameraAccessDeniedStore}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.permissionDeniedTitle()}</p>
+                    {:else if $cameraAccessIssueStore === "device_in_use"}
+                        <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.deviceInUseTitle()}</p>
+                        <span class="text-xs text-white/60">{$LL.camera.help.tooltip.deviceInUseDesc()}</span>
                     {:else if $cameraAccessIssueStore === "no_device" || (!$devicesNotLoaded && $cameraListStore !== undefined && $cameraListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.noDeviceTitle()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
                     {:else if $cameraPermissionStateStore === "prompt" && !$requestedCameraState}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.title()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.content()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.content()}</span>
                     {:else if $mediaStreamConstraintsStore.video === false || !$requestedCameraState}
                         <p class="text-sm p-0 m-0">{$LL.actionbar.camera.disabled()}</p>
                     {:else if $rawLocalStreamStore.type === "error"}
-                        <p class="text-sm p-0 m-0">{$LL.login.genericError()}</p>
+                        <p class="text-sm p-0 m-0">{$LL.camera.startError.camera()}</p>
                     {:else}
                         <p class="text-sm p-0 m-0">{$LL.chat.loading()}...</p>
                     {/if}
@@ -153,7 +149,7 @@
             </div>
             {#if $silentStore == false}
                 <div class="group flex items-center relative z-10 py-1 px-2 overflow-hidden">
-                    {#if cameraDenied}
+                    {#if $cameraAccessDeniedStore}
                         <Button variant="danger" size="sm" class="w-full" onclick={showHelpCameraSettings}>
                             {$LL.actionbar.microphone.openSettings()}
                         </Button>
@@ -181,7 +177,7 @@
     <div class="flex flex-col gap-1">
         <SectionTitle>
             <div class="flex items-center gap-1">
-                <IconMicrophoneOn font-size="14" />
+                <IconMicrophoneOn font-size="14" aria-hidden="true" />
                 {$LL.actionbar.subtitle.microphone()}
             </div>
             {#snippet actions()}
@@ -193,7 +189,7 @@
                     title={$LL.actionbar.microphone.openSettings()}
                     onclick={openMicrophoneSettings}
                 >
-                    <IconSettings font-size="14" />
+                    <IconSettings font-size="14" aria-hidden="true" />
                 </button>
             {/snippet}
         </SectionTitle>
@@ -225,20 +221,20 @@
                         ? noiseSuppressionActive
                         : undefined}
                 >
-                    <span class:text-pop-red={isNoiseSuppressionErrorState}>
+                    <span class:text-pop-red-text={isNoiseSuppressionErrorState}>
                         {$LL.actionbar.microphone.advancedNoiseReduction()}
                     </span>
                 </InputSwitch>
                 {#if $noiseSuppressionStateStore.status === "initializing"}
-                    <div class="ms-14 px-3 text-sm text-white/50">
+                    <div class="ms-14 px-3 text-sm text-white/60">
                         {$LL.actionbar.microphone.noiseSuppressionInitializing()}
                     </div>
                 {:else if $noiseSuppressionStateStore.status === "unsupported"}
-                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red">
+                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red-text">
                         {$noiseSuppressionStateStore.message ?? $LL.actionbar.microphone.noiseSuppressionUnsupported()}
                     </div>
                 {:else if $noiseSuppressionStateStore.status === "error"}
-                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red">
+                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red-text">
                         {$noiseSuppressionStateStore.message ?? $LL.actionbar.microphone.noiseSuppressionError()}
                     </div>
                 {/if}
@@ -246,18 +242,21 @@
         {:else}
             <div class="group flex items-center relative z-10 py-1 px-2 font-sm justify-center">
                 <div class="text-sm italic text-center">
-                    {#if microphoneDenied}
+                    {#if $microphoneAccessDeniedStore}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.permissionDeniedTitle()}</p>
+                    {:else if $microphoneAccessIssueStore === "device_in_use"}
+                        <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.deviceInUseTitle()}</p>
+                        <span class="text-xs text-white/60">{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</span>
                     {:else if $microphoneAccessIssueStore === "no_device" || (!$devicesNotLoaded && $microphoneListStore !== undefined && $microphoneListStore.length === 0)}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.noDeviceTitle()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>
                     {:else if $microphonePermissionStateStore === "prompt" && !$requestedMicrophoneState}
                         <p class="text-sm p-0 m-0">{$LL.camera.help.title()}</p>
-                        <span class="text-xs text-white/55">{$LL.camera.help.content()}</span>
+                        <span class="text-xs text-white/60">{$LL.camera.help.content()}</span>
                     {:else if $mediaStreamConstraintsStore.audio === false || !$requestedMicrophoneState}
                         <p class="text-sm p-0 m-0">{$LL.actionbar.microphone.disabled()}</p>
                     {:else if $rawLocalStreamStore.type === "error"}
-                        <p class="text-sm p-0 m-0">{$LL.login.genericError()}</p>
+                        <p class="text-sm p-0 m-0">{$LL.camera.startError.microphone()}</p>
                     {:else}
                         <p class="text-sm p-0 m-0">{$LL.chat.loading()}...</p>
                     {/if}
@@ -265,7 +264,7 @@
             </div>
             {#if $silentStore == false}
                 <div class="group flex items-center relative z-10 py-1 px-2 overflow-hidden">
-                    {#if microphoneDenied}
+                    {#if $microphoneAccessDeniedStore}
                         <Button variant="danger" size="sm" class="w-full" onclick={showHelpCameraSettings}>
                             {$LL.actionbar.microphone.openSettings()}
                         </Button>
@@ -295,7 +294,7 @@
         <div class="flex flex-col gap-1">
             <SectionTitle>
                 <div class="flex items-center gap-1">
-                    <IconHeadphones font-size="14" />
+                    <IconHeadphones font-size="14" aria-hidden="true" />
                     {$LL.actionbar.subtitle.speaker()}
                 </div>
                 {#snippet actions()}
@@ -308,7 +307,7 @@
                             title={$LL.actionbar.speaker.test()}
                             onclick={() => playSpeakerTestSound().catch((e) => console.error(e))}
                         >
-                            <IconUnMute font-size="14" />
+                            <IconUnMute font-size="14" aria-hidden="true" />
                         </button>
                     {/if}
                 {/snippet}
@@ -329,7 +328,7 @@
                     <div class="text-sm italic text-center">
                         {#if $speakerListStore.length === 0}
                             <p class="text-sm p-0 m-0">{$LL.actionbar.speaker.noDevices()}</p>
-                            <span class="text-xs text-white/55">{$LL.actionbar.speaker.noDevicesDesc()}</span>
+                            <span class="text-xs text-white/60">{$LL.actionbar.speaker.noDevicesDesc()}</span>
                         {:else}
                             {$LL.actionbar.speaker.disabled()}
                         {/if}

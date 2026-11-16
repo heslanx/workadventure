@@ -6,7 +6,7 @@ import { dismissNoBrowserSoundInfoToast } from "./doNotDisturbInfoToast";
 
 // for oidcLogin to work on mobile you must open the burger menu before calling this function
 export async function oidcLogin(page: Page, userName = "User1", password = "pwd") {
-    await page.getByRole("button", { name: "Login" }).click();
+    await page.getByRole("button", { name: "Log in" }).click();
     await page.fill("#Input_Username", userName, {
         timeout: 40_000,
     });

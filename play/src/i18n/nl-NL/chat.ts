@@ -434,6 +434,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         moreOptions: "Meer opties",
         createRoom: "Kamer aanmaken",
         createFolder: "Map aanmaken",
+        nameRequired: "Voer een naam in om het aan te maken.",
     },
     createFolder: {
         title: "Nieuwe map maken",
@@ -578,6 +579,8 @@ const chat: DeepPartial<Translation["chat"]> = {
                 changeAccess: "Toegang wijzigen",
                 changePermissions: "Rechten wijzigen",
             },
+            nothingToSave: "Wijzig een instelling om op te slaan.",
+            nameRequiredToSave: "Voer een ruimtenaam in om op te slaan.",
         },
         pollsEmpty: "Nog geen peilingen",
         participantsEmpty: "Nog geen deelnemers",
@@ -588,6 +591,8 @@ const chat: DeepPartial<Translation["chat"]> = {
         pollFocusError: "Kan deze peiling niet openen in de tijdlijn.",
         closeFolderMembers: "Mapleden sluiten",
         folderMembersHint: "Mapleden kunnen deelnemen aan de kamers ervan die open zijn voor leden.",
+        proximityParticipantsEmpty:
+            "Er is niemand bij je in de buurt. Loop naar iemand toe om een gesprek te beginnen.",
     },
     roomMenu: {
         leaveRoom: {
@@ -839,6 +844,7 @@ const chat: DeepPartial<Translation["chat"]> = {
         securitySection: "Beveiliging",
         securityHint: "Je back-upsleutel ontgrendelt je versleutelde berichten op een nieuw apparaat.",
         advancedSection: "Geavanceerd",
+        notSet: "Niet ingesteld",
     },
     matrixPeerProfileDebug: {
         menuItemTitle: "Matrix profile",
@@ -877,7 +883,23 @@ const chat: DeepPartial<Translation["chat"]> = {
         endPollTitle: "Deze peiling sluiten?",
         endPollMessage: "Niemand kan dan nog stemmen. De resultaten blijven zichtbaar.",
         save: "Opslaan",
+        deleteMessageNamedTitle: "“{excerpt}” verwijderen?",
+        cannotUndo: "Dit kan niet ongedaan worden gemaakt.",
     },
+    chatTurnedOffInArea: "De chat is uitgeschakeld in dit gebied. Verlaat het gebied om weer te schrijven.",
+    searchFailed: "Zoeken mislukt. Er kunnen resultaten ontbreken in de lijst.",
+    searchRetry: "Opnieuw zoeken",
+    copyFailed: "Kopiëren mislukt",
+    directMessagesEmpty: "Nog geen privéberichten. Open de gebruikerslijst en kies iemand om te schrijven.",
+    roomsEmpty: "Nog geen groepsgesprekken. Maak een ruimte om er een te beginnen.",
+    folderEmpty: "Deze map heeft nog geen ruimtes. Maak een ruimte om een gesprek te beginnen.",
+    connectionErrorImpact: "Berichten kunnen niet worden verzonden of ontvangen totdat de verbinding is hersteld.",
+    connectionErrorSince: "Niet beschikbaar sinds {time}.",
+    connectionRetrying: "Chatverbinding wordt opnieuw geprobeerd…",
+    connectionRetryFailed:
+        "De chat is nog steeds onbereikbaar. Probeer het opnieuw, of herlaad de pagina als het blijft mislukken.",
+    connectionRecovered: "De chat is terug. Hij was niet beschikbaar van {from} tot {to}.",
+    connectionRecoveredDismiss: "Deze melding sluiten",
 };
 
 export default chat;

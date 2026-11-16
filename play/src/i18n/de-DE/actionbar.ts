@@ -135,6 +135,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Bereich zum Sperren/Entsperren wählen",
             bubbleLabel: "Diskussionsblase",
             unnamedArea: "Unbenannter Bereich",
+            noPermission: "Du kannst diesen Bereich nicht sperren. Bitte einen Admin um das Recht, ihn zu sperren.",
         },
         giveBackFloor: {
             title: "Wort zurückgeben",
@@ -230,6 +231,21 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Sie haben noch keinen persönlichen Schreibtisch",
         errorMoving: "Ihr persönlicher Schreibtisch konnte nicht erreicht werden",
         errorUnclaiming: "Ihr persönlicher Schreibtisch konnte nicht freigegeben werden",
+        unclaimConfirmTitle: "Deinen Schreibtisch „{name}“ freigeben?",
+        unclaimConfirmMessage:
+            "Er wird sofort frei. Jeder kann ihn beanspruchen, und du bekommst ihn nur zurück, wenn du ihn erneut beanspruchst, solange er noch frei ist.",
+    },
+    mediaSettingsToggle: "Kamera- und Mikrofoneinstellungen",
+    blocked: {
+        calendarOff:
+            "Der Kalender ist in dieser Welt nicht verbunden. Ein Admin kann ihn in den Admin-Einstellungen aktivieren.",
+        todoListOff:
+            "Die To-do-Liste ist in dieser Welt nicht verbunden. Ein Admin kann sie in den Admin-Einstellungen aktivieren.",
+        roomListOff: "Diese Karte hat die Raumliste deaktiviert. Bitte den Kartenbesitzer, sie wieder zu aktivieren.",
+        screenSharingOff:
+            "Diese Karte hat die Bildschirmfreigabe hier deaktiviert. Bitte den Kartenbesitzer, sie wieder zu aktivieren.",
+        chatConnecting: "Der Chat verbindet sich noch. Versuche es in ein paar Sekunden erneut.",
+        alreadyAtDesk: "Du bist bereits an deinem Schreibtisch.",
     },
 };
 

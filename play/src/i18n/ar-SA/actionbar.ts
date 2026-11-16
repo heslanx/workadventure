@@ -132,6 +132,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "اختر المنطقة لقفلها/فتحها",
             bubbleLabel: "فقاعة المناقشة",
             unnamedArea: "منطقة بدون اسم",
+            noPermission: "لا يمكنك قفل هذه المنطقة. اطلب من المسؤول صلاحية قفلها.",
         },
         giveBackFloor: {
             title: "إعادة الكلمة",
@@ -227,6 +228,18 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "ليس لديك مكتب شخصي بعد",
         errorMoving: "تعذر الوصول إلى مكتبك الشخصي",
         errorUnclaiming: "تعذر تحرير مكتبك الشخصي",
+        unclaimConfirmTitle: "هل تريد التخلي عن مكتبك «{name}»؟",
+        unclaimConfirmMessage:
+            "سيصبح متاحًا فورًا. يمكن لأي شخص حجزه، ولن تستعيده إلا إذا حجزته مجددًا ما دام لا يزال متاحًا.",
+    },
+    mediaSettingsToggle: "إعدادات الكاميرا والميكروفون",
+    blocked: {
+        calendarOff: "التقويم غير متصل في هذا العالم. يمكن للمسؤول تفعيله من إعدادات الإدارة.",
+        todoListOff: "قائمة المهام غير متصلة في هذا العالم. يمكن للمسؤول تفعيلها من إعدادات الإدارة.",
+        roomListOff: "أوقفت هذه الخريطة قائمة الغرف. اطلب من مالك الخريطة إعادة تفعيلها.",
+        screenSharingOff: "أوقفت هذه الخريطة مشاركة الشاشة هنا. اطلب من مالك الخريطة إعادة تفعيلها.",
+        chatConnecting: "لا تزال الدردشة قيد الاتصال. حاول مرة أخرى بعد بضع ثوانٍ.",
+        alreadyAtDesk: "أنت بالفعل عند مكتبك.",
     },
 };
 

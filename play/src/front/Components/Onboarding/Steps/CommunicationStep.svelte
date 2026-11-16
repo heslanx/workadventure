@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../../Utils/reducedMotion";
     import LL from "../../../../i18n/i18n-svelte";
     import { isMobileOnboarding } from "../../../Stores/OnboardingStore";
 
@@ -21,7 +21,7 @@
         : 'fixed top-1/2 -right-10 transform -translate-x-14 -translate-y-1/2'}"
 >
     <div
-        class="bg-contrast/90 backdrop-blur-lg rounded-xl p-4 sm:p-6 w-full max-w-lg shadow-2xl border border-white/20 {$isMobileOnboarding
+        class="bg-contrast/90 backdrop-blur-lg rounded-lg p-4 sm:p-6 w-full max-w-lg shadow-lg border border-white/20 {$isMobileOnboarding
             ? 'mx-auto max-h-[40vh] overflow-y-auto'
             : ''}"
         in:fly={{ y: $isMobileOnboarding ? 10 : 10, duration: 400 }}
@@ -39,7 +39,7 @@
                 </video>
             {/if}
             <button
-                class="px-4 py-2 min-h-10 bg-secondary hover:bg-secondary-600 text-white rounded-lg font-semibold transition-all"
+                class="px-4 py-2 min-h-10 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
                 onclick={handleNext}
             >
                 {$LL.onboarding.communication.next()}

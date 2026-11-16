@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
+    import LL from "../../../i18n/i18n-svelte";
     import ChevronLeftIcon from "../Icons/ChevronLeftIcon.svelte";
     import ChevronRightIcon from "../Icons/ChevronRightIcon.svelte";
     import XIcon from "../Icons/XIcon.svelte";
@@ -42,7 +43,8 @@
                     : 'opacity-20'}"
                 id="chevron-left"
                 onclick={goToPreviousBanner}
-                aria-label="Previous"
+                disabled={$currentBannerIndex <= 0 || $currentBannerIndex >= 5}
+                aria-label={$LL.a11y.popupPreviousSlide()}
             >
                 {#snippet icon()}
                     <ChevronLeftIcon height="h-4" width="w-4" />
@@ -60,7 +62,8 @@
                     : ''}"
                 id="chevron-right"
                 onclick={goToNextBanner}
-                aria-label="Next"
+                disabled={$currentBannerIndex === 4}
+                aria-label={$LL.a11y.popupNextSlide()}
             >
                 {#snippet icon()}
                     <ChevronRightIcon height="h-4" width="w-4" />
@@ -74,7 +77,7 @@
                 square
                 class="min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 p-2"
                 onclick={closeBanner}
-                aria-label="Close"
+                aria-label={$LL.actionbar.close()}
             >
                 {#snippet icon()}
                     <XIcon height="h-4" width="w-4" />

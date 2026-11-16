@@ -1,7 +1,6 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
-
     import type { MegaphoneSettings } from "@workadventure/map-editor/src/types";
+    import { fade } from "../../../Utils/reducedMotion";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { LL } from "../../../../i18n/i18n-svelte";
     import Input from "../../Input/Input.svelte";
@@ -152,7 +151,7 @@
 </div>
 
 <p class="help-text">
-    <IconInfoCircle font-size="18" />
+    <IconInfoCircle font-size="18" aria-hidden="true" />
     {$LL.mapEditor.settings.megaphone.description()}
 </p>
 {#if enabled}
@@ -168,7 +167,7 @@
         <Select label={$LL.mapEditor.settings.megaphone.inputs.scope()} options={scopes} bind:value={scope} />
 
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.settings.megaphone.inputs.spaceNameHelper()}
         </p>
         <div class="flex flex-wrap gap-x-4 items-center h-fit">
@@ -204,12 +203,12 @@
                 bind:value={rights}
             />
             <p class="help-text">
-                <IconInfoCircle font-size="18" />
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {$LL.mapEditor.settings.megaphone.inputs.rightsHelper()}
             </p>
         {:catch error}
-            <p class="help-text text-danger-800">
-                <IconInfoCircle font-size="18" />
+            <p class="help-text text-danger-400">
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {error}
             </p>
         {/await}
@@ -231,7 +230,7 @@
             </label>
         </div>
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.settings.megaphone.inputs.audienceVideoFeedbackActivatedHelper()}
         </p>
         <div class="space-y-4">
@@ -245,7 +244,7 @@
                 />
             </div>
             <p class="help-text">
-                <IconInfoCircle font-size="18" />
+                <IconInfoCircle font-size="18" aria-hidden="true" />
                 {$LL.mapEditor.settings.megaphone.inputs.recording.enableHelper()}
             </p>
             {#if recordingEnabled}
@@ -259,12 +258,12 @@
                         testId="megaphone-recording-rights-input"
                     />
                     <p class="help-text">
-                        <IconInfoCircle font-size="18" />
+                        <IconInfoCircle font-size="18" aria-hidden="true" />
                         {$LL.mapEditor.settings.megaphone.inputs.recording.rightsHelper()}
                     </p>
                 {:catch error}
-                    <p class="help-text text-danger-800">
-                        <IconInfoCircle font-size="18" />
+                    <p class="help-text text-danger-400">
+                        <IconInfoCircle font-size="18" aria-hidden="true" />
                         {error}
                     </p>
                 {/await}
@@ -272,4 +271,4 @@
         </div>
     </div>
 {/if}
-<ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText="Saving" />
+<ButtonState promise={save} initialText={$LL.menu.settings.save()} loadingText={$LL.menu.settings.saving()} />

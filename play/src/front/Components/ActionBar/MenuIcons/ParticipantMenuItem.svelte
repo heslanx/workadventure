@@ -212,15 +212,25 @@
 
 {#if $participantMenuVisibleStore}
     {#if !inProfileMenu}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             data-testid="participant-menu"
             class="items-center relative cursor-pointer pointer-events-auto ps-2 pe-2"
+            role="button"
+            tabindex="0"
+            aria-label={$LL.actionbar.participantListPlaceholder()}
+            aria-haspopup="menu"
+            aria-expanded={$openedMenuStore === "participantMenu"}
             use:floatingUiRef
             onclick={(event) => {
                 event.preventDefault();
                 openedMenuStore.toggle("participantMenu");
+            }}
+            onkeydown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    if (event.repeat) return;
+                    openedMenuStore.toggle("participantMenu");
+                }
             }}
         >
             <div class="group bg-contrast/80 backdrop-blur rounded-lg h-16 @sm/actions:h-14 @xl/actions:h-16 p-2">
@@ -271,7 +281,7 @@
                     </div>
 
                     <IconChevronDown
-                        stroke="2"
+                        aria-hidden="true"
                         class="h-4 w-4 aspect-square transition-all opacity-50 flex-shrink-0 {$openedMenuStore ===
                         'participantMenu'
                             ? 'rotate-180'
@@ -284,7 +294,7 @@
         </div>
         {#if $openedMenuStore === "participantMenu"}
             <div
-                class="absolute bg-contrast/80 backdrop-blur rounded-md w-48 text-white"
+                class="absolute bg-contrast/95 backdrop-blur rounded-md w-48 text-white"
                 data-testid="participant-sub-menu"
                 use:floatingUiContent
                 use:clickOutside={closeParticipantMenu}
@@ -321,7 +331,7 @@
                         >
                             {#each $participantView.participantGroups as group (group.id)}
                                 <div
-                                    class="px-1 pt-2 pb-0.5 text-xxs uppercase text-white/50 font-semibold truncate"
+                                    class="px-1 pt-2 pb-0.5 text-xxs uppercase text-white/60 font-semibold truncate"
                                     data-testid="participant-group-header"
                                     title={group.name}
                                 >
@@ -369,14 +379,14 @@
                             onclick={onSendMessage}
                             dataTestId="participant-send-message"
                         >
-                            <IconMessageCircle2 font-size="20" />
+                            <IconMessageCircle2 font-size="20" aria-hidden="true" />
                         </ActionBarButton>
                         <ActionBarButton
                             label={$LL.actionbar.participantInviteUser()}
                             onclick={onInviteUser}
                             dataTestId="participant-invite-user"
                         >
-                            <IconUserPlus font-size="20" />
+                            <IconUserPlus font-size="20" aria-hidden="true" />
                         </ActionBarButton>
                     </div>
                 </div>
@@ -399,7 +409,7 @@
                 </div>
             </div>
             <div class="min-w-0 flex-1">
-                <div class="font-medium text-white text-sm truncate">
+                <div class="font-medium text-white text-sm truncate" title={$LL.camera.my.nameTag()}>
                     {$LL.camera.my.nameTag()}
                 </div>
             </div>
@@ -411,7 +421,7 @@
             >
                 {#each $participantView.participantGroups as group (group.id)}
                     <div
-                        class="px-1 pt-2 pb-0.5 text-xxs uppercase text-white/50 font-semibold truncate"
+                        class="px-1 pt-2 pb-0.5 text-xxs uppercase text-white/60 font-semibold truncate"
                         data-testid="participant-group-header"
                         title={group.name}
                     >
@@ -438,7 +448,7 @@
                                 </div>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <div class="font-medium text-white text-sm truncate">
+                                <div class="font-medium text-white text-sm truncate" title={item.name}>
                                     {item.name}
                                 </div>
                                 {#if item.uuid?.includes("@")}
@@ -457,14 +467,14 @@
             onclick={onSendMessage}
             dataTestId="participant-send-message"
         >
-            <IconMessageCircle2 font-size="20" />
+            <IconMessageCircle2 font-size="20" aria-hidden="true" />
         </ActionBarButton>
         <ActionBarButton
             label={$LL.actionbar.participantInviteUser()}
             onclick={onInviteUser}
             dataTestId="participant-invite-user"
         >
-            <IconUserPlus font-size="20" />
+            <IconUserPlus font-size="20" aria-hidden="true" />
         </ActionBarButton>
     {/if}
 {/if}
@@ -474,11 +484,9 @@
         0%,
         100% {
             transform: translateY(0) scale(1);
-            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
         }
         50% {
             transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
     }
 

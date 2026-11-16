@@ -21,7 +21,7 @@
 </script>
 
 <ToastContainer extraClasses="w-full min-w-72 max-w-sm sm:min-w-80 sm:max-w-md" theme="error" {toastUuid}>
-    <p class="m-0 text-sm leading-snug text-white text-center">
+    <p class="m-0 text-sm leading-normal text-white text-center">
         {$LL.actionbar.microphone.loudEnvironmentWarning()}
     </p>
     {#snippet buttons()}

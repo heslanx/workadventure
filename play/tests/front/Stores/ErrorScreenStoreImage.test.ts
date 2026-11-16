@@ -29,7 +29,10 @@ describe("importing ErrorScreenStore", () => {
         vi.unstubAllGlobals();
     });
 
-    it("does not download images before an error screen needs them", async () => {
+    // The import has to happen inside the test, after Image is stubbed and the module registry reset, so the test
+    // pays for a cold import of the store's module graph: about 1.5 s alone, past the default 5 s when every worker
+    // of the full suite imports at once. The longer timeout covers that import; there is no race to hide.
+    it("does not download images before an error screen needs them", { timeout: 30_000 }, async () => {
         await import("../../../src/front/Stores/ErrorScreenStore");
 
         expect(requestedImages).toEqual([]);

@@ -48,7 +48,7 @@
         ></video>
     {:else}
         <div class="w-full h-full flex items-center justify-center text-white/50">
-            <IconCamera font-size="32" />
+            <IconCamera font-size="32" aria-hidden="true" />
         </div>
     {/if}
 </div>
@@ -61,16 +61,20 @@
 {:else}
     <div class="scrollable-content overflow-y-auto flex flex-col gap-2 flex-1 min-h-0">
         <!-- No Effect Button -->
-        <button class="relative z-10 flex flex-col gap-1 group text-left" onclick={() => setBackgroundMode("none")}>
+        <button
+            class="relative z-10 flex flex-col gap-1 group text-left"
+            aria-current={isNoEffectSelected ? "true" : undefined}
+            onclick={() => setBackgroundMode("none")}
+        >
             <div
                 class="relative w-1/3 h-full aspect-square rounded-lg bg-white/10 flex flex-col items-center justify-center transition-all gap-1 hover:brightness-50 border-2 {isNoEffectSelected
                     ? 'border-white border-solid'
                     : 'border-transparent hover:border-white/30'}"
             >
                 {#if isNoEffectSelected}
-                    <IconCheck font-size="16" />
+                    <IconCheck font-size="16" aria-hidden="true" />
                 {:else}
-                    <IconCancel font-size="16" />
+                    <IconCancel font-size="16" aria-hidden="true" />
                 {/if}
                 <span class="text-xs group-hover:text-white transition-colors"
                     >{$LL.actionbar.background.noEffect()}</span
@@ -88,6 +92,7 @@
                     <button
                         class="flex flex-col items-center group px-0"
                         data-testid="background-blur-{option.amount}"
+                        aria-current={isSelected ? "true" : undefined}
                         onclick={() => setBackgroundBlur(option.amount)}
                     >
                         <div class="relative w-full aspect-square transition-all hover:brightness-50">
@@ -98,7 +103,7 @@
                             >
                                 <img
                                     src="/static/images/background/thumbnail/settingBackgroundEffect.jpeg"
-                                    alt="Blur preview"
+                                    alt=""
                                     class="w-full h-full object-cover {option.blurTailwind}"
                                 />
                             </div>

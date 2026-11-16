@@ -39,6 +39,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "没有可用的摄像头",
             noDeviceDesc:
                 "浏览器未检测到可用的摄像头。请尝试其他浏览器、检查摄像头是否已连接、检查计算机的配置（隐私、设备），或在设备正常时重启电脑。",
+            deviceInUseTitle: "摄像头已被占用",
+            deviceInUseDesc: "另一个应用程序正在使用摄像头。请关闭该应用程序，然后重试。",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -54,6 +56,8 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "没有可用的麦克风",
             noDeviceDesc:
                 "浏览器未检测到可用的麦克风。请尝试其他浏览器、检查麦克风是否已连接、检查计算机的配置（隐私、设备），或在设备正常时重启电脑。",
+            deviceInUseTitle: "麦克风已被占用",
+            deviceInUseDesc: "另一个应用程序正在使用麦克风。请关闭该应用程序，然后重试。",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/en-US-firefox.png",
@@ -98,6 +102,16 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "请求关闭视频",
         muteVideoEveryBody: "关闭所有人的视频",
         blockOrReportUser: "审核",
+        mutedAudioNotice: "{name} 的麦克风已静音。只有本人可以重新打开。",
+        askedMuteAudioNotice: "已请求 {name} 将麦克风静音。",
+        mutedVideoNotice: "{name} 的摄像头已关闭。只有本人可以重新打开。",
+        askedMuteVideoNotice: "已请求 {name} 关闭摄像头。",
+        alreadyMuted: "已静音",
+        videoAlreadyOff: "视频已关闭",
+    },
+    startError: {
+        camera: "你的摄像头未能启动。其他人看不到你。请关闭正在使用它的其他应用,然后重试。",
+        microphone: "你的麦克风未能启动。其他人听不到你。请关闭正在使用它的其他应用,然后重试。",
     },
 };
 

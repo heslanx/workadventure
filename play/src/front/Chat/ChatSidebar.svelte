@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../Utils/reducedMotion";
     import { chatVisibilityStore, INITIAL_SIDEBAR_WIDTH, INITIAL_SIDEBAR_WIDTH_MOBILE } from "../Stores/ChatStore";
     import { isMediaBreakpointUp } from "../Utils/BreakpointsUtils";
     import { blocker } from "../Utils/screenBlocker";
@@ -120,16 +120,17 @@
         transition:fly={{ duration: 200, x: isRTL ? sideBarWidth : -sideBarWidth }}
         style="width: {sideBarWidth}px; max-width: {sideBarWidth}px;"
         {@attach blocker}
-        class=" chatWindow !min-w-[320px] max-sm:!min-w-[150px] bg-contrast/50 backdrop-blur-md p-0"
+        class=" chatWindow !min-w-[320px] max-sm:!min-w-[150px] bg-contrast/95 backdrop-blur-md p-0"
     >
         {#if $hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion}
             <div class="close-window absolute end-2 top-3 rounded-sm p-1 bg-contrast/80 z-50">
                 <button
                     class="hover:bg-white/10 rounded aspect-square w-8 h-8 m-0 flex items-center justify-center !text-white"
                     data-testid="closeChatButton"
+                    aria-label={$LL.chat.closeChat()}
                     onclick={closeChat}
                 >
-                    <IconX font-size="20" />
+                    <IconX aria-hidden="true" font-size="20" />
                 </button>
             </div>
         {/if}

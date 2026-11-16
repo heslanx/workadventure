@@ -21,6 +21,14 @@
         class: className = "",
         children,
     }: Props = $props();
+
+    // The design system's value colours miss 4.5:1 on two combinations: a light label on the danger fill (3.1:1) and
+    // secondary text on a dark surface (2.7:1).
+    let valueClass = $derived.by(() => {
+        if (variant === "danger" && !border) return "text-contrast-900";
+        if (variant === "secondary" && border) return "text-secondary-300";
+        return "";
+    });
 </script>
 
 <span
@@ -41,6 +49,6 @@
     class:notification-xxxs={size === "xxxs"}
 >
     {#if children}
-        <span class="notification-value" class:white>{@render children()}</span>
+        <span class="notification-value {valueClass}" class:white>{@render children()}</span>
     {/if}
 </span>

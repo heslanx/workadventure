@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyticsClient } from "../../../src/front/Administration/AnalyticsClient";
 import { TimedEventsByKey } from "../../../src/front/Administration/TimedAnalyticsEvent";

@@ -156,7 +156,7 @@
 
 {#if matches.length > 0}
     <div
-        class="absolute bottom-full start-0 end-0 z-50 mx-2 mb-2 overflow-hidden rounded-xl border border-solid border-white/10 bg-contrast shadow-xl"
+        class="absolute bottom-full start-0 end-0 z-50 mx-2 mb-2 overflow-hidden rounded-lg border border-solid border-white/10 bg-contrast shadow-lg"
         data-testid="mentionSuggestions"
     >
         <ul
@@ -196,7 +196,7 @@
                             @
                         </div>
                         <div class="text-sm font-bold">room</div>
-                        <div class="ms-auto truncate text-xs {active ? 'text-white/85' : 'text-white/60'}">
+                        <div class="ms-auto truncate text-xs {active ? 'text-white' : 'text-white/60'}">
                             {$LL.chat.mention.room({ count: everyoneCount })}
                         </div>
                     {:else}
@@ -223,7 +223,7 @@
                             {candidate.name}
                         </div>
                         {#if candidate.online !== undefined}
-                            <div class="ms-auto shrink-0 text-xs {active ? 'text-white/85' : 'text-white/60'}">
+                            <div class="ms-auto shrink-0 text-xs {active ? 'text-white' : 'text-white/60'}">
                                 {candidate.online ? $LL.chat.mention.online() : $LL.chat.mention.offline()}
                             </div>
                         {/if}

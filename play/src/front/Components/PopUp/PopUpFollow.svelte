@@ -67,6 +67,7 @@
                     viewBox="0 0 23 23"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
                 >
                     <path
                         d="M5.875 3.625C5.875 4.22174 5.63795 4.79403 5.21599 5.21599C4.79403 5.63795 4.22174 5.875 3.625 5.875C3.02826 5.875 2.45597 5.63795 2.03401 5.21599C1.61205 4.79403 1.375 4.22174 1.375 3.625C1.375 3.02826 1.61205 2.45597 2.03401 2.03401C2.45597 1.61205 3.02826 1.375 3.625 1.375C4.22174 1.375 4.79403 1.61205 5.21599 2.03401C5.63795 2.45597 5.875 3.02826 5.875 3.625ZM5.875 3.625L16.5625 3.625C17.6068 3.625 18.6083 4.03984 19.3467 4.77827C20.0852 5.51669 20.5 6.51821 20.5 7.5625C20.5 8.60679 20.0852 9.60831 19.3467 10.3467C18.6083 11.0852 17.6068 11.5 16.5625 11.5H6.4375C5.39321 11.5 4.39169 11.9148 3.65327 12.6533C2.91484 13.3917 2.5 14.3932 2.5 15.4375C2.5 16.4818 2.91484 17.4833 3.65327 18.2217C4.39169 18.9602 5.39321 19.375 6.4375 19.375H21.625M21.625 19.375L18.25 16M21.625 19.375L18.25 22.75"
@@ -82,7 +83,7 @@
     {/if}
 
     {#if $followStateStore === "ending"}
-        <div class="w-56 min-h-10 bottom-12 text-center z-[150] bg-contrast/80 backdrop-blur rounded-lg text-white">
+        <div class="w-56 min-h-10 bottom-12 text-center z-[150] bg-contrast/95 backdrop-blur rounded-lg text-white">
             <div>{$LL.follow.interactMenu.title.interact()}</div>
             {#if $followRoleStore === "follower"}
                 <div class="m-1">{$LL.follow.interactMenu.stop.follower({ leader: name($followUsersStore[0]) })}</div>
@@ -135,7 +136,7 @@
                     reset();
                 }}
             >
-                {$LL.follow.interactMenu.no()}
+                {$LL.follow.interactMenu.buttons.notNow()}
             </Button>
             <Button
                 variant="secondary"
@@ -145,7 +146,7 @@
                     acceptFollowRequest();
                 }}
             >
-                {$LL.follow.interactMenu.yes()}
+                {$LL.follow.interactMenu.buttons.follow({ leader: name($followUsersStore[0]) })}
             </Button>
         {/if}
 
@@ -158,7 +159,9 @@
                     reset();
                 }}
             >
-                {$LL.follow.interactMenu.yes()}
+                {$followRoleStore === "leader"
+                    ? $LL.follow.interactMenu.buttons.stopLeading()
+                    : $LL.follow.interactMenu.buttons.stopFollowing()}
             </Button>
             <Button
                 variant="light"
@@ -169,7 +172,9 @@
                     abortEnding();
                 }}
             >
-                {$LL.follow.interactMenu.no()}
+                {$followRoleStore === "leader"
+                    ? $LL.follow.interactMenu.buttons.keepLeading()
+                    : $LL.follow.interactMenu.buttons.keepFollowing()}
             </Button>
         {/if}
 

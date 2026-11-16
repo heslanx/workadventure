@@ -11,6 +11,7 @@ const statusModal: DeepPartial<Translation["statusModal"]> = {
     audioPlaybackBlocked: "El navegador ha bloquejat la reproducció d'àudio.",
     audioPlaybackInterrupted: "El navegador o el sistema operatiu ha interromput la reproducció d'àudio.",
     turnSoundOn: "Activar el so",
+    stayInCurrentStatus: "Em quedo com estic",
 };
 
 export default statusModal;

@@ -44,7 +44,7 @@
 </script>
 
 {#if imageUrl}
-    <img src={imageUrl} alt="Reaction" class="w-5 h-5" onerror={handleError} />
+    <img src={imageUrl} alt="" class="w-5 h-5" onerror={handleError} />
 {:else if isMultiGrapheme}
     <span title={key}>{firstGrapheme}</span>
 {:else}

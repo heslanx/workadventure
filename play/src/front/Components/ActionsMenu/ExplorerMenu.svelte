@@ -40,9 +40,11 @@
         return event !== undefined && "pointerId" in event;
     }
 
+    // Keyboard presses share the pointer gesture state; -1 is the pointer id the spec reserves for non-pointer input.
+    const KEYBOARD_ZOOM_ID = -1;
+
     /**
      * Starts the zoom gesture for mouse, touch, and stylus.
-     * Analytics is emitted once here so a long press does not create one event per animation frame.
      */
     function startZoom(direction: "in" | "out", event: PointerEvent) {
         if (event.pointerType === "mouse" && event.button !== 0) {
@@ -50,12 +52,57 @@
         }
 
         event.preventDefault();
+        beginZoom(direction, event.pointerId);
+    }
 
+    /**
+     * Keyboard equivalent of press-and-hold: Enter or Space use the button's direction, + and - pick one explicitly.
+     * Holding the key keeps zooming until keyup, like holding the pointer.
+     */
+    function startKeyboardZoom(direction: "in" | "out", event: KeyboardEvent) {
+        const keyDirection = getKeyboardZoomDirection(direction, event.key);
+        if (keyDirection === undefined) {
+            return;
+        }
+
+        event.preventDefault();
+        if (event.repeat) {
+            return;
+        }
+        beginZoom(keyDirection, KEYBOARD_ZOOM_ID);
+    }
+
+    function stopKeyboardZoom(event: KeyboardEvent) {
+        if (getKeyboardZoomDirection("in", event.key) === undefined) {
+            return;
+        }
+
+        event.preventDefault();
+        stopZoom();
+    }
+
+    function getKeyboardZoomDirection(direction: "in" | "out", key: string): "in" | "out" | undefined {
+        if (key === "Enter" || key === " ") {
+            return direction;
+        }
+        if (key === "+" || key === "=") {
+            return "in";
+        }
+        if (key === "-") {
+            return "out";
+        }
+        return undefined;
+    }
+
+    /**
+     * Analytics is emitted once here so a long press does not create one event per animation frame.
+     */
+    function beginZoom(direction: "in" | "out", gestureId: number) {
         if (activeZoomPointerId !== undefined) {
             return;
         }
 
-        activeZoomPointerId = event.pointerId;
+        activeZoomPointerId = gestureId;
         const cameraManager = gameManager.getCurrentGameScene().getCameraManager();
         const zoomFactor = direction === "in" ? BUTTON_ZOOM_STEP_FACTOR : 1 / BUTTON_ZOOM_STEP_FACTOR;
         const continuousZoomFactor =
@@ -72,7 +119,7 @@
         // If the pointer is still down after the delay, the same gesture becomes continuous zoom.
         clearZoomHoldTimeout();
         zoomHoldTimeout = setTimeout(() => {
-            if (activeZoomPointerId === event.pointerId) {
+            if (activeZoomPointerId === gestureId) {
                 getCameraManager()?.startContinuousZoom(continuousZoomFactor);
             }
         }, ZOOM_HOLD_DELAY);
@@ -124,64 +171,70 @@
 >
     <div class="flex flex-col justify-center gap-2">
         <div class="flex flex-col justify-center gap-1">
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+            <button
+                type="button"
+                aria-label={$LL.mapEditor.explorer.zoomIn()}
+                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                 onpointerdown={(event) => startZoom("in", event)}
                 onpointerup={stopZoom}
                 onpointercancel={stopZoom}
                 onpointerleave={stopZoom}
+                onkeydown={(event) => startKeyboardZoom("in", event)}
+                onkeyup={stopKeyboardZoom}
+                onblur={() => stopZoom()}
             >
-                <IconPlus />
+                <IconPlus aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.zoomIn()}
                 </div>
-            </div>
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+            </button>
+            <button
+                type="button"
+                aria-label={$LL.mapEditor.explorer.zoomOut()}
+                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                 onpointerdown={(event) => startZoom("out", event)}
                 onpointerup={stopZoom}
                 onpointercancel={stopZoom}
                 onpointerleave={stopZoom}
+                onkeydown={(event) => startKeyboardZoom("out", event)}
+                onkeyup={stopKeyboardZoom}
+                onblur={() => stopZoom()}
             >
-                <IconMinus />
+                <IconMinus aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.zoomOut()}
                 </div>
-            </div>
+            </button>
         </div>
         {#if !$mapEditorModeStore && !$cameraDetachedStore}
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+            <button
+                type="button"
+                aria-label={$LL.mapEditor.explorer.title()}
+                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                 onclick={openMapExplorer}
             >
-                <IconMapSearch />
+                <IconMapSearch aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.title()}
                 </div>
-            </div>
+            </button>
         {:else}
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.showMyLocation()}
                 data-testid="center-camera-on-player"
-                class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                 onclick={centerToUser}
             >
-                <IconFocusCentered />
+                <IconFocusCentered aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.showMyLocation()}
                 </div>

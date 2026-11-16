@@ -25,7 +25,7 @@
     /* eslint-disable svelte/require-each-key */
 </script>
 
-<div class="flex justify-between w-8 h-6 items-center {cssClass ?? ''}" class:active={display}>
+<div class="flex justify-between w-8 h-6 items-center {cssClass ?? ''}" class:active={display} aria-hidden="true">
     {#if volume}
         {#each volume as bar}
             <div

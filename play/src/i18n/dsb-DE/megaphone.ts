@@ -23,6 +23,9 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
         placeNotFound: "Toś to městno južo njeeksistěrujo na karśe.",
         admin: "Administrator",
         more: "Cakajuce pśipowěsći: {count}",
+        sendFailed:
+            "Njepósłane: zwisk ze serwerom jo pśetergnjony. Twój tekst how wóstanjo; pósćel jen znowego, gaž sy zasej zwězany.",
+        emptyMessage: "Napiš powěsć, aby ju pósłał.",
     },
     modal: {
         liveMessage: {
@@ -36,6 +39,7 @@ const megaphone: DeepPartial<Translation["megaphone"]> = {
             live: "Live",
             stop: "Zastajiś",
             title: "Megafon",
+            enableMicrophone: "Mikrofon zašaltowaś",
         },
     },
 };

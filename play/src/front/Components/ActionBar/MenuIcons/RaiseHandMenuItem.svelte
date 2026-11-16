@@ -116,6 +116,7 @@
     classList="group/btn-raise-hand"
     disabledHelp={$openedMenuStore !== undefined}
     state={$buttonStateStore}
+    pressed={$isHandRaisedStore || $givenFloorSpaceStore !== undefined}
     dataTestId="raise-hand-button"
     tooltipTitle={$givenFloorSpaceStore
         ? $LL.actionbar.help.giveBackFloor.title()
@@ -124,6 +125,9 @@
     bind:wrapperDiv={triggerElement}
 >
     <RaiseHandIcon
+        height="h-5"
+        width="w-5"
+        strokeWidth="2"
         strokeColor={$isHandRaisedStore || $givenFloorSpaceStore
             ? "stroke-contrast fill-white"
             : "stroke-white fill-transparent"}

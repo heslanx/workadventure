@@ -1,0 +1,12 @@
+{
+  "baseImage": "workadventure-orca-base:latest",
+  "authImage": "workadventure-orca-auth:latest",
+  "authContainer": "workadventure-orca-auth",
+  "containerPrefix": "workadventure-orca",
+  "username": "node",
+  "projectRoot": "/home/node/workadventure",
+  "repoUrl": "https://github.com/heslanx/workadventure.git",
+  "upstreamUrl": "https://github.com/workadventure/workadventure.git",
+  "repoRef": "master",
+  "sshKey": ".orca-vm/id_ed25519"
+}

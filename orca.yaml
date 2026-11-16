@@ -1,0 +1,17 @@
+scripts:
+  setup: ./scripts/orca-setup.sh
+
+# One disposable local Docker container per workspace, reached over SSH.
+# One-time image build: scripts/orca-vm/README.md.
+environmentRecipes:
+  - id: docker-ssh
+    name: Local Docker (SSH)
+    create: ./scripts/orca-vm/docker-create.sh
+    suspend: ./scripts/orca-vm/docker-suspend.sh
+    resume: ./scripts/orca-vm/docker-resume.sh
+    destroy: ./scripts/orca-vm/docker-destroy.sh
+    timeoutSeconds:
+      create: 600
+      suspend: 120
+      resume: 300
+      destroy: 120

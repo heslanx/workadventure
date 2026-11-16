@@ -6,6 +6,7 @@ const cowebsite: DeepPartial<Translation["cowebsite"]> = {
     close: "Đóng",
     bigBlueButton: "BigBlueButton",
     jitsi: "Jitsi",
+    resize: "Thay đổi kích thước bảng trang web (dùng phím mũi tên để thay đổi kích thước)",
 };
 
 export default cowebsite;

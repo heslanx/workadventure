@@ -50,23 +50,24 @@
             <button
                 class="p-3 hover:bg-white/10 rounded aspect-square w-12 h-12 relative z-50"
                 onclick={handleToggleSearch}
+                aria-label={$LL.chat.closeSearch()}
             >
-                <IconX font-size="20" />
+                <IconX aria-hidden="true" font-size="20" />
             </button>
         {:else}
             {#if matrixChatConnection}
                 <button
                     type="button"
-                    class="p-3 mt-2 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center text-white aspect-square w-12 h-12 shrink-0"
+                    class="p-3 mt-2 rounded hover:bg-white/10 transition-all flex items-center justify-center text-white aspect-square w-12 h-12 shrink-0"
                     onclick={openMatrixSettings}
                     aria-label={$LL.chat.matrixSettings.title()}
                     title={$LL.chat.matrixSettings.title()}
                 >
-                    <IconSettings font-size="20" />
+                    <IconSettings aria-hidden="true" font-size="20" />
                 </button>
             {/if}
             <button
-                class="p-2 mt-2 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center text-white"
+                class="p-2 mt-2 rounded hover:bg-white/10 transition-all flex items-center justify-center text-white"
                 onclick={toggleMenu}
                 aria-label={$LL.chat.a11y.menuActions()}
             >
@@ -82,6 +83,7 @@
                     fill="none"
                     stroke-linecap="round"
                     stroke-linejoin="round"
+                    aria-hidden="true"
                 >
                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                     <path d="M15 11l-3 3l-3 -3" />
@@ -92,16 +94,16 @@
 
         {#if menuOpen && !searchActive}
             <div
-                class="absolute top-full right-0 mt-2 bg-contrast/20 backdrop-blur-md rounded-l shadow-lg p-1 min-w-[140px] z-50"
+                class="absolute top-full right-0 mt-2 bg-contrast/20 backdrop-blur-md rounded-md shadow-lg p-1 min-w-[140px] z-50"
             >
                 <button
-                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg text-white text-left transition-colors"
+                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded text-white text-left transition-colors"
                     onclick={handleToggleSearch}
                 >
                     {#if searchActive}
-                        <IconX font-size="20" />
+                        <IconX aria-hidden="true" font-size="20" />
                     {:else}
-                        <IconSearch font-size="20" />
+                        <IconSearch aria-hidden="true" font-size="20" />
                     {/if}
                     <span class="text-sm">
                         {searchActive ? $LL.chat.closeSearch() : $LL.chat.search()}
@@ -109,11 +111,11 @@
                 </button>
 
                 <button
-                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg text-white text-left transition-colors"
+                    class="menu-item w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded text-white text-left transition-colors"
                     data-testid="closeChatButton"
                     onclick={closeChat}
                 >
-                    <IconX font-size="18" />
+                    <IconX aria-hidden="true" font-size="18" />
                     <span class="text-sm">{$LL.chat.closeChat()}</span>
                 </button>
             </div>
@@ -129,17 +131,18 @@
                 aria-label={$LL.chat.matrixSettings.title()}
                 title={$LL.chat.matrixSettings.title()}
             >
-                <IconSettings font-size="20" />
+                <IconSettings aria-hidden="true" font-size="20" />
             </button>
         {/if}
         <button
             class="p-3 hover:bg-white/10 rounded aspect-square w-12 h-12 relative z-50"
             onclick={handleToggleSearch}
+            aria-label={searchActive ? $LL.chat.closeSearch() : $LL.chat.search()}
         >
             {#if !searchActive}
-                <IconSearch font-size="20" />
+                <IconSearch aria-hidden="true" font-size="20" />
             {:else}
-                <IconX font-size="20" />
+                <IconX aria-hidden="true" font-size="20" />
             {/if}
         </button>
     </div>
@@ -153,7 +156,7 @@
         onclick={closeChat}
         aria-label={$LL.chat.closeChat()}
     >
-        <IconX font-size="20" />
+        <IconX aria-hidden="true" font-size="20" />
     </button>
 {/if}
 
@@ -164,5 +167,6 @@
         onkeydown={(e) => e.key === "Escape" && (menuOpen = false)}
         role="button"
         tabindex="-1"
+        aria-label={$LL.chat.messageActions.close()}
     ></div>
 {/if}

@@ -124,6 +124,7 @@ const externalModule: DeepPartial<Translation["externalModule"]> = {
         startsNow: "即將開始",
         startedAgo: "已於{ago}開始",
         noLink: "沒有會議連結",
+        timeRange: "{start} 至 {end}",
     },
     todoList: {
         title: "待辦事項",

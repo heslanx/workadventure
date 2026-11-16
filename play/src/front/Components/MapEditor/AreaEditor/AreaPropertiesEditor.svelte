@@ -830,18 +830,26 @@
             onchange={onUpdateName}
         />
         <p class="help-text">
-            <IconInfoCircle font-size="18" />
+            <IconInfoCircle font-size="18" aria-hidden="true" />
             {$LL.mapEditor.areaEditor.nameHelpText()}
         </p>
 
         <div class="area-name-container">
             {#if !showDescriptionField}
-                <button class="ps-0 text-blue-500 flex flex-row items-center" onclick={toggleDescriptionField}>
-                    <IconChevronRight />{$LL.mapEditor.areaEditor.addDescriptionField()}</button
+                <button
+                    class="ps-0 text-secondary-300 flex flex-row items-center"
+                    aria-expanded="false"
+                    onclick={toggleDescriptionField}
+                >
+                    <IconChevronRight aria-hidden="true" />{$LL.mapEditor.areaEditor.addDescriptionField()}</button
                 >
             {:else}
-                <button class="ps-0 text-blue-500 flex flex-row items-center" onclick={toggleDescriptionField}>
-                    <IconChevronDown />{$LL.mapEditor.areaEditor.addDescriptionField()}</button
+                <button
+                    class="ps-0 text-secondary-300 flex flex-row items-center"
+                    aria-expanded="true"
+                    onclick={toggleDescriptionField}
+                >
+                    <IconChevronDown aria-hidden="true" />{$LL.mapEditor.areaEditor.addDescriptionField()}</button
                 >
 
                 <TextArea

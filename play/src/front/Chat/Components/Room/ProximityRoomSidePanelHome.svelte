@@ -83,7 +83,7 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col bg-white/[0.02]" data-testid="proximityRoomSidePanelHome">
-    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-4 py-5">
+    <div class="border border-solid border-x-0 border-t-0 border-white/10 px-3 py-5">
         <div class="flex items-center gap-3">
             <div class="relative shrink-0">
                 <Avatar
@@ -96,7 +96,7 @@
 
             <div class="min-w-0 flex-1">
                 <div class="truncate text-lg font-bold text-white">{$roomName}</div>
-                <div class="mt-1 flex flex-wrap gap-1.5 text-xs text-white/65">
+                <div class="mt-1 flex flex-wrap gap-1.5 text-xs text-white/70">
                     <span class="rounded-full bg-white/10 px-2 py-0.5">
                         {roomKindLabel}
                     </span>
@@ -113,9 +113,9 @@
                 data-testid="proximityRoomSidePanelHomeParticipants"
                 onclick={() => openSection("participants")}
             >
-                <IconUsersGroup font-size={18} />
+                <IconUsersGroup aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.participants()}</div>
-                <div class="mt-1 text-xs text-white/55">{$participants.length}</div>
+                <div class="mt-1 text-base font-bold text-white/70">{$participants.length}</div>
             </button>
 
             <button
@@ -124,11 +124,15 @@
                 data-testid="proximityRoomSidePanelHomePolls"
                 onclick={() => openSection("polls")}
             >
-                <IconCheckList font-size={18} />
+                <IconCheckList aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.polls()}</div>
-                <div class="mt-1 flex min-h-4 items-center text-xs text-white/55">
+                <div class="mt-1 flex min-h-4 items-center text-base font-bold text-white/70">
                     {#if isPollCatalogueLoading}
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={14}
+                        />
                     {:else}
                         {pollCardValue}
                     {/if}
@@ -145,11 +149,12 @@
                     <span
                         class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border border-solid border-contrast bg-success"
                         data-testid="proximityRoomSidePanelHomeQuestionsUnreadBadge"
-                    ></span>
+                        ><span class="sr-only">{$LL.chat.a11y.unreadCount({ count: $unreadQuestionCount })}</span></span
+                    >
                 {/if}
-                <IconHelpCircle font-size={18} />
+                <IconHelpCircle aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.question.title()}</div>
-                <div class="mt-1 text-xs text-white/55">{questionCardValue}</div>
+                <div class="mt-1 text-base font-bold text-white/70">{questionCardValue}</div>
             </button>
         </div>
 
@@ -160,7 +165,7 @@
                 data-testid="proximityRoomSidePanelHomeInvite"
                 onclick={openInvite}
             >
-                <IconUserPlus font-size={17} />
+                <IconUserPlus aria-hidden="true" font-size={17} />
                 {$LL.chat.manageRoomUsers.buttons.invite()}
             </button>
 
@@ -171,10 +176,10 @@
                 onclick={toggleMute}
             >
                 {#if $areNotificationsMuted}
-                    <IconUnMute font-size={17} />
+                    <IconUnMute aria-hidden="true" font-size={17} />
                     {$LL.chat.roomMenu.unmuteRoom()}
                 {:else}
-                    <IconBellOff font-size={17} />
+                    <IconBellOff aria-hidden="true" font-size={17} />
                     {$LL.chat.roomMenu.muteRoom()}
                 {/if}
             </button>

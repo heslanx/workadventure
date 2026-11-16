@@ -17,8 +17,8 @@ test.describe("OpenId connect @oidc mobile @nofirefox @nodesktop", () => {
     test("Can login and logout @nowebkit", async ({ browser }, { project }) => {
         await using page = await getPage(browser, "Alice", publicTestMapUrl("tests/E2E/empty.json", "oidc"));
 
-        await page.addLocatorHandler(page.getByText("Continue without webcam"), async () => {
-            await page.getByText("Continue without webcam").click();
+        await page.addLocatorHandler(page.getByText("Continue without camera"), async () => {
+            await page.getByText("Continue without camera").click();
         });
 
         // Test if player variable is correct
@@ -43,7 +43,7 @@ test.describe("OpenId connect @oidc mobile @nofirefox @nodesktop", () => {
         await oidcLogout(page);
 
         // Check user is Logout
-        await expect(page.getByRole("button", { name: "Login" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Log in" })).toBeVisible();
 
         // Let's try to login using the scripting API
         await evaluateScript(page, async () => {

@@ -160,7 +160,7 @@
     {items}
 >
     <div slot="prepend" class="ps-2">
-        <IconUsers font-size="20" class="text-white" />
+        <IconUsers aria-hidden="true" font-size="20" class="text-white" />
     </div>
     <div slot="item" let:item class="cursor-pointer">
         {item.created ? $LL.chat.addNew : ""}

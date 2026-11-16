@@ -10,6 +10,7 @@ const audio: DeepPartial<Translation["audio"]> = {
         notAllowed: "▶️ Audio is niet toegestaan. Druk op [SPATIE] of klik hier om het af te spelen!",
     },
     disable: "Schakel je microfoon uit",
+    mute: "Geluid dempen",
 };
 
 export default audio;

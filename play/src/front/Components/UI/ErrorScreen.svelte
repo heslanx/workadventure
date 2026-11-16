@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
     import { onDestroy } from "svelte";
+    import { fly } from "../../Utils/reducedMotion";
     import { errorScreenStore } from "../../Stores/ErrorScreenStore";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { connectionManager } from "../../Connection/ConnectionManager";
@@ -70,7 +70,7 @@
                 {#if logoErrorSrc && $errorScreenStore.type !== "reconnecting"}
                     <img
                         src={errorScreen?.imageLogo ?? logoErrorSrc}
-                        alt="Logo error"
+                        alt=""
                         class="mx-auto"
                         style="max-height:25vh; max-width:80%;"
                         draggable="false"
@@ -80,18 +80,25 @@
             <div class="icon">
                 <img
                     src={errorScreen?.image ?? startRoom?.errorSceneLogo ?? errorGif}
-                    alt="Error"
+                    alt=""
                     style="height:125px; max-width:100%;"
                     draggable="false"
                 />
             </div>
-            {#if $errorScreenStore.type !== "retry"}<h2 class="mt-10">{$errorScreenStore.title}</h2>{/if}
+            {#if $errorScreenStore.type !== "retry"}<h2 class="mt-10">
+                    {#if $errorScreenStore.clientErrorKind === "network"}
+                        {$LL.error.errorScreen.networkTitle()}
+                    {:else if $errorScreenStore.clientErrorKind === "generic"}
+                        {$LL.error.errorScreen.genericTitle()}
+                    {:else}
+                        {$errorScreenStore.title}
+                    {/if}
+                </h2>{/if}
             {#if $errorScreenStore.subtitle}<p>{$errorScreenStore.subtitle}</p>{/if}
-            {#if $errorScreenStore.type !== "retry" && $errorScreenStore.type !== "reconnecting"}<p class="code">
-                    Code : {$errorScreenStore.code}
-                </p>{/if}
             <div class="details flex flex-row items-center justify-center content-center gap-2">
-                <span class="whitespace-pre-line">{detailsStylized}</span>
+                <span class="whitespace-pre-line"
+                    >{#if $errorScreenStore.clientErrorKind === "network"}{$LL.error.errorScreen.networkNextStep()}{:else if $errorScreenStore.clientErrorKind === "generic"}{$LL.error.errorScreen.genericNextStep()}{:else}{detailsStylized}{/if}</span
+                >
                 {#if $errorScreenStore.type === "retry"}
                     <div class="loading"></div>
                 {:else if $errorScreenStore.type === "reconnecting"}
@@ -116,8 +123,29 @@
                             {$LL.menu.profile.logout()}
                         </Button>
                     {/if}
+                {:else if $errorScreenStore.type === "error"}
+                    <Button
+                        type="button"
+                        size="lg"
+                        variant="light"
+                        appearance="border"
+                        class="button"
+                        icon={refreshIcon}
+                        onclick={click}
+                    >
+                        {$LL.error.errorScreen.reload()}
+                    </Button>
                 {/if}
             </div>
+            {#if $errorScreenStore.type !== "retry" && $errorScreenStore.type !== "reconnecting"}
+                <details class="code mt-4">
+                    <summary class="cursor-pointer hit-area">{$LL.error.errorScreen.showDetails()}</summary>
+                    <p class="m-0 mt-1">{$LL.error.errorScreen.code({ code: $errorScreenStore.code ?? "" })}</p>
+                    {#if $errorScreenStore.technicalDetails}
+                        <p class="m-0 mt-1 break-all">{$errorScreenStore.technicalDetails}</p>
+                    {/if}
+                </details>
+            {/if}
         </div>
     </main>
 {/if}
@@ -134,10 +162,10 @@
         }
         h2 {
             padding: 5px;
-            font-size: 30px;
+            font-size: 1.875rem;
         }
-        p.code {
-            font-size: 12px;
+        details.code {
+            font-size: 0.75rem;
             opacity: 0.6;
             /* Prefixed too, or WebKit ignores the opt-in and `body` keeps this unselectable. */
             -webkit-user-select: text;
@@ -158,7 +186,7 @@
             content: "\2026";
             width: 0;
             font-family: "Press Start 2P";
-            font-size: 16px;
+            font-size: 1rem;
             position: absolute;
             left: 0;
             top: -19px;
@@ -166,7 +194,7 @@
         /* Global so it reaches the <button> rendered by <Button> (scoped CSS would not). */
         :global(.button) {
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.875rem;
         }
     }
 
@@ -179,6 +207,13 @@
             .icon {
                 height: 60px;
             }
+        }
+    }
+
+    /* The dots are only an "in progress" cue: with reduced motion they stay still instead of vanishing. */
+    @media (prefers-reduced-motion: reduce) {
+        main.errorScreen .loading:after {
+            width: 1.25em;
         }
     }
 

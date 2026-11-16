@@ -25,14 +25,14 @@
         aria-labelledby="duplicate-user-title"
         aria-describedby="duplicate-user-message"
     >
-        <div class="w-full max-w-md rounded-2xl bg-contrast p-6 shadow-2xl" role="document">
+        <div class="w-full max-w-md rounded-lg bg-contrast p-6 shadow-lg" role="document">
             <h2 id="duplicate-user-title" class="text-xl font-bold text-white">
                 {$LL.warning.duplicateUserConnected.title()}
             </h2>
             <p id="duplicate-user-message" class="mt-3 text-sm text-white/90">
                 {$LL.warning.duplicateUserConnected.message()}
             </p>
-            <label class="mt-4 flex cursor-pointer items-center gap-2 text-sm text-white/90">
+            <label class="hit-area mt-4 flex cursor-pointer items-center gap-2 text-sm text-white/90">
                 <input
                     type="checkbox"
                     bind:checked={dontRemindAgain}

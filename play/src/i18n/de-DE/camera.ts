@@ -40,6 +40,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Keine verwendbare Kamera",
             noDeviceDesc:
                 "Der Browser erkennt keine verwendbare Kamera. Versuchen Sie einen anderen Browser, prüfen Sie die Verbindung der Kamera, prüfen Sie die Konfiguration des Computers (Datenschutz, Geräte), oder starten Sie den Computer neu, wenn die Hardware in Ordnung sein sollte.",
+            deviceInUseTitle: "Kamera wird verwendet",
+            deviceInUseDesc:
+                "Ihre Kamera wird von einer anderen Anwendung verwendet. Schließen Sie diese Anwendung und versuchen Sie es dann erneut.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -55,6 +58,9 @@ const camera: DeepPartial<Translation["camera"]> = {
             noDeviceTitle: "Kein verwendbares Mikrofon",
             noDeviceDesc:
                 "Der Browser erkennt kein verwendbares Mikrofon. Versuchen Sie einen anderen Browser, prüfen Sie das Mikrofon, prüfen Sie die Konfiguration des Computers (Datenschutz, Geräte), oder starten Sie den Computer neu, wenn die Hardware in Ordnung sein sollte.",
+            deviceInUseTitle: "Mikrofon wird verwendet",
+            deviceInUseDesc:
+                "Ihr Mikrofon wird von einer anderen Anwendung verwendet. Schließen Sie diese Anwendung und versuchen Sie es dann erneut.",
             permissionMedia: {
                 firefox: "/resources/help-setting-camera-permission/en-US-firefox.png",
                 chrome: "/resources/help-setting-camera-permission/de-DE-chrome.png",
@@ -102,6 +108,17 @@ const camera: DeepPartial<Translation["camera"]> = {
         askToMuteVideoUser: "Bitten, Video stummzuschalten",
         muteVideoEveryBody: "Video für alle stummschalten",
         blockOrReportUser: "Benutzer blockieren oder melden",
+        mutedAudioNotice: "Das Mikrofon von {name} ist stummgeschaltet. Nur diese Person kann es wieder einschalten.",
+        askedMuteAudioNotice: "{name} wurde gebeten, das Mikrofon stummzuschalten.",
+        mutedVideoNotice: "Die Kamera von {name} ist aus. Nur diese Person kann sie wieder einschalten.",
+        askedMuteVideoNotice: "{name} wurde gebeten, die Kamera auszuschalten.",
+        alreadyMuted: "Bereits stummgeschaltet",
+        videoAlreadyOff: "Video bereits aus",
+    },
+    startError: {
+        camera: "Deine Kamera ist nicht gestartet. Andere können dich nicht sehen. Schließe andere Apps, die sie verwenden, und versuche es erneut.",
+        microphone:
+            "Dein Mikrofon ist nicht gestartet. Andere können dich nicht hören. Schließe andere Apps, die es verwenden, und versuche es erneut.",
     },
 };
 

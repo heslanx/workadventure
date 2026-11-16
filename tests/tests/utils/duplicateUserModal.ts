@@ -12,7 +12,7 @@ export async function dismissDuplicateUserConnectedModalIfShown(
     const confirm = page.getByTestId("duplicate-user-confirm-continue");
     const dontRemindCheckbox = page.getByTestId("duplicate-user-dont-remind-again");
     const microphone = page.getByTestId("microphone-button");
-    const errorOccurred = page.getByText("An error occurred").first();
+    const errorOccurred = page.locator(".errorScreen:not([data-testid='reconnecting-error-screen'])").first();
 
     // Single wait rather than a Promise.race, see the comment in `dismissPwaInstallScreenIfShown`.
     await confirm.or(microphone).or(errorOccurred).first().waitFor({ state: "visible", timeout: 90_000 });

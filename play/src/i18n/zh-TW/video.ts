@@ -28,6 +28,7 @@ const video: DeepPartial<Translation["video"]> = {
         cameraAndMicPaused: "攝影機和麥克風已暫停，回來後恢復",
         cameraPaused: "攝影機已暫停，回來後恢復",
     },
+    enlarge: "放大視訊",
 };
 
 export default video;

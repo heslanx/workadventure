@@ -14,6 +14,7 @@ const error: DeepPartial<Translation["error"]> = {
     },
     connectionRetry: {
         unableConnect: "การเชื่อมต่อกับเซิร์ฟเวอร์ขาดหาย คุณจะไม่สามารถพูดคุยกับผู้อื่นได้",
+        retrying: "กำลังลองใหม่โดยอัตโนมัติ ข้อความนี้จะหายไปเมื่อเซิร์ฟเวอร์ตอบกลับ",
     },
     errorDialog: {
         title: "ข้อผิดพลาด 😱",
@@ -22,6 +23,15 @@ const error: DeepPartial<Translation["error"]> = {
         messageFAQ: "คุณยังสามารถดูได้ที่:",
         reload: "โหลดใหม่",
         close: "ปิด",
+    },
+    errorScreen: {
+        genericTitle: "เราเปิดโลกนี้ไม่ได้",
+        genericNextStep: "โหลดหน้าใหม่เพื่อลองอีกครั้ง หากยังเกิดขึ้นอยู่ ให้ติดต่อผู้ดูแลระบบ",
+        networkTitle: "เราเชื่อมต่อเซิร์ฟเวอร์ไม่ได้",
+        networkNextStep: "ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วโหลดหน้าใหม่",
+        reload: "โหลดหน้าใหม่",
+        showDetails: "แสดงรายละเอียด",
+        code: "รหัสข้อผิดพลาด {code}",
     },
 };
 

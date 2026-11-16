@@ -50,7 +50,7 @@ test.describe("Meeting actions test @nomobile @nowebkit", () => {
         await expect(userBob.locator("div").filter({ hasText: /^Can I mute your microphone\?$/ })).toBeVisible();
 
         // Click on the accept button
-        await userBob.getByRole("button", { name: "Yes" }).click();
+        await userBob.getByRole("button", { name: "Mute my microphone" }).click();
 
         // Check if the user has been muted
         await expect(page.getByTestId("Bob is muted.")).toBeVisible({ timeout: 20_000 });
@@ -65,7 +65,7 @@ test.describe("Meeting actions test @nomobile @nowebkit", () => {
         // Check if "Bob" user receive the request to be muted
         await expect(userBob.locator("div").filter({ hasText: /^Can I mute your camera\?$/ })).toBeVisible();
         // Click on the accept button
-        await userBob.getByRole("button", { name: "Yes" }).click();
+        await userBob.getByRole("button", { name: "Turn off my camera" }).click();
 
         // Check if the user has been muted
         await expect(

@@ -50,16 +50,20 @@
         </label>
     {/if}
     <label
-        class="inline-flex cursor-pointer relative {margin}"
+        class="inline-flex cursor-pointer relative hit-area {margin}"
         class:items-start={alignLabel === "top"}
         class:items-center={alignLabel === "center"}
     >
         <input id={uniqueId} type="checkbox" class="sr-only peer" bind:checked={value} {onchange} {disabled} />
-        <div class="input-switch" class:input-switch-white={variant === "white"} data-testid={uniqueId}></div>
+        <div
+            class="input-switch peer-focus-visible:ring-2 peer-focus-visible:ring-white peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-contrast"
+            class:input-switch-white={variant === "white"}
+            data-testid={uniqueId}
+        ></div>
         {#if labelPosition === "right" && hasLabel}
             <div class="flex flex-col items-start">
                 <span
-                    class={`input-label flex-col items-start input-label-inline ${spacing} font-regular ${value ? "text-white" : "text-white/50"}`}
+                    class={`input-label flex-col items-start input-label-inline ${spacing} font-regular ${value ? "text-white" : "text-white/60"}`}
                 >
                     {#if children}
                         {@render children()}
@@ -68,7 +72,7 @@
                     {/if}
                 </span>
                 {#if description}
-                    <span class="block text-sm text-white/50 font-regular mt-1 {spacing} px-3">
+                    <span class="block text-sm text-white/60 font-regular mt-1 {spacing} px-3">
                         {@render description()}
                     </span>
                 {/if}
@@ -76,7 +80,7 @@
         {/if}
     </label>
     {#if labelPosition === "top" && description}
-        <div class="input-label text-sm text-white/50 font-regular mt-1">
+        <div class="input-label text-sm text-white/60 font-regular mt-1">
             {@render description()}
         </div>
     {/if}

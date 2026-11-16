@@ -134,6 +134,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Elegir zona para bloquear/desbloquear",
             bubbleLabel: "Burbuja de discusión",
             unnamedArea: "Zona sin nombre",
+            noPermission: "No puedes bloquear esta zona. Pide a un administrador el permiso para bloquearla.",
         },
         giveBackFloor: {
             title: "Devolver la palabra",
@@ -229,6 +230,21 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Aún no tiene un escritorio personal",
         errorMoving: "No se puede llegar a su escritorio personal",
         errorUnclaiming: "No se puede liberar su escritorio personal",
+        unclaimConfirmTitle: "¿Liberar tu escritorio «{name}»?",
+        unclaimConfirmMessage:
+            "Queda libre de inmediato. Cualquiera puede reclamarlo, y solo lo recuperarás si lo reclamas de nuevo mientras siga libre.",
+    },
+    mediaSettingsToggle: "Ajustes de cámara y micrófono",
+    blocked: {
+        calendarOff:
+            "El calendario no está conectado en este mundo. Un administrador puede activarlo en los ajustes de administración.",
+        todoListOff:
+            "La lista de tareas no está conectada en este mundo. Un administrador puede activarla en los ajustes de administración.",
+        roomListOff: "Este mapa desactivó la lista de salas. Pide al propietario del mapa que la vuelva a activar.",
+        screenSharingOff:
+            "Este mapa desactivó aquí la compartición de pantalla. Pide al propietario del mapa que la vuelva a activar.",
+        chatConnecting: "El chat todavía se está conectando. Inténtalo de nuevo en unos segundos.",
+        alreadyAtDesk: "Ya estás en tu escritorio.",
     },
 };
 

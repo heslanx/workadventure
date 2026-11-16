@@ -27,7 +27,7 @@
     role="alert"
     data-testid="unsentMessagesBar"
 >
-    <IconAlertTriangle font-size="16" class="shrink-0 text-danger-400" />
+    <IconAlertTriangle aria-hidden="true" font-size="16" class="shrink-0 text-danger-400" />
     <span class="min-w-0 flex-1">{$LL.chat.unsentMessages()}</span>
     <button
         type="button"
@@ -37,7 +37,7 @@
         data-testid="retryUnsentMessages"
     >
         {#if isRefreshing}
-            <IconLoader class="animate-spin" font-size="14" />
+            <IconLoader aria-hidden="true" class="animate-spin" font-size="14" />
         {/if}
         {$LL.chat.retrySending()}
     </button>

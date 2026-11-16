@@ -33,6 +33,9 @@
         info,
     }: Props = $props();
 
+    // Ties the label to the field: `for` pointed at an id that no element had.
+    const selectorId = $props.id();
+
     let filterText = $state("");
 
     const visibleOptions = $derived.by(() => {
@@ -61,7 +64,7 @@
 <div class="flex flex-col text-dark-purple">
     <div class="input-label" class:hidden={!label && !info && !optional}>
         {#if label}
-            <label for="selector" class="text-white relative grow">
+            <label for={selectorId} class="text-white relative grow">
                 {label}
             </label>
         {/if}
@@ -73,12 +76,13 @@
         {/if}
 
         {#if optional}
-            <div class="text-xs opacity-50">
+            <div class="text-xs opacity-60">
                 {$LL.form.optional()}
             </div>
         {/if}
     </div>
     <Select
+        id={selectorId}
         bind:filterText
         loadOptions={queryOptions}
         on:change={_handleChange}
@@ -94,6 +98,7 @@
         listAutoWidth={false}
         --clear-select-color="hsl(var(--danger-500))"
         --input-color="white"
+        --placeholder-color="hsl(var(--contrast-300))"
         --chevron-icon-colour="white"
         --internal-padding="0px"
         --multi-item-color="hsl(var(--contrast-900))"
@@ -102,8 +107,8 @@
         --multi-item-outline="none"
         --padding="0px"
         --list-background="hsl(var(--contrast))"
-        --list-empty-color="hsl(var(--contrast-400))"
-        --selected-item-color="hsl(var(--contrast-500)) !important"
+        --list-empty-color="hsl(var(--contrast-300))"
+        --selected-item-color="hsl(var(--contrast-200)) !important"
         --selected-item-padding="0 0 0 32px"
         --list-border-radius="12px"
         --list-border="solid 1px hsl(var(--contrast-400))"

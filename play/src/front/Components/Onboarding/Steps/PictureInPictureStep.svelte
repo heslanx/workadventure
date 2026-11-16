@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
+    import { fly } from "../../../Utils/reducedMotion";
     import LL from "../../../../i18n/i18n-svelte";
 
     interface Props {
@@ -15,7 +15,7 @@
 
 <div class="fixed top-1/2 -right-10 transform -translate-x-14 -translate-y-1/2 z-[3001] pointer-events-auto">
     <div
-        class="bg-contrast/90 backdrop-blur-lg rounded-xl p-6 max-w-lg shadow-2xl border border-white/20"
+        class="bg-contrast/90 backdrop-blur-lg rounded-lg p-6 max-w-lg shadow-lg border border-white/20"
         in:fly={{ y: 10, duration: 400 }}
     >
         <div class="space-y-4">
@@ -34,7 +34,7 @@
                 {$LL.onboarding.pictureInPicture.hint()}
             </p>
             <button
-                class="mt-4 px-4 py-2 bg-secondary hover:bg-secondary-600 text-white rounded-lg font-semibold transition-all"
+                class="mt-4 px-4 py-2 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
                 onclick={handleNext}
             >
                 {$LL.onboarding.pictureInPicture.next()}

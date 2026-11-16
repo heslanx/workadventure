@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import * as Phaser from "phaser";
 globalThis.Phaser = Phaser;
 

@@ -34,7 +34,7 @@ export class MessageNotification implements NotificationWA {
                 return;
             }
             if (wad?.desktop) {
-                wad.notify(`${this.chatRoomName} — ${body}`);
+                wad.notify(`${this.chatRoomName}. ${body}`);
                 return;
             }
 

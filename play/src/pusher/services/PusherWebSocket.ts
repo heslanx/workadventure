@@ -28,6 +28,12 @@ export class PusherWebSocket {
         event: "",
         payload: [],
     };
+    /**
+     * Group id to the index, in batchedMessages, of a groupUpdateMessage that no later message of the batch is about.
+     * A newer update for that group replaces it in place: a batch is applied by the client at once, so the
+     * superseded state is never seen, and every message in between concerns other users or groups.
+     */
+    private batchedGroupUpdateIndexes = new Map<number, number>();
     private nextOutgoingNonce = 1;
     private lastSentNonce = 0;
     private waitingForDrain = false;
@@ -79,6 +85,20 @@ export class PusherWebSocket {
     }
 
     public emitInBatch(payload: SubMessage): void {
+        const message = payload.message;
+        if (message?.$case === "groupUpdateMessage") {
+            const groupId = message.groupUpdateMessage.groupId;
+            const index = this.batchedGroupUpdateIndexes.get(groupId);
+            if (index !== undefined) {
+                this.batchedMessages.payload[index] = payload;
+                return;
+            }
+            this.batchedGroupUpdateIndexes.set(groupId, this.batchedMessages.payload.length);
+        } else if (message?.$case === "groupDeleteMessage") {
+            this.batchedGroupUpdateIndexes.delete(message.groupDeleteMessage.groupId);
+        } else if (message?.$case === "groupUsersUpdateMessage") {
+            this.batchedGroupUpdateIndexes.delete(message.groupUsersUpdateMessage.groupId);
+        }
         this.batchedMessages.payload.push(payload);
 
         if (this.batchTimeout) {
@@ -315,6 +335,7 @@ export class PusherWebSocket {
             event: "",
             payload: [],
         };
+        this.batchedGroupUpdateIndexes.clear();
     }
 
     private sendStoredPayload(nonce: number, payload: Uint8Array<ArrayBuffer>): ReturnType<RawSocket["send"]> {

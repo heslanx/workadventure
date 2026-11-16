@@ -119,7 +119,7 @@
         {#each roomsWithUsers as [playUri, roomName, userInRoom] (playUri)}
             <div class=" users flex flex-col shrink-0 relative first:pt-[12px]">
                 <button
-                    class="group relative px-3 gap-2 rounded-none text-white/75 hover:text-white h-11 hover:bg-contrast-200/10 w-full flex space-x-2 items-center border border-solid border-x-0 border-t border-b-0 border-white/10 text-white outline-none border-y-0 appearance-none m-0"
+                    class="group relative px-3 gap-2 rounded-none text-white/75 hover:text-white h-11 hover:bg-contrast-200/10 w-full flex space-x-2 items-center border border-solid border-x-0 border-t border-b-0 border-white/10 text-white border-y-0 appearance-none m-0"
                     data-testid={roomName === $LL.chat.userList.isHere() ? "user-list-room-here" : undefined}
                     onclick={() => toggleRoomList(playUri)}
                 >
@@ -131,6 +131,8 @@
                         >
                             {userInRoom.length}
                         </div>
+                    {:else}
+                        <span class="w-5 shrink-0" aria-hidden="true"></span>
                     {/if}
                     <div class="text-white text-sm font-bold tracking-widest uppercase grow text-start">
                         {roomName}
@@ -139,6 +141,7 @@
                         class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                     >
                         <IconChevronUp
+                            aria-hidden="true"
                             class={`transform transition ${$shownRoomListStore.includes(playUri) ? "" : "rotate-180"}`}
                         />
                     </div>
@@ -158,7 +161,7 @@
             onclick={toggleInviteMenu}
             data-testid="user-list-invite-button"
         >
-            <IconShare font-size="18" />
+            <IconShare aria-hidden="true" font-size="18" />
             {$LL.menu.invite.share()}
         </button>
     {/if}

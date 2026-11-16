@@ -2,6 +2,7 @@
     import type { EntityVariant } from "../../../Phaser/Game/MapEditor/Entities/EntityVariant";
     import type { CategoryTag } from "../../../Stores/MapEditorStore";
     import LL from "../../../../i18n/i18n-svelte";
+    import { activateOnEnterOrSpace } from "../../../Utils/activateOnEnterOrSpace";
     import EntityImage from "./EntityItem/EntityImage.svelte";
     import { IconChevronRight, IconChevronLeft } from "@wa-icons";
 
@@ -22,33 +23,39 @@
 </script>
 
 {#if entitiesPrefabsVariants.length !== 0}
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-    <li
-        class="min-w-full group transition-all bg-white/10 rounded mt-2 hover:bg-white hover:text-dark hover:!cursor-pointer"
-        onclick={() => selectedTag(tag)}
-    >
-        <div class="entities-tag-list-item-grid p-2">
-            <div class="asset">
-                <EntityImage
-                    classNames="w-[32px] h-[32px] object-contain"
-                    imageSource={entitiesPrefabsVariants[0].defaultPrefab.imagePath}
-                    imageAlt={entitiesPrefabsVariants[0].defaultPrefab.name}
-                />
-            </div>
-            <div class="tag">
-                <p class="m-0">{label ? format(label) : format(tag.tag)}</p>
-            </div>
-            <div class="entitiesCount">
-                {entitiesPrefabsVariants.length}
-            </div>
-            <div class="object">{$LL.mapEditor.entityEditor.images(entitiesPrefabsVariants.length)}</div>
-            <div class="chevronRight group-hover:-translate-x-2 transition-transform">
-                {#if isRtl}
-                    <IconChevronLeft />
-                {:else}
-                    <IconChevronRight />
-                {/if}
+    <!-- The row keeps its list semantics on the li; the role="button" child is the control. -->
+    <li class="min-w-full group transition-all bg-white/10 rounded mt-2 hover:bg-white hover:text-dark">
+        <div
+            role="button"
+            tabindex="0"
+            class="cursor-pointer rounded"
+            onclick={() => selectedTag(tag)}
+            onkeydown={(event) => activateOnEnterOrSpace(event, () => selectedTag(tag))}
+        >
+            <div class="entities-tag-list-item-grid p-2">
+                <div class="asset">
+                    <EntityImage
+                        classNames="w-[32px] h-[32px] object-contain"
+                        imageSource={entitiesPrefabsVariants[0].defaultPrefab.imagePath}
+                        imageAlt={entitiesPrefabsVariants[0].defaultPrefab.name}
+                    />
+                </div>
+                <div class="tag">
+                    <p class="m-0">{label ? format(label) : format(tag.tag)}</p>
+                </div>
+                <div class="entitiesCount">
+                    {entitiesPrefabsVariants.length}
+                </div>
+                <div class="object">{$LL.mapEditor.entityEditor.images(entitiesPrefabsVariants.length)}</div>
+                <div
+                    class="chevronRight group-hover:-translate-x-2 motion-reduce:group-hover:translate-x-0 transition-transform"
+                >
+                    {#if isRtl}
+                        <IconChevronLeft aria-hidden="true" />
+                    {:else}
+                        <IconChevronRight aria-hidden="true" />
+                    {/if}
+                </div>
             </div>
         </div>
     </li>
@@ -80,7 +87,7 @@
 
     .entitiesCount {
         grid-area: entitiesCount;
-        font-size: 12px;
+        font-size: 0.75rem;
         border: 1px solid white;
         align-self: center;
         justify-self: center;
@@ -94,8 +101,8 @@
 
     .object {
         grid-area: object;
-        opacity: 50%;
-        font-size: 12px;
+        opacity: 70%;
+        font-size: 0.75rem;
         align-self: center;
     }
 </style>

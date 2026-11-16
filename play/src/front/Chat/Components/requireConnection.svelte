@@ -19,7 +19,7 @@
     {#if emoji}
         {@render emoji()}
     {:else}
-        <img src={messageSmileyImg} alt="Smiley happy" draggable="false" />
+        <img src={messageSmileyImg} alt="" draggable="false" />
     {/if}
     <div class="w-full text-center text-lg font-bold">
         {#if title}
@@ -30,7 +30,7 @@
     </div>
     <div class="flex justify-center">
         <a
-            class="flex justify-center rounded-lg h-10 bg-secondary hover:bg-secondary-800 hover:no-underline hover:text-white no-underline transition-all items-center my-4 text-base px-8 text-white"
+            class="flex justify-center rounded h-10 bg-secondary hover:bg-secondary-800 hover:no-underline hover:text-white no-underline transition-all items-center my-4 text-base px-8 text-white"
             href="/login"
             onclick={() => analyticsClient.trackAdminEvent("auth.login_clicked")}
         >

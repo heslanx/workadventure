@@ -3,6 +3,10 @@ import type { Translation } from "../i18n-types";
 
 const report: DeepPartial<Translation["report"]> = {
     block: {
+        blockedNotice: "{userName} está bloqueado. Vocês não se veem nem se ouvem mais.",
+        unblockedNotice: "{userName} está desbloqueado.",
+        undoBlock: "Desbloquear",
+        undoUnblock: "Bloquear de novo",
         title: "Bloquear",
         content: "Bloqueie qualquer comunicação de e para {userName}. Isso pode ser revertido.",
         unblock: "Desbloquear este usuário",
@@ -18,6 +22,7 @@ const report: DeepPartial<Translation["report"]> = {
     },
     submit: "Denunciar este usuário",
     moderate: {
+        sendFailed: "Não enviado: a conexão com o servidor caiu. Seu texto foi mantido; tente de novo em instantes.",
         title: "Moderar {userName}",
         block: "Bloquear",
         report: "Relatório",

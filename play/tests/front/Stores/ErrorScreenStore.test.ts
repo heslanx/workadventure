@@ -16,8 +16,8 @@ describe("errorScreenStore.setException", () => {
         expect(get(errorScreenStore)).toMatchObject({
             type: "error",
             code: "INTERNAL_ERROR",
-            title: "An error occurred",
-            details: "[object Event]",
+            clientErrorKind: "generic",
+            technicalDetails: "[object Event]",
         });
     });
 });

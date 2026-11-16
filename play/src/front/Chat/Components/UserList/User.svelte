@@ -90,6 +90,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             class="relative shrink-0 wa-avatar {!$userStatus ? 'opacity-50' : ''} cursor-pointer"
+            aria-hidden="true"
             onclick={(event) => {
                 event.stopPropagation();
                 openWokaMenu();
@@ -97,17 +98,25 @@
         >
             <Avatar compact {pictureStore} fallbackName={username || "?"} color={resolvedAvatarColor} />
         </div>
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-            class={`flex-auto ms-1 ${!$userStatus && "opacity-50"} cursor-pointer`}
+            class={`flex-auto min-w-0 ${!$userStatus && "opacity-50"} cursor-pointer`}
+            title={username}
+            role="button"
+            tabindex="0"
             onclick={(event) => {
                 event.stopPropagation();
                 openWokaMenu();
             }}
+            onkeydown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openWokaMenu();
+                }
+            }}
         >
-            <div class="flex items-center h-4">
-                <div class="text-sm font-bold mb-0 flex items-center text-nowrap">
+            <div class="flex min-w-0 items-center h-4">
+                <div class="text-sm font-bold mb-0 flex min-w-0 items-center truncate">
                     {#each chunks as chunk (chunk.key)}
                         <div class={`${chunk.match ? "text-light-blue" : ""}`}>
                             {chunk.text}
@@ -129,9 +138,9 @@
                     {/if}
                 </div>
             </div>
-            <div class="text-xs mb-0 font-condensed opacity-75 self-end">
+            <div class="text-xs mb-0 font-condensed self-end">
                 {#if isMe}
-                    {$LL.chat.you()}
+                    <span class="opacity-75">{$LL.chat.you()}</span>
                 {:else if $userStatus}
                     <div class="flex items-center brightness-150" style="color:{getColorHexOfStatus($userStatus)}">
                         <div
@@ -141,7 +150,7 @@
                         {getStatusLabel($userStatus)}
                     </div>
                 {:else}
-                    {$LL.chat.userList.disconnected()}
+                    <span class="opacity-75">{$LL.chat.userList.disconnected()}</span>
                 {/if}
             </div>
         </div>
@@ -160,7 +169,7 @@
                     onmouseleave={() => (sendButtonTooltipVisible = false)}
                 >
                     <button
-                        class="transition-all hover:bg-white/10 p-2 rounded-md flex items-center justify-center m-0"
+                        class="transition-all hover:bg-white/10 p-2 rounded flex items-center justify-center m-0"
                         class:text-white={canSendMessage}
                         class:text-gray-400={!canSendMessage}
                         class:aspect-square={!openingDirectChat}
@@ -186,10 +195,10 @@
                         }}
                     >
                         {#if openingDirectChat}
-                            <IconLoader class="animate-spin" font-size="16" />
+                            <IconLoader aria-hidden="true" class="animate-spin" font-size="16" />
                             <span class="text-xs ms-1">{$LL.chat.userList.openingDirectChat()}</span>
                         {:else}
-                            <IconSend font-size="16" />
+                            <IconSend aria-hidden="true" font-size="16" />
                         {/if}
                     </button>
                     <!-- The wrapper, not the button, listens: a disabled button gets no mouse events, and its

@@ -128,6 +128,7 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             areaPickerTitle: "Chọn khu vực để khóa/mở khóa",
             bubbleLabel: "Bong bóng thảo luận",
             unnamedArea: "Khu vực chưa đặt tên",
+            noPermission: "Bạn không thể khóa khu vực này. Hãy xin quản trị viên quyền khóa khu vực.",
         },
         giveBackFloor: {
             title: "Trả lại quyền phát biểu",
@@ -223,11 +224,25 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         errorNotFound: "Bạn chưa có bàn làm việc cá nhân",
         errorMoving: "Không thể đi tới bàn làm việc cá nhân của bạn",
         errorUnclaiming: "Không thể trả lại bàn làm việc cá nhân của bạn",
+        unclaimConfirmTitle: "Trả lại bàn làm việc “{name}” của bạn?",
+        unclaimConfirmMessage:
+            "Bàn sẽ trống ngay lập tức. Bất kỳ ai cũng có thể nhận bàn, và bạn chỉ lấy lại được nếu nhận lại khi bàn vẫn còn trống.",
     },
     desktop: {
         section: "Ứng dụng máy tính",
         openRoom: "Mở phòng khác…",
         openMiniWindow: "Mở cửa sổ thu nhỏ",
+    },
+    mediaSettingsToggle: "Cài đặt camera và micrô",
+    blocked: {
+        calendarOff:
+            "Lịch chưa được kết nối trong thế giới này. Quản trị viên có thể bật lịch trong phần cài đặt quản trị.",
+        todoListOff:
+            "Danh sách việc cần làm chưa được kết nối trong thế giới này. Quản trị viên có thể bật nó trong phần cài đặt quản trị.",
+        roomListOff: "Bản đồ này đã tắt danh sách phòng. Hãy nhờ chủ sở hữu bản đồ bật lại.",
+        screenSharingOff: "Bản đồ này đã tắt chia sẻ màn hình tại đây. Hãy nhờ chủ sở hữu bản đồ bật lại.",
+        chatConnecting: "Trò chuyện vẫn đang kết nối. Hãy thử lại sau vài giây.",
+        alreadyAtDesk: "Bạn đã ở bàn làm việc của mình.",
     },
 };
 export default actionbar;

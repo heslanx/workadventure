@@ -129,6 +129,7 @@ const externalModule: DeepPartial<Translation["externalModule"]> = {
         startsNow: "Inizia ora",
         startedAgo: "Iniziata {ago}",
         noLink: "Nessun link alla riunione",
+        timeRange: "{start} - {end}",
     },
     todoList: {
         title: "Da fare",

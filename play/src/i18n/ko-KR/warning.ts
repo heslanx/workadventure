@@ -68,6 +68,22 @@ const warning: DeepPartial<Translation["warning"]> = {
     },
     otherMeetingMuted: "이제 여기에서 회의 중입니다. {world}에서 마이크, 카메라, 화면 공유가 꺼졌습니다.",
     desktopAppOutdated: "WorkAdventure 앱의 새 버전을 사용할 수 있습니다: {url}",
+    connectionLostDetail: "자동으로 다시 시도하는 중입니다. 입력한 내용은 그대로 유지됩니다.",
+    reconnectNow: "지금 다시 시도",
+    limitMap: "이 맵은 2일 동안 사용할 수 있습니다.",
+    registerDomain: "맵을 유지하려면 도메인을 등록하세요",
+    popUp: {
+        close: "닫기",
+        closeMessage: "메시지 닫기",
+        openInNewTab: "새 탭에서 열기",
+        joinJitsi: "Jitsi 회의 참여",
+        openWebsite: "웹사이트 열기",
+    },
+    limitRoom: {
+        title: "이 맵에는 시간 제한이 있습니다.",
+        content: "이곳에서 WorkAdventure를 계속 사용하려면 계정을 만드세요.",
+        createAccount: "내 계정 만들기",
+    },
 };
 
 export default warning;

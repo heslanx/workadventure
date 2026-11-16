@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { localUserStore } from "../Connection/LocalUserStore";
 import { codecPerformance, codecSupportReport, probeCodecPerformance, retryGranted } from "./CodecPerformance";

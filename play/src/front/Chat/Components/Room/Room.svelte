@@ -106,6 +106,7 @@
     <button
         data-room-row-button
         class="flex flex-1 min-w-0 items-center gap-2 self-stretch ps-2 py-2 m-0 rounded bg-transparent border-none text-start cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
+        title={$roomName}
         onclick={() => selectedRoomStore.set(room)}
     >
         <span class="relative shrink-0">
@@ -120,12 +121,12 @@
                 <EncryptionBadge />
             {/if}
         </span>
-        <span class="m-0 flex-1 min-w-0">
+        <span class="m-0 flex-1 min-w-0 wrap-anywhere">
             {#if lastMessagePreview}
                 <span class="flex items-baseline gap-2">
                     <span class="min-w-0 truncate">{@render nameChunks()}</span>
                     {#if $lastMessagePreview}
-                        <span class="ms-auto shrink-0 text-xs text-white/50">
+                        <span class="ms-auto shrink-0 text-xs text-white/60">
                             {formatLastActivity($lastMessagePreview.timestamp, new Date(), $locale)}
                         </span>
                     {/if}
@@ -154,14 +155,17 @@
             <TypingDots />
         </span>
     {/if}
-    {#if $areNotificationsMuted}
-        <IconBellOff font-size="12" class="opacity-50" />
-    {/if}
-    <RoomMenu {room} />
-    {#if $hasUnreadMessage}
-        <UnreadCount
-            count={$roomUnreadCount}
-            variant={$hasUnreadMentions ? "mention" : $areNotificationsMuted ? "muted" : "default"}
-        />
-    {/if}
+    <!-- Reserved width (bell 12 + menu 28 + badge 20 + gaps) so the timestamp ends at one x in every row. -->
+    <span class="flex shrink-0 items-center justify-end gap-2 min-w-[4.75rem]">
+        {#if $areNotificationsMuted}
+            <IconBellOff font-size="12" class="opacity-50" role="img" aria-label={$LL.a11y.chatNotificationsMuted()} />
+        {/if}
+        <RoomMenu {room} />
+        {#if $hasUnreadMessage}
+            <UnreadCount
+                count={$roomUnreadCount}
+                variant={$hasUnreadMentions ? "mention" : $areNotificationsMuted ? "muted" : "default"}
+            />
+        {/if}
+    </span>
 </div>

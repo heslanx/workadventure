@@ -25,7 +25,7 @@
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { screenAnnotationManager } from "../../Space/ScreenAnnotation/ScreenAnnotationManager";
     import { localAnnotationTargetStore, screenAnnotationEnabledStore } from "../../Stores/ScreenAnnotationStore";
-    import { getColorHexOfStatus } from "../../Utils/AvailabilityStatus";
+    import { getColorHexOfStatus, getStatusLabel } from "../../Utils/AvailabilityStatus";
     import ActionMediaBox from "./ActionMediaBox.svelte";
     import AwayPausedOverlay from "./AwayPausedOverlay.svelte";
     import RaisedHandBadge from "./RaisedHandBadge.svelte";
@@ -401,7 +401,7 @@
                 <div
                     class="flex w-8 h-8 justify-center items-center absolute right-2 top-2 @[22rem]/videomediabox:w-full @[22rem]/videomediabox:right-auto @[22rem]/videomediabox:top-auto @[22rem]/videomediabox:h-full @[22rem]/videomediabox:justify-center @[22rem]/videomediabox:items-center @[22rem]/videomediabox:right-none @[22rem]/videomediabox:top-none"
                 >
-                    <div class="connecting-spinner"></div>
+                    <div class="connecting-spinner motion-essential" aria-hidden="true"></div>
                 </div>
             </div>
             <div class="absolute w-full h-full pointer-events-none">
@@ -531,6 +531,7 @@
                                         {:else if streamable?.videoType === "video"}
                                             <span class="relative flex">
                                                 <IconMicrophoneOff
+                                                    role="img"
                                                     aria-label={$LL.video.user_is_muted({ name: name ?? "unknown" })}
                                                     data-testid={$LL.video.user_is_muted({ name: name ?? "unknown" })}
                                                     class="{showAudioStateMismatch
@@ -543,6 +544,9 @@
                                                 {#if $microphoneHeldStore && $availabilityStatusStore !== undefined}
                                                     <span
                                                         class="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full"
+                                                        role="img"
+                                                        aria-label={getStatusLabel($availabilityStatusStore)}
+                                                        title={getStatusLabel($availabilityStatusStore)}
                                                         style:background-color={getColorHexOfStatus(
                                                             $availabilityStatusStore,
                                                         )}
@@ -562,6 +566,8 @@
                                         : $LL.video.remoteAway.cameraPaused()}
                                     <div
                                         class="absolute inset-0 z-[251] pointer-events-none flex flex-col items-center justify-center rounded-lg border border-dashed border-warning/60 px-4 pb-8 text-center text-white"
+                                        role="group"
+                                        aria-label="{awayText}. {awayDetail}"
                                         data-testid="away-camera-held"
                                     >
                                         <!-- Small tiles keep only the icon, with the text in its tooltip -->
@@ -569,7 +575,11 @@
                                             class="pointer-events-auto flex flex-col items-center gap-0.5"
                                             title="{awayText}. {awayDetail}"
                                         >
-                                            <IconEyeOff class="text-warning shrink-0" font-size="20" />
+                                            <IconEyeOff
+                                                class="text-warning shrink-0"
+                                                font-size="20"
+                                                aria-hidden="true"
+                                            />
                                             <div class="hidden @[14rem]/videomediabox:block text-sm leading-tight">
                                                 {awayText}
                                             </div>
@@ -589,32 +599,50 @@
                                 <!-- The menu to go fullscreen -->
                                 {#if !inCameraContainer && videoEnabled}
                                     <div
-                                        class="absolute m-auto top-0 right-0 left-0 z-[256] h-14 w-fit rounded-lg bg-contrast/50 backdrop-blur transition-all opacity-0 hover:!opacity-100 group-hover/centered-video:opacity-20 [@media(pointer:coarse)]:opacity-100 flex items-center justify-center cursor-pointer"
+                                        class="absolute m-auto top-0 right-0 left-0 z-[256] h-14 w-fit rounded-lg bg-contrast/50 backdrop-blur transition-all opacity-0 hover:!opacity-100 focus-within:!opacity-100 group-hover/centered-video:opacity-20 [@media(pointer:coarse)]:opacity-100 flex items-center justify-center cursor-pointer"
                                     >
                                         <div class="h-full w-full flex flex-row justify-evenly cursor-pointer">
                                             {#if !fullScreen && !$highlightFullScreen}
                                                 <button
+                                                    type="button"
+                                                    aria-label={$LL.video.reduce()}
                                                     class="svg p-4 h-full w-full hover:bg-white/10 flex justify-start items-center z-25 rounded-lg text-base"
                                                     onclick={removeHighlight}
                                                     data-testid="highlight-minimize-button"
                                                 >
-                                                    <IconArrowsMinimize font-size="20" class="text-white" />
+                                                    <IconArrowsMinimize
+                                                        font-size="20"
+                                                        class="text-white"
+                                                        aria-hidden="true"
+                                                    />
                                                 </button>
                                             {/if}
                                             {#if fullScreen}
                                                 <button
+                                                    type="button"
+                                                    aria-label={$LL.actionbar.participantExitFullscreen()}
                                                     class="muted-video p-4 h-full w-full hover:bg-white/10 flex justify-start cursor-pointer items-center z-25 rounded-lg text-base"
                                                     onclick={exitFullScreen}
                                                 >
-                                                    <IconArrowsMinimize font-size="20" class="text-white" />
+                                                    <IconArrowsMinimize
+                                                        font-size="20"
+                                                        class="text-white"
+                                                        aria-hidden="true"
+                                                    />
                                                 </button>
                                             {:else}
                                                 <button
+                                                    type="button"
+                                                    aria-label={$LL.menu.settings.fullscreen()}
                                                     class="muted-video p-4 h-full w-full hover:bg-white/10 flex justify-start cursor-pointer items-center z-25 rounded-lg text-base"
                                                     onclick={setFullScreen}
                                                     data-testid="highlight-enter-fullscreen-button"
                                                 >
-                                                    <IconArrowsMaximize font-size="20" class="text-white" />
+                                                    <IconArrowsMaximize
+                                                        font-size="20"
+                                                        class="text-white"
+                                                        aria-hidden="true"
+                                                    />
                                                 </button>
                                             {/if}
                                         </div>
@@ -669,14 +697,16 @@
             !!annotationTargetUserId &&
             (isLocalUser || ($screenAnnotationEnabledStore.get(annotationTargetUserId) ?? false))}
         <div
-            class="absolute top-0 bottom-0 right-0 left-0 m-auto h-14 w-fit z-20 flex items-center justify-center gap-2 opacity-0 group-hover/screenshare:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all"
+            class="absolute top-0 bottom-0 right-0 left-0 m-auto h-14 w-fit z-20 flex items-center justify-center gap-2 opacity-0 group-hover/screenshare:opacity-100 focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-all"
         >
             <button
+                type="button"
+                aria-label={$LL.video.enlarge()}
                 class="full-screen-button h-14 w-14 p-4 rounded-lg bg-contrast/50 backdrop-blur hover:bg-white/10 cursor-pointer"
                 data-testid={isScreenShare ? "screenshare-fullscreen-button" : undefined}
                 onclick={highlightPeer}
             >
-                <IconArrowsMaximize font-size="20" class="text-white" />
+                <IconArrowsMaximize font-size="20" class="text-white" aria-hidden="true" />
             </button>
             {#if canAnnotate}
                 <button
@@ -690,17 +720,16 @@
                         }
                     }}
                 >
-                    <IconPencil font-size="20" class="text-white" />
+                    <IconPencil font-size="20" class="text-white" aria-hidden="true" />
                 </button>
             {/if}
         </div>
     {/if}
 
     {#if isCurrentUserBlackListed}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-            class="absolute w-full h-full aspect-video mx-auto flex justify-center items-center bg-contrast/50 rounded-lg z-20 cursor-pointer"
+        <button
+            type="button"
+            class="absolute w-full h-full aspect-video mx-auto flex justify-center items-center bg-contrast/70 rounded-lg z-20 cursor-pointer p-0 m-0 border-0"
             onclick={() => {
                 if (userUuid !== undefined) blackListManager.cancelBlackList(userUuid);
                 if (spaceUserId !== undefined) blackListManager.cancelBlackList(spaceUserId);
@@ -710,7 +739,7 @@
             <div class="text-center">
                 <div class="text-lg text-white bold">{$LL.video.click_to_unblock()}</div>
             </div>
-        </div>
+        </button>
     {/if}
 </div>
 

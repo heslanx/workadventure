@@ -34,12 +34,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <img
-                class="w-6 mr-1"
-                src={infoBulleSvg}
-                alt={$LL.mapEditor.properties.tooltipPropertyData.label()}
-                draggable="false"
-            />
+            <img class="w-6 mr-1" src={infoBulleSvg} alt="" draggable="false" />
             <label for="contentTooltip">{$LL.mapEditor.properties.tooltipPropertyData.label()}</label>
         </span>
     {/snippet}

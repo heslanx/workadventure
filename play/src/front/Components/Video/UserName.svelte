@@ -61,10 +61,10 @@
     <div class="{position} z-30 responsive-dimension">
         <div
             class="flex justify-between rounded {isHandRaised
-                ? 'bg-success/50 @[17.5rem]/videomediabox:bg-success/90 text-black'
+                ? 'bg-success/70 @[17.5rem]/videomediabox:bg-success/90 text-black'
                 : isPlayingAudio
-                  ? 'bg-secondary/50 @[17.5rem]/videomediabox:bg-secondary/90 text-white'
-                  : 'bg-contrast/50 @[17.5rem]/videomediabox:bg-contrast/90 text-white'}"
+                  ? 'bg-secondary/90 text-white'
+                  : 'bg-contrast/70 @[17.5rem]/videomediabox:bg-contrast/90 text-white'}"
         >
             <div
                 class="relative @[17.5rem]/videomediabox:backdrop-blur px-2 py-[2px] text-sm {isHandRaised

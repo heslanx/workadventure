@@ -112,6 +112,7 @@ const desktop: DeepPartial<Translation["desktop"]> = {
         kick: "Ze zasedanja wotstronić",
         visitCard: "Wizitka",
         blockOrReport: "Blokować abo zdźělić",
+        todayWithSoonMeeting: "Dźensa, přichodne zetkanje: {title}",
     },
     meetingBar: {
         switchSharedScreenDialog: "Změnić, štož dźěliće",

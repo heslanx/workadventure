@@ -46,6 +46,8 @@ export type ConnectingSocketData = {
     backConnection?: BackConnection;
     // True between the client join and leave events, so a socket that never joined (or already left) is not counted.
     joinedRoom: boolean;
+    // True once leaveRoom closed the analytics intervals of this socket, so that a second cleanup closes none.
+    analyticsIntervalsClosed: boolean;
     listenedZones: Set<string>;
     pusherRoom: PusherRoom | undefined;
     spaces: Set<SpaceName>;

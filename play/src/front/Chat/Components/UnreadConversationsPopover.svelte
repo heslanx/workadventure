@@ -20,7 +20,7 @@
 </script>
 
 <div
-    class="bg-contrast/90 backdrop-blur rounded-lg p-1 w-60 text-white select-none border border-solid border-white/10"
+    class="bg-contrast/90 backdrop-blur rounded-md p-1 w-60 text-white select-none border border-solid border-white/10"
     data-testid="unreadConversationsPopover"
 >
     <div class="px-2 py-1 text-xs font-bold uppercase tracking-widest text-white/60">

@@ -532,10 +532,15 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
             moveToEntity: "K entitě {name} hić",
             moveToArea: "K wobłukej {name} hić",
             errorMovingToObject: "Objekt hišće njeje přistupny 🚫",
+            show: "Podrobnosće wo {name} pokazać",
         },
         zoomIn: "Powjetšić +",
         zoomOut: "Pomjeńšić -",
         showMyLocation: "Móju poziciju pokazać",
+        noEntitiesMatch: "Žane objekty twojemu pytanju njewotpowěduja. Wuprózdń pytanje, zo by wšě objekty widźał.",
+        noAreasMatch: "Žane wobłuki twojemu pytanju njewotpowěduja. Wuprózdń pytanje, zo by wšě wobłuki widźał.",
+        entitiesList: "Lisćina objektow",
+        areasList: "Lisćina wobłukow",
     },
     listRoom: {
         isFetching: "Lisćina rumnosćow so wotwołuje... ⤵️",
@@ -545,6 +550,12 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         movingToRoom: "Hibać k rumnosći: {roomNameSelected}... Do skóro... 🫡",
         searchLabel: "Rumnosć pytać",
         searchPlaceholder: "Přez klučowe słowa pisać...",
+        noRoomAvailable: "W tutym swěće hišće žadyn rum k dispoziciji njeje.",
+        noRoomMatch: "Žadyn rum „{search}“ njewotpowěduje.",
+        clearSearch: "Pytanje wuprózdnić",
+        fetchFailedTitle: "Lisćina rumow njeda so začitać",
+        fetchFailedDetail: "Wostanješ w swojim aktualnym rumje. Přepruwuj swój zwisk a spytaj potom hišće raz.",
+        retryFetch: "Rumy znowa začitać",
     },
 };
 

@@ -4,10 +4,10 @@
         .bottom-action-section {
 
             #invite-btn {
-                @apply min-h-[2rem] h-8 sm:h-10 outline-none;
+                @apply min-h-[2rem] h-8 sm:h-10 outline-none focus-visible:ring-2 focus-visible:ring-white;
             }
             #register-btn {
-                @apply min-h-[2rem] h-8 sm:h-10 outline-none;
+                @apply min-h-[2rem] h-8 sm:h-10 outline-none focus-visible:ring-2 focus-visible:ring-white;
             }
 
             button.large {
@@ -65,7 +65,13 @@
                     border-radius: 0.25rem !important;
                     padding: 0.2rem 0.8rem !important;
                     height: initial !important;
-                    min-height: fit-content !important;
+                    min-height: 1.75rem !important;
+
+                    /* "all: unset" removes the keyboard focus ring too: bring it back. */
+                    &:focus-visible {
+                        outline: 2px solid #fff;
+                        outline-offset: 2px;
+                    }
 
                     &.light {
                         @apply bg-light-blue text-brand-blue;

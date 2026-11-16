@@ -34,6 +34,13 @@ const notification: DeepPartial<Translation["notification"]> = {
     actionFailed: "تعذر إكمال هذا الإجراء",
     recordingStarted: "بدأ شخص واحد في المناقشة تسجيلاً.",
     urlCopiedToClipboard: "تم نسخ الرابط إلى الحافظة",
+    muteRequest: {
+        acceptMicrophone: "كتم الميكروفون",
+        acceptCamera: "إيقاف الكاميرا",
+        refuse: "إبقاؤه قيد التشغيل",
+    },
+    copyFailed: "تعذر النسخ: حظر المتصفح الحافظة. حدد النص واضغط Ctrl+C (Cmd+C على Mac).",
+    closeToast: "إغلاق الإشعار",
 };
 
 export default notification;

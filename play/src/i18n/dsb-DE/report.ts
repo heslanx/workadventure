@@ -7,6 +7,10 @@ const report: DeepPartial<Translation["report"]> = {
         content: "Blokěruj kuždu komunikaciju z wužywarjom {userName}. Ta opcija móžo se kuždy cas zasej anulěrowaś.",
         unblock: "Blokěrowanje togo wužywarja zasej anulěrowaś",
         block: "Blokěruj togo wužywarja",
+        blockedNotice: "{userName} jo zablokěrowany/-a. Wěcej se njewiźitej a njesłyšytej.",
+        unblockedNotice: "{userName} južo zablokěrowany/-a njejo.",
+        undoBlock: "Blokěrowanje wótpóraś",
+        undoUnblock: "Znowego blokěrowaś",
     },
     title: "Mjeldowanje",
     content: "Napiš powěsć administratoram teje śpy. Wóni mógu togo wužywarja blokěrowaś.",
@@ -67,6 +71,8 @@ const report: DeepPartial<Translation["report"]> = {
                 submitWithOthers: "Toś tych {count} wósobow wuzamknuś",
             },
         },
+        sendFailed:
+            "Njepósłane: zwisk ze serwerom jo pśetergnjony. Twój tekst wóstanjo; wopytaj za wokognuśe hyšći raz.",
     },
     kicked: {
         title: "WÓTWÓNOŹONY",

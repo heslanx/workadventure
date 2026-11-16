@@ -69,6 +69,22 @@ const warning: DeepPartial<Translation["warning"]> = {
     },
     otherMeetingMuted: "Bạn hiện đang họp ở đây. Micrô, camera và chia sẻ màn hình của bạn trong {world} đã bị tắt.",
     desktopAppOutdated: "Đã có phiên bản mới của ứng dụng WorkAdventure: {url}",
+    connectionLostDetail: "Đang tự động thử lại. Nội dung bạn đã nhập vẫn được giữ nguyên.",
+    reconnectNow: "Thử lại ngay",
+    limitMap: "Bản đồ này khả dụng trong 2 ngày.",
+    registerDomain: "Đăng ký tên miền của bạn để giữ bản đồ",
+    popUp: {
+        close: "Đóng",
+        closeMessage: "Đóng tin nhắn",
+        openInNewTab: "Mở trong tab mới",
+        joinJitsi: "Tham gia cuộc họp Jitsi",
+        openWebsite: "Mở trang web",
+    },
+    limitRoom: {
+        title: "Bản đồ này có giới hạn thời gian.",
+        content: "Để tiếp tục dùng WorkAdventure tại đây, hãy tạo tài khoản của bạn.",
+        createAccount: "Tạo tài khoản của tôi",
+    },
 };
 
 export default warning;

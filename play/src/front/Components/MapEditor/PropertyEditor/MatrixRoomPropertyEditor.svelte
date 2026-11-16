@@ -30,7 +30,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconMessage font-size="18" class="mr-2" />
+            <IconMessage font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.matrixRoomPropertyData.label()}
         </span>
     {/snippet}

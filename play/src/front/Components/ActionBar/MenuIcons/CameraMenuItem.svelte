@@ -86,6 +86,13 @@
                     media: "",
                 };
             }
+            if (ctx === "device_in_use") {
+                return {
+                    title: $LL.camera.help.tooltip.deviceInUseTitle(),
+                    desc: $LL.camera.help.tooltip.deviceInUseDesc(),
+                    media: "",
+                };
+            }
             return { title: "", desc: "", media: "" };
         },
     );
@@ -105,6 +112,7 @@
     statusDot={$heldMediaStore.camera ? getColorHexOfStatus($heldMediaStore.status) : undefined}
     statusDotClickable={canComeBackFrom($heldMediaStore.status)}
     ariaLabel={$LL.actionbar.help.cam.title()}
+    pressed={Boolean($requestedCameraState && !$silentStore && $cameraListStore && $cameraListStore.length > 0)}
     dataTestId="camera-button"
     tooltipTitle={$cameraActionBarTooltipStore.title}
     desc={$cameraActionBarTooltipStore.desc}
@@ -116,8 +124,8 @@
     onmouseleave={() => mouseIsHoveringCameraButton.set(false)}
 >
     {#if $requestedCameraState && !$silentStore && $cameraListStore && $cameraListStore.length > 0}
-        <CamOnIcon />
+        <CamOnIcon height="h-5" width="w-5" strokeWidth="2" />
     {:else}
-        <CamOffIcon />
+        <CamOffIcon height="h-5" width="w-5" strokeWidth="2" />
     {/if}
 </ActionBarButton>

@@ -27,7 +27,7 @@
 </script>
 
 <ConfirmationModal props={confirmationModalProps}>
-    <div id="acceptDiscussion" class="grow text-center text-xl">
+    <div id="acceptDiscussion" class="grow text-center text-xl leading-8">
         {$LL.notification.discussion({ name })}
     </div>
 </ConfirmationModal>

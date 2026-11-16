@@ -108,18 +108,20 @@
         class:mb-2={isOpen || rootFolder}
         data-roving-row
     >
-        <div class="flex items-center space-x-2 grow m-0 p-0">
+        <div class="flex min-w-0 items-center space-x-2 grow m-0 p-0">
             <button
-                class="flex items-center space-x-2 grow m-0 p-0 focus-visible:ring-2 focus-visible:ring-white/70"
+                class="flex min-w-0 items-center space-x-2 grow m-0 p-0 focus-visible:ring-2 focus-visible:ring-white/70"
                 data-room-row-button
                 aria-expanded={isOpen}
                 onclick={toggleFolder}
             >
-                <div class="text-white text-sm font-bold tracking-widest uppercase grow text-start">
-                    <span class="truncate">{$name}</span>
+                <div
+                    class="flex min-w-0 items-center gap-2 text-white text-sm font-bold tracking-widest uppercase grow text-start"
+                >
+                    <span class="truncate" title={$name}>{$name}</span>
                     {#if hasSuggestedRooms}
                         <span
-                            class="shrink-0 inline-flex items-center rounded-full bg-secondary/50 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white/95 border border-secondary/60"
+                            class="shrink-0 inline-flex items-center rounded-full bg-secondary/50 px-2 py-0.5 text-xxs font-semibold uppercase tracking-wide text-white/95 border border-secondary/60"
                             title={$LL.chat.suggestedRooms()}
                             aria-label={$LL.chat.suggestedRooms()}
                         >
@@ -139,13 +141,13 @@
         </div>
 
         <button
-            class="transition-all group-hover:bg-white/10 p-1 rounded-lg aspect-square flex items-center justify-center text-white"
+            class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
             data-testid={`toggleFolder${$name}`}
             tabindex="-1"
             aria-hidden="true"
             onclick={toggleFolder}
         >
-            <IconChevronUp class={`transform transition ${!isOpen ? "" : "rotate-180"}`} />
+            <IconChevronUp aria-hidden="true" class={`transform transition ${!isOpen ? "" : "rotate-180"}`} />
         </button>
     </div>
     <div class="flex flex-col">
@@ -155,7 +157,7 @@
                     <div class="px-2 pb-2" role="alert" data-testid="joinableRoomsError">
                         <Alert variant="danger" class="w-full">
                             <div class="flex gap-2 items-center">
-                                <IconExclamation font-size="20" class="shrink-0" />
+                                <IconExclamation aria-hidden="true" font-size="20" class="shrink-0" />
                                 <span class="grow min-w-0 text-white">{$LL.chat.joinableRoomsError()}</span>
                                 <Button
                                     variant="danger"
@@ -189,10 +191,13 @@
                                 </button>
                             </div>
                             <button
-                                class="transition-all group-hover:bg-white/10 p-1 rounded-lg aspect-square flex items-center justify-center text-white"
+                                class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
+                                aria-label={$LL.chat.joinableRooms()}
+                                aria-expanded={joinableRoomsOpen}
                                 onclick={toggleJoinableRooms}
                             >
                                 <IconChevronUp
+                                    aria-hidden="true"
                                     class={`transform transition ${!joinableRoomsOpen ? "" : "rotate-180"}`}
                                 />
                             </button>
@@ -200,8 +205,12 @@
                         {#if joinableRoomsOpen}
                             <div class="flex flex-col overflow-auto ps-3 pe-4 pb-3">
                                 {#if $joinableRoomsLoading}
-                                    <div class="flex items-center justify-center p-2 text-white/70">
-                                        <IconLoader class="animate-spin" />
+                                    <div
+                                        class="flex items-center justify-center p-2 text-white/70"
+                                        role="status"
+                                        aria-label={$LL.chat.loader()}
+                                    >
+                                        <IconLoader aria-hidden="true" class="animate-spin" />
                                     </div>
                                 {:else if $suggestedRooms.length > 0}
                                     <div class="bg-white/10 rounded-md">
@@ -255,11 +264,11 @@
                     <p
                         class={`${
                             rootFolder
-                                ? "self-center text-md text-gray-500"
-                                : "py-2 px-3 m-0 text-white/50 italic text-sm"
+                                ? "self-center text-md text-white/60"
+                                : "py-2 px-3 m-0 text-white/60 italic text-sm"
                         }`}
                     >
-                        {$LL.chat.nothingToDisplay()}
+                        {$LL.chat.folderEmpty()}
                     </p>
                 {/if}
             </div>

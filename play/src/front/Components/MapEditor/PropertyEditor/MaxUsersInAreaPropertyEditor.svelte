@@ -25,7 +25,7 @@
 >
     {#snippet header()}
         <span class="flex justify-center items-center">
-            <IconLockHash font-size="18" class="mr-2" />
+            <IconLockHash font-size="18" class="mr-2" aria-hidden="true" />
             {$LL.mapEditor.properties.maxUsersInAreaPropertyData.label()}
         </span>
     {/snippet}

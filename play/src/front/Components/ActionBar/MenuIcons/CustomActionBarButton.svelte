@@ -35,6 +35,11 @@
     {classList}
 >
     {#if button.imageSrc}
-        <img draggable="false" src={button.imageSrc} alt={button.tooltipTitle} class="h-6" />
+        <img
+            draggable="false"
+            src={button.imageSrc}
+            alt={button.label ? "" : (button.tooltipTitle ?? "")}
+            class="h-6"
+        />
     {/if}
 </ActionBarButton>

@@ -26,3 +26,6 @@ synapse/media_store/*
 
 .vscode/settings.json
 play/src/i18n/ko-KR/*.backup
+
+# Orca per-workspace environment: repo-local SSH key
+.orca-vm/

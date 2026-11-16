@@ -22,6 +22,14 @@ const follow: DeepPartial<Translation["follow"]> = {
         },
         yes: "haj",
         no: "ně",
+        buttons: {
+            follow: "{leader} sćěhować",
+            notNow: "Nic nětko",
+            stopLeading: "Wjedźenje skónčić",
+            keepLeading: "Dale wjesć",
+            stopFollowing: "Sćěhowanje skónčić",
+            keepFollowing: "Dale sćěhować",
+        },
     },
     actionName: "Lokalizować",
 };

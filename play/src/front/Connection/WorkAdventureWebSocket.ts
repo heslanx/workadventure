@@ -79,6 +79,19 @@ export class WorkAdventureWebSocket {
         this.socket.send(payloadWithNonce);
     }
 
+    /**
+     * Skips the wait before the next reconnection attempt, for a person who pressed "Try again now".
+     * Does nothing unless an attempt is scheduled (connected, connecting, or closed for good).
+     */
+    public reconnectNow(): void {
+        if (this.manuallyClosed || this.reconnectionTimeout === undefined) {
+            return;
+        }
+        this.clearReconnectionTimeout();
+        this.socket = this.createSocket();
+        analyticsClient.trackAdminEvent("websocket.reconnecting");
+    }
+
     public getLastReceivedNonce(): number {
         return this.lastReceivedNonce;
     }

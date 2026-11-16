@@ -69,6 +69,6 @@
         {last}
         {classList}
     >
-        <ShareIcon strokeWidth="stroke-[1.5]" />
+        <ShareIcon height="h-5" width="w-5" strokeWidth="stroke-2" />
     </ActionBarButton>
 {/if}

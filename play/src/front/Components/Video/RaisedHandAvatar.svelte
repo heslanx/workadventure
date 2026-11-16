@@ -2,6 +2,7 @@
     import type { PictureStore } from "../../Stores/PictureStore";
     import { getColorByString } from "../../Utils/ColorGenerator";
     import Woka from "../Woka/Woka.svelte";
+    import { readableTextColor } from "./readableTextColor";
 
     // Shows the user's Woka when we can resolve it (proximity, or megaphone with seeAttendees). Falls back to a
     // colored initial only when there is no SpaceUser for the entry (megaphone listener without seeAttendees).
@@ -11,6 +12,8 @@
     }
 
     let { pictureStore, name }: Props = $props();
+
+    let backgroundColor = $derived(getColorByString(name));
 </script>
 
 {#if $pictureStore}
@@ -19,8 +22,9 @@
     </div>
 {:else}
     <div
-        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold uppercase text-white"
-        style:background-color={getColorByString(name)}
+        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold uppercase"
+        style:background-color={backgroundColor}
+        style:color={readableTextColor(backgroundColor)}
     >
         {name.charAt(0)}
     </div>

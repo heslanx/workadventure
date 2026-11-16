@@ -1,10 +1,11 @@
 <script lang="ts">
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { get } from "svelte/store";
 
     import { onDestroy, onMount, setContext } from "svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { warningMessageStore } from "../../Stores/ErrorStore";
-    import LL from "../../../i18n/i18n-svelte";
+    import LL, { locale } from "../../../i18n/i18n-svelte";
     import { chatSearchBarValue, joignableRoom, navChat } from "../Stores/ChatStore";
     import { selectedRoomStore } from "../Stores/SelectRoomStore";
     import { isThreadPanelEnabledStore, selectedThreadStore } from "../Stores/SelectedThreadStore";
@@ -31,6 +32,7 @@
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import { createUnreadConversationsStore, createUnreadSummaryStore } from "../Stores/UnreadMessagesCountStore";
     import { roomListWidthStore } from "../ChatSidebarWidthStore";
+    import { chatConnectionFailureStore } from "../Stores/ChatConnectionFailureStore";
     import Room from "./Room/Room.svelte";
     import RoomTimeline from "./Room/RoomTimeline.svelte";
     import RoomInvitation from "./Room/RoomInvitation.svelte";
@@ -64,7 +66,7 @@
     import { rowUnreadCount } from "./showMoreUnread";
     import { rovingFocus } from "./roomRowKeyboard";
     import { sortByLastMessage } from "./sortByLastMessage";
-    import { IconChevronUp, IconCloudLock, IconLoader, IconPlus, IconRefresh } from "@wa-icons";
+    import { IconChevronUp, IconCloudLock, IconLoader, IconPlus, IconRefresh, IconX } from "@wa-icons";
 
     interface Props {
         sideBarWidth?: number;
@@ -84,6 +86,16 @@
     const shouldRetrySendingEvents = chat.shouldRetrySendingEvents;
 
     const chatConnectionStatus = chat.connectionStatus;
+    const formatOutageTime = (date: Date) => date.toLocaleTimeString($locale, { hour: "2-digit", minute: "2-digit" });
+    // The last outage, once it is over: kept until dismissed so a recovered failure is not forgotten.
+    let recoveredOutage = $derived(
+        $chatConnectionFailureStore?.recoveredAt && $chatConnectionStatus === "ONLINE"
+            ? {
+                  from: formatOutageTime($chatConnectionFailureStore.failedAt),
+                  to: formatOutageTime($chatConnectionFailureStore.recoveredAt),
+              }
+            : undefined,
+    );
     // Once the list has been shown, a reconnection (network blip, laptop waking up) keeps it on screen under a
     // banner instead of swapping every room for a loading skeleton.
     let hasBeenOnline = $state(false);
@@ -359,13 +371,30 @@
                 {#if $chatConnectionStatus === "ON_ERROR" && $userIsConnected && !$loginTokenErrorStore}
                     <ChatError />
                 {/if}
+                {#if recoveredOutage}
+                    <div
+                        class="mx-2 mb-2 flex items-start gap-2 rounded border border-solid border-white/20 bg-white/10 px-3 py-2 text-xs text-white"
+                        role="status"
+                        data-testid="chatConnectionRecovered"
+                    >
+                        <p class="m-0 grow">{$LL.chat.connectionRecovered(recoveredOutage)}</p>
+                        <button
+                            type="button"
+                            class="m-0 -my-1.5 -me-2 p-1.5 shrink-0 rounded bg-transparent text-white/75 hover:text-white hover:bg-white/10 cursor-pointer"
+                            aria-label={$LL.chat.connectionRecoveredDismiss()}
+                            onclick={() => chatConnectionFailureStore.dismiss()}
+                        >
+                            <IconX aria-hidden="true" font-size="14" />
+                        </button>
+                    </div>
+                {/if}
 
                 {#if !$userIsConnected && gameManager.getCurrentGameScene().room.isMatrixChatEnabled}
                     <RequireConnection />
                 {:else if $loginTokenErrorStore}
                     <RequireConnection>
                         {#snippet emoji()}
-                            <IconRefresh font-size="50" />
+                            <IconRefresh aria-hidden="true" font-size="50" />
                         {/snippet}
                         {#snippet title()}
                             {$LL.chat.loginTokenError()}
@@ -406,19 +435,19 @@
                         role="status"
                         data-testid="chatReconnecting"
                     >
-                        <IconLoader class="animate-spin shrink-0" font-size="14" />
+                        <IconLoader aria-hidden="true" class="animate-spin shrink-0" font-size="14" />
                         {$LL.chat.reconnecting()}
                     </div>
                 {/if}
                 {#if $chatConnectionStatus === "ONLINE" || isReconnecting}
                     {#if hasNoSearchResult}
-                        <p class="px-3 py-2 m-0 text-sm text-center text-white/50" data-testid="chatSearchNoResult">
+                        <p class="px-3 py-2 m-0 text-sm text-center text-white/60" data-testid="chatSearchNoResult">
                             {$LL.chat.searchNoResult({ search: $chatSearchBarValue.trim() })}
                         </p>
                     {/if}
                     {#if $joignableRoom.length > 0 && $chatSearchBarValue.trim() !== ""}
                         <p
-                            class="px-3 py-1 m-0 text-xs font-bold uppercase text-white/50"
+                            class="px-3 py-1 m-0 text-xs font-bold uppercase text-white/60"
                             data-testid="chatJoinableRoomsTitle"
                         >
                             {$LL.chat.joinableRooms()} · {$joignableRoom.length}
@@ -447,12 +476,13 @@
                                 class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                             >
                                 <IconChevronUp
+                                    aria-hidden="true"
                                     class={`transform transition ${!displayRoomInvitations ? "" : "rotate-180"}`}
                                 />
                             </div>
                         </button>
                         {#if displayRoomInvitations}
-                            <div class="flex flex-col overflow-auto ps-3 pr-4 pb-3">
+                            <div class="flex flex-col overflow-auto px-2 pb-2">
                                 <ShowMore items={filteredRoomInvitations} maxNumber={8} idKey="id">
                                     {#snippet children({ item: room })}
                                         <RoomInvitation {room} />
@@ -477,17 +507,26 @@
                             </div>
                         </button>
                         {#if !displayDirectRooms && $directRoomsUnreadSummary.count > 0}
-                            <UnreadCount
-                                count={$directRoomsUnreadSummary.count}
-                                variant={$directRoomsUnreadSummary.muted ? "muted" : "default"}
-                                size="sm"
-                            />
+                            <!-- The count is a door: it opens the section that holds the unread conversations. -->
+                            <button
+                                type="button"
+                                class="m-0 p-1 flex items-center bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                                aria-label={$LL.chat.a11y.showUnreadConversations()}
+                                title={$LL.chat.a11y.showUnreadConversations()}
+                                onclick={toggleDisplayDirectRooms}
+                            >
+                                <UnreadCount
+                                    count={$directRoomsUnreadSummary.count}
+                                    variant={$directRoomsUnreadSummary.muted ? "muted" : "default"}
+                                    size="sm"
+                                />
+                            </button>
                         {/if}
                         {#if showDirectMessageUserListButton}
                             <button
                                 type="button"
                                 data-testid="directMessageOpenUserList"
-                                class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
+                                class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
                                 aria-label={$LL.chat.users()}
                                 title={$LL.chat.users()}
                                 onclick={(event) => {
@@ -495,19 +534,23 @@
                                     navChat.switchToUserList();
                                 }}
                             >
-                                <IconPlus />
+                                <IconPlus aria-hidden="true" />
                             </button>
                         {/if}
                         <button
                             type="button"
-                            class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
+                            class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
+                            aria-label={$LL.chat.people()}
                             aria-expanded={displayDirectRooms}
                             onclick={(event) => {
                                 event.stopPropagation();
                                 toggleDisplayDirectRooms();
                             }}
                         >
-                            <IconChevronUp class={`transform transition ${!displayDirectRooms ? "" : "rotate-180"}`} />
+                            <IconChevronUp
+                                aria-hidden="true"
+                                class={`transform transition ${!displayDirectRooms ? "" : "rotate-180"}`}
+                            />
                         </button>
                     </div>
 
@@ -518,6 +561,7 @@
                                 maxNumber={8}
                                 idKey="id"
                                 showNothingToDisplayMessage={!isSearching}
+                                emptyMessage={$LL.chat.directMessagesEmpty()}
                                 getUnreadCount={(room) =>
                                     rowUnreadCount(room.hasUnreadMessages, room.unreadNotificationCount)}
                             >
@@ -533,8 +577,11 @@
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <div
-                            class="group relative px-3 m-0 mb-2 rounded-none text-white/75 hover:text-white h-11 hover:bg-contrast-200/10 w-full flex space-x-2 items-center border border-solid border-x-0 border-t border-b-0 border-white/10"
+                            class="group relative px-3 m-0 mb-2 rounded-none text-white/75 hover:text-white h-11 hover:bg-contrast-200/10 w-full flex gap-1 cursor-pointer items-center border border-solid border-x-0 border-t border-b-0 border-white/10"
                             onclick={toggleDisplayRooms}
+                            role="button"
+                            tabindex="0"
+                            onkeydown={(event) => activateOnEnterOrSpace(event, toggleDisplayRooms)}
                             data-testid="roomAccordeon"
                         >
                             <div class="flex items-center space-x-2 grow m-0 p-0">
@@ -543,17 +590,36 @@
                                 </div>
                             </div>
                             {#if !displayRooms && $roomsUnreadSummary.count > 0}
-                                <UnreadCount
-                                    count={$roomsUnreadSummary.count}
-                                    variant={$roomsUnreadSummary.muted ? "muted" : "default"}
-                                    size="sm"
-                                />
+                                <!-- The count is a door: it opens the section that holds the unread conversations. -->
+                                <button
+                                    type="button"
+                                    class="m-0 p-1 flex items-center bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                                    aria-label={$LL.chat.a11y.showUnreadConversations()}
+                                    title={$LL.chat.a11y.showUnreadConversations()}
+                                    onclick={(event) => {
+                                        // The header row toggles on click too: toggling twice would leave it closed.
+                                        event.stopPropagation();
+                                        toggleDisplayRooms();
+                                    }}
+                                >
+                                    <UnreadCount
+                                        count={$roomsUnreadSummary.count}
+                                        variant={$roomsUnreadSummary.muted ? "muted" : "default"}
+                                        size="sm"
+                                    />
+                                </button>
                             {/if}
                             <CreateRoomOrFolderOption parentID={undefined} parentName="" folder={undefined} />
                             <button
-                                class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
+                                type="button"
+                                aria-expanded={displayRooms}
+                                aria-label={$LL.chat.rooms()}
+                                class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white cursor-pointer"
                             >
-                                <IconChevronUp class={`transform transition ${!displayRooms ? "" : "rotate-180"}`} />
+                                <IconChevronUp
+                                    aria-hidden="true"
+                                    class={`transform transition ${!displayRooms ? "" : "rotate-180"}`}
+                                />
                             </button>
                         </div>
                     </div>
@@ -564,6 +630,7 @@
                                 maxNumber={8}
                                 idKey="id"
                                 showNothingToDisplayMessage={!isSearching}
+                                emptyMessage={$LL.chat.roomsEmpty()}
                                 getUnreadCount={(room) =>
                                     rowUnreadCount(room.hasUnreadMessages, room.unreadNotificationCount)}
                             >
@@ -592,7 +659,7 @@
             {/key}
             {#if showRoomSidePanelAsOverlay && selectedRoomWithSidePanel}
                 <div
-                    class="absolute inset-y-0 end-0 z-10 w-[360px] max-w-full overflow-y-auto border border-solid border-y-0 border-e-0 border-white/10 bg-contrast/95 backdrop-blur-md shadow-2xl"
+                    class="absolute inset-y-0 end-0 z-10 w-[360px] max-w-full overflow-y-auto border border-solid border-y-0 border-e-0 border-white/10 bg-contrast/95 backdrop-blur-md shadow-lg"
                 >
                     <RoomSidePanel room={selectedRoomWithSidePanel} showCloseButton closeOnTimelineFocus />
                 </div>
@@ -651,13 +718,15 @@
                             warningMessageStore.addWarningMessage($LL.chat.e2ee.configureFailed(), { closable: true });
                         });
                     }}
-                    class="text-white flex gap-2 justify-center w-full bg-neutral hover:bg-neutral-600 hover:brightness-100 m-0 rounded-none py-2 px-3 appearance-none"
+                    class="text-white flex gap-2 justify-center w-full bg-neutral-900 hover:bg-neutral-800 hover:brightness-100 m-0 rounded-none py-2 px-3 appearance-none"
                 >
-                    <IconCloudLock font-size="20" />
+                    <IconCloudLock aria-hidden="true" font-size="20" />
                     <div class="text-sm font-bold grow text-start">
                         {$LL.chat.e2ee.encryptionNotConfigured()}
                     </div>
-                    <div class="text-xs rounded border border-solid border-white py-0.5 px-1.5 group-hover:bg-white/10">
+                    <div
+                        class="text-xs rounded-sm border border-solid border-white py-0.5 px-1.5 group-hover:bg-white/10"
+                    >
                         {$LL.chat.e2ee.configure()}
                     </div>
                 </button>

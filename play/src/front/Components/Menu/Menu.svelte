@@ -1,8 +1,8 @@
 <script lang="ts">
     import { get } from "svelte/store";
-    import { fly } from "svelte/transition";
     import { onDestroy, onMount } from "svelte";
     import type { Unsubscriber } from "svelte/store";
+    import { fly } from "../../Utils/reducedMotion";
     import type { WorkAdventureComponent } from "../../../types/component";
     import chevronImg from "../images/chevron.svg";
     import type { MenuItem } from "../../Stores/MenuStore";
@@ -35,10 +35,11 @@
     // reassigned, never mutated, so there is nothing for the proxy to do anyway.
     let activeSubMenu: MenuItem = $state.raw($subMenusStore[$activeSubMenuStore]);
     let activeComponent: WorkAdventureComponent = $state(ProfileSubMenu);
-    let props: { url: string; allowApi: boolean; allow?: string } = $state({
+    let props: { url: string; allowApi: boolean; allow?: string; title?: string } = $state({
         url: "",
         allowApi: false,
         allow: undefined,
+        title: undefined,
     });
     let unsubscriberSubMenuStore: Unsubscriber;
     let unsubscriberActiveSubMenuStore: Unsubscriber;
@@ -108,7 +109,12 @@
             const customMenu = customMenuIframe.get(menu.key);
             if (customMenu !== undefined) {
                 activeSubMenu = menu;
-                props = { url: customMenu.url, allowApi: customMenu.allowApi, allow: customMenu.allow };
+                props = {
+                    url: customMenu.url,
+                    allowApi: customMenu.allowApi,
+                    allow: customMenu.allow,
+                    title: menu.label,
+                };
                 activeComponent = CustomSubMenu;
             } else {
                 sendMenuClickedEvent(menu.key);
@@ -145,10 +151,11 @@
 >
     <div class="flex flex-row items-center gap-2">
         <div
-            class="menu-nav-sidebar rounded-lg @md/main-layout:w-[200px] @md/main-layout:rounded-xl overflow-hidden bg-contrast/80 backdrop-blur w-md relative h-full"
+            class="menu-nav-sidebar rounded-lg @md/main-layout:w-[200px] overflow-hidden bg-contrast/95 backdrop-blur w-md relative h-full"
         >
             <!--<h2 class="p-8 text-white/10 h-5 tracking-[1rem] mb-8">{$LL.menu.title()}</h2>-->
             <nav
+                aria-label={$LL.menu.title()}
                 class="mt-0 mr-16 @md/main-layout:mr-0 flex flex-row @md/main-layout:flex-col w-full @md/main-layout:w-full items-stretch @md/main-layout:items-start overflow-auto h-full @md/main-layout:overflow-auto p-2.5 @md/main-layout:p-3 gap-1"
             >
                 {#each $subMenusStore as submenu, i (`${submenu.key}_${submenu.type}`)}
@@ -182,6 +189,7 @@
                             >
                                 <button
                                     type="button"
+                                    aria-current={activeSubMenu === submenu ? "true" : undefined}
                                     class="menu-item m-0 relative z-10 bold block @md/main-layout:flex text-nowrap text-white"
                                 >
                                     {subMenuTranslations[i]}
@@ -192,7 +200,7 @@
                                     submenu
                                         ? 'opacity-100 group-hover:right-4'
                                         : 'opacity-30'}"
-                                    alt="open submenu"
+                                    alt=""
                                     draggable="false"
                                 />
                             </div>
@@ -208,7 +216,7 @@
         </div>
     </div>
     <div
-        class="menu-submenu-container w-full rounded-xl overflow-y relative h-full bg-contrast/80 backdrop-blur overflow-hidden"
+        class="menu-submenu-container w-full rounded-lg overflow-y relative h-full bg-contrast/95 backdrop-blur overflow-hidden"
     >
         <div
             class="h-full mt-0 text-white rounded-none @md/main-layout:rounded-tl-lg overflow-y-scroll @md/main-layout:overflow-none"

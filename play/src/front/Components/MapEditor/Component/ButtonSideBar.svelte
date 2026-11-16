@@ -28,12 +28,16 @@
     use:floatingUiRef
     onmouseenter={() => (activeTooltip = true)}
     onmouseleave={() => (activeTooltip = false)}
+    onfocusin={() => (activeTooltip = true)}
+    onfocusout={() => (activeTooltip = false)}
 >
     <button
         class="p-3 aspect-square w-12 rounded {$mapEditorSelectedToolStore === tool.toolName
             ? 'bg-secondary'
             : 'hover:bg-white/10'}"
         id={tool.toolName}
+        aria-label={tool.tooltiptext}
+        aria-pressed={$mapEditorSelectedToolStore === tool.toolName}
         class:active={$mapEditorSelectedToolStore === tool.toolName}
         onclick={(event) => {
             event.preventDefault();
@@ -41,7 +45,7 @@
         }}
         type="button"
     >
-        <img draggable="false" class="h-6 w-6" src={tool.img} alt="open tool {tool.toolName}" />
+        <img draggable="false" class="h-6 w-6" src={tool.img} alt="" />
     </button>
     {#if activeTooltip}
         <div

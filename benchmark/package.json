@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Load testing for WorkAdventure",
   "scripts": {
-    "start": "ts-node ./index.ts"
+    "start": "tsx ./index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node index.ts tests/harness.test.ts"
   },
   "contributors": [
     {
@@ -26,5 +28,10 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3",
     "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "tsx": "^4.22.3",
+    "vitest": "^4.1.7"
   }
 }

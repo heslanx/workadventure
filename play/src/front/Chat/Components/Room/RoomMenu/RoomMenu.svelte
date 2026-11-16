@@ -234,7 +234,7 @@
     <RoomOption
         IconComponent={IconLogout}
         title={$LL.chat.roomMenu.leaveRoom.label()}
-        bg="bg-danger-900 hover:bg-danger"
+        bg="bg-danger-1000 hover:bg-danger-1100"
         onclick={closeMenuAndLeaveRoom}
     />
 </ChatMenu>

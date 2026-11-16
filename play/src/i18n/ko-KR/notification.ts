@@ -34,6 +34,14 @@ const notification: DeepPartial<Translation["notification"]> = {
     actionFailed: "이 작업을 완료할 수 없습니다",
     recordingStarted: "토론 중 한 명이 녹화를 시작했습니다.",
     urlCopiedToClipboard: "URL이 클립보드에 복사되었습니다",
+    muteRequest: {
+        acceptMicrophone: "내 마이크 음소거",
+        acceptCamera: "내 카메라 끄기",
+        refuse: "켜 두기",
+    },
+    copyFailed:
+        "복사할 수 없습니다: 브라우저가 클립보드를 차단했습니다. 텍스트를 선택하고 Ctrl+C(Mac에서는 Cmd+C)를 누르세요.",
+    closeToast: "알림 닫기",
 };
 
 export default notification;
