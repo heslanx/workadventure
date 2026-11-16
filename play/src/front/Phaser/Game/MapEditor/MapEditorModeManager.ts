@@ -21,6 +21,7 @@ import { gameManager } from "../GameManager";
 import { isInsidePersonalAreaStore, personalAreaDataStore } from "../../../Stores/PersonalDeskStore";
 import { analyticsClient } from "../../../Administration/AnalyticsClient";
 import { warningMessageStore } from "../../../Stores/ErrorStore";
+import { offerUndo } from "../../../Components/MapEditor/offerUndo";
 import { AreaEditorTool } from "./Tools/AreaEditorTool";
 import type { MapEditorTool } from "./Tools/MapEditorTool";
 import { FloorEditorTool } from "./Tools/FloorEditorTool";
@@ -201,6 +202,40 @@ export class MapEditorModeManager {
             console.error(e);
             Sentry.captureException(e);
         }
+    }
+
+    /**
+     * Executes a command that loses something in one gesture and, once it ran, says what happened in a toast with
+     * an Undo button. The button reverts exactly this command, never a newer one.
+     */
+    public async executeCommandWithUndoNotice(
+        command: Command & FrontCommandInterface,
+        message: string,
+    ): Promise<void> {
+        await this.executeCommand(command);
+        // executeCommand swallows failures: the command is the last of the history only if it really ran.
+        if (this.localCommandsHistory[this.currentCommandIndex] !== command) {
+            return;
+        }
+        offerUndo(message, () => this.undoCommandIfLast(command));
+    }
+
+    /**
+     * Undoes `command` only while it is still the last thing done here, so an Undo button left on screen never
+     * reverts something newer. Resolves to false when nothing was undone.
+     */
+    public undoCommandIfLast(command: Command & FrontCommandInterface): Promise<boolean> {
+        let undone = false;
+        this.runningUndoRedoCommand = this.runningUndoRedoCommand
+            .then(async () => {
+                if (this.localCommandsHistory[this.currentCommandIndex] !== command) {
+                    return;
+                }
+                await this.undoCommand();
+                undone = true;
+            })
+            .catch((e) => console.error(e));
+        return this.runningUndoRedoCommand.then(() => undone);
     }
 
     public async redoCommand(): Promise<void> {

@@ -95,6 +95,7 @@
 
     function openModalForActionOnAreaEntities(dispatchType: "change" | "close", callback?: () => void) {
         modals.open(ActionPopupOnPersonalAreaWithEntities, {
+            entitiesCount: countPersonalAreaEntities(),
             onDeleteEntities: () => {
                 if (callback) {
                     callback();
@@ -123,12 +124,16 @@
         });
     }
 
-    function isPersonalAreaContainsEntities() {
+    function countPersonalAreaEntities(): number {
         const areaId = $mapEditorSelectedAreaPreviewStore?.getId();
         if (areaId) {
-            return entitiesManager.getEntitiesInsideArea(areaId).size > 0;
+            return entitiesManager.getEntitiesInsideArea(areaId).size;
         }
-        return false;
+        return 0;
+    }
+
+    function isPersonalAreaContainsEntities() {
+        return countPersonalAreaEntities() > 0;
     }
 </script>
 
@@ -163,6 +168,7 @@
                                         textColor="text-black"
                                         bgColor="bg-black/10"
                                         hoverColor="hover:bg-black/20"
+                                        label={$LL.mapEditor.properties.personalAreaPropertyData.revokeAccess()}
                                         onclick={revokeOwner}
                                     />
                                 </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { EntityDataProperties, EntityDataPropertiesKeys, EntityDataProperty } from "@workadventure/map-editor";
     import { onDestroy } from "svelte";
+    import { get } from "svelte/store";
     import type { ApplicationDefinitionInterface } from "@workadventure/messages";
     import { v4 as uuid } from "uuid";
     import {
@@ -10,6 +11,7 @@
     } from "../../../Stores/MapEditorStore";
     import { analyticsClient } from "../../../Administration/AnalyticsClient";
     import LL from "../../../../i18n/i18n-svelte";
+    import { holdsUploadedFile, offerUndo } from "../offerUndo";
     import AddPropertyButtonWrapper from "../PropertyEditor/AddPropertyButtonWrapper.svelte";
     import PlayAudioPropertyEditor from "../PropertyEditor/PlayAudioPropertyEditor.svelte";
     import OpenWebsitePropertyEditor from "../PropertyEditor/OpenWebsitePropertyEditor.svelte";
@@ -249,13 +251,28 @@
 
     function onDeleteProperty(id: string) {
         if ($mapEditorSelectedEntityStore) {
+            const entity = $mapEditorSelectedEntityStore;
+            const removedProperty = properties.find((p) => p.id === id);
+            const removedPropertyCopy = removedProperty ? $state.snapshot(removedProperty) : undefined;
             analyticsClient.trackAdminEvent("map_editor.property.removed", {
-                name: properties.find((p) => p.id === id)?.type || "unknown",
+                name: removedProperty?.type || "unknown",
                 type: "entity",
             });
-            $mapEditorSelectedEntityStore.deleteProperty(id);
+            entity.deleteProperty(id);
             // refresh properties
-            properties = $mapEditorSelectedEntityStore?.getProperties();
+            properties = entity.getProperties();
+            // A property that held an uploaded file lost it on the server: putting it back would not restore it.
+            if (removedPropertyCopy && !holdsUploadedFile([removedPropertyCopy])) {
+                offerUndo($LL.mapEditor.undo.propertyRemovedFromObject(), () => {
+                    // The property goes back only to the object it came from, as long as that object is still selected.
+                    if (get(mapEditorSelectedEntityStore) !== entity) {
+                        return false;
+                    }
+                    entity.addProperty(removedPropertyCopy);
+                    properties = entity.getProperties();
+                    return true;
+                });
+            }
             // $mapEditorSelectedEntityStore.delete();
             // mapEditorSelectedEntityStore.set(undefined);
             // mapEditorEntityModeStore.set("ADD");

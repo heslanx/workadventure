@@ -176,7 +176,15 @@ export class AreaEditorTool extends MapEditorTool {
         }
     }
 
-    public handleDeleteAreaFrontCommandExecution(areaId: string, editorTool?: AreaEditorTool | TrashEditorTool): void {
+    /**
+     * @param undoNotice When set (the trash tool deletes in one click), what to tell the person once the area is
+     * gone, with an Undo button.
+     */
+    public handleDeleteAreaFrontCommandExecution(
+        areaId: string,
+        editorTool?: AreaEditorTool | TrashEditorTool,
+        undoNotice?: string,
+    ): void {
         const isPersonalArea = this.getIsPersonalArea(areaId);
         const deleteAreaCommand = new DeleteAreaFrontCommand(
             this.scene.getGameMap().getWamFile()!,
@@ -189,6 +197,7 @@ export class AreaEditorTool extends MapEditorTool {
             const entitiesInsideArea = this.getEntitiesInsideArea(areaId);
             if (entitiesInsideArea.size > 0) {
                 modals.open(ActionPopupOnPersonalAreaWithEntities, {
+                    entitiesCount: entitiesInsideArea.size,
                     onDeleteEntities: () => this.executeDeletePersonalAreaWithEntities(areaId, deleteAreaCommand, true),
                     onKeepEntities: () => this.executeDeletePersonalAreaWithEntities(areaId, deleteAreaCommand),
                     onCancel: () => {},
@@ -196,7 +205,11 @@ export class AreaEditorTool extends MapEditorTool {
                 return;
             }
         }
-        this.mapEditorModeManager.executeCommand(deleteAreaCommand).catch((error) => console.error(error));
+        const execution =
+            undoNotice !== undefined
+                ? this.mapEditorModeManager.executeCommandWithUndoNotice(deleteAreaCommand, undoNotice)
+                : this.mapEditorModeManager.executeCommand(deleteAreaCommand);
+        execution.catch((error) => console.error(error));
     }
 
     private getIsPersonalArea(areaId: string): boolean {

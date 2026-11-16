@@ -214,15 +214,22 @@ export abstract class EntityRelatedEditorTool extends MapEditorTool {
     }
 
     private deleteEntity(entity: Entity) {
-        this.mapEditorModeManager
-            .executeCommand(
-                new DeleteEntityFrontCommand(
-                    this.scene.getGameMap().getWamFile()!,
-                    entity.entityId,
-                    undefined,
-                    this.entitiesManager,
-                ),
-            )
-            .catch((e) => console.error(e));
+        this.executeEntityDeletion(
+            new DeleteEntityFrontCommand(
+                this.scene.getGameMap().getWamFile()!,
+                entity.entityId,
+                undefined,
+                this.entitiesManager,
+            ),
+            entity,
+        ).catch((e) => console.error(e));
+    }
+
+    /**
+     * Runs the deletion of an entity. A tool whose deletion is a single click (the trash tool) overrides it to say
+     * what was deleted and offer an Undo.
+     */
+    protected executeEntityDeletion(command: DeleteEntityFrontCommand, entity: Entity): Promise<void> {
+        return this.mapEditorModeManager.executeCommand(command);
     }
 }

@@ -160,6 +160,8 @@ class EntityEditor {
 
     async removeEntity(page: Page) {
         await page.getByTestId("removeEntity").click();
+        // Deleting a custom object asks first: Cancel has the focus, so the delete is confirmed explicitly.
+        await page.getByTestId("confirmDialogConfirm").click();
     }
 
     async setOpenLinkProperty(page: Page, link: string) {
