@@ -50,12 +50,16 @@
         </label>
     {/if}
     <label
-        class="inline-flex cursor-pointer relative {margin}"
+        class="inline-flex cursor-pointer relative hit-area {margin}"
         class:items-start={alignLabel === "top"}
         class:items-center={alignLabel === "center"}
     >
         <input id={uniqueId} type="checkbox" class="sr-only peer" bind:checked={value} {onchange} {disabled} />
-        <div class="input-switch" class:input-switch-white={variant === "white"} data-testid={uniqueId}></div>
+        <div
+            class="input-switch peer-focus-visible:ring-2 peer-focus-visible:ring-white peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-contrast"
+            class:input-switch-white={variant === "white"}
+            data-testid={uniqueId}
+        ></div>
         {#if labelPosition === "right" && hasLabel}
             <div class="flex flex-col items-start">
                 <span

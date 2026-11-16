@@ -38,11 +38,12 @@
 
 <div
     class="notification-playing bg-contrast/80 p-1 backdrop-blur rounded-lg mr-3"
+    role="status"
     transition:fly={{ x: 210, duration: 500 }}
 >
     <img
         src={notification.icon ? (icons.get(notification.icon) ?? notification.icon) : waImg}
-        alt="Audio playing"
+        alt=""
         class="bg-white/10 rounded-md h-12"
         draggable="false"
     />

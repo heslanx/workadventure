@@ -109,6 +109,7 @@
     }
 
     let uniqueId = (() => id || `input-${Math.random().toString(36).substring(2, 9)} `)();
+    const errorId = $props.id();
 
     function validateInput(event: Event) {
         const inputElement = event.target as HTMLInputElement;
@@ -141,7 +142,7 @@
         {/if}
 
         {#if optional}
-            <div class="text-xs opacity-50">
+            <div class="text-xs opacity-60">
                 {$LL.form.optional()}
             </div>
         {/if}
@@ -152,6 +153,8 @@
             <input
                 id={uniqueId}
                 type="text"
+                aria-invalid={status === "error" ? true : undefined}
+                aria-describedby={errorHelperText ? errorId : undefined}
                 class="grow input-text input-icon {extraInputClasses}"
                 class:input-icon-left={appendSide === "left"}
                 class:input-text-light={variant === "light"}
@@ -181,12 +184,15 @@
             />
 
             {#if errorHelperText}
-                <p class="text-red-500 text-sm mt-1">{errorHelperText}</p>
+                <p id={errorId} class="text-sm mt-1 {variant === 'light' ? 'text-danger-1100' : 'text-danger-400'}">
+                    {errorHelperText}
+                </p>
             {/if}
         {:else if type === "url"}
             <input
                 id={uniqueId}
                 type="url"
+                aria-invalid={status === "error" ? true : undefined}
                 class="grow input-text input-icon"
                 class:input-icon-left={appendSide === "left"}
                 class:input-text-light={variant === "light"}
@@ -211,6 +217,7 @@
             <input
                 id={uniqueId}
                 type="number"
+                aria-invalid={status === "error" ? true : undefined}
                 class="grow input-text input-icon"
                 class:input-icon-left={appendSide === "left"}
                 class:input-text-light={variant === "light"}
@@ -235,6 +242,7 @@
             <input
                 id={uniqueId}
                 type="color"
+                aria-invalid={status === "error" ? true : undefined}
                 class="grow input-text input-icon border-0 bg-transparent hover:bg-transparent active:bg-transparent mx-auto w-full p-0 border-none"
                 class:input-icon-left={appendSide === "left"}
                 class:input-text-light={variant === "light"}
@@ -267,7 +275,7 @@
     </div>
 
     {#if helper}
-        <div class="flex items-center px-3 space-x-1.5 opacity-50">
+        <div class="flex items-center px-3 space-x-1.5 opacity-60">
             <div class="text-sm text-white grow">
                 {@render helper()}
             </div>

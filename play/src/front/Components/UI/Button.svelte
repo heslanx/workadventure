@@ -72,6 +72,27 @@
         onclick?.(event);
     }
 
+    // The design system's label colours miss 4.5:1 on some variants: white on the danger, success and warning fills
+    // (1.6 to 3.1:1), on a hovered secondary fill (4.0:1) and on neutral (3.7:1), and secondary or neutral text on a
+    // dark surface (2.7 and 3.9:1). These utilities sit in a later layer than its rules, so they win. They are spelled
+    // out in full because Tailwind's scanner has to find them in the source.
+    let contrastClasses = $derived.by(() => {
+        if (appearance === "filled") {
+            if (variant === "secondary") return href ? "hover:bg-secondary-800" : "enabled:hover:bg-secondary-800";
+            if (variant === "danger" || variant === "success" || variant === "warning") {
+                return "text-contrast-900 [&_.btn-label]:text-contrast-900";
+            }
+            if (variant === "neutral") {
+                const hover = href ? "hover:bg-neutral-600" : "enabled:hover:bg-neutral-600";
+                return `text-contrast-900 [&_.btn-label]:text-contrast-900 ${hover}`;
+            }
+            return "";
+        }
+        if (variant === "secondary") return "text-secondary-300 [&_.btn-label]:text-secondary-300";
+        if (variant === "neutral") return "text-neutral-500 [&_.btn-label]:text-neutral-500";
+        return "";
+    });
+
     // Interpolating is safe here: every entry is a static design-system `@layer components`
     // rule, not a utility that Tailwind's scanner has to find in the source.
     let classes = $derived(
@@ -84,6 +105,7 @@
             inlineBlock && "btn-inline-block",
             size && `btn-${size}`,
             explained && "opacity-50",
+            contrastClasses,
             className,
         ]
             .filter(Boolean)

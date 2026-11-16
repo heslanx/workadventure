@@ -1,5 +1,6 @@
 <script lang="ts">
     import * as Sentry from "@sentry/svelte";
+    import { LL } from "../../../i18n/i18n-svelte";
     import { playOnSelectedOutput } from "../../WebRtc/AudioOutputManager";
     import Button from "../UI/Button.svelte";
     import Select from "./Select.svelte";
@@ -63,6 +64,7 @@
         variant="light"
         appearance="ghost"
         class="mb-2"
+        aria-label={$LL.a11y.uiPlaySound()}
         onclick={handlePlayClick}
         disabled={disabled || !getSoundUrl(value)}
     >

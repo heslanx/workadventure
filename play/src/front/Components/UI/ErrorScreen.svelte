@@ -70,7 +70,7 @@
                 {#if logoErrorSrc && $errorScreenStore.type !== "reconnecting"}
                     <img
                         src={errorScreen?.imageLogo ?? logoErrorSrc}
-                        alt="Logo error"
+                        alt=""
                         class="mx-auto"
                         style="max-height:25vh; max-width:80%;"
                         draggable="false"
@@ -80,7 +80,7 @@
             <div class="icon">
                 <img
                     src={errorScreen?.image ?? startRoom?.errorSceneLogo ?? errorGif}
-                    alt="Error"
+                    alt=""
                     style="height:125px; max-width:100%;"
                     draggable="false"
                 />
@@ -139,7 +139,7 @@
             </div>
             {#if $errorScreenStore.type !== "retry" && $errorScreenStore.type !== "reconnecting"}
                 <details class="code mt-4">
-                    <summary class="cursor-pointer">{$LL.error.errorScreen.showDetails()}</summary>
+                    <summary class="cursor-pointer hit-area">{$LL.error.errorScreen.showDetails()}</summary>
                     <p class="m-0 mt-1">{$LL.error.errorScreen.code({ code: $errorScreenStore.code ?? "" })}</p>
                     {#if $errorScreenStore.technicalDetails}
                         <p class="m-0 mt-1 break-all">{$errorScreenStore.technicalDetails}</p>
@@ -162,10 +162,10 @@
         }
         h2 {
             padding: 5px;
-            font-size: 30px;
+            font-size: 1.875rem;
         }
         details.code {
-            font-size: 12px;
+            font-size: 0.75rem;
             opacity: 0.6;
             /* Prefixed too, or WebKit ignores the opt-in and `body` keeps this unselectable. */
             -webkit-user-select: text;
@@ -186,7 +186,7 @@
             content: "\2026";
             width: 0;
             font-family: "Press Start 2P";
-            font-size: 16px;
+            font-size: 1rem;
             position: absolute;
             left: 0;
             top: -19px;
@@ -194,7 +194,7 @@
         /* Global so it reaches the <button> rendered by <Button> (scoped CSS would not). */
         :global(.button) {
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.875rem;
         }
     }
 
@@ -207,6 +207,13 @@
             .icon {
                 height: 60px;
             }
+        }
+    }
+
+    /* The dots are only an "in progress" cue: with reduced motion they stay still instead of vanishing. */
+    @media (prefers-reduced-motion: reduce) {
+        main.errorScreen .loading:after {
+            width: 1.25em;
         }
     }
 

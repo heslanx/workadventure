@@ -62,8 +62,8 @@
         {/if}
         {#if $hasClosableMessagesInErrorStore}
             <section class="footer w-full flex flex-row justify-center backdrop-blur-sm">
-                <button class="light" onclick={close}>{$LL.error.errorDialog.close()}</button>
-                <button class="light outline" onclick={refresh}>{$LL.error.errorDialog.reload()}</button>
+                <button class="light hit-area" onclick={close}>{$LL.error.errorDialog.close()}</button>
+                <button class="light outline hit-area" onclick={refresh}>{$LL.error.errorDialog.reload()}</button>
             </section>
         {/if}
     </div>

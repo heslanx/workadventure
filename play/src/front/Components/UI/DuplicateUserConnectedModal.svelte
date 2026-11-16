@@ -32,7 +32,7 @@
             <p id="duplicate-user-message" class="mt-3 text-sm text-white/90">
                 {$LL.warning.duplicateUserConnected.message()}
             </p>
-            <label class="mt-4 flex cursor-pointer items-center gap-2 text-sm text-white/90">
+            <label class="hit-area mt-4 flex cursor-pointer items-center gap-2 text-sm text-white/90">
                 <input
                     type="checkbox"
                     bind:checked={dontRemindAgain}

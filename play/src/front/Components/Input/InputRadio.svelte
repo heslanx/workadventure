@@ -33,7 +33,7 @@
 </script>
 
 <div class="flex items-center gap-2 p-2">
-    <label class="inline-flex cursor-pointer relative">
+    <label class="inline-flex cursor-pointer relative hit-area">
         <input
             id={uniqueId}
             class="sr-only peer"
@@ -47,7 +47,10 @@
             {disabled}
         />
 
-        <div class="input-radio input-radio-light" class:input-radio-contrast={variant === "contrast"}></div>
+        <div
+            class="input-radio input-radio-light peer-focus-visible:ring-2 peer-focus-visible:ring-white peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-contrast"
+            class:input-radio-contrast={variant === "contrast"}
+        ></div>
     </label>
 
     <label for={uniqueId} class="  input-label input-label-inline input-label-light text-white">

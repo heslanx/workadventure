@@ -61,7 +61,7 @@
         {/if}
 
         {#if optional}
-            <div class="text-xs opacity-50">
+            <div class="text-xs opacity-60">
                 {$LL.form.optional()}
             </div>
         {/if}

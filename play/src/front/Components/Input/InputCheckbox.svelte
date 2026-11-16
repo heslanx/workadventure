@@ -32,7 +32,7 @@
 </script>
 
 <div class="flex items-center gap-2 p-2" data-testid={dataTestId}>
-    <label class="inline-flex cursor-pointer relative">
+    <label class="inline-flex cursor-pointer relative hit-area">
         <input
             id={uniqueId}
             class="sr-only peer"
@@ -43,7 +43,10 @@
             {disabled}
         />
 
-        <div class="input-checkbox" class:input-checkbox-white={variant === "white"}></div>
+        <div
+            class="input-checkbox peer-focus-visible:ring-2 peer-focus-visible:ring-white peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-contrast"
+            class:input-checkbox-white={variant === "white"}
+        ></div>
     </label>
 
     {#if label}

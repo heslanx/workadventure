@@ -56,11 +56,12 @@
     inputStyles="box-shadow:none !important"
     --border-focused="1px solid rgb(146 142 187)"
     --input-color="white"
+    --placeholder-color="hsl(var(--contrast-300))"
     --item-color="black"
     --item-hover-color="black"
     --clear-select-color="red"
     loadOptions={searchMembers}
-    inputAttributes={{ "data-testid": "memberAutoCompleteInput" }}
+    inputAttributes={{ "data-testid": "memberAutoCompleteInput", "aria-label": placeholder }}
     {placeholder}
     class="!bg-contrast !rounded-md !border-contrast-400 !outline-none !w-full"
 />

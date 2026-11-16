@@ -28,11 +28,11 @@
 </script>
 
 <div class={outerClass}>
-    <input id={uniqueId} class="hidden peer radio-ds" type="radio" bind:group {value} {onchange} {disabled} />
+    <input id={uniqueId} class="sr-only peer radio-ds" type="radio" bind:group {value} {onchange} {disabled} />
     <label
         for={uniqueId}
         data-testid={dataTestId}
-        class="inline-flex items-center justify-between w-full h-full p-5 text-white bg-transparent border border-solid border-white rounded-lg cursor-pointer opacity-50 peer-checked:bg-white/10 peer-checked:opacity-100 hover:bg-white/10 bg-no-repeat bg-[center_left_1rem] pl-14 min-w-[170px]"
+        class="inline-flex items-center justify-between w-full h-full p-5 text-white bg-transparent border border-solid border-white rounded-lg cursor-pointer opacity-60 peer-checked:bg-white/10 peer-checked:opacity-100 hover:bg-white/10 peer-focus-visible:ring-2 peer-focus-visible:ring-white peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-contrast bg-no-repeat bg-[center_left_1rem] pl-14 min-w-[170px]"
     >
         <div class="flex flex-col">
             <div class="w-full text-lg font-semibold">{label}</div>

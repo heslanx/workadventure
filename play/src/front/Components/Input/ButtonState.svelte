@@ -58,9 +58,9 @@
         <span role="status">{loadingText}</span>
     {:else}
         {#if buttonState === "success"}
-            <IconInfoCircle class="mr-3" />
+            <IconInfoCircle class="mr-3" aria-hidden="true" />
         {:else}
-            <IconCircleX class="mr-3" />
+            <IconCircleX class="mr-3" aria-hidden="true" />
         {/if}
         {finalText}
     {/if}
