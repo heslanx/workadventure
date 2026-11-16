@@ -34,16 +34,23 @@ Owned by the integrator ([`LOOP.md`](LOOP.md)). Status key: `ready`, `waiting` (
   immediate-delete flows. Commit `444906164` updates them, with normal hooks and scoped
   eslint/Prettier passing. E2E specs were scanned, not executed; browser evidence covers
   the actual confirmation behavior. Product/package gate inputs are unchanged from `fd52afc1d`.
-- Independent GPT6Luna E2E delta review passes at `444906164`. Merge and push pending.
+- Independent GPT6Luna E2E delta review passes at `444906164`.
+- Integrated and pushed as `b6136db03`. Merge adds only the existing erick-mode skill documentation
+  to the reviewed candidate. All workers released. No product gate inputs changed.
 
 ## Last green
 
-- `origin/master` = `37636665f` (merge of `chore/orca-docker-ssh-env` at `a3f11a964`), 2026-11-16.
-- Check on `a3f11a964`: play typesafe-i18n, typecheck, svelte-check (5775 files, 0/0), lint,
-  pretty-check, i18n:check, build all exit 0; play vitest 268 files, 1793 passed; back 382 passed;
-  map-storage typecheck 0, tests 119 passed at the default timeout.
-- Gate gotcha: `npm run typesafe-i18n` exits 0 even when generation fails. Read its log for `ERROR`
-  and check `play/src/i18n/i18n-types.ts` is not near-empty before trusting typecheck.
+- `origin/master` = `b6136db03`, HIG round 3 integration, 2026-11-16.
+- Product candidate `fd52afc1d`: generation without ERROR and 605277-byte generated types,
+  typecheck, svelte-check (0 errors, 0 warnings), lint, pretty-check and i18n:check pass.
+- Play: 280 suites, 1862 passed, 10 skipped. Back: 29 suites, 382 passed, 2 skipped.
+  Map-storage: typecheck passes, 12 suites, 119 passed.
+- `444906164` only updates E2E callers; scoped eslint/Prettier and normal hooks pass.
+  E2E specs were scanned, not executed. Real browser confirmation flows passed.
+- Independent review passes on the product candidate and final E2E delta. Documentation
+  and merge preserve all verified product/package inputs, so those checks are reused.
+- Evidence: `~/.claude/orchestrate/konclui-native/recovery-codex/evidence/final-*.log`.
+- Integration uses `[skip ci]` to avoid inherited paid GitHub runner workflows. No hook bypass.
 
 ## Queue
 
@@ -67,9 +74,8 @@ Owned by the integrator ([`LOOP.md`](LOOP.md)). Status key: `ready`, `waiting` (
 
 ## Next prompt
 
-Finish the final independent E2E delta review at `444906164`, then integrate the verified
-round-3 stack into master. Reuse passing checks while their inputs remain unchanged.
-Use `[skip ci]` on the integration commit because inherited push workflows still target
-paid GitHub runners. The required local serial gate already passes.
-Then follow the user recovery order: L-04 browser issues, L-05 dependencies, L-06 through
-L-09 reference UI, L-10 through L-14 native slices and global-shell opt-out.
+L-03 is integrated and pushed. Execute L-04 in bounded verified units, beginning with
+LoginScene ISSUE-001, ISSUE-002 and ISSUE-008. Root reproduced all three in the browser.
+Then address the remaining browser issues and tracked accessibility concerns, including
+replacement of an uploaded sound by a URL without confirmation. Follow with L-05
+dependencies, L-06 through L-09 reference UI, and L-10 through L-14 native integration.
