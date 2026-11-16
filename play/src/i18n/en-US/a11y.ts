@@ -1,0 +1,37 @@
+import type { BaseTranslation } from "../i18n-types";
+
+const a11y: BaseTranslation = {
+    chatApplications: "Applications and attachments",
+    chatCancelReply: "Cancel reply",
+    chatEmojiPicker: "Emoji",
+    chatNotificationsMuted: "Notifications muted",
+    chatRemoveFile: "Remove {name}",
+    compCamerasScrollDown: "Scroll down to see more cameras",
+    compCamerasScrollLeft: "Scroll left to see more cameras",
+    compCamerasScrollRight: "Scroll right to see more cameras",
+    compCamerasScrollUp: "Scroll up to see more cameras",
+    compHelpCameraPermission: "How to allow the camera and microphone from the browser settings",
+    compLoading: "Loading",
+    compNextCollection: "Next collection",
+    compPoweredByWorkAdventure: "Powered by WorkAdventure",
+    compPreviousCollection: "Previous collection",
+    compResizeCameras: "Resize the camera area (up and down arrow keys to resize)",
+    compRoomLogo: "Logo of this world",
+    compRotateAvatar: "Rotate avatar",
+    compScrollTabsLeft: "Show the previous tabs",
+    compScrollTabsRight: "Show the next tabs",
+    frontEmbeddedWebsite: "Embedded website",
+    mapEditorPlayAudio: "Play the audio",
+    mapEditorResizePanel: "Resize the side panel",
+    mapEditorStopAudio: "Stop the audio",
+    mapEditorToggleSidebar: "Show or hide the side panel",
+    popupNextSlide: "Next slide",
+    popupPreviousSlide: "Previous slide",
+    uiMoreInfo: "More information",
+    uiPlaySound: "Play the selected sound",
+    videoEmbeddedVideo: "Embedded video",
+    videoHandRaised: "Hand raised",
+    videoUnmuteAudio: "Unmute audio",
+};
+
+export default a11y;
