@@ -18,6 +18,10 @@ WorkAdventure is a TypeScript monorepo (npm workspaces) for building collaborati
 - `libs/AGENTS.md`: shared `@workadventure/*` libraries.
 - `tests/AGENTS.md`: Playwright end-to-end tests.
 
+## Integration loop
+
+- When several sessions edit this checkout, or you commit, merge or push here: read `docs/integration/LOOP.md` and its queue `docs/integration/STATE.md`. One integrator session is the single git writer.
+
 ## Shared guidance
 
 - `docs/agent/dev-setup.md`
