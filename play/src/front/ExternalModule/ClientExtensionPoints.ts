@@ -77,3 +77,33 @@ export const activeActionBar: Readable<Component | undefined> = derived<
     },
     undefined,
 );
+
+const registeredEmbeddedChatHost = writable<Readable<boolean> | undefined>(undefined);
+
+/**
+ * Declares that an extension hosts the chat sidebar inside a panel of its own while `active` is true. A later
+ * call replaces the earlier one.
+ */
+export function setEmbeddedChatHost(active: Readable<boolean>): void {
+    registeredEmbeddedChatHost.set(active);
+}
+
+/**
+ * Whether an extension hosts the chat right now: `false` until one is registered and whenever its `active`
+ * store is false.
+ *
+ * While it is true, the app mounts no chat sidebar of its own and does not take the chat width off the game
+ * area again, because the host has already laid the chat out. It is flattened here for the same reason as
+ * `activeActionBar`: a template cannot read through a store held inside another store.
+ */
+export const embeddedChatHost: Readable<boolean> = derived<typeof registeredEmbeddedChatHost, boolean>(
+    registeredEmbeddedChatHost,
+    (active, set) => {
+        if (active === undefined) {
+            set(false);
+            return;
+        }
+        return active.subscribe(set);
+    },
+    false,
+);

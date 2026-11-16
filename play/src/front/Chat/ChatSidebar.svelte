@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { Attachment } from "svelte/attachments";
     import { fly } from "../Utils/reducedMotion";
     import { chatVisibilityStore, INITIAL_SIDEBAR_WIDTH, INITIAL_SIDEBAR_WIDTH_MOBILE } from "../Stores/ChatStore";
     import { isMediaBreakpointUp } from "../Utils/BreakpointsUtils";
@@ -15,7 +16,23 @@
     } from "./ChatSidebarWidth";
     import { IconX } from "@wa-icons";
 
+    /**
+     * True when an extension hosts the chat in a panel of its own: the sidebar then fills that panel instead of
+     * positioning, sizing and animating itself, and the user cannot resize it.
+     */
+    let { embedded = false }: { embedded?: boolean } = $props();
+
     let container: HTMLElement | undefined = $state();
+    let embeddedWidth = $state(INITIAL_SIDEBAR_WIDTH);
+
+    const trackEmbeddedWidth: Attachment<HTMLElement> = (node) => {
+        embeddedWidth = node.clientWidth;
+        const observer = new ResizeObserver(() => {
+            embeddedWidth = node.clientWidth;
+        });
+        observer.observe(node);
+        return () => observer.disconnect();
+    };
 
     function closeChat() {
         chatVisibilityStore.set(false);
@@ -92,11 +109,11 @@
     };
 
     $effect(() => {
-        chatSidebarWidthStore.set(sideBarWidth);
+        if (!embedded) chatSidebarWidthStore.set(sideBarWidth);
     });
 
     const onresize = () => {
-        if (isChatSidebarLargerThanWindow() && container) {
+        if (!embedded && isChatSidebarLargerThanWindow() && container) {
             sideBarWidth = maxChatSidebarWidth(document.documentElement.clientWidth);
             chatSidebarWidthStore.set(sideBarWidth);
         }
@@ -117,12 +134,14 @@
         bind:this={container}
         id="chat"
         data-testid="chat"
-        transition:fly={{ duration: 200, x: isRTL ? sideBarWidth : -sideBarWidth }}
-        style="width: {sideBarWidth}px; max-width: {sideBarWidth}px;"
+        transition:fly={{ duration: embedded ? 0 : 200, x: embedded ? 0 : isRTL ? sideBarWidth : -sideBarWidth }}
+        style={embedded ? undefined : `width: ${sideBarWidth}px; max-width: ${sideBarWidth}px;`}
         {@attach blocker}
-        class=" chatWindow !min-w-[320px] max-sm:!min-w-[150px] bg-contrast/95 backdrop-blur-md p-0"
+        {@attach embedded ? trackEmbeddedWidth : undefined}
+        class:embedded
+        class="chatWindow p-0 {embedded ? '' : '!min-w-[320px] max-sm:!min-w-[150px] bg-contrast/95 backdrop-blur-md'}"
     >
-        {#if $hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion}
+        {#if embedded || ($hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion)}
             <div class="close-window absolute end-2 top-3 rounded-sm p-1 bg-contrast/80 z-50">
                 <button
                     class="hover:bg-white/10 rounded aspect-square w-8 h-8 m-0 flex items-center justify-center !text-white"
@@ -135,28 +154,41 @@
             </div>
         {/if}
 
-        <Chat {sideBarWidth} />
-        <!-- A focusable separator is the WAI-ARIA window splitter pattern, which Svelte's a11y rules don't know. -->
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-        <div
-            class="!absolute !end-1 !top-0 !bottom-0 !z-20 !m-auto !w-1 !h-32 !bg-white !rounded !cursor-col-resize select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            id="resize-bar"
-            role="separator"
-            tabindex="0"
-            aria-orientation="vertical"
-            aria-label={$LL.chat.resizeChat()}
-            aria-valuenow={Math.round(sideBarWidth)}
-            aria-valuemin={CHAT_SIDEBAR_MIN_WIDTH}
-            aria-valuemax={maxChatSidebarWidth(document.documentElement.clientWidth)}
-            onmousedown={handleMousedown}
-            ondblclick={toggleFullScreen}
-            ontouchstart={handleTouchStart}
-            onkeydown={handleKeydown}
-        ></div>
+        <Chat sideBarWidth={embedded ? embeddedWidth : sideBarWidth} />
+        {#if !embedded}
+            <!-- A focusable separator is the WAI-ARIA window splitter pattern, which Svelte's a11y rules don't know. -->
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+            <div
+                class="!absolute !end-1 !top-0 !bottom-0 !z-20 !m-auto !w-1 !h-32 !bg-white !rounded !cursor-col-resize select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                id="resize-bar"
+                role="separator"
+                tabindex="0"
+                aria-orientation="vertical"
+                aria-label={$LL.chat.resizeChat()}
+                aria-valuenow={Math.round(sideBarWidth)}
+                aria-valuemin={CHAT_SIDEBAR_MIN_WIDTH}
+                aria-valuemax={maxChatSidebarWidth(document.documentElement.clientWidth)}
+                onmousedown={handleMousedown}
+                ondblclick={toggleFullScreen}
+                ontouchstart={handleTouchStart}
+                onkeydown={handleKeydown}
+            ></div>
+        {/if}
     </section>
 {/if}
 
 <style>
+    /* The host owns the panel: fill it, and let it paint the background. */
+    .chatWindow.embedded {
+        position: relative;
+        top: auto;
+        z-index: auto;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        height: 100%;
+    }
+
     @media only screen and (max-width: 767px) {
         .chatWindow {
             width: 100% !important;

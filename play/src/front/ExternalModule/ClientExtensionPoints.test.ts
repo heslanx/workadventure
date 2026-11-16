@@ -168,3 +168,113 @@ describe("activeActionBar", () => {
         expect(listeners).toBe(0);
     });
 });
+
+describe("embeddedChatHost", () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    async function loadPort() {
+        return await import("./ClientExtensionPoints");
+    }
+
+    it("is false when no extension hosts the chat, so that the app keeps its own chat sidebar", async () => {
+        const { embeddedChatHost } = await loadPort();
+
+        expect(get(embeddedChatHost)).toBe(false);
+    });
+
+    it("is false while the registered host is not active", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+
+        setEmbeddedChatHost(readable(false));
+
+        expect(get(embeddedChatHost)).toBe(false);
+    });
+
+    it("is true while the registered host is active", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+
+        setEmbeddedChatHost(readable(true));
+
+        expect(get(embeddedChatHost)).toBe(true);
+    });
+
+    it("follows the active store of the host and tells its subscribers each time it changes", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+        const active = writable(false);
+        setEmbeddedChatHost(active);
+        const seen: boolean[] = [];
+        const unsubscribe = embeddedChatHost.subscribe((hosted) => seen.push(hosted));
+
+        active.set(true);
+        active.set(false);
+        unsubscribe();
+
+        expect(seen).toEqual([false, true, false]);
+    });
+
+    it("picks up a host registered after a consumer subscribed", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+        const seen: boolean[] = [];
+        const unsubscribe = embeddedChatHost.subscribe((hosted) => seen.push(hosted));
+
+        setEmbeddedChatHost(readable(true));
+        unsubscribe();
+
+        expect(seen).toEqual([false, true]);
+    });
+
+    it("switches to the host registered last and ignores the active store of the one it replaced", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+        const firstActive = writable(true);
+        setEmbeddedChatHost(firstActive);
+        const seen: boolean[] = [];
+        const unsubscribe = embeddedChatHost.subscribe((hosted) => seen.push(hosted));
+
+        setEmbeddedChatHost(readable(false));
+        firstActive.set(false);
+        firstActive.set(true);
+        unsubscribe();
+
+        expect(seen).toEqual([true, false]);
+    });
+
+    it("releases the active store of a replaced host while a consumer keeps reading", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+        let firstListeners = 0;
+        const first = readable(true, () => {
+            firstListeners += 1;
+            return () => {
+                firstListeners -= 1;
+            };
+        });
+        setEmbeddedChatHost(first);
+        const unsubscribe = embeddedChatHost.subscribe(() => undefined);
+        expect(firstListeners).toBe(1);
+
+        setEmbeddedChatHost(readable(false));
+        const releasedWhileReading = firstListeners === 0;
+        unsubscribe();
+
+        expect(releasedWhileReading).toBe(true);
+    });
+
+    it("stops listening to the active store of the host once nothing reads the chat host", async () => {
+        const { embeddedChatHost, setEmbeddedChatHost } = await loadPort();
+        let listeners = 0;
+        const active = readable(true, () => {
+            listeners += 1;
+            return () => {
+                listeners -= 1;
+            };
+        });
+        setEmbeddedChatHost(active);
+
+        const unsubscribe = embeddedChatHost.subscribe(() => undefined);
+        expect(listeners).toBe(1);
+        unsubscribe();
+
+        expect(listeners).toBe(0);
+    });
+});
