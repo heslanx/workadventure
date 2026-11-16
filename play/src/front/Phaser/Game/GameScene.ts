@@ -191,6 +191,7 @@ import { calendarEventsStore, isActivatedStore as isCalendarActiveStore } from "
 import { isActivatedStore as isTodoListActiveStore, todoListsStore } from "../../Stores/TodoListStore";
 import { externalSvelteComponentService } from "../../Stores/Utils/externalSvelteComponentService";
 import type { ExtensionModule } from "../../ExternalModule/ExtensionModule";
+import { notifySceneShutdown, runSceneFrame } from "../../ExternalModule/ClientExtensionPoints";
 import type { SpaceInterface } from "../../Space/SpaceInterface";
 import type { UserProviderInterface } from "../../Chat/UserProvider/UserProviderInterface";
 import { registerAdditionalMenuItem, unregisterAdditionalMenuItem } from "../../Stores/AdditionalItemsMenuStore";
@@ -1252,6 +1253,7 @@ export class GameScene extends DirtyScene {
         this.outlineManager?.clear();
         this.tileAnimationRefreshEvent?.remove(false);
         this.tileAnimationRefreshEvent = undefined;
+        notifySceneShutdown(this);
         if (this.pathfindingManager) {
             this.thinWallsController.destroy(this.pathfindingManager);
         }
@@ -1429,6 +1431,17 @@ export class GameScene extends DirtyScene {
         }
 
         this.applyBufferedRemotePlayerChanges();
+
+        runSceneFrame({
+            scene: this,
+            time,
+            delta,
+            baseUrl: window.location.href,
+            currentPlayer: this.CurrentPlayer,
+            remoteCharacters: this.MapPlayersByKey,
+            remotePlayers: this.remotePlayersRepository.getPlayers(),
+            getPlayerVariable: (key) => this.playerVariablesManager?.variables.get(key),
+        });
 
         // Let's handle all events
         while (this.pendingEvents.length !== 0) {

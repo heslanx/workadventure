@@ -1,5 +1,11 @@
+import * as Sentry from "@sentry/svelte";
+import { asError } from "catch-unknown";
 import type { Component, Snippet } from "svelte";
 import { derived, writable, type Readable } from "svelte/store";
+import type { MessageUserJoined } from "../Connection/ConnexionModels";
+import type { RemotePlayer } from "../Phaser/Entity/RemotePlayer";
+import type { GameScene } from "../Phaser/Game/GameScene";
+import type { Player } from "../Phaser/Player/Player";
 import type { ViewportBounds } from "../Stores/CoWebsiteLayout";
 
 /**
@@ -107,3 +113,125 @@ export const embeddedChatHost: Readable<boolean> = derived<typeof registeredEmbe
     },
     false,
 );
+
+/** What the scene shows an extension on each frame. */
+export interface SceneFrameContext {
+    readonly scene: GameScene;
+    /** The time of this frame and the time since the previous one, both in milliseconds. */
+    readonly time: number;
+    readonly delta: number;
+    /** The address of the page, which the relative URLs of map data resolve against. */
+    readonly baseUrl: string;
+    /** `undefined` until the scene has created the current player. */
+    readonly currentPlayer: Player | undefined;
+    /** The characters of the other players, by user id. */
+    readonly remoteCharacters: ReadonlyMap<number, RemotePlayer>;
+    /** What the scene knows of the other players, by user id: the variables they published, for one. */
+    readonly remotePlayers: ReadonlyMap<number, MessageUserJoined>;
+    /** A variable of the current player, `undefined` when it is not set. */
+    getPlayerVariable(key: string): unknown;
+}
+
+/** Code that follows the game scene: it is called on each frame and told when the scene shuts down. */
+export interface SceneExtension {
+    /** Names the extension in error reports. */
+    readonly id: string;
+    /** Called once per frame, after the scene has applied the changes the other players made. */
+    onFrame?(context: SceneFrameContext): void;
+    /** Called when the scene shuts down, before it releases its own resources. Give back what the extension drew. */
+    onShutdown?(scene: GameScene): void;
+}
+
+// The least frame time between two reports of one extension failing on a frame. It mirrors the frame guard's
+// FRAME_ERROR_REPORT_INTERVAL_MS in Game.ts: an extension that fails on a frame fails again on the next one.
+const SCENE_EXTENSION_FAILURE_REPORT_INTERVAL_MS = 10_000;
+
+interface FrameFailures {
+    lastReportTime: number;
+    sinceLastReport: number;
+}
+
+// Replaced, never changed in place, so that a loop over it is not disturbed when an extension registers or
+// unregisters from inside a call.
+let sceneExtensions: readonly SceneExtension[] = [];
+const frameFailures = new Map<SceneExtension, FrameFailures>();
+
+/**
+ * Registers an extension of the game scene. Extensions are called in the order they were registered, and the
+ * scene calls the ones registered at the start of a call. One that registers or unregisters during a frame or a
+ * shutdown takes effect from the next one.
+ *
+ * Returns the function that unregisters it, which does nothing when called again.
+ */
+export function registerSceneExtension(extension: SceneExtension): () => void {
+    sceneExtensions = [...sceneExtensions, extension];
+    let registered = true;
+    return () => {
+        if (!registered) return;
+        registered = false;
+        const index = sceneExtensions.indexOf(extension);
+        sceneExtensions = sceneExtensions.filter((_, position) => position !== index);
+        if (!sceneExtensions.includes(extension)) {
+            frameFailures.delete(extension);
+        }
+    };
+}
+
+/** The registered extensions of the game scene, in registration order. */
+export function getSceneExtensions(): readonly SceneExtension[] {
+    return sceneExtensions;
+}
+
+/**
+ * Calls `onFrame` of every registered extension. The game scene calls it once per frame.
+ *
+ * An extension that throws is reported and the next one still runs, so a faulty extension cannot stop the frame.
+ */
+export function runSceneFrame(context: SceneFrameContext): void {
+    for (const extension of sceneExtensions) {
+        try {
+            extension.onFrame?.(context);
+        } catch (error: unknown) {
+            reportFrameFailure(extension, error, context.time);
+        }
+    }
+}
+
+/**
+ * Calls `onShutdown` of every registered extension. The game scene calls it when it shuts down.
+ *
+ * An extension that throws is reported and the next one still runs, so that each can give back what it drew.
+ */
+export function notifySceneShutdown(scene: GameScene): void {
+    for (const extension of sceneExtensions) {
+        try {
+            extension.onShutdown?.(scene);
+        } catch (error: unknown) {
+            const cause = asError(error);
+            console.error(`The scene extension "${extension.id}" failed on shutdown`, cause);
+            Sentry.captureException(cause, { extra: { extensionId: extension.id } });
+        }
+    }
+}
+
+function reportFrameFailure(extension: SceneExtension, error: unknown, time: number): void {
+    let failures = frameFailures.get(extension);
+    if (failures === undefined) {
+        failures = { lastReportTime: Number.NEGATIVE_INFINITY, sinceLastReport: 0 };
+        frameFailures.set(extension, failures);
+    }
+    failures.sinceLastReport++;
+    if (time - failures.lastReportTime < SCENE_EXTENSION_FAILURE_REPORT_INTERVAL_MS) {
+        return;
+    }
+    const cause = asError(error);
+    console.error(
+        `The scene extension "${extension.id}" failed on a frame (failures since the last report: ${failures.sinceLastReport})`,
+        cause,
+    );
+    Sentry.captureException(cause, {
+        extra: { extensionId: extension.id, failuresSinceLastReport: failures.sinceLastReport },
+    });
+    failures.lastReportTime = time;
+    failures.sinceLastReport = 0;
+}

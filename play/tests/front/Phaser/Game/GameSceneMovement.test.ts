@@ -9,6 +9,8 @@ import type { PositionMessage } from "@workadventure/messages";
 import type { Movable, SpatialMap } from "@workadventure/shared-utils";
 import { GameScene } from "../../../../src/front/Phaser/Game/GameScene";
 import type { HasPlayerMovedInterface } from "../../../../src/front/Api/Events/HasPlayerMovedInterface";
+import { registerSceneExtension } from "../../../../src/front/ExternalModule/ClientExtensionPoints";
+import type { SceneFrameContext } from "../../../../src/front/ExternalModule/ClientExtensionPoints";
 import { iframeListener } from "../../../../src/front/Api/IframeListener";
 import type { Room } from "../../../../src/front/Connection/Room";
 import type { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
@@ -56,6 +58,7 @@ interface GameSceneInternals {
     connection: unknown;
     hasJoinedRoom: boolean;
     CurrentPlayer: unknown;
+    playerVariablesManager: unknown;
     userInputManager: unknown;
     activatablesManager: unknown;
     gameMapFrontWrapper: unknown;
@@ -344,6 +347,82 @@ describe("GameScene remote players, once per frame (update)", () => {
         expectDriftReports([
             ["The scene and the repository have a different number of remote players", { userId: undefined, ...sizes }],
         ]);
+    });
+});
+
+describe("GameScene extensions, once per frame (update)", () => {
+    const unregisterAll: Array<() => void> = [];
+
+    afterEach(() => {
+        for (const unregister of unregisterAll.splice(0)) unregister();
+    });
+
+    it("calls each registered extension once per frame, after the changes of the remote players are applied", () => {
+        const { scene } = createScene();
+        const frames: Array<{ scene: unknown; time: number; delta: number; remoteIds: number[] }> = [];
+        unregisterAll.push(
+            registerSceneExtension({
+                id: "test",
+                onFrame: (context) =>
+                    frames.push({
+                        scene: context.scene,
+                        time: context.time,
+                        delta: context.delta,
+                        remoteIds: [...context.remoteCharacters.keys()],
+                    }),
+            }),
+        );
+        scene.getRemotePlayersRepository().addPlayer(joined(7, 100, 200));
+
+        scene.update(1_000, 16);
+        scene.update(1_016, 17);
+
+        expect(frames).toHaveLength(2);
+        expect(frames[0].scene).toBe(scene);
+        expect(frames.map(({ time, delta, remoteIds }) => ({ time, delta, remoteIds }))).toEqual([
+            { time: 1_000, delta: 16, remoteIds: [7] },
+            { time: 1_016, delta: 17, remoteIds: [7] },
+        ]);
+    });
+
+    it("tells the extension about the page, the remote players and the variables of the current player", () => {
+        const { scene, internals } = createScene();
+        internals.playerVariablesManager = { variables: new Map([["officeSeat", { v: 1, direction: "down" }]]) };
+        const contexts: SceneFrameContext[] = [];
+        unregisterAll.push(registerSceneExtension({ id: "test", onFrame: (context) => contexts.push(context) }));
+        scene.getRemotePlayersRepository().addPlayer(joined(7, 100, 200));
+
+        scene.update(1_000, 16);
+
+        const [context] = contexts;
+        expect(context.baseUrl).toBe(window.location.href);
+        expect(context.currentPlayer).toBeUndefined();
+        expect([...context.remotePlayers.keys()]).toEqual([7]);
+        expect(context.getPlayerVariable("officeSeat")).toEqual({ v: 1, direction: "down" });
+        expect(context.getPlayerVariable("missing")).toBeUndefined();
+    });
+
+    it("keeps the frame going when an extension throws, and reports it", () => {
+        const { scene, remotePlayers } = createScene();
+        const failure = new Error("extension failed");
+        unregisterAll.push(
+            registerSceneExtension({
+                id: "faulty",
+                onFrame: () => {
+                    throw failure;
+                },
+            }),
+        );
+        scene.getRemotePlayersRepository().addPlayer(joined(7, 100, 200));
+        scene.update(1_000, 16);
+        scene.getRemotePlayersRepository().movePlayer(moved(7, 300, 200));
+
+        expect(() => scene.update(2_000, 16)).not.toThrow();
+
+        expect(remotePlayers.get(7)?.positions).toHaveLength(1);
+        expect(captureException).toHaveBeenCalledWith(failure, {
+            extra: { extensionId: "faulty", failuresSinceLastReport: 1 },
+        });
     });
 });
 
