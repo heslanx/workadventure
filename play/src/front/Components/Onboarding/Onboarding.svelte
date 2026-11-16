@@ -94,6 +94,50 @@
         onboardingStore.skip();
     }
 
+    // Where the focus was when the tutorial opened. Skipping, finishing or cancelling it removes the button that had the
+    // focus, which would leave it on <body>: it goes back to where it was, or to the profile menu that replays the
+    // tutorial. Moving between steps keeps the tutorial open, so it never touches the focus here.
+    let focusBeforeTutorial: HTMLElement | undefined;
+    let tutorialWasOpen = false;
+
+    function isDocumentRoot(element: Element | null): boolean {
+        return !element || element === document.body || element === document.documentElement;
+    }
+
+    function isFocusLost(): boolean {
+        const active = document.activeElement;
+        return isDocumentRoot(active) || !!active?.closest("[data-onboarding-panel]");
+    }
+
+    // Runs before the DOM update, so a step that takes the focus when it mounts is not mistaken for the origin.
+    $effect.pre(() => {
+        const isOpen = $onboardingStore !== null;
+        if (isOpen === tutorialWasOpen) return;
+        tutorialWasOpen = isOpen;
+        if (isOpen) {
+            // The profile menu closes itself when it starts the tutorial, so the focus can already be on <body>, which
+            // is never a place to give it back to.
+            const active = document.activeElement;
+            focusBeforeTutorial =
+                active instanceof HTMLElement && !isDocumentRoot(active) && !active.closest("[data-onboarding-panel]")
+                    ? active
+                    : undefined;
+            return;
+        }
+        const origin = focusBeforeTutorial;
+        focusBeforeTutorial = undefined;
+        tick()
+            .then(() => {
+                // Someone who moved on to another control during the closing keeps it.
+                if (!isFocusLost()) return;
+                origin?.focus();
+                // An origin that is gone, hidden or not focusable any more falls through to the profile menu.
+                if (!isFocusLost()) return;
+                document.querySelector<HTMLElement>('[data-testid="action-user"] [role="button"]')?.focus();
+            })
+            .catch((error: unknown) => console.error("Could not restore the focus after the tutorial", error));
+    });
+
     // During onboarding: temporarily disable silent zone so the communication demo works
     $effect(() => {
         silentStore.setOnboardingOverride($onboardingStore !== null);
