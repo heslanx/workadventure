@@ -32,6 +32,7 @@ import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
 import recording from "./recording";
 import a11y from "./a11y";
+import konclui from "./konclui";
 
 const ja_JP = deepmerge(en_US, {
     a11y,
@@ -66,6 +67,7 @@ const ja_JP = deepmerge(en_US, {
     recording,
     screenAnnotation,
     desktop,
+    konclui,
 });
 
 export default ja_JP;

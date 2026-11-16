@@ -32,6 +32,7 @@ import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
 import recording from "./recording";
 import a11y from "./a11y";
+import konclui from "./konclui";
 
 const ar_SA = deepmerge(en_US, {
     a11y,
@@ -66,6 +67,7 @@ const ar_SA = deepmerge(en_US, {
     recording,
     screenAnnotation,
     desktop,
+    konclui,
 });
 
 export default ar_SA;

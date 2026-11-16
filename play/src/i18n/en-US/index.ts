@@ -31,6 +31,7 @@ import onboarding from "./onboarding";
 import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
 import a11y from "./a11y";
+import konclui from "./konclui";
 
 const en_US: BaseTranslation = {
     a11y,
@@ -65,6 +66,7 @@ const en_US: BaseTranslation = {
     onboarding,
     screenAnnotation,
     desktop,
+    konclui,
 };
 
 export default en_US;

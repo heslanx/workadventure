@@ -32,6 +32,7 @@ import screenAnnotation from "./screenAnnotation";
 import desktop from "./desktop";
 import recording from "./recording";
 import a11y from "./a11y";
+import konclui from "./konclui";
 
 const zh_TW = deepmerge(en_US, {
     a11y,
@@ -66,6 +67,7 @@ const zh_TW = deepmerge(en_US, {
     recording,
     screenAnnotation,
     desktop,
+    konclui,
 });
 
 export default zh_TW;
