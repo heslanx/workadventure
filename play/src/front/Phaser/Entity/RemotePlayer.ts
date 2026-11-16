@@ -207,7 +207,7 @@ export class RemotePlayer extends Character implements ActivatableInterface {
             actionName: get(LL).report.moderate.action(),
             protected: true,
             priority: -1,
-            style: "is-error bg-white/10 hover:bg-white/30 text-red-500",
+            style: "is-error bg-white/10 hover:bg-pop-red/20 [&_.btn-label]:text-pop-red-text",
             testId: "wokamenu-block-user-button",
             callback: () => {
                 // Track the report user action
