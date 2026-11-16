@@ -4,6 +4,7 @@ import type { CowebsiteOpenedAnalyticsContext } from "../Administration/Cowebsit
 import { buildCowebsiteOpenedProperties } from "../Administration/CowebsiteAnalyticsProperties";
 import { analyticsClient } from "../Administration/AnalyticsClient";
 import { TimedEventsByKey } from "../Administration/TimedAnalyticsEvent";
+import { splitGameViewport } from "./CoWebsiteLayout";
 
 export function createCoWebsiteStore() {
     const { subscribe, update } = writable<Array<CoWebsite>>([]);
@@ -141,51 +142,25 @@ export const windowSize = readable({ width: window.innerWidth, height: window.in
 
 export const coWebsiteRatio = writable(0.5);
 
-export const canvasSize = derived(
+const viewportLayout = derived(
     [coWebsites, windowSize, coWebsiteRatio, fullScreenCowebsite],
-    ([$coWebsites, $windowSize, $coWebsiteRatio, $fullScreenCowebsite]) => {
-        if ($coWebsites.length === 0) {
-            return { width: window.innerWidth, height: window.innerHeight };
-        }
-        if ($fullScreenCowebsite) {
-            return {
-                width: 0,
-                height: 0,
-            };
-        }
-        if ($windowSize.width <= $windowSize.height) {
-            return {
-                width: $windowSize.width,
-                height: $windowSize.height * (1 - $coWebsiteRatio),
-            };
-        } else {
-            return {
-                width: $windowSize.width * (1 - $coWebsiteRatio),
-                height: $windowSize.height,
-            };
-        }
-    },
+    ([$coWebsites, $windowSize, $coWebsiteRatio, $fullScreenCowebsite]) =>
+        splitGameViewport(
+            // Without a co-website the game owns the whole window. It is read live because windowSize
+            // only follows resize events while something subscribes to it.
+            $coWebsites.length === 0 ? { width: window.innerWidth, height: window.innerHeight } : $windowSize,
+            {
+                visible: $coWebsites.length > 0,
+                fullscreen: $fullScreenCowebsite,
+                ratio: $coWebsiteRatio,
+                vertical: $windowSize.width <= $windowSize.height,
+            },
+        ),
 );
 
-export const coWebsitesSize = derived(
-    [coWebsites, windowSize, coWebsiteRatio],
-    ([$coWebsites, $windowSize, $coWebsiteRatio]) => {
-        if ($coWebsites.length === 0) {
-            return { width: 0, height: 0 };
-        }
-        if ($windowSize.width <= $windowSize.height) {
-            return {
-                width: $windowSize.width,
-                height: $windowSize.height * $coWebsiteRatio,
-            };
-        } else {
-            return {
-                width: $windowSize.width * $coWebsiteRatio,
-                height: $windowSize.height,
-            };
-        }
-    },
-);
+export const canvasSize = derived(viewportLayout, ($viewportLayout) => $viewportLayout.game);
+
+export const coWebsitesSize = derived(viewportLayout, ($viewportLayout) => $viewportLayout.website);
 
 export class CoWebsiteManager {
     get verticalMode(): boolean {

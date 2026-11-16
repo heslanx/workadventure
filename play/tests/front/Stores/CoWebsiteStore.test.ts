@@ -2,7 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyticsClient } from "../../../src/front/Administration/AnalyticsClient";
 import type { CoWebsite } from "../../../src/front/WebRtc/CoWebsite/CoWebsite";
-import { createCoWebsiteStore } from "../../../src/front/Stores/CoWebsiteStore";
+import {
+    canvasSize,
+    coWebsiteRatio,
+    coWebsites,
+    coWebsitesSize,
+    createCoWebsiteStore,
+    fullScreenCowebsite,
+} from "../../../src/front/Stores/CoWebsiteStore";
 
 const makeSender = () => vi.fn();
 
@@ -139,5 +146,99 @@ describe("CoWebsiteStore analytics intervals", () => {
 
         expect(sendAdmin).not.toHaveBeenCalled();
         expect(store.findById("cowebsite-1")).toBeUndefined();
+    });
+});
+
+/**
+ * The sizes the game canvas and the co-website panel take, observed through the exported stores. The
+ * geometry itself is covered in CoWebsiteLayout.test.ts; these cases pin how the store feeds it: which
+ * window it measures, when the window counts as portrait, and what fullscreen does to each size.
+ */
+describe("CoWebsiteStore viewport sizes", () => {
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    let unsubscribe: Array<() => void> = [];
+
+    function observe<T>(store: { subscribe: (run: (value: T) => void) => () => void }): () => T {
+        let latest: T | undefined;
+        unsubscribe.push(
+            store.subscribe((value) => {
+                latest = value;
+            }),
+        );
+        return () => latest as T;
+    }
+
+    function setWindowSize(width: number, height: number, notify: boolean) {
+        Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: width });
+        Object.defineProperty(window, "innerHeight", { configurable: true, writable: true, value: height });
+        if (notify) {
+            window.dispatchEvent(new Event("resize"));
+        }
+    }
+
+    beforeEach(() => {
+        window.capabilities = {};
+    });
+
+    afterEach(() => {
+        unsubscribe.forEach((stop) => stop());
+        unsubscribe = [];
+        coWebsites.removeAll();
+        fullScreenCowebsite.set(false);
+        coWebsiteRatio.set(0.5);
+        setWindowSize(originalWidth, originalHeight, false);
+    });
+
+    it("gives the game the live window and the panel nothing when no cowebsite is open", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+
+        // No resize event: windowSize still holds the size it had when it was created.
+        setWindowSize(640, 480, false);
+        coWebsiteRatio.set(0.3);
+
+        expect(canvas()).toEqual({ width: 640, height: 480 });
+        expect(panel()).toEqual({ width: 0, height: 0 });
+    });
+
+    it("splits the window width in a landscape window", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        setWindowSize(1000, 800, true);
+
+        coWebsites.add(fakeCoWebsite("cowebsite-1"));
+        coWebsiteRatio.set(0.25);
+
+        expect(canvas()).toEqual({ width: 750, height: 800 });
+        expect(panel()).toEqual({ width: 250, height: 800 });
+    });
+
+    it("splits the window height in a portrait window, and a square window is portrait", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        coWebsites.add(fakeCoWebsite("cowebsite-1"));
+
+        setWindowSize(600, 900, true);
+        expect(canvas()).toEqual({ width: 600, height: 450 });
+        expect(panel()).toEqual({ width: 600, height: 450 });
+
+        setWindowSize(800, 800, true);
+        expect(canvas()).toEqual({ width: 800, height: 400 });
+        expect(panel()).toEqual({ width: 800, height: 400 });
+    });
+
+    it("hides the game in fullscreen and leaves the panel size alone", () => {
+        const canvas = observe(canvasSize);
+        const panel = observe(coWebsitesSize);
+        setWindowSize(1000, 800, true);
+        coWebsites.add(fakeCoWebsite("cowebsite-1"));
+        const panelBefore = panel();
+
+        fullScreenCowebsite.set(true);
+
+        expect(canvas()).toEqual({ width: 0, height: 0 });
+        expect(panel()).toEqual(panelBefore);
+        expect(panel()).toEqual({ width: 500, height: 800 });
     });
 });
