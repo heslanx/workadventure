@@ -74,8 +74,9 @@ Stop and ask the user only for:
 - the same check red after three fixes that each targeted a different cause;
 - a credential, account or paid service the loop lacks.
 
-The loop is done when the queue has no `ready`, `waiting` or `blocked` items and `origin/master`
-equals the last green SHA in `STATE.md`.
+The loop is done when the queue has no `ready`, `waiting` or `blocked` items and every code change on
+`origin/master` is covered by the last green check in `STATE.md` (documentation-only commits need no
+re-run).
 
 ## Prompts
 
