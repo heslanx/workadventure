@@ -45,6 +45,7 @@
     import type { WorkAdventureComponent } from "../../types/component";
     import { LL } from "../../i18n/i18n-svelte";
     import { sidePanelWidthStore } from "../Stores/SidePanelStore";
+    import { activeActionBar } from "../ExternalModule/ClientExtensionPoints";
     import { mapEditorSideBarWidthStore } from "./MapEditor/MapEditorSideBarWidthStore";
     import { calendarRemindersStore, startCalendarReminders } from "./Calendar/CalendarReminder";
     import ActionBar from "./ActionBar/ActionBar.svelte";
@@ -318,7 +319,10 @@
 
     <AudioPlayer />
 
-    <div class="flex min-h-full flex-col-reverse mobile:flex-col">
+    <div
+        class="flex min-h-full flex-col-reverse mobile:flex-col"
+        class:action-bar-replaced={$activeActionBar !== undefined}
+    >
         <section id="main-layout-main" class="pb-0 flex-1 pointer-events-none h-full w-full relative">
             <div class="fixed z-[1000] bottom-0 start-0 right-0 m-auto w-max mobile:w-[98vw] md:max-w-[80%]">
                 <div class="popups flex items-end relative w-full justify-center mobile:mb-24 mb-4 h-[calc(100%-96px)]">
@@ -454,11 +458,22 @@
         <div class="">
             <!--<ActionBar />-->
         </div>
-        <ActionBar />
+        {#if $activeActionBar !== undefined}
+            {@const ReplacementActionBar = $activeActionBar}
+            <ReplacementActionBar />
+        {:else}
+            <ActionBar />
+        {/if}
     </div>
 </div>
 
 <style>
+    /* An extension replaced the action bar: the layout fills its parent instead of the window. */
+    .action-bar-replaced {
+        position: relative;
+        height: 100%;
+    }
+
     .popups {
         z-index: 1000;
         .popupwrapper {

@@ -35,10 +35,14 @@
     import { FileListener } from "../Phaser/FileUpload/FileListener";
     import { isStructuredCloneSupported } from "../Utils/BrowserCompatibility";
     import { gameSceneIsLoadedStore } from "../Stores/GameSceneStore";
+    import { getAppFrame } from "../ExternalModule/ClientExtensionPoints";
     import GameOverlay from "./GameOverlay.svelte";
     import CoWebsitesContainer from "./EmbedScreens/CoWebsitesContainer.svelte";
     import BrowserNotSupported from "./BrowserNotSupported/BrowserNotSupported.svelte";
+    import PassThroughFrame from "./AppFrame/PassThroughFrame.svelte";
 
+    // Read once: a frame is registered before the app mounts and does not change while it runs.
+    const AppFrame = getAppFrame() ?? PassThroughFrame;
     let WebGLRenderer = Phaser.Renderer.WebGL.WebGLRenderer;
     let game: Game | undefined = $state();
     let gameDiv: HTMLDivElement | undefined = $state();
@@ -299,36 +303,38 @@
 {#if browserNotSupported}
     <BrowserNotSupported />
 {:else}
-    <div
-        class="h-dvh w-dvw flex landscape:flex-row portrait:flex-col-reverse"
-        id="main-container"
-        bind:this={gameContainer}
-    >
+    <AppFrame>
         <div
-            id="game"
-            class="relative {$fullScreenCowebsite ? 'hidden' : ''}"
-            class:game-scene-loaded={$gameSceneIsLoadedStore}
-            bind:this={gameDiv}
+            class="h-full w-full flex landscape:flex-row portrait:flex-col-reverse"
+            id="main-container"
+            bind:this={gameContainer}
         >
-            {#if game}
-                <GameOverlay {game} />
+            <div
+                id="game"
+                class="relative {$fullScreenCowebsite ? 'hidden' : ''}"
+                class:game-scene-loaded={$gameSceneIsLoadedStore}
+                bind:this={gameDiv}
+            >
+                {#if game}
+                    <GameOverlay {game} />
+                {/if}
+            </div>
+            {#if $coWebsites.length > 0}
+                <div class="flex-1">
+                    <!-- Transitions are breaking the onDestroy lifecycle of cowebsites -->
+                    <!--            transition:fly={{-->
+                    <!--            duration: 200,-->
+                    <!--            x:-->
+                    <!--                $screenOrientationStore === "portrait"-->
+                    <!--                    ? 0-->
+                    <!--                    : document.documentElement.dir === "rtl"-->
+                    <!--                        ? -$coWebsitesSize.width-->
+                    <!--                        : $coWebsitesSize.width,-->
+                    <!--            y: $screenOrientationStore === "portrait" ? -$coWebsitesSize.height : 0,-->
+                    <!--        }}-->
+                    <CoWebsitesContainer />
+                </div>
             {/if}
         </div>
-        {#if $coWebsites.length > 0}
-            <div class="flex-1">
-                <!-- Transitions are breaking the onDestroy lifecycle of cowebsites -->
-                <!--            transition:fly={{-->
-                <!--            duration: 200,-->
-                <!--            x:-->
-                <!--                $screenOrientationStore === "portrait"-->
-                <!--                    ? 0-->
-                <!--                    : document.documentElement.dir === "rtl"-->
-                <!--                        ? -$coWebsitesSize.width-->
-                <!--                        : $coWebsitesSize.width,-->
-                <!--            y: $screenOrientationStore === "portrait" ? -$coWebsitesSize.height : 0,-->
-                <!--        }}-->
-                <CoWebsitesContainer />
-            </div>
-        {/if}
-    </div>
+    </AppFrame>
 {/if}
