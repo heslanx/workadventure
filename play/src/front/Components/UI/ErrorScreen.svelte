@@ -8,7 +8,7 @@
     import LL from "../../../i18n/i18n-svelte";
     import { userIsConnected } from "../../Stores/MenuStore";
 
-    import logoImg from "../images/logo-min-white.png";
+    import logoImg from "../images/konclui-logo.svg";
     import LoaderIcon from "../Icons/LoaderIcon.svelte";
     import type { Room } from "../../Connection/Room";
     import Button from "./Button.svelte";

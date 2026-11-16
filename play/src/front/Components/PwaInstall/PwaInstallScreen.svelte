@@ -1,8 +1,7 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import { LL } from "../../../i18n/i18n-svelte";
-    import logoImg from "../images/logo.svg";
-    import bgMap from "../images/map-exemple.webp";
+    import logoImg from "../images/konclui-logo.svg";
     import poweredByWorkAdventureImg from "../images/Powered_By_WorkAdventure_Big.png";
     import pwaDefaultBackground from "../images/pwa-background-image.jpg";
     import { gameManager } from "../../Phaser/Game/GameManager";
@@ -19,7 +18,7 @@
     import { IconApps, IconAppWindow, IconHistory } from "@wa-icons";
 
     const logo = gameManager.currentStartedRoom.loginSceneLogo ?? logoImg;
-    const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage ?? bgMap;
+    const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
 
     let neverShowAgain = $state(false);
     let unsubscribePwa: (() => void) | undefined;
@@ -61,11 +60,13 @@
     class="pwa-install-screen loginScene relative z-30 flex w-full h-full flex-col items-center justify-center overflow-y-auto pointer-events-auto font-[roboto]"
 >
     <!-- Full-page background -->
-    <div
-        class="absolute inset-0 z-0 bg-cover bg-center h-full w-full"
-        style="background-image: url('{sceneBg}');"
-        aria-hidden="true"
-    ></div>
+    {#if sceneBg}
+        <div
+            class="absolute inset-0 z-0 bg-cover bg-center h-full w-full"
+            style="background-image: url('{sceneBg}');"
+            aria-hidden="true"
+        ></div>
+    {/if}
     <!-- Dim overlay (room tint or default blue) -->
     <div
         class="absolute inset-0 z-[1] backdrop-blur-[2px] h-full w-full"

@@ -3,17 +3,17 @@
     import { loaderProgressStore } from "../../Stores/LoaderStore";
     import LL from "../../../i18n/i18n-svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
-    import bgMap from "../images/map-exemple.webp";
-    import defaultLoader from "../images/Workadventure.gif";
+    import defaultLoader from "../images/konclui-logo.svg";
 
     const logo = gameManager.currentStartedRoom.loadingLogo ?? defaultLoader;
-    const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage ?? bgMap;
+    const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
     const bgColor = gameManager.currentStartedRoom.backgroundColor ?? "#1B2A41";
     const primary = gameManager.currentStartedRoom.primaryColor ?? "#4056F6";
 </script>
 
+<!-- bg-contrast-1100: the loader must stay opaque without a background image, or the scene behind shows through. -->
 <div
-    class="absolute top-0 left-0 z-50 h-dvh w-dvw"
+    class="absolute top-0 left-0 z-50 h-dvh w-dvw bg-contrast-1100"
     in:fade={{ duration: 100 }}
     out:fade={{ delay: 500, duration: 300 }}
 >
@@ -47,7 +47,12 @@
             </div>
         </div>
     </div>
-    <div class="absolute left-0 top-0 w-full h-full bg-cover z-10 blur" style="background-image: url({sceneBg});"></div>
+    {#if sceneBg}
+        <div
+            class="absolute left-0 top-0 w-full h-full bg-cover z-10 blur"
+            style="background-image: url({sceneBg});"
+        ></div>
+    {/if}
     <div
         class="absolute left-0 top-0 w-full h-full z-20 backdrop-blur-md opacity-70"
         style="background-color: {bgColor};"

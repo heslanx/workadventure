@@ -44,10 +44,10 @@ describe("map deleted screen branding", () => {
         expect(target.querySelector("img[alt='Map deleted']")?.getAttribute("src")).toBe(room.errorSceneLogo);
     });
 
-    it("keeps default images for a room without branding", () => {
+    it("shows the Konclui logo and the default error illustration for a room without branding", () => {
         component = mount(MapDeletedPrompt, { target, intro: false });
 
-        expect(target.querySelector("img[alt='Logo']")?.getAttribute("src")).toContain("logo-min-white.png");
+        expect(target.querySelector("img[alt='Logo']")?.getAttribute("src")).toContain("konclui-logo.svg");
         expect(target.querySelector("img[alt='Map deleted']")?.getAttribute("src")).toContain("error.gif");
     });
 });

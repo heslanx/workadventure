@@ -2,7 +2,6 @@
     import { getBrowserInfo, getBrowserDisplayName } from "../../Utils/BrowserCompatibility";
     import { LL } from "../../../i18n/i18n-svelte";
     import Button from "../UI/Button.svelte";
-    import bgMap from "../images/map-exemple.webp";
 
     let browserInfo = getBrowserInfo();
     let browserName = getBrowserDisplayName();
@@ -22,13 +21,6 @@
 </script>
 
 <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-contrast-1100">
-    <!-- Background image layer (like PictureInPicture) -->
-    <div
-        class="fixed z-[9998] top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-20 bg-black"
-        style="background-image: url({bgMap});"
-    ></div>
-    <!-- Background color overlay -->
-    <div class="fixed z-[9998] top-0 left-0 w-full h-full backdrop-blur-md opacity-70"></div>
     <div
         class="bg-contrast/95 backdrop-blur-md text-white z-[10000] w-[90%] m-auto left-0 right-0 sm:max-w-[600px] rounded-lg max-h-full overflow-y-auto pointer-events-auto shadow-lg"
     >

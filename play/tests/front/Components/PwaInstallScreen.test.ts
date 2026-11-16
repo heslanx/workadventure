@@ -61,14 +61,18 @@ describe("PWA install screen branding", () => {
 
         flushSync(() => {
             component = mount(PwaInstallScreen, { target });
-            expect(target.querySelector(".bg-cover.bg-center")?.getAttribute("style")).toContain(
-                background ?? "map-exemple.webp",
-            );
+            const renderedBackground = target.querySelector("[style*='background-image']");
+            if (background) {
+                expect(renderedBackground?.getAttribute("style")).toContain(background);
+            } else {
+                // An unbranded room has no default background image, only the dim overlay.
+                expect(renderedBackground).toBeNull();
+            }
             const renderedLogo = target.querySelector("img.object-contain")?.getAttribute("src");
             if (logo) {
                 expect(renderedLogo).toBe(logo);
             } else {
-                expect(renderedLogo).toContain("/images/logo.svg");
+                expect(renderedLogo).toContain("/images/konclui-logo.svg");
             }
         });
     });

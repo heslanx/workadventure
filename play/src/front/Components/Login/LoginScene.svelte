@@ -3,9 +3,8 @@
     import type { LoginScene } from "../../Phaser/Login/LoginScene";
     import { LoginSceneName } from "../../Phaser/Login/LoginScene";
     import { MAX_USERNAME_LENGTH } from "../../Enum/EnvironmentVariable";
-    import logoImg from "../images/logo.svg";
+    import logoImg from "../images/konclui-logo.svg";
     import poweredByWorkAdventureImg from "../images/Powered_By_WorkAdventure_Big.png";
-    import bgMap from "../images/map-exemple.webp";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { LL, locale } from "../../../i18n/i18n-svelte";
     import { NameNotValidError, NameTooLongError } from "../../Exception/NameError";
@@ -26,7 +25,7 @@
     let logo = gameManager.currentStartedRoom.loginSceneLogo ?? logoImg;
     let legals = gameManager.currentStartedRoom?.legals ?? {};
 
-    const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage ?? bgMap;
+    const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
 
     let legalStrings: string[] = [];
     if (legals?.termsOfUseUrl) {
@@ -183,4 +182,6 @@
     class="absolute left-0 top-0 w-full h-full z-20 bg-contrast opacity-80"
     style={getBackgroundColor() != undefined ? `background-color: ${getBackgroundColor()};` : ""}
 ></div>
-<div class="absolute left-0 top-0 w-full h-full bg-cover z-10" style="background-image: url('{sceneBg}');"></div>
+{#if sceneBg}
+    <div class="absolute left-0 top-0 w-full h-full bg-cover z-10" style="background-image: url('{sceneBg}');"></div>
+{/if}

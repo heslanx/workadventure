@@ -24,7 +24,7 @@ import { preventTabFreezing } from "../Utils/TabFreezing";
 import { ABSOLUTE_PUSHER_URL } from "../Enum/ComputedConst";
 import { openChatRoom } from "../Chat/Utils";
 import LL from "../../i18n/i18n-svelte";
-import waLogo from "../Components/images/logo.svg";
+import defaultLogo from "../Components/images/konclui-logo.svg";
 import WebsocketReconnectingToast from "../Components/Toasts/WebsocketReconnectingToast.svelte";
 import { errorScreenStore } from "../Stores/ErrorScreenStore";
 import { toastStore } from "../Stores/ToastStoreSingleton";
@@ -491,7 +491,7 @@ class ConnectionManager {
                     code: "reconnecting",
                     title: get(LL).messageScreen.connecting(),
                     subtitle: get(LL).messageScreen.pleaseWait(),
-                    image: gameManager?.currentStartedRoom?.loadingLogo ?? waLogo,
+                    image: gameManager?.currentStartedRoom?.loadingLogo ?? defaultLogo,
                 }),
             );
             const retryDelay = this.getConnectionRetryDelay(retryAttempt);

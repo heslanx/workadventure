@@ -2,7 +2,7 @@
     import { fly } from "../Utils/reducedMotion";
     import { LL } from "../../i18n/i18n-svelte";
     import { gameManager } from "../Phaser/Game/GameManager";
-    import logoImg from "./images/logo-min-white.png";
+    import logoImg from "./images/konclui-logo.svg";
     import errorGif from "./UI/images/error.gif";
 
     function getBackgroundColor() {
