@@ -5,19 +5,19 @@ Owned by the integrator ([`LOOP.md`](LOOP.md)). Status key: `ready`, `waiting` (
 
 ## Last green
 
-- `origin/master` = `28d01caf7` (merge of `chore/orca-docker-ssh-env` at `ce6ece405`), 2026-11-16.
-- Check on `ce6ece405`: play typesafe-i18n, typecheck, svelte-check (5775 files, 0/0), lint,
-  pretty-check, i18n:check all exit 0; play vitest 268 files, 1793 passed; back 382 passed;
-  map-storage typecheck 0, vitest 119 passed (30 s timeout).
-- After it, documentation-only commits (this loop, `2a6fbf6a8` onward) on both `master` and
-  `chore/orca-docker-ssh-env`; they change no code, so the check above still covers the code tree.
+- `origin/master` = `37636665f` (merge of `chore/orca-docker-ssh-env` at `a3f11a964`), 2026-11-16.
+- Check on `a3f11a964`: play typesafe-i18n, typecheck, svelte-check (5775 files, 0/0), lint,
+  pretty-check, i18n:check, build all exit 0; play vitest 268 files, 1793 passed; back 382 passed;
+  map-storage typecheck 0, tests 119 passed at the default timeout.
+- Gate gotcha: `npm run typesafe-i18n` exits 0 even when generation fails. Read its log for `ERROR`
+  and check `play/src/i18n/i18n-types.ts` is not near-empty before trusting typecheck.
 
 ## Queue
 
 | # | Item | Producer | Status | Evidence / next |
 |---|---|---|---|---|
-| 1 | Apple HIG pass, round 2 (critic residuals) | workadventure-cb | waiting | Round 1 done 2026-11-16: fully committed (`2b572e4ba`..`ec1851d3a`, `bffa20c5b`, `be66d0f89`, `ce6ece405`), no a11y key changes (31 keys). Round 2 touches only `play/src/front/**`, no new keys, no package.json. Wait for its "done", then commit and run the full check. `/tmp/wa-hig` belongs to cb until then |
-| 2 | Dependency upgrades, one per commit | workadventure-b0 | waiting | Runs in `/tmp/wa-upgrade-repo` on branch `chore/deps-upgrade` from `ce6ece405`. b0 announces before fetching into this checkout or pushing. Integrate as a fast-forward when its gate is green |
+| 1 | Apple HIG pass, rounds 1 and 2 | workadventure-cb | done | Round 2 landed as `05127a813`..`a3f11a964` (contrast, hit areas, reduced motion, input borders); full check green on `a3f11a964`, pushed as `37636665f`. Open: nobody has looked at the input borders in a browser yet (`style/input.css` moved the colour into `@layer components`) |
+| 2 | Dependency upgrades (Vite 8.3, Prettier 3.10, TypeScript 6.0.3, Vitest 5.1) | workadventure-b0 | blocked | Tip `2c098b31d` merged locally, red: under TypeScript 6 `npm run typesafe-i18n` fails to import its temp base locale (`ERR_MODULE_NOT_FOUND .../temp-output/0/en-US/audio`), still exits 0 and writes an empty `i18n-types.ts`, so play typecheck shows 675 errors and svelte-check 2995. Merge reset to `a3f11a964`, host deps reinstalled. Waiting for a new tip from b0 |
 | 3 | Native-speaker review of dsb-DE and hsb-DE strings | user | user | Machine translations in `play/src/i18n/{dsb-DE,hsb-DE}/` (a11y.ts from `bffa20c5b`, earlier keys from the UI polish). Needs a reviewer the loop cannot supply |
 | 4 | `.env.bak` at the repo root, untracked | user | user | Keep untracked, move out of the repo, or delete. The loop never reads or commits it |
 | 5 | `map-storage` `UploadController` tests stalled 6 s after earlier tests | integrator | done | Cause: `fetch` reused a keep-alive loopback socket the test server was about to drop, so the request waited for the server's 5 s keep-alive timeout. Fix: `server.closeIdleConnections()` after each test; 3 runs 18/18 at the default 5 s timeout, full map-storage suite 119/119 |
@@ -32,6 +32,7 @@ Owned by the integrator ([`LOOP.md`](LOOP.md)). Status key: `ready`, `waiting` (
 
 ## Next prompt
 
-Read this file. Item 1 and item 2 are `waiting`: check `ListAgents` and the inbox for cb's "done" or
-b0's upgrade report. When one arrives, run one iteration of LOOP.md on it. When neither has arrived,
-stop and report the queue.
+Read this file. Item 2 is `blocked` on a new tip from workadventure-b0. When it arrives, fetch it,
+merge it, run a host `npm install` with Node 24, run `npm run typesafe-i18n` and confirm its log has
+no `ERROR`, then run the full serial check of LOOP.md and push on green. Items 3 and 4 wait for the
+user.
