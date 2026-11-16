@@ -109,9 +109,15 @@
             <div
                 class="rounded-lg border border-dashed border-white/10 px-4 py-6 text-center text-sm opacity-60"
                 data-testid="roomSidePanelPollsLoading"
+                role="status"
+                aria-label={$LL.chat.loader()}
             >
                 <div class="flex items-center justify-center text-white/80">
-                    <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={24} />
+                    <IconLoader
+                        aria-hidden="true"
+                        class="animate-[spin_2s_linear_infinite] motion-essential"
+                        font-size={24}
+                    />
                 </div>
             </div>
         {:else if hasPollRichHydrationState && $pollRichHydrationState.status === "error"}

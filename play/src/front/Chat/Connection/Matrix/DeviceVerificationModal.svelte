@@ -66,7 +66,7 @@
         <div class="w-full h-full">
             {#if current.status === "done"}
                 <div class="w-full py-12 flex justify-center">
-                    <IconVerify class="scale-[6]" stroke="2" />
+                    <IconVerify aria-hidden="true" class="scale-[6]" stroke="2" />
                 </div>
             {:else if current.status === "emoji"}
                 {@const emojis = current.emojis ?? []}

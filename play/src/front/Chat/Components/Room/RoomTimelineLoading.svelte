@@ -29,7 +29,7 @@
         ></div>
     {/each}
     <div class="slow self-center mt-3 flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm opacity-0">
-        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+        <IconLoader aria-hidden="true" class="animate-[spin_2s_linear_infinite]" font-size={14} />
         {$LL.chat.timeLine.loadingMessages()}
     </div>
 </li>

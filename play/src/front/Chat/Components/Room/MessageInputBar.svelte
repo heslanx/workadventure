@@ -643,10 +643,11 @@
                         data-testid="filePreview"
                     >
                         <button
-                            class="border-2 border-white border-solid absolute flex items-center justify-center rounded-full bg-secondary hover:bg-secondary-600 p-0.5 -start-2 -top-2"
+                            class="hit-area border-2 border-white border-solid absolute flex items-center justify-center rounded-full bg-secondary hover:bg-secondary-800 p-0.5 -start-2 -top-2"
+                            aria-label={$LL.a11y.chatRemoveFile({ name: preview.name })}
                             onclick={() => deleteFile(preview.id)}
                         >
-                            <IconX font-size="12" />
+                            <IconX aria-hidden="true" font-size="12" />
                         </button>
                         {#if preview.type.includes("image") && preview.url !== undefined}
                             <img
@@ -665,7 +666,7 @@
                                 </span>
                                 <div class="flex items-center gap-1 rounded-sm bg-white/10 p-0.5 text-xxs m-0.5">
                                     {#if preview.type.includes("image") && preview.url === undefined}
-                                        <IconLoader class="animate-spin shrink-0" font-size={12} />
+                                        <IconLoader aria-hidden="true" class="animate-spin shrink-0" font-size={12} />
                                     {/if}
                                     <span>{formatFileSize(preview.size)}</span>
                                 </div>
@@ -680,7 +681,7 @@
                     role="alert"
                     data-testid="fileError"
                 >
-                    <IconAlertTriangle class="mt-0.5 shrink-0 text-danger-200" font-size={16} />
+                    <IconAlertTriangle aria-hidden="true" class="mt-0.5 shrink-0 text-danger-200" font-size={16} />
                     <div class="leading-normal">
                         <div class="font-bold">{fileError.title}</div>
                         {#if fileError.hint}
@@ -705,7 +706,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "youtube"}
                 aria-disabled={!applicationManager.youtubeToolActivated}
             >
-                <img draggable="false" class="w-8" src={youtubeSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={youtubeSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.youtube.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.youtubeToolActivated
@@ -724,7 +725,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "klaxoon"}
                 aria-disabled={!applicationManager.klaxoonToolActivated}
             >
-                <img draggable="false" class="w-8" src={klaxoonSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={klaxoonSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.klaxoon.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.klaxoonToolActivated
@@ -743,7 +744,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "googleSheets"}
                 aria-disabled={!applicationManager.googleSheetsToolActivated}
             >
-                <img draggable="false" class="w-8" src={googleSheetsSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={googleSheetsSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleSheets.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.googleSheetsToolActivated
@@ -762,7 +763,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "googleDocs"}
                 aria-disabled={!applicationManager.googleDocsToolActivated}
             >
-                <img draggable="false" class="w-8" src={googleDocsSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={googleDocsSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleDocs.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.googleDocsToolActivated
@@ -781,7 +782,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "googleSlides"}
                 aria-disabled={!applicationManager.googleSlidesToolActivated}
             >
-                <img draggable="false" class="w-8" src={googleSlidesSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={googleSlidesSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleSlides.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.googleSlidesToolActivated
@@ -800,7 +801,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "googleDrive"}
                 aria-disabled={!applicationManager.googleDriveToolActivated}
             >
-                <img draggable="false" class="w-8" src={googleDriveSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={googleDriveSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.googleDrive.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.googleDriveToolActivated
@@ -819,7 +820,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "eraser"}
                 aria-disabled={!applicationManager.eraserToolActivated}
             >
-                <img draggable="false" class="w-8" src={eraserSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={eraserSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.eraser.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.eraserToolActivated
@@ -838,7 +839,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "excalidraw"}
                 aria-disabled={!applicationManager.excalidrawToolActivated}
             >
-                <img draggable="false" class="w-8" src={excalidrawSvg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={excalidrawSvg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.excalidraw.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.excalidrawToolActivated
@@ -857,7 +858,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "cards"}
                 aria-disabled={!applicationManager.cardsToolActivated}
             >
-                <img draggable="false" class="w-8" src={cardsPng} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={cardsPng} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.cards.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.cardsToolActivated
@@ -876,7 +877,7 @@
                 class:bg-secondary-800={applicationProperty?.name === "tldraw"}
                 aria-disabled={!applicationManager.tldrawToolActivated}
             >
-                <img draggable="false" class="w-8" src={tldrawJpeg} alt={$LL.chat.a11y.applicationIcon()} />
+                <img draggable="false" class="w-8" src={tldrawJpeg} alt="" />
                 <h2 class={applicationTitleClass}>{$LL.chat.form.application.tldraw.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {applicationManager.tldrawToolActivated
@@ -894,7 +895,7 @@
                     class:bg-secondary-800={applicationProperty?.name === app.name}
                     onclick={() => openLinkForm(app.name)}
                 >
-                    <img draggable="false" class="w-8" src={app.image} alt={$LL.chat.a11y.applicationIcon()} />
+                    <img draggable="false" class="w-8" src={app.image} alt="" />
                     <h2 class={applicationTitleClass}>{app.name}</h2>
                     <p class={applicationDescriptionClass}>{app.description}</p>
                 </button>
@@ -912,7 +913,7 @@
                 class:bg-secondary-800={fileAttachmentComponentOpened}
                 aria-disabled={!canAttachFiles}
             >
-                <IconPaperclip font-size={32} />
+                <IconPaperclip aria-hidden="true" font-size={32} />
                 <h2 class={applicationTitleClass}>
                     {isProximityChatRoom ? $LL.chat.fileAttachment.proximityTitle() : $LL.chat.fileAttachment.title()}
                 </h2>
@@ -938,7 +939,7 @@
                 }}
                 aria-disabled={!pollCreation || !$canCreatePoll}
             >
-                <IconList font-size={32} />
+                <IconList aria-hidden="true" font-size={32} />
                 <h2 class={applicationTitleClass}>{$LL.chat.poll.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {pollCreation && $canCreatePoll ? $LL.chat.poll.create.description() : $LL.chat.disabled()}
@@ -954,7 +955,7 @@
                 }}
                 aria-disabled={!canOpenQuestions}
             >
-                <IconHelpCircle font-size={32} />
+                <IconHelpCircle aria-hidden="true" font-size={32} />
                 <h2 class={applicationTitleClass}>{$LL.chat.question.title()}</h2>
                 <p class={applicationDescriptionClass}>
                     {canOpenQuestions ? $LL.chat.question.description() : $LL.chat.question.proximityOnly()}
@@ -996,9 +997,13 @@
                         <span class="text-sm text-gray-400">
                             {$LL.chat.replyTo()}
                         </span>
-                        <button class="p-2 m-0" onclick={unselectChatMessageToReply}>
+                        <button
+                            class="p-2 m-0"
+                            aria-label={$LL.a11y.chatCancelReply()}
+                            onclick={unselectChatMessageToReply}
+                        >
                             <!--<IconCircleX />-->
-                            <IconX font-size={18} />
+                            <IconX aria-hidden="true" font-size={18} />
                         </button>
                     </span>
                     <div class="flex row w-full border-l border-l-white/10 ml-1 border-solid border-0">
@@ -1030,7 +1035,7 @@
         bind:message
         bind:messageInput
         disabled={messageInputDisabled}
-        inputClass="message-input flex-grow !m-0 px-4 py-2.5 max-h-36 overflow-auto h-full rounded-md block text-sm text-white placeholder:text-white/60 placeholder:text-sm border border-white/10 !bg-white/5 resize-none outline-none shadow-none focus:ring-0 focus:border-white/20"
+        inputClass="message-input flex-grow !m-0 px-4 py-2.5 max-h-36 overflow-auto h-full rounded-md block text-sm text-white placeholder:text-white/60 placeholder:text-sm border border-white/10 !bg-white/5 resize-none outline-none shadow-none focus:ring-0 focus:border-white/60"
         dataText={$LL.chat.enter()}
         disabledText={isProximityChatRoom && !$proximityRoomJoined
             ? $LL.chat.getCloserToWrite()
@@ -1050,7 +1055,7 @@
                 aria-label={$LL.chat.fileAttachment.title()}
                 onclick={openFileAttachmentComponent}
             >
-                <IconPaperclip font-size={18} />
+                <IconPaperclip aria-hidden="true" font-size={18} />
             </button>
         {/if}
     {:else}
@@ -1059,9 +1064,12 @@
             class="p-0 m-0 h-11 w-11 flex items-center justify-center hover:bg-white/10 rounded-md shrink-0 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
             class:bg-secondary-800={applicationComponentOpened}
             disabled={messageInputDisabled}
+            aria-label={$LL.a11y.chatApplications()}
+            aria-expanded={applicationComponentOpened}
             onclick={toggleApplicationComponent}
         >
             <IconX
+                aria-hidden="true"
                 font-size={18}
                 class={applicationComponentOpened ? "rotate-0" : "rotate-45"}
                 style="transition: all .2s ease-out;"
@@ -1071,9 +1079,10 @@
     <button
         class="p-0 m-0 h-11 w-11 flex items-center justify-center hover:bg-white/10 rounded-md shrink-0 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         disabled={messageInputDisabled}
+        aria-label={$LL.a11y.chatEmojiPicker()}
         onclick={openCloseEmojiPicker}
     >
-        <IconMoodSmile font-size={18} />
+        <IconMoodSmile aria-hidden="true" font-size={18} />
     </button>
     {#if message.trim().length !== 0 || files.length !== 0 || (applicationProperty && applicationProperty.link.length !== 0)}
         <button
@@ -1085,9 +1094,10 @@
                     isMessageInputDisabled: messageInputDisabled,
                 }) ||
                 fileErrors.length > 0}
+            aria-label={$LL.chat.userList.sendMessage()}
             onclick={() => sendMessage(message).catch((error) => console.error(error))}
         >
-            <IconSend />
+            <IconSend aria-hidden="true" />
         </button>
     {/if}
 </div>

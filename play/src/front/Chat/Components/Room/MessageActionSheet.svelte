@@ -117,7 +117,7 @@
                 data-testid="messageActionReply"
                 onclick={() => run(() => selectedChatMessageToReply.set(message))}
             >
-                <IconArrowBackUp font-size={20} />{$LL.chat.reply()}
+                <IconArrowBackUp aria-hidden="true" font-size={20} />{$LL.chat.reply()}
             </button>
         {/if}
         {#if message.openThread && onOpenThread}
@@ -129,12 +129,12 @@
                         onOpenThread?.().catch((error) => console.error(error));
                     })}
             >
-                <IconMessageCircle2 font-size={20} />{$LL.chat.thread.openThreadButtonTitle()}
+                <IconMessageCircle2 aria-hidden="true" font-size={20} />{$LL.chat.thread.openThreadButtonTitle()}
             </button>
         {/if}
         {#if canCopy}
             <button type="button" class="action" onclick={copyText}>
-                <IconCopy font-size={20} />{copyState === "copied"
+                <IconCopy aria-hidden="true" font-size={20} />{copyState === "copied"
                     ? $LL.chat.copied()
                     : copyState === "failed"
                       ? $LL.chat.copyFailed()
@@ -143,7 +143,7 @@
         {/if}
         {#if $canEdit}
             <button type="button" class="action" onclick={() => run(() => selectedChatMessageToEdit.set(message))}>
-                <IconPencil font-size={20} />{$LL.chat.messageActions.edit()}
+                <IconPencil aria-hidden="true" font-size={20} />{$LL.chat.messageActions.edit()}
             </button>
         {/if}
         {#if $canDelete}
@@ -152,7 +152,7 @@
                 class="action text-danger-400"
                 onclick={() => run(() => confirmDelete("message", () => message.remove(), $content.body))}
             >
-                <IconTrash font-size={20} />{$LL.chat.delete()}
+                <IconTrash aria-hidden="true" font-size={20} />{$LL.chat.delete()}
             </button>
         {/if}
     </div>

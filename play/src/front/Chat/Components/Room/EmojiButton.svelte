@@ -62,5 +62,5 @@
     bind:this={trigger}
     onclick={togglePicker}
 >
-    <IconMoodSmile font-size={18} />
+    <IconMoodSmile aria-hidden="true" font-size={18} />
 </button>

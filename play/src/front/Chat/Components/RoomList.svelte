@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { get } from "svelte/store";
 
     import { onDestroy, onMount, setContext } from "svelte";
-    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { warningMessageStore } from "../../Stores/ErrorStore";
     import LL, { locale } from "../../../i18n/i18n-svelte";
@@ -384,7 +384,7 @@
                             aria-label={$LL.chat.connectionRecoveredDismiss()}
                             onclick={() => chatConnectionFailureStore.dismiss()}
                         >
-                            <IconX font-size="14" />
+                            <IconX aria-hidden="true" font-size="14" />
                         </button>
                     </div>
                 {/if}
@@ -394,7 +394,7 @@
                 {:else if $loginTokenErrorStore}
                     <RequireConnection>
                         {#snippet emoji()}
-                            <IconRefresh font-size="50" />
+                            <IconRefresh aria-hidden="true" font-size="50" />
                         {/snippet}
                         {#snippet title()}
                             {$LL.chat.loginTokenError()}
@@ -435,7 +435,7 @@
                         role="status"
                         data-testid="chatReconnecting"
                     >
-                        <IconLoader class="animate-spin shrink-0" font-size="14" />
+                        <IconLoader aria-hidden="true" class="animate-spin shrink-0" font-size="14" />
                         {$LL.chat.reconnecting()}
                     </div>
                 {/if}
@@ -476,6 +476,7 @@
                                 class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                             >
                                 <IconChevronUp
+                                    aria-hidden="true"
                                     class={`transform transition ${!displayRoomInvitations ? "" : "rotate-180"}`}
                                 />
                             </div>
@@ -525,7 +526,7 @@
                             <button
                                 type="button"
                                 data-testid="directMessageOpenUserList"
-                                class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
+                                class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
                                 aria-label={$LL.chat.users()}
                                 title={$LL.chat.users()}
                                 onclick={(event) => {
@@ -533,19 +534,23 @@
                                     navChat.switchToUserList();
                                 }}
                             >
-                                <IconPlus />
+                                <IconPlus aria-hidden="true" />
                             </button>
                         {/if}
                         <button
                             type="button"
-                            class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
+                            class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white shrink-0 m-0"
+                            aria-label={$LL.chat.people()}
                             aria-expanded={displayDirectRooms}
                             onclick={(event) => {
                                 event.stopPropagation();
                                 toggleDisplayDirectRooms();
                             }}
                         >
-                            <IconChevronUp class={`transform transition ${!displayDirectRooms ? "" : "rotate-180"}`} />
+                            <IconChevronUp
+                                aria-hidden="true"
+                                class={`transform transition ${!displayDirectRooms ? "" : "rotate-180"}`}
+                            />
                         </button>
                     </div>
 
@@ -609,9 +614,12 @@
                                 type="button"
                                 aria-expanded={displayRooms}
                                 aria-label={$LL.chat.rooms()}
-                                class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white cursor-pointer"
+                                class="hit-area transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white cursor-pointer"
                             >
-                                <IconChevronUp class={`transform transition ${!displayRooms ? "" : "rotate-180"}`} />
+                                <IconChevronUp
+                                    aria-hidden="true"
+                                    class={`transform transition ${!displayRooms ? "" : "rotate-180"}`}
+                                />
                             </button>
                         </div>
                     </div>
@@ -710,9 +718,9 @@
                             warningMessageStore.addWarningMessage($LL.chat.e2ee.configureFailed(), { closable: true });
                         });
                     }}
-                    class="text-white flex gap-2 justify-center w-full bg-neutral hover:bg-neutral-600 hover:brightness-100 m-0 rounded-none py-2 px-3 appearance-none"
+                    class="text-white flex gap-2 justify-center w-full bg-neutral-900 hover:bg-neutral-800 hover:brightness-100 m-0 rounded-none py-2 px-3 appearance-none"
                 >
-                    <IconCloudLock font-size="20" />
+                    <IconCloudLock aria-hidden="true" font-size="20" />
                     <div class="text-sm font-bold grow text-start">
                         {$LL.chat.e2ee.encryptionNotConfigured()}
                     </div>

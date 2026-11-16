@@ -19,7 +19,7 @@
     {#if emoji}
         {@render emoji()}
     {:else}
-        <img src={messageSmileyImg} alt="Smiley happy" draggable="false" />
+        <img src={messageSmileyImg} alt="" draggable="false" />
     {/if}
     <div class="w-full text-center text-lg font-bold">
         {#if title}

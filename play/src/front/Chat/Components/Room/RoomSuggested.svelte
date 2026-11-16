@@ -73,7 +73,7 @@
             <div class="flex items-center gap-1 text-xs text-white/60 min-w-0">
                 {#if roomInformation.folderName}
                     <span class="flex items-center gap-0.5 shrink-0 max-w-[40%]" data-testid="joinableRoomFolder">
-                        <IconFolder font-size="0.875rem" class="shrink-0" />
+                        <IconFolder aria-hidden="true" font-size="0.875rem" class="shrink-0" />
                         <span class="truncate">{roomInformation.folderName}</span>
                     </span>
                 {/if}
@@ -97,7 +97,7 @@
         {#if suggested}
             <button
                 type="button"
-                class="border border-solid border-white/35 text-white/80 hover:bg-white/10 rounded text-xs py-1 px-2 m-0"
+                class="hit-area border border-solid border-white/35 text-white/80 hover:bg-white/10 rounded text-xs py-1 px-2 m-0"
                 data-testid="ignoreSuggestedRoomButton"
                 disabled={loadingInvitation}
                 onclick={onIgnoreClick}
@@ -106,7 +106,7 @@
             </button>
         {/if}
         <button
-            class="border border-solid border-success text-success hover:bg-success-400/10 rounded text-xs py-1 px-2 m-0 relative flex items-center justify-center"
+            class="hit-area border border-solid border-success text-success hover:bg-success-400/10 rounded text-xs py-1 px-2 m-0 relative flex items-center justify-center"
             data-testid="acceptInvitationButton"
             disabled={loadingInvitation}
             aria-busy={loadingInvitation}
@@ -115,7 +115,7 @@
             <!-- The label stays in place, hidden, so the button keeps its width while the spinner turns. -->
             <span class:invisible={loadingInvitation}>{$LL.chat.join()}</span>
             {#if loadingInvitation}
-                <IconLoader class="animate-spin absolute" font-size="1rem" />
+                <IconLoader aria-hidden="true" class="animate-spin absolute" font-size="1rem" />
             {/if}
         </button>
     </div>

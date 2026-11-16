@@ -85,7 +85,7 @@
             </label>
             <textarea
                 id="proximity-question-input"
-                class="m-0 min-h-20 resize-none rounded-md border border-solid border-white/10 bg-black/20 p-3 text-sm text-white placeholder:text-white/60 focus:border-white/25 focus:outline-none"
+                class="m-0 min-h-20 resize-none rounded-md border border-solid border-white/10 bg-black/20 p-3 text-sm text-white placeholder:text-white/60 focus:border-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 maxlength={maxQuestionLength}
                 placeholder={$LL.chat.question.placeholder()}
                 bind:value={draftQuestion}

@@ -87,7 +87,7 @@
                         aria-label={$LL.chat.roomPanel.back()}
                         onclick={() => activateSection("home")}
                     >
-                        <IconChevronLeft font-size={18} />
+                        <IconChevronLeft aria-hidden="true" font-size={18} />
                     </button>
                     <div class="min-w-0 flex-1 truncate text-sm font-bold uppercase tracking-widest text-white/75">
                         {#if displayedSection === "threads"}
@@ -114,7 +114,7 @@
                         aria-label={$LL.chat.roomPanel.toggleClose()}
                         onclick={() => roomSidePanelStore.close()}
                     >
-                        <IconX font-size={18} />
+                        <IconX aria-hidden="true" font-size={18} />
                     </button>
                 {/if}
             </div>

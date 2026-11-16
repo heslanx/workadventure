@@ -134,7 +134,7 @@
                     }}
                 >
                     {#if sendingInvitations}
-                        <IconLoader class="animate-spin" />
+                        <IconLoader aria-hidden="true" class="animate-spin" />
                     {/if}
                     {$LL.chat.manageRoomUsers.buttons.sendInvitations()}
                 </Button>
@@ -155,7 +155,7 @@
                 data-testid="roomSidePanelParticipantsLoading"
             >
                 <div class="animate-[spin_2s_linear_infinite] text-white/80">
-                    <IconLoader font-size="2em" />
+                    <IconLoader aria-hidden="true" font-size="2em" />
                 </div>
                 <p class="text-sm text-white/60">{$LL.chat.loadingUsers()}</p>
             </div>
@@ -196,7 +196,7 @@
                 {#if leftOrBanned.length > 0}
                     <details class="flex flex-col gap-2" data-testid="roomSidePanelMembers-left">
                         <summary
-                            class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-white/80"
+                            class="hit-area cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-white/80"
                         >
                             {$LL.chat.manageRoomUsers.sectionLeft()} · {leftOrBanned.length}
                         </summary>

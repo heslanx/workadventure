@@ -90,6 +90,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             class="relative shrink-0 wa-avatar {!$userStatus ? 'opacity-50' : ''} cursor-pointer"
+            aria-hidden="true"
             onclick={(event) => {
                 event.stopPropagation();
                 openWokaMenu();
@@ -137,9 +138,9 @@
                     {/if}
                 </div>
             </div>
-            <div class="text-xs mb-0 font-condensed opacity-75 self-end">
+            <div class="text-xs mb-0 font-condensed self-end">
                 {#if isMe}
-                    {$LL.chat.you()}
+                    <span class="opacity-75">{$LL.chat.you()}</span>
                 {:else if $userStatus}
                     <div class="flex items-center brightness-150" style="color:{getColorHexOfStatus($userStatus)}">
                         <div
@@ -149,7 +150,7 @@
                         {getStatusLabel($userStatus)}
                     </div>
                 {:else}
-                    {$LL.chat.userList.disconnected()}
+                    <span class="opacity-75">{$LL.chat.userList.disconnected()}</span>
                 {/if}
             </div>
         </div>
@@ -194,10 +195,10 @@
                         }}
                     >
                         {#if openingDirectChat}
-                            <IconLoader class="animate-spin" font-size="16" />
+                            <IconLoader aria-hidden="true" class="animate-spin" font-size="16" />
                             <span class="text-xs ms-1">{$LL.chat.userList.openingDirectChat()}</span>
                         {:else}
-                            <IconSend font-size="16" />
+                            <IconSend aria-hidden="true" font-size="16" />
                         {/if}
                     </button>
                     <!-- The wrapper, not the button, listens: a disabled button gets no mouse events, and its

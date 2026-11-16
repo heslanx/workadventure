@@ -74,10 +74,10 @@
     <div class="flex items-center justify-between gap-2 px-2.5 py-2">
         <div class="min-w-0">
             <div class="flex items-center gap-1 text-sm font-bold">
-                <IconPaperclip font-size={14} class="shrink-0" />
+                <IconPaperclip aria-hidden="true" font-size={14} class="shrink-0" />
                 <span class="truncate">{$content.body}</span>
             </div>
-            <div class="text-xs text-white/70">{captionFor(phase, $status)}</div>
+            <div class="text-xs text-white/90">{captionFor(phase, $status)}</div>
         </div>
         {#if percent !== undefined}
             <span class="shrink-0 text-sm font-bold">{percent}%</span>

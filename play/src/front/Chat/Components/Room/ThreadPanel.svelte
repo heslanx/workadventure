@@ -81,9 +81,15 @@
                 <div
                     class="rounded-lg border border-dashed border-white/10 px-4 py-6 text-center text-sm opacity-60"
                     data-testid="threadPanelLoading"
+                    role="status"
+                    aria-label={$LL.chat.loader()}
                 >
                     <div class="flex items-center justify-center text-white/80">
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={24} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={24}
+                        />
                     </div>
                 </div>
             {:else if $threadHydrationState.status === "error"}
@@ -162,7 +168,7 @@
                                     class="mt-2 flex items-center gap-2 text-xs font-semibold opacity-75"
                                     data-testid={`threadPanelItemCount-${summary.rootMessageId}`}
                                 >
-                                    <IconMessageCircle2 font-size={14} />
+                                    <IconMessageCircle2 aria-hidden="true" font-size={14} />
                                     <span
                                         >{summary.replyCount === 1
                                             ? $LL.chat.thread.replySingular()

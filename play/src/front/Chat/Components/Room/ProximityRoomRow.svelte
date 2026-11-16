@@ -53,7 +53,7 @@
         {
             "bg-white/15 rounded before:absolute before:start-0 before:inset-y-2 before:w-[3px] before:rounded-full before:bg-secondary":
                 $selectedRoomStore?.id === room.id,
-            "opacity-50 ps-6": isParentZone,
+            "opacity-70 ps-6": isParentZone,
         },
     ]}
     aria-current={$selectedRoomStore?.id === room.id ? "true" : undefined}

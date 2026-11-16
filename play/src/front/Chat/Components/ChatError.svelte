@@ -72,7 +72,7 @@
 <div class="px-2 pb-2" role="alert" data-testid="chatConnectionError">
     <Alert variant="danger" class="w-full">
         <div class="flex gap-2">
-            <IconExclamation font-size="20" class="shrink-0" />
+            <IconExclamation aria-hidden="true" font-size="20" class="shrink-0" />
             <div class="flex flex-col gap-1 items-start min-w-0">
                 <div class="font-bold text-white">{label ?? $LL.chat.connectionError()}</div>
                 {#if label === undefined}
@@ -87,7 +87,11 @@
                     {/if}
                     {#if showRetrying}
                         <p class="m-0 mt-1 flex items-center gap-2 text-white" role="status">
-                            <IconLoader class="animate-spin motion-reduce:animate-none shrink-0" font-size="14" />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="animate-spin motion-reduce:animate-none shrink-0"
+                                font-size="14"
+                            />
                             {$LL.chat.connectionRetrying()}
                         </p>
                     {:else if canRetry}

@@ -78,12 +78,12 @@
             data-testid="openThreadButton"
             onclick={() => run(onOpenThread)}
         >
-            <IconMessageCircle2 font-size={16} />{$LL.chat.thread.openThreadButtonTitle()}
+            <IconMessageCircle2 aria-hidden="true" font-size={16} />{$LL.chat.thread.openThreadButtonTitle()}
         </button>
     {/if}
     {#if onCopy}
         <button type="button" role="menuitem" class="item" data-testid="copyMessageButton" onclick={copy}>
-            <IconCopy font-size={16} />{copyState === "copied"
+            <IconCopy aria-hidden="true" font-size={16} />{copyState === "copied"
                 ? $LL.chat.copied()
                 : copyState === "failed"
                   ? $LL.chat.copyFailed()
@@ -92,7 +92,7 @@
     {/if}
     {#if onEdit}
         <button type="button" role="menuitem" class="item" data-testid="editMessageButton" onclick={() => run(onEdit)}>
-            <IconPencil font-size={16} />{$LL.chat.messageActions.edit()}
+            <IconPencil aria-hidden="true" font-size={16} />{$LL.chat.messageActions.edit()}
         </button>
     {/if}
     {#if downloadUrl}
@@ -104,7 +104,9 @@
             target="_blank"
             onclick={() => onClose()}
         >
-            <IconArrowDown font-size={16} /><span class="first-letter:uppercase">{$LL.chat.file.download()}</span>
+            <IconArrowDown aria-hidden="true" font-size={16} /><span class="first-letter:uppercase"
+                >{$LL.chat.file.download()}</span
+            >
         </a>
     {/if}
     {#if onDelete}
@@ -116,7 +118,7 @@
             data-testid="removeMessageButton"
             onclick={() => run(onDelete)}
         >
-            <IconTrash font-size={16} />{$LL.chat.delete()}
+            <IconTrash aria-hidden="true" font-size={16} />{$LL.chat.delete()}
         </button>
     {/if}
 </div>
@@ -137,6 +139,9 @@
     .item:hover,
     .item:focus-visible {
         background: rgb(255 255 255 / 0.1);
-        outline: none;
+    }
+    .item:focus-visible {
+        outline: 2px solid white;
+        outline-offset: -2px;
     }
 </style>

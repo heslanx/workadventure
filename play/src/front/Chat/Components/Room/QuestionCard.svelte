@@ -41,7 +41,7 @@
             <span
                 class="inline-flex h-6 items-center gap-1 rounded-sm bg-warning/15 px-2 text-xs font-medium text-warning"
             >
-                <IconHelpCircle font-size={12} />
+                <IconHelpCircle aria-hidden="true" font-size={12} />
                 {$LL.chat.question.badge()}
             </span>
             {#if $questionState.isAnswered}
@@ -49,7 +49,7 @@
                     data-testid="questionAnsweredBadge"
                     class="ms-auto inline-flex h-6 items-center gap-1 rounded-sm bg-success/15 px-2 text-xs font-medium text-success"
                 >
-                    <IconCheck font-size={12} />
+                    <IconCheck aria-hidden="true" font-size={12} />
                     {$LL.chat.question.answered()}
                 </span>
             {/if}
@@ -77,7 +77,7 @@
                 onclick={() => run("upvote", () => question.toggleUpvote())}
             >
                 {#snippet icon()}
-                    <IconThumbUp font-size={14} />
+                    <IconThumbUp aria-hidden="true" font-size={14} />
                 {/snippet}
                 <span data-testid="questionUpvoteCount">{$questionState.upvoteCount}</span>
             </Button>
@@ -93,9 +93,9 @@
                 >
                     {#snippet icon()}
                         {#if pending === "answer"}
-                            <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                            <IconLoader aria-hidden="true" class="animate-[spin_2s_linear_infinite]" font-size={14} />
                         {:else}
-                            <IconCheck font-size={14} />
+                            <IconCheck aria-hidden="true" font-size={14} />
                         {/if}
                     {/snippet}
                     {$LL.chat.question.markAnswered()}
@@ -113,9 +113,9 @@
                 >
                     {#snippet icon()}
                         {#if pending === "delete"}
-                            <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                            <IconLoader aria-hidden="true" class="animate-[spin_2s_linear_infinite]" font-size={14} />
                         {:else}
-                            <IconTrash font-size={14} />
+                            <IconTrash aria-hidden="true" font-size={14} />
                         {/if}
                     {/snippet}
                     {$LL.chat.delete()}
@@ -131,7 +131,7 @@
                 onclick={() => roomSidePanelStore.setActiveSection("questions")}
             >
                 {#snippet icon()}
-                    <IconList font-size={14} />
+                    <IconList aria-hidden="true" font-size={14} />
                 {/snippet}
                 {$LL.chat.question.viewAll()}
             </Button>

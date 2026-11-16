@@ -115,7 +115,7 @@
             dataTestId="chatMessageBannerDismiss"
         >
             {#snippet icon()}
-                <IconX font-size="16" />
+                <IconX aria-hidden="true" font-size="16" />
             {/snippet}
         </Button>
     </div>

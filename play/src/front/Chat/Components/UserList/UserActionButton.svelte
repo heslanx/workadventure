@@ -218,7 +218,7 @@
                 ? "m-0 p-0 inline-flex min-w-0 items-end rounded bg-transparent border-0 cursor-pointer !text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                 : "m-0 p-2 flex items-center rounded hover:bg-white/10 bg-transparent !text-white"}
             type="button"
-            aria-label={trigger ? triggerLabel : undefined}
+            aria-label={trigger ? triggerLabel : $LL.chat.manageRoomUsers.actions()}
             aria-expanded={chatMenuActive}
             bind:this={buttonElement}
             onclick={(event) => {
@@ -229,7 +229,7 @@
             {#if trigger}
                 {@render trigger()}
             {:else}
-                <IconDots font-size="16" />
+                <IconDots aria-hidden="true" font-size="16" />
             {/if}
         </button>
     {/if}
@@ -249,7 +249,7 @@
                         closeChatUserMenu();
                     }}
                 >
-                    <IconCamera class="w-4" />
+                    <IconCamera aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.TalkTo()}</button
                 >
                 <button
@@ -263,7 +263,7 @@
                         locateUser();
                     }}
                 >
-                    <IconMapPin class="w-4" />
+                    <IconMapPin aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.follow()}
                 </button>
                 <button
@@ -287,7 +287,7 @@
                         closeChatUserMenu();
                     }}
                 >
-                    <IconUserPlus class="w-4" />
+                    <IconUserPlus aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.invite()}
                 </button>
             {:else if user.playUri}
@@ -299,14 +299,7 @@
                         goTo("room", user.playUri ?? "", user.uuid ?? "");
                         closeChatUserMenu();
                     }}
-                    ><img
-                        class="noselect"
-                        src={teleport}
-                        alt={$LL.chat.userList.teleport()}
-                        height="13"
-                        width="13"
-                        draggable="false"
-                    />
+                    ><img class="noselect" src={teleport} alt="" height="13" width="13" draggable="false" />
                     {$LL.chat.userList.teleport()}</button
                 >
                 <button
@@ -330,7 +323,7 @@
                         closeChatUserMenu();
                     }}
                 >
-                    <IconUserPlus class="w-4" />
+                    <IconUserPlus aria-hidden="true" class="w-4" />
                     {$LL.chat.userList.invite()}
                 </button>
             {/if}
@@ -342,14 +335,7 @@
                         event.stopPropagation();
                         showBusinessCard(user.visitCardUrl);
                     }}
-                    ><img
-                        class="noselect"
-                        src={businessCard}
-                        alt={$LL.chat.userList.businessCard()}
-                        height="13"
-                        width="13"
-                        draggable="false"
-                    />
+                    ><img class="noselect" src={businessCard} alt="" height="13" width="13" draggable="false" />
                     {$LL.chat.userList.businessCard()}</button
                 >
             {/if}
@@ -362,7 +348,7 @@
                         event.stopPropagation();
                         openModerationModal(user.uuid ?? "", user.username ?? "");
                         closeChatUserMenu();
-                    }}><IconForbid font-size="13" /> {$LL.report.moderate.action()}</button
+                    }}><IconForbid aria-hidden="true" font-size="13" /> {$LL.report.moderate.action()}</button
                 >
             {/if}
         </div>

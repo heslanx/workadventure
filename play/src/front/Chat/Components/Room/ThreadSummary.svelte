@@ -20,7 +20,7 @@
     onclick={openThread}
 >
     <div class="flex items-center gap-2 text-xs font-semibold opacity-90" data-testid="threadSummaryCount">
-        <IconMessageCircle2 font-size={14} />
+        <IconMessageCircle2 aria-hidden="true" font-size={14} />
         <span
             >{summary.replyCount === 1
                 ? $LL.chat.thread.replySingular()

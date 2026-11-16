@@ -205,13 +205,17 @@
                                     : 'border-white/20'}"
                             >
                                 {#if selected}
-                                    <IconCheck font-size={12} />
+                                    <IconCheck aria-hidden="true" font-size={12} />
                                 {/if}
                             </span>
                             <span class="truncate">{answer.text}</span>
                         </span>
                         {#if isSubmittingVote && selected}
-                            <IconLoader class="shrink-0 animate-[spin_2s_linear_infinite]" font-size={13} />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="shrink-0 animate-[spin_2s_linear_infinite]"
+                                font-size={13}
+                            />
                         {:else if $pollState.resultsVisible}
                             <span class="shrink-0 text-sm font-semibold text-white/60">{getAnswerResult(answer)}</span>
                         {/if}
@@ -272,7 +276,11 @@
                         onclick={confirmEndPoll}
                     >
                         {#if isEndingPoll}
-                            <IconLoader class="animate-[spin_2s_linear_infinite] mr-2" font-size={16} />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="animate-[spin_2s_linear_infinite] mr-2"
+                                font-size={16}
+                            />
                         {/if}
                         {$LL.chat.poll.end.cta()}
                     </button>
@@ -286,9 +294,13 @@
                         onclick={() => confirmDelete("poll", deletePoll)}
                     >
                         {#if isDeletingPoll}
-                            <IconLoader class="animate-[spin_2s_linear_infinite] mr-2" font-size={16} />
+                            <IconLoader
+                                aria-hidden="true"
+                                class="animate-[spin_2s_linear_infinite] mr-2"
+                                font-size={16}
+                            />
                         {:else}
-                            <IconTrash class="mr-2" font-size={16} />
+                            <IconTrash aria-hidden="true" class="mr-2" font-size={16} />
                         {/if}
                         {$LL.chat.delete()}
                     </button>

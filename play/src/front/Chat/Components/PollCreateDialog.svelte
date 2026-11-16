@@ -105,7 +105,7 @@
 </script>
 
 {#snippet submitSpinner()}
-    <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={16} />
+    <IconLoader aria-hidden="true" class="animate-[spin_2s_linear_infinite]" font-size={16} />
 {/snippet}
 
 <Popup isOpen withAction isDirty={hasTypedContent}>
@@ -136,7 +136,7 @@
                     <InputGroupLabel id="poll-answers-label">{$LL.chat.poll.create.answers()}</InputGroupLabel>
                     <Button variant="light" appearance="ghost" size="sm" disabled={!canAddAnswer} onclick={addAnswer}>
                         {#snippet icon()}
-                            <IconPlus font-size={16} />
+                            <IconPlus aria-hidden="true" font-size={16} />
                         {/snippet}
                         {$LL.chat.poll.create.addAnswer()}
                     </Button>
@@ -163,7 +163,7 @@
                                 onclick={() => removeAnswer(index)}
                             >
                                 {#snippet icon()}
-                                    <IconTrash font-size={16} />
+                                    <IconTrash aria-hidden="true" font-size={16} />
                                 {/snippet}
                             </Button>
                         </div>

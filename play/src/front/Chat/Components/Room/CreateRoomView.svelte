@@ -167,7 +167,7 @@
             aria-label={$LL.chat.roomPanel.back()}
             onclick={back}
         >
-            <IconChevronLeft font-size="20" />
+            <IconChevronLeft aria-hidden="true" font-size="20" />
         </button>
         <h2 class="m-0 min-w-0 flex-1 truncate text-base font-bold">{heading}</h2>
     </div>
@@ -298,7 +298,7 @@
             }}
         >
             {#if creating}
-                <IconLoader class="animate-spin" font-size="16" />
+                <IconLoader aria-hidden="true" class="animate-spin" font-size="16" />
             {/if}
             {kind === "room" ? $LL.chat.createView.createRoom() : $LL.chat.createView.createFolder()}
         </Button>

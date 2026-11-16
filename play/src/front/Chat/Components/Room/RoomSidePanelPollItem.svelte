@@ -141,7 +141,7 @@
 
     {#if poll.context.kind === "thread"}
         <div class="mt-2 flex items-center gap-1.5 text-xs text-white/60" data-testid="roomSidePanelPollThreadContext">
-            <IconMessageCircle2 font-size={13} />
+            <IconMessageCircle2 aria-hidden="true" font-size={13} />
             <span class="truncate">
                 {#if poll.context.threadSenderName}{poll.context.threadSenderName}:
                 {/if}{poll.context.threadPreview ?? $LL.chat.thread.defaultPreview()}
@@ -154,8 +154,12 @@
             class="mt-3 rounded-lg border border-solid border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-white/60"
         >
             {#if $pollHydrationState.status === "loading"}
-                <div class="flex items-center gap-2">
-                    <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                <div class="flex items-center gap-2" role="status" aria-label={$LL.chat.loader()}>
+                    <IconLoader
+                        aria-hidden="true"
+                        class="animate-[spin_2s_linear_infinite] motion-essential"
+                        font-size={14}
+                    />
                 </div>
             {:else}
                 {$LL.chat.roomPanel.status.pollDetailsUnavailable()}
@@ -182,13 +186,17 @@
                                 : 'border-white/20'}"
                         >
                             {#if selected}
-                                <IconCheck font-size={12} />
+                                <IconCheck aria-hidden="true" font-size={12} />
                             {/if}
                         </span>
                         <span class="truncate">{answer.text}</span>
                     </span>
                     {#if isSubmittingVote && selected}
-                        <IconLoader class="shrink-0 animate-[spin_2s_linear_infinite]" font-size={13} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="shrink-0 animate-[spin_2s_linear_infinite]"
+                            font-size={13}
+                        />
                     {:else if $pollState.resultsVisible}
                         <span class="shrink-0 text-sm font-semibold text-white/60">{getAnswerResult(answer)}</span>
                     {/if}
@@ -239,10 +247,15 @@
                 class="m-0 rounded-lg border border-solid border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
                 data-testid="roomSidePanelPollRetryButton"
                 disabled={isRetryingHydration}
+                aria-label={$LL.chat.roomPanel.status.retry()}
                 onclick={retryPollHydration}
             >
                 {#if isRetryingHydration}
-                    <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                    <IconLoader
+                        aria-hidden="true"
+                        class="animate-[spin_2s_linear_infinite] motion-essential"
+                        font-size={14}
+                    />
                 {:else}
                     {$LL.chat.roomPanel.status.retry()}
                 {/if}

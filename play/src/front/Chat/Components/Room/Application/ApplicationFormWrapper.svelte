@@ -183,7 +183,7 @@
 
 <div class="flex flex-col w-full justify-center items-center py-4 px-6 gap-2">
     <div class="flex flex-row w-full justify-between items-center gap-2">
-        <img draggable="false" class="w-8 shrink-0" src={property.img} alt={$LL.chat.a11y.applicationIcon()} />
+        <img draggable="false" class="w-8 shrink-0" src={property.img} alt="" />
         <h2 class="min-w-0 flex-1 text-center text-sm p-0 m-0 leading-tight whitespace-normal break-words">
             {property.title}
         </h2>
@@ -214,7 +214,7 @@
     />
 
     {#if errorLink}
-        <p data-testid="applicationLinkError" class="text-xs text-red-500 p-0 m-0 h-fit w-full">
+        <p data-testid="applicationLinkError" class="text-xs text-danger-400 p-0 m-0 h-fit w-full">
             {errorLink}
         </p>
     {/if}

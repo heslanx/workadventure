@@ -141,6 +141,7 @@
                         class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
                     >
                         <IconChevronUp
+                            aria-hidden="true"
                             class={`transform transition ${$shownRoomListStore.includes(playUri) ? "" : "rotate-180"}`}
                         />
                     </div>
@@ -160,7 +161,7 @@
             onclick={toggleInviteMenu}
             data-testid="user-list-invite-button"
         >
-            <IconShare font-size="18" />
+            <IconShare aria-hidden="true" font-size="18" />
             {$LL.menu.invite.share()}
         </button>
     {/if}

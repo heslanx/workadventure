@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { isReducedMotion } from "../../Utils/reducedMotion";
+
     interface Props {
         text?: string;
         height?: string;
@@ -6,6 +8,9 @@
     }
 
     let { text = "", height = "h-dvh", className = "" }: Props = $props();
+
+    // SMIL animations ignore the CSS reduced-motion rule: with it, the two rings are drawn still instead of pulsing.
+    const animated = !isReducedMotion();
 </script>
 
 <div class="grid place-items-center {height} loader {className}">
@@ -17,49 +22,54 @@
             height="100"
             viewBox="0 0 50 50"
             preserveAspectRatio="xMidYMid"
+            aria-hidden="true"
         >
-            <circle cx="25" cy="25" r="0" fill="none" stroke="#4156f6" stroke-width="1">
-                <animate
-                    attributeName="r"
-                    repeatCount="indefinite"
-                    dur="1s"
-                    values="0;13"
-                    keyTimes="0;1"
-                    keySplines="0 0.2 0.8 1"
-                    calcMode="spline"
-                    begin="0s"
-                />
-                <animate
-                    attributeName="opacity"
-                    repeatCount="indefinite"
-                    dur="1s"
-                    values="1;0"
-                    keyTimes="0;1"
-                    keySplines="0.2 0 0.8 1"
-                    calcMode="spline"
-                    begin="0s"
-                />
-            </circle><circle cx="25" cy="25" r="0" fill="none" stroke="#ffffff" stroke-width="1">
-                <animate
-                    attributeName="r"
-                    repeatCount="indefinite"
-                    dur="1s"
-                    values="0;13"
-                    keyTimes="0;1"
-                    keySplines="0 0.2 0.8 1"
-                    calcMode="spline"
-                    begin="-0.5s"
-                />
-                <animate
-                    attributeName="opacity"
-                    repeatCount="indefinite"
-                    dur="1s"
-                    values="1;0"
-                    keyTimes="0;1"
-                    keySplines="0.2 0 0.8 1"
-                    calcMode="spline"
-                    begin="-0.5s"
-                />
+            <circle cx="25" cy="25" r={animated ? "0" : "13"} fill="none" stroke="#4156f6" stroke-width="1">
+                {#if animated}
+                    <animate
+                        attributeName="r"
+                        repeatCount="indefinite"
+                        dur="1s"
+                        values="0;13"
+                        keyTimes="0;1"
+                        keySplines="0 0.2 0.8 1"
+                        calcMode="spline"
+                        begin="0s"
+                    />
+                    <animate
+                        attributeName="opacity"
+                        repeatCount="indefinite"
+                        dur="1s"
+                        values="1;0"
+                        keyTimes="0;1"
+                        keySplines="0.2 0 0.8 1"
+                        calcMode="spline"
+                        begin="0s"
+                    />
+                {/if}
+            </circle><circle cx="25" cy="25" r={animated ? "0" : "7"} fill="none" stroke="#ffffff" stroke-width="1">
+                {#if animated}
+                    <animate
+                        attributeName="r"
+                        repeatCount="indefinite"
+                        dur="1s"
+                        values="0;13"
+                        keyTimes="0;1"
+                        keySplines="0 0.2 0.8 1"
+                        calcMode="spline"
+                        begin="-0.5s"
+                    />
+                    <animate
+                        attributeName="opacity"
+                        repeatCount="indefinite"
+                        dur="1s"
+                        values="1;0"
+                        keyTimes="0;1"
+                        keySplines="0.2 0 0.8 1"
+                        calcMode="spline"
+                        begin="-0.5s"
+                    />
+                {/if}
             </circle>
         </svg>
         <div class="animate-pulse text-sm">{text}</div>

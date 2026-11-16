@@ -124,7 +124,7 @@
     {/snippet}
     {#snippet action()}
         {#if !errorLabel}
-            <Button class="flex-1 bg-danger-900" onclick={refuseToStartVerification}>
+            <Button class="flex-1 bg-danger-1000" onclick={refuseToStartVerification}>
                 {$LL.chat.askStartVerificationModal.ignore()}
             </Button>
             <Button

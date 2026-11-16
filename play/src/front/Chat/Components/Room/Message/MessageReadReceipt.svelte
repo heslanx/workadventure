@@ -48,7 +48,7 @@
 >
     <button
         type="button"
-        class="flex items-center gap-1 m-0 p-0 bg-transparent border-none text-inherit cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        class="hit-area flex items-center gap-1 m-0 p-0 bg-transparent border-none text-inherit cursor-pointer rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         aria-label={showReaders && readers.length > 0
             ? $LL.chat.readReceipts.seenByCount({ count: readers.length })
             : readStateLabel}
@@ -70,9 +70,9 @@
                 <span>+{readers.length - MAX_FACES}</span>
             {/if}
         {:else if readState === "read"}
-            <IconChecks font-size="14" class="text-light-blue" />
+            <IconChecks aria-hidden="true" font-size="14" class="text-light-blue" />
         {:else}
-            <IconCheck font-size="14" />
+            <IconCheck aria-hidden="true" font-size="14" />
         {/if}
     </button>
 

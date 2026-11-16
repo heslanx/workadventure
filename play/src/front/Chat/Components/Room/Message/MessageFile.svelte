@@ -26,18 +26,18 @@
     >
         <div class="px-2.5 py-2">
             <div class="flex items-center gap-1 text-sm font-bold">
-                <IconPaperclip font-size={14} class="shrink-0" />
+                <IconPaperclip aria-hidden="true" font-size={14} class="shrink-0" />
                 <span class="truncate">{$content.body}</span>
             </div>
             {#if size !== undefined}
-                <div class="text-xs text-white/70">{formatFileSize(size)}</div>
+                <div class="text-xs text-white/90">{formatFileSize(size)}</div>
             {/if}
         </div>
         {#if canSave}
             <div
                 class="flex items-center justify-center gap-1 border-0 border-t border-solid border-white/10 py-2 text-xs font-bold hover:bg-white/10"
             >
-                <IconFileDownload font-size={14} />
+                <IconFileDownload aria-hidden="true" font-size={14} />
                 {$LL.chat.file.saveFile()}
             </div>
         {/if}

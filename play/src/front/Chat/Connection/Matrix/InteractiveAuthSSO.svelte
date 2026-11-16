@@ -66,7 +66,7 @@
 </script>
 
 {#if errorText}
-    <div class="text-red-500" role="alert">{errorText}</div>
+    <div class="text-danger-400" role="alert">{errorText}</div>
 {/if}
 
 <button class="flex-1 justify-center" onclick={onCancel} data-testid="cancelSSO">

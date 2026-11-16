@@ -113,7 +113,7 @@
                 data-testid="proximityRoomSidePanelHomeParticipants"
                 onclick={() => openSection("participants")}
             >
-                <IconUsersGroup font-size={18} />
+                <IconUsersGroup aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.participants()}</div>
                 <div class="mt-1 text-base font-bold text-white/70">{$participants.length}</div>
             </button>
@@ -124,11 +124,15 @@
                 data-testid="proximityRoomSidePanelHomePolls"
                 onclick={() => openSection("polls")}
             >
-                <IconCheckList font-size={18} />
+                <IconCheckList aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.roomPanel.sections.polls()}</div>
                 <div class="mt-1 flex min-h-4 items-center text-base font-bold text-white/70">
                     {#if isPollCatalogueLoading}
-                        <IconLoader class="animate-[spin_2s_linear_infinite]" font-size={14} />
+                        <IconLoader
+                            aria-hidden="true"
+                            class="animate-[spin_2s_linear_infinite] motion-essential"
+                            font-size={14}
+                        />
                     {:else}
                         {pollCardValue}
                     {/if}
@@ -148,7 +152,7 @@
                         ><span class="sr-only">{$LL.chat.a11y.unreadCount({ count: $unreadQuestionCount })}</span></span
                     >
                 {/if}
-                <IconHelpCircle font-size={18} />
+                <IconHelpCircle aria-hidden="true" font-size={18} />
                 <div class="mt-2 text-sm font-semibold">{$LL.chat.question.title()}</div>
                 <div class="mt-1 text-base font-bold text-white/70">{questionCardValue}</div>
             </button>
@@ -161,7 +165,7 @@
                 data-testid="proximityRoomSidePanelHomeInvite"
                 onclick={openInvite}
             >
-                <IconUserPlus font-size={17} />
+                <IconUserPlus aria-hidden="true" font-size={17} />
                 {$LL.chat.manageRoomUsers.buttons.invite()}
             </button>
 
@@ -172,10 +176,10 @@
                 onclick={toggleMute}
             >
                 {#if $areNotificationsMuted}
-                    <IconUnMute font-size={17} />
+                    <IconUnMute aria-hidden="true" font-size={17} />
                     {$LL.chat.roomMenu.unmuteRoom()}
                 {:else}
-                    <IconBellOff font-size={17} />
+                    <IconBellOff aria-hidden="true" font-size={17} />
                     {$LL.chat.roomMenu.muteRoom()}
                 {/if}
             </button>

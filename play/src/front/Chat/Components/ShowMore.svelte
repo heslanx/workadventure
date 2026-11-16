@@ -54,7 +54,7 @@
 {#if items.length > maxNumber}
     <div class="flex justify-center">
         <button
-            class="flex items-center justify-center gap-1.5 p-0 m-0 text-neutral-500 text-center w-full text-sm"
+            class="hit-area flex items-center justify-center gap-1.5 p-0 m-0 text-neutral-500 text-center w-full text-sm"
             onclick={() => (showMore = !showMore)}
         >
             {showMore ? $LL.chat.showLess() : $LL.chat.showMore({ number: items.length - maxNumber })}

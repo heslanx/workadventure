@@ -74,6 +74,7 @@
             {/if}
             <div
                 class="absolute top-2 right-2 flex items-center justify-end gap-2 rounded-lg bg-black/40 p-1.5"
+                role="group"
                 aria-label={$LL.chat.imagePreview.imageActions()}
             >
                 {#if url}
@@ -84,7 +85,7 @@
                         class="flex items-center justify-center rounded p-2 hover:bg-white/20 text-white transition-colors"
                         title={$LL.chat.imagePreview.openInNewTab()}
                     >
-                        <IconExternalLink class="h-6 w-6" />
+                        <IconExternalLink aria-hidden="true" class="h-6 w-6" />
                     </a>
                 {/if}
                 <ButtonClose dataTestId="close-image-preview-modal" size="sm" onclick={onClose} />

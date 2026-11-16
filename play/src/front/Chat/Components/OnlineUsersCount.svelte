@@ -26,7 +26,7 @@
 {#if $navChat.key === "chat" && canOpenUserList}
     <button
         type="button"
-        class="m-0 px-1 py-0.5 flex items-center justify-center gap-1 text-success space-x-1.5 bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white {searchActive
+        class="hit-area m-0 px-1 py-0.5 flex items-center justify-center gap-1 text-success space-x-1.5 bg-transparent border-0 rounded cursor-pointer hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white {searchActive
             ? 'hidden'
             : ''}"
         onclick={() => navChat.switchToUserList()}

@@ -127,9 +127,10 @@
                 <button
                     class="hover:bg-white/10 rounded aspect-square w-8 h-8 m-0 flex items-center justify-center !text-white"
                     data-testid="closeChatButton"
+                    aria-label={$LL.chat.closeChat()}
                     onclick={closeChat}
                 >
-                    <IconX font-size="20" />
+                    <IconX aria-hidden="true" font-size="20" />
                 </button>
             </div>
         {/if}

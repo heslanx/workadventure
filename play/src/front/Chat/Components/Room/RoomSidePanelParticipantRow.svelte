@@ -98,7 +98,7 @@
                 openMatrixPeerProfileDebug();
             }}
         >
-            <IconSettings font-size={16} />
+            <IconSettings aria-hidden="true" font-size={16} />
         </button>
     {/if}
 </div>

@@ -93,7 +93,7 @@
             : recoveryKeyInput.trim().length === 0,
     );
 
-    const changeAccessSecretStorageMethodButtonClass = "self-end text-blue-500";
+    const changeAccessSecretStorageMethodButtonClass = "self-end text-secondary-300";
 </script>
 
 <Popup {isOpen}>
@@ -104,13 +104,15 @@
         <div class="flex flex-col">
             <p>{$LL.chat.e2ee.accessSecretStorage.description()}</p>
             {#if accessSecretStorageMethod === "passphrase"}
-                <label for="passphrase"> <IconEdit /> {$LL.chat.e2ee.accessSecretStorage.passphrase()}</label>
+                <label for="passphrase">
+                    <IconEdit aria-hidden="true" /> {$LL.chat.e2ee.accessSecretStorage.passphrase()}</label
+                >
                 <input
                     id="passphrase"
                     type="password"
                     autocomplete="new-password"
                     data-testid="passphraseInput"
-                    class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-light-purple border border-solid bg-contrast"
+                    class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-lighter-purple border border-solid bg-contrast"
                     placeholder={$LL.chat.e2ee.accessSecretStorage.enterPassphrase()}
                     bind:value={passphraseInput}
                     onkeydown={(key) => {
@@ -122,20 +124,21 @@
                     onfocusout={unfocusChatInput}
                 />
                 <div class="flex flex-row justify-between">
-                    <button class="self-start text-blue-500" onclick={switchToRestoreConfirmationModal}>
-                        <IconRestore />
+                    <button class="self-start text-secondary-300" onclick={switchToRestoreConfirmationModal}>
+                        <IconRestore aria-hidden="true" />
                         {$LL.menu.chat.resetKeyStorageUpButtonLabel()}
                     </button>
                     <button
                         onclick={changeAccessSecretStorageMethod}
                         class={changeAccessSecretStorageMethodButtonClass}
                     >
-                        <IconEdit /> {$LL.chat.e2ee.accessSecretStorage.buttons.useRecoveryKey()}</button
+                        <IconEdit aria-hidden="true" />
+                        {$LL.chat.e2ee.accessSecretStorage.buttons.useRecoveryKey()}</button
                     >
                 </div>
             {:else}
                 <label for="recoveryKey">
-                    <IconKey />
+                    <IconKey aria-hidden="true" />
                     {$LL.chat.e2ee.accessSecretStorage.recoveryKey()}
                 </label>
                 <input
@@ -144,27 +147,28 @@
                     type="password"
                     autocomplete="new-password"
                     data-testid="recoveryKeyInput"
-                    class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-light-purple border border-solid bg-contrast"
+                    class="w-full rounded-md text-white placeholder:text-sm px-3 py-2 p border-lighter-purple border border-solid bg-contrast"
                     bind:value={recoveryKeyInput}
                     onfocusin={focusChatInput}
                     onfocusout={unfocusChatInput}
                 />
                 <div class="flex flex-row justify-between">
-                    <button class="self-start text-blue-500" onclick={switchToRestoreConfirmationModal}>
-                        <IconRestore />
+                    <button class="self-start text-secondary-300" onclick={switchToRestoreConfirmationModal}>
+                        <IconRestore aria-hidden="true" />
                         {$LL.menu.chat.resetKeyStorageUpButtonLabel()}
                     </button>
                     <button
                         onclick={changeAccessSecretStorageMethod}
                         class={changeAccessSecretStorageMethodButtonClass}
                     >
-                        <IconEdit /> {$LL.chat.e2ee.accessSecretStorage.buttons.usePassphrase()}</button
+                        <IconEdit aria-hidden="true" />
+                        {$LL.chat.e2ee.accessSecretStorage.buttons.usePassphrase()}</button
                     >
                 </div>
             {/if}
 
             {#if error}
-                <p class="text-red-500" role="alert">
+                <p class="text-danger-400" role="alert">
                     {accessSecretStorageMethod === "passphrase"
                         ? $LL.chat.e2ee.accessSecretStorage.passphraseWrong()
                         : $LL.chat.e2ee.accessSecretStorage.recoveryKeyWrong()}
@@ -181,10 +185,12 @@
             disabled={confirmInputDisabled || isCheckingPassphrase}
             class="disabled:text-gray-400 disabled:bg-gray-500 bg-secondary flex-1"
             dataTestId="confirmAccessSecretStorageButton"
+            aria-label={$LL.chat.e2ee.accessSecretStorage.buttons.confirm()}
+            aria-busy={isCheckingPassphrase}
             onclick={() => checkAndSubmitRecoveryOrPassphraseIfValid()}
         >
             {#if isCheckingPassphrase}
-                <IconLoader font-size="1.25rem" />
+                <IconLoader aria-hidden="true" font-size="1.25rem" />
             {:else}
                 {$LL.chat.e2ee.accessSecretStorage.buttons.confirm()}
             {/if}

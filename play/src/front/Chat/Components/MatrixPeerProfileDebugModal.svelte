@@ -97,7 +97,7 @@
         <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5 sm:py-4">
             {#if loading}
                 <div class="flex flex-col items-center justify-center gap-3 py-12 text-white/80">
-                    <IconLoader class="animate-spin" font-size="2rem" />
+                    <IconLoader aria-hidden="true" class="animate-spin" font-size="2rem" />
                     <span class="text-sm">{$LL.chat.loader()}</span>
                 </div>
             {:else if loadError}

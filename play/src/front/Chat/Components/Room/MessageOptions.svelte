@@ -150,7 +150,7 @@
             title={$LL.chat.reply()}
             onclick={replyToMessage}
         >
-            <IconArrowBackUp font-size={18} />
+            <IconArrowBackUp aria-hidden="true" font-size={18} />
         </button>
     {/if}
     {#if hasMoreActions}
@@ -164,7 +164,7 @@
             bind:this={moreButton}
             onclick={toggleMoreMenu}
         >
-            <IconDots font-size={18} />
+            <IconDots aria-hidden="true" font-size={18} />
         </button>
     {/if}
 </div>

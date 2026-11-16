@@ -120,7 +120,7 @@
             aria-label={$LL.chat.roomPanel.back()}
             onclick={back}
         >
-            <IconChevronLeft font-size="20" />
+            <IconChevronLeft aria-hidden="true" font-size="20" />
         </button>
         <h2 class="m-0 min-w-0 flex-1 truncate text-base font-bold">{$LL.chat.matrixSettings.title()}</h2>
     </div>
@@ -141,7 +141,7 @@
 
         {#if loading}
             <div class="flex flex-col items-center justify-center gap-3 py-8 text-white/80">
-                <IconLoader class="animate-spin" font-size="2rem" />
+                <IconLoader aria-hidden="true" class="animate-spin" font-size="2rem" />
                 <span class="text-sm">{$LL.chat.loader()}</span>
             </div>
         {:else if loadError}
@@ -184,14 +184,14 @@
                     onclick={syncAccountData}
                 >
                     {#if syncing}
-                        <IconLoader class="animate-spin" font-size="1.25rem" />
+                        <IconLoader aria-hidden="true" class="animate-spin" font-size="1.25rem" />
                         {$LL.chat.matrixSettings.syncing()}
                     {:else if successFlash === "syncAccount"}
                         <span
                             class="flex items-center justify-center gap-2"
                             in:scale={{ duration: 200, delay: 0, opacity: 0.5, start: 0.85 }}
                         >
-                            <IconCheck font-size="1.25rem" class="shrink-0 text-white" />
+                            <IconCheck aria-hidden="true" font-size="1.25rem" class="shrink-0" />
                             {$LL.chat.matrixSettings.actionDone()}
                         </span>
                     {:else}
@@ -218,7 +218,7 @@
 
             <details class="flex flex-col gap-2">
                 <summary
-                    class="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-white/80"
+                    class="hit-area cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-white/60 hover:text-white/80"
                 >
                     {$LL.chat.matrixSettings.advancedSection()}
                 </summary>
@@ -255,7 +255,7 @@
                                 class="flex items-center justify-center gap-2"
                                 in:scale={{ duration: 200, delay: 0, opacity: 0.5, start: 0.85 }}
                             >
-                                <IconCheck font-size="1.25rem" class="shrink-0 text-emerald-300" />
+                                <IconCheck aria-hidden="true" font-size="1.25rem" class="shrink-0" />
                                 {$LL.chat.matrixSettings.actionDone()}
                             </span>
                         {:else}

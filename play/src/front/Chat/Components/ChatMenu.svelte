@@ -126,7 +126,7 @@
     onkeydown={onButtonKeyDown}
     class="{buttonClass} {open ? 'bg-white/10' : ''}"
 >
-    <IconDots font-size={iconSize} />
+    <IconDots aria-hidden="true" font-size={iconSize} />
 </button>
 <!-- svelte-ignore a11y_interactive_supports_focus -->
 <div

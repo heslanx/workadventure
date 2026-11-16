@@ -9,7 +9,11 @@
 </script>
 
 <div class="text-gray-400 text-xl flex flex-col items-center my-10 gap-2" role="status">
-    <IconLoader class="animate-[spin_2s_linear_infinite] motion-reduce:animate-none" font-size={40} />
+    <IconLoader
+        aria-hidden="true"
+        class="animate-[spin_2s_linear_infinite] motion-reduce:animate-none"
+        font-size={40}
+    />
     <p class="m-0">
         {label}
     </p>

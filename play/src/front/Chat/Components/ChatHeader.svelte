@@ -107,16 +107,18 @@
             {#if $navChat.key === "chat" && showUserListButton}
                 <button
                     class="userList p-3 hover:bg-white/10 rounded aspect-square w-12 h-12 !text-white"
+                    aria-label={$LL.chat.users()}
                     onclick={() => navChat.switchToUserList()}
                 >
-                    <IconUsers font-size="20" />
+                    <IconUsers aria-hidden="true" font-size="20" />
                 </button>
             {:else if showChatButton}
                 <button
                     class="p-3 hover:bg-white/10 rounded aspect-square w-12 h-12 !text-white"
+                    aria-label={$LL.chat.chat()}
                     onclick={() => navChat.switchToChat()}
                 >
-                    <IconMessageCircle2 font-size="20" />
+                    <IconMessageCircle2 aria-hidden="true" font-size="20" />
                 </button>
             {/if}
         {/if}
@@ -152,6 +154,7 @@
                     autocomplete="new-password"
                     class="block text-white placeholder:text-white/60 w-full placeholder:text-sm border-none pl-6 pr-20 bg-transparent py-3 text-base h-full"
                     placeholder={$navChat.key === "users" ? $LL.chat.searchUser() : $LL.chat.searchChat()}
+                    aria-label={$navChat.key === "users" ? $LL.chat.searchUser() : $LL.chat.searchChat()}
                     onkeydown={handleKeyDown}
                     onkeyup={() => handleKeyUp(userProviderMerger)}
                     bind:value={$chatSearchBarValue}
@@ -165,7 +168,7 @@
                 {/if}
                 {#if searchFailed && !searchLoader}
                     <div
-                        class="absolute left-0 top-full w-full flex items-center justify-between gap-2 px-4 py-2 bg-danger-900 text-white text-sm"
+                        class="absolute left-0 top-full w-full flex items-center justify-between gap-2 px-4 py-2 bg-danger-1000 text-white text-sm"
                         role="alert"
                     >
                         <span>{$LL.chat.searchFailed()}</span>

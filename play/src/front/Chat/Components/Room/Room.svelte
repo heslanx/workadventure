@@ -158,7 +158,7 @@
     <!-- Reserved width (bell 12 + menu 28 + badge 20 + gaps) so the timestamp ends at one x in every row. -->
     <span class="flex shrink-0 items-center justify-end gap-2 min-w-[4.75rem]">
         {#if $areNotificationsMuted}
-            <IconBellOff font-size="12" class="opacity-50" />
+            <IconBellOff font-size="12" class="opacity-50" role="img" aria-label={$LL.a11y.chatNotificationsMuted()} />
         {/if}
         <RoomMenu {room} />
         {#if $hasUnreadMessage}
