@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "../../../Utils/reducedMotion";
+    import { fly, isReducedMotion } from "../../../Utils/reducedMotion";
     import LL from "../../../../i18n/i18n-svelte";
     import { isMobileOnboarding } from "../../../Stores/OnboardingStore";
 
@@ -8,6 +8,9 @@
     }
 
     const { onnext }: Props = $props();
+
+    // A looping autoplay video is decorative motion: under reduced motion the user starts it from the controls.
+    const reducedMotion = isReducedMotion();
 
     function handleNext() {
         onnext?.();
@@ -34,7 +37,14 @@
                 {$LL.onboarding.communication.description()}
             </p>
             {#if $LL.onboarding.communication.video() && !$isMobileOnboarding}
-                <video autoplay muted loop playsinline class="w-full rounded-lg mb-4">
+                <video
+                    autoplay={!reducedMotion}
+                    muted
+                    loop={!reducedMotion}
+                    controls={reducedMotion}
+                    playsinline
+                    class="w-full rounded-lg mb-4"
+                >
                     <source src={$LL.onboarding.communication.video()} type="video/mp4" />
                 </video>
             {/if}

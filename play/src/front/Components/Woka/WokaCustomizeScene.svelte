@@ -3,6 +3,7 @@
     import { LL } from "../../../i18n/i18n-svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { ABSOLUTE_PUSHER_URL } from "../../Enum/ComputedConst";
+    import { isReducedMotion } from "../../Utils/reducedMotion";
     import { areCharacterTexturesValid } from "../../Connection/LocalUserUtils";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import BodyIcon from "../Icons/BodyIcon.svelte";
@@ -186,7 +187,7 @@
                 if (!element) return; // If still not found, exit
             }
             // Scroll to the element
-            element.scrollIntoView({ behavior: "smooth", block: "end", inline: "end" });
+            element.scrollIntoView({ behavior: isReducedMotion() ? "auto" : "smooth", block: "end", inline: "end" });
         }, 100); // Delay to ensure the DOM is updated
     }
 
@@ -224,7 +225,11 @@
                 // Scroll to the newly selected texture
                 const element = document.getElementById(`texture-${selectedBodyPart}-${textures[newIndex].id}`);
                 if (element) {
-                    element.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+                    element.scrollIntoView({
+                        behavior: isReducedMotion() ? "auto" : "smooth",
+                        block: "nearest",
+                        inline: "nearest",
+                    });
                 }
             }
         } else if (event.key === "Enter") {

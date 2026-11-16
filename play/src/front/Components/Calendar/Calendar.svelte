@@ -1,6 +1,6 @@
 <script lang="ts">
     import { get } from "svelte/store";
-    import { fly } from "../../Utils/reducedMotion";
+    import { fly, isReducedMotion } from "../../Utils/reducedMotion";
     import { calendarEventsStore, isCalendarVisibleStore } from "../../Stores/CalendarStore";
     import LL from "../../../i18n/i18n-svelte";
 
@@ -94,7 +94,11 @@
                         appearance="border"
                         size="xs"
                         class="m-0 shrink-0"
-                        onclick={() => sections[index]?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                        onclick={() =>
+                            sections[index]?.scrollIntoView({
+                                behavior: isReducedMotion() ? "auto" : "smooth",
+                                block: "start",
+                            })}
                     >
                         {day.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" })}
                         {#snippet notification()}

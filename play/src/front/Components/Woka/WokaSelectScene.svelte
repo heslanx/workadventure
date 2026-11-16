@@ -4,6 +4,7 @@
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { localUserStore } from "../../Connection/LocalUserStore";
     import { ABSOLUTE_PUSHER_URL } from "../../Enum/ComputedConst";
+    import { isReducedMotion } from "../../Utils/reducedMotion";
     import Button from "../UI/Button.svelte";
     import WokaPreview from "./WokaPreview.svelte";
     import type { WokaCollection, WokaData, WokaTexture } from "./WokaTypes";
@@ -74,7 +75,7 @@
             setTimeout(() => {
                 const element = document.getElementById(`woka-${selectedWokaTextureId["woka"]}`);
                 if (element == undefined) return;
-                element.scrollIntoView({ behavior: "smooth", block: "end" });
+                element.scrollIntoView({ behavior: isReducedMotion() ? "auto" : "smooth", block: "end" });
             }, 800);
         } catch (err) {
             console.warn("Cannot load previous WOKA textures:", err);
@@ -172,7 +173,11 @@
                 // Scroll to the newly selected texture
                 const element = document.getElementById(`woka-${textures[newIndex].id}`);
                 if (element) {
-                    element.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+                    element.scrollIntoView({
+                        behavior: isReducedMotion() ? "auto" : "smooth",
+                        block: "nearest",
+                        inline: "nearest",
+                    });
                 }
             }
         } else if (event.key === "Enter") {

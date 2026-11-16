@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fly } from "../../../Utils/reducedMotion";
+    import { fly, isReducedMotion } from "../../../Utils/reducedMotion";
     import LL from "../../../../i18n/i18n-svelte";
 
     interface Props {
@@ -7,6 +7,9 @@
     }
 
     const { onnext }: Props = $props();
+
+    // A looping autoplay video is decorative motion: under reduced motion the user starts it from the controls.
+    const reducedMotion = isReducedMotion();
 
     function handleNext() {
         onnext?.();
@@ -26,7 +29,13 @@
                 {$LL.onboarding.screenSharing.description()}
             </p>
             {#if $LL.onboarding.screenSharing.video()}
-                <video autoplay muted loop class="w-full rounded-lg mb-4">
+                <video
+                    autoplay={!reducedMotion}
+                    muted
+                    loop={!reducedMotion}
+                    controls={reducedMotion}
+                    class="w-full rounded-lg mb-4"
+                >
                     <source src={$LL.onboarding.screenSharing.video()} type="video/mp4" />
                 </video>
             {/if}

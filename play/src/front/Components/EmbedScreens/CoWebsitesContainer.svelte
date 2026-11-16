@@ -16,6 +16,7 @@
     import type { CoWebsite } from "../../WebRtc/CoWebsite/CoWebsite";
     import { screenOrientationStore } from "../../Stores/ScreenOrientationStore";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
+    import { isReducedMotion } from "../../Utils/reducedMotion";
     import CoWebsiteTab from "./CoWebsiteTab.svelte";
     import { IconChevronLeft, IconChevronRight, IconArrowsMinimize } from "@wa-icons";
 
@@ -197,7 +198,7 @@
             if (tab.offsetLeft < scrollX) {
                 tabsContainer.scrollTo({
                     left: tab.offsetLeft,
-                    behavior: "smooth",
+                    behavior: isReducedMotion() ? "auto" : "smooth",
                 });
                 break;
             }
@@ -214,7 +215,7 @@
             if (tab.offsetLeft > scrollX) {
                 tabsContainer.scrollTo({
                     left: tab.offsetLeft,
-                    behavior: "smooth",
+                    behavior: isReducedMotion() ? "auto" : "smooth",
                 });
                 break;
             }
