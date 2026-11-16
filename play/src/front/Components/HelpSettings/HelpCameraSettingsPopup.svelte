@@ -45,8 +45,8 @@
         </div>
         {#if showDetails}
             <div class="px-4 mt-4">
-                <p class="help-text !text-danger-800">
-                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" />
+                <p class="help-text !text-danger-400">
+                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" aria-hidden="true" />
                     {#if cameraAndMicrophoneDenied}
                         {$LL.camera.help.cameraMicrophonePermissionDenied()}
                     {:else if cameraDenied}
@@ -56,7 +56,7 @@
                     {/if}
                 </p>
             </div>
-            <div class="p-4 italic opacity-50 text-sm leading-6">
+            <div class="p-4 italic opacity-60 text-sm leading-6">
                 {#if cameraAndMicrophoneDenied}
                     {$LL.camera.help.content()}
                 {:else if cameraDenied}
@@ -75,14 +75,14 @@
                     <img
                         draggable="false"
                         src={$LL.camera.help.screen.firefox()}
-                        alt="help media setup"
+                        alt={$LL.a11y.compHelpCameraPermission()}
                         class="w-full m-auto"
                     />
                 {:else if isChrome && !isAndroid}
                     <img
                         draggable="false"
                         src={$LL.camera.help.screen.chrome()}
-                        alt="help media setup"
+                        alt={$LL.a11y.compHelpCameraPermission()}
                         class="w-full m-auto"
                     />
                 {/if}

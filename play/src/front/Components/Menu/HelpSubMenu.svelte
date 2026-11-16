@@ -21,6 +21,7 @@
         <div class="space-y-2">
             <ActionBarButton label="Restart tutorial" onclick={restartOnboarding}>
                 <svg
+                    aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"

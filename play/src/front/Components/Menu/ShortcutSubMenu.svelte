@@ -203,7 +203,7 @@
             {#if !editing}
                 <Button variant="secondary" size="sm" dataTestId="shortcuts-edit" onclick={() => (editing = true)}>
                     {#snippet icon()}
-                        <IconPencil />
+                        <IconPencil aria-hidden="true" />
                     {/snippet}
                     {$LL.menu.shortcuts.edit.start()}
                 </Button>
@@ -321,7 +321,7 @@
                                                         }}
                                                     >
                                                         {#snippet icon()}
-                                                            <IconRestore />
+                                                            <IconRestore aria-hidden="true" />
                                                         {/snippet}
                                                     </Button>
                                                 {/if}
@@ -355,7 +355,7 @@
                                                         aria-label={$LL.menu.shortcuts.edit.locked()}
                                                         role="img"
                                                     >
-                                                        <IconLock />
+                                                        <IconLock aria-hidden="true" />
                                                     </span>
                                                 {/if}
                                             {/if}

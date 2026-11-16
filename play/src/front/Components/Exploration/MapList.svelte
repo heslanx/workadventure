@@ -139,6 +139,7 @@
                                 />
                                 <svg
                                     class="icon icon-tabler icon-tabler-search stroke-contrast-400 absolute top-0 bottom-0 right-5 m-auto peer-focus:stroke-secondary peer-hover:stroke-secondary-500 transition-all peer-focus:-translate-x-1"
+                                    aria-hidden="true"
                                     fill="none"
                                     height="20"
                                     stroke-linecap="round"
@@ -204,8 +205,8 @@
                                                 <img
                                                     draggable="false"
                                                     src={roomData.thumbnail ?? defaultMapImg}
-                                                    alt={roomData.name}
-                                                    class="shrink-0 w-80 h-52 bg-white object-cover group-hover:scale-110 transition-all z-0"
+                                                    alt=""
+                                                    class="shrink-0 w-80 h-52 bg-white object-cover group-hover:scale-110 motion-reduce:group-hover:scale-100 transition-all z-0"
                                                     onerror={(e) => {
                                                         const img = e.currentTarget as HTMLImageElement;
                                                         img.onerror = null;

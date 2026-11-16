@@ -86,7 +86,7 @@
                 <button
                     type="button"
                     data-testid={getActionTestId(row)}
-                    class="shrink-0 rounded border px-2 py-1 text-xs font-semibold transition-colors aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent {row.action ===
+                    class="hit-area-lg shrink-0 rounded border px-2 py-1 text-xs font-semibold transition-colors aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-transparent {row.action ===
                     'stop'
                         ? 'border-red-400/60 text-red-200 hover:bg-red-500/10'
                         : 'border-white/20 text-white hover:bg-white/10'}"

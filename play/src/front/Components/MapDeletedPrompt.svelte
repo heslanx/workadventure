@@ -27,7 +27,7 @@
         <div class="icon">
             <img
                 src={gameManager?.currentStartedRoom?.errorSceneLogo ?? errorGif}
-                alt="Map deleted"
+                alt={$LL.mapEditor.map.deletePrompt()}
                 style="height:125px; max-width:100%;"
                 draggable="false"
             />
@@ -55,7 +55,7 @@
 
         h2 {
             padding: 5px;
-            font-size: 30px;
+            font-size: 1.875rem;
         }
 
         .subtitle {
@@ -64,7 +64,7 @@
         }
 
         .details {
-            font-size: 12px;
+            font-size: 0.75rem;
             max-width: 80%;
             margin: 0 auto 35px auto;
             opacity: 0.8;
@@ -79,7 +79,7 @@
             }
 
             h2 {
-                font-size: 24px;
+                font-size: 1.5rem;
             }
         }
     }

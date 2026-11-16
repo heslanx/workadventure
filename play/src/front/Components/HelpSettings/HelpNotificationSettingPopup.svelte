@@ -40,13 +40,13 @@
                 {$LL.notification.help.title()}
             </div>
             <div class="px-4 mt-4">
-                <p class="help-text !text-danger-800">
-                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" />
+                <p class="help-text !text-danger-400">
+                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" aria-hidden="true" />
                     {$LL.notification.help.permissionDenied()}
                 </p>
             </div>
         </div>
-        <div class="p-4 italic opacity-50 text-sm leading-6">
+        <div class="p-4 italic opacity-60 text-sm leading-6">
             {$LL.notification.help.content()}
         </div>
         <div class="max-h-72 overflow-hidden opacity-80 saturate-50">

@@ -110,6 +110,7 @@
                 <svg
                     viewBox="0 0 19.54 18.03"
                     class="bi bi-volume-up h-6 w-6 fill-white"
+                    aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
                 >
                     <path
@@ -144,13 +145,14 @@
                 max="1"
                 step="0.025"
                 bind:this={audioPlayerVol}
+                aria-label={$LL.audio.volumeCtrl()}
                 onchange={setVolume}
                 oninput={setVolume}
                 onkeydown={disallowKeys}
                 class="grow"
             />
             <div class="text-white ml-4">
-                {Math.round(currentVolume * 100)}<span class="opacity-50">%</span>
+                {Math.round(currentVolume * 100)}<span class="opacity-60">%</span>
             </div>
         </div>
     </div>

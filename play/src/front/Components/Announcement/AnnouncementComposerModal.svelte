@@ -100,7 +100,7 @@
     >
         <header class="flex flex-row items-center justify-between p-4 pb-2">
             <h2 class="text-base md:text-xl m-0 flex items-center gap-2">
-                <IconMessageShare font-size="22" />
+                <IconMessageShare font-size="22" aria-hidden="true" />
                 {$LL.megaphone.announcement.title()}
             </h2>
             <ButtonClose onclick={close} />
@@ -145,7 +145,7 @@
 
             <section>
                 <h3 class="text-sm uppercase text-white/60 mb-2 flex items-center gap-1">
-                    <IconMapPin font-size="16" />
+                    <IconMapPin font-size="16" aria-hidden="true" />
                     {$LL.megaphone.announcement.place()}
                 </h3>
                 <Select bind:value={place} dataTestId="announcement-place">
@@ -182,13 +182,13 @@
                         role="alert"
                         data-testid="announcement-send-failed"
                     >
-                        <IconAlertTriangle font-size="16" class="shrink-0" />
+                        <IconAlertTriangle font-size="16" class="shrink-0" aria-hidden="true" />
                         {$LL.megaphone.announcement.sendFailed()}
                     </p>
                 {/if}
                 {#if confirmingWorld}
                     <p class="m-0 me-auto text-sm flex items-center gap-1 text-warning-400">
-                        <IconAlertTriangle font-size="16" />
+                        <IconAlertTriangle font-size="16" aria-hidden="true" />
                         {$LL.megaphone.announcement.confirmWorld()}
                     </p>
                     <Button variant="light" appearance="border" onclick={() => (confirmingWorld = false)}>
@@ -202,7 +202,7 @@
                     onclick={send}
                     dataTestId="announcement-send"
                 >
-                    {#snippet icon()}<IconSend class="h-4 w-4" />{/snippet}
+                    {#snippet icon()}<IconSend class="h-4 w-4" aria-hidden="true" />{/snippet}
                     {confirmingWorld
                         ? $LL.megaphone.announcement.confirmSend()
                         : broadcastToWorld

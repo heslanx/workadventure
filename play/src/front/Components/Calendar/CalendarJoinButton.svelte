@@ -45,17 +45,17 @@
             class={className}
             onclick={goThere}
         >
-            {#snippet icon()}<IconDoorIn class="h-4 w-4" />{/snippet}
+            {#snippet icon()}<IconDoorIn class="h-4 w-4" aria-hidden="true" />{/snippet}
             {$LL.externalModule.calendar.goThere()}
         </Button>
     {:else if prominent}
         <Button variant="secondary" class={className} onclick={join}>
-            {#snippet icon()}<IconVideo class="h-5 w-5" />{/snippet}
+            {#snippet icon()}<IconVideo class="h-5 w-5" aria-hidden="true" />{/snippet}
             {$LL.externalModule.calendar.join()}
         </Button>
     {:else if labelled}
         <Button variant="light" appearance="border" size="sm" class={className} onclick={join}>
-            {#snippet icon()}<IconVideo class="h-4 w-4" />{/snippet}
+            {#snippet icon()}<IconVideo class="h-4 w-4" aria-hidden="true" />{/snippet}
             {$LL.externalModule.calendar.join()}
         </Button>
     {:else}
@@ -68,7 +68,7 @@
             class={className}
             onclick={join}
         >
-            {#snippet icon()}<IconVideo class="h-4 w-4" />{/snippet}
+            {#snippet icon()}<IconVideo class="h-4 w-4" aria-hidden="true" />{/snippet}
         </Button>
     {/if}
 {/if}

@@ -175,7 +175,13 @@
                             dataTestId="pwa-install-button"
                         >
                             {#snippet icon()}
-                                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg
+                                    class="h-5 w-5 shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
                                     <path
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
@@ -209,14 +215,14 @@
                             type="button"
                             role="switch"
                             aria-checked={neverShowAgain}
-                            class="flex cursor-pointer items-center gap-3 border-0 bg-transparent p-0 text-sm text-white/95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded max-h-5"
+                            class="hit-area flex cursor-pointer items-center gap-3 border-0 bg-transparent p-0 text-sm text-white/95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded max-h-5"
                             onclick={toggleNeverShow}
                             data-testid="pwa-install-never-show-input"
                         >
                             <span
                                 class="relative inline-flex h-5 w-8 shrink-0 rounded-full transition-colors {neverShowAgain
                                     ? 'bg-[#4b68ff]'
-                                    : 'bg-white/25'}"
+                                    : 'bg-white/40'}"
                             >
                                 <span
                                     class="pointer-events-none absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform {neverShowAgain
@@ -233,7 +239,12 @@
 
         {#if logo !== logoImg && gameManager.currentStartedRoom.showPoweredBy !== false}
             <section class="flex justify-center pb-2">
-                <img draggable="false" src={poweredByWorkAdventureImg} alt="Powered by WorkAdventure" class="h-14" />
+                <img
+                    draggable="false"
+                    src={poweredByWorkAdventureImg}
+                    alt={$LL.a11y.compPoweredByWorkAdventure()}
+                    class="h-14"
+                />
             </section>
         {/if}
     </div>

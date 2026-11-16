@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { LL } from "../../../i18n/i18n-svelte";
     import type { WokaData } from "./WokaTypes";
     import WokaImage from "./WokaImage.svelte";
 
@@ -21,7 +22,8 @@
 <div class="woka-preview flex items-center justify-center relative">
     <div class="p-6 relative flex items-center justify-center w-fit bg-white/10 rounded-lg">
         <button
-            aria-label="Rotate avatar"
+            type="button"
+            aria-label={$LL.a11y.compRotateAvatar()}
             class="bg-white/10 hover:bg-white/20 rounded-md absolute bottom-2 right-2 aspect-square p-2 flex items-center justify-center"
             onclick={() => {
                 direction = (direction + 1) % 4;
@@ -39,6 +41,7 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 class="icon icon-tabler icons-tabler-outline icon-tabler-reload"
+                aria-hidden="true"
             >
                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                 <path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1 7.935 1.007 9.425 4.747" />

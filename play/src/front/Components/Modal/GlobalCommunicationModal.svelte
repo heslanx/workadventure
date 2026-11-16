@@ -134,7 +134,7 @@
     >
         <header class="flex flex-row items-center justify-between p-4 pb-2">
             <h2 class="text-base md:text-xl m-0 flex items-center gap-2">
-                <IconSpeakerPhone font-size="22" />
+                <IconSpeakerPhone font-size="22" aria-hidden="true" />
                 {$LL.actionbar.goLive()}
             </h2>
             <ButtonClose onclick={close} />
@@ -156,16 +156,17 @@
                         ></video>
                     {:else}
                         <div class="flex flex-col items-center gap-1 text-center px-4">
-                            <IconCameraOff font-size="28" />
+                            <IconCameraOff font-size="28" aria-hidden="true" />
                             <span class="font-bold">{$LL.megaphone.modal.liveMessage.cameraOff()}</span>
                             <span class="text-sm text-white/70">{$LL.megaphone.modal.liveMessage.cameraOffHint()}</span>
                         </div>
                     {/if}
                     {#if $requestedMegaphoneStore}
                         <span
-                            class="absolute top-2 left-2 rounded-full bg-danger text-white text-sm font-bold px-3 py-1"
+                            class="absolute top-2 left-2 rounded-full bg-danger-1000 text-white text-sm font-bold px-3 py-1"
                         >
-                            ● {$LL.megaphone.modal.liveMessage.live()}
+                            <span aria-hidden="true">●</span>
+                            {$LL.megaphone.modal.liveMessage.live()}
                         </span>
                     {/if}
                     {#if $requestedMicrophoneState}
@@ -182,7 +183,7 @@
                 <section class="flex flex-col gap-2">
                     <h3 class="text-sm uppercase text-white/60 m-0">{$LL.megaphone.modal.liveMessage.devices()}</h3>
                     <div class="flex flex-row items-center gap-3">
-                        <IconCamera font-size="20" />
+                        <IconCamera font-size="20" aria-hidden="true" />
                         <div class="w-full">
                             <Select
                                 value={$requestedCameraState ? cameraSelectValue : ""}
@@ -201,7 +202,7 @@
                         </div>
                     </div>
                     <div class="flex flex-row items-center gap-3">
-                        <IconMicrophone font-size="20" />
+                        <IconMicrophone font-size="20" aria-hidden="true" />
                         <div class="w-full">
                             <Select
                                 value={$requestedMicrophoneState ? microphoneSelectValue : ""}
@@ -225,10 +226,10 @@
                     <h3 class="text-sm uppercase text-white/60 mb-2">{$LL.megaphone.modal.liveMessage.whoHears()}</h3>
                     <p class="m-0 flex items-center gap-2">
                         {#if reachesWholeWorld}
-                            <IconWorld font-size="18" />
+                            <IconWorld font-size="18" aria-hidden="true" />
                             {$LL.megaphone.modal.liveMessage.wholeWorld()}
                         {:else}
-                            <IconUsers font-size="18" />
+                            <IconUsers font-size="18" aria-hidden="true" />
                             {$LL.megaphone.modal.liveMessage.thisRoom()}
                         {/if}
                     </p>
@@ -237,7 +238,7 @@
                 <footer class="flex flex-wrap items-center justify-end gap-2">
                     {#if !canGoLive}
                         <p id={blockedReasonId} class="m-0 me-auto text-sm flex items-center gap-1 text-warning-400">
-                            <IconAlertTriangle font-size="16" />
+                            <IconAlertTriangle font-size="16" aria-hidden="true" />
                             {$LL.warning.megaphoneNeeds()}
                         </p>
                         <!-- The way out of the block, right beside it: the microphone alone is enough to go live. -->
@@ -247,7 +248,7 @@
                             onclick={() => requestedMicrophoneState.enableMicrophone()}
                             dataTestId="go-live-enable-microphone"
                         >
-                            {#snippet icon()}<IconMicrophone font-size="16" />{/snippet}
+                            {#snippet icon()}<IconMicrophone font-size="16" aria-hidden="true" />{/snippet}
                             {$LL.megaphone.modal.liveMessage.enableMicrophone()}
                         </Button>
                     {/if}
@@ -263,10 +264,13 @@
                         </Button>
                     {:else}
                         <div
-                            class="flex items-center justify-between gap-3 w-full rounded-md bg-danger px-4 py-2"
+                            class="flex items-center justify-between gap-3 w-full rounded-md bg-danger-1000 px-4 py-2"
                             data-testid="go-live-on-air"
                         >
-                            <span class="font-bold">● {$LL.megaphone.modal.liveMessage.live()}</span>
+                            <span class="font-bold">
+                                <span aria-hidden="true">●</span>
+                                {$LL.megaphone.modal.liveMessage.live()}
+                            </span>
                             <Button variant="light" appearance="border" onclick={stopLive} dataTestId="go-live-stop">
                                 {$LL.megaphone.modal.liveMessage.stop()}
                             </Button>

@@ -21,7 +21,7 @@
         <p class="test-class">{$LL.mapEditor.map.refreshPrompt()}</p>
         <button
             type="button"
-            class="light m-auto cursor-pointer px-3"
+            class="light m-auto min-h-11 cursor-pointer px-3"
             onclick={(event) => {
                 event.preventDefault();
                 window.location.reload();

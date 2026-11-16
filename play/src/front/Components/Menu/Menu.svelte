@@ -35,10 +35,11 @@
     // reassigned, never mutated, so there is nothing for the proxy to do anyway.
     let activeSubMenu: MenuItem = $state.raw($subMenusStore[$activeSubMenuStore]);
     let activeComponent: WorkAdventureComponent = $state(ProfileSubMenu);
-    let props: { url: string; allowApi: boolean; allow?: string } = $state({
+    let props: { url: string; allowApi: boolean; allow?: string; title?: string } = $state({
         url: "",
         allowApi: false,
         allow: undefined,
+        title: undefined,
     });
     let unsubscriberSubMenuStore: Unsubscriber;
     let unsubscriberActiveSubMenuStore: Unsubscriber;
@@ -108,7 +109,12 @@
             const customMenu = customMenuIframe.get(menu.key);
             if (customMenu !== undefined) {
                 activeSubMenu = menu;
-                props = { url: customMenu.url, allowApi: customMenu.allowApi, allow: customMenu.allow };
+                props = {
+                    url: customMenu.url,
+                    allowApi: customMenu.allowApi,
+                    allow: customMenu.allow,
+                    title: menu.label,
+                };
                 activeComponent = CustomSubMenu;
             } else {
                 sendMenuClickedEvent(menu.key);
@@ -149,6 +155,7 @@
         >
             <!--<h2 class="p-8 text-white/10 h-5 tracking-[1rem] mb-8">{$LL.menu.title()}</h2>-->
             <nav
+                aria-label={$LL.menu.title()}
                 class="mt-0 mr-16 @md/main-layout:mr-0 flex flex-row @md/main-layout:flex-col w-full @md/main-layout:w-full items-stretch @md/main-layout:items-start overflow-auto h-full @md/main-layout:overflow-auto p-2.5 @md/main-layout:p-3 gap-1"
             >
                 {#each $subMenusStore as submenu, i (`${submenu.key}_${submenu.type}`)}
@@ -182,6 +189,7 @@
                             >
                                 <button
                                     type="button"
+                                    aria-current={activeSubMenu === submenu ? "true" : undefined}
                                     class="menu-item m-0 relative z-10 bold block @md/main-layout:flex text-nowrap text-white"
                                 >
                                     {subMenuTranslations[i]}
@@ -192,7 +200,7 @@
                                     submenu
                                         ? 'opacity-100 group-hover:right-4'
                                         : 'opacity-30'}"
-                                    alt="open submenu"
+                                    alt=""
                                     draggable="false"
                                 />
                             </div>

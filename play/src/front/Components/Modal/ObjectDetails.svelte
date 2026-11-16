@@ -202,7 +202,7 @@
                 <img
                     src={$mapExplorationObjectSelectedStore?.getPrefab().imagePath}
                     id={$mapExplorationObjectSelectedStore.entityId}
-                    alt="Object"
+                    alt=""
                     class="w-32 h-32 mb-4 object-contain"
                     draggable="false"
                 />

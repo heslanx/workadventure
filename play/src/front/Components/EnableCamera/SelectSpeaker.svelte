@@ -22,7 +22,7 @@
     class="p-4 rounded-lg bg-white/10 mx-2 md:mx-0 w-full min-w-[300px] md:min-w-[400px] max-w-[450px] flex flex-col lg:min-h-[24rem] items-center"
 >
     <div class="text-lg bold flex items-center justify-center gap-3 mb-4 ps-2">
-        <IconUnMute font-size="28" />
+        <IconUnMute font-size="28" aria-hidden="true" />
         <div id="{uid}-title" class="grow pe-8 ps-2">{$LL.camera.editSpeaker()}</div>
         <Button
             variant={!editMode ? "secondary" : "light"}
@@ -73,7 +73,7 @@
                                 : 'border-white'}"
                         >
                             {#if selectedDevice === speaker.deviceId}
-                                <IconCheck class="text-white" />
+                                <IconCheck class="text-white" aria-hidden="true" />
                             {/if}
                         </div>
                         <div class="space-y-1 min-w-0">
@@ -98,7 +98,7 @@
                         >
                             {#snippet icon()}
                                 <!-- TODO HUGO -->
-                                <IconUnMute font-size="20" />
+                                <IconUnMute font-size="20" aria-hidden="true" />
                             {/snippet}
                         </Button>
                     {/if}

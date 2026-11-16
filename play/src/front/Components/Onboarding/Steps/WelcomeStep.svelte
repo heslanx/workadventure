@@ -42,7 +42,7 @@
             </p>
             <div class="flex justify-center gap-4 pt-4">
                 <button
-                    class="px-6 py-3 bg-secondary hover:bg-secondary-600 text-white rounded font-semibold transition-all"
+                    class="px-6 py-3 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
                     data-testid="onboarding-button-welcome-start"
                     onclick={handleNext}
                 >

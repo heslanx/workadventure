@@ -72,7 +72,7 @@
                     <div
                         class="webrtcsetup flex items-center justify-center w-full aspect-video overflow-hidden bg-contrast"
                     >
-                        <IconVideoOff font-size="28" />
+                        <IconVideoOff font-size="28" aria-hidden="true" />
                     </div>
                 {/if}
                 <div class="flex py-4 pe-8 ps-4 items-center gap-4">
@@ -82,7 +82,7 @@
                         class:border-secondary={!selectedDevice}
                     >
                         {#if !selectedDevice}
-                            <IconCheck class="text-white" />
+                            <IconCheck class="text-white" aria-hidden="true" />
                         {/if}
                     </div>
                     <div class="space-y-1">
@@ -133,7 +133,7 @@
                             class:border-secondary={selectedDevice === device.deviceId}
                         >
                             {#if selectedDevice == device.deviceId}
-                                <IconCheck class="text-white" />
+                                <IconCheck class="text-white" aria-hidden="true" />
                             {/if}
                         </div>
                         <div class="space-y-1">

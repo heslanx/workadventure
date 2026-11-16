@@ -90,6 +90,7 @@
         >
             <div class="grow text-left">{$LL.menu.about.copyrights.map.title()}</div>
             <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 class={expandedMapCopyright ? "rotate-180" : ""}
                 width="24"
@@ -120,6 +121,7 @@
         >
             <div class="grow text-left">{$LL.menu.about.copyrights.tileset.title()}</div>
             <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 class={expandedTilesetCopyright ? "rotate-180" : ""}
                 width="24"
@@ -156,6 +158,7 @@
         >
             <div class="grow text-left">{$LL.menu.about.copyrights.audio.title()}</div>
             <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 class={expandedAudioCopyright ? "rotate-180" : ""}
                 width="24"

@@ -91,14 +91,14 @@
 
     .recording-title {
         font-weight: 600;
-        font-size: 15px;
+        font-size: 0.9375rem;
         color: white;
         line-height: 1.4;
         margin: 0;
     }
 
     .recording-subtitle {
-        font-size: 13px;
+        font-size: 0.8125rem;
         color: rgba(255, 255, 255, 0.7);
         line-height: 1.5;
         margin: 0;
@@ -106,11 +106,11 @@
 
     @media (max-width: 768px) {
         .recording-title {
-            font-size: 14px;
+            font-size: 0.875rem;
         }
 
         .recording-subtitle {
-            font-size: 12px;
+            font-size: 0.75rem;
         }
     }
 </style>

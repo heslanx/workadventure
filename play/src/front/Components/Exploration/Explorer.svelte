@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { writable } from "svelte/store";
     import { onMount } from "svelte";
     import type { OpenWebsitePropertyData } from "@workadventure/map-editor";
-    import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { LL } from "../../../i18n/i18n-svelte";
     import AreaToolImg from "../images/icon-tool-area.png";
     import EntityToolImg from "../images/icon-tool-entity.svg";
@@ -382,12 +382,7 @@
                 onkeydown={(event) => activateOnEnterOrSpace(event, toggleEntityList)}
             >
                 <div class="flex flex-row items-center justify-start gap-2">
-                    <img
-                        draggable="false"
-                        class="w-10 h-auto pointer-events-none"
-                        src={EntityToolImg}
-                        alt="link icon"
-                    />
+                    <img draggable="false" class="w-10 h-auto pointer-events-none" src={EntityToolImg} alt="" />
                     {#if $entitiesListFiltered.size > 0}
                         <span class="pointer-events-none flex flex-row items-center gap-2">
                             <span
@@ -412,14 +407,17 @@
                     type="button"
                     aria-expanded={entityListActive}
                     aria-label={$LL.mapEditor.explorer.entitiesList()}
-                    class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
+                    class="transition-all group-hover:bg-white/10 min-h-7 min-w-7 p-1 rounded aspect-square flex items-center justify-center text-white"
                     data-testid="toggleFolderEntity"
                     onclick={(event) => {
                         event.stopPropagation();
                         toggleEntityList();
                     }}
                 >
-                    <IconChevronUp class={`transform transition ${!entityListActive ? "" : "rotate-180"}`} />
+                    <IconChevronUp
+                        class={`transform transition ${!entityListActive ? "" : "rotate-180"}`}
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
 
@@ -450,7 +448,7 @@
                                 draggable="false"
                                 class="w-6 max-h-10 h-auto mr-2 pointer-events-none object-contain"
                                 src={entity.getPrefab().imagePath}
-                                alt="link icon"
+                                alt=""
                             />
                             <span
                                 class="pointer-events-none w-full text-nowrap text-ellipsis overflow-hidden whitespace-nowrap"
@@ -470,7 +468,7 @@
                                     goTo(entity);
                                 }}
                             >
-                                <IconWalk font-size="16" />
+                                <IconWalk font-size="16" aria-hidden="true" />
                             </button>
                             <button
                                 type="button"
@@ -482,7 +480,7 @@
                                     handlerToSelectEntity(entity);
                                 }}
                             >
-                                <IconEye font-size="16" />
+                                <IconEye font-size="16" aria-hidden="true" />
                             </button>
                         </div>
                     {/each}
@@ -499,7 +497,7 @@
                 onkeydown={(event) => activateOnEnterOrSpace(event, toggleAreaList)}
             >
                 <div class="flex flex-row items-center justify-start gap-2">
-                    <img draggable="false" class="w-10 h-auto pointer-events-none" src={AreaToolImg} alt="link icon" />
+                    <img draggable="false" class="w-10 h-auto pointer-events-none" src={AreaToolImg} alt="" />
                     {#if $areasListFiltered.size > 0}
                         <span class="pointer-events-none flex flex-row items-center gap-2">
                             <span
@@ -523,14 +521,17 @@
                     type="button"
                     aria-expanded={areaListActive}
                     aria-label={$LL.mapEditor.explorer.areasList()}
-                    class="transition-all group-hover:bg-white/10 p-1 rounded aspect-square flex items-center justify-center text-white"
+                    class="transition-all group-hover:bg-white/10 min-h-7 min-w-7 p-1 rounded aspect-square flex items-center justify-center text-white"
                     data-testid="toggleFolderArea"
                     onclick={(event) => {
                         event.stopPropagation();
                         toggleAreaList();
                     }}
                 >
-                    <IconChevronUp class={`transform transition ${!areaListActive ? "" : "rotate-180"}`} />
+                    <IconChevronUp
+                        class={`transform transition ${!areaListActive ? "" : "rotate-180"}`}
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
             {#if areaListActive && $areasListFiltered.size > 0}
@@ -561,7 +562,7 @@
                                     draggable="false"
                                     class="w-6 h-auto pointer-events-none"
                                     src={AreaToolImg}
-                                    alt="link icon"
+                                    alt=""
                                 />
                                 <span
                                     class="pointer-events-none w-full text-nowrap text-ellipsis overflow-hidden whitespace-nowrap"
@@ -582,7 +583,7 @@
                                         goTo(area);
                                     }}
                                 >
-                                    <IconWalk font-size="16" />
+                                    <IconWalk font-size="16" aria-hidden="true" />
                                 </button>
                                 <button
                                     type="button"
@@ -596,7 +597,7 @@
                                         handlerToSelectArea(area);
                                     }}
                                 >
-                                    <IconEye font-size="16" />
+                                    <IconEye font-size="16" aria-hidden="true" />
                                 </button>
                             </div>
                         {/each}

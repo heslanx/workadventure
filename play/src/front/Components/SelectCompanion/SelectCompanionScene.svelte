@@ -49,23 +49,27 @@
 <section class="category flex flex-row justify-center">
     {#if $collectionsSizeStore > 1 && $selectedCollection}
         <button
-            class="light mr-2 selectCharacterButton"
+            type="button"
+            aria-label={$LL.a11y.compPreviousCollection()}
+            class="hit-area-lg light mr-2 selectCharacterButton"
             onclick={(event) => {
                 event.preventDefault();
                 selectLeftCollection();
             }}
         >
-            <IconChevronLeft />
+            <IconChevronLeft aria-hidden="true" />
         </button>
         <strong class="category-text">{$selectedCollection}</strong>
         <button
-            class="outline ml-2 selectCharacterButton"
+            type="button"
+            aria-label={$LL.a11y.compNextCollection()}
+            class="hit-area-lg outline ml-2 selectCharacterButton"
             onclick={(event) => {
                 event.preventDefault();
                 selectRightCollection();
             }}
         >
-            <IconChevronRight />
+            <IconChevronRight aria-hidden="true" />
         </button>
     {/if}
 </section>

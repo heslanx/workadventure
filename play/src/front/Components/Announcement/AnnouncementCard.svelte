@@ -82,10 +82,10 @@
                 {#if woka}
                     <img src={woka} alt="" class="h-7 w-7 [image-rendering:pixelated]" draggable="false" />
                 {:else}
-                    <IconSpeakerPhone font-size="20" />
+                    <IconSpeakerPhone font-size="20" aria-hidden="true" />
                 {/if}
             {:catch}
-                <IconSpeakerPhone font-size="20" />
+                <IconSpeakerPhone font-size="20" aria-hidden="true" />
             {/await}
         </div>
         <div class="flex-1 min-w-0">
@@ -95,10 +95,10 @@
                 {#if senderName}
                     <span
                         class="ms-auto text-xs rounded-full px-2 py-0.5 flex items-center gap-1 {broadcastToWorld
-                            ? 'bg-secondary/40'
-                            : 'bg-success/40'}"
+                            ? 'bg-secondary/20 text-secondary-300'
+                            : 'bg-success/20 text-success-400'}"
                     >
-                        <IconWorld font-size="12" />
+                        <IconWorld font-size="12" aria-hidden="true" />
                         {broadcastToWorld
                             ? $LL.megaphone.announcement.wholeWorld()
                             : $LL.megaphone.announcement.thisRoom()}
@@ -116,13 +116,13 @@
                     onclick={join}
                     data-testid="announcement-join"
                 >
-                    <IconDoorIn font-size="16" />
+                    <IconDoorIn font-size="16" aria-hidden="true" />
                     {place ? $LL.megaphone.announcement.join({ place }) : $LL.megaphone.announcement.joinMap()}
                 </button>
             {/if}
             {#if placeNotFound}
                 <p class="mt-2 mb-0 text-sm text-danger-400 flex items-center gap-1">
-                    <IconAlertTriangle font-size="16" />
+                    <IconAlertTriangle font-size="16" aria-hidden="true" />
                     {$LL.megaphone.announcement.placeNotFound()}
                 </p>
             {/if}

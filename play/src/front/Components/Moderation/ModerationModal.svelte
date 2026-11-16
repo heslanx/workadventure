@@ -178,12 +178,12 @@
     }
 </script>
 
-{#snippet forbidIcon()}<IconForbid font-size="24" />{/snippet}
-{#snippet alertIcon()}<IconAlertTriangle font-size="24" />{/snippet}
-{#snippet removeIcon()}<IconUserMinus font-size="24" />{/snippet}
-{#snippet doorIcon()}<IconDoorExit font-size="24" />{/snippet}
-{#snippet banIcon()}<IconForbid2 font-size="24" />{/snippet}
-{#snippet backIcon()}<IconChevronLeft font-size="20" />{/snippet}
+{#snippet forbidIcon()}<IconForbid font-size="24" aria-hidden="true" />{/snippet}
+{#snippet alertIcon()}<IconAlertTriangle font-size="24" aria-hidden="true" />{/snippet}
+{#snippet removeIcon()}<IconUserMinus font-size="24" aria-hidden="true" />{/snippet}
+{#snippet doorIcon()}<IconDoorExit font-size="24" aria-hidden="true" />{/snippet}
+{#snippet banIcon()}<IconForbid2 font-size="24" aria-hidden="true" />{/snippet}
+{#snippet backIcon()}<IconChevronLeft font-size="20" aria-hidden="true" />{/snippet}
 
 {#snippet actionRow(label: string, hint: string, icon: Snippet, onclick: () => void, testId: string)}
     <button
@@ -208,6 +208,7 @@
                     appearance="ghost"
                     square={true}
                     icon={backIcon}
+                    aria-label={$LL.recording.back()}
                     dataTestId="moderation-back"
                     onclick={() => (step = undefined)}
                 />
@@ -257,7 +258,7 @@
                     )}
                 {/if}
                 {#if $userIsAdminStore}
-                    <div class="flex flex-row items-center gap-3 text-xs uppercase opacity-50">
+                    <div class="flex flex-row items-center gap-3 text-xs uppercase opacity-60">
                         <span class="h-px grow bg-white/20"></span>
                         {$LL.report.moderate.adminOnly()}
                         <span class="h-px grow bg-white/20"></span>
@@ -339,7 +340,7 @@
                                 <p class="mb-0 text-sm">{$LL.report.moderate.ban.scope.nobody()}</p>
                             {:else}
                                 <p class="mb-0 flex flex-row items-center gap-2 text-sm font-semibold">
-                                    <IconAlertTriangle font-size="20" class="shrink-0" />
+                                    <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                                     {$LL.report.moderate.ban.scope.others({ count: ipPreview.users.length })}
                                 </p>
                                 <ul class="mb-0 flex flex-col gap-1 max-h-40 overflow-y-auto list-none p-0 pl-7">
@@ -351,7 +352,7 @@
                         </div>
                     {/if}
                     <p class="mb-0 flex flex-row items-center gap-2 font-semibold">
-                        <IconAlertTriangle font-size="20" class="shrink-0" />
+                        <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                         {$LL.report.moderate.ban.confirmContent()}
                     </p>
                 {/if}
@@ -374,13 +375,13 @@
                         role="alert"
                         data-testid="moderation-send-failed"
                     >
-                        <IconAlertTriangle font-size="20" class="shrink-0" />
+                        <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                         {$LL.report.moderate.sendFailed()}
                     </p>
                 {/if}
                 {#if textIsEmpty}
                     <p class="mb-0 flex flex-row items-center gap-2 font-semibold" role="alert">
-                        <IconAlertTriangle font-size="20" class="shrink-0" />
+                        <IconAlertTriangle font-size="20" class="shrink-0" aria-hidden="true" />
                         {$LL.report.message.empty()}
                     </p>
                 {/if}

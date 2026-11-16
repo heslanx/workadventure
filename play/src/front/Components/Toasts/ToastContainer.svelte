@@ -165,7 +165,7 @@
             {#if canClose}
                 <button
                     type="button"
-                    class="m-0 -my-2 -me-2 p-0 h-8 w-8 shrink-0 self-start flex items-center justify-center rounded bg-transparent text-white/80 hover:bg-white/10 hover:text-white cursor-pointer"
+                    class="hit-area-lg m-0 -my-2 -me-2 p-0 h-8 w-8 shrink-0 self-start flex items-center justify-center rounded bg-transparent text-white/80 hover:bg-white/10 hover:text-white cursor-pointer"
                     aria-label={$LL.notification.closeToast()}
                     title={$LL.notification.closeToast()}
                     data-testid="toast-close-button"
@@ -179,8 +179,9 @@
             {/if}
         </div>
         {#if buttons}
+            <!-- Design-system secondary hover (4.0:1) and danger label (3.1:1) fail 4.5: darker hover, dark label. -->
             <div
-                class="buttons-wrapper flex items-center justify-center p-2 space-x-2 bg-contrast/60 pointer-events-auto"
+                class="buttons-wrapper flex items-center justify-center p-2 space-x-2 bg-contrast/60 pointer-events-auto [&_.btn-secondary:hover:enabled]:bg-secondary-800 [&_.btn-danger]:text-contrast-900 [&_.btn-danger_.btn-label]:text-contrast-900"
             >
                 {@render buttons()}
             </div>
@@ -235,6 +236,13 @@
         }
         to {
             transform: scaleX(1);
+        }
+    }
+
+    /* The countdown bar shows the time left. Without motion it would sit full from the start, so it is hidden. */
+    @media (prefers-reduced-motion: reduce) {
+        .progress-bar-container {
+            display: none;
         }
     }
 </style>

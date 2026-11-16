@@ -1,6 +1,7 @@
 <script lang="ts">
     import { fade } from "../../Utils/reducedMotion";
     import { loaderProgressStore } from "../../Stores/LoaderStore";
+    import LL from "../../../i18n/i18n-svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import bgMap from "../images/map-exemple.webp";
     import defaultLoader from "../images/Workadventure.gif";
@@ -24,9 +25,21 @@
             {/if}
             -->
             <div class="mb-4 w-full flex justify-center">
-                <img draggable="false" src={logo} class="max-w-[300px] max-h-[150px] px-4" alt="Logo loading screen" />
+                <img
+                    draggable="false"
+                    src={logo}
+                    class="max-w-[300px] max-h-[150px] px-4"
+                    alt={$LL.a11y.compRoomLogo()}
+                />
             </div>
-            <div class="w-full h-3 bg-contrast py-[2px]">
+            <div
+                class="w-full h-3 bg-contrast py-[2px]"
+                role="progressbar"
+                aria-label={$LL.a11y.compLoading()}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round($loaderProgressStore * 100)}
+            >
                 <div
                     class="h-full transition-all duration-200"
                     style="width: {$loaderProgressStore * 100}%; background-color: {primary};"

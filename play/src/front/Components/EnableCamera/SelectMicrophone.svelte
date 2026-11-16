@@ -71,14 +71,14 @@
                     class:border-secondary={!selectedDevice}
                 >
                     {#if !selectedDevice}
-                        <IconCheck font-size="20" class="text-white" />
+                        <IconCheck font-size="20" class="text-white" aria-hidden="true" />
                     {/if}
                 </div>
 
                 <div class="space-y-1 min-w-0">
                     <div class="text-lg bold truncate leading-tight flex self-start">
                         {#if editMode && selectedDevice}
-                            <IconMicrophoneOff font-size="20" />
+                            <IconMicrophoneOff font-size="20" aria-hidden="true" />
                         {/if}
 
                         {$LL.audio.disable()}
@@ -124,7 +124,7 @@
                             class:border-secondary={selectedDevice === device.deviceId}
                         >
                             {#if selectedDevice == device.deviceId}
-                                <IconCheck class="text-white" />
+                                <IconCheck class="text-white" aria-hidden="true" />
                             {/if}
                         </div>
                         <div class="space-y-1 min-w-0">

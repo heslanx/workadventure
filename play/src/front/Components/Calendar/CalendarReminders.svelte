@@ -74,7 +74,7 @@
                     aria-label={$LL.externalModule.calendar.dismissReminder()}
                     onclick={() => dismissReminder(event)}
                 >
-                    {#snippet icon()}<IconX class="h-4 w-4" />{/snippet}
+                    {#snippet icon()}<IconX class="h-4 w-4" aria-hidden="true" />{/snippet}
                 </Button>
             </div>
             <div class="grid gap-2 {link ? 'grid-cols-2' : 'grid-cols-1'}">

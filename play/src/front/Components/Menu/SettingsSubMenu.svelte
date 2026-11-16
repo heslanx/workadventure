@@ -326,7 +326,7 @@
 <div class="divide-y divide-white/20" transition:fly={{ x: -700, duration: 250 }}>
     <section class=" p-0 first:pt-0 pt-8 m-0">
         <div class="bg-contrast font-bold text-lg p-4 flex items-center">
-            <div class="me-4 opacity-50"><IconCameraUp /></div>
+            <div class="me-4 opacity-50" aria-hidden="true"><IconCameraUp /></div>
             {$LL.menu.settings.videoBandwidth.title()}
         </div>
         <div class="flex w-full mb-6 mt-2 justify-center">
@@ -337,11 +337,11 @@
                             ? 'opacity-100 font-bold'
                             : 'opacity-50 hover:opacity-80'}"
                     >
-                        <IconAntennaBarsLow />
+                        <IconAntennaBarsLow aria-hidden="true" />
                         <button
                             type="button"
                             aria-pressed={valueVideoQuality === 1}
-                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer hit-area"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueVideoQuality = 1;
@@ -354,11 +354,11 @@
                             ? 'opacity-100 font-bold'
                             : 'opacity-50 hover:opacity-80'}"
                     >
-                        <IconAntennaBarsMid />
+                        <IconAntennaBarsMid aria-hidden="true" />
                         <button
                             type="button"
                             aria-pressed={valueVideoQuality === 2}
-                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer hit-area"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueVideoQuality = 2;
@@ -371,11 +371,11 @@
                             ? 'opacity-100 font-bold'
                             : 'opacity-50 hover:opacity-80'}"
                     >
-                        <IconAntennaBarsHigh />
+                        <IconAntennaBarsHigh aria-hidden="true" />
                         <button
                             type="button"
                             aria-pressed={valueVideoQuality === 3}
-                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer hit-area"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueVideoQuality = 3;
@@ -385,6 +385,7 @@
                     </li>
                 </ul>
                 <RangeSlider
+                    ariaLabel={$LL.menu.settings.videoBandwidth.title()}
                     buttonShape="square"
                     min={1}
                     max={3}
@@ -397,7 +398,7 @@
     </section>
     <section class="flex flex-col p-0 first:pt-0 pt-8 m-0">
         <div class="bg-contrast font-bold text-lg p-4 flex items-center">
-            <div class="me-4 opacity-50"><IconScreenShare /></div>
+            <div class="me-4 opacity-50" aria-hidden="true"><IconScreenShare /></div>
 
             {$LL.menu.settings.shareScreenBandwidth.title()}
         </div>
@@ -409,11 +410,11 @@
                             ? 'opacity-100 font-bold'
                             : 'opacity-50 hover:opacity-80'}"
                     >
-                        <IconAntennaBarsLow />
+                        <IconAntennaBarsLow aria-hidden="true" />
                         <button
                             type="button"
                             aria-pressed={valueScreenShareQuality === 1}
-                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer hit-area"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueScreenShareQuality = 1;
@@ -426,11 +427,11 @@
                             ? 'opacity-100 font-bold'
                             : 'opacity-50 hover:opacity-80'}"
                     >
-                        <IconAntennaBarsMid />
+                        <IconAntennaBarsMid aria-hidden="true" />
                         <button
                             type="button"
                             aria-pressed={valueScreenShareQuality === 2}
-                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer hit-area"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueScreenShareQuality = 2;
@@ -443,11 +444,11 @@
                             ? 'opacity-100 font-bold'
                             : 'opacity-50 hover:opacity-80'}"
                     >
-                        <IconAntennaBarsHigh />
+                        <IconAntennaBarsHigh aria-hidden="true" />
                         <button
                             type="button"
                             aria-pressed={valueScreenShareQuality === 3}
-                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer"
+                            class="absolute -bottom-5 min-h-6 px-1 rounded cursor-pointer hit-area"
                             onclick={(event) => {
                                 event.preventDefault();
                                 valueScreenShareQuality = 3;
@@ -457,6 +458,7 @@
                     </li>
                 </ul>
                 <RangeSlider
+                    ariaLabel={$LL.menu.settings.shareScreenBandwidth.title()}
                     min={1}
                     max={3}
                     step={1}
@@ -507,7 +509,7 @@
         data-testid="microphone-settings-section"
     >
         <div class="bg-contrast font-bold text-lg p-4 flex items-center">
-            <div class="me-4 opacity-50"><IconMicrophoneOn /></div>
+            <div class="me-4 opacity-50" aria-hidden="true"><IconMicrophoneOn /></div>
             {$LL.menu.settings.microphone.title()}
         </div>
 
@@ -537,12 +539,12 @@
                             {$LL.actionbar.microphone.noiseSuppressionInitializing()}
                         </div>
                     {:else if selectedNoiseSuppressionProvider === "workadventure" && $noiseSuppressionStateStore.status === "unsupported"}
-                        <div data-testid="noise-suppression-error" class="text-xs text-pop-red mt-1">
+                        <div data-testid="noise-suppression-error" class="text-xs text-pop-red-text mt-1">
                             {$noiseSuppressionStateStore.message ??
                                 $LL.actionbar.microphone.noiseSuppressionUnsupported()}
                         </div>
                     {:else if selectedNoiseSuppressionProvider === "workadventure" && $noiseSuppressionStateStore.status === "error"}
-                        <div data-testid="noise-suppression-error" class="text-xs text-pop-red mt-1">
+                        <div data-testid="noise-suppression-error" class="text-xs text-pop-red-text mt-1">
                             {$noiseSuppressionStateStore.message ?? $LL.actionbar.microphone.noiseSuppressionError()}
                         </div>
                     {/if}
@@ -626,7 +628,7 @@
     </section>
     <section class="flex flex-col p-0 first:pt-0 pt-8 m-0">
         <div class="bg-contrast font-bold text-lg p-4 flex items-center">
-            <div class="me-4 opacity-50"><IconAdjustements /></div>
+            <div class="me-4 opacity-50" aria-hidden="true"><IconAdjustements /></div>
 
             {$LL.menu.settings.proximityDiscussionVolume()}
         </div>
@@ -669,6 +671,7 @@
                     </li>
                 </ul>
                 <RangeSlider
+                    ariaLabel={$LL.menu.settings.proximityDiscussionVolume()}
                     min={0}
                     max={1}
                     step={0.1}
@@ -680,11 +683,12 @@
     </section>
     <section class="flex flex-col p-0 first:pt-0 pt-8 m-0">
         <div class="bg-contrast font-bold text-lg p-4 flex items-center">
-            <div class="me-4 opacity-50"><IconLanguage /></div>
+            <div class="me-4 opacity-50" aria-hidden="true"><IconLanguage /></div>
             {$LL.menu.settings.language.title()}
         </div>
         <div class="mt-2 p-2">
             <select
+                aria-label={$LL.menu.settings.language.title()}
                 class="w-full languages-switcher bg-contrast rounded-md border border-solid border-white/20 mb-0"
                 bind:value={valueLocale}
                 onchange={updateLocale}
@@ -702,7 +706,7 @@
     <section class="flex flex-col p-0 first:pt-0 pt-8 m-0">
         <div class="tooltip">
             <div class="group bg-contrast font-bold text-lg p-4 flex items-center relative">
-                <div class="me-4 opacity-50"><IconDoorExit /></div>
+                <div class="me-4 opacity-50" aria-hidden="true"><IconDoorExit /></div>
                 <div class="grow">
                     <div>{$LL.menu.settings.privacySettings.title()}</div>
                     <div class="text-sm italic text-white/60">{$LL.menu.settings.privacySettings.explanation()}</div>
@@ -730,7 +734,7 @@
     </section>
     <section class="flex flex-col p-0 first:pt-0 pt-8 m-0">
         <div class="bg-contrast font-bold text-lg p-4 flex items-center">
-            <div class="me-4 opacity-50"><IconAdjustements /></div>
+            <div class="me-4 opacity-50" aria-hidden="true"><IconAdjustements /></div>
             {$LL.menu.settings.otherSettings()}
         </div>
 

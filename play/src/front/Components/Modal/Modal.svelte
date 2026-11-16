@@ -82,7 +82,7 @@
 >
     <div class="w-full h-full bg-contrast/95 backdrop-blur rounded" transition:blur={{ amount: 10, duration: 250 }}>
         <div
-            class={`flex justify-center items-center content-center bg-contrast/80 backdrop-blur p-2 space-y-0 @lg/main-layout:space-y-2 rounded-lg absolute z-50 hover:opacity-100 focus-within:opacity-100 opacity-25 transition-opacity duration-300
+            class={`flex justify-center items-center content-center bg-contrast/80 backdrop-blur p-2 space-y-0 @lg/main-layout:space-y-2 rounded-lg absolute z-50 hover:opacity-100 focus-within:opacity-100 opacity-60 transition-opacity duration-300
                 ${
                     isFullScreened || isMobile
                         ? "top-4 right-4"
@@ -107,9 +107,9 @@
                     >
                         {#snippet icon()}
                             {#if isFullScreened}
-                                <IconArrowsMinimize font-size="20" class="text-white" />
+                                <IconArrowsMinimize font-size="20" class="text-white" aria-hidden="true" />
                             {:else}
-                                <IconArrowsMaximize font-size="20" class="text-white" />
+                                <IconArrowsMaximize font-size="20" class="text-white" aria-hidden="true" />
                             {/if}
                         {/snippet}
                     </Button>
@@ -129,7 +129,7 @@
                     aria-label={$LL.actionbar.close()}
                 >
                     {#snippet icon()}
-                        <IconX font-size="20" class="text-white" />
+                        <IconX font-size="20" class="text-white" aria-hidden="true" />
                     {/snippet}
                 </Button>
             {/if}
@@ -141,7 +141,7 @@
                 height="100%"
                 width="100%"
                 allow={$modalIframeStore?.allow}
-                title={$modalIframeStore?.title}
+                title={$modalIframeStore?.title || "WorkAdventure"}
                 src={modalUrl}
                 class="border-0 relative z-40"
                 allowtransparency

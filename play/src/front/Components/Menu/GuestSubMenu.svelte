@@ -152,7 +152,7 @@
                 </div>
                 <Button variant="secondary" class="w-full" onclick={shareLink}>
                     {#snippet icon()}
-                        <IconShare font-size="20" />
+                        <IconShare font-size="20" aria-hidden="true" />
                     {/snippet}
                     <span class="text-lg font-bold">
                         {$LL.menu.invite.share()}
@@ -166,6 +166,7 @@
                     type="text"
                     readonly
                     id="input-share-link"
+                    aria-label={$LL.menu.invite.description()}
                     class="grow h-12 text-sm border-white bg-contrast rounded-md border border-solid border-white/20"
                     value={location.toString()}
                 />
@@ -177,7 +178,7 @@
                 >
                     {#snippet icon()}
                         <span class="flex items-center justify-center {linkCopied ? '' : 'hidden'}">
-                            <IconCheck class="text-white" />
+                            <IconCheck class="text-contrast-900" aria-hidden="true" />
                         </span>
                     {/snippet}
                     <div hidden={!linkCopied}>{$LL.menu.invite.copied()}</div>

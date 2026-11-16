@@ -113,10 +113,10 @@
                 <button
                     type="button"
                     aria-label={$LL.mapEditor.explorer.zoomIn()}
-                    class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+                    class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                     onclick={zoomIn}
                 >
-                    <IconPlus />
+                    <IconPlus aria-hidden="true" />
                     <div
                         class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
@@ -126,10 +126,10 @@
                 <button
                     type="button"
                     aria-label={$LL.mapEditor.explorer.zoomOut()}
-                    class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+                    class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                     onclick={zoomOut}
                 >
-                    <IconMinus />
+                    <IconMinus aria-hidden="true" />
                     <div
                         class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
@@ -141,10 +141,10 @@
                 <button
                     type="button"
                     aria-label={$LL.chat.imagePreview.openInNewTab()}
-                    class="group flex justify-center items-center p-1 rounded hover:bg-white/30 cursor-pointer"
+                    class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
                     onclick={openInNewTab}
                 >
-                    <IconExternalLink />
+                    <IconExternalLink aria-hidden="true" />
                     <div
                         class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >

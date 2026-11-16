@@ -34,8 +34,8 @@
 <style>
     @media (max-width: 768px) {
         :global(.responsive-message) {
-            font-size: 24px;
-            line-height: 32px;
+            font-size: 1.5rem;
+            line-height: 2rem;
             padding-bottom: 14px;
         }
     }

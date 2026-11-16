@@ -73,11 +73,11 @@
             />
             <span
                 class="absolute -bottom-1.5 -end-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-solid border-contrast bg-danger-1000 text-xxs font-bold"
-                >@</span
+                aria-hidden="true">@</span
             >
         </div>
     {:else}
-        <div class="mt-1 text-white text-xl flex-shrink-0">💬</div>
+        <div class="mt-1 text-white text-xl flex-shrink-0" aria-hidden="true">💬</div>
     {/if}
 
     <div class="flex flex-col text-white flex-1 min-w-0 overflow-hidden">

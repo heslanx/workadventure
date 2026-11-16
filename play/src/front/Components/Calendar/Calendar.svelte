@@ -56,9 +56,9 @@
                     {#if get(externalSvelteComponentService.getComponentsByZone("calendarImage")).size > 0}
                         <ExternalComponents zone="calendarImage" />
                     {:else}
-                        <img draggable="false" src={outlookSvg} class="w-8" alt={$LL.menu.icon.open.calendar()} />
+                        <img draggable="false" src={outlookSvg} class="w-8" alt="" />
                         <span>/</span>
-                        <img draggable="false" src={calendarPng} class="w-8" alt={$LL.menu.icon.open.calendar()} />
+                        <img draggable="false" src={calendarPng} class="w-8" alt="" />
                     {/if}
                     <h3 class="m-0 text-lg normal-case leading-none">{$LL.externalModule.calendar.title()}</h3>
                     <span class="rounded-sm bg-white px-1 py-0.5 text-xxs font-bold text-secondary">Beta</span>

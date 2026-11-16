@@ -70,6 +70,8 @@
                 toolbar: toolbarOptions,
             },
         });
+        // The editable element is the one Quill creates: it needs its own name.
+        quill.root.setAttribute("aria-label", $LL.menu.globalMessage.enter());
         quill.on("text-change", onTextChange);
         if (initialContent) {
             try {
@@ -114,6 +116,17 @@
             stroke: none;
         }
 
+        /* Quill's blue (#06c) for a hovered or active tool is only 2.6:1 on this dark toolbar. */
+        :global(.ql-toolbar.ql-snow button:hover .ql-stroke),
+        :global(.ql-toolbar.ql-snow button.ql-active .ql-stroke) {
+            stroke: hsl(var(--secondary-300));
+        }
+
+        :global(.ql-toolbar.ql-snow button:hover .ql-fill),
+        :global(.ql-toolbar.ql-snow button.ql-active .ql-fill) {
+            fill: hsl(var(--secondary-300));
+        }
+
         :global(.ql-toolbar.ql-snow .ql-formats button) {
             color: whitesmoke; /* Droprown label text color */
         }
@@ -152,6 +165,11 @@
 
                 color: whitesmoke;
                 background-color: #333333;
+            }
+
+            /* Quill's blue links (#06c) are 2.3:1 on the tooltip above. */
+            :global(.ql-tooltip a) {
+                color: hsl(var(--secondary-300));
             }
         }
     }

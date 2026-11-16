@@ -208,12 +208,20 @@
     >
         {#if isLoading}
             <div class="flex items-center justify-center h-64">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <div
+                    class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"
+                    role="status"
+                    aria-label={$LL.a11y.compLoading()}
+                ></div>
             </div>
         {:else if error}
-            <div class="text-center text-red-600 mb-4">
+            <div class="text-center text-danger-400 mb-4" role="alert">
                 <p>{error}</p>
-                <button class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick={loadWokaData}>
+                <button
+                    type="button"
+                    class="mt-2 px-4 py-2 bg-secondary text-white rounded hover:bg-secondary-800"
+                    onclick={loadWokaData}
+                >
                     Retry
                 </button>
             </div>
@@ -239,7 +247,7 @@
                                 onclick={randomizeOutfit}
                             >
                                 {#snippet icon()}
-                                    <IconShuffle font-size="20" class="text-white" />
+                                    <IconShuffle font-size="20" class="text-white" aria-hidden="true" />
                                 {/snippet}
                                 <span>{$LL.woka.selectWoka.randomize()}</span>
                             </Button>
@@ -266,6 +274,8 @@
                                                 ? 'bg-white/50 border-white'
                                                 : 'bg-white/10 hover:bg-white/20 border-transparent'}"
                                             id="woka-{texture.id}"
+                                            aria-label={texture.name}
+                                            aria-pressed={selectedWokaTextureId?.woka === texture.id}
                                             onclick={() => selectTexture(collectionIndex, texture.id)}
                                         >
                                             <WokaImage
@@ -291,7 +301,7 @@
                     {$LL.woka.selectWoka.customize()}
                 </button>
                 <button
-                    class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-600"
+                    class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-800"
                     onclick={() => saveAndContinue([selectedWokaTextureId["woka"]])}
                 >
                     {$LL.woka.selectWoka.continue()}

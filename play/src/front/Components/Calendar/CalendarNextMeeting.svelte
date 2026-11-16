@@ -28,7 +28,7 @@
         <!-- The countdown is what the card is for: it outweighs its caption and the time range below. -->
         <span class="text-sm text-contrast-200">
             {#if started}
-                <span class="font-bold text-danger-600">{$LL.externalModule.calendar.inProgress()}</span>
+                <span class="font-bold text-danger-400">{$LL.externalModule.calendar.inProgress()}</span>
             {:else}
                 {$LL.externalModule.calendar.nextMeeting()} ·
                 <span class="font-bold text-white">{formatTimeUntil(event.start, now)}</span>

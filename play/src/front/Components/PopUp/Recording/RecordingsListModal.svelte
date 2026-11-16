@@ -285,9 +285,9 @@
                             aria-label={viewMode === "list" ? $LL.recording.viewCards() : $LL.recording.viewList()}
                         >
                             {#if viewMode === "list"}
-                                <IconLayoutGrid class="h-5 w-5" />
+                                <IconLayoutGrid class="h-5 w-5" aria-hidden="true" />
                             {:else}
-                                <IconList class="h-5 w-5" />
+                                <IconList class="h-5 w-5" aria-hidden="true" />
                             {/if}
                         </button>
                         <button
@@ -295,7 +295,7 @@
                             onclick={() => queryRecordings()}
                             title={$LL.recording.refresh()}
                         >
-                            <IconRefresh />
+                            <IconRefresh aria-hidden="true" />
                             <span class="sr-only">{$LL.recording.refresh()}</span>
                         </button>
                     </div>
@@ -388,7 +388,7 @@
                                     <div
                                         class="flex shrink-0 items-center gap-1 self-center rounded border hover:border-white/20 hover:bg-white/5 p-1 mr-2"
                                         role="group"
-                                        aria-label="Actions"
+                                        aria-label={$LL.recording.actions()}
                                     >
                                         <button
                                             type="button"
@@ -420,7 +420,7 @@
                                             title={$LL.recording.contextMenu.delete()}
                                             aria-label={$LL.recording.contextMenu.delete()}
                                         >
-                                            <IconTrash class="h-4 w-4" />
+                                            <IconTrash class="h-4 w-4" aria-hidden="true" />
                                         </button>
                                     </div>
                                 </div>
@@ -459,12 +459,12 @@
                                             data-testid="recording-delete-{index}"
                                             onclick={() => handleDelete(record)}
                                         >
-                                            <IconTrash class="h-4 w-4" />
+                                            <IconTrash class="h-4 w-4" aria-hidden="true" />
                                             {$LL.recording.contextMenu.delete()}
                                         </button>
                                         <button
                                             type="button"
-                                            class="mt-1 text-xs text-white/60 underline-offset-2 hover:text-white/80 hover:underline"
+                                            class="hit-area mt-1 text-xs text-white/60 underline-offset-2 hover:text-white/80 hover:underline"
                                             onclick={() => (actionsCardFilename = null)}
                                         >
                                             {$LL.recording.back()}
@@ -526,7 +526,7 @@
                                         title={$LL.recording.actions()}
                                         aria-label={$LL.recording.actions()}
                                     >
-                                        <IconDots class="h-4 w-4" />
+                                        <IconDots class="h-4 w-4" aria-hidden="true" />
                                     </button>
                                 {/if}
                             </div>

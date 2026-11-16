@@ -208,7 +208,7 @@
         >
             <section class="mb-4 text-center">
                 <h2 class="h4">{$LL.camera.enable.title()}</h2>
-                <p class="opacity-50 w-2/3 m-auto pt-2 hidden md:block">
+                <p class="opacity-70 w-2/3 m-auto pt-2 hidden md:block">
                     {$LL.camera.enable.start()}
                 </p>
             </section>
@@ -224,7 +224,7 @@
                     selectedDevice={selectedMicrophone}
                 >
                     {#snippet icon()}
-                        <IconMicrophoneOn font-size="24" />
+                        <IconMicrophoneOn font-size="24" aria-hidden="true" />
                     {/snippet}
                     {#snippet title()}
                         <span>{$LL.actionbar.subtitle.microphone()}</span>
@@ -243,7 +243,7 @@
                     selectedDevice={selectedCamera}
                 >
                     {#snippet icon()}
-                        <IconCamera font-size="24" />
+                        <IconCamera font-size="24" aria-hidden="true" />
                     {/snippet}
                     {#snippet title()}
                         <span>{$LL.camera.editCam()}</span>
@@ -296,7 +296,7 @@
                 {#if legalString}
                     <section class="terms-and-conditions h-fit z-40 text-center w-full">
                         <a style="display: none;" href="traduction">Need for traduction</a>
-                        <p class="text-white text-xs italic opacity-50">
+                        <p class="text-white text-xs italic opacity-70">
                             {@html $LL.login.terms({
                                 links: legalString,
                             })}

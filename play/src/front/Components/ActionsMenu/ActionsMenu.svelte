@@ -95,7 +95,7 @@
                 {/if}
             </div>
             {#if actionsMenuData.menuDescription}
-                <p class="text-sm opacity-50 text-white px-4">
+                <p class="text-sm opacity-60 text-white px-4">
                     {actionsMenuData.menuDescription}
                 </p>
             {/if}
@@ -129,6 +129,7 @@
                             {#if action.actionIcon}
                                 <div
                                     class="w-6 h-6"
+                                    aria-hidden="true"
                                     style="background-color: {action.iconColor ?? 'white'};
                                 -webkit-mask: url({action.actionIcon}) no-repeat center;
                                     mask: url({action.actionIcon}) no-repeat center;"

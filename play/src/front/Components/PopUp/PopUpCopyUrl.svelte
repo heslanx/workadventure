@@ -40,9 +40,10 @@
             square
             class="!p-0 w-8 h-8 items-center absolute top-2 right-2 z-50 pointer-events-auto"
             onclick={closeBanner}
+            aria-label={$LL.actionbar.close()}
         >
             {#snippet icon()}
-                <IconX font-size="20" class="text-white" />
+                <IconX font-size="20" class="text-white" aria-hidden="true" />
             {/snippet}
         </Button>
     {/snippet}

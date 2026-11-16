@@ -25,6 +25,7 @@
 <div
     class="horizontal-sound-meter flex items-center justify-center rounded-full overflow-hidden w-full max-w-[700px] mx-5"
     class:active={spectrum !== undefined}
+    aria-hidden="true"
 >
     {#each [...Array(NB_BARS).keys()] as i (i)}
         <div class="flex-1 h-4" style={color(i, spectrum)}></div>

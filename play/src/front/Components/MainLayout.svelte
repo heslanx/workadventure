@@ -298,6 +298,7 @@
                 <span
                     class="inline-flex transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
                     class:rotate-180={highlightParticipantCamerasListOpen}
+                    aria-hidden="true"
                 >
                     <ChevronLeftIcon height="h-8" width="w-8" strokeWidth="2" />
                 </span>

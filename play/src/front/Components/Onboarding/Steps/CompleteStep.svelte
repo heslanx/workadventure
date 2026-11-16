@@ -38,7 +38,7 @@
             </p>
             <div class="flex justify-center gap-4 pt-4">
                 <button
-                    class="px-5 py-3 sm:px-6 min-h-11 bg-secondary hover:bg-secondary-600 text-white rounded font-semibold transition-all"
+                    class="px-5 py-3 sm:px-6 min-h-11 bg-secondary hover:bg-secondary-800 text-white rounded font-semibold transition-all"
                     onclick={handleNext}
                 >
                     {$LL.onboarding.complete.finish()}

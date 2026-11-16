@@ -79,9 +79,9 @@
                     {#if get(externalSvelteComponentService.getComponentsByZone("todoListImage")).size > 0}
                         <ExternalComponents zone="todoListImage" />
                     {:else}
-                        <img draggable="false" src={todoListPng} class="w-6" alt={$LL.menu.icon.open.todoList()} />
+                        <img draggable="false" src={todoListPng} class="w-6" alt="" />
                         <span>/</span>
-                        <img draggable="false" src={taskPng} class="w-6" alt={$LL.menu.icon.open.todoList()} />
+                        <img draggable="false" src={taskPng} class="w-6" alt="" />
                     {/if}
                     <h3 class="m-0 text-lg normal-case leading-none">{$LL.externalModule.todoList.title()}</h3>
                     <span class="rounded-sm bg-white px-1 py-0.5 text-xxs font-bold text-secondary">Beta</span>
@@ -114,7 +114,7 @@
                                 {$LL.externalModule.todoList.forToday()}
                             </h4>
                             {#if overdueCount > 0}
-                                <span class="rounded-sm bg-danger-600/20 px-2 py-0.5 text-xs font-bold text-danger-600">
+                                <span class="rounded-sm bg-danger-600/20 px-2 py-0.5 text-xs font-bold text-danger-400">
                                     {$LL.externalModule.todoList.overdueCount({ count: overdueCount })}
                                 </span>
                             {/if}

@@ -66,6 +66,7 @@
                 ? 'bg-red-500/30 hover:bg-red-500/40 aria-disabled:hover:bg-red-500/30'
                 : 'hover:bg-white/10 aria-disabled:hover:bg-transparent'} aria-disabled:cursor-not-allowed"
             data-testid="lockable-area-option-bubble"
+            aria-pressed={groupLockState}
             onclick={handleSelectGroupLock}
         >
             {#if groupLockState}
@@ -86,6 +87,7 @@
                 ? 'bg-red-500/30 hover:bg-red-500/40 aria-disabled:hover:bg-red-500/30'
                 : 'hover:bg-white/10 aria-disabled:hover:bg-transparent'} aria-disabled:cursor-not-allowed"
             data-testid="lockable-area-option-{index}"
+            aria-pressed={entry.lockState}
             aria-disabled={!canLock(entry) || undefined}
             onclick={() => canLock(entry) && handleSelect(entry)}
         >
