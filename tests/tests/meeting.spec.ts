@@ -47,7 +47,7 @@ test.describe("Meeting actions test @nomobile @nowebkit", () => {
         await page.getByRole("button", { name: "Ask to mute audio", exact: true }).click();
 
         // Check if "Bob" user receive the request to be muted
-        await expect(userBob.locator("div").filter({ hasText: /^Can I mute your microphone\?$/ })).toBeVisible();
+        await expect(userBob.getByRole("alertdialog").getByText("Can I mute your microphone?")).toBeVisible();
 
         // Click on the accept button
         await userBob.getByRole("button", { name: "Mute my microphone" }).click();
@@ -63,7 +63,7 @@ test.describe("Meeting actions test @nomobile @nowebkit", () => {
         await page.getByRole("button", { name: "Ask to turn off video", exact: true }).click();
 
         // Check if "Bob" user receive the request to be muted
-        await expect(userBob.locator("div").filter({ hasText: /^Can I mute your camera\?$/ })).toBeVisible();
+        await expect(userBob.getByRole("alertdialog").getByText("Can I mute your camera?")).toBeVisible();
         // Click on the accept button
         await userBob.getByRole("button", { name: "Turn off my camera" }).click();
 

@@ -51,6 +51,8 @@ export const localSpaceUser = (name?: string): SpaceUserExtended => {
             // The local user stands in no space of their own: no action on them names a meeting.
             filterType: FilterType.LIVE_STREAMING_USERS,
             getName: () => "",
+            usersStore: writable(new Map()),
+            mySpaceUserId: "",
             state: {
                 giveFloor: () => {
                     throw new Error("should not be called");
