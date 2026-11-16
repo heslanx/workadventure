@@ -1,5 +1,10 @@
 import { derived, readable } from "svelte/store";
 
+/**
+ * What the browser says about a permission. null: it says nothing (no Permissions API, or it does not know this
+ * permission name), which is not "granted": a blocked device then shows only as a failed request, and the screens that
+ * explain it read cameraAccessDeniedStore and microphoneAccessDeniedStore (MediaStore), not this state alone.
+ */
 export type BrowserMediaPermissionState = "granted" | "denied" | "prompt" | null;
 
 function createBrowserPermissionStateStore(name: "camera" | "microphone") {

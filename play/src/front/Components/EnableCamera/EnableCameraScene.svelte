@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
+    import { get } from "svelte/store";
     import type { EnableCameraScene } from "../../Phaser/Login/EnableCameraScene";
     import { EnableCameraSceneName } from "../../Phaser/Login/EnableCameraScene";
     import {
@@ -14,16 +15,25 @@
         requestedMicrophoneState,
         speakerSelectedStore,
         localStreamStore,
+        enableCameraSceneVisibilityStore,
+        cameraAccessDeniedStore,
+        microphoneAccessDeniedStore,
+        cameraButtonHelpContextStore,
+        microphoneButtonHelpContextStore,
     } from "../../Stores/MediaStore";
     import type { Game } from "../../Phaser/Game/Game";
     import { LL, locale } from "../../../i18n/i18n-svelte";
     import { myCameraStore, myMicrophoneStore } from "../../Stores/MyMediaStore";
     import { localUserStore } from "../../Connection/LocalUserStore";
-    import { gameManager } from "../../Phaser/Game/GameManager";
+    import { gameManager, GameSceneNotFoundError } from "../../Phaser/Game/GameManager";
+    import { hideHelpCameraSettings } from "../../Stores/HelpSettingsStore";
     import { playSpeakerTestSound } from "../../WebRtc/AudioOutputManager";
 
     import bgMap from "../images/map-exemple.webp";
     import Button from "../UI/Button.svelte";
+    import Alert from "../UI/Alert.svelte";
+    import PermissionHelpDetails from "../HelpSettings/PermissionHelpDetails.svelte";
+    import { readDevicePreferences, restoreDevicePreferences } from "./devicePreferences";
     import HorizontalSoundMeterWidget from "./HorizontalSoundMeterWidget.svelte";
     import SelectMicrophone from "./SelectMicrophone.svelte";
     import SelectCamera from "./SelectCamera.svelte";
@@ -43,6 +53,57 @@
 
     let selectedCamera: string | undefined = $state(undefined);
     let selectedMicrophone: string | undefined = $state(undefined);
+    // Whether each list of devices is open, so that Escape closes the list before it leaves the page.
+    let cameraEditing = $state(false);
+    let microphoneEditing = $state(false);
+    let speakerEditing = $state(false);
+
+    // A game scene exists when the page was opened from the profile menu (the room was left to edit the devices),
+    // and not on the way into the room. Only the first has a room to go back to.
+    function isOpenedFromRoom(): boolean {
+        try {
+            gameManager.getCurrentGameScene();
+            return true;
+        } catch (error) {
+            if (error instanceof GameSceneNotFoundError) {
+                return false;
+            }
+            throw error;
+        }
+    }
+    const openedFromRoom = isOpenedFromRoom();
+    // The page applies a choice as soon as it is made: this is what Cancel puts back.
+    const initialPreferences = readDevicePreferences();
+
+    // From the same rule as the action bar and the media settings, which also holds for a browser without the
+    // Permissions API: a blocked device is known there from its failed request.
+    let cameraDenied = $derived($cameraAccessDeniedStore);
+    let microphoneDenied = $derived($microphoneAccessDeniedStore);
+    let permissionDenied = $derived(cameraDenied || microphoneDenied);
+    // A device that is missing or that another application holds, told as the action bar tooltip tells it.
+    let cameraNotice = $derived(
+        $cameraButtonHelpContextStore === "no_device"
+            ? { title: $LL.camera.help.tooltip.noDeviceTitle(), description: $LL.camera.help.tooltip.noDeviceDesc() }
+            : $cameraButtonHelpContextStore === "device_in_use"
+              ? {
+                    title: $LL.camera.help.tooltip.deviceInUseTitle(),
+                    description: $LL.camera.help.tooltip.deviceInUseDesc(),
+                }
+              : undefined,
+    );
+    let microphoneNotice = $derived(
+        $microphoneButtonHelpContextStore === "no_device"
+            ? {
+                  title: $LL.camera.help.microphoneTooltip.noDeviceTitle(),
+                  description: $LL.camera.help.microphoneTooltip.noDeviceDesc(),
+              }
+            : $microphoneButtonHelpContextStore === "device_in_use"
+              ? {
+                    title: $LL.camera.help.microphoneTooltip.deviceInUseTitle(),
+                    description: $LL.camera.help.microphoneTooltip.deviceInUseDesc(),
+                }
+              : undefined,
+    );
 
     let legalStrings: string[] = [];
     if (legals?.termsOfUseUrl) {
@@ -94,6 +155,31 @@
         enableCameraScene.login();
     }
 
+    // Back to the room that was left, with the devices as they were: the way out of a page opened from the menu.
+    function cancel() {
+        restoreDevicePreferences(initialPreferences);
+        enableCameraSceneVisibilityStore.hideEnableCameraScene();
+        enableCameraScene.scene.sleep(EnableCameraSceneName);
+        gameManager.goToStartingMap();
+    }
+
+    function onWindowKeydown(event: KeyboardEvent) {
+        if (event.key !== "Escape" || event.defaultPrevented) {
+            return;
+        }
+        if (cameraEditing || microphoneEditing || speakerEditing) {
+            event.preventDefault();
+            cameraEditing = false;
+            microphoneEditing = false;
+            speakerEditing = false;
+            return;
+        }
+        if (openedFromRoom) {
+            event.preventDefault();
+            cancel();
+        }
+    }
+
     function srcObject(node: HTMLVideoElement, stream: MediaStream) {
         node.srcObject = stream;
         return {
@@ -134,6 +220,13 @@
 
     onDestroy(() => {
         unsubscribeLocalStreamStore();
+        // The page explained a blocked device. The popup that waits in the popup store (it shows when the map is up)
+        // and the one-time help of the first start would say it again at the start of the world.
+        // (Read from the stores: a $derived of this component is torn down by now.)
+        if (get(cameraAccessDeniedStore) || get(microphoneAccessDeniedStore)) {
+            hideHelpCameraSettings();
+            localUserStore.setHelpCameraSettingsShown();
+        }
     });
 
     onMount(() => {
@@ -195,6 +288,8 @@
     /* eslint-disable svelte/no-at-html-tags */
 </script>
 
+<svelte:window onkeydown={onWindowKeydown} />
+
 <form
     class="enableCameraScene pointer-events-auto relative z-30 m-0 px-2"
     onsubmit={(event) => {
@@ -213,12 +308,40 @@
                 </p>
             </section>
 
+            <!-- Why a device does not work and what to do, here where the user can still choose another device -->
+            <div aria-live="polite" class="w-full flex flex-col items-center gap-3" data-testid="enable-camera-help">
+                {#if permissionDenied}
+                    <!-- Dark and nearly opaque: the dimmed explanation needs 4.5:1 on any background image -->
+                    <section class="mb-4 mx-2 md:mx-0 w-full max-w-[560px] rounded-lg bg-contrast/90 text-center">
+                        <h3 class="m-0 text-lg bold border border-solid border-transparent border-b-white/20 px-4 py-3">
+                            {#if cameraDenied && microphoneDenied}
+                                {$LL.camera.help.title()}
+                            {:else if cameraDenied}
+                                {$LL.camera.help.cameraTitle()}
+                            {:else}
+                                {$LL.camera.help.microphoneTitle()}
+                            {/if}
+                        </h3>
+                        <PermissionHelpDetails camera={cameraDenied} microphone={microphoneDenied} />
+                    </section>
+                {/if}
+                {#each [cameraNotice, microphoneNotice] as notice, index (index)}
+                    {#if notice}
+                        <Alert variant="warning" class="mb-4 mx-2 md:mx-0 w-full max-w-[560px] text-start">
+                            <strong>{notice.title}</strong>
+                            <p class="m-0">{notice.description}</p>
+                        </Alert>
+                    {/if}
+                {/each}
+            </div>
+
             <div
                 class="flex md:flex-wrap flex-col gap-4 w-full items-center justify-center lg:flex-row lg:items-stretch lg:px-4 lg:pb-4"
             >
                 <!-- MICROPHONE -->
 
                 <SelectMicrophone
+                    bind:editMode={microphoneEditing}
                     onselectdevice={handleSelectMicrophone}
                     deviceList={$microphoneListStore ?? []}
                     selectedDevice={selectedMicrophone}
@@ -238,6 +361,7 @@
 
                 <!-- CAMERA -->
                 <SelectCamera
+                    bind:editMode={cameraEditing}
                     onselectdevice={handleSelectCamera}
                     deviceList={$cameraListStore ?? []}
                     selectedDevice={selectedCamera}
@@ -272,6 +396,7 @@
                 <!-- SPEAKER -->
                 {#if $speakerSelectedStore != undefined && $speakerListStore && $speakerListStore.length > 0}
                     <SelectSpeaker
+                        bind:editMode={speakerEditing}
                         onplaysound={playSoundClick}
                         onselectdevice={handleSelectSpeaker}
                         deviceList={$speakerListStore ?? []}
@@ -283,14 +408,29 @@
                 class="fixed bottom-0 start-0 !w-[100vw] bg-contrast/80 backdrop-blur-md border border-solid border-t border-b-0 border-x-0 border-white/10"
             >
                 <section
-                    class="container m-auto p-4 flex flex-col-reverse md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-4"
+                    class="container m-auto p-4 flex flex-col-reverse md:flex-row items-center justify-center gap-2 md:gap-4"
                 >
-                    <Button type="submit" variant="light" appearance="ghost" size="lg" class="w-full md:w-1/2 hidden">
-                        {$LL.actionbar.cancel()}
-                    </Button>
-                    <!-- TODO ACTION -->
-                    <Button type="submit" variant="secondary" size="lg" class="w-full md:w-1/2 block">
-                        {$LL.menu.settings.save()}
+                    {#if openedFromRoom}
+                        <Button
+                            variant="light"
+                            appearance="ghost"
+                            size="lg"
+                            class="w-full md:w-1/2 block enableCameraSceneFormCancel"
+                            onclick={(event) => {
+                                event.preventDefault();
+                                cancel();
+                            }}
+                        >
+                            {$LL.actionbar.cancel()}
+                        </Button>
+                    {/if}
+                    <Button
+                        type="submit"
+                        variant="secondary"
+                        size="lg"
+                        class="w-full md:w-1/2 block enableCameraSceneFormSubmit"
+                    >
+                        {openedFromRoom ? $LL.menu.settings.save() : $LL.camera.enable.join()}
                     </Button>
                 </section>
                 {#if legalString}

@@ -31,8 +31,9 @@
 
     onMount(() => {
         if (localUserStore.getNotAskAgainHelpWebRtcSettingsPopup()) {
-            // Close this popup but show warning message
-            warningMessageStore.addWarningMessage($LL.camera.webrtc.content());
+            // Close this popup but show a warning message. Not webrtc.content(): it sends the reader to "the options
+            // below", and the options are in this popup, which is not shown. error() says the cause and the fix.
+            warningMessageStore.addWarningMessage($LL.camera.webrtc.error());
             close();
         }
     });

@@ -1,22 +1,29 @@
 <script lang="ts">
     import { fly } from "../../Utils/reducedMotion";
-    import { getNavigatorType, isAndroid as isAndroidFct, NavigatorType } from "../../WebRtc/DeviceUtils";
     import { LL } from "../../../i18n/i18n-svelte";
     import { mediaPermissionDeniedStore } from "../../Stores/MediaStatusStore";
     import { popupStore } from "../../Stores/PopupStore";
     import Button from "../UI/Button.svelte";
-    import { IconInfoCircle } from "@wa-icons";
+    import PermissionHelpDetails from "./PermissionHelpDetails.svelte";
 
-    let isAndroid = isAndroidFct();
-    let isFirefox = getNavigatorType() === NavigatorType.firefox;
-    let isChrome = getNavigatorType() === NavigatorType.chrome;
+    interface Props {
+        // Devices the caller knows are blocked. A browser without the Permissions API never reports them, so the
+        // popup reads the browser's permission state only for a device the caller does not name.
+        camera?: boolean;
+        microphone?: boolean;
+    }
+
+    let { camera = undefined, microphone = undefined }: Props = $props();
+
     let showDetails = $state(false);
+    const detailsId = $props.id();
 
-    let cameraDenied = $derived($mediaPermissionDeniedStore.camera);
-    let microphoneDenied = $derived($mediaPermissionDeniedStore.microphone);
-    let cameraAndMicrophoneDenied = $derived(cameraDenied && microphoneDenied);
+    let cameraDenied = $derived(camera ?? $mediaPermissionDeniedStore.camera);
+    let microphoneDenied = $derived(microphone ?? $mediaPermissionDeniedStore.microphone);
+    // Neither device denied (the state changed while the popup closes) reads as both, like the details do.
+    let cameraAndMicrophoneDenied = $derived(cameraDenied === microphoneDenied);
 
-    function allow() {
+    function toggleDetails() {
         showDetails = !showDetails;
     }
 
@@ -44,73 +51,29 @@
             {/if}
         </div>
         {#if showDetails}
-            <div class="px-4 mt-4">
-                <p class="help-text !text-danger-400">
-                    <IconInfoCircle class="mr-2 mb-1 min-w-6" font-size="18" aria-hidden="true" />
-                    {#if cameraAndMicrophoneDenied}
-                        {$LL.camera.help.cameraMicrophonePermissionDenied()}
-                    {:else if cameraDenied}
-                        {$LL.camera.help.cameraPermissionDenied()}
-                    {:else}
-                        {$LL.camera.help.microphonePermissionDenied()}
-                    {/if}
-                </p>
-            </div>
-            <div class="p-4 italic opacity-60 text-sm leading-6">
-                {#if cameraAndMicrophoneDenied}
-                    {$LL.camera.help.content()}
-                {:else if cameraDenied}
-                    {$LL.camera.help.cameraContent()}
-                {:else}
-                    {$LL.camera.help.microphoneContent()}
-                {/if}
-            </div>
-            {#if isFirefox}
-                <p class="err">
-                    {$LL.camera.help.firefoxContent()}
-                </p>
-            {/if}
-            <div class="h-72 overflow-hidden opacity-80 saturate-50">
-                {#if isFirefox}
-                    <img
-                        draggable="false"
-                        src={$LL.camera.help.screen.firefox()}
-                        alt={$LL.a11y.compHelpCameraPermission()}
-                        class="w-full m-auto"
-                    />
-                {:else if isChrome && !isAndroid}
-                    <img
-                        draggable="false"
-                        src={$LL.camera.help.screen.chrome()}
-                        alt={$LL.a11y.compHelpCameraPermission()}
-                        class="w-full m-auto"
-                    />
-                {/if}
+            <div id={detailsId}>
+                <PermissionHelpDetails camera={cameraDenied} microphone={microphoneDenied} />
             </div>
         {/if}
     </section>
     <section class="flex flex-col gap-2 p-4 bg-contrast">
         <Button
-            variant="success"
+            variant="secondary"
             appearance="border"
             size="sm"
             class="w-full whitespace-normal"
+            aria-expanded={showDetails}
+            aria-controls={showDetails ? detailsId : undefined}
             onclick={(event) => {
                 event.preventDefault();
-                allow();
+                toggleDetails();
             }}
         >
-            {#if cameraAndMicrophoneDenied}
-                {$LL.camera.help.allowCameraMicrophone()}
-            {:else if cameraDenied}
-                {$LL.camera.help.allow()}
-            {:else}
-                {$LL.camera.help.allowMicrophone()}
-            {/if}
+            {showDetails ? $LL.camera.help.hideSteps() : $LL.camera.help.showSteps()}
         </Button>
         <Button
             type="submit"
-            variant="danger"
+            variant="secondary"
             size="sm"
             class="w-full whitespace-normal"
             onclick={(event) => {

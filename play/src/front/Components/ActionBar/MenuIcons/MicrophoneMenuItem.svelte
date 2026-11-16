@@ -11,8 +11,9 @@
         silentStore,
     } from "../../../Stores/MediaStore";
     import { openedMenuStore } from "../../../Stores/MenuStore";
-    import { LL } from "../../../../i18n/i18n-svelte";
-    import { getNavigatorType, isAndroid, NavigatorType } from "../../../WebRtc/DeviceUtils";
+    import { LL, locale } from "../../../../i18n/i18n-svelte";
+    import { getPermissionHelpBrowser, getPermissionHelpScreenshot } from "../../HelpSettings/permissionHelp";
+    import { showHelpForBlockedDevices } from "../../../Stores/HelpSettingsStore";
     import { getColorHexOfStatus, getStatusLabel } from "../../../Utils/AvailabilityStatus";
     import { canComeBackFrom, heldMediaStore, toggleMicrophone } from "../../../Stores/HeldMediaStore";
 
@@ -31,8 +32,8 @@
     );
 
     const microphoneActionBarTooltipStore = derived(
-        [LL, microphoneButtonHelpContextStore, heldMediaStore, silentStore, availabilityStatusStore],
-        ([$LL, ctx, held, silent, status]) => {
+        [LL, locale, microphoneButtonHelpContextStore, heldMediaStore, silentStore, availabilityStatusStore],
+        ([$LL, $locale, ctx, held, silent, status]) => {
             if (held.microphone && canComeBackFrom(held.status)) {
                 return {
                     title: $LL.actionbar.help.micPausedByStatus.title(),
@@ -49,31 +50,13 @@
                     media: "",
                 };
             }
-            const permissionMedia = (() => {
-                try {
-                    if (isAndroid()) {
-                        return $LL.camera.help.microphoneTooltip.permissionMedia.android();
-                    }
-                    const nt = getNavigatorType();
-                    if (nt === NavigatorType.firefox) {
-                        return $LL.camera.help.microphoneTooltip.permissionMedia.firefox();
-                    }
-                    if (nt === NavigatorType.chrome) {
-                        return $LL.camera.help.microphoneTooltip.permissionMedia.chrome();
-                    }
-                    if (nt === NavigatorType.safari) {
-                        return $LL.camera.help.microphoneTooltip.permissionMedia.safari();
-                    }
-                } catch {
-                    // getNavigatorType() throws on some embedded or uncommon browsers
-                }
-                return $LL.camera.help.microphoneTooltip.permissionMedia.default();
-            })();
+            // A screenshot only where one shows this browser in this language: no image otherwise.
+            const permissionMedia = getPermissionHelpScreenshot(getPermissionHelpBrowser(), $locale) ?? "";
 
             if (ctx === "permission") {
                 return {
                     title: $LL.camera.help.microphoneTooltip.permissionDeniedTitle(),
-                    desc: $LL.camera.help.microphoneTooltip.permissionDeniedDesc(),
+                    desc: $LL.camera.help.microphoneTooltip.permissionDeniedFix(),
                     media: permissionMedia,
                 };
             }
@@ -98,6 +81,10 @@
     function microphoneClick(): void {
         analyticsClient.trackAdminEvent("media.microphone.toggled");
         if ($silentStore) return;
+        // The fix in the tooltip needs a hover: a tap or Enter on a microphone the browser blocks opens it as a popup.
+        if ($microphoneButtonHelpContextStore === "permission" && !$heldMediaStore.microphone) {
+            showHelpForBlockedDevices({ microphone: true });
+        }
         toggleMicrophone();
     }
 </script>
