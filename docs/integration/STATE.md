@@ -9,7 +9,8 @@ Owned by the integrator ([`LOOP.md`](LOOP.md)). Status key: `ready`, `waiting` (
 - Check on `ce6ece405`: play typesafe-i18n, typecheck, svelte-check (5775 files, 0/0), lint,
   pretty-check, i18n:check all exit 0; play vitest 268 files, 1793 passed; back 382 passed;
   map-storage typecheck 0, vitest 119 passed (30 s timeout).
-- `origin/chore/orca-docker-ssh-env` = `ce6ece405`.
+- After it, documentation-only commits (this loop, `2a6fbf6a8` onward) on both `master` and
+  `chore/orca-docker-ssh-env`; they change no code, so the check above still covers the code tree.
 
 ## Queue
 
