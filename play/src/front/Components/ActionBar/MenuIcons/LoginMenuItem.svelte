@@ -27,5 +27,5 @@
     {last}
     {classList}
 >
-    <IconUserCircle font-size="20" />
+    <IconUserCircle font-size="20" aria-hidden="true" />
 </ActionBarButton>

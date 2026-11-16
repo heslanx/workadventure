@@ -47,6 +47,7 @@
     classList="group/btn-picture-in-picture"
     disabledHelp={$openedMenuStore !== undefined}
     state={$activePictureInPictureStore ? "active" : "normal"}
+    pressed={Boolean($activePictureInPictureStore)}
     dataTestId="pictureInPictureButton"
     tooltipTitle={$LL.actionbar.help.pictureInPicture.title()}
     desc={$LL.actionbar.help.pictureInPicture.desc()}

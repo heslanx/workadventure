@@ -22,6 +22,7 @@
                 appearance="ghost"
                 size="sm"
                 class="w-full rounded text-nowrap {mode === 'settings' ? '!bg-white/10' : ''}"
+                aria-pressed={mode === "settings"}
                 onclick={() => {
                     mode = "settings";
                 }}
@@ -37,6 +38,7 @@
                 appearance="ghost"
                 size="sm"
                 class="w-full rounded text-nowrap {mode === 'background' ? '!bg-white/10' : ''}"
+                aria-pressed={mode === "background"}
                 dataTestId="background-settings-tab"
                 onclick={() => {
                     mode = "background";

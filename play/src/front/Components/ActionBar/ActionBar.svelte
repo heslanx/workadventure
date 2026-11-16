@@ -115,6 +115,7 @@
                                             }}
                                         >
                                             <IconChevronUp
+                                                aria-hidden="true"
                                                 class="aspect-square transition-all select-none {$mediaSettingsOpenStore
                                                     ? ''
                                                     : 'rotate-180'}"

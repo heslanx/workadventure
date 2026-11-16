@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
+    import LL from "../../../../i18n/i18n-svelte";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { availabilityStatusStore, inBbbStore, inJitsiStore, inLivekitStore } from "../../../Stores/MediaStore";
     import { openedMenuStore } from "../../../Stores/MenuStore";
@@ -72,6 +73,9 @@
         class:profile-menu-force-burger={forceBurgerMode}
         role="button"
         tabindex="0"
+        aria-label={[$LL.menu.sub.profile(), userName, getStatusLabel($availabilityStatusStore)]
+            .filter(Boolean)
+            .join(", ")}
         aria-haspopup="menu"
         aria-expanded={$openedMenuStore === "profileMenu"}
         bind:this={triggerElement}
@@ -117,6 +121,7 @@
                     <div
                         class="aspect-square h-2 w-2 rounded-full me-1.5"
                         style="background-color: {getColorHexOfStatus($availabilityStatusStore)}"
+                        title={getStatusLabel($availabilityStatusStore)}
                     ></div>
                     <div
                         class="hidden @xl/actions:block"

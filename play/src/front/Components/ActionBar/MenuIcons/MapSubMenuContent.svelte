@@ -157,8 +157,9 @@
         onclick={toggleMapEditorMode}
         label={$LL.actionbar.mapEditor()}
         state={$mapEditorModeStore && !$mapExplorationModeStore ? "active" : "normal"}
+        pressed={Boolean($mapEditorModeStore && !$mapExplorationModeStore)}
     >
-        <IconMapEditor font-size="20" />
+        <IconMapEditor font-size="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 {#if $mapManagerActivated}
@@ -166,8 +167,9 @@
         onclick={toggleMapExplorerMode}
         label={$LL.mapEditor.sideBar.exploreTheRoom()}
         state={$mapExplorationModeStore ? "active" : "normal"}
+        pressed={Boolean($mapExplorationModeStore)}
     >
-        <IconMapSearch font-size="20" />
+        <IconMapSearch font-size="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 {#if $roomListActivated || $userIsAdminStore}
@@ -178,7 +180,7 @@
         blockedReason={$LL.actionbar.blocked.roomListOff()}
         dataTestId="room-list-button"
     >
-        <IconWorldSearch font-size="20" />
+        <IconWorldSearch font-size="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 <!-- Each entry only for those allowed to use it, rather than a window of greyed-out buttons. -->
@@ -187,9 +189,10 @@
         onclick={() => toggleGlobalCommunication("text")}
         label={$LL.actionbar.sendAnnouncement()}
         state={$showModalGlobalComminucationVisibilityStore === "text" ? "active" : "normal"}
+        pressed={$showModalGlobalComminucationVisibilityStore === "text"}
         dataTestId="send-announcement-button"
     >
-        <IconMessageShare font-size="20" />
+        <IconMessageShare font-size="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 {#if $megaphoneCanBeUsedStore}
@@ -197,9 +200,10 @@
         onclick={() => toggleGlobalCommunication("live")}
         label={$LL.actionbar.goLive()}
         state={$showModalGlobalComminucationVisibilityStore === "live" ? "active" : "normal"}
+        pressed={$showModalGlobalComminucationVisibilityStore === "live"}
         dataTestId="go-live-button"
     >
-        <IconSpeakerPhone font-size="20" />
+        <IconSpeakerPhone font-size="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 {#if $personalAreaDataStore}
@@ -211,14 +215,14 @@
         blockedReason={$LL.actionbar.blocked.alreadyAtDesk()}
         classList="group/btn-personal-desk"
     >
-        <IconDesk font-size="20" />
+        <IconDesk font-size="20" aria-hidden="true" />
     </ActionBarButton>
     <ActionBarButton
         label={$LL.actionbar.personalDesk.unclaim()}
         onclick={unclaimPersonalDesk}
         classList="group/btn-personal-desk"
     >
-        <IconDeskExit font-size="20" />
+        <IconDeskExit font-size="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 

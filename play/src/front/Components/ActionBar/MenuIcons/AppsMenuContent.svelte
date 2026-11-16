@@ -80,7 +80,7 @@
         state={$isCalendarActivatedStore ? "normal" : "disabled"}
         blockedReason={$LL.actionbar.blocked.calendarOff()}
     >
-        <IconCalendar width="20" height="20" />
+        <IconCalendar width="20" height="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 
@@ -91,7 +91,7 @@
         state={$isTodoListActivatedStore ? "normal" : "disabled"}
         blockedReason={$LL.actionbar.blocked.todoListOff()}
     >
-        <IconCheckList width="20" height="20" />
+        <IconCheckList width="20" height="20" aria-hidden="true" />
     </ActionBarButton>
 {/if}
 

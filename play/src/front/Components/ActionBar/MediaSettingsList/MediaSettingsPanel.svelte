@@ -109,7 +109,7 @@
     <div class="flex flex-col gap-1">
         <SectionTitle>
             <div class="flex items-center gap-1">
-                <IconCamera font-size="14" />
+                <IconCamera font-size="14" aria-hidden="true" />
                 {$LL.actionbar.subtitle.camera()}
             </div>
         </SectionTitle>
@@ -177,7 +177,7 @@
     <div class="flex flex-col gap-1">
         <SectionTitle>
             <div class="flex items-center gap-1">
-                <IconMicrophoneOn font-size="14" />
+                <IconMicrophoneOn font-size="14" aria-hidden="true" />
                 {$LL.actionbar.subtitle.microphone()}
             </div>
             {#snippet actions()}
@@ -189,7 +189,7 @@
                     title={$LL.actionbar.microphone.openSettings()}
                     onclick={openMicrophoneSettings}
                 >
-                    <IconSettings font-size="14" />
+                    <IconSettings font-size="14" aria-hidden="true" />
                 </button>
             {/snippet}
         </SectionTitle>
@@ -221,7 +221,7 @@
                         ? noiseSuppressionActive
                         : undefined}
                 >
-                    <span class:text-pop-red={isNoiseSuppressionErrorState}>
+                    <span class:text-pop-red-text={isNoiseSuppressionErrorState}>
                         {$LL.actionbar.microphone.advancedNoiseReduction()}
                     </span>
                 </InputSwitch>
@@ -230,11 +230,11 @@
                         {$LL.actionbar.microphone.noiseSuppressionInitializing()}
                     </div>
                 {:else if $noiseSuppressionStateStore.status === "unsupported"}
-                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red">
+                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red-text">
                         {$noiseSuppressionStateStore.message ?? $LL.actionbar.microphone.noiseSuppressionUnsupported()}
                     </div>
                 {:else if $noiseSuppressionStateStore.status === "error"}
-                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red">
+                    <div data-testid="noise-suppression-error" class="ms-14 px-3 text-sm text-pop-red-text">
                         {$noiseSuppressionStateStore.message ?? $LL.actionbar.microphone.noiseSuppressionError()}
                     </div>
                 {/if}
@@ -294,7 +294,7 @@
         <div class="flex flex-col gap-1">
             <SectionTitle>
                 <div class="flex items-center gap-1">
-                    <IconHeadphones font-size="14" />
+                    <IconHeadphones font-size="14" aria-hidden="true" />
                     {$LL.actionbar.subtitle.speaker()}
                 </div>
                 {#snippet actions()}
@@ -307,7 +307,7 @@
                             title={$LL.actionbar.speaker.test()}
                             onclick={() => playSpeakerTestSound().catch((e) => console.error(e))}
                         >
-                            <IconUnMute font-size="14" />
+                            <IconUnMute font-size="14" aria-hidden="true" />
                         </button>
                     {/if}
                 {/snippet}

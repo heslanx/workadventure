@@ -80,8 +80,9 @@
     <MessageCircleIcon height="h-5" width="w-5" strokeWidth="2" />
 </ActionBarButton>
 {#if $chatZoneLiveStore || totalUnreadCount > 0}
-    <div>
-        <span class="w-4 h-4 block rounded-full absolute -top-1 -start-1 animate-ping bg-white"></span>
+    <div aria-hidden="true">
+        <span class="w-4 h-4 block rounded-full absolute -top-1 -start-1 animate-ping motion-reduce:hidden bg-white"
+        ></span>
         <span class="w-3 h-3 block rounded-full absolute -top-0.5 -start-0.5 bg-white"></span>
     </div>
 {/if}
@@ -89,10 +90,12 @@
     <div
         class="absolute -top-2 -start-2 aspect-square flex w-5 h-5 items-center justify-center text-sm font-bold leading-none text-contrast bg-success rounded-full z-10"
         data-testid="unreadMessagesCount"
+        aria-hidden="true"
     >
         <span>{displayCount}</span>
         {#if totalUnreadCount > 99}
             <span class="text-xxs">+</span>
         {/if}
     </div>
+    <span class="sr-only">{$LL.chat.a11y.unreadCount({ count: totalUnreadCount })}</span>
 {/if}

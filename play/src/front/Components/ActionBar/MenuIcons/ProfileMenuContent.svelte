@@ -195,7 +195,7 @@
 
         {#if SENTRY_DSN_FRONT != undefined && connectionManager.currentRoom?.isIssueReportEnabled}
             <ActionBarButton label={$LL.actionbar.issueReport.menuAction()} onclick={openFeedbackScene}>
-                <IconBug font-size="20" />
+                <IconBug font-size="20" aria-hidden="true" />
             </ActionBarButton>
         {/if}
 
@@ -220,7 +220,7 @@
                 }}
                 dataTestId="desktop-open-mini-window"
             >
-                <IconAppWindow font-size="20" />
+                <IconAppWindow font-size="20" aria-hidden="true" />
             </ActionBarButton>
         {/if}
 
@@ -248,7 +248,7 @@
                     : 'opacity-50 cursor-not-allowed'}"
             >
                 <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
-                    <IconFileDownload height="20" width="20" class="text-white" />
+                    <IconFileDownload height="20" width="20" class="text-white" aria-hidden="true" />
                 </div>
                 <div class="text-start leading-4 text-white flex items-center">
                     {$LL.actionbar.installPwa()}
@@ -264,7 +264,7 @@
             class="group flex p-2 gap-2 items-center hover:bg-white/10 transition-all cursor-pointer font-bold text-sm w-full pointer-events-auto text-start rounded"
         >
             <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
-                <IconHelpCircle height="20" width="20" class="text-white" />
+                <IconHelpCircle height="20" width="20" class="text-white" aria-hidden="true" />
             </div>
             <div class="text-start leading-4 text-white flex items-center">
                 {$LL.menu.profile.helpAndTips()}
@@ -280,9 +280,14 @@
                 class="group flex p-2 gap-2 items-center hover:bg-danger-600 transition-all cursor-pointer font-bold text-sm w-full pointer-events-auto text-start rounded"
             >
                 <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
-                    <IconLogout height="20" width="20" class="text-danger-800 group-hover:text-white" />
+                    <IconLogout
+                        height="20"
+                        width="20"
+                        class="text-danger-400 group-hover:text-contrast-900"
+                        aria-hidden="true"
+                    />
                 </div>
-                <div class="text-start leading-4 text-danger-800 group-hover:text-white flex items-center">
+                <div class="text-start leading-4 text-danger-400 group-hover:text-contrast-900 flex items-center">
                     {$LL.menu.profile.logout()}
                 </div>
             </button>

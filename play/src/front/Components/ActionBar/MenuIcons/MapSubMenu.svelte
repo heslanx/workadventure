@@ -63,7 +63,7 @@
                 <div
                     class="flex items-center h-full group-hover:bg-white/10mr group-hover:rounded pl-4 pr-4 gap-2 hover:bg-white/10"
                 >
-                    <IconTools font-size="20" class="text-white" />
+                    <IconTools font-size="20" class="text-white" aria-hidden="true" />
                     <div class="pr">
                         <div
                             class="font-bold text-white leading-3 whitespace-nowrap select-none text-base @sm/actions:text-sm @xl/actions:text-base"
@@ -73,6 +73,7 @@
                     </div>
 
                     <IconChevronDown
+                        aria-hidden="true"
                         class="h-4 w-4 aspect-square transition-all opacity-50 {$openedMenuStore === 'mapMenu'
                             ? 'rotate-180'
                             : ''}"

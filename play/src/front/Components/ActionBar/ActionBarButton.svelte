@@ -97,6 +97,12 @@
     // tooltip, as the help tooltip does not fit such a small window.
     const compact = getContext("compactActionBar") === true;
     let heldOff = $derived(statusDot !== undefined && !statusDotClickable);
+    // White text is 3.06:1 on the red fill and 1.5:1 on the green one: dark text on them.
+    let darkLabel = $derived(
+        buttonState === "forbidden" || buttonState === "disabledForbidden" || buttonState === "live",
+    );
+    // An icon-only button is named by its tooltip title when nothing else names it.
+    let accessibleName = $derived(ariaLabel ?? (label ? undefined : tooltipTitle || undefined));
     // The help tooltip's text, without its video or image and the text that goes with them.
     let nativeTitle = $derived((media ? tooltipTitle : [tooltipTitle, desc].filter(Boolean).join("\n")) || ariaLabel);
 
@@ -155,7 +161,7 @@
                     {buttonState === 'disabledForbidden' ? `bg-danger opacity-70 ${blockedCursor}` : ''}
                     {heldOff ? blockedCursor : ''}
                     {buttonState === 'normal' && !isGradient && !heldOff ? 'hover:bg-white/10 cursor-pointer' : ''}
-                    {buttonState === 'active' ? 'bg-secondary hover:bg-secondary-600 cursor-pointer' : ''}
+                    {buttonState === 'active' ? 'bg-secondary hover:bg-secondary-800 cursor-pointer' : ''}
                     {buttonState === 'forbidden' ? 'bg-danger hover:bg-danger-600 cursor-pointer' : ''}
                     {buttonState === 'live' ? 'bg-success hover:bg-success-600 cursor-pointer' : ''}
                     {!label
@@ -165,12 +171,12 @@
                 : 'px-4 text-base @sm/actions:text-sm @xl/actions:text-base whitespace-nowrap'}
                 {isGradient ? 'gradient overflow-hidden font-bold' : ''}
                 {bgColor && !isGradient ? 'bg-[var(--bg-color)]' : ''}
-                {textColor ? 'text-[var(--text-color)]' : 'text-neutral-100'}
+                {textColor ? 'text-[var(--text-color)]' : darkLabel ? 'text-contrast-900' : 'text-neutral-100'}
                     flex items-center justify-center gap-2 select-none"
             disabled={blocked && !blockedReason}
             aria-disabled={explained || undefined}
             aria-describedby={explained ? reasonId : undefined}
-            aria-label={ariaLabel}
+            aria-label={accessibleName}
             aria-pressed={pressed}
             title={compact ? nativeTitle : undefined}
             onclick={(event) => {
@@ -197,6 +203,7 @@
                     <span class="flex opacity-50">{@render children?.()}</span>
                     <span
                         class="absolute top-1 end-1 h-2 w-2 rounded-full"
+                        aria-hidden="true"
                         style:background-color={statusDot}
                         data-testid="status-dot"
                     ></span>
@@ -237,13 +244,13 @@
                     {buttonState === 'disabled' || heldOff ? blockedCursor : ''}
                     {buttonState === 'disabledForbidden' ? `bg-danger opacity-70 ${blockedCursor}` : ''}
                     {buttonState === 'active' && !isGradient
-            ? 'bg-secondary hover:bg-secondary-600 cursor-pointer'
+            ? 'bg-secondary hover:bg-secondary-800 cursor-pointer'
             : ''}
                     {buttonState === 'forbidden' ? 'bg-danger hover:bg-danger-600 cursor-pointer' : ''}
                     {buttonState === 'live' ? 'bg-success hover:bg-success-600 cursor-pointer' : ''}
                     {isGradient ? 'gradient overflow-hidden' : ''}
                     {bgColor && !isGradient ? 'bg-[var(--bg-color)]' : ''}
-                    {textColor ? 'text-[var(--text-color)]' : 'text-neutral-100'}
+                    {textColor ? 'text-[var(--text-color)]' : darkLabel ? 'text-contrast-900' : 'text-neutral-100'}
                     {isGradient ? 'relative' : ''}"
         use:action
         aria-disabled={explained || undefined}

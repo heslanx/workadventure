@@ -217,6 +217,7 @@
             class="items-center relative cursor-pointer pointer-events-auto ps-2 pe-2"
             role="button"
             tabindex="0"
+            aria-label={$LL.actionbar.participantListPlaceholder()}
             aria-haspopup="menu"
             aria-expanded={$openedMenuStore === "participantMenu"}
             use:floatingUiRef
@@ -280,6 +281,7 @@
                     </div>
 
                     <IconChevronDown
+                        aria-hidden="true"
                         class="h-4 w-4 aspect-square transition-all opacity-50 flex-shrink-0 {$openedMenuStore ===
                         'participantMenu'
                             ? 'rotate-180'
@@ -377,14 +379,14 @@
                             onclick={onSendMessage}
                             dataTestId="participant-send-message"
                         >
-                            <IconMessageCircle2 font-size="20" />
+                            <IconMessageCircle2 font-size="20" aria-hidden="true" />
                         </ActionBarButton>
                         <ActionBarButton
                             label={$LL.actionbar.participantInviteUser()}
                             onclick={onInviteUser}
                             dataTestId="participant-invite-user"
                         >
-                            <IconUserPlus font-size="20" />
+                            <IconUserPlus font-size="20" aria-hidden="true" />
                         </ActionBarButton>
                     </div>
                 </div>
@@ -465,14 +467,14 @@
             onclick={onSendMessage}
             dataTestId="participant-send-message"
         >
-            <IconMessageCircle2 font-size="20" />
+            <IconMessageCircle2 font-size="20" aria-hidden="true" />
         </ActionBarButton>
         <ActionBarButton
             label={$LL.actionbar.participantInviteUser()}
             onclick={onInviteUser}
             dataTestId="participant-invite-user"
         >
-            <IconUserPlus font-size="20" />
+            <IconUserPlus font-size="20" aria-hidden="true" />
         </ActionBarButton>
     {/if}
 {/if}

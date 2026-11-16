@@ -40,7 +40,7 @@
     <!-- Some status (silent, in a meeting...) are locking the status bar to only one option -->
     {#if [AvailabilityStatus.LISTENER, AvailabilityStatus.SPEAKER, AvailabilityStatus.JITSI, AvailabilityStatus.LIVEKIT, AvailabilityStatus.BBB, AvailabilityStatus.DENY_PROXIMITY_MEETING, AvailabilityStatus.SILENT, AvailabilityStatus.SOUND_BLOCKED].includes($availabilityStatusStore)}
         <button
-            class="status-button group flex px-2 py-1 gap-2 items-center transition-all cursor-pointer text-sm text-neutral-100 w-full pointer-events-auto text-start rounded"
+            class="status-button group flex px-2 py-1 gap-2 items-center min-h-7 transition-all cursor-pointer text-sm text-neutral-100 w-full pointer-events-auto text-start rounded"
         >
             <AvailabilityStatusCircle
                 cursorType="pointer"
@@ -48,13 +48,16 @@
                 colorHex={getColorHexOfStatus($availabilityStatusStore)}
             />
             <div class="grow text-start leading-4 opacity-50">{getStatusLabel($availabilityStatusStore)}</div>
-            <IconCheck class="text-white transition-all" />
+            <IconCheck aria-hidden="true" class="text-white transition-all" />
         </button>
     {:else}
         {#each statusInformation as statusInformationValue (statusInformationValue.AvailabilityStatus)}
             <button
-                class="status-button group flex px-2 py-1 gap-2 items-center transition-all cursor-pointer text-sm text-neutral-100 w-full pointer-events-auto text-start rounded"
+                class="status-button group flex px-2 py-1 gap-2 items-center min-h-7 transition-all cursor-pointer text-sm text-neutral-100 w-full pointer-events-auto text-start rounded"
                 class:justify-end={align === "end"}
+                aria-current={$availabilityStatusStore === statusInformationValue.AvailabilityStatus
+                    ? "true"
+                    : undefined}
                 class:disabled={$availabilityStatusStore === statusInformationValue.AvailabilityStatus}
                 onkeyup={(e) => {
                     handleKeyPress(e, statusInformationValue.AvailabilityStatus);
@@ -78,6 +81,7 @@
                     {statusInformationValue.label}
                 </div>
                 <IconCheck
+                    aria-hidden="true"
                     class="text-white {($availabilityStatusStore !== statusInformationValue.AvailabilityStatus
                         ? 'opacity-0 '
                         : '') + 'group-hover:opacity-100 transition-all'}"

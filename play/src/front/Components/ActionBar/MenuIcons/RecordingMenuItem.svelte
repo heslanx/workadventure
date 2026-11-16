@@ -157,7 +157,10 @@
                     </div>
                 {:else if $recordingMenuState.hasPendingRequest}
                     <div class="text-sm text-white px-2 py-1 flex flex-row gap-2 items-center">
-                        <div class="bg-red-500 rounded-full w-4 h-4 max-w-4 max-h-4 animate-pulse"></div>
+                        <div
+                            class="bg-red-500 rounded-full w-4 h-4 max-w-4 max-h-4 animate-pulse"
+                            aria-hidden="true"
+                        ></div>
                         <div class="text-xs italic opacity-80">
                             {$LL.recording.actionbar.desc.inProgress()}
                         </div>
@@ -165,7 +168,7 @@
                 {:else if $recordingMenuState.actionableRows.some((row) => row.action === "start")}
                     <div class="text-sm text-whitepx-2 py-1">
                         <span class="mr-2 -translate-y-1">
-                            <IconAlertTriangle />
+                            <IconAlertTriangle aria-hidden="true" />
                         </span>
                         <span class="text-xs italic opacity-80">
                             {$LL.recording.actionbar.desc.advert()}
@@ -173,14 +176,17 @@
                     </div>
                 {:else if $recordingMenuState.hasOwnRecording}
                     <div class="text-sm text-white flex flex-row items-center gap-2 px-2 py-1">
-                        <div class="bg-red-500 rounded-full min-w-4 min-h-4 animate-pulse"></div>
+                        <div class="bg-red-500 rounded-full min-w-4 min-h-4 animate-pulse" aria-hidden="true"></div>
                         <div class="text-xs italic opacity-80">
                             {$LL.recording.actionbar.desc.yourRecordInProgress()}
                         </div>
                     </div>
                 {:else}
                     <div class="text-sm text-white px-2 py-1 flex flex-row gap-2 items-center">
-                        <div class="bg-red-500 rounded-full w-4 h-4 max-w-4 max-h-4 animate-pulse"></div>
+                        <div
+                            class="bg-red-500 rounded-full w-4 h-4 max-w-4 max-h-4 animate-pulse"
+                            aria-hidden="true"
+                        ></div>
                         <div class="text-xs italic opacity-80">
                             {$LL.recording.actionbar.desc.inProgress()}
                         </div>

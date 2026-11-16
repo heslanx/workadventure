@@ -38,7 +38,7 @@
     dataTestId="music-pause-button"
 >
     {#if $audioManagerPlayerState === "loading"}
-        <IconLoader font-size="20" class="animate-spin" />
+        <IconLoader font-size="20" class="animate-spin" aria-hidden="true" />
     {:else if $audioManagerVolumeStore.paused}
         <PlayerPlayIcon height="h-5" width="w-5" strokeWidth="2" />
     {:else}
