@@ -194,6 +194,13 @@ html [data-theme="default"] {
 
 /* Same specificity as the design system rules they replace; they win by coming later. */
 @layer components {
+  /* The design system's `.btn` sets `outline-none` in this layer, which beats the base focus ring: keyboard users
+     could not see which design-system button had the focus. The base halo still fills the offset gap. */
+  .btn:focus-visible {
+    outline: 2px solid var(--k-accent);
+    outline-offset: 2px;
+  }
+
   /* Filled mint and green controls take dark ink. */
   .btn:is(.btn-primary, .btn-secondary, .btn-success):not(
       .btn-border,

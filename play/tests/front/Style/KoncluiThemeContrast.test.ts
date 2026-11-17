@@ -209,6 +209,18 @@ describe("Konclui theme contrast", () => {
         });
     });
 
+    describe("keyboard focus", () => {
+        it("draws a mint ring around a focused design-system button, visible on the navy page", () => {
+            const outline = declared(components, ".btn:focus-visible", "outline");
+            const [, width = "", style = "", ringColor = ""] = /^(\d+)px (\w+) (.+)$/.exec(outline) ?? [];
+
+            expect(Number(width)).toBeGreaterThanOrEqual(2);
+            expect(style).toBe("solid");
+            expect(contrast(color(ringColor), token("--k-page"))).toBeGreaterThanOrEqual(3);
+            expect(contrast(color(ringColor), token("--k-card"))).toBeGreaterThanOrEqual(3);
+        });
+    });
+
     describe("fills declared in components", () => {
         interface Site {
             file: string;
