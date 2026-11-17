@@ -71,7 +71,7 @@
 <!-- The tab is the select button only: the copy, open and close actions are its siblings, not nested in it. -->
 <div
     class="text h-full flex items-center px-2 rounded transition-all hover:stroke-white {active
-        ? 'text-contrast bg-white hover:bg-white/90 tab justify-between bg-contrast/80' // translate-y-2 rounded-b-none for animation but not working inside dropdown
+        ? 'text-contrast bg-white hover:bg-white/90 tab justify-between' // translate-y-2 rounded-b-none for animation but not working inside dropdown
         : 'text-white bg-white/10 hover:bg-white/20 tab'}"
 >
     <button

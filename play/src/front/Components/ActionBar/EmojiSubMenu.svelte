@@ -171,7 +171,7 @@
     }}
 >
     <div
-        class="bottom-action-bar bg-contrast/95 transition-all backdrop-blur-md rounded-md px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
+        class="bottom-action-bar k-chrome transition-all rounded-lg px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
     >
         <div class="flex animate flex-row items-center select-none">
             <div class="py-1 flex">

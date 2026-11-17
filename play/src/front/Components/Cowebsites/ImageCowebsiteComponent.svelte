@@ -105,20 +105,18 @@
 </script>
 
 <div class="relative h-full w-full overflow-hidden bg-black" class:hidden={!visible}>
-    <div
-        class="absolute bottom-2 right-2 z-10 bg-contrast/80 rounded pointer-events-auto p-1 backdrop-blur hover:bg-contrast/100"
-    >
+    <div class="absolute bottom-2 right-2 z-10 k-chrome rounded-lg pointer-events-auto p-2">
         <div class="flex flex-col justify-center gap-2">
             <div class="flex flex-col justify-center gap-1">
                 <button
                     type="button"
                     aria-label={$LL.mapEditor.explorer.zoomIn()}
-                    class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                    class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                     onclick={zoomIn}
                 >
                     <IconPlus aria-hidden="true" />
                     <div
-                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                        class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
                         {$LL.mapEditor.explorer.zoomIn()}
                     </div>
@@ -126,12 +124,12 @@
                 <button
                     type="button"
                     aria-label={$LL.mapEditor.explorer.zoomOut()}
-                    class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                    class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                     onclick={zoomOut}
                 >
                     <IconMinus aria-hidden="true" />
                     <div
-                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                        class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
                         {$LL.mapEditor.explorer.zoomOut()}
                     </div>
@@ -141,12 +139,12 @@
                 <button
                     type="button"
                     aria-label={$LL.chat.imagePreview.openInNewTab()}
-                    class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                    class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                     onclick={openInNewTab}
                 >
                     <IconExternalLink aria-hidden="true" />
                     <div
-                        class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                        class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                     >
                         {$LL.chat.imagePreview.openInNewTab()}
                     </div>

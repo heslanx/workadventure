@@ -39,16 +39,16 @@
 <div
     class="sm:block pointer-events-none absolute p-1.5 {hasImage && hasDesc
         ? 'w-64'
-        : 'min-w-[128px] text-center'} z-[500] text-white rounded-lg top-[70px] -start-2 transform before:content-[''] before:absolute before:w-full before:h-full before:z-1 before:start-0 before:top-0 before:rounded-lg before:bg-contrast/80 before:backdrop-blur after:content-[''] after:absolute after:z-0 after:w-full after:bg-transparent after:h-full after:-top-4 after:-start-0"
+        : 'min-w-[128px] text-center'} z-[500] text-white rounded-lg top-[70px] -start-2 transform before:content-[''] before:absolute before:w-full before:h-full before:z-1 before:start-0 before:top-0 before:rounded-lg before:bg-contrast/80 after:content-[''] after:absolute after:z-0 after:w-full after:bg-transparent after:h-full after:-top-4 after:-start-0"
     in:fly={{ delay: delayBeforeAppear, y: 40, duration: 150 }}
 >
-    <img
-        alt=""
-        loading="eager"
-        src={tooltipArrow}
-        class="content-[''] absolute -top-1 start-9 m-auto w-2 h-1"
-        draggable="false"
-    />
+    <!-- The arrow takes the tooltip's own fill: the image is only its shape. -->
+    <span
+        aria-hidden="true"
+        class="absolute -top-1 start-9 m-auto w-2 h-1 bg-(--k-chrome,#1b2a41)"
+        style:mask="url({tooltipArrow}) center / contain no-repeat"
+        style:-webkit-mask="url({tooltipArrow}) center / contain no-repeat"
+    ></span>
     <div class="relative z-10 pb-3 overflow-hidden flex flex-col gap-2">
         {#if helpMedia}
             {#if helpMedia.endsWith(".mp4")}

@@ -70,7 +70,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
-        class="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-contrast/90 text-white shadow-lg backdrop-blur-md pointer-events-auto"
+        class="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-contrast/95 text-white shadow-lg backdrop-blur-md pointer-events-auto"
         tabindex="-1"
         use:focusTrap
         onclick={(event) => {

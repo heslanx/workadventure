@@ -81,38 +81,31 @@ html [data-theme="default"] {
     --k-danger-text: var(--color-pop-red-text, #ff8591);
     --k-success-text: #34d399;
 
-    /* Glass: a translucent tint over a blurred, saturated backdrop. The tint is the contrast floor: over a white
-       backdrop it keeps white ink above 6:1, so the sheen (top 12px, above the icons) is the only light layer. */
-    --k-glass-blur: 8px;
-    --k-glass-saturate: 1.6;
-    --k-glass-backdrop: blur(var(--k-glass-blur))
-      saturate(var(--k-glass-saturate));
-    --k-glass-tint-top: rgb(14 26 44 / 0.7);
-    --k-glass-tint-bottom: rgb(8 16 30 / 0.78);
-    --k-glass-sheen: linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.28),
-      rgb(255 255 255 / 0) 12px
-    );
-    --k-glass:
-      var(--k-glass-sheen),
-      linear-gradient(
-        180deg,
-        var(--k-glass-tint-top),
-        var(--k-glass-tint-bottom)
-      );
-    --k-glass-border: rgb(255 255 255 / 0.16);
-    --k-glass-edge:
-      inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.28);
-    --k-glass-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.2);
-    /* The look before the glass: reduced transparency and more contrast go back to it. */
-    --k-glass-opaque: linear-gradient(
-      180deg,
-      rgb(40 54 72 / 0.95),
-      rgb(26 40 58 / 0.95) 45%,
-      rgb(18 32 52 / 0.96)
-    );
     --k-shadow: 0 8px 32px rgb(0 0 0 / 0.32);
+
+    /* Chrome: the one material of every surface that floats over the map (dock, People pill, bar groups, menus,
+       zoom controls, map editor tools, tooltips). Flat and opaque, copied from the reference theme's --k-surface
+       (owner, 17/11/2026: no glass for now), so the map's colors never tint it. No backdrop filter: the token
+       exists so the surfaces that declare one stay in step. Hover is --k-hover on every chrome surface. */
+    --k-chrome: #03051a;
+    --k-chrome-border: var(--k-border);
+    --k-chrome-shadow: var(--k-shadow);
+    --k-chrome-backdrop: none;
+
+    /* The page of the entry, avatar and camera screens: the card navy fading into the page navy, with two still mint
+       glows (the accent at 16% and 10%). Opaque, so it replaces the page color instead of tinting it. */
+    --k-page-backdrop:
+      radial-gradient(
+        60% 55% at 15% 10%,
+        color-mix(in srgb, var(--k-accent) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        55% 50% at 88% 92%,
+        color-mix(in srgb, var(--k-accent) 10%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(165deg, var(--k-card) 0%, var(--k-page) 60%);
 
     --k-radius-row: 6px;
     --k-radius-inner: 8px;
@@ -129,29 +122,12 @@ html [data-theme="default"] {
     --k-dur-moderate: 300ms;
   }
 
-  /* Chromium bends the backdrop near the edges through the filter that Frame.svelte defines. It is the only engine
-     known to run an SVG filter as a backdrop filter: the others may parse the `url()` and then drop the whole
-     filter, blur included. The gate therefore also excludes the engines that know `-moz-appearance` or
-     `hanging-punctuation`, and anything else keeps the blur alone. */
-  @supports (backdrop-filter: url("#k-glass-refract")) and
-    (not (-moz-appearance: none)) and (not (hanging-punctuation: first)) {
+  /* The chrome is already opaque, so reduced transparency keeps it as it is. More contrast also strengthens the rim
+     that stands it off the map. */
+  @media (prefers-contrast: more) {
     :root,
     [data-theme="default"] {
-      --k-glass-backdrop: blur(var(--k-glass-blur))
-        saturate(var(--k-glass-saturate)) url("#k-glass-refract");
-    }
-  }
-
-  /* After the block above, so that it wins. `initial` empties a token, and each surface then falls back to the
-     shadow and border it had before the glass. */
-  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-    :root,
-    [data-theme="default"] {
-      --k-glass: var(--k-glass-opaque);
-      --k-glass-backdrop: none;
-      --k-glass-border: initial;
-      --k-glass-edge: initial;
-      --k-glass-shadow: initial;
+      --k-chrome-border: var(--k-border-strong);
     }
   }
 
@@ -356,5 +332,91 @@ html [data-theme="default"] {
   /* Mint text on a white surface needs the ink variant. */
   .bg-white:is(.text-primary, .text-secondary) {
     color: var(--k-accent-ink);
+  }
+
+  /* Chrome over the map: upstream paints every floating surface (bar groups, menus, zoom controls, map editor tools,
+     tooltips) with contrast at 50, 80 or 90 percent over a blur, so the map's greens and browns showed through. All of
+     them take the one chrome material, which also drops their blur. The list stays at (0,1,0): it wins over the
+     `bg-contrast/N` and `backdrop-blur` utilities by coming later in the layer, and Tailwind's (0,2,0) hover and state
+     variants still win over it. The exclusions sit in `:where()` so they add no specificity:
+     - a white or color fill on the same element wins (a stray `bg-contrast/N` next to it never painted upstream);
+     - the Konclui side panel is not over the map (see the panel rule below);
+     - fills nested in a dialog panel (`bg-contrast/95`) stay wells of that dialog.
+     Scene cards use `--k-card` and are not in the list. */
+  :is(.bg-contrast\/50, .bg-contrast\/80, .bg-contrast\/90):where(
+      :not(.bg-white, .bg-primary, .bg-secondary, .bg-danger, .bg-success)
+    ):where(:not([data-konclui-panel] *, .bg-contrast\/95 *)) {
+    background-color: var(--k-chrome);
+    -webkit-backdrop-filter: var(--k-chrome-backdrop);
+    backdrop-filter: var(--k-chrome-backdrop);
+  }
+
+  /* Tooltips float over whatever is under them, so they take the chrome everywhere. Same (0,1,1) as Tailwind's own
+     `before:bg-contrast/80`, later in the layer. */
+  .before\:bg-contrast\/80::before {
+    background-color: var(--k-chrome);
+    -webkit-backdrop-filter: var(--k-chrome-backdrop);
+    backdrop-filter: var(--k-chrome-backdrop);
+  }
+
+  /* Upstream's hover to the opaque contrast: on the chrome it stays the chrome. Its own rule, gated like Tailwind's
+     hover variants, so the static list above keeps its lower specificity. */
+  @media (hover: hover) {
+    .hover\:bg-contrast\/100:where(
+        :not([data-konclui-panel] *, .bg-contrast\/95 *)
+      ):hover {
+      background-color: var(--k-chrome);
+    }
+  }
+
+  /* Inside the Konclui side panel (chat, people), upstream's contrast fills sit on `--k-card`, which is the contrast
+     color itself, so bubbles, the composer and the cards would vanish into the panel. They take the next elevation. */
+  :where([data-konclui-panel])
+    :is(.bg-contrast\/50, .bg-contrast\/80, .bg-contrast\/90):where(
+      :not(.bg-white, .bg-primary, .bg-secondary, .bg-danger, .bg-success)
+    ) {
+    background-color: var(--k-elevated);
+  }
+
+  /* The full chrome material, for the top-level surfaces over the map (zoom controls, map editor groups, dock menus,
+     menu close pads): the same fill, rim and shadow as the dock. The rim is drawn inside, so it adds no size. Radius
+     comes from `rounded-lg`, the dock's 16 px. */
+  .k-chrome {
+    background-color: var(--k-chrome);
+    -webkit-backdrop-filter: var(--k-chrome-backdrop);
+    backdrop-filter: var(--k-chrome-backdrop);
+    box-shadow:
+      inset 0 0 0 1px var(--k-chrome-border),
+      var(--k-chrome-shadow);
+  }
+
+  /* More contrast needs no rule of its own: `.k-chrome` and the dock read `--k-chrome-border`, which is then the
+     strong border. A rim on every mapped fill would also draw one inside each joined bar segment and dock control. */
+
+  /* A fill nested in another panel fill (reply rows in the composer) takes the hover step, so it stays visible. */
+  :where([data-konclui-panel])
+    :is(.bg-contrast\/50, .bg-contrast\/80, .bg-contrast\/90)
+    :is(.bg-contrast\/50, .bg-contrast\/80, .bg-contrast\/90):where(
+      :not(.bg-white, .bg-primary, .bg-secondary, .bg-danger, .bg-success)
+    ) {
+    background-color: var(--k-hover);
+  }
+
+  /* One hover on the chrome: upstream lightens with white at 10 or 30 percent. A filled control keeps its own hover
+     step, or its dark ink would land on navy, and a tinted resting fill (a selected item at white 10 or 20) keeps
+     Tailwind's lighter step, or it would darken under the pointer. `group-hover` matches any descendant, as
+     Tailwind's own variant does. */
+  @media (hover: hover) {
+    :is(.hover\:bg-white\/10, .hover\:bg-white\/30):not(
+        .bg-primary,
+        .bg-secondary,
+        .bg-danger,
+        .bg-success,
+        .bg-white\/10,
+        .bg-white\/20
+      ):hover,
+    .group:hover .group-hover\:bg-white\/10 {
+      background-color: var(--k-hover);
+    }
   }
 }

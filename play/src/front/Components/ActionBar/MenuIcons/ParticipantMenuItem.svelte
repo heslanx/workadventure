@@ -296,7 +296,7 @@
         </div>
         {#if $openedMenuStore === "participantMenu"}
             <div
-                class="absolute bg-contrast/95 backdrop-blur rounded-md w-48 text-white"
+                class="absolute k-chrome rounded-lg w-48 text-white"
                 data-testid="participant-sub-menu"
                 use:floatingUiContent
                 use:clickOutside={closeParticipantMenu}

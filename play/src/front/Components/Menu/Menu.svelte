@@ -209,9 +209,7 @@
                 {/each}
             </nav>
         </div>
-        <div
-            class="p-2 rounded-lg bg-contrast/80 backdrop-blur-md flex items-center justify-center w-fit @md/main-layout:hidden"
-        >
+        <div class="p-2 rounded-lg k-chrome flex items-center justify-center w-fit @md/main-layout:hidden">
             <ButtonClose onclick={closeMenu} dataTestId="closeMenuBtn" />
         </div>
     </div>
@@ -226,7 +224,7 @@
         </div>
     </div>
     <div class="right-menu-side-bar w-fit h-full @md/main-layout:flex flex-col items-start justify-start hidden">
-        <div class="p-2 rounded-lg bg-contrast/80 backdrop-blur-md flex items-center justify-center w-fit">
+        <div class="p-2 rounded-lg k-chrome flex items-center justify-center w-fit">
             <ButtonClose onclick={closeMenu} id="closeMenu" dataTestId="closeMenuBtn" />
         </div>
     </div>

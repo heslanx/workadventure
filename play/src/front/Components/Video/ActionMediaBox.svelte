@@ -143,7 +143,7 @@
 </script>
 
 <div
-    class="flex flex-col p-1 w-48 bg-contrast/95 backdrop-blur-md rounded-md max-h-max z-50 cursor-pointer select-none"
+    class="flex flex-col p-1 w-48 k-chrome rounded-lg max-h-max z-50 cursor-pointer select-none"
     class:mt-[0.2rem]={!videoEnabled}
     onclick={(event) => {
         event.preventDefault();

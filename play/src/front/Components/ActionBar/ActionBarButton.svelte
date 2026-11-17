@@ -218,7 +218,7 @@
             <span
                 id={reasonId}
                 class={reasonShown
-                    ? "absolute top-full start-0 z-10 mt-1 w-max max-w-64 rounded bg-contrast px-2 py-1 text-xs text-white shadow-lg"
+                    ? "absolute top-full start-0 z-10 mt-1 w-max max-w-64 rounded bg-contrast/90 px-2 py-1 text-xs text-white shadow-lg"
                     : "sr-only"}
                 data-testid={dataTestId ? `${dataTestId}-blocked-reason` : undefined}
             >

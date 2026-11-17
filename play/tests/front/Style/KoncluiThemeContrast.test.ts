@@ -313,4 +313,315 @@ describe("Konclui theme contrast", () => {
             }
         });
     });
+
+    describe("chrome over the map", () => {
+        const themeLayer = "@layer theme";
+        const moreContrast = "@layer theme @media (prefers-contrast: more)";
+
+        /** The rule in the given at-rules whose selector list holds the given compound, e.g. `.bg-contrast\/80`. */
+        function ruleWith(context: string, fragment: string): Rule {
+            const rule = rules.find(
+                (candidate) =>
+                    candidate.context === context &&
+                    candidate.selectors.some((selector) => selector.includes(fragment)),
+            );
+            if (rule === undefined) throw new Error(`${context} has no rule for ${fragment}`);
+            return rule;
+        }
+
+        const chrome = (): Rgb => token("--k-chrome");
+        const chromeHover = (): Rgb =>
+            color(ruleWith(hover, ".hover\\:bg-white\\/10").declarations.get("background-color") ?? "");
+
+        it("is one flat, opaque material in every mode, with no backdrop filter", () => {
+            const declarations = rules.flatMap((rule) =>
+                [...rule.declarations].filter(([name]) => name === "--k-chrome" || name === "--k-chrome-backdrop"),
+            );
+
+            expect(declarations.length).toBeGreaterThan(0);
+            for (const [name, value] of declarations) {
+                if (name === "--k-chrome") expect(value).toMatch(/^#[0-9a-f]{6}$/i);
+                else expect(value).toBe("none");
+            }
+            expect(declared(themeLayer, ":root", "--k-chrome")).toBe("#03051a");
+            expect(declared(themeLayer, ":root", "--k-chrome-border")).toBe("var(--k-border)");
+            expect(declared(themeLayer, ":root", "--k-chrome-shadow")).toBe("var(--k-shadow)");
+        });
+
+        it("leaves no glass behind: no glass token, no refraction filter", () => {
+            expect([...tokens.keys()].filter((name) => name.startsWith("--k-glass"))).toEqual([]);
+            expect(theme).not.toContain("k-glass-refract");
+            for (const file of ["Konclui/Shell/components/Frame.svelte", "Konclui/Shell/components/Dock.svelte"]) {
+                const source = readFileSync(resolve(front, file), "utf8");
+                expect(source).not.toMatch(/k-glass|feDisplacementMap|blur\(/);
+                expect(source).toContain("background: var(--k-chrome);");
+                expect(source).toContain("var(--k-chrome-shadow)");
+            }
+        });
+
+        /** The CSS specificity of one selector: `:where()` counts nothing, `:is()` and `:not()` their heaviest argument. */
+        function specificity(selector: string): [number, number, number] {
+            const total: [number, number, number] = [0, 0, 0];
+            let index = 0;
+            while (index < selector.length) {
+                const rest = selector.slice(index);
+                const functional = /^:(where|is|not)\(/.exec(rest);
+                if (functional) {
+                    const open = index + functional[0].length - 1;
+                    let depth = 0;
+                    let close = open;
+                    for (; close < selector.length; close++) {
+                        if (selector[close] === "(") depth++;
+                        if (selector[close] === ")" && --depth === 0) break;
+                    }
+                    if (functional[1] !== "where") {
+                        const heaviest = splitSelectors(selector.slice(open + 1, close))
+                            .map(specificity)
+                            .reduce((a, b) => (a.join() >= b.join() ? a : b));
+                        for (const level of [0, 1, 2] as const) total[level] += heaviest[level];
+                    }
+                    index = close + 1;
+                    continue;
+                }
+                const simple =
+                    /^(#[\w-]+|\.(?:\\.|[\w-])+|\[[^\]]*\]|::[\w-]+|:[\w-]+|[a-zA-Z][\w-]*|\*|\s+|[>+~])/.exec(rest);
+                if (!simple) throw new Error(`Cannot weigh ${rest}`);
+                const [token] = simple;
+                if (token.startsWith("#")) total[0]++;
+                else if (/^(\.|\[|:[^:])/.test(token)) total[1]++;
+                else if (/^(::|[a-zA-Z])/.test(token)) total[2]++;
+                index += token.length;
+            }
+            return total;
+        }
+
+        const read = (file: string): string => readFileSync(resolve(front, file), "utf8");
+        const staticChrome = (): Rule => ruleWith(utilities, ".bg-contrast\\/80");
+        const moreContrastUtilities = "@layer utilities @media (prefers-contrast: more)";
+
+        it.each([".bg-contrast\\/50", ".bg-contrast\\/80", ".bg-contrast\\/90"])(
+            "paints %s with the chrome, drops its blur and stays at (0,1,0)",
+            (utility) => {
+                const rule = ruleWith(utilities, utility);
+                const selector = rule.selectors.find((candidate) => candidate.includes(utility)) ?? "";
+
+                expect(rule.declarations.get("background-color")).toBe("var(--k-chrome)");
+                expect(rule.declarations.get("backdrop-filter")).toBe("var(--k-chrome-backdrop)");
+                expect(rule.declarations.get("-webkit-backdrop-filter")).toBe("var(--k-chrome-backdrop)");
+                // At (0,1,0) Tailwind's (0,2,0) hover and state variants still win over the static fill.
+                expect(specificity(selector)).toEqual([0, 1, 0]);
+                expect(selector).not.toContain(":hover");
+            },
+        );
+
+        it("keeps the hover to the opaque contrast in its own rule, gated like Tailwind's hovers", () => {
+            const rule = ruleWith(hover, ".hover\\:bg-contrast\\/100");
+
+            expect(rule.declarations.get("background-color")).toBe("var(--k-chrome)");
+            expect(rule.selectors).toHaveLength(1);
+            expect(specificity(rule.selectors[0] ?? "")).toEqual([0, 2, 0]);
+            expect(staticChrome().selectors.join(",")).not.toContain("bg-contrast\\/100");
+        });
+
+        it("lets a white or color fill on the same element win over a stray contrast fill", () => {
+            const selector = staticChrome().selectors.find((candidate) => candidate.includes(".bg-contrast\\/80"));
+
+            for (const fill of [".bg-white", ".bg-primary", ".bg-secondary", ".bg-danger", ".bg-success"]) {
+                expect(selector).toMatch(new RegExp(`:where\\(\\s*:not\\([^)]*\\${fill}[\\s,)]`));
+            }
+            // The active co-website tab is white with navy ink; a contrast fill on it would hide the ink.
+            const tab = read("Components/EmbedScreens/CoWebsiteTab.svelte");
+            const active = /'text-contrast bg-white[^']*'/.exec(tab)?.[0] ?? "";
+            expect(active).toBe("'text-contrast bg-white hover:bg-white/90 tab justify-between'");
+        });
+
+        it("maps only the chrome over the map: not the side panel, not the wells of a dialog", () => {
+            const scoped = [staticChrome(), ruleWith(hover, ".hover\\:bg-contrast\\/100")].map(
+                // Prettier may break the list across lines, so compare without the padding inside parentheses.
+                (rule) =>
+                    (rule.selectors.find((candidate) => candidate.includes("bg-contrast")) ?? "")
+                        .replace(/\(\s+/g, "(")
+                        .replace(/\s+\)/g, ")"),
+            );
+
+            for (const selector of scoped) {
+                expect(selector).toContain(":where(:not([data-konclui-panel] *, .bg-contrast\\/95 *))");
+            }
+            expect(read("Konclui/Shell/components/Frame.svelte")).toMatch(
+                /<aside[^>]*class="side-panel"[^>]*data-konclui-panel/,
+            );
+        });
+
+        it("lifts the contrast fills inside the side panel to the next elevation, so they stay visible", () => {
+            const rule = ruleWith(utilities, ":where([data-konclui-panel])");
+
+            expect(rule.declarations.get("background-color")).toBe("var(--k-elevated)");
+            expect(contrast(token("--k-elevated"), token("--k-card"))).toBeGreaterThan(1.1);
+            expect(contrast(token("--k-fg"), token("--k-elevated"))).toBeGreaterThanOrEqual(4.5);
+            expect(contrast(token("--k-fg-muted"), token("--k-elevated"))).toBeGreaterThanOrEqual(4.5);
+        });
+
+        it("keeps the dialogs and scene cards out of the chrome", () => {
+            const chromeSelectors = staticChrome()
+                .selectors.join(",")
+                .replace(/:where\(:not\([^)]*\)\)/g, "");
+
+            expect(chromeSelectors).not.toContain("bg-contrast\\/95");
+            expect(chromeSelectors).not.toContain("k-card");
+            for (const step of [
+                "WelcomeStep",
+                "CompleteStep",
+                "PictureInPictureStep",
+                "LockBubbleStep",
+                "ScreenSharingStep",
+                "MovementStep",
+                "CommunicationStep",
+            ]) {
+                expect(read(`Components/Onboarding/Steps/${step}.svelte`)).toContain(
+                    'class="bg-contrast/95 backdrop-blur-lg rounded-lg',
+                );
+            }
+            expect(read("Chat/Components/MatrixPeerProfileDebugModal.svelte")).toContain("rounded-lg bg-contrast/95");
+            const companion = read("Components/SelectCompanion/SelectCompanionScene.svelte");
+            expect(companion).toContain("fixed bottom-0 w-full bg-(--k-card)");
+            expect(companion).not.toContain("bg-contrast/80");
+        });
+
+        it.each([".hover\\:bg-white\\/10", ".hover\\:bg-white\\/30", ".group-hover\\:bg-white\\/10"])(
+            "moves the %s hover to the one chrome hover",
+            (utility) => {
+                expect(ruleWith(hover, utility).declarations.get("background-color")).toBe("var(--k-hover)");
+            },
+        );
+
+        it("matches any descendant of a hovered group, as Tailwind's group-hover does", () => {
+            const selector = ruleWith(hover, ".group-hover\\:bg-white\\/10").selectors.find((candidate) =>
+                candidate.includes(".group-hover"),
+            );
+
+            expect(selector).toBe(".group:hover .group-hover\\:bg-white\\/10");
+        });
+
+        it("leaves a filled control and a tinted resting fill on their own hover step", () => {
+            const selector = ruleWith(hover, ".hover\\:bg-white\\/10").selectors.find((candidate) =>
+                candidate.includes(".hover\\:bg-white\\/10"),
+            );
+
+            for (const fill of [
+                ".bg-primary",
+                ".bg-secondary",
+                ".bg-danger",
+                ".bg-success",
+                ".bg-white\\/10",
+                ".bg-white\\/20",
+            ]) {
+                expect(selector).toMatch(new RegExp(`:not\\([^)]*${fill.replace(/[.\\/]/g, "\\$&")}[\\s,)]`));
+            }
+        });
+
+        it("gives the top-level chrome surfaces the dock's fill, rim and shadow", () => {
+            const rule = ruleWith(utilities, ".k-chrome");
+
+            expect(rule.selectors).toEqual([".k-chrome"]);
+            expect(rule.declarations.get("background-color")).toBe("var(--k-chrome)");
+            expect(rule.declarations.get("backdrop-filter")).toBe("var(--k-chrome-backdrop)");
+            expect(rule.declarations.get("-webkit-backdrop-filter")).toBe("var(--k-chrome-backdrop)");
+            expect(rule.declarations.get("box-shadow")).toMatch(
+                /^inset 0 0 0 1px var\(--k-chrome-border\),\s*var\(--k-chrome-shadow\)$/,
+            );
+        });
+
+        it.each<[file: string, surface: string, count: number]>([
+            ["Components/ActionsMenu/ExplorerMenu.svelte", "k-chrome rounded-lg pointer-events-auto p-2", 1],
+            ["Components/Cowebsites/ImageCowebsiteComponent.svelte", "k-chrome rounded-lg pointer-events-auto p-2", 1],
+            ["Components/MapEditor/MapEditorSideBar.svelte", "p-2 k-chrome rounded-lg flex flex-col gap-2", 2],
+            ["Components/Menu/Menu.svelte", "p-2 rounded-lg k-chrome flex", 2],
+            ["Components/ActionBar/MenuIcons/ProfileMenuContent.svelte", "k-chrome rounded-lg p-1 w-56", 1],
+            ["Components/ActionBar/MediaSettingsList/MediaSettingsList.svelte", "k-chrome rounded-lg w-64", 1],
+            ["Components/ActionBar/MenuIcons/MapSubMenu.svelte", "absolute k-chrome rounded-lg", 1],
+            ["Components/ActionBar/MenuIcons/ParticipantMenuItem.svelte", "absolute k-chrome rounded-lg", 1],
+            ["Components/ActionBar/MenuIcons/AppsMenuItem.svelte", "k-chrome rounded-lg p-1", 1],
+            ["Components/ActionBar/EmojiSubMenu.svelte", "k-chrome transition-all rounded-lg", 1],
+            ["Components/Video/ActionMediaBox.svelte", "k-chrome rounded-lg", 1],
+        ])("%s draws its surface with the chrome material", (file, surface, count) => {
+            const source = read(file);
+
+            expect(source.split(surface)).toHaveLength(count + 1);
+            // No second, translucent material: no dialog fill and no blur on a chrome surface.
+            expect(source).not.toMatch(/k-chrome[^"]*(bg-contrast\/95|backdrop-blur)/);
+            expect(source).not.toMatch(/before:bg-contrast\/95/);
+        });
+
+        it("draws no rim on each mapped fill when more contrast is asked for: joined segments would show seams", () => {
+            expect(() => ruleWith(moreContrastUtilities, ".bg-contrast\\/80")).toThrow();
+        });
+
+        it("keeps a panel fill nested in another panel fill visible with the hover step", () => {
+            const nested = rules.find(
+                (rule) =>
+                    rule.context === utilities &&
+                    rule.selectors.some((selector) => (selector.match(/bg-contrast\\\/80/g) ?? []).length === 2),
+            );
+
+            expect(nested?.declarations.get("background-color")).toBe("var(--k-hover)");
+            expect(contrast(token("--k-hover"), token("--k-elevated"))).toBeGreaterThan(1.1);
+            expect(contrast(token("--k-fg-muted"), token("--k-hover"))).toBeGreaterThanOrEqual(4.5);
+        });
+
+        it("gives every tooltip the chrome fill and no blur", () => {
+            const tooltip = ruleWith(utilities, ".before\\:bg-contrast\\/80::before");
+
+            expect(tooltip.declarations.get("background-color")).toBe("var(--k-chrome)");
+            expect(tooltip.declarations.get("backdrop-filter")).toBe("var(--k-chrome-backdrop)");
+            expect(specificity(".before\\:bg-contrast\\/80::before")).toEqual([0, 1, 1]);
+            for (const file of ["Components/Util/Tooltip.svelte", "Components/Tooltip/HelpTooltip.svelte"]) {
+                const source = read(file);
+                expect(source).toContain("before:bg-contrast/80");
+                expect(source).not.toContain("before:backdrop-blur");
+            }
+            for (const [file, count] of [
+                ["Components/ActionsMenu/ExplorerMenu.svelte", 4],
+                ["Components/Cowebsites/ImageCowebsiteComponent.svelte", 3],
+            ] as const) {
+                const source = read(file);
+                expect(
+                    source.match(
+                        /group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast\/90 text-sm/g,
+                    ),
+                ).toHaveLength(count);
+                expect(source).not.toContain("backdrop-blur");
+            }
+            expect(read("Components/ActionBar/ActionBarButton.svelte")).toContain("rounded bg-contrast/90 px-2 py-1");
+        });
+
+        it.each<[ink: string, value: () => Rgb]>([
+            ["the theme's text", () => token("--k-fg")],
+            ["upstream's white labels and icons", () => white],
+            ["the muted text", () => token("--k-fg-muted")],
+        ])("keeps %s readable on the chrome and on its hover", (_ink, value) => {
+            expect(contrast(value(), chrome())).toBeGreaterThanOrEqual(4.5);
+            expect(contrast(value(), chromeHover())).toBeGreaterThanOrEqual(4.5);
+        });
+
+        it("keeps the mint of a selected tool visible on the chrome", () => {
+            expect(contrast(token("--k-accent"), chrome())).toBeGreaterThanOrEqual(3);
+        });
+
+        it("draws a rim of at least 3:1 around the chrome when more contrast is asked for", () => {
+            const rim = color(declared(moreContrast, ":root", "--k-chrome-border"));
+
+            expect(contrast(rim, chrome())).toBeGreaterThanOrEqual(3);
+        });
+
+        it("gives the zoom controls and the map editor tools the chrome geometry", () => {
+            const explorer = read("Components/ActionsMenu/ExplorerMenu.svelte");
+            const image = read("Components/Cowebsites/ImageCowebsiteComponent.svelte");
+
+            // `rounded-lg` is the 16 px surface radius, `rounded` the 8 px inner one, `p-2` the 8 px padding.
+            expect(theme).toMatch(/--radius-lg: 16px;/);
+            expect(theme).toMatch(/--radius: 8px;/);
+            expect(explorer.match(/min-h-7 min-w-7 p-2 rounded hover:bg-white\/30/g)).toHaveLength(4);
+            expect(image.match(/min-h-7 min-w-7 p-2 rounded hover:bg-white\/30/g)).toHaveLength(3);
+        });
+    });
 });

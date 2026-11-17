@@ -101,44 +101,40 @@
 >
     <!--put a section to avoid lower div to be affected by some css-->
     <div class="flex flex-col items-center gap-4 pt-24 side-bar">
-        <div class="flex flex-col gap-1">
-            <div class="close-window p-2 bg-contrast/80 rounded-lg backdrop-blur-md">
-                <button
-                    class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
-                    data-testid="closeMapEditorButton"
-                    aria-label={$LL.mapEditor.sideBar.closeMapEditor()}
-                    onclick={(event) => {
-                        event.preventDefault();
-                        switchTool(EditorToolName.CloseMapEditor);
-                    }}
-                >
-                    <IconX font-size="20" aria-hidden="true" />
-                </button>
-            </div>
-            <div class="close-window p-2 bg-contrast/80 rounded-lg backdrop-blur-md">
-                <button
-                    class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
-                    data-testid="hideMapEditorButton"
-                    aria-label={$LL.a11y.mapEditorToggleSidebar()}
-                    aria-expanded={$mapEditorVisibilityStore}
-                    onclick={(event) => {
-                        event.preventDefault();
-                        toggleMapEditor();
-                    }}
-                >
-                    <ArrowBarRight
-                        height="h-5"
-                        width="w-5"
-                        strokeColor="stroke-white"
-                        fillColor="fill-transparent"
-                        classList={`aspect-ratio transition-all motion-reduce:transition-none ${direction === "rtl" ? "rotate-180" : ""} ${
-                            $mapEditorVisibilityStore ? "" : "rotate-180"
-                        }`}
-                    />
-                </button>
-            </div>
+        <div class="close-window p-2 k-chrome rounded-lg flex flex-col gap-2">
+            <button
+                class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
+                data-testid="closeMapEditorButton"
+                aria-label={$LL.mapEditor.sideBar.closeMapEditor()}
+                onclick={(event) => {
+                    event.preventDefault();
+                    switchTool(EditorToolName.CloseMapEditor);
+                }}
+            >
+                <IconX font-size="20" aria-hidden="true" />
+            </button>
+            <button
+                class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
+                data-testid="hideMapEditorButton"
+                aria-label={$LL.a11y.mapEditorToggleSidebar()}
+                aria-expanded={$mapEditorVisibilityStore}
+                onclick={(event) => {
+                    event.preventDefault();
+                    toggleMapEditor();
+                }}
+            >
+                <ArrowBarRight
+                    height="h-5"
+                    width="w-5"
+                    strokeColor="stroke-white"
+                    fillColor="fill-transparent"
+                    classList={`aspect-ratio transition-all motion-reduce:transition-none ${direction === "rtl" ? "rotate-180" : ""} ${
+                        $mapEditorVisibilityStore ? "" : "rotate-180"
+                    }`}
+                />
+            </button>
         </div>
-        <div class="p-2 bg-contrast/80 rounded-lg flex flex-col gap-2 backdrop-blur-md">
+        <div class="p-2 k-chrome rounded-lg flex flex-col gap-2">
             {#each availableTools as tool (tool.toolName)}
                 {@const ToolIcon = tool.iconComponent}
                 <div class="tool-button relative">

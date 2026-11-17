@@ -153,7 +153,7 @@
     }
 </script>
 
-<div class="bg-contrast/95 backdrop-blur rounded-md p-1 w-56 text-white select-none" data-testid="profile-menu">
+<div class="k-chrome rounded-lg p-1 w-56 text-white select-none" data-testid="profile-menu">
     <div class="p-0 m-0 list-none overflow-y-auto max-h-[calc(100vh-96px)]">
         <ExternalComponents zone="menuTop" />
         <AvailabilityStatusList statusInformation={getStatusInformation(statusToShow)} />

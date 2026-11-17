@@ -73,9 +73,7 @@
         </button>
     {/if}
 </section>
-<div
-    class="fixed bottom-0 w-full bg-contrast/80 backdrop-blur-md border border-solid border-t border-b-0 border-x-0 border-white/10"
->
+<div class="fixed bottom-0 w-full bg-(--k-card) border border-solid border-t border-b-0 border-x-0 border-(--k-border)">
     <section
         class="action container m-auto p-4 flex flex-col-reverse md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 justify-between"
     >

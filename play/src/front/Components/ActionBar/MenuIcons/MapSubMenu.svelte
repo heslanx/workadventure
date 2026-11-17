@@ -85,7 +85,7 @@
         </div>
         {#if $openedMenuStore === "mapMenu"}
             <div
-                class="absolute bg-contrast/95 backdrop-blur rounded-md w-auto max-w-full text-white"
+                class="absolute k-chrome rounded-lg w-auto max-w-full text-white"
                 data-testid="map-sub-menu"
                 use:floatingUiContent
                 use:clickOutside={closeMapMenu}

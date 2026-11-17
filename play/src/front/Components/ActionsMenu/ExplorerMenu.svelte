@@ -165,7 +165,7 @@
 <svelte:window onblur={stopZoom} />
 
 <div
-    class="fixed bottom-2 mobile:bottom-24 bg-contrast/80 rounded pointer-events-auto p-1 backdrop-blur hover:bg-contrast/100"
+    class="fixed bottom-2 mobile:bottom-24 k-chrome rounded-lg pointer-events-auto p-2"
     style:right={`calc(${mapEditorRightOffset}px + 0.5rem)`}
     data-testid="actions-explorer"
 >
@@ -174,7 +174,7 @@
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.zoomIn()}
-                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                 onpointerdown={(event) => startZoom("in", event)}
                 onpointerup={stopZoom}
                 onpointercancel={stopZoom}
@@ -185,7 +185,7 @@
             >
                 <IconPlus aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.zoomIn()}
                 </div>
@@ -193,7 +193,7 @@
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.zoomOut()}
-                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                 onpointerdown={(event) => startZoom("out", event)}
                 onpointerup={stopZoom}
                 onpointercancel={stopZoom}
@@ -204,7 +204,7 @@
             >
                 <IconMinus aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.zoomOut()}
                 </div>
@@ -214,12 +214,12 @@
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.title()}
-                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                 onclick={openMapExplorer}
             >
                 <IconMapSearch aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.title()}
                 </div>
@@ -229,12 +229,12 @@
                 type="button"
                 aria-label={$LL.mapEditor.explorer.showMyLocation()}
                 data-testid="center-camera-on-player"
-                class="group flex justify-center items-center min-h-7 min-w-7 p-1 rounded hover:bg-white/30 cursor-pointer"
+                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
                 onclick={centerToUser}
             >
                 <IconFocusCentered aria-hidden="true" />
                 <div
-                    class="-right-60 opacity-0 group-hover:opacity-90 group-hover:right-11 group-focus-visible:opacity-90 group-focus-visible:right-11 absolute bg-contrast backdrop-blur text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
+                    class="-right-60 opacity-0 group-hover:opacity-100 group-hover:right-11 group-focus-visible:opacity-100 group-focus-visible:right-11 absolute bg-contrast/90 text-sm px-2 py-1 rounded whitespace-nowrap transition-all text-white pointer-events-none select-none"
                 >
                     {$LL.mapEditor.explorer.showMyLocation()}
                 </div>

@@ -197,20 +197,6 @@
     class:panel-open={view !== "closed"}
     data-testid={$shellActiveStore ? "konclui-shell" : undefined}
 >
-    <!-- The refraction of the dock's and the mobile pill's glass (see --k-glass-backdrop in konclui.css). It is here
-         and not behind the shell flag because the dock mounts before the shell turns active, and a backdrop filter
-         that names a missing filter loses its blur too. The map is stretched over the surface: the sampling point
-         moves inward by up to 4px at the rim and stays put in the middle. -->
-    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
-        <filter id="k-glass-refract" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-            <feImage
-                href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='h'%3E%3Cstop offset='0' stop-color='rgb(255,128,128)'/%3E%3Cstop offset='.03' stop-color='rgb(255,128,128)' stop-opacity='0.35'/%3E%3Cstop offset='.08' stop-color='rgb(255,128,128)' stop-opacity='0'/%3E%3Cstop offset='.92' stop-color='rgb(0,128,128)' stop-opacity='0'/%3E%3Cstop offset='.97' stop-color='rgb(0,128,128)' stop-opacity='0.35'/%3E%3Cstop offset='1' stop-color='rgb(0,128,128)'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='rgb(128,255,128)'/%3E%3Cstop offset='.08' stop-color='rgb(128,255,128)' stop-opacity='0.35'/%3E%3Cstop offset='.2' stop-color='rgb(128,255,128)' stop-opacity='0'/%3E%3Cstop offset='.8' stop-color='rgb(128,0,128)' stop-opacity='0'/%3E%3Cstop offset='.92' stop-color='rgb(128,0,128)' stop-opacity='0.35'/%3E%3Cstop offset='1' stop-color='rgb(128,0,128)'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='rgb(128,128,128)'/%3E%3Crect width='100' height='100' fill='url(%23h)'/%3E%3Crect width='100' height='100' fill='url(%23v)'/%3E%3C/svg%3E"
-                preserveAspectRatio="none"
-                result="map"
-            />
-            <feDisplacementMap in="SourceGraphic" in2="map" scale="8" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-    </svg>
     {#if $shellActiveStore}
         <nav class="rail" aria-label={$LL.konclui.office()}>
             <button
@@ -271,6 +257,7 @@
         <aside
             bind:this={panel}
             class="side-panel"
+            data-konclui-panel
             class:closed={view === "closed"}
             aria-label={conversationShown ? $LL.konclui.chat() : $LL.konclui.peoplePanel()}
         >
@@ -431,14 +418,14 @@
             padding: 8px 12px;
             border-radius: 22px;
             min-height: 44px;
-            background: var(--k-glass);
-            -webkit-backdrop-filter: var(--k-glass-backdrop);
-            backdrop-filter: var(--k-glass-backdrop);
-            /* The rim is an inset shadow, not a border: the pill keeps its size and the rim stays on the blur. */
+            /* The chrome material (konclui.css), like the dock. The rim is an inset shadow, not a border, so the
+               pill keeps its size. */
+            background: var(--k-chrome);
+            -webkit-backdrop-filter: var(--k-chrome-backdrop);
+            backdrop-filter: var(--k-chrome-backdrop);
             box-shadow:
-                var(--k-glass-edge, 0 0 0 0 transparent),
-                inset 0 0 0 1px var(--k-glass-border, transparent),
-                var(--k-glass-shadow, 0 0 0 0 transparent);
+                inset 0 0 0 1px var(--k-chrome-border),
+                var(--k-chrome-shadow);
             font: inherit;
             font-size: 13px;
         }

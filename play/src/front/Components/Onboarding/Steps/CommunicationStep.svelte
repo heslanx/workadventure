@@ -24,7 +24,7 @@
         : 'fixed top-1/2 -right-10 transform -translate-x-14 -translate-y-1/2'}"
 >
     <div
-        class="bg-contrast/90 backdrop-blur-lg rounded-lg p-4 sm:p-6 w-full max-w-lg shadow-lg border border-white/20 {$isMobileOnboarding
+        class="bg-contrast/95 backdrop-blur-lg rounded-lg p-4 sm:p-6 w-full max-w-lg shadow-lg border border-white/20 {$isMobileOnboarding
             ? 'mx-auto max-h-[40vh] overflow-y-auto'
             : ''}"
         in:fly={{ y: $isMobileOnboarding ? 10 : 10, duration: 400 }}
