@@ -309,6 +309,8 @@
     }
     .k-prefs-head h2 {
         margin: 0;
+        text-transform: none;
+        letter-spacing: normal;
         font:
             700 20px/1.25 Urbanist,
             system-ui,
@@ -372,12 +374,14 @@
         margin-top: 10px;
     }
     .k-prefs :global(.k-pref-section) {
-        margin: 0;
+        margin: 6px 0 0;
         padding: 0 4px;
         font:
-            600 13px/1.5 Urbanist,
+            600 12px/1.5 Urbanist,
             system-ui,
             sans-serif;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
         color: var(--k-fg-2);
     }
     .k-prefs :global(.k-pref-group) {
@@ -512,7 +516,7 @@
         gap: 2px;
         padding: 3px;
         border-radius: 10px;
-        background: var(--k-page);
+        background: rgb(3 5 26 / 0.45);
     }
     .k-prefs :global(.k-pref-seg button) {
         min-height: 32px;
@@ -534,7 +538,7 @@
     .k-prefs :global(.k-pref-seg button[aria-checked="true"]) {
         background: var(--k-hover);
         color: var(--k-accent);
-        box-shadow: inset 0 0 0 1px var(--k-accent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k-accent) 25%, transparent);
     }
     .k-prefs :global(.k-pref-seg button[aria-disabled="true"]),
     .k-prefs :global(.k-pref-select[aria-disabled="true"]),
@@ -553,12 +557,21 @@
         padding: 8px 12px;
         border: 1px solid var(--k-border-strong);
         border-radius: 10px;
-        background: var(--k-page);
+        background: rgb(3 5 26 / 0.45);
         font:
             600 13px/1.3 Urbanist,
             system-ui,
             sans-serif;
         color: var(--k-fg);
+    }
+    /* The reference's list: no native arrow, a muted chevron at the end. */
+    .k-prefs :global(.k-pref-select) {
+        appearance: none;
+        padding-right: 32px;
+        background: rgb(3 5 26 / 0.45)
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b8c4d6' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E")
+            right 10px center / 14px no-repeat;
+        cursor: pointer;
     }
     .k-prefs :global(.k-pref-field) {
         flex: 1 1 100%;

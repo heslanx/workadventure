@@ -107,7 +107,7 @@
         class="main-logo inline mt-8 {gameManager.currentStartedRoom.loginSceneLogo
             ? 'max-h-[200px] object-cover'
             : ''}"
-        style="width: 333px;"
+        style:width={logo === logoImg ? "160px" : "333px"}
     />
 </section>
 

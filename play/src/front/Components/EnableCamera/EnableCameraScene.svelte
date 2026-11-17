@@ -321,7 +321,7 @@
         style={roomBackgroundColor !== undefined ? `background-color: ${roomBackgroundColor};` : ""}
     ></div>
 {:else}
-    <div class="fixed start-0 top-0 w-dvw h-dvh z-20 bg-(image:--k-page-backdrop)"></div>
+    <div class="fixed start-0 top-0 w-dvw h-dvh z-20 bg-(--k-page)"></div>
 {/if}
 
 <style>

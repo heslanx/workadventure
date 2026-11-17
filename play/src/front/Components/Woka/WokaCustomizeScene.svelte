@@ -271,7 +271,7 @@
     });
 </script>
 
-<div class="mobile-webkit w-screen h-full flex items-center justify-center bg-(image:--k-page-backdrop)">
+<div class="mobile-webkit w-screen h-full flex items-center justify-center bg-(--k-page)">
     <div
         class="mobile-webkit rounded-(--k-radius-surface) flex flex-col max-w-4xl w-full h-[calc(100%-2rem)] md:h-[70vh] m-4 relative bg-(--k-card) border border-solid border-(--k-border)"
     >
