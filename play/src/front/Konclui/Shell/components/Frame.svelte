@@ -18,7 +18,7 @@
         type SidePanelView,
     } from "../domain/sidePanel";
     import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
-    import { showMenuItem, SubMenusInterface } from "../../../Stores/MenuStore";
+    import { openPreferences } from "../../Preferences/stores/preferencesStore";
     import { navChat } from "../../../Chat/Stores/ChatStore";
     import ChatSidebar from "../../../Chat/ChatSidebar.svelte";
     import { IconUsersGroup, IconSettings, IconMessageCircle2, IconChevronLeft } from "@wa-icons";
@@ -203,7 +203,7 @@
                 class="logo"
                 type="button"
                 aria-label={$LL.konclui.officeMenu()}
-                onclick={() => showMenuItem(SubMenusInterface.settings)}
+                onclick={(event) => openPreferences(undefined, event.currentTarget)}
             >
                 <svg viewBox="0 0 162 162" fill="currentColor" aria-hidden="true">
                     <path
@@ -239,7 +239,7 @@
                 class="settings"
                 type="button"
                 aria-label={$LL.konclui.settings()}
-                onclick={() => showMenuItem(SubMenusInterface.settings)}
+                onclick={(event) => openPreferences(undefined, event.currentTarget)}
             >
                 <IconSettings font-size="20" />
             </button>

@@ -51,9 +51,10 @@ npx vitest run src/front/Konclui src/front/ExternalModule/ClientExtensionPoints.
 ```
 
 `architecture.test.ts` is the fitness test. It checks the seam, the `domain/` import allowlist, that `stores/` and `phaser/`
-import no component, the domain graph, barrels, polling and page observers, the overlay flags and empty catches. Review
-holds the rest of the layer table. When it fails, change the code, not the rule. A rule changes only with an explicit
-decision by the context owner, recorded in the commit that changes the test.
+import no component, that `components/` import no `phaser/` file or upstream Phaser module, the domain graph, barrels,
+polling and page observers, the overlay flags and empty catches. Review holds the rest of the layer table. When it
+fails, change the code, not the rule. A rule changes only with an explicit decision by the context owner, recorded in
+the commit that changes the test.
 
 ## Related guides
 

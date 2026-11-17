@@ -109,6 +109,11 @@ function isComponent(specifier: string, target: string | undefined): boolean {
     return layerOf(target) === "components" || isInside(target, join(playSrc, "front", "Components"));
 }
 
+/** A `phaser/` layer file of any domain, or upstream's Phaser tree: the scene internals components may not import. */
+function isPhaser(target: string): boolean {
+    return layerOf(target) === "phaser" || isInside(target, join(playSrc, "front", "Phaser"));
+}
+
 /**
  * The top-level arguments of the call whose opening parenthesis is at `open`, or undefined when it never closes.
  * Brackets and commas inside strings and comments do not count; regex literals and nested templates are not parsed.
@@ -196,6 +201,10 @@ function findViolations(files: readonly SourceFile[]): string[] {
 
             if ((layer === "stores" || layer === "phaser") && isComponent(specifier, target)) {
                 violations.push(`rule 2: ${layer} file ${name} imports the component ${specifier}`);
+            }
+
+            if (layer === "components" && target !== undefined && isPhaser(target)) {
+                violations.push(`rule 2: component file ${name} imports the Phaser layer ${specifier}`);
             }
 
             const targetDomain = target === undefined ? undefined : domainOf(target);
@@ -311,6 +320,27 @@ describe("Konclui architecture", () => {
                 at("front/Konclui/Shell/components/Example.svelte", 'import Dock from "./Dock.svelte";'),
                 at("front/Phaser/Game/Example.ts", 'import Help from "../../Components/Help.svelte";'),
             ]),
+        ).toEqual([]);
+    });
+
+    it("keeps components off the Phaser layer, theirs and upstream's", () => {
+        const component = "front/Konclui/Preferences/components/Example.svelte";
+        const componentTest = "front/Konclui/Preferences/components/Example.test.ts";
+        expect(findViolations([at(component, 'import { openWokaEditor } from "../phaser/gameActions";')])).toHaveLength(
+            1,
+        );
+        expect(
+            findViolations([at(componentTest, 'import { gameActions } from "../phaser/gameActions";')]),
+        ).toHaveLength(1);
+        expect(
+            findViolations([at(component, 'import { gameManager } from "../../../Phaser/Game/GameManager";')]),
+        ).toHaveLength(1);
+        expect(
+            findViolations([at(component, 'import type { GameScene } from "../../../Phaser/Game/GameScene";')]),
+        ).toHaveLength(1);
+        expect(findViolations([at(component, 'import { openWokaEditor } from "../stores/gameCommands";')])).toEqual([]);
+        expect(
+            findViolations([at(component, 'import { gameSceneStore } from "../../../Stores/GameSceneStore";')]),
         ).toEqual([]);
     });
 

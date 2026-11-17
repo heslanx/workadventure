@@ -1,3 +1,4 @@
+import { mount } from "svelte";
 import {
     registerActionBar,
     registerAppFrame,
@@ -10,6 +11,9 @@ import { shellActiveStore, shellEnabledStore } from "./Shell/stores/shellStore";
 import { createSeatedPoseExtension } from "./Workplace/phaser/seatedPoseExtension";
 import { createBrowserEffectsPort } from "./Ambience/phaser/browserEffectsPort";
 import { createSceneEffectsExtension } from "./Ambience/phaser/sceneEffectsExtension";
+import PreferencesHost from "./Preferences/components/PreferencesHost.svelte";
+import { gameActions } from "./Preferences/phaser/gameActions";
+import { installGameCommands } from "./Preferences/stores/gameCommands";
 
 let installed = false;
 
@@ -25,4 +29,10 @@ export function installKonclui(): void {
     setEmbeddedChatHost(shellActiveStore);
     registerSceneExtension(createSeatedPoseExtension());
     registerSceneExtension(createSceneEffectsExtension(createBrowserEffectsPort()));
+    // The dialog's components reach the game through this registry, not through the Phaser layer.
+    installGameCommands(gameActions);
+    // The preferences dialog lives beside the app, over everything: the rail opens it with `openPreferences()`.
+    const preferences = document.createElement("div");
+    document.body.append(preferences);
+    mount(PreferencesHost, { target: preferences });
 }
