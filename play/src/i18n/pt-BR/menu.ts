@@ -30,13 +30,13 @@ const menu: BaseTranslation = {
             title: "Qualidade de vídeo",
             low: "Baixa",
             recommended: "Recomendada",
-            high: "High",
+            high: "Alta",
         },
         shareScreenBandwidth: {
             title: "Qualidade de compartilhamento de tela",
             low: "Baixa",
             recommended: "Recomendada",
-            high: "High",
+            high: "Alta",
         },
         bandwidthConstrainedPreference: {
             title: "Se a largura de banda da rede estiver limitada",

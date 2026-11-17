@@ -31,13 +31,13 @@ const menu: DeepPartial<Translation["menu"]> = {
             title: "Qualità video",
             low: "Bassa",
             recommended: "Consigliata",
-            high: "High",
+            high: "Alta",
         },
         shareScreenBandwidth: {
             title: "Qualità condivisione schermo",
             low: "Bassa",
             recommended: "Consigliata",
-            high: "High",
+            high: "Alta",
         },
         bandwidthConstrainedPreference: {
             title: "Se la banda di rete è limitata",

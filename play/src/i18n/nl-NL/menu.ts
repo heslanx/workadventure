@@ -31,13 +31,13 @@ const menu: DeepPartial<Translation["menu"]> = {
             title: "Videokwaliteit",
             low: "Laag",
             recommended: "Aanbevolen",
-            high: "High",
+            high: "Hoog",
         },
         shareScreenBandwidth: {
             title: "Kwaliteit van schermdeling",
             low: "Laag",
             recommended: "Aanbevolen",
-            high: "High",
+            high: "Hoog",
         },
         bandwidthConstrainedPreference: {
             title: "Als de netwerkbandbreedte beperkt is",

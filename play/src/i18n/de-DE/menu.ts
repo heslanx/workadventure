@@ -32,13 +32,13 @@ const menu: DeepPartial<Translation["menu"]> = {
             title: "Videoqualität",
             low: "Niedrig",
             recommended: "Empfohlen",
-            high: "High",
+            high: "Hoch",
         },
         shareScreenBandwidth: {
             title: "Bildschirmfreigabe-Qualität",
             low: "Niedrig",
             recommended: "Empfohlen",
-            high: "High",
+            high: "Hoch",
         },
         bandwidthConstrainedPreference: {
             title: "Wenn die Netzwerkbandbreite begrenzt ist",

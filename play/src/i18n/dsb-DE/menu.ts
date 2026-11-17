@@ -31,13 +31,13 @@ const menu: DeepPartial<Translation["menu"]> = {
             title: "Kwalita video",
             low: "Ryjna",
             recommended: "Pśirucona",
-            high: "High",
+            high: "Wusoka",
         },
         shareScreenBandwidth: {
             title: "Kwalita pśenosowaneje wobrazowki",
             low: "Ryjna",
             recommended: "Pśirucona",
-            high: "High",
+            high: "Wusoka",
         },
         bandwidthConstrainedPreference: {
             title: "Gaž je šyrokosć pásma seśi wobmjezowana",

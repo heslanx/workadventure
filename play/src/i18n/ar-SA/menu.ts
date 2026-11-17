@@ -31,13 +31,13 @@ const menu: DeepPartial<Translation["menu"]> = {
             title: "جودة الفيديو", // Video quality
             low: "منخفض", // Low
             recommended: "موصى به", // Recommended
-            high: "High", // Unlimited
+            high: "عالية", // Unlimited
         },
         shareScreenBandwidth: {
             title: "جودة مشاركة الشاشة", // Screen sharing quality
             low: "منخفض", // Low
             recommended: "موصى به", // Recommended
-            high: "High", // Unlimited
+            high: "عالية", // Unlimited
         },
         bandwidthConstrainedPreference: {
             title: "إذا كانت سعة نطاق الشبكة محدودة",
