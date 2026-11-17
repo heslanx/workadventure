@@ -56,17 +56,16 @@ describe("inviteLink", () => {
 
 describe("shownDevice", () => {
     it("is off only when the user turned the device off", () => {
-        expect(shownDevice(false, "cam-1", "cam-1", ["cam-1"])).toBe(NO_DEVICE);
+        expect(shownDevice(false, "cam-1", "cam-1")).toBe(NO_DEVICE);
     });
 
     it("shows the device in use, then the one asked for", () => {
-        expect(shownDevice(true, "cam-2", "cam-1", ["cam-1", "cam-2"])).toBe("cam-2");
-        expect(shownDevice(true, undefined, "cam-1", ["cam-2"])).toBe("cam-1");
+        expect(shownDevice(true, "cam-2", "cam-1")).toBe("cam-2");
+        expect(shownDevice(true, undefined, "cam-1")).toBe("cam-1");
     });
 
     it("shows an on device as starting, never as off and never as a guessed device", () => {
-        expect(shownDevice(true, undefined, undefined, ["cam-1", "cam-2"])).toBe(STARTING_DEVICE);
-        expect(shownDevice(true, undefined, undefined, [])).toBe(STARTING_DEVICE);
+        expect(shownDevice(true, undefined, undefined)).toBe(STARTING_DEVICE);
     });
 });
 

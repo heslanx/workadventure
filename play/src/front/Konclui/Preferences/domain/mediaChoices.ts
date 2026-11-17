@@ -29,12 +29,7 @@ export const STARTING_DEVICE = "starting";
  * preference, the device in use is not known yet: the list shows "starting" rather than guess one, so every listed
  * device stays a real choice (picking the one already shown would fire no change).
  */
-export function shownDevice(
-    on: boolean,
-    used: string | undefined,
-    requested: string | undefined,
-    _listed: readonly string[],
-): string {
+export function shownDevice(on: boolean, used: string | undefined, requested: string | undefined): string {
     if (!on) return NO_DEVICE;
     return used ?? requested ?? STARTING_DEVICE;
 }

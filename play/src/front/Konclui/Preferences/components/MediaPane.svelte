@@ -95,22 +95,12 @@
 
     let cameras = $derived(devices($cameraListStore, (index) => t.cameraNumber({ index })));
     let cameraValue = $derived(
-        shownDevice(
-            $requestedCameraState,
-            $usedCameraDeviceIdStore,
-            $requestedCameraDeviceIdStore,
-            cameras.map((camera) => camera.value),
-        ),
+        shownDevice($requestedCameraState, $usedCameraDeviceIdStore, $requestedCameraDeviceIdStore),
     );
     let cameraOptions = $derived(deviceOptions(t.cameraOff(), cameras, cameraValue));
     let microphones = $derived(devices($microphoneListStore, (index) => t.microphoneNumber({ index })));
     let microphoneValue = $derived(
-        shownDevice(
-            $requestedMicrophoneState,
-            $usedMicrophoneDeviceIdStore,
-            $requestedMicrophoneDeviceIdStore,
-            microphones.map((microphone) => microphone.value),
-        ),
+        shownDevice($requestedMicrophoneState, $usedMicrophoneDeviceIdStore, $requestedMicrophoneDeviceIdStore),
     );
     let microphoneOptions = $derived(deviceOptions(t.microphoneOff(), microphones, microphoneValue));
     // Safari and iOS play on the system output: there is no speaker to choose (AudioOutputStore.ts).
