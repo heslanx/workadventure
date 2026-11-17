@@ -97,12 +97,6 @@ const es: NativeStrings = {
     "menu.hideTabBarDetail":
         "Tienes {total} pestañas abiertas. Al ocultar la barra de pestañas se mantiene esta pestaña y se cierran las otras {count}.",
 
-    "tray.status.meeting": "En una reunión",
-    "tray.status.do_not_disturb": "No molestar",
-    "tray.status.busy": "Ocupado",
-    "tray.status.back_in_a_moment": "Vuelvo en un momento",
-    "tray.status.idle": "Inactivo",
-    "tray.status.online": "Disponible",
     "tray.status.offline": "Desconectado",
     "tray.microphone": "Micrófono",
     "tray.camera": "Cámara",
@@ -159,6 +153,7 @@ const es: NativeStrings = {
     "auth.signingOutTitle": "Cerrando sesión…",
     "auth.signingOutMessage": "Termina de cerrar sesión en tu navegador. Volverás a la aplicación automáticamente.",
     "auth.reopenBrowser": "Volver a abrir el navegador",
+    "auth.back": "Volver",
     "auth.signedIn": "Sesión iniciada. Ya puedes volver a WorkAdventure.",
     "auth.signedOut": "Sesión cerrada. Ya puedes volver a WorkAdventure.",
     "auth.closeWindow": "Ya puedes cerrar esta ventana.",

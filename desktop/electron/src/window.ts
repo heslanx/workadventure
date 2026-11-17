@@ -14,13 +14,14 @@ import { createDesktopWindowTitle } from "./app-name-policy";
 import {
     createDesktopLoginUrl,
     createDesktopLogoutUrl,
+    desktopBrowserFlowReturnUrl,
     createRoomUrlWithAuthToken,
     isAllowedNavigationUrl,
     isDesktopLoginUrl,
     isDesktopLogoutUrl,
     isRoomUrl,
     isSameRoomUrl,
-    resolveInitialTarget,
+    opensInApp,
     stripSensitiveQueryParams,
     worldKeyOf,
     type DesktopAuthCallback,
@@ -341,6 +342,14 @@ function escapeHtml(value: string) {
         .replaceAll("'", "&#39;");
 }
 
+/** The screen shown while signing in or out in the browser: the only data: page a world view loads. */
+function isBrowserFlowPendingScreen(contents: Electron.WebContents) {
+    return contents.getURL().startsWith("data:");
+}
+
+/** Its Back link when there is no world to go back to: a data: page cannot open the Landing (file:). */
+const BACK_TO_LANDING = "#landing";
+
 async function showDesktopBrowserFlowPendingScreen(title: string, message: string, actionUrl: string) {
     const contents = getActiveWorldContents();
     if (!contents) {
@@ -351,7 +360,14 @@ async function showDesktopBrowserFlowPendingScreen(title: string, message: strin
     // it cannot bounce the user out of the login flow mid-way.
     cancelReachWorldWatchdog();
 
+    // "Reopen the browser" lands here again: keep the one pending screen, so Back leaves it in one step.
+    if (isBrowserFlowPendingScreen(contents)) {
+        showWindow();
+        return;
+    }
+
     const safeActionUrl = escapeHtml(actionUrl);
+    const safeBackUrl = escapeHtml(desktopBrowserFlowReturnUrl(actionUrl, getDesktopConfig()) ?? BACK_TO_LANDING);
     const safeTitle = escapeHtml(title);
     const safeMessage = escapeHtml(message);
     const html = `<!doctype html>
@@ -381,6 +397,7 @@ async function showDesktopBrowserFlowPendingScreen(title: string, message: strin
       text-decoration: none;
       font-weight: 600;
     }
+    a + a { margin-inline-start: 8px; background: transparent; box-shadow: inset 0 0 0 1px #475569; }
   </style>
 </head>
 <body>
@@ -388,11 +405,16 @@ async function showDesktopBrowserFlowPendingScreen(title: string, message: strin
     <h1>${safeTitle}</h1>
     <p>${safeMessage}</p>
     <a href="${safeActionUrl}">${escapeHtml(t("auth.reopenBrowser"))}</a>
+    <a href="${safeBackUrl}">${escapeHtml(t("auth.back"))}</a>
   </main>
 </body>
 </html>`;
 
-    await contents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    // The page this replaces may still be loading (the /login page the Login button goes through, which
+    // sent the user here): Electron then rejects with that page's ERR_ABORTED, though this one loads.
+    await contents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`).catch((error) => {
+        ElectronLog.debug("The page before the browser flow screen did not finish loading.", error);
+    });
     showWindow();
 }
 
@@ -539,9 +561,11 @@ function ensureDesktopCallbackServer(): Promise<string> {
             response.end(createDesktopCallbackPage(t("auth.signedOut"), t("auth.closeWindow"), nativeLocale()));
 
             bringAppToFront();
-            const config = getDesktopConfig();
-            const safeTarget = targetUrl && isAllowedNavigationUrl(targetUrl, config) ? targetUrl : config.portalUrl;
-            void loadDesktopTarget(safeTarget);
+            // Back to the world the user signed out from, else the Landing.
+            (targetUrl && isAllowedNavigationUrl(targetUrl, getDesktopConfig())
+                ? loadDesktopTarget(targetUrl)
+                : loadLandingPage()
+            ).catch((error) => ElectronLog.error("Could not leave the sign-out page.", error));
             maybeStopDesktopCallbackServer();
             return;
         }
@@ -626,6 +650,23 @@ function configureSession() {
     }
 }
 
+/** A link that leaves its page: the browser sign-in, a world, or the system browser for anything else. */
+function openLink(url: string) {
+    let opening: Promise<void>;
+    if (isAllowedDesktopBrowserFlowUrl(url, getDesktopConfig())) {
+        opening = openDesktopBrowserFlow(url);
+    } else if (opensInApp(url, getDesktopConfig())) {
+        // A new tab, not loadDesktopTarget: that loads into the ACTIVE tab, so a link from a background
+        // world would replace the world (and meeting) the user is looking at.
+        opening = openWorldTab(url);
+    } else {
+        opening = openExternal(url);
+    }
+    opening.catch((error) =>
+        ElectronLog.error(`Could not open the link "${stripSensitiveQueryParams(url) || url}".`, error)
+    );
+}
+
 function configureNavigationSecurity(webContents: Electron.WebContents) {
     // Each new page has to say hello again (page-contract.ts): it may be another server, or an older one.
     webContents.on("did-start-navigation", (details) => {
@@ -643,49 +684,39 @@ function configureNavigationSecurity(webContents: Electron.WebContents) {
             return { action: "allow", overrideBrowserWindowOptions: childOptions };
         }
 
-        if (isAllowedDesktopBrowserFlowUrl(url, getDesktopConfig())) {
-            void openDesktopBrowserFlow(url);
-            return { action: "deny" };
-        }
-
-        if (shouldOpenExternally(url, getDesktopConfig())) {
-            void openExternal(url);
-            return { action: "deny" };
-        }
-
-        // A new tab, not loadDesktopTarget: that loads into the ACTIVE tab, so a window.open from a
-        // background world would replace the world (and meeting) the user is looking at.
-        void openWorldTab(url);
+        openLink(url);
         return { action: "deny" };
     });
 
-    window.webContents.on("did-create-window", (childWindow, { frameName }) =>
-        adoptChildWindow(childWindow, frameName)
-    );
+    window.webContents.on("did-create-window", (childWindow, { frameName }) => {
+        // The floating windows show play's components (the chat among them): their links go where the
+        // world's would. Without this, Electron opened them in a new window of its own, Google included.
+        childWindow.webContents.setWindowOpenHandler(({ url }) => {
+            openLink(url);
+            return { action: "deny" };
+        });
+        childWindow.webContents.on("will-navigate", (event, url) => {
+            event.preventDefault();
+            openLink(url);
+        });
+        adoptChildWindow(childWindow, frameName);
+    });
 
+    // A world tab may move within its own server or to another world. Anything else goes where a link would.
     window.webContents.on("will-navigate", (event, url) => {
-        if (isAllowedDesktopBrowserFlowUrl(url, getDesktopConfig())) {
+        const config = getDesktopConfig();
+        if (isAllowedDesktopBrowserFlowUrl(url, config) || !opensInApp(url, config, webContents.getURL())) {
             event.preventDefault();
-            void openDesktopBrowserFlow(url);
-            return;
-        }
-
-        if (shouldOpenExternally(url, getDesktopConfig())) {
-            event.preventDefault();
-            void openExternal(url);
+            openLink(url);
         }
     });
 
+    // A server's redirect may go to any page of a trusted server (a sign-in redirect is not a world).
     window.webContents.on("will-redirect", (event, url) => {
-        if (isAllowedDesktopBrowserFlowUrl(url, getDesktopConfig())) {
+        const config = getDesktopConfig();
+        if (isAllowedDesktopBrowserFlowUrl(url, config) || shouldOpenExternally(url, config)) {
             event.preventDefault();
-            void openDesktopBrowserFlow(url);
-            return;
-        }
-
-        if (shouldOpenExternally(url, getDesktopConfig())) {
-            event.preventDefault();
-            void openExternal(url);
+            openLink(url);
         }
     });
 
@@ -717,6 +748,10 @@ function configureNavigationSecurity(webContents: Electron.WebContents) {
     // handler, only the initial cold-launch URL ever lands in Recent rooms.
     window.webContents.on("did-navigate-in-page", (event, url, isMainFrame) => {
         if (!isMainFrame) {
+            return;
+        }
+        if (url.endsWith(BACK_TO_LANDING) && isBrowserFlowPendingScreen(webContents)) {
+            void loadLandingPage();
             return;
         }
         rememberWorldUrl(url);
@@ -897,15 +932,9 @@ export async function loadLandingPage(query?: { error: string } | { trust: strin
     try {
         await contents.loadURL(landingUrl);
     } catch (error) {
+        // The Landing ships with the app: there is nothing else to show. Still reveal the window rather than
+        // leave it hidden forever.
         ElectronLog.error(`Failed to load Landing page at ${landingUrl}`, error);
-        // Fall back to the portal URL — worst case the user still lands somewhere usable. Guard
-        // the fallback too: if BOTH the Landing file and the portal fail to load (e.g. offline on
-        // first launch), we must still reveal the window rather than leave it hidden forever.
-        try {
-            await contents.loadURL(getDesktopConfig().portalUrl);
-        } catch (fallbackError) {
-            ElectronLog.error("Failed to load Landing fallback portal", fallbackError);
-        }
     }
     showWindow();
 }
@@ -934,34 +963,23 @@ export async function loadDesktopTarget(requestedUrl?: string): Promise<boolean>
         throw new Error("No active world view");
     }
 
-    const explicitTarget = requestedUrl || pendingDeepLinkUrl;
-    const lastRoomUrl = settings.get("last_room_url");
-    // First cold launch (nothing pending, no persisted room) → show the Landing instead of
-    // silently loading the portal URL. Once the user picks a world (or a deep-link fires),
-    // last_room_url is set and this branch never fires again.
-    if (!explicitTarget && !lastRoomUrl) {
-        pendingDeepLinkUrl = undefined;
+    const target = requestedUrl || pendingDeepLinkUrl || settings.get("last_room_url");
+    pendingDeepLinkUrl = undefined;
+    // First cold launch (nothing pending, no persisted room) → the Landing. Once the user picks a world (or a
+    // deep-link fires), last_room_url is set and this branch never fires again.
+    if (!target) {
         await loadLandingPage();
         return true;
     }
-    const config = getDesktopConfig();
-    // A world on a server the app does not trust (a deep link, a server the user removed since): never open
-    // the last room or the portal in its place. A WorkAdventure server is offered to be added, anything else
-    // gets an error.
-    if (explicitTarget && !isAllowedNavigationUrl(explicitTarget, config)) {
-        pendingDeepLinkUrl = undefined;
+    // A world on a server the app does not trust (a deep link, a server the user removed since, a last room on a
+    // server an update stopped trusting): never open another world or the portal in its place. A WorkAdventure
+    // server is offered to be added, anything else gets an error.
+    if (!isAllowedNavigationUrl(target, getDesktopConfig())) {
         await loadLandingPage(
-            (await isWorkAdventureServer(explicitTarget))
-                ? { trust: explicitTarget }
-                : { error: t("landing.urlNotAllowed") }
+            (await isWorkAdventureServer(target)) ? { trust: target } : { error: t("landing.urlNotAllowed") }
         );
         return true;
     }
-    const target = resolveInitialTarget(config, {
-        pendingDeepLinkUrl: explicitTarget,
-        lastRoomUrl,
-    });
-    pendingDeepLinkUrl = undefined;
     try {
         const navigationStartedAt = Date.now();
         await contents.loadURL(target);
@@ -1096,7 +1114,7 @@ async function openDesktopAuthCallback(callback: DesktopAuthCallback) {
         );
     } catch (error) {
         ElectronLog.warn("Failed to exchange desktop auth callback.", error);
-        await loadDesktopTarget(getDesktopConfig().portalUrl);
+        await recoverToLandingWithError(t("landing.signInFailed"));
     }
 }
 

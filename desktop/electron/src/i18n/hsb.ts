@@ -97,12 +97,6 @@ const hsb: NativeStrings = {
     "menu.hideTabBarDetail":
         "Maće {total} rajtarkow wočinjenych. Hdyž lajstu rajtarkow schowaće, wostanje tutón rajtark wočinjeny a {count} druhich so začini.",
 
-    "tray.status.meeting": "W zasedanju",
-    "tray.status.do_not_disturb": "Njewobćežować",
-    "tray.status.busy": "Zabuzowany",
-    "tray.status.back_in_a_moment": "Wróću so bórze",
-    "tray.status.idle": "Njeaktiwny",
-    "tray.status.online": "K dispoziciji",
     "tray.status.offline": "Offline",
     "tray.microphone": "Mikrofon",
     "tray.camera": "Kamera",
@@ -160,6 +154,7 @@ const hsb: NativeStrings = {
     "auth.signingOutMessage":
         "Dokónčće wotzjewjenje w swojim wobhladowaku. Potom so awtomatisce do aplikacije wróćiće.",
     "auth.reopenBrowser": "Wobhladowak znowa wočinić",
+    "auth.back": "Wróćo",
     "auth.signedIn": "Přizjewjeny. Móžeće so k WorkAdventure wróćić.",
     "auth.signedOut": "Wotzjewjeny. Móžeće so k WorkAdventure wróćić.",
     "auth.closeWindow": "Móžeće tute wokno začinić.",

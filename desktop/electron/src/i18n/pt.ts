@@ -97,12 +97,6 @@ const pt: NativeStrings = {
     "menu.hideTabBarDetail":
         "Você tem {total} abas abertas. Ocultar a barra de abas mantém esta aba e fecha as outras {count}.",
 
-    "tray.status.meeting": "Em uma reunião",
-    "tray.status.do_not_disturb": "Não perturbe",
-    "tray.status.busy": "Ocupado",
-    "tray.status.back_in_a_moment": "Volto em instantes",
-    "tray.status.idle": "Inativo",
-    "tray.status.online": "Disponível",
     "tray.status.offline": "Offline",
     "tray.microphone": "Microfone",
     "tray.camera": "Câmera",
@@ -159,6 +153,7 @@ const pt: NativeStrings = {
     "auth.signingOutTitle": "Saindo…",
     "auth.signingOutMessage": "Conclua a saída no seu navegador. Você voltará ao aplicativo automaticamente.",
     "auth.reopenBrowser": "Reabrir o navegador",
+    "auth.back": "Voltar",
     "auth.signedIn": "Login concluído. Você já pode voltar ao WorkAdventure.",
     "auth.signedOut": "Você saiu. Já pode voltar ao WorkAdventure.",
     "auth.closeWindow": "Você já pode fechar esta janela.",

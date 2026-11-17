@@ -97,12 +97,6 @@ const ja: NativeStrings = {
     "menu.hideTabBarDetail":
         "{total} 個のタブを開いています。タブバーを非表示にすると、このタブを残して他の {count} 個を閉じます。",
 
-    "tray.status.meeting": "ミーティング中",
-    "tray.status.do_not_disturb": "応答不可",
-    "tray.status.busy": "忙しい",
-    "tray.status.back_in_a_moment": "すぐ戻る",
-    "tray.status.idle": "アイドル",
-    "tray.status.online": "オンライン",
     "tray.status.offline": "オフライン",
     "tray.microphone": "マイク",
     "tray.camera": "カメラ",
@@ -159,6 +153,7 @@ const ja: NativeStrings = {
     "auth.signingOutTitle": "サインアウトしています…",
     "auth.signingOutMessage": "ブラウザでサインアウトを完了してください。自動的にアプリに戻ります。",
     "auth.reopenBrowser": "ブラウザを再度開く",
+    "auth.back": "戻る",
     "auth.signedIn": "サインインしました。WorkAdventure に戻れます。",
     "auth.signedOut": "サインアウトしました。WorkAdventure に戻れます。",
     "auth.closeWindow": "このウィンドウは閉じてかまいません。",
