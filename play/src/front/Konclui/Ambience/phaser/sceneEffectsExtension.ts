@@ -1,7 +1,7 @@
 import { asError } from "catch-unknown";
 import type { SceneExtension } from "../../../ExternalModule/ClientExtensionPoints";
 import type { GameScene } from "../../../Phaser/Game/GameScene";
-import type { FeatureSwitches } from "../domain/effectSwitches";
+import type { FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import type { EffectsData } from "./effectsLoader";
 
 /** The effects of one scene, as the extension drives them. */

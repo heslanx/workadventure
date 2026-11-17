@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import type { RemotePlayer } from "../../../Phaser/Entity/RemotePlayer";
 import type { Player } from "../../../Phaser/Player/Player";
 import { EFFECT_TEXTURES, type EffectTexture, type EffectsManifest } from "../domain/effectsManifest";
-import { parseFeatures, type FeatureSwitches } from "../domain/effectSwitches";
+import { parseFeatures, type FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import { SceneEffects, isKoiSchool, type EffectsEnvironment, type EffectsHost } from "./SceneEffects";
 
 // The effects are built on a hand-made scene (EffectsHost): it records what they add to it and what they give back.

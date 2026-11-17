@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daylight, isPlainDay, localHour } from "./timeOfDay";
+import { daylight, isPlainDay, localHour, lookAt } from "./timeOfDay";
 
 describe("timeOfDay", () => {
     it("reads the clock in Brasília time", () => {
@@ -34,5 +34,13 @@ describe("timeOfDay", () => {
             const b = daylight(h + 0.25);
             expect(Math.abs(a.outside[0] - b.outside[0]), `jump at ${h}`).toBeLessThan(0.2);
         }
+    });
+
+    it("keeps the art as drawn with the light switched off", () => {
+        const drawn = lookAt(21, { light: false });
+        expect(isPlainDay(drawn)).toBe(true);
+        expect(drawn.sat).toBe(1);
+        expect(drawn.lamps).toBe(0);
+        expect(lookAt(21, { light: true })).toStrictEqual(daylight(21));
     });
 });

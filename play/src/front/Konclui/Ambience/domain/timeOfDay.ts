@@ -1,4 +1,4 @@
-import type { FeatureSwitches } from "./effectSwitches";
+import type { FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 
 export const TIME_ZONE = "America/Sao_Paulo";
 

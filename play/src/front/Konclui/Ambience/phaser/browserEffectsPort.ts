@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import { asError } from "catch-unknown";
 import { localUserStore } from "../../../Connection/LocalUserStore";
-import { FEATURES_KEY, parseFeatures } from "../domain/effectSwitches";
+import { FEATURES_KEY, parseFeatures } from "../../Preferences/domain/effectSwitches";
 import { loadEffectsData } from "./effectsLoader";
 import { SceneEffects, type EffectsEnvironment } from "./SceneEffects";
 import type { SceneEffectsPort } from "./sceneEffectsExtension";

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SceneFrameContext } from "../../../ExternalModule/ClientExtensionPoints";
 import type { GameScene } from "../../../Phaser/Game/GameScene";
-import { parseFeatures, presetFeatures } from "../domain/effectSwitches";
-import type { FeatureSwitches } from "../domain/effectSwitches";
+import { parseFeatures, presetFeatures } from "../../Preferences/domain/effectSwitches";
+import type { FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import type { EffectsData } from "./effectsLoader";
 import {
     createSceneEffectsExtension,

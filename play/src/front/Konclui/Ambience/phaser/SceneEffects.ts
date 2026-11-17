@@ -20,7 +20,7 @@ import type { Player } from "../../../Phaser/Player/Player";
 import type { GameMapFrontWrapper } from "../../../Phaser/Game/GameMap/GameMapFrontWrapper";
 import type { EffectTexture, EffectsManifest } from "../domain/effectsManifest";
 import { EFFECT_TEXTURES } from "../domain/effectsManifest";
-import type { FeatureSwitches } from "../domain/effectSwitches";
+import type { FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import { coverage, inside, occupancy, type Box, type Rect } from "../domain/geometry";
 import { footprints } from "../domain/groundShadow";
 import {
