@@ -65,7 +65,7 @@ async def geometry(page):
             canvasCount: document.querySelectorAll('#game > canvas').length,
             shellCount: document.querySelectorAll('[data-testid="konclui-shell"]').length,
             dockCount: document.querySelectorAll('[data-testid="konclui-dock"]').length,
-            controls: [...(dock?.querySelectorAll('.dock-controls button, .dock-profile[role="button"]') || [])]
+            controls: [...(dock?.querySelectorAll('.dock-controls button, .dock-profile [role="button"]') || [])]
                 .filter(visible).map(element => ({id:element.dataset.testid || element.getAttribute('aria-label'),rect:rect(element)})),
             popups: [...document.querySelectorAll('[data-testid="profile-menu"], [data-testid="media-settings-panel"]')].filter(visible).map(rect),
             visibleTestIds: counts,
@@ -253,7 +253,7 @@ async def run(args):
                         return switched
                     await case(page, f"chat-to-people-{width}", chat_to_people)
                     async def profile_flow():
-                        trigger = page.get_by_role("button", name="Abrir perfil")
+                        trigger = page.locator('[data-testid="action-user"] [role="button"]')
                         await trigger.press("Enter")
                         await page.get_by_test_id("profile-menu").wait_for(state="visible")
                         opened = await capture(page, f"profile-{width}")

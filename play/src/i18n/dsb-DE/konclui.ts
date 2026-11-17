@@ -12,7 +12,6 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "Lisćina wósobow njestoj k dispoziciji.",
     dockLabel: "Wóźenje běrowa",
     mediaSettings: "Nastajenja kamery a mikrofona",
-    openProfile: "Profil wócyniś",
 };
 
 export default konclui;

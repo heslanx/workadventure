@@ -12,7 +12,6 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "La liste des personnes n'est pas disponible.",
     dockLabel: "Commandes du bureau",
     mediaSettings: "Paramètres de la caméra et du microphone",
-    openProfile: "Ouvrir le profil",
 };
 
 export default konclui;

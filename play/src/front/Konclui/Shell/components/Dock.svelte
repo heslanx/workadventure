@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import { SvelteMap } from "svelte/reactivity";
     import { get, type Writable } from "svelte/store";
-    import { currentRoomStore } from "../../../Stores/CurrentRoomStore";
     import { chatVisibilityStore } from "../../../Stores/ChatStore";
     import { silentStore } from "../../../Stores/MediaStore";
     import {
@@ -11,7 +10,7 @@
         myMicrophoneStore,
         proximityMeetingStore,
     } from "../../../Stores/MyMediaStore";
-    import { mediaSettingsOpenStore, openedMenuStore, rightActionBarMenuItems } from "../../../Stores/MenuStore";
+    import { mediaSettingsOpenStore, rightActionBarMenuItems } from "../../../Stores/MenuStore";
     import { screenSharingAvailableStore } from "../../../Stores/ScreenSharingStore";
     import { isInRemoteConversation } from "../../../Stores/StreamableCollectionStore";
     import { pictureInPictureSupportedStore } from "../../../Stores/PeerStore";
@@ -26,6 +25,7 @@
     import MediaSettingsList from "../../../Components/ActionBar/MediaSettingsList/MediaSettingsList.svelte";
     import SilentBlock from "../../../Components/ActionBar/SilentBlock.svelte";
     import { navChat } from "../../../Chat/Stores/ChatStore";
+    import { shellRoomStore } from "../stores/shellStore";
     import { LL } from "../../../../i18n/i18n-svelte";
     import { IconSettings } from "@wa-icons";
 
@@ -44,24 +44,17 @@
             for (const [store, value] of previous) store.set(value);
         };
     });
-
-    function openProfileWithKeyboard(event: KeyboardEvent) {
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            openedMenuStore.toggle("profileMenu");
-        }
-    }
 </script>
 
 <div class="dock-stack">
     <div class="dock" role="group" aria-label={$LL.konclui.dockLabel()} data-testid="konclui-dock">
         <div class="dock-controls">
             {#if !$chatVisibilityStore}
-                <ChatMenuItem chatEnabledInAdmin={$currentRoomStore?.isChatEnabled ?? false} last />
+                <ChatMenuItem chatEnabledInAdmin={$shellRoomStore?.isChatEnabled ?? false} last />
             {:else if $navChat.key === "users"}
                 <!-- The panel shows the people list: the button moves it to the conversation instead of closing it. -->
                 <ChatMenuItem
-                    chatEnabledInAdmin={$currentRoomStore?.isChatEnabled ?? false}
+                    chatEnabledInAdmin={$shellRoomStore?.isChatEnabled ?? false}
                     last
                     onclick={() => chatVisibilityStore.set(true)}
                 />
@@ -87,18 +80,16 @@
                 aria-label={$LL.konclui.mediaSettings()}
                 aria-expanded={$mediaSettingsOpenStore}
                 data-testid="media-settings-toggle-button"
-                onclick={() => mediaSettingsOpenStore.set(!$mediaSettingsOpenStore)}
-                ><IconSettings font-size="18" /></button
+                onclick={(event) => {
+                    // The panel closes on a click outside it: this click must not reach it as the first one.
+                    event.stopPropagation();
+                    event.preventDefault();
+                    mediaSettingsOpenStore.set(!$mediaSettingsOpenStore);
+                }}><IconSettings font-size="18" /></button
             >
         </div>
-        <div
-            class="dock-profile"
-            role="button"
-            tabindex="0"
-            aria-label={$LL.konclui.openProfile()}
-            aria-expanded={$openedMenuStore === "profileMenu"}
-            onkeydown={openProfileWithKeyboard}
-        >
+        <!-- The profile menu draws its own button, with its name, state and keys: the wrapper only sizes it. -->
+        <div class="dock-profile">
             <ProfileMenu showContextualMenuItems={false} />
         </div>
         {#if $mediaSettingsOpenStore}
@@ -208,10 +199,25 @@
         top: auto;
         bottom: calc(100% + 10px);
     }
-    .dock-profile:focus-visible,
+    .dock-profile :global([role="button"]:focus-visible),
     .dock :global(button:focus-visible) {
         outline: 2px solid var(--k-accent);
         outline-offset: 2px;
+    }
+    /*
+     * A phone keeps the 36px buttons, so the dock stays on one row, and widens what a finger can hit to 42x44.
+     * Only a button that is positioned takes the wider area: on any other one it would cover an ancestor instead.
+     */
+    @media (max-width: 767px) {
+        .media-settings {
+            position: relative;
+        }
+        .dock-controls :global(button.relative[data-testid]::after),
+        .media-settings::after {
+            content: "";
+            position: absolute;
+            inset: -4px -3px;
+        }
     }
     @media (prefers-reduced-motion: reduce) {
         .dock :global(*) {

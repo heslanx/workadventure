@@ -12,7 +12,6 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "メンバーリストは利用できません。",
     dockLabel: "オフィスの操作",
     mediaSettings: "カメラとマイクの設定",
-    openProfile: "プロフィールを開く",
 };
 
 export default konclui;

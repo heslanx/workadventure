@@ -11,7 +11,6 @@ const konclui: BaseTranslation = {
     rosterUnavailable: "The people list is not available.",
     dockLabel: "Office controls",
     mediaSettings: "Camera and microphone settings",
-    openProfile: "Open profile",
 };
 
 export default konclui;

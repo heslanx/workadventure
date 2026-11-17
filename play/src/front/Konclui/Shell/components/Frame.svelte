@@ -2,12 +2,21 @@
     import { untrack, type Snippet } from "svelte";
     import { get } from "svelte/store";
     import { LL } from "../../../../i18n/i18n-svelte";
-    import { currentRoomStore } from "../../../Stores/CurrentRoomStore";
-    import { shellActiveStore } from "../stores/shellStore";
+    import { shellActiveStore, shellRoomStore } from "../stores/shellStore";
     import { gameViewportBounds } from "../../../ExternalModule/ClientExtensionPoints";
     import type { ViewportBounds } from "../../../Stores/CoWebsiteLayout";
     import { toGameViewport } from "../domain/gameViewport";
-    import { sidePanelView, type SidePanelView } from "../domain/sidePanel";
+    import {
+        focusAfterClose,
+        isRosterAvailable,
+        isWideScreen,
+        opensOnLeftoverUserList,
+        panelButtonFor,
+        peopleOpening,
+        sidePanelView,
+        type PanelButton,
+        type SidePanelView,
+    } from "../domain/sidePanel";
     import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
     import { showMenuItem, SubMenusInterface } from "../../../Stores/MenuStore";
     import { navChat } from "../../../Chat/Stores/ChatStore";
@@ -34,22 +43,64 @@
     let peopleShown = $derived(view === "people");
     let conversationShown = $derived(view === "conversation");
 
+    // Whether the focus is inside the panel as it closes. This runs before the update that removes the chat, so
+    // it must stay above the template: afterwards the focus is on the page whether it was in the panel or not.
+    let focusWasInPanel = false;
+    $effect.pre(() => {
+        focusWasInPanel = view === "closed" && (panel?.contains(document.activeElement) ?? false);
+    });
+
     // Closing the panel removes the element that had the focus; hand it to the button that reopens that view.
     let lastOpenView: SidePanelView = "closed";
     $effect(() => {
         if (view !== "closed") {
             lastOpenView = view;
-        } else if (lastOpenView !== "closed" && document.activeElement === document.body) {
-            railButtonOf(lastOpenView)?.focus();
+            return;
+        }
+        const button = focusAfterClose({
+            closedView: lastOpenView,
+            focusWasInPanel,
+            focusIsOnPage: document.activeElement === document.body,
+            wideScreen: isWideScreen(window.innerWidth),
+        });
+        // A close is handled once: the rail drawn again after a loader is not another close.
+        lastOpenView = "closed";
+        if (button !== undefined) elementOf(button)?.focus();
+    });
+
+    // The chat taking the panel ends the notice, so closing the chat later does not bring the notice back.
+    $effect(() => {
+        if ($chatVisibilityStore) rosterNoticeOpen = false;
+    });
+
+    // Upstream opens the chat for a message without choosing a tab, and must not land on the user list the people
+    // view left behind. Each switch of the tab stores a new object, so the same object means nobody chose one.
+    let tabWhenHidden: unknown;
+    $effect.pre(() => {
+        const chatVisible = $chatVisibilityStore;
+        if (!$shellActiveStore) return;
+        const tab = get(navChat);
+        if (!chatVisible) {
+            tabWhenHidden = tab;
+        } else if (
+            opensOnLeftoverUserList({
+                chatShowsUserList: tab.key === "users",
+                tabChosenSinceHidden: tab !== tabWhenHidden,
+            })
+        ) {
+            navChat.switchToChat();
         }
     });
 
     // A wide screen opens on the people of the room, once per room and only when the chrome is drawn.
     $effect(() => {
-        const roomId = $currentRoomStore?.id;
+        const roomId = $shellRoomStore?.id;
         if (!$shellActiveStore || roomId === undefined || roomId === roomOpenedFor) return;
         roomOpenedFor = roomId;
-        if (window.innerWidth >= 768) untrack(openPeople);
+        // A notice raised in the previous room says nothing about this one.
+        rosterNoticeOpen = false;
+        // A chat that something opened before the chrome was drawn keeps the panel.
+        if (isWideScreen(window.innerWidth) && !get(chatVisibilityStore)) untrack(() => openPeople(false));
     });
 
     $effect(() => {
@@ -76,12 +127,23 @@
         };
     });
 
-    /** The people list is the chat's own user list; a room may turn it off, and the switch then does nothing. */
-    function openPeople() {
-        navChat.switchToUserList();
-        const rosterAvailable = get(navChat).key === "users";
-        rosterNoticeOpen = !rosterAvailable;
-        chatVisibilityStore.set(rosterAvailable);
+    /** The people list is the chat's own user list, which a room may turn off. */
+    function openPeople(requestedByUser: boolean) {
+        const room = get(shellRoomStore);
+        const rosterAvailable =
+            room !== undefined &&
+            isRosterAvailable({
+                onlineListEnabled: room.isChatOnlineListEnabled,
+                disconnectedListEnabled: room.isChatDisconnectedListEnabled,
+            });
+        const opening = peopleOpening(rosterAvailable, requestedByUser);
+        if (opening === "list") {
+            navChat.switchToUserList();
+            chatVisibilityStore.set(true);
+        } else if (opening === "notice") {
+            rosterNoticeOpen = true;
+            chatVisibilityStore.set(false);
+        }
     }
 
     function togglePeople() {
@@ -89,18 +151,18 @@
             rosterNoticeOpen = false;
             chatVisibilityStore.set(false);
         } else {
-            openPeople();
+            openPeople(true);
         }
     }
 
-    function railButtonOf(panelView: SidePanelView): HTMLButtonElement | undefined {
-        if (window.innerWidth < 768) return mobilePeopleButton;
-        return panelView === "conversation" ? chatButton : peopleButton;
+    function elementOf(button: PanelButton): HTMLButtonElement | undefined {
+        if (button === "mobilePeople") return mobilePeopleButton;
+        return button === "chat" ? chatButton : peopleButton;
     }
 
     function closeRosterNotice() {
         rosterNoticeOpen = false;
-        railButtonOf("people")?.focus();
+        elementOf(panelButtonFor("people", isWideScreen(window.innerWidth)))?.focus();
     }
 
     function toggleChat() {
@@ -354,6 +416,7 @@
             gap: 6px;
             padding: 8px 12px;
             border-radius: 22px;
+            min-height: 44px;
             background: var(--k-glass);
             font: inherit;
             font-size: 13px;

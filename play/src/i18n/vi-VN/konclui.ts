@@ -12,7 +12,6 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "Danh sách mọi người hiện không khả dụng.",
     dockLabel: "Điều khiển văn phòng",
     mediaSettings: "Cài đặt camera và micrô",
-    openProfile: "Mở hồ sơ",
 };
 
 export default konclui;
