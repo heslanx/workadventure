@@ -14,7 +14,7 @@
     const supported = notificationsSupported();
     // The browser blocked the site: the switch stays off and says why, as the browser will not ask again.
     let blocked = $state(notificationsBlocked());
-    let notify = $state(supported && !blocked && localUserStore.getNotification());
+    let notify = $state(supported && !notificationsBlocked() && localUserStore.getNotification());
     let askSites = $state(localUserStore.getForceCowebsiteTrigger());
     let ignoreFollow = $state(localUserStore.getIgnoreFollowRequests());
 
