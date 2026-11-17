@@ -1,7 +1,7 @@
+// No `image`: that slot is the large hero picture of a notification, and a logo is not artwork for it.
 export const defaultOptions = {
-    icon: "/static/images/logo-WA-min.png",
-    image: "/static/images/logo-WA-min.png",
-    badge: "/static/images/logo-WA-min.png",
+    icon: "/static/images/konclui/icon-192x192.png",
+    badge: "/static/images/konclui/icon-192x192.png",
 };
 
 export interface NotificationWA {

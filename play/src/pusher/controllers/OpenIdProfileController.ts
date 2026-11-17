@@ -61,7 +61,7 @@ export class OpenIdProfileController extends BaseHttpController {
                     <body>
                         <div class="container">
                             <section>
-                                <img src="${pictureUrl ? pictureUrl : "/static/images/logo-WA-min.png"}">
+                                <img src="${pictureUrl ? pictureUrl : "/static/images/konclui/icon-192x192.png"}">
                             </section>
                             <section>
                                 Profile validated by domain: <span style="font-weight: bold">${domain}</span>

@@ -13,29 +13,31 @@ import { ADMIN_API_URL } from "../enums/EnvironmentVariable";
 import { adminService } from "./AdminService";
 
 export const MetaTagsDefaultValue: RequiredMetaTagsData = {
-    title: "WorkAdventure",
-    description:
-        "Organize your online event in WorkAdventure to recreate spontaneous social interactions. Connect, collaborate and have fun with your teammates and attendees.",
-    author: "WorkAdventure team",
-    provider: "WorkAdventure",
+    title: "Koncluí",
+    description: "Koncluí: o escritório virtual para encontrar sua equipe, conversar e colaborar em tempo real.",
+    author: "Koncluí",
+    provider: "Koncluí",
     favIcons: [
         {
             rel: "icon",
             sizes: "512x512",
-            src: "/static/images/favicons/favicon-512x512.svg",
+            src: "/static/images/konclui/icon.svg",
         },
     ],
     manifestIcons: [
         {
-            src: "/static/images/favicons/icon-512x512.png",
+            src: "/static/images/konclui/icon-512x512.png",
             sizes: "512x512",
             type: "image/png",
         },
     ],
-    appName: "WorkAdventure",
-    shortAppName: "WA",
-    themeColor: "#1B2A41",
-    cardImage: "https://workadventu.re/images/general/logo-og.png",
+    appName: "Koncluí",
+    shortAppName: "Koncluí",
+    // The page background of play/index.html, so the mobile browser chrome and the PWA splash match the page.
+    themeColor: "#03051A",
+    // A share card needs an absolute URL to a raster image that Konclui hosts. None exists yet: an empty card is
+    // better than unfurling Konclui links with the upstream WorkAdventure card.
+    cardImage: "",
 };
 
 export class MetaTagsBuilder {

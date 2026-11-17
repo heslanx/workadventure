@@ -3,7 +3,6 @@
     import { LL } from "../../../i18n/i18n-svelte";
     import logoImg from "../images/konclui-logo.svg";
     import poweredByWorkAdventureImg from "../images/Powered_By_WorkAdventure_Big.png";
-    import pwaDefaultBackground from "../images/pwa-background-image.jpg";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import {
@@ -80,11 +79,8 @@
         class="relative z-10 mx-auto flex w-full max-w-[min(510px,calc(100vw-2rem))] flex-col items-center gap-6 px-4 py-10"
     >
         <div class="w-full overflow-hidden rounded-lg bg-contrast text-left">
-            <!-- Header: banner + logo + italic pitch -->
+            <!-- Header: logo + italic pitch -->
             <div class="hidden relative min-h-[200px] md:block">
-                <div class="absolute inset-0 bg-cover bg-center" aria-hidden="true">
-                    <img draggable="false" src={pwaDefaultBackground} alt="" class="h-full w-full object-cover" />
-                </div>
                 <div class="absolute inset-0 bg-black/40" aria-hidden="true"></div>
                 <div
                     class="absolute flex flex-col justify-center content-center items-center gap-4 px-6 py-4 text-center w-full h-full"

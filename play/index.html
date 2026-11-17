@@ -26,14 +26,14 @@
         <meta property="og:url" content="{{ url }}">
         <meta property="og:title" content="{{ title }}">
         <meta property="og:description" content="{{ description }}">
-        <meta property="og:image" content="{{ cardImage }}">
+        {{#cardImage}}<meta property="og:image" content="{{ cardImage }}">{{/cardImage}}
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
         <meta property="twitter:url" content="{{ url }}">
         <meta property="twitter:title" content="{{ title }}">
         <meta property="twitter:description" content="{{ description }}">
-        <meta property="twitter:image" content="{{ cardImage }}">
+        {{#cardImage}}<meta property="twitter:image" content="{{ cardImage }}">{{/cardImage}}
 
         <base href="/" />
 
@@ -42,6 +42,10 @@
         <link rel="{{ rel }}" type="image/png" sizes="{{ sizes }}" href="{{ src }}" />
         {{/favIcons}}
         <link rel="manifest" href="/manifest.json?url={{ url }}" />
+
+        <!-- Urbanist is the UI face of every screen: fetch it with the page, not after the stylesheet is parsed.
+             Vite rewrites the href to the fingerprinted file; a font fetch is anonymous CORS, hence crossorigin. -->
+        <link rel="preload" as="font" type="font/woff2" href="/src/front/style/fonts/urbanist/urbanist-latin.woff2" crossorigin />
 
         <style>
             /*hide cowebsite container before CSS is loaded*/

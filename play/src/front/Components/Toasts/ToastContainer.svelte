@@ -226,7 +226,7 @@
     }
 
     .progress-bar.secondary {
-        background: linear-gradient(90deg, #4156f6 0%, #3145e3 100%);
+        background: hsl(var(--secondary));
         transition: width 0.05s linear;
     }
 

@@ -116,7 +116,6 @@ function createErrorScreenStore() {
                 set(
                     clientError("INTERNAL_ERROR", "generic", error.toString(), {
                         image: "/resources/icons/new_version.png",
-                        imageLogo: "/static/images/logo.png",
                     }),
                 );
                 return;

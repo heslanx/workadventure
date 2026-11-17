@@ -20,4 +20,20 @@ describe("errorScreenStore.setException", () => {
             technicalDetails: "[object Event]",
         });
     });
+
+    it("leaves the logo of a thrown string to the error screen", () => {
+        vi.spyOn(console, "error").mockImplementation(() => {});
+
+        errorScreenStore.setException("Room not found");
+
+        const errorScreen = get(errorScreenStore);
+        expect(errorScreen).toMatchObject({
+            type: "error",
+            code: "INTERNAL_ERROR",
+            clientErrorKind: "generic",
+            technicalDetails: "Room not found",
+        });
+        // The error screen shows `imageLogo ?? <room logo or Konclui logo>`: a logo set here would replace both.
+        expect(errorScreen?.imageLogo).toBeUndefined();
+    });
 });

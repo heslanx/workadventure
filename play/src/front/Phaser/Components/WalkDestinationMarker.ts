@@ -1,8 +1,8 @@
 import * as Phaser from "phaser";
 import type { GameScene } from "../Game/GameScene";
 
-/** The theme's primary colour when the room doesn't set one (same default as the loading screen). */
-const DEFAULT_PRIMARY_COLOR = "#4056F6";
+/** The theme's accent when the room doesn't set a primary colour (`--secondary` in libs/tailwind/style/konclui.css). */
+const DEFAULT_PRIMARY_COLOR = "#53FFC8";
 /** Ring width on screen, in CSS pixels: zoomed out, the marker keeps that size so it stays visible. */
 const RING_WIDTH = 36;
 /** Zoomed in, the ring never gets narrower than a 32 px map object (one tile). */

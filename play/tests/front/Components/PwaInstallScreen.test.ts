@@ -4,7 +4,11 @@ import { flushSync, mount, unmount } from "svelte";
 import PwaInstallScreen from "../../../src/front/Components/PwaInstall/PwaInstallScreen.svelte";
 
 const { room } = vi.hoisted(() => ({
-    room: { loginSceneLogo: undefined as string | undefined, backgroundSceneImage: undefined as string | undefined },
+    room: {
+        loginSceneLogo: undefined as string | undefined,
+        backgroundSceneImage: undefined as string | undefined,
+        showPoweredBy: undefined as boolean | undefined,
+    },
 }));
 
 vi.mock("../../../src/front/Phaser/Game/GameManager", () => ({
@@ -44,6 +48,7 @@ describe("PWA install screen branding", () => {
         target.replaceChildren();
         room.loginSceneLogo = undefined;
         room.backgroundSceneImage = undefined;
+        room.showPoweredBy = undefined;
     });
 
     it.each([
@@ -51,13 +56,35 @@ describe("PWA install screen branding", () => {
             name: "fully branded",
             logo: "https://cdn.example.com/room-logo.svg",
             background: "https://cdn.example.com/room-background.webp",
+            showPoweredBy: undefined,
+            poweredBy: true,
         },
-        { name: "custom logo only", logo: "https://cdn.example.com/room-logo.svg", background: undefined },
-        { name: "custom background only", logo: undefined, background: "https://cdn.example.com/room-background.webp" },
-        { name: "unbranded", logo: undefined, background: undefined },
-    ])("renders $name room images before mount callbacks run", ({ logo, background }) => {
+        {
+            name: "custom logo only",
+            logo: "https://cdn.example.com/room-logo.svg",
+            background: undefined,
+            showPoweredBy: undefined,
+            poweredBy: true,
+        },
+        {
+            name: "custom logo without the powered-by badge",
+            logo: "https://cdn.example.com/room-logo.svg",
+            background: undefined,
+            showPoweredBy: false,
+            poweredBy: false,
+        },
+        {
+            name: "custom background only",
+            logo: undefined,
+            background: "https://cdn.example.com/room-background.webp",
+            showPoweredBy: undefined,
+            poweredBy: false,
+        },
+        { name: "unbranded", logo: undefined, background: undefined, showPoweredBy: undefined, poweredBy: false },
+    ])("renders $name room images before mount callbacks run", ({ logo, background, showPoweredBy, poweredBy }) => {
         room.loginSceneLogo = logo;
         room.backgroundSceneImage = background;
+        room.showPoweredBy = showPoweredBy;
 
         flushSync(() => {
             component = mount(PwaInstallScreen, { target });
@@ -74,6 +101,8 @@ describe("PWA install screen branding", () => {
             } else {
                 expect(renderedLogo).toContain("/images/konclui-logo.svg");
             }
+            // The badge credits WorkAdventure under a room's own logo; the Konclui default never carries it.
+            expect(target.querySelector("img[src*='Powered_By_WorkAdventure']") !== null).toBe(poweredBy);
         });
     });
 });

@@ -36,7 +36,7 @@
     let { game }: Props = $props();
 
     let enableCameraScene = $derived(game.scene.getScene(EnableCameraSceneName) as EnableCameraScene);
-    const bgColor = gameManager.currentStartedRoom.backgroundColor ?? "#1B2A41";
+    const bgColor = gameManager.currentStartedRoom.backgroundColor ?? "hsl(var(--contrast-1100))";
     const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
     let legals = gameManager.currentStartedRoom?.legals ?? {};
 
@@ -309,7 +309,7 @@
 {#if sceneBg}
     <div class="fixed start-0 top-0 w-dvw h-dvh bg-cover z-10" style="background-image: url('{sceneBg}');"></div>
 {/if}
-<div class="fixed start-0 top-0 w-dvw h-dvh bg-contrast/80 z-20" style="background-color: '{bgColor}';"></div>
+<div class="fixed start-0 top-0 w-dvw h-dvh bg-contrast/80 z-20" style="background-color: {bgColor};"></div>
 
 <style>
     .enableCameraScene {

@@ -319,7 +319,7 @@ export class FrontController extends BaseHttpController {
                     url: "/",
                     icons: [
                         {
-                            src: "/static/images/favicons/android-icon-192x192.png",
+                            src: "/static/images/konclui/icon-192x192.png",
                             sizes: "192x192",
                             type: "image/png",
                         },
@@ -328,16 +328,6 @@ export class FrontController extends BaseHttpController {
             ],
             description: metaTagsData.description,
             screenshots: [],
-            related_applications: [
-                {
-                    platform: "web",
-                    url: "https://workadventu.re",
-                },
-                {
-                    platform: "play",
-                    url: "https://play.workadventu.re",
-                },
-            ],
         };
 
         res.contentType("application/manifest+json").json(manifest);

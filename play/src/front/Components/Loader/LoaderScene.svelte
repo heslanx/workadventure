@@ -7,8 +7,8 @@
 
     const logo = gameManager.currentStartedRoom.loadingLogo ?? defaultLoader;
     const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
-    const bgColor = gameManager.currentStartedRoom.backgroundColor ?? "#1B2A41";
-    const primary = gameManager.currentStartedRoom.primaryColor ?? "#4056F6";
+    // Without a room colour the dim layer takes the root's own colour: it still dims a room image, and adds no tint.
+    const bgColor = gameManager.currentStartedRoom.backgroundColor ?? "hsl(var(--contrast-1100))";
 </script>
 
 <!-- bg-contrast-1100: the loader must stay opaque without a background image, or the scene behind shows through. -->
@@ -40,9 +40,10 @@
                 aria-valuemax={100}
                 aria-valuenow={Math.round($loaderProgressStore * 100)}
             >
+                <!-- bg-secondary, not the room's primaryColor: the theme pins the accent so that a map cannot move it. -->
                 <div
-                    class="h-full transition-all duration-200"
-                    style="width: {$loaderProgressStore * 100}%; background-color: {primary};"
+                    class="h-full transition-all duration-200 bg-secondary"
+                    style="width: {$loaderProgressStore * 100}%;"
                 ></div>
             </div>
         </div>

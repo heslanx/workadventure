@@ -228,7 +228,8 @@
                     }
                 },
             },
-            backgroundColor: "#1b2a41",
+            // --contrast / --k-card in libs/tailwind/style/konclui.css: the canvas shows wherever a scene draws nothing.
+            backgroundColor: "#0e2236",
         };
 
         game = new Game(config);
@@ -281,10 +282,23 @@
     let stopBootPump: (() => void) | undefined;
     let stopPerformanceMonitoring: (() => void) | undefined;
     onMount(() => {
+        // The store emits on every layout pass, also when the game area kept its size (inside a frame, a window
+        // resize first emits with the bounds measured before it). Resizing the canvas is costly: do it once per size.
+        // The pixel ratio is part of the size: moving the window to another screen keeps the CSS size.
+        let applied: { width: number; height: number; devicePixelRatio: number } | undefined;
         canvasSizeUnsubscriber = canvasSize.subscribe(({ width, height }) => {
             if (width < 1 || height < 1) {
                 return;
             }
+            const devicePixelRatio = window.devicePixelRatio;
+            if (
+                applied?.width === width &&
+                applied.height === height &&
+                applied.devicePixelRatio === devicePixelRatio
+            ) {
+                return;
+            }
+            applied = { width, height, devicePixelRatio };
             waScaleManager.applyNewSize();
             waScaleManager.refreshFocusOnTarget();
         });
