@@ -28,6 +28,11 @@
     let entry = $derived(
         entries.includes($invitePreferencesStore.entryPoint) ? $invitePreferencesStore.entryPoint : (entries[0] ?? ""),
     );
+    let copyHint = $derived.by(() => {
+        if (copyState === "copied") return t.copied();
+        if (copyState === "failed") return t.copyFailed();
+        return t.copyLinkHint();
+    });
 
     function currentLink(): string {
         // Upstream names the entrance whenever the map has start positions: the saved one, or the map's first.
@@ -66,7 +71,7 @@
         <span class="k-pref-text">
             <b id="{id}-copy">{t.copyLink()}</b>
             <small id="{id}-copy-hint" role="status">
-                {copyState === "copied" ? t.copied() : copyState === "failed" ? t.copyFailed() : t.copyLinkHint()}
+                {copyHint}
             </small>
         </span>
         <button

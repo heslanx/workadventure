@@ -35,7 +35,7 @@ export const CUSTOM_PRESET = "custom";
 
 export const FEATURES_KEY = "konclui.fx.features";
 
-function isPresetName(name: string): name is PresetName {
+export function isPresetName(name: string): name is PresetName {
     return Object.hasOwn(PRESETS, name);
 }
 

@@ -88,13 +88,11 @@
             });
     }
 
-    let windowModeNote = $derived(
-        windowMode?.setByCommandLine
-            ? t.setByCommandLine()
-            : windowMode?.x11Unavailable
-              ? t.x11Unavailable()
-              : t.windowModeHint(),
-    );
+    let windowModeNote = $derived.by(() => {
+        if (windowMode?.setByCommandLine) return t.setByCommandLine();
+        if (windowMode?.x11Unavailable) return t.x11Unavailable();
+        return t.windowModeHint();
+    });
 </script>
 
 {#if desktop || downloadUrl}

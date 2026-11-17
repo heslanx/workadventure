@@ -87,6 +87,12 @@
         return [{ value: NO_DEVICE, label: off }, ...starting, ...listed];
     }
 
+    /** The note under a device list: the silent zone, or else a list the browser has not filled yet. */
+    function deviceHint(silent: boolean, list: readonly MediaDeviceInfo[] | undefined): string | undefined {
+        if (silent) return t.silentZone();
+        return (list?.length ?? 0) === 0 ? t.listAfterPermission() : undefined;
+    }
+
     let cameras = $derived(devices($cameraListStore, (index) => t.cameraNumber({ index })));
     let cameraValue = $derived(
         shownDevice(
@@ -132,22 +138,14 @@
 <PrefSection title={t.devices()}>
     <PrefSelect
         title={t.camera()}
-        hint={$silentStore
-            ? t.silentZone()
-            : ($cameraListStore?.length ?? 0) === 0
-              ? t.listAfterPermission()
-              : undefined}
+        hint={deviceHint($silentStore, $cameraListStore)}
         value={cameraValue}
         options={cameraOptions}
         onchange={selectCamera}
     />
     <PrefSelect
         title={t.microphone()}
-        hint={$silentStore
-            ? t.silentZone()
-            : ($microphoneListStore?.length ?? 0) === 0
-              ? t.listAfterPermission()
-              : undefined}
+        hint={deviceHint($silentStore, $microphoneListStore)}
         value={microphoneValue}
         options={microphoneOptions}
         onchange={selectMicrophone}

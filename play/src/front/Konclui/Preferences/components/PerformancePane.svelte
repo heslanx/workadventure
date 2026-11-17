@@ -1,7 +1,14 @@
 <script lang="ts">
     import { LL } from "../../../../i18n/i18n-svelte";
     import { localUserStore } from "../../../Connection/LocalUserStore";
-    import { CUSTOM_PRESET, PRESET_NAMES, presetOf, type Feature, type PresetName } from "../domain/effectSwitches";
+    import {
+        CUSTOM_PRESET,
+        isPresetName,
+        PRESET_NAMES,
+        presetOf,
+        type Feature,
+        type PresetName,
+    } from "../domain/effectSwitches";
     import { applyEffectsPreset, effectSwitchesStore, setEffect } from "../stores/effectSwitchesStore";
     import { pauseTileAnimations } from "../stores/gameCommands";
     import PrefChoice from "./PrefChoice.svelte";
@@ -43,10 +50,6 @@
         tv: { title: t.tv(), hint: t.tvHint() },
         iris: { title: t.iris(), hint: t.irisHint() },
     });
-
-    function isPresetName(value: string): value is PresetName {
-        return (PRESET_NAMES as readonly string[]).includes(value);
-    }
 
     function changeAnimations(on: boolean): void {
         animations = on;
