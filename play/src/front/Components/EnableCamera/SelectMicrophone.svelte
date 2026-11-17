@@ -21,7 +21,7 @@
 </script>
 
 <div
-    class="p-4 rounded-lg bg-white/10 mx-2 md:mx-0 w-full min-w-[300px] md:min-w-[400px] max-w-[450px] flex flex-col lg:min-h-[24rem] items-center"
+    class="p-4 rounded-(--k-radius-surface) bg-(--k-card) border border-solid border-(--k-border) text-(--k-fg) mx-2 md:mx-0 w-full min-w-[300px] md:min-w-[400px] max-w-[450px] flex flex-col lg:min-h-[24rem] items-center"
 >
     <div class="text-lg bold flex items-center gap-3 mb-4 ps-2">
         {@render icon?.()}
@@ -31,6 +31,7 @@
         <Button
             variant={!editMode ? "secondary" : "light"}
             appearance={!editMode ? "filled" : "ghost"}
+            class="rounded-full font-semibold"
             onclick={(event) => {
                 event.stopPropagation();
                 event.preventDefault();
@@ -44,9 +45,9 @@
     <div class="flex w-full">
         <div class="flex flex-wrap justify-center w-full min-h-[129px]" role="radiogroup" aria-labelledby="{uid}-title">
             <div
-                class="flex border border-solid border-white w-full rounded-lg items-center justify-start transition-all overflow-hidden cursor-pointer px-8 py-6 space-x-4 {!selectedDevice
-                    ? 'bg-white text-secondary border-none'
-                    : ' hover:bg-white/10 pt-4'} "
+                class="flex border border-solid w-full rounded-(--k-radius-menu) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent) items-center justify-start transition-all overflow-hidden cursor-pointer px-8 py-6 space-x-4 {!selectedDevice
+                    ? 'bg-(--k-elevated) border-(--k-accent)'
+                    : 'border-(--k-border-strong) hover:bg-(--k-hover) pt-4'} "
                 class:hidden={!editMode && selectedDevice}
                 class:flex={editMode || !selectedDevice}
                 role="radio"
@@ -66,12 +67,12 @@
                 }}
             >
                 <div
-                    class="aspect-square me-4 h-6 rounded-full border border-solid border-white flex items-center justify-center"
-                    class:bg-secondary={!selectedDevice}
-                    class:border-secondary={!selectedDevice}
+                    class="aspect-square me-4 h-6 rounded-full border border-solid flex items-center justify-center {!selectedDevice
+                        ? 'bg-secondary border-secondary'
+                        : 'border-(--k-border-strong)'}"
                 >
                     {#if !selectedDevice}
-                        <IconCheck font-size="20" class="text-white" aria-hidden="true" />
+                        <IconCheck font-size="20" class="text-(--k-on-accent)" aria-hidden="true" />
                     {/if}
                 </div>
 
@@ -92,10 +93,10 @@
             </div>
             {#each deviceList ?? [] as device (device.deviceId)}
                 <div
-                    class="border border-solid border-white w-full rounded-lg transition-all overflow-hidden cursor-pointer relative px-8 py-6 space-x-4 {selectedDevice ===
+                    class="border border-solid w-full rounded-(--k-radius-menu) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent) transition-all overflow-hidden cursor-pointer relative px-8 py-6 space-x-4 {selectedDevice ===
                     device.deviceId
-                        ? 'bg-white text-secondary pt-12'
-                        : 'hover:bg-white/10 pt-4'}"
+                        ? 'bg-(--k-elevated) border-(--k-accent) pt-12'
+                        : 'border-(--k-border-strong) hover:bg-(--k-hover) pt-4'}"
                     class:hidden={!editMode && selectedDevice !== device.deviceId}
                     class:flex={editMode || selectedDevice === device.deviceId}
                     role="radio"
@@ -119,12 +120,13 @@
                     {/if}
                     <div class="flex gap-4 items-center justify-start w-full">
                         <div
-                            class="aspect-square h-6 rounded-full border border-solid border-white flex items-center justify-center"
-                            class:bg-secondary={selectedDevice === device.deviceId}
-                            class:border-secondary={selectedDevice === device.deviceId}
+                            class="aspect-square h-6 rounded-full border border-solid flex items-center justify-center {selectedDevice ===
+                            device.deviceId
+                                ? 'bg-secondary border-secondary'
+                                : 'border-(--k-border-strong)'}"
                         >
                             {#if selectedDevice == device.deviceId}
-                                <IconCheck class="text-white" aria-hidden="true" />
+                                <IconCheck class="text-(--k-on-accent)" aria-hidden="true" />
                             {/if}
                         </div>
                         <div class="space-y-1 min-w-0">

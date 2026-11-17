@@ -21,6 +21,7 @@
     let name = $state(gameManager.getPlayerName() || "");
     let startValidating = $state(false);
     let errorName = $state("");
+    let invalid = $derived((name.trim() === "" && startValidating) || errorName !== "");
 
     let logo = gameManager.currentStartedRoom.loginSceneLogo ?? logoImg;
     let legals = gameManager.currentStartedRoom?.legals ?? {};
@@ -92,6 +93,9 @@
         return gameManager.currentStartedRoom.backgroundColor;
     }
 
+    // A room's own color or image keeps its dimmed backdrop; without either, the page is the Konclui backdrop.
+    const roomBackgroundColor = getBackgroundColor();
+
     /* eslint-disable svelte/no-at-html-tags */
 </script>
 
@@ -117,8 +121,9 @@
     }}
 >
     <div class="w-full sm:w-96 md:w-10/12 lg:w-1/2 xl:w-1/3 rounded mx-auto text-center p-8">
+        <!-- The error sits in normal flow in a min-height slot, so a wrapped message pushes the button down instead of covering the input -->
         <section class="text-center flex h-fit flex-col justify-center items-center mb-0">
-            <span class="text-white text-lg bold">
+            <span class="text-(--k-fg) text-xl font-bold leading-[1.2] tracking-[-0.01em]">
                 {$LL.login.input.name.placeholder()}
             </span>
             <!-- svelte-ignore a11y_autofocus -->
@@ -128,38 +133,40 @@
                 data-testid="loginSceneNameInput"
                 aria-label={$LL.login.input.name.placeholder()}
                 placeholder={$LL.login.input.name.placeholder()}
-                class="w-52 md:w-96 h-12 text text-center bg-contrast rounded-md border border-solid border-white/20 mt-4 mb-0"
+                class="w-52 md:w-96 h-12 text-base text-center text-(--k-fg) placeholder:text-(--k-fg-muted) bg-(--k-card) rounded-(--k-radius-menu) border border-solid mt-4 mb-0 focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--k-accent) {invalid
+                    ? 'border-(--k-danger-text)'
+                    : 'border-(--k-border-strong) focus:border-(--k-accent)'}"
                 autofocus
                 maxlength={MAX_USERNAME_LENGTH}
                 bind:value={name}
                 onkeypress={() => {
                     startValidating = true;
                 }}
-                class:border-danger={(name.trim() === "" && startValidating) || errorName !== ""}
             />
-            {#if (name.trim() === "" && startValidating) || errorName !== ""}
-                <p class="err text-xs text-danger-400 italic pt-2 mb-0" role="alert">
-                    {#if errorName}{errorName}{:else}{$LL.login.input.name.empty()}{/if}
-                </p>
-            {/if}
+            <div class="min-h-7 w-full">
+                {#if invalid}
+                    <p
+                        class="err m-0 pt-1 text-xs font-medium leading-normal not-italic text-(--k-danger-text)"
+                        role="alert"
+                    >
+                        {#if errorName}{errorName}{:else}{$LL.login.input.name.empty()}{/if}
+                    </p>
+                {/if}
+            </div>
         </section>
-        <section
-            class="action flex h-fit justify-center m-0"
-            class:opacity-50={(name.trim() === "" && startValidating) || errorName !== ""}
-        >
+        <section class="action flex h-fit justify-center m-0" class:opacity-50={invalid}>
             <Button
                 type="submit"
-                disabled={(name.trim() === "" && startValidating) || errorName !== ""}
+                disabled={invalid}
                 variant="secondary"
-                size="lg"
-                class="mt-4 w-52 md:w-96 bold text-center block loginSceneFormSubmit"
+                class="w-52 md:w-96 h-12 rounded-full text-base font-semibold text-center block loginSceneFormSubmit"
             >
                 {$LL.login.continue()}
             </Button>
         </section>
         {#if legalString}
             <section class="terms-and-conditions h-fit text-center w-full">
-                <p class="text-white text-xs italic opacity-70">
+                <p class="text-(--k-fg-muted) text-xs not-italic">
                     {@html $LL.login.terms({
                         links: legalString,
                     })}
@@ -178,10 +185,14 @@
         </section>
     {/if}
 </form>
-<div
-    class="absolute left-0 top-0 w-full h-full z-20 bg-contrast opacity-80"
-    style={getBackgroundColor() != undefined ? `background-color: ${getBackgroundColor()};` : ""}
-></div>
+{#if roomBackgroundColor !== undefined || sceneBg}
+    <div
+        class="absolute left-0 top-0 w-full h-full z-20 bg-contrast opacity-80"
+        style={roomBackgroundColor !== undefined ? `background-color: ${roomBackgroundColor};` : ""}
+    ></div>
+{:else}
+    <div class="absolute left-0 top-0 w-full h-full z-20 bg-(image:--k-page-backdrop)"></div>
+{/if}
 {#if sceneBg}
     <div class="absolute left-0 top-0 w-full h-full bg-cover z-10" style="background-image: url('{sceneBg}');"></div>
 {/if}

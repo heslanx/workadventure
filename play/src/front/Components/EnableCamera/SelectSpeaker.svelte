@@ -19,7 +19,7 @@
 </script>
 
 <div
-    class="p-4 rounded-lg bg-white/10 mx-2 md:mx-0 w-full min-w-[300px] md:min-w-[400px] max-w-[450px] flex flex-col lg:min-h-[24rem] items-center"
+    class="p-4 rounded-(--k-radius-surface) bg-(--k-card) border border-solid border-(--k-border) text-(--k-fg) mx-2 md:mx-0 w-full min-w-[300px] md:min-w-[400px] max-w-[450px] flex flex-col lg:min-h-[24rem] items-center"
 >
     <div class="text-lg bold flex items-center justify-center gap-3 mb-4 ps-2">
         <IconUnMute font-size="28" aria-hidden="true" />
@@ -27,6 +27,7 @@
         <Button
             variant={!editMode ? "secondary" : "light"}
             appearance={!editMode ? "filled" : "ghost"}
+            class="rounded-full font-semibold"
             onclick={(event) => {
                 event.stopPropagation();
                 event.preventDefault();
@@ -41,10 +42,10 @@
         <div class="flex flex-wrap items-center justify-center w-full" role="radiogroup" aria-labelledby="{uid}-title">
             {#each deviceList as speaker, index (index)}
                 <div
-                    class="border border-solid border-white w-full rounded-lg items-center justify-between transition-all overflow-hidden cursor-pointer relative px-8 py-6 space-x-4 {selectedDevice ===
+                    class="border border-solid w-full rounded-(--k-radius-menu) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent) items-center justify-between transition-all overflow-hidden cursor-pointer relative px-8 py-6 space-x-4 {selectedDevice ===
                     speaker.deviceId
-                        ? 'bg-white text-secondary border-none'
-                        : 'border-white hover:bg-white/10'}"
+                        ? 'bg-(--k-elevated) border-(--k-accent)'
+                        : 'border-(--k-border-strong) hover:bg-(--k-hover)'}"
                     class:flex={editMode || selectedDevice === speaker.deviceId}
                     class:hidden={!editMode && selectedDevice !== speaker.deviceId}
                     role="radio"
@@ -67,13 +68,13 @@
                 >
                     <div class="flex items-center space-x-4 overflow-hidden truncate">
                         <div
-                            class="aspect-square me-4 h-6 rounded-full border border-solid border-white flex items-center justify-center {selectedDevice ===
+                            class="aspect-square me-4 h-6 rounded-full border border-solid flex items-center justify-center {selectedDevice ===
                             speaker.deviceId
                                 ? 'bg-secondary border-secondary'
-                                : 'border-white'}"
+                                : 'border-(--k-border-strong)'}"
                         >
                             {#if selectedDevice === speaker.deviceId}
-                                <IconCheck class="text-white" aria-hidden="true" />
+                                <IconCheck class="text-(--k-on-accent)" aria-hidden="true" />
                             {/if}
                         </div>
                         <div class="space-y-1 min-w-0">
@@ -91,7 +92,7 @@
                         <Button
                             variant="secondary"
                             square
-                            class="self-end"
+                            class="self-end rounded-full"
                             type="button"
                             aria-label={$LL.actionbar.speaker.test()}
                             title={$LL.actionbar.speaker.test()}

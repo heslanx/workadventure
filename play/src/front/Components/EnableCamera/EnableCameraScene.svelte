@@ -36,7 +36,7 @@
     let { game }: Props = $props();
 
     let enableCameraScene = $derived(game.scene.getScene(EnableCameraSceneName) as EnableCameraScene);
-    const bgColor = gameManager.currentStartedRoom.backgroundColor ?? "hsl(var(--contrast-1100))";
+    const roomBackgroundColor = gameManager.currentStartedRoom.backgroundColor;
     const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
     let legals = gameManager.currentStartedRoom?.legals ?? {};
 
@@ -203,11 +203,13 @@
 >
     <section class="flex min-h-dvh">
         <div
-            class="text-white justify-center items-center overflow-hidden w-[100vw] container flex flex-col min-h-dvh pb-42 md:pb-36 pt-8 lg:pt-0 relative"
+            class="text-(--k-fg) justify-center items-center overflow-hidden w-[100vw] container flex flex-col min-h-dvh pb-42 md:pb-36 pt-8 lg:pt-0 relative"
         >
             <section class="mb-4 text-center">
-                <h2 class="h4">{$LL.camera.enable.title()}</h2>
-                <p class="opacity-70 w-2/3 m-auto pt-2 hidden md:block">
+                <h2 class="h4 normal-case leading-[1.2] tracking-[-0.01em] text-(--k-fg)">
+                    {$LL.camera.enable.title()}
+                </h2>
+                <p class="text-(--k-fg-2) w-2/3 m-auto pt-2 hidden md:block">
                     {$LL.camera.enable.start()}
                 </p>
             </section>
@@ -251,7 +253,7 @@
                         <span>
                             {#if selectedCamera !== undefined && $localStreamStore.type === "success" && $localStreamStore.stream}
                                 <video
-                                    class="myCamVideoSetup bg-contrast/80 backdrop-blur flex items-center justify-center w-full aspect-video overflow-hidden scale-x-[-1]"
+                                    class="myCamVideoSetup bg-(--k-page) flex items-center justify-center w-full aspect-video overflow-hidden scale-x-[-1]"
                                     use:srcObject={$localStreamStore.stream}
                                     autoplay
                                     muted
@@ -259,7 +261,7 @@
                                 ></video>
                             {:else}
                                 <div
-                                    class="webrtcsetup flex items-center justify-center w-full aspect-video rounded-lg overflow-hidden bg-contrast"
+                                    class="webrtcsetup flex items-center justify-center w-full aspect-video rounded-lg overflow-hidden bg-(--k-page)"
                                 >
                                     {$LL.camera.my.loading()}
                                 </div>
@@ -279,7 +281,7 @@
                 {/if}
             </div>
             <div
-                class="fixed bottom-0 start-0 !w-[100vw] bg-contrast/80 backdrop-blur-md border border-solid border-t border-b-0 border-x-0 border-white/10"
+                class="fixed bottom-0 start-0 !w-[100vw] bg-(--k-page) border border-solid border-t border-b-0 border-x-0 border-(--k-border)"
             >
                 <section
                     class="container m-auto p-4 flex flex-col-reverse md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-4"
@@ -288,14 +290,18 @@
                         {$LL.actionbar.cancel()}
                     </Button>
                     <!-- TODO ACTION -->
-                    <Button type="submit" variant="secondary" size="lg" class="w-full md:w-1/2 block">
+                    <Button
+                        type="submit"
+                        variant="secondary"
+                        class="w-full md:w-1/2 h-12 rounded-full text-base font-semibold block"
+                    >
                         {$LL.menu.settings.save()}
                     </Button>
                 </section>
                 {#if legalString}
                     <section class="terms-and-conditions h-fit z-40 text-center w-full">
                         <a style="display: none;" href="traduction">Need for traduction</a>
-                        <p class="text-white text-xs italic opacity-70">
+                        <p class="text-(--k-fg-muted) text-xs not-italic">
                             {@html $LL.login.terms({
                                 links: legalString,
                             })}
@@ -309,7 +315,14 @@
 {#if sceneBg}
     <div class="fixed start-0 top-0 w-dvw h-dvh bg-cover z-10" style="background-image: url('{sceneBg}');"></div>
 {/if}
-<div class="fixed start-0 top-0 w-dvw h-dvh bg-contrast/80 z-20" style="background-color: {bgColor};"></div>
+{#if roomBackgroundColor !== undefined || sceneBg}
+    <div
+        class="fixed start-0 top-0 w-dvw h-dvh z-20 bg-contrast opacity-80"
+        style={roomBackgroundColor !== undefined ? `background-color: ${roomBackgroundColor};` : ""}
+    ></div>
+{:else}
+    <div class="fixed start-0 top-0 w-dvw h-dvh z-20 bg-(image:--k-page-backdrop)"></div>
+{/if}
 
 <style>
     .enableCameraScene {

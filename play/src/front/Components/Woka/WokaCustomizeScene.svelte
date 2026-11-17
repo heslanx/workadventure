@@ -271,24 +271,24 @@
     });
 </script>
 
-<div class="mobile-webkit bg-contrast w-screen md:!mt-[15vh] h-full md:!h-[70vh] flex items-center justify-center">
+<div class="mobile-webkit w-screen h-full flex items-center justify-center bg-(image:--k-page-backdrop)">
     <div
-        class="mobile-webkit rounded-lg flex flex-col max-w-4xl w-full h-full m-4 relative bg-white/10 backdrop-blur-md"
+        class="mobile-webkit rounded-(--k-radius-surface) flex flex-col max-w-4xl w-full h-[calc(100%-2rem)] md:h-[70vh] m-4 relative bg-(--k-card) border border-solid border-(--k-border)"
     >
         {#if isLoading}
             <div class="flex items-center justify-center h-64">
                 <div
-                    class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"
+                    class="animate-spin rounded-full h-12 w-12 border-b-2 border-(--k-accent)"
                     role="status"
                     aria-label={$LL.a11y.compLoading()}
                 ></div>
             </div>
         {:else if error}
-            <div class="text-center text-danger-400 mb-4" role="alert">
+            <div class="text-center text-(--k-danger-text) mb-4" role="alert">
                 <p>{error}</p>
                 <button
                     type="button"
-                    class="mt-2 px-4 py-2 bg-secondary text-white rounded hover:bg-secondary-800"
+                    class="mt-2 px-6 h-12 rounded-full font-semibold bg-(--k-accent) text-(--k-on-accent) hover:bg-(--k-accent-hover) active:bg-(--k-accent-active) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent)"
                     onclick={loadWokaData}
                 >
                     Retry
@@ -312,11 +312,11 @@
                                 size="sm"
                                 variant="light"
                                 appearance="border"
-                                class="w-full px-4 py-2 bg-white/10 text-white rounded hover:bg-white/10 flex flex-row items-center gap-2"
+                                class="w-full rounded-full border-(--k-border-strong) bg-(--k-card) text-(--k-fg) font-semibold hover:bg-(--k-hover) flex flex-row items-center gap-2"
                                 onclick={randomizeOutfit}
                             >
                                 {#snippet icon()}
-                                    <ShuffleIcon fillColor="white" width="w-4" height="h-4" />
+                                    <ShuffleIcon strokeColor="stroke-(--k-fg)" width="w-4" height="h-4" />
                                 {/snippet}
                                 <span>{$LL.woka.customWoka.randomize()}</span>
                             </Button>
@@ -328,8 +328,8 @@
                             <button
                                 class="flex-1 px-4 py-2 flex-grow capitalize flex flex-row items-center justify-center gap-2 border-b-2 {selectedBodyPart ===
                                 bodyPart
-                                    ? 'text-white border-white'
-                                    : 'text-white/60 border-white/10'}"
+                                    ? 'text-(--k-fg) border-(--k-accent)'
+                                    : 'text-(--k-fg-2) border-(--k-border-subtle)'}"
                                 aria-pressed={selectedBodyPart === bodyPart}
                                 onclick={() => (selectedBodyPart = bodyPart)}
                                 style="border-bottom-style: solid;"
@@ -337,8 +337,10 @@
                                 <BodyPartIcon
                                     height="h-5"
                                     width="w-5"
-                                    strokeColor={selectedBodyPart === bodyPart ? "stroke-white " : "stroke-white/50"}
-                                    fillColor={selectedBodyPart === bodyPart ? "fill-white " : "fill-white/50"}
+                                    strokeColor={selectedBodyPart === bodyPart
+                                        ? "stroke-(--k-fg)"
+                                        : "stroke-(--k-fg-2)"}
+                                    fillColor={selectedBodyPart === bodyPart ? "fill-(--k-fg)" : "fill-(--k-fg-2)"}
                                 />
                                 {bodyPart}
                             </button>
@@ -353,8 +355,8 @@
                             <button
                                 class="flex-1 px-4 py-2 capitalize flex flex-row items-center justify-center gap-2 border-b-2 {selectedBodyPart ===
                                 bodyPart
-                                    ? 'text-white border-white'
-                                    : 'text-white/60 border-white/10'}"
+                                    ? 'text-(--k-fg) border-(--k-accent)'
+                                    : 'text-(--k-fg-2) border-(--k-border-subtle)'}"
                                 aria-pressed={selectedBodyPart === bodyPart}
                                 onclick={() => selectBodyPart(bodyPart)}
                                 style="border-bottom-style: solid;"
@@ -362,8 +364,10 @@
                                 <BodyPartIcon
                                     height="h-5"
                                     width="w-5"
-                                    strokeColor={selectedBodyPart === bodyPart ? "stroke-white " : "stroke-white/50"}
-                                    fillColor={selectedBodyPart === bodyPart ? "fill-white " : "fill-white/50"}
+                                    strokeColor={selectedBodyPart === bodyPart
+                                        ? "stroke-(--k-fg)"
+                                        : "stroke-(--k-fg-2)"}
+                                    fillColor={selectedBodyPart === bodyPart ? "fill-(--k-fg)" : "fill-(--k-fg-2)"}
                                 />
                                 {bodyPart}
                             </button>
@@ -371,25 +375,25 @@
                     </div>
 
                     <div class="rounded-lg flex flex-col flex-1 min-h-0 min-w-0">
-                        <h3 class="text-lg font-semibold capitalize">
+                        <h3 class="text-[1.25rem] font-bold leading-tight tracking-[-0.01em] text-(--k-fg) capitalize">
                             {selectedBodyPart} Options
                         </h3>
                         <div
                             class="flex-none lg:flex-1 flex flex-col items-start gap-0 min-h-0 min-w-0 max-h-full overflow-y-scroll overflow-x-auto scroll-mask py-[20px]"
                         >
                             {#each wokaData?.[selectedBodyPart]?.collections || [] as collection, collectionIndex (collection.name)}
-                                <p class="text-sm text-white/60 mb-1 mt-4 p-0">{collection.name}</p>
+                                <p class="text-xs font-semibold text-(--k-fg-muted) mb-1 mt-4 p-0">{collection.name}</p>
                                 <div
                                     class="w-full flex flex-row flex-wrap items-start justify-start gap-3"
                                     id={`woka-line-${collectionIndex}`}
                                 >
                                     {#each getAvailableTextures(collectionIndex, selectedBodyPart) as texture (texture.id)}
                                         <button
-                                            class="rounded border border-solid box-border p-0 h-fit {selectedTextures[
+                                            class="rounded-(--k-radius-menu) border-2 border-solid box-border p-0 h-fit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent) {selectedTextures[
                                                 selectedBodyPart
                                             ] === texture.id
-                                                ? 'bg-white/50 border-white'
-                                                : 'bg-white/10 hover:bg-white/20 border-transparent'}"
+                                                ? 'bg-(--k-hover) border-(--k-accent)'
+                                                : 'bg-(--k-elevated) hover:bg-(--k-hover) border-transparent'}"
                                             onclick={() => selectTexture(selectedBodyPart, texture.id)}
                                             id={`texture-${selectedBodyPart}-${texture.id}`}
                                             aria-label={texture.name}
@@ -411,14 +415,17 @@
                 </div>
             </div>
             <div
-                class="w-full p-3 flex flex-row items-center gap-2 border-t-2 border-t-white/10"
+                class="w-full p-3 flex flex-row items-center gap-2 border-t-2 border-t-(--k-border-subtle)"
                 style="border-top-style: solid;"
             >
-                <button class="w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded" onclick={back}>
+                <button
+                    class="w-full h-12 px-4 rounded-full border border-solid border-(--k-border-strong) bg-(--k-card) text-(--k-fg) font-semibold hover:bg-(--k-hover) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent)"
+                    onclick={back}
+                >
                     {$LL.woka.customWoka.navigation.backToDefaultWoka()}
                 </button>
                 <button
-                    class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-800"
+                    class="selectCharacterSceneFormSubmit w-full h-12 px-4 rounded-full font-semibold bg-(--k-accent) text-(--k-on-accent) hover:bg-(--k-accent-hover) active:bg-(--k-accent-active) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent)"
                     onclick={handlerSaveAndContinue}
                 >
                     {$LL.woka.customWoka.navigation.finish()}

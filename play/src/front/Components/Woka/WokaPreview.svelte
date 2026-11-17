@@ -20,11 +20,11 @@
 </script>
 
 <div class="woka-preview flex items-center justify-center relative">
-    <div class="p-6 relative flex items-center justify-center w-fit bg-white/10 rounded-lg">
+    <div class="p-6 relative flex items-center justify-center w-fit bg-(--k-elevated) rounded-(--k-radius-surface)">
         <button
             type="button"
             aria-label={$LL.a11y.compRotateAvatar()}
-            class="bg-white/10 hover:bg-white/20 rounded-md absolute bottom-2 right-2 aspect-square p-2 flex items-center justify-center"
+            class="bg-(--k-hover) hover:bg-(--k-border-subtle) text-(--k-fg) rounded-(--k-radius-inner) absolute bottom-2 right-2 aspect-square p-2 flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--k-accent)"
             onclick={() => {
                 direction = (direction + 1) % 4;
                 onrotate?.(directionsMapping[direction]);

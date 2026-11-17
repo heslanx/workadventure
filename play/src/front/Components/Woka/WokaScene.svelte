@@ -71,5 +71,10 @@
 {/if}
 
 {#if error}
-    <p class="text-center text-danger-400 p-0 m-0" role="alert">{error}</p>
+    <p
+        class="fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] m-0 px-4 py-2 rounded-(--k-radius-menu) border border-solid border-(--k-border) bg-(--k-card) text-center text-(--k-danger-text)"
+        role="alert"
+    >
+        {error}
+    </p>
 {/if}

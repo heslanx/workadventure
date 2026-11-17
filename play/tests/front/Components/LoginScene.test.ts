@@ -8,6 +8,7 @@ const { room } = vi.hoisted(() => ({
     room: {
         loginSceneLogo: undefined as string | undefined,
         backgroundSceneImage: undefined as string | undefined,
+        backgroundColor: undefined as string | undefined,
         showPoweredBy: undefined as boolean | undefined,
     },
 }));
@@ -41,12 +42,16 @@ describe("login screen branding", () => {
         target.replaceChildren();
         room.loginSceneLogo = undefined;
         room.backgroundSceneImage = undefined;
+        room.backgroundColor = undefined;
         room.showPoweredBy = undefined;
     });
 
     const logo = () => target.querySelector("img.main-logo")?.getAttribute("src");
     const background = () => target.querySelector("[style*='background-image']");
     const poweredBy = () => target.querySelector("img[src*='Powered_By_WorkAdventure']");
+    const pageBackdrop = () =>
+        [...target.querySelectorAll("div")].find((div) => div.classList.contains("bg-(image:--k-page-backdrop)"));
+    const dimmingLayer = () => target.querySelector<HTMLElement>("div.bg-contrast.opacity-80");
 
     it("shows the Konclui logo alone for a room without branding", () => {
         component = mount(LoginScene, { target, props: { game } });
@@ -64,6 +69,29 @@ describe("login screen branding", () => {
         expect(logo()).toBe(room.loginSceneLogo);
         expect(background()?.getAttribute("style")).toContain(room.backgroundSceneImage);
         expect(poweredBy()).not.toBeNull();
+    });
+
+    it("draws the Konclui page backdrop, undimmed, for a room without a background color or image", () => {
+        component = mount(LoginScene, { target, props: { game } });
+
+        expect(pageBackdrop()).toBeDefined();
+        expect(dimmingLayer()).toBeNull();
+    });
+
+    it("keeps the room's own background color instead of the Konclui backdrop", () => {
+        room.backgroundColor = "rgb(17, 34, 51)";
+        component = mount(LoginScene, { target, props: { game } });
+
+        expect(pageBackdrop()).toBeUndefined();
+        expect(dimmingLayer()?.style.backgroundColor).toBe("rgb(17, 34, 51)");
+    });
+
+    it("dims the room's background image instead of drawing the Konclui backdrop", () => {
+        room.backgroundSceneImage = "https://cdn.example.com/room-background.webp";
+        component = mount(LoginScene, { target, props: { game } });
+
+        expect(pageBackdrop()).toBeUndefined();
+        expect(dimmingLayer()).not.toBeNull();
     });
 
     it("hides the WorkAdventure credit when the room turns it off", () => {
