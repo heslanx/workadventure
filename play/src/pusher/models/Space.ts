@@ -39,6 +39,10 @@ const CLIENT_UPDATABLE_SPACE_USER_FIELDS: ReadonlySet<string> = new Set<keyof Sp
     "microphoneHeld",
 ]);
 
+// A space whose properties include one of these is a video space: its users stream to each other. The back
+// (CommunicationManager) and the front (Space.isVideoSpace) apply the same test.
+const MEDIA_PROPERTIES: ReadonlySet<string> = new Set(["cameraState", "microphoneState", "screenSharingState"]);
+
 /**
  * The Space class from the Pusher acts as a proxy and a cache for the users available in the space.
  * When a new user connects from the front, it is forwarded to the back. At the same ytime, we keep a reference to the user "socket".
@@ -294,6 +298,15 @@ export class Space implements SpaceForSpaceConnectionInterface {
         return this._filterType;
     }
 
+    // The talk indicator is drawn on the video boxes of a video space (a bubble, a meeting, a megaphone), and a space
+    // that lists the field asks for it. The other spaces (the world user list, which every client joins only to count
+    // and list people) never read it, yet each speech edge of each talker would reach every one of their watchers.
+    private carriesVoiceIndicator(): boolean {
+        return this.propertiesToSync.some(
+            (property) => property === "showVoiceIndicator" || MEDIA_PROPERTIES.has(property),
+        );
+    }
+
     public applyAndGetUpdatedFieldsForUserFromSetPlayerDetails(
         client: PusherWebSocket,
         playerDetails: SetPlayerDetailsMessage,
@@ -326,6 +339,7 @@ export class Space implements SpaceForSpaceConnectionInterface {
             spaceUser.chatID = playerDetails.chatID;
         }
         if (
+            this.carriesVoiceIndicator() &&
             playerDetails.showVoiceIndicator !== undefined &&
             spaceUser.showVoiceIndicator !== playerDetails.showVoiceIndicator
         ) {

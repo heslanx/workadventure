@@ -226,6 +226,53 @@ describe("SpaceToFrontDispatcher", () => {
                 });
                 expect(mockEmitInBatch).toHaveBeenCalledOnce();
             });
+
+            it("should send only the masked fields of the user, not the whole record", () => {
+                const mockEmitInBatch = vi.fn();
+                const spaceUser = {
+                    ...SpaceUser.fromPartial({
+                        spaceUserId: "foo_1",
+                        name: "Alice",
+                        playUri: "https://play.test/@/org/world/room",
+                        tags: ["member"],
+                        characterTextures: [{ id: "woka", url: "https://play.test/resources/customisation/woka.png" }],
+                        availabilityStatus: 1,
+                    }),
+                    lowercaseName: "alice",
+                };
+                const mockSocket = mock<PusherWebSocket>({ emitInBatch: mockEmitInBatch });
+                const mockSpace = {
+                    users: new Map([["foo_1", spaceUser]]),
+                    _localWatchers: new Set<string>(["foo_1"]),
+                    _localConnectedUser: new Map<string, PusherWebSocket>([["foo_1", mockSocket]]),
+                    metadata: new Map(),
+                    localName: "localTest",
+                } as unknown as Space;
+
+                new SpaceToFrontDispatcher(mockSpace, new EventProcessor()).handleMessage({
+                    message: {
+                        $case: "updateSpaceUserMessage",
+                        updateSpaceUserMessage: {
+                            spaceName: "test",
+                            user: SpaceUser.fromPartial({ spaceUserId: "foo_1", availabilityStatus: 3 }),
+                            updateMask: ["availabilityStatus"],
+                        },
+                    },
+                });
+
+                const sent = mockEmitInBatch.mock.calls[0][0] as SubMessage;
+                if (sent.message?.$case !== "updateSpaceUserMessage") {
+                    throw new Error(`Unexpected message ${sent.message?.$case}`);
+                }
+                expect(sent.message.updateSpaceUserMessage.updateMask).toEqual(["availabilityStatus"]);
+                // The changed field and the id, nothing else: the unmasked fields keep their protobuf defaults.
+                expect(sent.message.updateSpaceUserMessage.user).toEqual(
+                    SpaceUser.fromPartial({ spaceUserId: "foo_1", availabilityStatus: 3 }),
+                );
+                // The pusher's own copy of the user is still merged whole.
+                expect(spaceUser.availabilityStatus).toBe(3);
+                expect(spaceUser.name).toBe("Alice");
+            });
         });
         describe("removeSpaceUserMessage", () => {
             it.skip("should throw error when user not found in space", () => {

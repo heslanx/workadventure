@@ -1,4 +1,4 @@
-import { FilterType, SpaceUser } from "@workadventure/messages";
+import { AvailabilityStatus, FilterType, SetPlayerDetailsMessage, SpaceUser } from "@workadventure/messages";
 import { describe, expect, it, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
 import type { ApiClientRepository } from "@workadventure/shared-utils/src/ApiClientRepository";
@@ -363,6 +363,83 @@ describe("Space.extractUpdatedFieldsFromUpdateSpaceUserMessage", () => {
                 updateMask: ["cameraState"],
             }),
         ).toThrow("spaceUser not found");
+    });
+});
+
+describe("Space.applyAndGetUpdatedFieldsForUserFromSetPlayerDetails", () => {
+    const WORLD_PROPERTIES = ["availabilityStatus", "chatID"];
+    const BUBBLE_PROPERTIES = ["cameraState", "microphoneState", "screenSharingState"];
+    const MEGAPHONE_PROPERTIES = ["screenSharingState", "cameraState", "microphoneState", "megaphoneState"];
+
+    const setup = (propertiesToSync: string[]) => {
+        const space = new Space(
+            "test",
+            "test",
+            new EventProcessor(),
+            FilterType.ALL_USERS,
+            vi.fn(),
+            mock<SpaceConnectionInterface>(),
+            "world",
+            propertiesToSync,
+            () => ({}) as unknown as SpaceToBackForwarder,
+            () => ({}) as unknown as SpaceToFrontDispatcher,
+        );
+        const socket = mock<PusherWebSocket>({
+            getUserData: vi.fn().mockReturnValue({ spaceUserId: "room_1", userUuid: "uuid" }),
+        });
+        const spaceUser = {
+            ...SpaceUser.fromPartial({
+                spaceUserId: "room_1",
+                uuid: "uuid",
+                availabilityStatus: AvailabilityStatus.ONLINE,
+            }),
+            lowercaseName: "fabio",
+        };
+        space._localConnectedUserWithSpaceUser.set(socket, spaceUser);
+        return { space, socket, spaceUser };
+    };
+
+    it("leaves the talk indicator out of a space that is not a video space", () => {
+        const { space, socket, spaceUser } = setup(WORLD_PROPERTIES);
+
+        const result = space.applyAndGetUpdatedFieldsForUserFromSetPlayerDetails(
+            socket,
+            SetPlayerDetailsMessage.fromPartial({ showVoiceIndicator: true }),
+        );
+
+        expect(result).toBeNull();
+        expect(spaceUser.showVoiceIndicator).toBe(false);
+    });
+
+    it("still sends the status to a space that is not a video space, without the talk indicator of the same message", () => {
+        const { space, socket } = setup(WORLD_PROPERTIES);
+
+        const result = space.applyAndGetUpdatedFieldsForUserFromSetPlayerDetails(
+            socket,
+            SetPlayerDetailsMessage.fromPartial({
+                availabilityStatus: AvailabilityStatus.AWAY,
+                showVoiceIndicator: true,
+            }),
+        );
+
+        expect(result?.changedFields).toEqual(["availabilityStatus"]);
+    });
+
+    it.each([
+        ["a bubble or a meeting", BUBBLE_PROPERTIES],
+        ["a megaphone", MEGAPHONE_PROPERTIES],
+        ["a space that lists the field itself", ["name", "showVoiceIndicator"]],
+    ])("sends the talk indicator to %s", (_label, propertiesToSync) => {
+        const { space, socket, spaceUser } = setup(propertiesToSync);
+
+        const result = space.applyAndGetUpdatedFieldsForUserFromSetPlayerDetails(
+            socket,
+            SetPlayerDetailsMessage.fromPartial({ showVoiceIndicator: true }),
+        );
+
+        expect(result?.changedFields).toEqual(["showVoiceIndicator"]);
+        expect(result?.partialSpaceUser.showVoiceIndicator).toBe(true);
+        expect(spaceUser.showVoiceIndicator).toBe(true);
     });
 });
 

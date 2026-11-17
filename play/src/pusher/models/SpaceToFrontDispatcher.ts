@@ -323,12 +323,15 @@ export class SpaceToFrontDispatcher implements SpaceToFrontDispatcherInterface, 
     }
 
     public createUpdateUserMessage(user: SpaceUserExtended, updateMask: string[]): SubMessage {
+        // The front applies only the masked fields (Space.updateUserData), so the rest of the record (name, textures,
+        // tags...) would be encoded once per watcher for nothing.
+        const maskedFields = applyFieldMask(user, updateMask) as unknown as Partial<SpaceUser>;
         return {
             message: {
                 $case: "updateSpaceUserMessage",
                 updateSpaceUserMessage: {
                     spaceName: this._space.localName,
-                    user: this.toSpaceUser(user),
+                    user: SpaceUser.fromPartial({ ...maskedFields, spaceUserId: user.spaceUserId }),
                     updateMask,
                 },
             },
