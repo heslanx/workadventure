@@ -8,6 +8,8 @@ import Frame from "./Shell/components/Frame.svelte";
 import Dock from "./Shell/components/Dock.svelte";
 import { shellActiveStore, shellEnabledStore } from "./Shell/stores/shellStore";
 import { createSeatedPoseExtension } from "./Workplace/phaser/seatedPoseExtension";
+import { createBrowserEffectsPort } from "./Ambience/phaser/browserEffectsPort";
+import { createSceneEffectsExtension } from "./Ambience/phaser/sceneEffectsExtension";
 
 let installed = false;
 
@@ -22,4 +24,5 @@ export function installKonclui(): void {
     registerActionBar({ component: Dock, active: shellEnabledStore });
     setEmbeddedChatHost(shellActiveStore);
     registerSceneExtension(createSeatedPoseExtension());
+    registerSceneExtension(createSceneEffectsExtension(createBrowserEffectsPort()));
 }
