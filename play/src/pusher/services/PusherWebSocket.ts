@@ -4,14 +4,13 @@ import {
     PusherToFrontWebSocketMessage,
     type ServerToClientMessage,
     type ClientToServerMessage,
-    type BatchMessage,
     type SubMessage,
 } from "@workadventure/messages";
 import * as Sentry from "@sentry/node";
 import { CLIENT_DISCONNECTION_RETENTION_MS } from "../enums/EnvironmentVariable";
 import { NoncedMessageStore } from "../../common/NoncedMessageStore";
-
 import type { SocketData } from "../models/Websocket/SocketData";
+import { encodeBatchFrame } from "./BatchFrame";
 
 export type RawSocket = WebSocket<SocketData>;
 
@@ -24,10 +23,7 @@ export class PusherWebSocket {
     private keepAliveInterval: NodeJS.Timeout | undefined;
     private batchTimeout: NodeJS.Timeout | undefined;
     private pingBackpressured = false;
-    private batchedMessages: BatchMessage = {
-        event: "",
-        payload: [],
-    };
+    private batchedMessages: SubMessage[] = [];
     /**
      * Group id to the index, in batchedMessages, of a groupUpdateMessage that no later message of the batch is about.
      * A newer update for that group replaces it in place: a batch is applied by the client at once, so the
@@ -53,19 +49,7 @@ export class PusherWebSocket {
     }
 
     public send(message: ServerToClientMessage): ReturnType<RawSocket["send"]> {
-        const nonce = this.nextOutgoingNonce;
-        const payloadWithNonce = PusherToFrontWebSocketMessage.encode({
-            nonce,
-            message,
-        }).finish();
-        this.nextOutgoingNonce += 1;
-        this.outgoingMessagesStore.add(nonce, payloadWithNonce);
-
-        if (!this.transportAvailable || this.waitingForDrain || nonce > this.lastSentNonce + 1) {
-            return 0;
-        }
-
-        return this.sendStoredPayload(nonce, payloadWithNonce);
+        return this.sendFrame((nonce) => PusherToFrontWebSocketMessage.encode({ nonce, message }).finish());
     }
 
     public handleDrain(): void {
@@ -90,16 +74,16 @@ export class PusherWebSocket {
             const groupId = message.groupUpdateMessage.groupId;
             const index = this.batchedGroupUpdateIndexes.get(groupId);
             if (index !== undefined) {
-                this.batchedMessages.payload[index] = payload;
+                this.batchedMessages[index] = payload;
                 return;
             }
-            this.batchedGroupUpdateIndexes.set(groupId, this.batchedMessages.payload.length);
+            this.batchedGroupUpdateIndexes.set(groupId, this.batchedMessages.length);
         } else if (message?.$case === "groupDeleteMessage") {
             this.batchedGroupUpdateIndexes.delete(message.groupDeleteMessage.groupId);
         } else if (message?.$case === "groupUsersUpdateMessage") {
             this.batchedGroupUpdateIndexes.delete(message.groupUsersUpdateMessage.groupId);
         }
-        this.batchedMessages.payload.push(payload);
+        this.batchedMessages.push(payload);
 
         if (this.batchTimeout) {
             return;
@@ -121,16 +105,12 @@ export class PusherWebSocket {
             this.resetBatch();
             return;
         }
-        if (this.batchedMessages.payload.length === 0) {
+        if (this.batchedMessages.length === 0) {
             return;
         }
 
-        this.send({
-            message: {
-                $case: "batchMessage",
-                batchMessage: this.batchedMessages,
-            },
-        });
+        const batch = this.batchedMessages;
+        this.sendFrame((nonce) => encodeBatchFrame(nonce, batch));
         this.resetBatch();
     }
 
@@ -331,11 +311,22 @@ export class PusherWebSocket {
     }
 
     private resetBatch(): void {
-        this.batchedMessages = {
-            event: "",
-            payload: [],
-        };
+        this.batchedMessages = [];
         this.batchedGroupUpdateIndexes.clear();
+    }
+
+    /** Numbers the frame `encode` makes, keeps it for a reconnection to replay, and sends it unless the socket is behind. */
+    private sendFrame(encode: (nonce: number) => Uint8Array<ArrayBuffer>): ReturnType<RawSocket["send"]> {
+        const nonce = this.nextOutgoingNonce;
+        const payloadWithNonce = encode(nonce);
+        this.nextOutgoingNonce += 1;
+        this.outgoingMessagesStore.add(nonce, payloadWithNonce);
+
+        if (!this.transportAvailable || this.waitingForDrain || nonce > this.lastSentNonce + 1) {
+            return 0;
+        }
+
+        return this.sendStoredPayload(nonce, payloadWithNonce);
     }
 
     private sendStoredPayload(nonce: number, payload: Uint8Array<ArrayBuffer>): ReturnType<RawSocket["send"]> {

@@ -64,7 +64,13 @@ import { AbortError } from "@workadventure/shared-utils/src/Abort/AbortError";
 import { PusherRoom } from "../models/PusherRoom";
 import type { BackConnection, SocketData } from "../models/Websocket/SocketData";
 
-import type { GroupDescriptor, UserDescriptor, ZoneEventListener } from "../models/Zone";
+import {
+    groupDeleteSubMessage,
+    userLeftSubMessage,
+    type GroupDescriptor,
+    type UserDescriptor,
+    type ZoneEventListener,
+} from "../models/Zone";
 import type { AdminConnection, AdminSocketData } from "../models/Websocket/AdminSocketData";
 import { EMBEDDED_DOMAINS_WHITELIST, FRONT_URL, GRPC_MAX_MESSAGE_SIZE, SECRET_KEY } from "../enums/EnvironmentVariable";
 import type { SpaceInterface } from "../models/Space";
@@ -728,15 +734,7 @@ export class SocketManager implements ZoneEventListener {
     }
 
     onGroupUsersUpdated(group: GroupDescriptor, listener: PusherWebSocket): void {
-        listener.emitInBatch({
-            message: {
-                $case: "groupUsersUpdateMessage",
-                groupUsersUpdateMessage: {
-                    groupId: group.groupId,
-                    userIds: group.userIds,
-                },
-            },
-        });
+        listener.emitInBatch(group.toGroupUsersUpdateSubMessage());
     }
 
     onEmote(emoteMessage: EmoteEventMessage, listener: PusherWebSocket): void {
@@ -749,6 +747,7 @@ export class SocketManager implements ZoneEventListener {
     }
 
     onPlayerDetailsUpdated(playerDetailsUpdatedMessage: PlayerDetailsUpdatedMessage, listener: PusherWebSocket): void {
+        // Must stay batched so it follows a queued join, whose variables are encoded when the join is emitted.
         listener.emitInBatch({
             message: {
                 $case: "playerDetailsUpdatedMessage",
@@ -1084,41 +1083,19 @@ export class SocketManager implements ZoneEventListener {
     }
 
     public onUserEnters(user: UserDescriptor, listener: PusherWebSocket): void {
-        listener.emitInBatch({
-            message: {
-                $case: "userJoinedMessage",
-                userJoinedMessage: user.toUserJoinedMessage(),
-            },
-        });
+        listener.emitInBatch(user.toUserJoinedSubMessage());
     }
 
     public onUserMoves(user: UserDescriptor, listener: PusherWebSocket): void {
-        listener.emitInBatch({
-            message: {
-                $case: "userMovedMessage",
-                userMovedMessage: user.toUserMovedMessage(),
-            },
-        });
+        listener.emitInBatch(user.toUserMovedSubMessage());
     }
 
     public onUserLeaves(userId: number, listener: PusherWebSocket): void {
-        listener.emitInBatch({
-            message: {
-                $case: "userLeftMessage",
-                userLeftMessage: {
-                    userId,
-                },
-            },
-        });
+        listener.emitInBatch(userLeftSubMessage(userId));
     }
 
     public onGroupEnters(group: GroupDescriptor, listener: PusherWebSocket): void {
-        listener.emitInBatch({
-            message: {
-                $case: "groupUpdateMessage",
-                groupUpdateMessage: group.toGroupUpdateMessage(),
-            },
-        });
+        listener.emitInBatch(group.toGroupUpdateSubMessage());
     }
 
     public onGroupMoves(group: GroupDescriptor, listener: PusherWebSocket): void {
@@ -1126,14 +1103,7 @@ export class SocketManager implements ZoneEventListener {
     }
 
     public onGroupLeaves(groupId: number, listener: PusherWebSocket): void {
-        listener.emitInBatch({
-            message: {
-                $case: "groupDeleteMessage",
-                groupDeleteMessage: {
-                    groupId,
-                },
-            },
-        });
+        listener.emitInBatch(groupDeleteSubMessage(groupId));
     }
 
     public getTokenExpiredMessage(): ServerToClientMessage {

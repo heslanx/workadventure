@@ -12,6 +12,7 @@ import type {
     PositionMessage,
     SayMessage,
     SetPlayerDetailsMessage,
+    SubMessage,
     UserJoinedMessage,
     UserJoinedZoneMessage,
     UserMovedMessage,
@@ -20,6 +21,7 @@ import type {
 } from "@workadventure/messages";
 import { AvailabilityStatus } from "@workadventure/messages";
 import type { PusherWebSocket } from "../services/PusherWebSocket";
+import { encodeOnce } from "../services/BatchFrame";
 
 export interface ZoneEventListener {
     onUserEnters(user: UserDescriptor, listener: PusherWebSocket): void;
@@ -34,7 +36,14 @@ export interface ZoneEventListener {
     onPlayerDetailsUpdated(playerDetailsUpdatedMessage: PlayerDetailsUpdatedMessage, listener: PusherWebSocket): void;
 }
 
+/*
+ * A zone event reaches every socket that watches the zone, so the sub-message a descriptor sends for it is built and
+ * encoded once and handed to all of them (see encodeOnce). A descriptor keeps it until the state it is made of changes.
+ */
 export class UserDescriptor {
+    private userJoinedSubMessage: SubMessage | undefined;
+    private userMovedSubMessage: SubMessage | undefined;
+
     private constructor(
         public readonly userId: number,
         private userUuid: string,
@@ -81,6 +90,8 @@ export class UserDescriptor {
             throw new Error("Missing position");
         }
         this.position = position;
+        this.userJoinedSubMessage = undefined;
+        this.userMovedSubMessage = undefined;
     }
 
     public updateDetails(playerDetails: SetPlayerDetailsMessage): void {
@@ -111,6 +122,7 @@ export class UserDescriptor {
         if (playerDetails.chatID !== undefined) {
             this.chatID = playerDetails.chatID;
         }
+        this.userJoinedSubMessage = undefined;
     }
 
     public toUserJoinedMessage(): UserJoinedMessage {
@@ -138,9 +150,26 @@ export class UserDescriptor {
             position: this.position,
         };
     }
+
+    public toUserJoinedSubMessage(): SubMessage {
+        this.userJoinedSubMessage ??= encodeOnce({
+            message: { $case: "userJoinedMessage", userJoinedMessage: this.toUserJoinedMessage() },
+        });
+        return this.userJoinedSubMessage;
+    }
+
+    public toUserMovedSubMessage(): SubMessage {
+        this.userMovedSubMessage ??= encodeOnce({
+            message: { $case: "userMovedMessage", userMovedMessage: this.toUserMovedMessage() },
+        });
+        return this.userMovedSubMessage;
+    }
 }
 
 export class GroupDescriptor {
+    private groupUpdateSubMessage: SubMessage | undefined;
+    private groupUsersUpdateSubMessage: SubMessage | undefined;
+
     private constructor(
         public readonly groupId: number,
         private groupSize: number | undefined,
@@ -161,10 +190,13 @@ export class GroupDescriptor {
         this.groupSize = groupDescriptor.groupSize;
         this.position = groupDescriptor.position;
         this.locked = groupDescriptor.locked;
+        this.groupUpdateSubMessage = undefined;
     }
 
     public updateUsers(userIds: number[]): void {
         this._userIds = userIds;
+        this.groupUpdateSubMessage = undefined;
+        this.groupUsersUpdateSubMessage = undefined;
     }
 
     public toGroupUpdateMessage(): GroupUpdateMessage {
@@ -180,10 +212,49 @@ export class GroupDescriptor {
         };
     }
 
+    public toGroupUpdateSubMessage(): SubMessage {
+        this.groupUpdateSubMessage ??= encodeOnce({
+            message: { $case: "groupUpdateMessage", groupUpdateMessage: this.toGroupUpdateMessage() },
+        });
+        return this.groupUpdateSubMessage;
+    }
+
+    public toGroupUsersUpdateSubMessage(): SubMessage {
+        this.groupUsersUpdateSubMessage ??= encodeOnce({
+            message: {
+                $case: "groupUsersUpdateMessage",
+                groupUsersUpdateMessage: { groupId: this.groupId, userIds: this._userIds },
+            },
+        });
+        return this.groupUsersUpdateSubMessage;
+    }
+
     public get userIds(): number[] {
         return this._userIds;
     }
 }
+
+/**
+ * The sub-messages that say a user or a group is gone depend on its id alone. A zone sends one to each of its
+ * sockets in a row, so it is enough to remember the last one.
+ */
+function rememberLast<K, V>(build: (key: K) => V): (key: K) => V {
+    let last: { key: K; value: V } | undefined;
+    return (key) => {
+        if (last === undefined || last.key !== key) {
+            last = { key, value: build(key) };
+        }
+        return last.value;
+    };
+}
+
+export const userLeftSubMessage = rememberLast((userId: number) =>
+    encodeOnce({ message: { $case: "userLeftMessage", userLeftMessage: { userId } } }),
+);
+
+export const groupDeleteSubMessage = rememberLast((groupId: number) =>
+    encodeOnce({ message: { $case: "groupDeleteMessage", groupDeleteMessage: { groupId } } }),
+);
 
 interface ZoneDescriptor {
     x: number;
