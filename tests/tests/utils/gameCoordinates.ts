@@ -16,6 +16,9 @@ export async function gameToBrowserCoordinates(page: Page, coordinates: Coordina
             window as unknown as {
                 e2eHooks: {
                     gameToBrowserCoordinates(coordinates: Coordinates): Promise<Coordinates>;
+                    startFrameRecording(): void;
+                    // E2EFrameRecording in play/src/front/Utils/E2EHooks.ts; gate frame time on its workMs
+                    stopFrameRecording(): Record<string, unknown>;
                 };
             }
         ).e2eHooks;

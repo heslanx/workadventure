@@ -431,6 +431,274 @@ async function compareLocalVideoFrames(): Promise<{ processedMeanGray: number; m
 }
 
 /**
+ * Nearest-rank percentile of values sorted ascending: the smallest value that at least `percent` percent of them do
+ * not exceed. Zero for an empty series.
+ */
+export function percentileOfSorted(sorted: ArrayLike<number>, percent: number): number {
+    if (sorted.length === 0) {
+        return 0;
+    }
+    // `percent` is a whole number, so the product is exact where 0.95 * 20 is not
+    const rank = Math.ceil((percent * sorted.length) / 100);
+    return sorted[Math.min(Math.max(rank, 1), sorted.length) - 1];
+}
+
+/** How a series of durations in milliseconds is distributed. */
+export interface E2EFrameStats {
+    p50: number;
+    p95: number;
+    p99: number;
+    max: number;
+}
+
+/** The distribution of a series of durations, in the order they are given and left untouched. */
+export function summarizeFrameTimes(samples: ArrayLike<number>): E2EFrameStats {
+    const sorted = Float64Array.from(samples).sort();
+    return {
+        p50: percentileOfSorted(sorted, 50),
+        p95: percentileOfSorted(sorted, 95),
+        p99: percentileOfSorted(sorted, 99),
+        max: percentileOfSorted(sorted, 100),
+    };
+}
+
+/** The part of Phaser's event emitter the frame recorder uses. */
+export interface E2EFrameEvents {
+    on(event: string, listener: (...args: unknown[]) => void): unknown;
+    off(event: string, listener: (...args: unknown[]) => void): unknown;
+}
+
+/** The part of PerformanceObserver the frame recorder uses, so that a test can stand in for the browser. */
+export interface E2ELongTaskObserver {
+    observe(options: { type: string }): void;
+    takeRecords(): readonly { duration: number }[];
+    disconnect(): void;
+}
+
+export interface E2ELongTaskObserverClass {
+    new (callback: (list: { getEntries(): readonly { duration: number }[] }) => void): E2ELongTaskObserver;
+    readonly supportedEntryTypes?: readonly string[];
+}
+
+export interface E2EFrameRecording {
+    /** Frames the game started while recording. `intervalMs` has one sample fewer: the first has no predecessor. */
+    frames: number;
+    durationMs: number;
+    /**
+     * The cost of a frame, and the series a frame-time budget is judged on: main-thread time from PRE_STEP to the
+     * last event of the same frame (POST_RENDER, or POST_STEP when it did not render). A frame that threw before
+     * POST_STEP adds no sample.
+     */
+    workMs: E2EFrameStats;
+    /**
+     * Time between the requestAnimationFrame timestamps of consecutive frames: what the player sees, but bounded
+     * below by the display refresh period (16.7 ms at 60 Hz, 8.3 ms at 120 Hz) whatever the frame costs.
+     */
+    intervalMs: E2EFrameStats;
+    /** Scene update only, from the game's PRE_STEP to its POST_STEP. */
+    stepMs: E2EFrameStats;
+    /** From POST_STEP to POST_RENDER, over the frames that rendered. */
+    renderMs: E2EFrameStats;
+    /** Frames that reached POST_STEP but not POST_RENDER: nothing was dirty (see Game.isDirty), or the render threw. */
+    skippedRenders: number;
+    /** Long tasks (50 ms or more of main thread) while recording. Not every browser reports them. */
+    longTasks: { supported: boolean; count: number; totalMs: number };
+    /** True when the recording outgrew its buffer: the percentiles then cover only its first frames. */
+    truncated: boolean;
+}
+
+export interface E2EFrameRecorderEnvironment {
+    now(): number;
+    observerClass: E2ELongTaskObserverClass | undefined;
+    // How many samples each series keeps. Past it a recording goes on counting but no longer stores.
+    capacity?: number;
+}
+
+// About 16 minutes at 60 fps
+const MAX_RECORDED_FRAMES = 60_000;
+
+/** One series of durations in a typed array allocated once, so that recording a frame never allocates. */
+class SampleBuffer {
+    private readonly samples: Float64Array;
+    private total = 0;
+
+    constructor(capacity: number) {
+        this.samples = new Float64Array(capacity);
+    }
+
+    push(sample: number): void {
+        if (this.total < this.samples.length) {
+            this.samples[this.total] = sample;
+        }
+        this.total++;
+    }
+
+    /** Samples pushed, kept or not. */
+    get count(): number {
+        return this.total;
+    }
+
+    get truncated(): boolean {
+        return this.total > this.samples.length;
+    }
+
+    kept(): Float64Array {
+        return this.samples.subarray(0, Math.min(this.total, this.samples.length));
+    }
+}
+
+function observeLongTasks(
+    observerClass: E2ELongTaskObserverClass | undefined,
+    onEntries: (entries: readonly { duration: number }[]) => void,
+): E2ELongTaskObserver | undefined {
+    if (!observerClass?.supportedEntryTypes?.includes("longtask")) {
+        return undefined;
+    }
+    const observer = new observerClass((list) => onEntries(list.getEntries()));
+    observer.observe({ type: "longtask" });
+    return observer;
+}
+
+function beginFrameRecording(
+    environment: E2EFrameRecorderEnvironment,
+    events: E2EFrameEvents,
+): { stop(): E2EFrameRecording } {
+    const capacity = environment.capacity ?? MAX_RECORDED_FRAMES;
+    const workMs = new SampleBuffer(capacity);
+    const intervalMs = new SampleBuffer(capacity);
+    const stepMs = new SampleBuffer(capacity);
+    const renderMs = new SampleBuffer(capacity);
+    const series = [workMs, intervalMs, stepMs, renderMs];
+    const longTasks = { count: 0, totalMs: 0 };
+    let frames = 0;
+    let previousTimestamp: number | undefined;
+    let frameStart: number | undefined;
+    let stepEnd: number | undefined;
+    let frameEnd: number | undefined;
+
+    // A frame's work is known only once the next one starts or the recording stops, since a frame may or may not render
+    const closeFrame = () => {
+        if (frameStart !== undefined && frameEnd !== undefined) {
+            workMs.push(frameEnd - frameStart);
+        }
+        frameEnd = undefined;
+    };
+
+    // A frame that throws never emits POST_STEP (Game.step) and one that does not render never emits POST_RENDER:
+    // such a frame adds no sample to the series of the event it lacks. A recording that starts in the middle of a
+    // frame sees the end of it without the start, which the two guards drop.
+    const onPreStep = (time?: unknown) => {
+        closeFrame();
+        frameStart = environment.now();
+        // Phaser passes the requestAnimationFrame timestamp, which is vsync-aligned and excludes the callbacks and
+        // PRE_STEP listeners that ran before this one
+        const timestamp = typeof time === "number" ? time : frameStart;
+        if (previousTimestamp !== undefined) {
+            intervalMs.push(timestamp - previousTimestamp);
+        }
+        previousTimestamp = timestamp;
+        frames++;
+    };
+    const onPostStep = () => {
+        if (frameStart === undefined) {
+            return;
+        }
+        stepEnd = environment.now();
+        stepMs.push(stepEnd - frameStart);
+        frameEnd = stepEnd;
+    };
+    const onPostRender = () => {
+        if (stepEnd === undefined) {
+            return;
+        }
+        const end = environment.now();
+        renderMs.push(end - stepEnd);
+        frameEnd = end;
+    };
+    const listeners: [string, (...args: unknown[]) => void][] = [
+        [Phaser.Core.Events.PRE_STEP, onPreStep],
+        [Phaser.Core.Events.POST_STEP, onPostStep],
+        [Phaser.Core.Events.POST_RENDER, onPostRender],
+    ];
+    const addLongTasks = (entries: readonly { duration: number }[]) => {
+        for (const entry of entries) {
+            longTasks.count++;
+            longTasks.totalMs += entry.duration;
+        }
+    };
+
+    const startedAt = environment.now();
+    const observer = observeLongTasks(environment.observerClass, addLongTasks);
+    for (const [event, listener] of listeners) {
+        events.on(event, listener);
+    }
+
+    return {
+        stop() {
+            const stoppedAt = environment.now();
+            for (const [event, listener] of listeners) {
+                events.off(event, listener);
+            }
+            closeFrame();
+            if (observer) {
+                // Entries the browser has queued but not yet delivered would be lost by disconnect()
+                addLongTasks(observer.takeRecords());
+                observer.disconnect();
+            }
+            return {
+                frames,
+                durationMs: stoppedAt - startedAt,
+                workMs: summarizeFrameTimes(workMs.kept()),
+                intervalMs: summarizeFrameTimes(intervalMs.kept()),
+                stepMs: summarizeFrameTimes(stepMs.kept()),
+                renderMs: summarizeFrameTimes(renderMs.kept()),
+                skippedRenders: stepMs.count - renderMs.count,
+                longTasks: { supported: observer !== undefined, ...longTasks },
+                truncated: series.some((samples) => samples.truncated),
+            };
+        },
+    };
+}
+
+/**
+ * Times the game's frames from the outside, through the events Phaser's game loop already emits. Nothing is attached
+ * to the game or to the browser until start(), and stop() detaches all of it.
+ */
+export function createFrameRecorder(environment: E2EFrameRecorderEnvironment) {
+    let running: { stop(): E2EFrameRecording } | undefined;
+
+    return {
+        start(events: E2EFrameEvents): void {
+            if (running) {
+                throw new Error("A frame recording is already running: call stopFrameRecording() first.");
+            }
+            running = beginFrameRecording(environment, events);
+        },
+        stop(): E2EFrameRecording {
+            if (!running) {
+                throw new Error("No frame recording is running: call startFrameRecording() first.");
+            }
+            const recording = running;
+            running = undefined;
+            return recording.stop();
+        },
+    };
+}
+
+const frameRecorder = createFrameRecorder({
+    now: () => performance.now(),
+    observerClass: typeof PerformanceObserver === "undefined" ? undefined : PerformanceObserver,
+});
+
+function startFrameRecording(): void {
+    frameRecorder.start(gameManager.getCurrentGameScene().game.events);
+}
+
+function stopFrameRecording(): E2EFrameRecording {
+    return frameRecorder.stop();
+}
+
+/**
  * The e2eHooks object contains methods used for E2E tests.
  * We should refrain from growing this object too much but it can be useful in very specific circumstances (usually linked to Phaser testing)
  */
@@ -467,4 +735,10 @@ export const e2eHooks = {
      * Used by the virtual background smoke test.
      */
     compareLocalVideoFrames,
+    /**
+     * Frame-time measurement: stopFrameRecording() returns percentiles of the frames played since
+     * startFrameRecording(). Only a screen backed by a real GPU gives numbers worth quoting.
+     */
+    startFrameRecording,
+    stopFrameRecording,
 };
