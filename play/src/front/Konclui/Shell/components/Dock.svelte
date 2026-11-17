@@ -124,12 +124,27 @@
         min-height: 48px;
         padding: 6px;
         border-radius: var(--k-radius-surface);
-        border: 1px solid var(--k-border-subtle);
-        background: var(--k-glass);
-        box-shadow: 0 4px 12px #0003;
+        border: 1px solid var(--k-glass-border, var(--k-border-subtle));
+        box-shadow: var(--k-glass-shadow, 0 4px 12px #0003);
         box-sizing: border-box;
         color: var(--k-fg);
         pointer-events: auto;
+        /* The glass sits on ::before, behind the buttons and inside the dock's own stacking context. A filter on
+           the dock itself would also become the backdrop root of the blur that its popovers and tooltips draw,
+           and the containing block of any fixed descendant. */
+        isolation: isolate;
+    }
+    .dock::before {
+        content: "";
+        position: absolute;
+        /* Under the translucent border too, so the rim does not show a ring of unblurred map. */
+        inset: -1px;
+        z-index: -1;
+        border-radius: var(--k-radius-surface);
+        background: var(--k-glass);
+        -webkit-backdrop-filter: var(--k-glass-backdrop);
+        backdrop-filter: var(--k-glass-backdrop);
+        box-shadow: var(--k-glass-edge, none);
     }
     .dock-controls {
         display: flex;

@@ -81,13 +81,37 @@ html [data-theme="default"] {
     --k-danger-text: var(--color-pop-red-text, #ff8591);
     --k-success-text: #34d399;
 
-    --k-glass: linear-gradient(
+    /* Glass: a translucent tint over a blurred, saturated backdrop. The tint is the contrast floor: over a white
+       backdrop it keeps white ink above 6:1, so the sheen (top 12px, above the icons) is the only light layer. */
+    --k-glass-blur: 8px;
+    --k-glass-saturate: 1.6;
+    --k-glass-backdrop: blur(var(--k-glass-blur))
+      saturate(var(--k-glass-saturate));
+    --k-glass-tint-top: rgb(14 26 44 / 0.7);
+    --k-glass-tint-bottom: rgb(8 16 30 / 0.78);
+    --k-glass-sheen: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.28),
+      rgb(255 255 255 / 0) 12px
+    );
+    --k-glass:
+      var(--k-glass-sheen),
+      linear-gradient(
+        180deg,
+        var(--k-glass-tint-top),
+        var(--k-glass-tint-bottom)
+      );
+    --k-glass-border: rgb(255 255 255 / 0.16);
+    --k-glass-edge:
+      inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.28);
+    --k-glass-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.2);
+    /* The look before the glass: reduced transparency and more contrast go back to it. */
+    --k-glass-opaque: linear-gradient(
       180deg,
       rgb(40 54 72 / 0.95),
       rgb(26 40 58 / 0.95) 45%,
       rgb(18 32 52 / 0.96)
     );
-    --k-glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.1);
     --k-shadow: 0 8px 32px rgb(0 0 0 / 0.32);
 
     --k-radius-row: 6px;
@@ -103,6 +127,32 @@ html [data-theme="default"] {
     --k-dur-normal: 200ms;
     --k-dur-settle: 280ms;
     --k-dur-moderate: 300ms;
+  }
+
+  /* Chromium bends the backdrop near the edges through the filter that Frame.svelte defines. It is the only engine
+     known to run an SVG filter as a backdrop filter: the others may parse the `url()` and then drop the whole
+     filter, blur included. The gate therefore also excludes the engines that know `-moz-appearance` or
+     `hanging-punctuation`, and anything else keeps the blur alone. */
+  @supports (backdrop-filter: url("#k-glass-refract")) and
+    (not (-moz-appearance: none)) and (not (hanging-punctuation: first)) {
+    :root,
+    [data-theme="default"] {
+      --k-glass-backdrop: blur(var(--k-glass-blur))
+        saturate(var(--k-glass-saturate)) url("#k-glass-refract");
+    }
+  }
+
+  /* After the block above, so that it wins. `initial` empties a token, and each surface then falls back to the
+     shadow and border it had before the glass. */
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    :root,
+    [data-theme="default"] {
+      --k-glass: var(--k-glass-opaque);
+      --k-glass-backdrop: none;
+      --k-glass-border: initial;
+      --k-glass-edge: initial;
+      --k-glass-shadow: initial;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
