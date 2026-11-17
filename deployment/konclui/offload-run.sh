@@ -35,7 +35,7 @@ step baseline-typecheck timeout 300 npm run typecheck
 step baseline-svelte-check timeout 300 npm run svelte-check
 step apply-candidate node "$JOB_ROOT/job/offload-inputs.mjs" apply
 if [ "$LAST_STATUS" -ne 0 ]; then exit 1; fi
-step candidate-tests env NODE_ENV=test timeout 300 npm test -- --run --maxWorkers=1 src/front/Phaser/Game/ThinWallsController.test.ts src/front/Phaser/Game/SeatedPoseController.test.ts src/front/Phaser/Game/TileAnimationRefreshTracker.test.ts src/front/Phaser/Game/MapEditor/EditorPlacement.test.ts tests/front/Utils/PathfindingManager.test.ts tests/front/Stores/KoncluiLayout.test.ts
+step candidate-tests env NODE_ENV=test timeout 300 npm test -- --run --maxWorkers=1 src/front/Phaser/Game/ThinWallsController.test.ts src/front/Phaser/Game/TileAnimationRefreshTracker.test.ts src/front/Phaser/Game/MapEditor/EditorPlacement.test.ts tests/front/Utils/PathfindingManager.test.ts src/front/Stores/CoWebsiteLayout.test.ts src/front/Konclui src/front/ExternalModule/ClientExtensionPoints.test.ts
 step candidate-typecheck timeout 300 npm run typecheck
 step candidate-svelte-check timeout 300 npm run svelte-check
 step candidate-build bash -lc 'set -e; cd "$JOB_ROOT/baseline/play"; rm -rf dist/public; npm run -s typesafe-i18n; npm run -s build-iframe-api; npm run -s build'

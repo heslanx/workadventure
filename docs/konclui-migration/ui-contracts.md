@@ -52,7 +52,7 @@ Matrix items U05 and U06 depend on U03, E04, E05, E06, and E09. [Room roster, vi
 | Identifiers | Native session/player ID for a person, entity ID for a desk, room generation for all asynchronous requests. World pixels remain distinct from viewport pixels and tile indices. |
 | State | Map closed/open; camera following/exploring; selection absent/present; walk idle/going/arrived/cancelled/blocked. These states do not redefine membership. |
 | Invalid or unavailable | A missing/offscreen coordinate is unavailable, not zero. An unreachable destination reports blocked. A disappeared person or desk invalidates its target without moving to a stale room. |
-| Native destination | Svelte map/tools in `Components/Konclui/`; native geometry from `Stores/KoncluiViewportStore.ts`; Phaser input, camera, and pathfinding in `GameScene` and the E05/E06 controller. |
+| Native destination | Svelte map/tools in `play/src/front/Konclui/<Domain>/components/`; native geometry from `gameViewportBounds` in `ExternalModule/ClientExtensionPoints.ts`; Phaser input, camera, and pathfinding in `GameScene` and the E05/E06 controller. |
 
 Single-click selection, double-click movement, right-click movement, and drag-pan remain distinct actions. Dragging the camera must not issue a walk. Walking or recentering restores camera follow. A real touch event needs its own proof; a mouse test does not certify the native joystick.
 

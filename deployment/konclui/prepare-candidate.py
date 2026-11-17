@@ -84,7 +84,7 @@ def main():
         source_files = source_manifest.get('files', {})
         source_fingerprint = source_manifest.get('sourceFingerprint')
     if (source_fingerprint != front_manifest['sourceFingerprint'] or
-            'play/src/front/Components/Konclui/KoncluiFrame.svelte' not in source_files):
+            'play/src/front/Konclui/Shell/components/Frame.svelte' not in source_files):
         raise ValueError('Source manifest does not identify the native Konclui frontend')
     verify(front, front_manifest['files'], [''])
     index = (front / 'index.html').read_text()

@@ -42,8 +42,8 @@ Registry source: `local-wa/hot-reload/server.mjs`, lines 106-119. All 12 source 
 |---|---|---|---|---|---|
 | E01 | editor-placement | Phaser/Game/MapEditor/EditorPlacement.ts; Utils/PathfindingManager.ts | Existing focused tests plus editing/pathfinding costs 0/4/5 | Bundle rewriting | implemented; tests/runtime pending |
 | E02 | thin-walls | Phaser/Game/ThinWallsController.ts; GameScene | Native controller tests plus edited-door/wall traversal | Bundle rewriting | implemented; tests/runtime pending |
-| E03 | seated-pose | Phaser/Game/SeatedPoseController.ts | Pose tests plus local/remote sitting and standing | Bundle rewriting | implemented; tests/runtime pending |
-| E04 | game-inset | Stores/KoncluiViewportStore.ts; CoWebsiteStore; KoncluiFrame | Canvas/camera bounds follow shell and chat at all widths | DOM-derived layout adapter where native geometry exists | implemented; build/runtime pending |
+| E03 | seated-pose | Konclui/Workplace/phaser/SeatedPoseController.ts | Pose tests plus local/remote sitting and standing | Bundle rewriting | implemented; tests/runtime pending |
+| E04 | game-inset | ExternalModule/ClientExtensionPoints.ts (gameViewportBounds); CoWebsiteStore; Konclui/Shell/components/Frame.svelte | Canvas/camera bounds follow shell and chat at all widths | DOM-derived layout adapter where native geometry exists | implemented; build/runtime pending |
 | E05 | tile-click | Phaser/Game/TileInteractionController.ts | Single selects, double/right-click moves, cancellation | Window events and HTML flags | inventoried |
 | E06 | tile-hover | Same controller | Camera-aware tile/desk projection | Window events | inventoried |
 | E07 | anim-in-view | Phaser/Game/TileAnimationRefreshTracker.ts | Visible tile-frame changes, GPU layers, hidden animations | Bundle rewriting | implemented; tests/runtime pending |

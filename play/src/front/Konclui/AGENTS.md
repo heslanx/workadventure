@@ -18,15 +18,15 @@ Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Rooms`, `Expression`
 `Notifications`, `Preferences`) with up to four layers. Files are named by feature, tests sit beside their source,
 and there are no barrel `index.ts` files.
 
-| Layer         | May import                                                                       | Must not import                                              |
-| ------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `domain/`     | other `domain/` files, `zod`, `import type` from the pure modules the test lists | `svelte`, `phaser`, stores, components, `window`, `document` |
-| `stores/`     | `domain/`, upstream stores, `svelte/store`                                       | components, Phaser objects                                   |
-| `components/` | `stores/`, `domain/`, upstream components, `$LL`                                 | Phaser scene internals                                       |
-| `phaser/`     | `domain/`, `stores/` (read), upstream Phaser classes                             | components                                                   |
+| Layer         | May import                                                                                                  | Must not import                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `domain/`     | other `domain/` files, `zod`, `import type` from the pure modules the test lists                            | `svelte`, `phaser`, stores, components, `window`, `document` |
+| `stores/`     | `domain/`, upstream stores, `svelte/store`                                                                  | components, Phaser objects                                   |
+| `components/` | `stores/`, `domain/`, upstream stores, upstream components, port stores from `ClientExtensionPoints`, `$LL` | Phaser scene internals                                       |
+| `phaser/`     | `domain/`, `stores/` (read), upstream Phaser classes                                                        | components                                                   |
 
-A domain imports another only along the edge table in `architecture.test.ts` (`domainEdges`). `Shell` composes the
-other domains; no domain imports `Shell`.
+A domain imports another only along the edge table in `architecture.test.ts` (`domainEdges`), and a new domain
+folder needs an entry there. `Shell` composes the other domains; no domain imports `Shell`.
 
 ## Rules
 
@@ -34,7 +34,7 @@ other domains; no domain imports `Shell`.
   properties with `zod` in `domain/` before a store sees them.
 - User-facing text goes through `$LL.konclui.*`, with the key present in all 17 locales under `play/src/i18n`.
 - Observe one element with `ResizeObserver` when you need its size. Do not use `MutationObserver`, `setInterval`, or
-  a `setTimeout` under 1000 ms.
+  a `setTimeout` under 1000 ms. Write the delay as a number literal: the test rejects one it cannot read.
 - A control that cannot act now stays focusable with `aria-disabled` and a visible reason. Do not use `disabled`.
 - Report errors. No empty `catch`, and no fallback that hides a failure.
 - When closing a surface removes the focused element, move focus to the control that reopens it.
@@ -50,8 +50,10 @@ npm run typecheck && npm run svelte-check && npm run lint && npm run pretty-chec
 npx vitest run src/front/Konclui src/front/ExternalModule/ClientExtensionPoints.test.ts
 ```
 
-`architecture.test.ts` is the fitness test of these rules. When it fails, change the code, not the rule. A rule
-changes only with the architecture decision behind it.
+`architecture.test.ts` is the fitness test. It checks the seam, the `domain/` import allowlist, that `stores/` and `phaser/`
+import no component, the domain graph, barrels, polling and page observers, the overlay flags and empty catches. Review
+holds the rest of the layer table. When it fails, change the code, not the rule. A rule changes only with an explicit
+decision by the context owner, recorded in the commit that changes the test.
 
 ## Related guides
 
