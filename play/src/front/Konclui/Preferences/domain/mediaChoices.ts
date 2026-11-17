@@ -25,18 +25,18 @@ export const NO_DEVICE = "";
 export const STARTING_DEVICE = "starting";
 
 /**
- * The device a list shows as chosen. Off only when the user turned it off: while it starts, or with no saved
- * preference, the device in use is not known yet, so the list shows the first device, or "starting" before the
- * browser lists any.
+ * The device a list shows as chosen. Off only when the user turned it off. While it starts, or with no saved
+ * preference, the device in use is not known yet: the list shows "starting" rather than guess one, so every listed
+ * device stays a real choice (picking the one already shown would fire no change).
  */
 export function shownDevice(
     on: boolean,
     used: string | undefined,
     requested: string | undefined,
-    listed: readonly string[],
+    _listed: readonly string[],
 ): string {
     if (!on) return NO_DEVICE;
-    return used ?? requested ?? listed[0] ?? STARTING_DEVICE;
+    return used ?? requested ?? STARTING_DEVICE;
 }
 
 export function isQualityName(value: string): value is QualityName {

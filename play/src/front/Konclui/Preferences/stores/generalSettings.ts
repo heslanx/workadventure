@@ -45,6 +45,11 @@ export async function setFullscreen(on: boolean): Promise<void> {
     localUserStore.setFullscreen(on);
 }
 
+/** Saves full screen off after the page left it another way (Esc, F11, the browser's button). */
+export function keepFullscreenOff(): void {
+    if (localUserStore.getFullscreen()) localUserStore.setFullscreen(false);
+}
+
 /** The first visit's guided tour, again. */
 export function restartTour(): void {
     onboardingStore.restart();

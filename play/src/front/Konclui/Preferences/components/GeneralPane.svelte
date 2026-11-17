@@ -8,6 +8,7 @@
     import {
         fullscreenAvailable,
         isFullscreen,
+        keepFullscreenOff,
         openUpstreamMenu,
         restartTour,
         setFullscreen,
@@ -30,8 +31,11 @@
     let fullscreenFailed = $state(false);
 
     onMount(() => {
+        // Leaving full screen by Esc or the browser is the user's choice too: save it, or the next scene would
+        // ask for full screen again while the switch shows off.
         const sync = () => {
             fullscreen = isFullscreen();
+            if (!fullscreen) keepFullscreenOff();
         };
         document.addEventListener("fullscreenchange", sync);
         return () => document.removeEventListener("fullscreenchange", sync);

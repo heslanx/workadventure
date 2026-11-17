@@ -12,9 +12,9 @@
     import PrefToggle from "./PrefToggle.svelte";
 
     const supported = notificationsSupported();
-    let notify = $state(supported && localUserStore.getNotification());
-    // The browser blocked the site: the switch says why it stays off, as the browser will not ask again.
+    // The browser blocked the site: the switch stays off and says why, as the browser will not ask again.
     let blocked = $state(notificationsBlocked());
+    let notify = $state(supported && !blocked && localUserStore.getNotification());
     let askSites = $state(localUserStore.getForceCowebsiteTrigger());
     let ignoreFollow = $state(localUserStore.getIgnoreFollowRequests());
 

@@ -12,6 +12,7 @@
         requestedMicrophoneState,
         speakerListStore,
         usedCameraDeviceIdStore,
+        silentStore,
         usedMicrophoneDeviceIdStore,
         videoQualityStore,
     } from "../../../Stores/MediaStore";
@@ -131,14 +132,22 @@
 <PrefSection title={t.devices()}>
     <PrefSelect
         title={t.camera()}
-        hint={($cameraListStore?.length ?? 0) === 0 ? t.listAfterPermission() : undefined}
+        hint={$silentStore
+            ? t.silentZone()
+            : ($cameraListStore?.length ?? 0) === 0
+              ? t.listAfterPermission()
+              : undefined}
         value={cameraValue}
         options={cameraOptions}
         onchange={selectCamera}
     />
     <PrefSelect
         title={t.microphone()}
-        hint={($microphoneListStore?.length ?? 0) === 0 ? t.listAfterPermission() : undefined}
+        hint={$silentStore
+            ? t.silentZone()
+            : ($microphoneListStore?.length ?? 0) === 0
+              ? t.listAfterPermission()
+              : undefined}
         value={microphoneValue}
         options={microphoneOptions}
         onchange={selectMicrophone}

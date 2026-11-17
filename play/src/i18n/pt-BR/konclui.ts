@@ -109,6 +109,7 @@ const konclui: DeepPartial<Translation["konclui"]> = {
             microphoneOff: "Microfone desligado",
             microphoneNumber: "Microfone {index}",
             listAfterPermission: "A lista aparece quando o navegador deixa o escritório usá-lo",
+            silentZone: "Nesta área silenciosa, a câmera e o microfone ficam desligados",
             speaker: "Alto-falante",
             speakerNumber: "Alto-falante {index}",
             testSpeaker: "Tocar um som de teste",

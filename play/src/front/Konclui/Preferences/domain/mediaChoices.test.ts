@@ -64,8 +64,8 @@ describe("shownDevice", () => {
         expect(shownDevice(true, undefined, "cam-1", ["cam-2"])).toBe("cam-1");
     });
 
-    it("never shows an on device as off while it starts", () => {
-        expect(shownDevice(true, undefined, undefined, ["cam-1", "cam-2"])).toBe("cam-1");
+    it("shows an on device as starting, never as off and never as a guessed device", () => {
+        expect(shownDevice(true, undefined, undefined, ["cam-1", "cam-2"])).toBe(STARTING_DEVICE);
         expect(shownDevice(true, undefined, undefined, [])).toBe(STARTING_DEVICE);
     });
 });

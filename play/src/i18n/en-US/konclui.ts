@@ -107,6 +107,7 @@ const konclui: BaseTranslation = {
             microphoneOff: "Microphone off",
             microphoneNumber: "Microphone {index:number}",
             listAfterPermission: "The list appears once the browser lets the office use it",
+            silentZone: "In this silent zone, the camera and microphone stay off",
             speaker: "Speaker",
             speakerNumber: "Speaker {index:number}",
             testSpeaker: "Play a test sound",
