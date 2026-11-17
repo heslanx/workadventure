@@ -17,10 +17,18 @@ type WebSocketFactory = (url: string, protocols?: string[]) => WebSocket;
 export class WorkAdventureWebSocket {
     private static readonly RECONNECT_BASE_DELAY_MS = 500;
     private static readonly RECONNECT_MAX_DELAY_MS = 5_000;
+    // Spreads the resume attempts of many clients that lost the same pusher, so they do not all reconnect in the same
+    // instant. Capped so a lone reconnect is never delayed by more than a few seconds.
+    private static readonly RECONNECT_MAX_JITTER_MS = 3_000;
     private static websocketFactory: WebSocketFactory | null = null;
+    private static randomSource: () => number = Math.random;
 
     public static setWebsocketFactory(websocketFactory: WebSocketFactory | null): void {
         WorkAdventureWebSocket.websocketFactory = websocketFactory;
+    }
+
+    public static setRandomSource(randomSource: (() => number) | null): void {
+        WorkAdventureWebSocket.randomSource = randomSource ?? Math.random;
     }
 
     public onopen: ((this: WorkAdventureWebSocket, ev: Event) => void) | null = null;
@@ -263,10 +271,13 @@ export class WorkAdventureWebSocket {
     }
 
     private getReconnectDelayMs(): number {
-        return Math.min(
+        const baseDelayMs = Math.min(
             WorkAdventureWebSocket.RECONNECT_MAX_DELAY_MS,
             WorkAdventureWebSocket.RECONNECT_BASE_DELAY_MS * 2 ** Math.max(0, this.reconnectAttempt - 1),
         );
+        // Jitter adds 0 to 100% of the base delay, and never more than RECONNECT_MAX_JITTER_MS.
+        const jitterCapMs = Math.min(baseDelayMs, WorkAdventureWebSocket.RECONNECT_MAX_JITTER_MS);
+        return baseDelayMs + WorkAdventureWebSocket.randomSource() * jitterCapMs;
     }
 
     private clearReconnectionTimeout(): void {
