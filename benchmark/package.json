@@ -5,7 +5,7 @@
   "scripts": {
     "start": "tsx ./index.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node index.ts tests/harness.test.ts"
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node index.ts tests/harness.test.ts tests/probe.test.ts"
   },
   "contributors": [
     {

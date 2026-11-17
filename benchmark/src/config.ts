@@ -16,6 +16,7 @@ export interface LoadConfig {
     namePrefix: string;
     disconnectFraction: number;
     disconnectAtSeconds: number;
+    probeObservers: number;
     minAccepted: number;
     output: string | undefined;
 }
@@ -39,6 +40,7 @@ export const USAGE = `Usage: npm start -- [--key=value ...]   (every flag is als
   --name-prefix  WA_NAME_PREFIX           bot
   --disconnect-fraction WA_DISCONNECT_FRACTION 0    share of sessions (lowest indexes) that leave early
   --disconnect-at-seconds WA_DISCONNECT_AT_SECONDS  half of the duration
+  --probe-observers WA_PROBE_OBSERVERS    20        sessions after the early leavers that record move delivery
   --min-accepted WA_MIN_ACCEPTED          1         exit code 2 when fewer sessions were accepted
   --output       WA_OUTPUT                optional  also write the JSON summary to this file
 `;
@@ -90,6 +92,10 @@ export function parseConfig(argv: readonly string[], env: Record<string, string 
         throw new ConfigError("WA_SESSIONS must be an integer");
     }
     const durationSeconds = number("WA_DURATION_SECONDS", 60, 0);
+    const probeObservers = number("WA_PROBE_OBSERVERS", 20, 0);
+    if (!Number.isInteger(probeObservers)) {
+        throw new ConfigError("WA_PROBE_OBSERVERS must be an integer");
+    }
 
     return {
         pusherUrl,
@@ -107,6 +113,7 @@ export function parseConfig(argv: readonly string[], env: Record<string, string 
         namePrefix: text("WA_NAME_PREFIX", "bot"),
         disconnectFraction: number("WA_DISCONNECT_FRACTION", 0, 0, 1),
         disconnectAtSeconds: number("WA_DISCONNECT_AT_SECONDS", durationSeconds / 2, 0),
+        probeObservers,
         minAccepted: number("WA_MIN_ACCEPTED", 1, 0),
         output: values.WA_OUTPUT === "" ? undefined : values.WA_OUTPUT,
     };

@@ -61,6 +61,7 @@ Every flag is also an environment variable (`--ramp-seconds` is `WA_RAMP_SECONDS
 | `--name-prefix` | `bot` | Player name is `<prefix>-<index>` |
 | `--disconnect-fraction` | `0` | Share of sessions (lowest indexes) that leave early; one not started by then never starts |
 | `--disconnect-at-seconds` | half the duration | When they leave |
+| `--probe-observers` | `20` | Sessions after the early leavers that record move delivery; `0` turns the probe off |
 | `--min-accepted` | `1` | Fewer accepted sessions makes the run invalid |
 | `--output` | none | Also write the JSON summary to this file |
 
@@ -78,7 +79,32 @@ leaver when the leave fired: `accepted` left the room, `connecting` aborted its 
 `rejected`, `leaving` and `closed` were already out of the room),
 `sockets` (opened, openPeak, openAtStop, closed),
 `joinLatencyMs` (p50, p95, max; `null` without samples), `rooms`, `sent`, `received.eventsByType`, `rejections`,
-`errors`, `closeCodes`, `generator` (CPU, RSS, event-loop lag), `cleanup` and `reconciled`.
+`errors`, `closeCodes`, `moveProbe` (see below), `generator` (CPU, RSS, event-loop lag), `cleanup` and `reconciled`.
+
+### Move probe
+
+`moveProbe` measures how movement reaches other players. The `--probe-observers` sessions with the lowest indexes
+that do not leave early (`--disconnect-fraction`) are the observers; they record the `userMovedMessage` and
+`userJoinedMessage` frames they receive. Every bot in the same process sends its moves through the same probe.
+
+- `delivery` (`expected`, `received`, `ratio`): `expected` counts the moves an observer should get: moves by another
+  bot in the same room, sent while the observer was accepted, whose position lay in the observer's viewport at that
+  time. `received` counts only arrivals that match one of those expected moves, each at most once, so `ratio`
+  (`received / expected`) is at most `1`. A shortfall is an expected move that did not arrive, or did not match, before
+  the observer left or the run stopped.
+- `moveLatencyMs` (`count`, `p50`, `p95`, `p99`): time from sending a move to its arrival, for received moves only.
+  The move is matched by the mover's user id (learned from its own `roomJoinedMessage`) and by its position: the
+  generator recomputes the position of each step, and a match takes the most recent send. A position repeats every
+  377 steps, so a move that took a full repeat period (about 75 s at 5 Hz) or longer is reported as unmatched.
+- `outsideExpectation`: arrivals that match a sent move the observer did not expect, or one it already received.
+  The server delivers by 320 px zone, not by viewport, so this is normally above zero.
+- `unmatched`: arrivals from a bot of this process that matched no sent step.
+
+Both numbers come from one generator process. With several processes, report each process's `moveProbe` on its own.
+Only observers decode and match arrivals, which adds CPU there; a run that is generator-bound (see below) does not
+measure server latency. Memory grows for the length of the run: one number per move sent by any bot, one per
+received move, and one per expected move not yet received.
+`null` means there was no sample or no expectation, never zero.
 
 `generator.eventLoopLagMs` is the delay beyond the 10 ms sampling interval (`resolutionMs`): an idle generator
 reads about 0, not 10.
@@ -101,6 +127,7 @@ this.
 ```bash
 cd benchmark
 npm test -- tests/harness.test.ts   # envelope handling, accepted vs rejected sessions, cleanup
+npm test -- tests/probe.test.ts     # move probe matching, delivery ratio, percentiles
 npm run typecheck
 ```
 

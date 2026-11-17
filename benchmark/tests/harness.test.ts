@@ -3,7 +3,7 @@ import { type Server, createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 import {
     ErrorScreenMessage,
     FrontToPusherWebSocketMessage,
@@ -35,6 +35,7 @@ async function startFakePusher(mode: "accept" | "reject") {
     let issuedTokens = 0;
     // Like the back, every room numbers its users from 1.
     const lastUserIdByRoom = new Map<string | null, number>();
+    const membersByRoom = new Map<string | null, Map<WebSocket, number>>();
     const http: Server = createServer((request, response) => {
         if (request.method === "POST" && request.url === "/anonymLogin") {
             issuedTokens += 1;
@@ -63,14 +64,37 @@ async function startFakePusher(mode: "accept" | "reject") {
                 roomConnectedMessage: RoomConnectedMessage.fromPartial({}),
             }),
         );
+        const members = membersByRoom.get(roomId) ?? new Map<WebSocket, number>();
+        membersByRoom.set(roomId, members);
+        socket.on("close", () => members.delete(socket));
         socket.on("message", (data: Buffer) => {
             const message = FrontToPusherWebSocketMessage.decode(data).message?.message;
             observed.clientMessages.push(message?.$case ?? "empty");
             if (message?.$case === "joinRoomFrontMessage") {
                 const userId = (lastUserIdByRoom.get(roomId) ?? 0) + 1;
                 lastUserIdByRoom.set(roomId, userId);
+                members.set(socket, userId);
                 const joined = RoomJoinedMessage.fromPartial({ currentUserId: userId });
                 socket.send(serverFrame(2, { $case: "roomJoinedMessage", roomJoinedMessage: joined }));
+            } else if (message?.$case === "userMovesMessage") {
+                // Like the pusher, relay a move to every other user of the room inside a batch.
+                const userId = members.get(socket);
+                const position = message.userMovesMessage.position;
+                if (userId === undefined || position === undefined) {
+                    return;
+                }
+                const moved = serverFrame(3, {
+                    $case: "batchMessage",
+                    batchMessage: {
+                        event: "",
+                        payload: [{ message: { $case: "userMovedMessage", userMovedMessage: { userId, position } } }],
+                    },
+                });
+                for (const other of members.keys()) {
+                    if (other !== socket && other.readyState === WebSocket.OPEN) {
+                        other.send(moved);
+                    }
+                }
             }
         });
     });
@@ -122,6 +146,7 @@ describe("protocol envelope", () => {
             nonce: 3,
             eventTypes: ["roomJoinedMessage"],
             signals: [{ kind: "roomJoined", userId: 42 }],
+            moves: [],
         });
     });
 
@@ -205,6 +230,7 @@ describe("load run", () => {
         expect(summary.rooms.map((room) => room.accepted)).toEqual([2, 1]);
         expect(summary.joinLatencyMs.count).toBe(3);
         expect(summary.sent.userMovesMessage).toBeGreaterThan(0);
+        expect(summary.moveProbe.observers).toBe(3);
         // The raw histogram never reads below its 10 ms interval; the reported lag excludes it.
         expect(summary.generator.eventLoopLagMs.resolutionMs).toBe(10);
         expect(summary.generator.eventLoopLagMs.p50).toBeLessThan(10);
@@ -215,6 +241,27 @@ describe("load run", () => {
             new Set(["joinRoomFrontMessage", "viewportMessage", "userMovesMessage"]),
         );
         await expect.poll(() => pusher?.observed.closeCodes).toEqual([1000, 1000, 1000]);
+    });
+
+    it("measures move delivery from a bot whose path stays inside an observer's viewport", async () => {
+        // Remove the recordReceive loop in session.ts, or the moveProbe block in runner.ts, and nothing is received.
+        pusher = await startFakePusher("accept");
+        // Session 13 trails session 0 by about 0.22 rad on the same ellipse, so it stays inside the 320 × 200 px
+        // half-viewport of observer 0 even when their step counts differ by two.
+        const config = configFor(pusher.url, {
+            roomUrls: ["http://play.test/_/global/maps.test/a.json"],
+            sessions: 14,
+            probeObservers: 1,
+        });
+
+        const summary = await runLoad(config);
+
+        expect(summary.sessions).toMatchObject({ accepted: 14 });
+        expect(summary.moveProbe.observers).toBe(1);
+        expect(summary.moveProbe.delivery.received).toBeGreaterThan(0);
+        expect(summary.moveProbe.delivery.received).toBeLessThanOrEqual(summary.moveProbe.delivery.expected);
+        expect(summary.moveProbe.moveLatencyMs.count).toBe(summary.moveProbe.delivery.received);
+        expect(summary.cleanup).toEqual({ openSockets: 0, activeTimers: 0 });
     });
 
     it("counts a refused connection as rejected and not as an accepted session", async () => {
@@ -328,6 +375,17 @@ describe("configuration", () => {
 
         expect(config.sessions).toBe(5);
         expect(config.wsUrl).toBe("http://play.test");
+    });
+
+    it("refuses a fractional number of probe observers", () => {
+        // Remove the integer check in parseConfig and 2.5 is accepted, making three sessions observe.
+        expect(() =>
+            parseConfig(["--probe-observers=2.5"], {
+                WA_PUSHER_URL: "http://play.test",
+                WA_ROOM_URLS: "http://play.test/_/global/maps.test/a.json",
+                WA_SESSIONS: "1",
+            }),
+        ).toThrow(ConfigError);
     });
 
     it("refuses to start without a room", () => {

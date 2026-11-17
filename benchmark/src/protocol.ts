@@ -56,7 +56,14 @@ export function encodeClientFrame(nonce: number, message: ClientMessage): Uint8A
 const VIEWPORT_HALF_WIDTH = 320;
 const VIEWPORT_HALF_HEIGHT = 200;
 
-function viewportAround(position: Position) {
+export interface Viewport {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+export function viewportAround(position: Position): Viewport {
     return {
         left: position.x - VIEWPORT_HALF_WIDTH,
         top: position.y - VIEWPORT_HALF_HEIGHT,
@@ -107,11 +114,19 @@ export type ServerSignal =
     | { kind: "ping" }
     | { kind: "serverError"; message: string };
 
+export interface ReceivedMove {
+    userId: number;
+    x: number;
+    y: number;
+}
+
 export interface DecodedServerFrame {
     nonce: number;
     /** One entry per logical event; batched sub-messages are flattened and counted individually. */
     eventTypes: string[];
     signals: ServerSignal[];
+    /** Positions of other users' moves and zone entries, used by the move probe; empty unless collected. */
+    moves: ReceivedMove[];
 }
 
 const REJECTION_CASES = new Set<ServerMessage["$case"]>([
@@ -123,16 +138,17 @@ const REJECTION_CASES = new Set<ServerMessage["$case"]>([
     "banUserMessage",
 ]);
 
-export function decodeServerFrame(bytes: Uint8Array): DecodedServerFrame {
+export function decodeServerFrame(bytes: Uint8Array, collectMoves = false): DecodedServerFrame {
     const frame = PusherToFrontWebSocketMessage.decode(bytes);
     const message = frame.message?.message;
     if (message === undefined) {
-        return { nonce: frame.nonce, eventTypes: ["emptyMessage"], signals: [] };
+        return { nonce: frame.nonce, eventTypes: ["emptyMessage"], signals: [], moves: [] };
     }
 
     if (message.$case === "batchMessage") {
         const eventTypes: string[] = [];
         const signals: ServerSignal[] = [];
+        const moves: ReceivedMove[] = [];
         for (const subMessage of message.batchMessage.payload) {
             const inner = subMessage.message;
             if (inner === undefined) {
@@ -143,12 +159,24 @@ export function decodeServerFrame(bytes: Uint8Array): DecodedServerFrame {
                 signals.push({ kind: "ping" });
             } else if (inner.$case === "errorMessage") {
                 signals.push({ kind: "serverError", message: inner.errorMessage.message });
+            } else if (collectMoves && inner.$case === "userMovedMessage") {
+                pushMove(moves, inner.userMovedMessage);
+            } else if (collectMoves && inner.$case === "userJoinedMessage") {
+                // A mover that crosses from an unwatched zone into a watched one arrives as a join, not as a move.
+                pushMove(moves, inner.userJoinedMessage);
             }
         }
-        return { nonce: frame.nonce, eventTypes, signals };
+        return { nonce: frame.nonce, eventTypes, signals, moves };
     }
 
-    return { nonce: frame.nonce, eventTypes: [message.$case], signals: toSignals(message) };
+    // The pusher sends user moves only inside a batch; a top-level one is not part of the protocol.
+    return { nonce: frame.nonce, eventTypes: [message.$case], signals: toSignals(message), moves: [] };
+}
+
+function pushMove(moves: ReceivedMove[], moved: { userId: number; position: Position | undefined }): void {
+    if (moved.position !== undefined) {
+        moves.push({ userId: moved.userId, x: moved.position.x, y: moved.position.y });
+    }
 }
 
 function toSignals(message: ServerMessage): ServerSignal[] {

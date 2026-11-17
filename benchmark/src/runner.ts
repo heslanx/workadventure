@@ -1,6 +1,7 @@
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import type { LoadConfig } from "./config";
-import { RoomSession } from "./session";
+import { MoveProbe, firstObserverIndex } from "./probe";
+import { RoomSession, positionAt } from "./session";
 import { type Counter, RunStats, TimerRegistry, eventLoopLagMs, increment, percentile } from "./stats";
 
 export type StopReason = "completed" | "aborted";
@@ -20,6 +21,17 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     const stats = new RunStats();
     const timers = new TimerRegistry();
     const sessions: RoomSession[] = [];
+    const roomUrlOf = Array.from(
+        { length: config.sessions },
+        (_, index) => config.roomUrls[index % config.roomUrls.length],
+    );
+    const earlyLeavers = Math.round(config.disconnectFraction * config.sessions);
+    const probe = new MoveProbe({
+        roomUrlOf,
+        firstObserver: firstObserverIndex(config.sessions, earlyLeavers, config.probeObservers),
+        observers: config.probeObservers,
+        positionOf: positionAt,
+    });
     const rampStarts: NodeJS.Timeout[] = [];
     const startedAt = new Date();
     const startedAtMs = performance.now();
@@ -40,7 +52,7 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
                 name: `${config.namePrefix}-${index}`,
                 pusherUrl: config.pusherUrl,
                 wsUrl: config.wsUrl,
-                roomUrl: config.roomUrls[index % config.roomUrls.length],
+                roomUrl: roomUrlOf[index],
                 apiVersion: config.apiVersion,
                 characterTextureId: config.characterTextureId,
                 auth: config.auth,
@@ -50,6 +62,7 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
             },
             stats,
             timers,
+            probe,
         );
         sessions.push(session);
         rampStarts.push(
@@ -58,7 +71,6 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     }
     runTimers.push(...rampStarts);
 
-    const earlyLeavers = Math.round(config.disconnectFraction * config.sessions);
     // State of each planned leaver when the leave fires: "accepted" left the room, "connecting" aborted its join,
     // "idle" had not started yet and never starts; "rejected", "leaving" and "closed" were already out of the room.
     // Every planned leaver is out of the room from then on.
@@ -106,9 +118,10 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     const uniqueUserIds = [...stats.rooms.values()].reduce((total, room) => total + room.userIds.size, 0);
     const neverStarted = config.sessions - stats.started;
     const cleanup = { openSockets: stats.socketsOpen, activeTimers: timers.activeCount };
+    const moves = probe.summary();
 
     return {
-        schemaVersion: 2,
+        schemaVersion: 3,
         notice: "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
         startedAt: startedAt.toISOString(),
         wallSeconds: round(wallMs / 1000, 3),
@@ -147,6 +160,23 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
         })),
         sent: stats.sent,
         received: { frames: stats.receivedFrames, bytes: stats.receivedBytes, eventsByType: stats.received },
+        // Only observers record this, and only bots of this process are matched: compare per generator process.
+        moveProbe: {
+            observers: moves.observers,
+            moveLatencyMs: {
+                count: moves.moveLatencyMs.count,
+                p50: round(moves.moveLatencyMs.p50),
+                p95: round(moves.moveLatencyMs.p95),
+                p99: round(moves.moveLatencyMs.p99),
+            },
+            delivery: {
+                expected: moves.delivery.expected,
+                received: moves.delivery.received,
+                ratio: round(moves.delivery.ratio, 4),
+            },
+            outsideExpectation: moves.outsideExpectation,
+            unmatched: moves.unmatched,
+        },
         rejections: stats.rejections,
         errors: stats.errors,
         closeCodes: stats.closeCodes,

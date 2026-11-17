@@ -9,9 +9,11 @@ import {
     joinRoomMessage,
     pongMessage,
     userMovesMessage,
+    viewportAround,
     viewportMessage,
     withTrailingSlash,
 } from "./protocol";
+import type { MoveProbe } from "./probe";
 import { type RunStats, type TimerRegistry, increment } from "./stats";
 
 export type SessionState = "idle" | "connecting" | "accepted" | "rejected" | "leaving" | "closed";
@@ -99,6 +101,7 @@ export class RoomSession {
         private readonly options: SessionOptions,
         private readonly stats: RunStats,
         private readonly timers: TimerRegistry,
+        private readonly probe: MoveProbe,
     ) {}
 
     public start(): void {
@@ -136,6 +139,7 @@ export class RoomSession {
             return;
         }
         this.state = nextState(this.state, "leave");
+        this.probe.setAccepted(this.options.index, false);
         this.clearActivityTimers();
         const socket = this.socket;
         if (socket === undefined) {
@@ -188,17 +192,21 @@ export class RoomSession {
     }
 
     private handleFrame(data: Buffer): void {
+        const receivedAt = performance.now();
         this.stats.receivedFrames += 1;
         this.stats.receivedBytes += data.byteLength;
         let frame;
         try {
-            frame = decodeServerFrame(data);
+            frame = decodeServerFrame(data, this.probe.isObserver(this.options.index));
         } catch {
             increment(this.stats.errors, "undecodable_server_frame");
             return;
         }
         for (const eventType of frame.eventTypes) {
             increment(this.stats.received, eventType);
+        }
+        for (const move of frame.moves) {
+            this.probe.recordReceive(this.options.index, move.userId, move, receivedAt);
         }
         for (const signal of frame.signals) {
             switch (signal.kind) {
@@ -227,6 +235,8 @@ export class RoomSession {
         }
         this.state = nextState(this.state, "joined");
         this.userId = userId;
+        this.probe.registerUser(this.options.index, userId);
+        this.probe.setAccepted(this.options.index, true);
         this.timers.clear(this.joinTimer);
         this.joinTimer = undefined;
         this.stats.accepted += 1;
@@ -235,11 +245,18 @@ export class RoomSession {
         room.accepted += 1;
         room.userIds.add(userId);
 
-        this.send(viewportMessage(positionAt(this.options.index, 0)));
+        const joinPosition = positionAt(this.options.index, 0);
+        this.send(viewportMessage(joinPosition));
+        this.probe.setViewport(this.options.index, viewportAround(joinPosition));
         if (this.options.moveHz > 0) {
             this.moveTimer = this.timers.setInterval(() => {
                 this.step += 1;
-                this.send(userMovesMessage(positionAt(this.options.index, this.step)));
+                const position = positionAt(this.options.index, this.step);
+                const sentAt = performance.now();
+                if (this.send(userMovesMessage(position))) {
+                    this.probe.setViewport(this.options.index, viewportAround(position));
+                    this.probe.recordSend(this.options.index, this.step, position, sentAt);
+                }
             }, 1000 / this.options.moveHz);
         }
     }
@@ -254,13 +271,15 @@ export class RoomSession {
         increment(this.stats.rejections, reason);
     }
 
-    private send(message: ClientMessage): void {
+    /** Returns false when the socket is not open, so nothing was sent. */
+    private send(message: ClientMessage): boolean {
         if (this.socket?.readyState !== WebSocket.OPEN) {
-            return;
+            return false;
         }
         this.socket.send(encodeClientFrame(this.nextNonce, message));
         this.nextNonce += 1;
         increment(this.stats.sent, message.$case);
+        return true;
     }
 
     private clearActivityTimers(): void {
@@ -271,6 +290,7 @@ export class RoomSession {
     }
 
     private finish(): void {
+        this.probe.setAccepted(this.options.index, false);
         this.clearActivityTimers();
         this.timers.clear(this.closeTimer);
         this.closeTimer = undefined;
