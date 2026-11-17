@@ -36,7 +36,9 @@ const { events, FakeObserverClass } = vi.hoisted(() => {
         }
     }
     vi.stubGlobal("PerformanceObserver", FakeObserverClass);
-    return { events: { current: undefined }, FakeObserverClass };
+    // The scene's event emitter, set by each test before the hooks read it.
+    const events: { current: unknown } = { current: undefined };
+    return { events, FakeObserverClass };
 });
 vi.mock("../../../src/front/Phaser/Game/GameManager", () => ({
     gameManager: { getCurrentGameScene: () => ({ game: { events: events.current } }) },
