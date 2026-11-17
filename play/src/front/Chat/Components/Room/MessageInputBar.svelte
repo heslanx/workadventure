@@ -624,6 +624,9 @@
     const applicationTitleClass = "text-sm p-0 m-0 w-full leading-tight whitespace-normal break-words";
     const applicationDescriptionClass =
         "text-xs p-0 m-0 min-h-12 w-full leading-5 whitespace-normal break-words text-white/60";
+    // A faint tint and a ring, not a mint fill: the title is white and the description white at 60%, and both
+    // stay above 4.5:1 on it.
+    const selectedApplicationClass = "bg-secondary/10 ring-1 ring-inset ring-secondary";
 </script>
 
 <!-- Closing or leaving the tab while typing: the others would otherwise wait for the timeout. -->
@@ -698,12 +701,11 @@
         <div class="flex flex-wrap w-full justify-between items-center p-2 gap-2">
             <button
                 data-testid="youtubeApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "youtube" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.youtubeToolActivated) return;
                     openLinkForm("youtube");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "youtube"}
                 aria-disabled={!applicationManager.youtubeToolActivated}
             >
                 <img draggable="false" class="w-8" src={youtubeSvg} alt="" />
@@ -717,12 +719,11 @@
 
             <button
                 data-testid="klaxoonApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "klaxoon" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.klaxoonToolActivated) return;
                     openLinkForm("klaxoon");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "klaxoon"}
                 aria-disabled={!applicationManager.klaxoonToolActivated}
             >
                 <img draggable="false" class="w-8" src={klaxoonSvg} alt="" />
@@ -736,12 +737,14 @@
 
             <button
                 data-testid="googleSheetsApplicationButton"
-                class={applicationButtonClass}
+                class={[
+                    applicationButtonClass,
+                    applicationProperty?.name === "googleSheets" && selectedApplicationClass,
+                ]}
                 onclick={() => {
                     if (!applicationManager.googleSheetsToolActivated) return;
                     openLinkForm("googleSheets");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "googleSheets"}
                 aria-disabled={!applicationManager.googleSheetsToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleSheetsSvg} alt="" />
@@ -755,12 +758,11 @@
 
             <button
                 data-testid="googleDocsApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "googleDocs" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.googleDocsToolActivated) return;
                     openLinkForm("googleDocs");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "googleDocs"}
                 aria-disabled={!applicationManager.googleDocsToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleDocsSvg} alt="" />
@@ -774,12 +776,14 @@
 
             <button
                 data-testid="googleSlidesApplicationButton"
-                class={applicationButtonClass}
+                class={[
+                    applicationButtonClass,
+                    applicationProperty?.name === "googleSlides" && selectedApplicationClass,
+                ]}
                 onclick={() => {
                     if (!applicationManager.googleSlidesToolActivated) return;
                     openLinkForm("googleSlides");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "googleSlides"}
                 aria-disabled={!applicationManager.googleSlidesToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleSlidesSvg} alt="" />
@@ -793,12 +797,14 @@
 
             <button
                 data-testid="googleDriveApplicationButton"
-                class={applicationButtonClass}
+                class={[
+                    applicationButtonClass,
+                    applicationProperty?.name === "googleDrive" && selectedApplicationClass,
+                ]}
                 onclick={() => {
                     if (!applicationManager.googleDriveToolActivated) return;
                     openLinkForm("googleDrive");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "googleDrive"}
                 aria-disabled={!applicationManager.googleDriveToolActivated}
             >
                 <img draggable="false" class="w-8" src={googleDriveSvg} alt="" />
@@ -812,12 +818,11 @@
 
             <button
                 data-testid="eraserApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "eraser" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.eraserToolActivated) return;
                     openLinkForm("eraser");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "eraser"}
                 aria-disabled={!applicationManager.eraserToolActivated}
             >
                 <img draggable="false" class="w-8" src={eraserSvg} alt="" />
@@ -831,12 +836,11 @@
 
             <button
                 data-testid="excalidrawApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "excalidraw" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.excalidrawToolActivated) return;
                     openLinkForm("excalidraw");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "excalidraw"}
                 aria-disabled={!applicationManager.excalidrawToolActivated}
             >
                 <img draggable="false" class="w-8" src={excalidrawSvg} alt="" />
@@ -850,12 +854,11 @@
 
             <button
                 data-testid="cardsApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "cards" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.cardsToolActivated) return;
                     openLinkForm("cards");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "cards"}
                 aria-disabled={!applicationManager.cardsToolActivated}
             >
                 <img draggable="false" class="w-8" src={cardsPng} alt="" />
@@ -869,12 +872,11 @@
 
             <button
                 data-testid="tldrawApplicationButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, applicationProperty?.name === "tldraw" && selectedApplicationClass]}
                 onclick={() => {
                     if (!applicationManager.tldrawToolActivated) return;
                     openLinkForm("tldraw");
                 }}
-                class:bg-secondary-800={applicationProperty?.name === "tldraw"}
                 aria-disabled={!applicationManager.tldrawToolActivated}
             >
                 <img draggable="false" class="w-8" src={tldrawJpeg} alt="" />
@@ -891,8 +893,7 @@
             {#each applicationManager.applications as app, index (`my-own-app-${index}`)}
                 <button
                     data-testid="{app.name}ApplicationButton"
-                    class={applicationButtonClass}
-                    class:bg-secondary-800={applicationProperty?.name === app.name}
+                    class={[applicationButtonClass, applicationProperty?.name === app.name && selectedApplicationClass]}
                     onclick={() => openLinkForm(app.name)}
                 >
                     <img draggable="false" class="w-8" src={app.image} alt="" />
@@ -905,12 +906,11 @@
         <div class="flex flex-wrap w-full justify-between items-center p-2 gap-2">
             <button
                 data-testid="fileAttachmentButton"
-                class={applicationButtonClass}
+                class={[applicationButtonClass, fileAttachmentComponentOpened && selectedApplicationClass]}
                 onclick={() => {
                     if (!canAttachFiles) return;
                     openFileAttachmentComponent();
                 }}
-                class:bg-secondary-800={fileAttachmentComponentOpened}
                 aria-disabled={!canAttachFiles}
             >
                 <IconPaperclip aria-hidden="true" font-size={32} />
@@ -1061,8 +1061,10 @@
     {:else}
         <button
             data-testid="addApplicationButton"
-            class="p-0 m-0 h-11 w-11 flex items-center justify-center hover:bg-white/10 rounded-md shrink-0 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-            class:bg-secondary-800={applicationComponentOpened}
+            class={[
+                "p-0 m-0 h-11 w-11 flex items-center justify-center hover:bg-white/10 rounded-md shrink-0 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent",
+                applicationComponentOpened && selectedApplicationClass,
+            ]}
             disabled={messageInputDisabled}
             aria-label={$LL.a11y.chatApplications()}
             aria-expanded={applicationComponentOpened}

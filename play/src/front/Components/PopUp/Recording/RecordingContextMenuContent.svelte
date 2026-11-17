@@ -86,7 +86,7 @@
         class="context-menu flex flex-col gap-1 min-w-[200px] z-50 absolute bg-contrast/95 backdrop-blur-md rounded-md shadow-lg py-1 p-1"
     >
         <button
-            class="w-full p-2 text-left text-white flex items-center gap-2 bg-secondary-800 hover:bg-secondary cursor-pointer rounded"
+            class="w-full p-2 text-left text-white flex items-center gap-2 bg-secondary hover:bg-secondary-800 cursor-pointer rounded"
             onclick={() => downloadFile(currentRecord.videoFile.filename)}
         >
             <DownloadIcon height="h-4" width="w-4" />

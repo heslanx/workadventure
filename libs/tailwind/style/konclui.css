@@ -81,7 +81,12 @@ html [data-theme="default"] {
     --k-danger-text: var(--color-pop-red-text, #ff8591);
     --k-success-text: #34d399;
 
-    --k-glass: linear-gradient(180deg, rgb(40 54 72 / 0.95), rgb(26 40 58 / 0.95) 45%, rgb(18 32 52 / 0.96));
+    --k-glass: linear-gradient(
+      180deg,
+      rgb(40 54 72 / 0.95),
+      rgb(26 40 58 / 0.95) 45%,
+      rgb(18 32 52 / 0.96)
+    );
     --k-glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.1);
     --k-shadow: 0 8px 32px rgb(0 0 0 / 0.32);
 
@@ -114,9 +119,15 @@ html [data-theme="default"] {
 
 /* Fonts and radii are literals in the design system's `@theme inline`; only a later block overrides them. */
 @theme inline {
-  --font-main: "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
-  --font-title: "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
-  --font-content: "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-main:
+    "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    sans-serif;
+  --font-title:
+    "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    sans-serif;
+  --font-content:
+    "Urbanist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    sans-serif;
 
   --radius-sm: 6px;
   --radius: 8px;
@@ -134,17 +145,38 @@ html [data-theme="default"] {
 /* Same specificity as the design system rules they replace; they win by coming later. */
 @layer components {
   /* Filled mint and green controls take dark ink. */
-  .btn:is(.btn-primary, .btn-secondary, .btn-success):not(.btn-border, .btn-ghost),
-  .btn:is(.btn-primary, .btn-secondary, .btn-success):not(.btn-border, .btn-ghost) .btn-label,
-  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(.chip-border, .chip-ghost),
-  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(.chip-border, .chip-ghost) > .chip-label,
-  .notification:is(.notification-primary, .notification-secondary):not(.notification-border) > .notification-value {
+  .btn:is(.btn-primary, .btn-secondary, .btn-success):not(
+      .btn-border,
+      .btn-ghost
+    ),
+  .btn:is(.btn-primary, .btn-secondary, .btn-success):not(
+      .btn-border,
+      .btn-ghost
+    )
+    .btn-label,
+  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(
+      .chip-border,
+      .chip-ghost
+    ),
+  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(
+      .chip-border,
+      .chip-ghost
+    )
+    > .chip-label,
+  .notification:is(.notification-primary, .notification-secondary):not(
+      .notification-border
+    )
+    > .notification-value {
     color: var(--k-on-accent);
     stroke: var(--k-on-accent);
     fill: var(--k-on-accent);
   }
 
-  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(.chip-border, .chip-ghost) > svg {
+  .chip:is(.chip-primary, .chip-secondary, .chip-success):not(
+      .chip-border,
+      .chip-ghost
+    )
+    > svg {
     stroke: var(--k-on-accent);
   }
 
@@ -178,6 +210,23 @@ html [data-theme="default"] {
   .chip:is(.chip-border, .chip-ghost).chip-success > svg {
     stroke: var(--k-success-text);
   }
+
+  /* The checked mark is white in the design system, which is 1.27:1 on the mint track and disc. These two win by
+     specificity over its `peer-checked:` rules, not by order. The radio is scoped to the light variant: only that
+     one paints a mint disc under the dot. */
+  /* The design system's hover rule would repaint a checked track navy, under the dark knob. */
+  .peer:checked ~ .input-switch {
+    background-color: hsl(var(--secondary));
+  }
+
+  .peer:checked ~ .input-switch::after {
+    background-color: var(--k-on-accent);
+    border-color: var(--k-on-accent);
+  }
+
+  .peer:checked ~ .input-radio-light::after {
+    background-color: var(--k-on-accent);
+  }
 }
 
 /* Only a rule in this layer beats a utility class such as `text-white`. */
@@ -190,12 +239,56 @@ html [data-theme="default"] {
     fill: var(--k-on-accent);
   }
 
+  /* A mint surface that is not a control (badge, expanded header) takes dark text. No stroke or fill here: they
+     would be inherited by every icon nested in it. */
+  :is(.bg-primary, .bg-secondary):not(button, a) {
+    color: var(--k-on-accent);
+  }
+
+  /* A white utility set on a descendant beats the ink it would inherit from the mint surface. Children only for
+     text: deeper down, an avatar or a badge is a surface of its own and keeps its white. */
+  :is(.bg-primary, .bg-secondary) > .text-white {
+    color: var(--k-on-accent);
+  }
+
+  :is(.bg-primary, .bg-secondary) .stroke-white {
+    stroke: var(--k-on-accent);
+  }
+
   /* A filled danger control is dark red here: it takes light ink, even where a utility asks for dark text. */
   .btn.btn-danger:not(.btn-border, .btn-ghost),
   .btn.btn-danger:not(.btn-border, .btn-ghost) .btn-label {
     color: var(--k-on-danger);
     stroke: var(--k-on-danger);
     fill: var(--k-on-danger);
+  }
+
+  /* Upstream pairs the danger fill with navy text, tuned for its coral: 3.37:1 on this red, white is 5.47:1. */
+  .bg-danger.text-contrast-900,
+  .bg-danger .text-contrast-900 {
+    color: var(--k-on-danger);
+  }
+
+  /* The design system's -600 steps are a light salmon and a lime of another hue. Only these hover fills move to the
+     dark step: as text and borders the -600 steps are light red on navy and must stay light. */
+  @media (hover: hover) {
+    /* An active menu row also carries `hover:bg-white/10`, which would leave its dark icon on navy. */
+    .bg-secondary.hover\:bg-secondary-800:hover {
+      background-color: hsl(var(--secondary-800));
+    }
+
+    .hover\:bg-danger-600:hover {
+      background-color: hsl(var(--danger-800));
+    }
+
+    /* The row that turns its label navy on hover (profile menu, log out). */
+    .hover\:bg-danger-600:hover .group-hover\:text-contrast-900 {
+      color: var(--k-on-danger);
+    }
+
+    .hover\:bg-success-600:hover {
+      background-color: hsl(var(--success-800));
+    }
   }
 
   /* The danger fill is too dark to read as text on navy (3.7:1). */

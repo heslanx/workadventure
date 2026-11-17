@@ -355,9 +355,9 @@
                     aria-hidden="true"
                 >
                     <span
-                        class="absolute top-0.5 left-0.5 size-3.5 rounded-full bg-white transition-transform {tabStripShown
-                            ? 'translate-x-4'
-                            : ''}"
+                        class="absolute top-0.5 left-0.5 size-3.5 rounded-full transition-transform {tabStripShown
+                            ? 'translate-x-4 bg-contrast-900'
+                            : 'bg-white'}"
                     ></span>
                 </span>
                 <span class="flex-1">{$LL.desktop.meetingBar.displayTabs()}</span>

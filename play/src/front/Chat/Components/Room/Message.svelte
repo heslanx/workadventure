@@ -361,7 +361,7 @@
                     ? 'bg-contrast/90 rounded-bl-none'
                     : ''}
                     {isMyMessage && !messageFromSystem && !$isDeleted && replyDepth === 0
-                    ? 'bg-secondary/90 rounded-br-none'
+                    ? 'bg-secondary-1100/90 rounded-br-none'
                     : ''}
                     {!isQuotedMessage ? 'my' : ''}
                     {hasReactions ? 'pb-2' : ''}"

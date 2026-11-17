@@ -97,7 +97,7 @@
     // tooltip, as the help tooltip does not fit such a small window.
     const compact = getContext("compactActionBar") === true;
     let heldOff = $derived(statusDot !== undefined && !statusDotClickable);
-    // White text is 3.06:1 on the red fill and 1.5:1 on the green one: dark text on them.
+    // Red fills take white text from the theme; darkLabel is for the green live state.
     let darkLabel = $derived(
         buttonState === "forbidden" || buttonState === "disabledForbidden" || buttonState === "live",
     );
