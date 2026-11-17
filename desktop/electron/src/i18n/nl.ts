@@ -97,12 +97,6 @@ const nl: NativeStrings = {
     "menu.hideTabBarDetail":
         "Je hebt {total} tabbladen open. Als je de tabbladbalk verbergt, blijft dit tabblad open en worden de {count} andere gesloten.",
 
-    "tray.status.meeting": "In een vergadering",
-    "tray.status.do_not_disturb": "Niet storen",
-    "tray.status.busy": "Bezet",
-    "tray.status.back_in_a_moment": "Zo terug",
-    "tray.status.idle": "Inactief",
-    "tray.status.online": "Beschikbaar",
     "tray.status.offline": "Offline",
     "tray.microphone": "Microfoon",
     "tray.camera": "Camera",
@@ -159,6 +153,7 @@ const nl: NativeStrings = {
     "auth.signingOutTitle": "Afmelden…",
     "auth.signingOutMessage": "Rond het afmelden af in je browser. Je keert daarna automatisch terug naar de app.",
     "auth.reopenBrowser": "Browser opnieuw openen",
+    "auth.back": "Terug",
     "auth.signedIn": "Aangemeld. Je kunt teruggaan naar WorkAdventure.",
     "auth.signedOut": "Afgemeld. Je kunt teruggaan naar WorkAdventure.",
     "auth.closeWindow": "Je kunt dit venster sluiten.",

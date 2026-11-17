@@ -94,12 +94,6 @@ const ko: NativeStrings = {
     "menu.hideTabBarDetail":
         "탭 {total}개가 열려 있습니다. 탭 표시줄을 숨기면 이 탭은 유지되고 나머지 {count}개는 닫힙니다.",
 
-    "tray.status.meeting": "회의 중",
-    "tray.status.do_not_disturb": "방해 금지",
-    "tray.status.busy": "바쁨",
-    "tray.status.back_in_a_moment": "곧 돌아옴",
-    "tray.status.idle": "자리 비움",
-    "tray.status.online": "온라인",
     "tray.status.offline": "오프라인",
     "tray.microphone": "마이크",
     "tray.camera": "카메라",
@@ -156,6 +150,7 @@ const ko: NativeStrings = {
     "auth.signingOutTitle": "로그아웃하는 중…",
     "auth.signingOutMessage": "브라우저에서 로그아웃을 완료하세요. 완료되면 자동으로 앱으로 돌아옵니다.",
     "auth.reopenBrowser": "브라우저 다시 열기",
+    "auth.back": "뒤로",
     "auth.signedIn": "로그인되었습니다. WorkAdventure로 돌아가셔도 됩니다.",
     "auth.signedOut": "로그아웃되었습니다. WorkAdventure로 돌아가셔도 됩니다.",
     "auth.closeWindow": "이 창을 닫아도 됩니다.",

@@ -99,12 +99,6 @@ const fr: NativeStrings = {
     "menu.hideTabBarDetail":
         "Vous avez {total} onglets ouverts. Si vous masquez la barre d'onglets, cet onglet restera ouvert et les {count} autres seront fermés.",
 
-    "tray.status.meeting": "En réunion",
-    "tray.status.do_not_disturb": "Ne pas déranger",
-    "tray.status.busy": "Occupé",
-    "tray.status.back_in_a_moment": "De retour bientôt",
-    "tray.status.idle": "Inactif",
-    "tray.status.online": "Disponible",
     "tray.status.offline": "Hors ligne",
     "tray.microphone": "Microphone",
     "tray.camera": "Caméra",
@@ -163,6 +157,7 @@ const fr: NativeStrings = {
     "auth.signingOutMessage":
         "Terminez la déconnexion dans votre navigateur. Vous reviendrez automatiquement dans l'application.",
     "auth.reopenBrowser": "Rouvrir le navigateur",
+    "auth.back": "Retour",
     "auth.signedIn": "Connecté. Vous pouvez revenir à WorkAdventure.",
     "auth.signedOut": "Déconnecté. Vous pouvez revenir à WorkAdventure.",
     "auth.closeWindow": "Vous pouvez fermer cette fenêtre.",

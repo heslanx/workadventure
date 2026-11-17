@@ -96,12 +96,6 @@ const en = {
     "menu.hideTabBarDetail":
         "You have {total} tabs open. Hiding the tab bar keeps this tab and closes the {count} others.",
 
-    "tray.status.meeting": "In a meeting",
-    "tray.status.do_not_disturb": "Do not disturb",
-    "tray.status.busy": "Busy",
-    "tray.status.back_in_a_moment": "Be right back",
-    "tray.status.idle": "Idle",
-    "tray.status.online": "Available",
     "tray.status.offline": "Offline",
     "tray.microphone": "Microphone",
     "tray.camera": "Camera",
@@ -157,6 +151,7 @@ const en = {
     "auth.signingOutTitle": "Signing out…",
     "auth.signingOutMessage": "Finish signing out in your browser. You'll return to the app automatically.",
     "auth.reopenBrowser": "Reopen the browser",
+    "auth.back": "Back",
     "auth.signedIn": "Signed in. You can go back to WorkAdventure.",
     "auth.signedOut": "Signed out. You can go back to WorkAdventure.",
     "auth.closeWindow": "You can close this window.",

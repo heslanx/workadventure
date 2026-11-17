@@ -97,12 +97,6 @@ const ca: NativeStrings = {
     "menu.hideTabBarDetail":
         "Tens {total} pestanyes obertes. Si amagues la barra de pestanyes, es mantindrà aquesta pestanya i es tancaran les altres {count}.",
 
-    "tray.status.meeting": "En una reunió",
-    "tray.status.do_not_disturb": "No molestar",
-    "tray.status.busy": "Ocupat",
-    "tray.status.back_in_a_moment": "Torno en un moment",
-    "tray.status.idle": "Inactiu",
-    "tray.status.online": "Disponible",
     "tray.status.offline": "Desconnectat",
     "tray.microphone": "Micròfon",
     "tray.camera": "Càmera",
@@ -159,6 +153,7 @@ const ca: NativeStrings = {
     "auth.signingOutTitle": "S'està tancant la sessió…",
     "auth.signingOutMessage": "Acaba de tancar la sessió al navegador. Tornaràs a l'aplicació automàticament.",
     "auth.reopenBrowser": "Torna a obrir el navegador",
+    "auth.back": "Enrere",
     "auth.signedIn": "Sessió iniciada. Ja pots tornar a WorkAdventure.",
     "auth.signedOut": "Sessió tancada. Ja pots tornar a WorkAdventure.",
     "auth.closeWindow": "Ja pots tancar aquesta finestra.",
