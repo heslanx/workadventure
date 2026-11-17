@@ -624,4 +624,33 @@ describe("Konclui theme contrast", () => {
             expect(image.match(/min-h-7 min-w-7 p-2 rounded hover:bg-white\/30/g)).toHaveLength(3);
         });
     });
+
+    describe("the dock, as the reference lays it out", () => {
+        const dock = readFileSync(resolve(front, "Konclui/Shell/components/Dock.svelte"), "utf8");
+        const position = (fragment: string): number => {
+            const index = dock.indexOf(fragment);
+            if (index < 0) throw new Error(`The dock has no ${fragment}`);
+            return index;
+        };
+
+        it("puts the profile first, then the microphone and its settings chevron, the camera, and the chat last", () => {
+            const order = [
+                "<ProfileMenu ",
+                "<MicrophoneMenuItem ",
+                'data-testid="media-settings-toggle-button"',
+                "<CameraMenuItem ",
+                "<ContextualMenuItems ",
+                "<ChatMenuItem",
+            ].map(position);
+
+            expect(order).toEqual([...order].sort((first, second) => first - second));
+        });
+
+        it("shows a device turned off without the red fill, with the dock's hover", () => {
+            expect(dock).toMatch(/\.dock-controls :global\(button\.bg-danger\) \{\s*background: transparent;/);
+            expect(dock).toMatch(
+                /\.dock-controls :global\(button\.bg-danger:hover\) \{\s*background: var\(--k-hover\);/,
+            );
+        });
+    });
 });

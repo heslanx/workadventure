@@ -27,7 +27,7 @@
     import { navChat } from "../../../Chat/Stores/ChatStore";
     import { shellRoomStore } from "../stores/shellStore";
     import { LL } from "../../../../i18n/i18n-svelte";
-    import { IconSettings } from "@wa-icons";
+    import { IconChevronUp } from "@wa-icons";
 
     onMount(() => {
         const previous = new SvelteMap<Writable<boolean>, boolean>();
@@ -48,31 +48,14 @@
 
 <div class="dock-stack">
     <div class="dock" role="group" aria-label={$LL.konclui.dockLabel()} data-testid="konclui-dock">
+        <!-- The reference's order: who you are, what others hear and see of you, then what you do. -->
+        <!-- The profile menu draws its own button, with its name, state and keys: the wrapper only sizes it. -->
+        <div class="dock-profile">
+            <ProfileMenu showContextualMenuItems={false} />
+        </div>
         <div class="dock-controls">
-            {#if !$chatVisibilityStore}
-                <ChatMenuItem chatEnabledInAdmin={$shellRoomStore?.isChatEnabled ?? false} last />
-            {:else if $navChat.key === "users"}
-                <!-- The panel shows the people list: the button moves it to the conversation instead of closing it. -->
-                <ChatMenuItem
-                    chatEnabledInAdmin={$shellRoomStore?.isChatEnabled ?? false}
-                    last
-                    onclick={() => chatVisibilityStore.set(true)}
-                />
-            {:else}
-                <CloseChatMenuItem />
-            {/if}
-            <ContextualMenuItems />
             {#if !$inExternalServiceStore && $proximityMeetingStore && $myMicrophoneStore}
                 <MicrophoneMenuItem />
-            {/if}
-            {#if !$inExternalServiceStore && $myCameraStore}
-                <CameraMenuItem />
-            {/if}
-            {#if $screenSharingAvailableStore}
-                <ScreenSharingMenuItem />
-            {/if}
-            {#if $isInRemoteConversation && $pictureInPictureSupportedStore}
-                <PictureInPictureMenuItem />
             {/if}
             <button
                 class="media-settings"
@@ -85,12 +68,30 @@
                     event.stopPropagation();
                     event.preventDefault();
                     mediaSettingsOpenStore.set(!$mediaSettingsOpenStore);
-                }}><IconSettings font-size="18" /></button
+                }}><IconChevronUp font-size="16" /></button
             >
-        </div>
-        <!-- The profile menu draws its own button, with its name, state and keys: the wrapper only sizes it. -->
-        <div class="dock-profile">
-            <ProfileMenu showContextualMenuItems={false} />
+            {#if !$inExternalServiceStore && $myCameraStore}
+                <CameraMenuItem />
+            {/if}
+            {#if $screenSharingAvailableStore}
+                <ScreenSharingMenuItem />
+            {/if}
+            {#if $isInRemoteConversation && $pictureInPictureSupportedStore}
+                <PictureInPictureMenuItem />
+            {/if}
+            <ContextualMenuItems />
+            {#if !$chatVisibilityStore}
+                <ChatMenuItem chatEnabledInAdmin={$shellRoomStore?.isChatEnabled ?? false} last />
+            {:else if $navChat.key === "users"}
+                <!-- The panel shows the people list: the button moves it to the conversation instead of closing it. -->
+                <ChatMenuItem
+                    chatEnabledInAdmin={$shellRoomStore?.isChatEnabled ?? false}
+                    last
+                    onclick={() => chatVisibilityStore.set(true)}
+                />
+            {:else}
+                <CloseChatMenuItem />
+            {/if}
         </div>
         {#if $mediaSettingsOpenStore}
             <MediaSettingsList onclose={() => mediaSettingsOpenStore.set(false)} />
@@ -172,6 +173,23 @@
     .media-settings:hover {
         background: var(--k-hover);
     }
+    /* The reference's chevron beside the microphone: a narrow button that opens the media settings. */
+    .dock-controls .media-settings {
+        width: 22px;
+        min-width: 22px;
+        color: var(--k-fg-2);
+    }
+    /*
+     * Off is shown by the slashed icon and the button's name, as in the reference: no red fill, which read as an error
+     * on a dock where off is the usual state. A device that cannot turn on keeps upstream's dimmed look.
+     */
+    .dock-controls :global(button.bg-danger) {
+        background: transparent;
+        color: var(--k-fg);
+    }
+    .dock-controls :global(button.bg-danger:hover) {
+        background: var(--k-hover);
+    }
     .dock-profile {
         flex: 0 0 auto;
         border-radius: 10px;
@@ -214,6 +232,11 @@
     @media (max-width: 767px) {
         .media-settings {
             position: relative;
+        }
+        /* A finger needs the full button: the narrow chevron is for a pointer. */
+        .dock-controls .media-settings {
+            width: 36px;
+            min-width: 36px;
         }
         .dock-controls :global(button.relative[data-testid]::after),
         .media-settings::after {
