@@ -527,6 +527,30 @@ describe("scene extensions", () => {
 
             expect(captureException).toHaveBeenCalledTimes(2);
         });
+
+        it("keeps the failure throttle while another registration of the same extension is active", async () => {
+            const { registerSceneExtension, runSceneFrame } = await loadPort();
+            const faulty: SceneExtension = {
+                id: "faulty",
+                onFrame: () => {
+                    throw new Error("failing");
+                },
+            };
+            const unregisterFirst = registerSceneExtension(faulty);
+            registerSceneExtension(faulty);
+            runSceneFrame(frameContext(1_000));
+            expect(captureException).toHaveBeenCalledTimes(1);
+
+            unregisterFirst();
+            runSceneFrame(frameContext(2_000));
+            expect(captureException).toHaveBeenCalledTimes(1);
+
+            runSceneFrame(frameContext(11_000));
+            expect(captureException).toHaveBeenCalledTimes(2);
+            expect(captureException.mock.calls[1][1]).toEqual({
+                extra: { extensionId: "faulty", failuresSinceLastReport: 3 },
+            });
+        });
     });
 
     describe("notifySceneShutdown", () => {
