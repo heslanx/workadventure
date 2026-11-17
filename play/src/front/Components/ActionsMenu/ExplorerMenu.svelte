@@ -7,6 +7,7 @@
     import { EditorToolName } from "../../Phaser/Game/MapEditor/MapEditorModeManager";
     import { BUTTON_ZOOM_FACTOR_PER_SECOND, BUTTON_ZOOM_STEP_FACTOR } from "../../Phaser/Game/CameraZoomUtils";
     import LL from "../../../i18n/i18n-svelte";
+    import { gameViewportBounds } from "../../ExternalModule/ClientExtensionPoints";
     import { IconFocusCentered, IconMapSearch, IconMinus, IconPlus } from "@wa-icons";
 
     interface Props {
@@ -14,6 +15,13 @@
     }
 
     let { mapEditorRightOffset = 0 }: Props = $props();
+
+    // An extension may draw the game in less than the window (a frame with panels and a gutter): the controls then
+    // keep their 0.5rem from the game's own edge, not from the window's.
+    let windowWidth = $state(window.innerWidth);
+    let rightGutter = $derived(
+        $gameViewportBounds ? Math.max(0, windowWidth - ($gameViewportBounds.left + $gameViewportBounds.width)) : 0,
+    );
 
     // Keep click and long-press as the same gesture: a press always starts with one smooth zoom step,
     // then turns into continuous zoom if the user keeps the pointer down.
@@ -162,11 +170,11 @@
     });
 </script>
 
-<svelte:window onblur={stopZoom} />
+<svelte:window onblur={stopZoom} bind:innerWidth={windowWidth} />
 
 <div
     class="fixed bottom-2 mobile:bottom-24 k-chrome rounded-lg pointer-events-auto p-2"
-    style:right={`calc(${mapEditorRightOffset}px + 0.5rem)`}
+    style:right={`calc(${mapEditorRightOffset + rightGutter}px + 0.5rem)`}
     data-testid="actions-explorer"
 >
     <div class="flex flex-col justify-center gap-2">
