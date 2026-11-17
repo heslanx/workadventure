@@ -8,6 +8,7 @@ import { gameManager } from "../Phaser/Game/GameManager";
 import { selectedRoomStore } from "../Chat/Stores/SelectRoomStore";
 import { proximityMeetingStore } from "../Stores/MyMediaStore";
 import { chatVisibilityStore } from "../Stores/ChatStore";
+import { navChat } from "../Chat/Stores/ChatStore";
 import { desktopAwayStore } from "../Stores/DesktopStatusStore";
 import type { NotificationWA } from "./Notification";
 
@@ -80,6 +81,7 @@ class NotificationManager {
     }
 
     private async handleMessageNotification(chatRoomId: string) {
+        navChat.switchToChat();
         chatVisibilityStore.set(true);
         let room: ChatRoom | undefined;
         if (chatRoomId.startsWith("proximity:")) {

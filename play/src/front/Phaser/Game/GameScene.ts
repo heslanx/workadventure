@@ -1432,16 +1432,19 @@ export class GameScene extends DirtyScene {
 
         this.applyBufferedRemotePlayerChanges();
 
-        runSceneFrame({
-            scene: this,
-            time,
-            delta,
-            baseUrl: window.location.href,
-            currentPlayer: this.CurrentPlayer,
-            remoteCharacters: this.MapPlayersByKey,
-            remotePlayers: this.remotePlayersRepository.getPlayers(),
-            getPlayerVariable: (key) => this.playerVariablesManager?.variables.get(key),
-        });
+        // An ejected user keeps a scene that still updates after it told its extensions to shut down.
+        if (!this.cleanupDone) {
+            runSceneFrame({
+                scene: this,
+                time,
+                delta,
+                baseUrl: window.location.href,
+                currentPlayer: this.CurrentPlayer,
+                remoteCharacters: this.MapPlayersByKey,
+                remotePlayers: this.remotePlayersRepository.getPlayers(),
+                getPlayerVariable: (key) => this.playerVariablesManager?.variables.get(key),
+            });
+        }
 
         // Let's handle all events
         while (this.pendingEvents.length !== 0) {
@@ -3104,6 +3107,7 @@ ${escapedMessage}
 
         this.iframeSubscriptionList.push(
             iframeListener.openChatStream.subscribe(() => {
+                navChat.switchToChat();
                 chatVisibilityStore.set(true);
             }),
         );
@@ -3193,6 +3197,7 @@ ${escapedMessage}
                             case "local": {
                                 room.addExternalMessage("local", chatMessage.message, chatMessage.options.author);
                                 selectedRoomStore.set(room);
+                                navChat.switchToChat();
                                 chatVisibilityStore.set(true);
 
                                 break;
@@ -3200,6 +3205,7 @@ ${escapedMessage}
                             case "bubble": {
                                 room.addExternalMessage("bubble", chatMessage.message);
                                 selectedRoomStore.set(room);
+                                navChat.switchToChat();
                                 chatVisibilityStore.set(true);
                             }
                         }

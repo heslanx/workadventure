@@ -692,6 +692,7 @@ export class ProximityChatRoom implements ChatRoom {
         }
 
         if (!get(this.intentionallyClosed)) {
+            navChat.switchToChat();
             chatVisibilityStore.set(true);
             chatNotificationStore.clearRoom(this.id);
             return;
@@ -734,6 +735,7 @@ export class ProximityChatRoom implements ChatRoom {
         }
 
         if (!get(this.intentionallyClosed)) {
+            navChat.switchToChat();
             chatVisibilityStore.set(true);
             chatNotificationStore.clearRoom(this.id);
             return;
@@ -1488,6 +1490,7 @@ export class ProximityChatRoom implements ChatRoom {
             // if the proximity chat is not open, open it to see the message
             const intentionallyClosed = get(this.intentionallyClosed);
             if (!intentionallyClosed) {
+                navChat.switchToChat();
                 chatVisibilityStore.set(true);
                 chatNotificationStore.clearRoom(this.id);
             } else {

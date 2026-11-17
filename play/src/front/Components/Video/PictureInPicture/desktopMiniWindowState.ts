@@ -12,6 +12,7 @@ import { isActivatedStore as isTodoListActivatedStore, todoListsStore } from "..
 import { playersStore } from "../../../Stores/PlayersStore";
 import { currentPlayerWokaStore } from "../../../Stores/CurrentPlayerWokaStore";
 import { chatVisibilityStore, isMatrixChatEnabledStore } from "../../../Stores/ChatStore";
+import { navChat } from "../../../Chat/Stores/ChatStore";
 import { selectedRoomStore } from "../../../Chat/Stores/SelectRoomStore";
 import { gameManager } from "../../../Phaser/Game/GameManager";
 import { CharacterLayerManager } from "../../../Phaser/Entity/CharacterLayerManager";
@@ -474,6 +475,7 @@ export function createMiniWindowChat() {
             const room = id === NEARBY_CONVERSATION_ID ? nearbyRoom() : roomOf(id);
             if (!room) return;
             selectedRoomStore.set(room);
+            navChat.switchToChat();
             chatVisibilityStore.set(true);
         },
         destroy() {

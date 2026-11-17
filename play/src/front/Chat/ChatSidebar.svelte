@@ -27,8 +27,10 @@
 
     const trackEmbeddedWidth: Attachment<HTMLElement> = (node) => {
         embeddedWidth = node.clientWidth;
-        const observer = new ResizeObserver(() => {
-            embeddedWidth = node.clientWidth;
+        // The observer has already measured the panel: reading the layout again would force a second one.
+        // Browsers that report no border box still get the layout read.
+        const observer = new ResizeObserver(([entry]) => {
+            embeddedWidth = entry?.borderBoxSize?.[0]?.inlineSize ?? node.clientWidth;
         });
         observer.observe(node);
         return () => observer.disconnect();
@@ -141,7 +143,7 @@
         class:embedded
         class="chatWindow p-0 {embedded ? '' : '!min-w-[320px] max-sm:!min-w-[150px] bg-contrast/95 backdrop-blur-md'}"
     >
-        {#if embedded || ($hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion)}
+        {#if $hideActionBarStoreBecauseOfChatBar && isInSpecificDiscussion}
             <div class="close-window absolute end-2 top-3 rounded-sm p-1 bg-contrast/80 z-50">
                 <button
                     class="hover:bg-white/10 rounded aspect-square w-8 h-8 m-0 flex items-center justify-center !text-white"

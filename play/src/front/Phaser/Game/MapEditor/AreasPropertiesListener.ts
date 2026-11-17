@@ -1178,6 +1178,7 @@ export class AreasPropertiesListener {
         }
 
         if (!isConnected && property.shouldOpenAutomatically) {
+            navChat.switchToChat();
             chatVisibilityStore.set(true);
         }
     }
