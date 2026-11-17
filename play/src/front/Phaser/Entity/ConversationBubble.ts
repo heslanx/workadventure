@@ -5,7 +5,7 @@ import { MINIMUM_DISTANCE } from "../../Enum/EnvironmentVariable";
 import type { Character } from "./Character";
 import { RemotePlayer } from "./RemotePlayer";
 
-import Sprite = Phaser.GameObjects.Sprite;
+import Graphics = Phaser.GameObjects.Graphics;
 import Vector2 = Phaser.Math.Vector2;
 import Linear = Phaser.Math.Linear;
 import Spline = Phaser.Curves.Spline;
@@ -18,8 +18,13 @@ export interface Avatar {
     inside: boolean; // true ⇢ avatar is already in the conversation
 }
 
-/** Jelly-like circle that bulges / dimples toward or away from avatars. */
-export class ConversationBubble extends Sprite {
+/**
+ * Jelly-like circle that bulges / dimples toward or away from avatars.
+ *
+ * It is drawn as vector geometry around its own position. Rendering it into a texture instead costs a canvas, a
+ * texture upload and a shader program on every frame the bubble moves, which froze the client in crowded rooms.
+ */
+export class ConversationBubble extends Graphics {
     // ==== Tunables =========================================================
     private readonly R0 = MINIMUM_DISTANCE; // resting radius (px)
     private readonly lambda = 40; // fall-off distance for influence (px)
@@ -39,22 +44,20 @@ export class ConversationBubble extends Sprite {
     private locked: boolean;
     private userIds: number[];
 
-    // Texture handling
-    private generatedTextureKey: string | null = null;
     // Whether the bubble is currently wobbling
     private _isAnimating: boolean = true;
     private _needsStep: boolean = true;
 
     constructor(scene: GameScene, x: number, y: number, locked: boolean, userIds: number[]) {
-        super(scene, x, y, "");
+        super(scene);
         this.gameScene = scene;
         scene.add.existing(this);
         this.center.set(x, y);
+        this.setPosition(x, y);
         this.setDepth(DEPTH_CONVERSATION_BUBBLE_INDEX); // draw above the map
         this.locked = locked;
         this.userIds = userIds;
 
-        // Generate initial texture
         this.drawSpline();
     }
 
@@ -188,7 +191,7 @@ export class ConversationBubble extends Sprite {
     }
 
     /**
-     * Build Catmull-Rom spline, create texture from it and apply to sprite.
+     * Builds a Catmull-Rom spline through the radius samples and draws it around the bubble's position.
      */
     private drawSpline(): void {
         if (!this.scene.renderer) {
@@ -196,77 +199,30 @@ export class ConversationBubble extends Sprite {
             return;
         }
 
-        // Convert polar samples to Cartesian points
         const pts: Vector2[] = [];
         for (let s = 0; s < this.segments; s++) {
             const θ = (s / this.segments) * Math.PI * 2;
             const r = this.radii[s];
-            pts.push(new Vector2(this.center.x + r * Math.cos(θ), this.center.y + r * Math.sin(θ)));
+            pts.push(new Vector2(r * Math.cos(θ), r * Math.sin(θ)));
         }
+        const smooth = new Spline(pts).getSpacedPoints(this.segments * 2);
 
-        // Create a spline and oversample for smoothness
-        const spline = new Spline(pts);
-        const smooth = spline.getSpacedPoints(this.segments * 2);
-
-        // Calculate bounding box
-        let minX = Number.MAX_VALUE;
-        let minY = Number.MAX_VALUE;
-        let maxX = Number.MIN_VALUE;
-        let maxY = Number.MIN_VALUE;
-
-        for (const point of smooth) {
-            minX = Math.min(minX, point.x);
-            minY = Math.min(minY, point.y);
-            maxX = Math.max(maxX, point.x);
-            maxY = Math.max(maxY, point.y);
-        }
-
-        const width = Math.ceil(maxX - minX);
-        const height = Math.ceil(maxY - minY);
-
-        // Create temporary graphics object to draw the shape
-        const tempGraphics = this.scene.add.graphics();
-
-        // Apply style based on locked status
+        this.clear();
         if (this.locked) {
-            tempGraphics.fillStyle(0xff0000, 0.25); // solid fill
-            tempGraphics.lineStyle(1, 0xff0000, 1); // crisp outline
+            this.fillStyle(0xff0000, 0.25);
+            this.lineStyle(1, 0xff0000, 1);
         } else {
-            tempGraphics.fillStyle(0xffffff, 0.25); // semi-transparent fill
-            tempGraphics.lineStyle(1, 0xffffff, 0.9); // crisp outline
+            this.fillStyle(0xffffff, 0.25);
+            this.lineStyle(1, 0xffffff, 0.9);
         }
-
-        // Draw the shape adjusted to (0,0) origin in the texture
-        tempGraphics.beginPath();
-        tempGraphics.moveTo(smooth[0].x - minX, smooth[0].y - minY);
+        this.beginPath();
+        this.moveTo(smooth[0].x, smooth[0].y);
         for (let i = 1; i < smooth.length; i++) {
-            tempGraphics.lineTo(smooth[i].x - minX, smooth[i].y - minY);
+            this.lineTo(smooth[i].x, smooth[i].y);
         }
-        tempGraphics.closePath();
-        tempGraphics.fillPath();
-        tempGraphics.strokePath();
-
-        // Calculate origin offset to position the sprite correctly
-        const originX = (this.center.x - minX) / width;
-        const originY = (this.center.y - minY) / height;
-
-        // Remove old texture if it exists
-        if (this.generatedTextureKey && this.scene.textures.exists(this.generatedTextureKey)) {
-            this.scene.textures.remove(this.generatedTextureKey);
-        }
-
-        // Generate a new texture key
-        this.generatedTextureKey = `bubble_texture_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-
-        // Generate a texture from the graphics
-        tempGraphics.generateTexture(this.generatedTextureKey, width, height);
-
-        // Clean up the temporary graphics
-        tempGraphics.destroy();
-
-        // Apply the new texture to this sprite
-        this.setTexture(this.generatedTextureKey);
-        this.setOrigin(originX, originY);
+        this.closePath();
+        this.fillPath();
+        this.strokePath();
     }
 
     // -----------------------------------------------------------------------
@@ -276,20 +232,6 @@ export class ConversationBubble extends Sprite {
     public setLocked(locked: boolean): void {
         this.locked = locked;
         this.drawSpline(); // redraw with new style
-    }
-
-    /** Convenience: call inside the scene's update loop. */
-    public preUpdate(time: number, delta: number): void {
-        // Intentionally empty – you can override if you prefer
-    }
-
-    /** Clean up resources when destroying the object */
-    public destroy(fromScene?: boolean): void {
-        // Remove the generated texture before destroying the sprite
-        if (this.generatedTextureKey && this.scene?.textures?.exists(this.generatedTextureKey)) {
-            this.scene.textures.remove(this.generatedTextureKey);
-        }
-        super.destroy(fromScene);
     }
 
     public get isAnimating(): boolean {
