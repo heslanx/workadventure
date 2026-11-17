@@ -1,47 +1,43 @@
 <script lang="ts">
-    import { untrack, type Snippet } from "svelte";
-    import { get } from "svelte/store";
+    import { onMount, type Snippet } from "svelte";
     import { LL } from "../../../../i18n/i18n-svelte";
-    import { shellActiveStore, shellRoomStore } from "../stores/shellStore";
+    import { shellActiveStore } from "../stores/shellStore";
+    import {
+        closeRosterNotice as endRosterNotice,
+        closeSidePanel,
+        followShell,
+        sidePanelStore,
+        toggleChat,
+        togglePeople,
+    } from "../stores/sidePanelStore";
     import { gameViewportBounds } from "../../../ExternalModule/ClientExtensionPoints";
     import type { ViewportBounds } from "../../../Stores/CoWebsiteLayout";
     import { toGameViewport } from "../domain/gameViewport";
     import {
         focusAfterClose,
-        isRosterAvailable,
         isWideScreen,
-        opensOnLeftoverUserList,
         panelButtonFor,
-        peopleOpening,
-        sidePanelView,
         type PanelButton,
         type SidePanelView,
     } from "../domain/sidePanel";
     import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
     import { openPreferences } from "../../Preferences/stores/preferencesStore";
-    import { navChat } from "../../../Chat/Stores/ChatStore";
     import ChatSidebar from "../../../Chat/ChatSidebar.svelte";
     import { IconUsersGroup, IconSettings, IconMessageCircle2, IconChevronLeft } from "@wa-icons";
 
     let { children }: { children: Snippet } = $props();
     let viewport: HTMLDivElement | undefined = $state();
     let panel: HTMLElement | undefined = $state();
-    /** The room has no people list to show; the panel says so instead. */
-    let rosterNoticeOpen = $state(false);
     let peopleButton: HTMLButtonElement | undefined = $state();
     let chatButton: HTMLButtonElement | undefined = $state();
     let mobilePeopleButton: HTMLButtonElement | undefined = $state();
-    let roomOpenedFor: string | undefined;
 
-    let view = $derived(
-        sidePanelView({
-            chatVisible: $chatVisibilityStore,
-            chatShowsUserList: $navChat.key === "users",
-            rosterNoticeOpen,
-        }),
-    );
+    let view = $derived($sidePanelStore.view);
+    let rosterNoticeOpen = $derived($sidePanelStore.rosterNoticeOpen);
     let peopleShown = $derived(view === "people");
     let conversationShown = $derived(view === "conversation");
+
+    onMount(() => followShell(() => isWideScreen(window.innerWidth)));
 
     // Whether the focus is inside the panel as it closes. This runs before the update that removes the chat, so
     // it must stay above the template: afterwards the focus is on the page whether it was in the panel or not.
@@ -68,41 +64,6 @@
         if (button !== undefined) elementOf(button)?.focus();
     });
 
-    // The chat taking the panel ends the notice, so closing the chat later does not bring the notice back.
-    $effect(() => {
-        if ($chatVisibilityStore) rosterNoticeOpen = false;
-    });
-
-    // Upstream opens the chat for a message without choosing a tab, and must not land on the user list the people
-    // view left behind. Each switch of the tab stores a new object, so the same object means nobody chose one.
-    let tabWhenHidden: unknown;
-    $effect.pre(() => {
-        const chatVisible = $chatVisibilityStore;
-        if (!$shellActiveStore) return;
-        const tab = get(navChat);
-        if (!chatVisible) {
-            tabWhenHidden = tab;
-        } else if (
-            opensOnLeftoverUserList({
-                chatShowsUserList: tab.key === "users",
-                tabChosenSinceHidden: tab !== tabWhenHidden,
-            })
-        ) {
-            navChat.switchToChat();
-        }
-    });
-
-    // A wide screen opens on the people of the room, once per room and only when the chrome is drawn.
-    $effect(() => {
-        const roomId = $shellRoomStore?.id;
-        if (!$shellActiveStore || roomId === undefined || roomId === roomOpenedFor) return;
-        roomOpenedFor = roomId;
-        // A notice raised in the previous room says nothing about this one.
-        rosterNoticeOpen = false;
-        // A chat that something opened before the chrome was drawn keeps the panel.
-        if (isWideScreen(window.innerWidth) && !get(chatVisibilityStore)) untrack(() => openPeople(false));
-    });
-
     $effect(() => {
         if (!$shellActiveStore || !viewport) {
             gameViewportBounds.set(undefined);
@@ -127,64 +88,26 @@
         };
     });
 
-    /** The people list is the chat's own user list, which a room may turn off. */
-    function openPeople(requestedByUser: boolean) {
-        const room = get(shellRoomStore);
-        const rosterAvailable =
-            room !== undefined &&
-            isRosterAvailable({
-                onlineListEnabled: room.isChatOnlineListEnabled,
-                disconnectedListEnabled: room.isChatDisconnectedListEnabled,
-            });
-        const opening = peopleOpening(rosterAvailable, requestedByUser);
-        if (opening === "list") {
-            navChat.switchToUserList();
-            chatVisibilityStore.set(true);
-        } else if (opening === "notice") {
-            rosterNoticeOpen = true;
-            chatVisibilityStore.set(false);
-        }
-    }
-
-    function togglePeople() {
-        if (peopleShown) {
-            rosterNoticeOpen = false;
-            chatVisibilityStore.set(false);
-        } else {
-            openPeople(true);
-        }
-    }
-
     function elementOf(button: PanelButton): HTMLButtonElement | undefined {
         if (button === "mobilePeople") return mobilePeopleButton;
         return button === "chat" ? chatButton : peopleButton;
     }
 
-    function closeRosterNotice() {
-        rosterNoticeOpen = false;
+    function focusPeopleButton() {
         elementOf(panelButtonFor("people", isWideScreen(window.innerWidth)))?.focus();
     }
 
-    function toggleChat() {
-        if (conversationShown) {
-            chatVisibilityStore.set(false);
-            return;
-        }
-        rosterNoticeOpen = false;
-        navChat.switchToChat();
-        chatVisibilityStore.set(true);
+    function closeRosterNotice() {
+        endRosterNotice();
+        focusPeopleButton();
     }
 
     function onkeydown(event: KeyboardEvent) {
         if (!$shellActiveStore || event.key !== "Escape" || event.defaultPrevented) return;
         if (!(event.target instanceof Node) || !panel?.contains(event.target)) return;
-        if ($chatVisibilityStore) {
-            chatVisibilityStore.set(false);
-        } else if (rosterNoticeOpen) {
-            closeRosterNotice();
-        } else {
-            return;
-        }
+        const closed = closeSidePanel();
+        if (closed === undefined) return;
+        if (closed === "notice") focusPeopleButton();
         event.preventDefault();
     }
 </script>
