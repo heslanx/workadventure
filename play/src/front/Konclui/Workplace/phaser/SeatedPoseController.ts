@@ -57,6 +57,9 @@ interface SpriteOrigin {
     texture: string;
     y: number;
     cropHeight: number | undefined;
+    // The idle animation of `texture` facing `direction`, built when either changes and not on every frame.
+    direction: SeatPose["direction"] | undefined;
+    animation: string;
 }
 
 interface FrontLayer {
@@ -169,13 +172,16 @@ export class SeatedPoseController {
         for (const [texture, sprite] of character.sprites) {
             let origin = origins.get(sprite);
             if (!origin) {
-                origin = { texture, y: sprite.y, cropHeight: undefined };
+                origin = { texture, y: sprite.y, cropHeight: undefined, direction: undefined, animation: "" };
                 origins.set(sprite, origin);
-            } else {
+            }
+            if (origin.texture !== texture || origin.direction !== pose.direction) {
                 origin.texture = texture;
+                origin.direction = pose.direction;
+                origin.animation = `${texture}-${pose.direction}-idle`;
             }
 
-            const animation = `${texture}-${pose.direction}-idle`;
+            const animation = origin.animation;
             if (sprite.anims && sprite.anims.currentAnim?.key !== animation && scene.anims.exists(animation)) {
                 sprite.anims.play(animation, true);
                 changed = true;

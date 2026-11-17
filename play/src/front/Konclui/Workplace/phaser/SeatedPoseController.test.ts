@@ -367,6 +367,7 @@ describe("SeatedPoseController", () => {
         player.sprites.set("hat", hair);
         update(controller, game, player, seat);
 
+        expect(hair.anims.currentAnim?.key).toBe("hat-up-idle");
         expect(hair.crop).toEqual([0, 0, 32, 22]);
         expect(hair.y).toBe(-3);
     });
