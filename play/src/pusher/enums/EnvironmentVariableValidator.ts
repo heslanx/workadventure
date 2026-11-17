@@ -23,6 +23,52 @@ const desktopRelease = z
     .optional()
     .transform(emptyStringToUndefined);
 
+// A room is addressed by its URL path alone: LocalAdmin compares the key with `new URL(playUri).pathname`, so a key
+// holding a scheme, a host or a query could never match and would be ignored without a trace.
+const RoomMetadataByPath = z.record(
+    z
+        .string()
+        .regex(/^\/[^?#]*$/, "Room keys must be URL paths such as /~/world/room.wam, without scheme, host or query"),
+    z.record(z.string(), z.unknown(), { invalid_type_error: "Room metadata must be a JSON object" }),
+    { invalid_type_error: "Must be a JSON object that maps each room path to a metadata object" },
+);
+
+// The environment hands over one JSON string. It is validated at startup so that a typo stops the process instead of
+// serving rooms without the metadata they were meant to carry. Issues stay on the variable itself, with the room key
+// in the message: the startup report only prints the errors attached to the variable, not those of nested paths.
+function parseRoomMetadataByPath(
+    value: string | undefined,
+    context: z.RefinementCtx,
+): Record<string, Record<string, unknown>> {
+    if (value === undefined || value.trim() === "") {
+        return {};
+    }
+
+    let json: unknown;
+    try {
+        json = JSON.parse(value);
+    } catch (error) {
+        context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Must be valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        });
+        return z.NEVER;
+    }
+
+    const parsed = RoomMetadataByPath.safeParse(json);
+    if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+            const room = issue.path[0];
+            context.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: room === undefined ? issue.message : `Room "${String(room)}": ${issue.message}`,
+            });
+        }
+        return z.NEVER;
+    }
+    return parsed.data;
+}
+
 export const EnvironmentVariables = z.object({
     ...ObservabilityEnvironmentVariables,
     ...PostHogEnvironmentVariables,
@@ -345,6 +391,13 @@ export const EnvironmentVariables = z.object({
     ENABLE_TUTORIAL: BoolAsString.optional()
         .transform((val) => toBool(val, true))
         .describe("Whether the onboarding tutorial is enabled or not on this room. Defaults to true."),
+    LOCAL_ADMIN_ROOM_METADATA: z
+        .string()
+        .optional()
+        .transform((val, context) => parseRoomMetadataByPath(val, context))
+        .describe(
+            'JSON object that maps a room path to the metadata object served for that room, merged over the default room metadata. Rooms that are not listed get no extra metadata. The path has no scheme, host or query. For example `{"/~/konclui-office/opt-out.wam":{"konclui":{"shell":false}}}`. Note: this setting is ignored if an Admin API is configured. Defaults to none.',
+        ),
     //DEBUG_ERROR_MESSAGES: BoolAsString.optional().transform((val) => toBool(val, false)),
     ENABLE_OPENAPI_ENDPOINT: BoolAsString.optional()
         .transform((val) => toBool(val, false))

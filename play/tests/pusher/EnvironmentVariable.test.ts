@@ -108,3 +108,29 @@ describe("PostHog session replay", () => {
         expect(EnvironmentVariables.shape.POSTHOG_REPLAY_ENABLED.parse(raw)).toBe(expected);
     });
 });
+
+describe("LOCAL_ADMIN_ROOM_METADATA", () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    afterEach(() => {
+        vi.doUnmock("../../src/pusher/enums/EnvironmentVariableValidator");
+    });
+
+    it("exports the validated room metadata for LocalAdmin", async () => {
+        const roomMetadata = { "/~/konclui-office/opt-out.wam": { konclui: { shell: false } } };
+        vi.doMock("../../src/pusher/enums/EnvironmentVariableValidator", () => ({
+            ValidatedEnvironmentVariables: {
+                safeParse: () => ({
+                    success: true,
+                    data: { LOCAL_ADMIN_ROOM_METADATA: roomMetadata },
+                }),
+            },
+        }));
+
+        const { LOCAL_ADMIN_ROOM_METADATA } = await import("../../src/pusher/enums/EnvironmentVariable");
+
+        expect(LOCAL_ADMIN_ROOM_METADATA).toBe(roomMetadata);
+    });
+});

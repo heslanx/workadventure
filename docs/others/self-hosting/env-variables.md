@@ -76,6 +76,7 @@ Environment variables for the Play service (frontend and pusher).
 | `ENABLE_SAY` | No | Whether the users can communicate via comics-style bubbles. Defaults to true. |
 | `ENABLE_ISSUE_REPORT` | No | Whether the feature 'issue report' is enabled or not on this room. Defaults to true. |
 | `ENABLE_TUTORIAL` | No | Whether the onboarding tutorial is enabled or not on this room. Defaults to true. |
+| `LOCAL_ADMIN_ROOM_METADATA` | No | JSON object that maps a room path to the metadata object served for that room, merged over the default room metadata. Rooms that are not listed get no extra metadata. The path has no scheme, host or query. For example `{"/~/konclui-office/opt-out.wam":{"konclui":{"shell":false}}}`. Note: this setting is ignored if an Admin API is configured. Defaults to none. |
 | `ENABLE_OPENAPI_ENDPOINT` | No | Enable/disable the OpenAPI documentation endpoint. Defaults to false |
 | `ANALYTICS_FLUSH_INTERVAL_MS` | No | Interval in milliseconds between analytics batch flushes. Renamed from VIDEO_ANALYTICS_FLUSH_INTERVAL_MS: one queue now carries every analytics event, video quality samples included. Defaults to 10000 |
 | `ANALYTICS_TIMEOUT_MS` | No | HTTP timeout in milliseconds for analytics ingestion calls. Renamed from VIDEO_ANALYTICS_TIMEOUT_MS. Defaults to 2000 |

@@ -45,6 +45,7 @@ import {
     LIVEKIT_RECORDING_S3_ENDPOINT,
     LIVEKIT_RECORDING_S3_REGION,
     LIVEKIT_RECORDING_S3_SECRET_KEY,
+    LOCAL_ADMIN_ROOM_METADATA,
     MAP_EDITOR_ALLOW_ALL_USERS,
     MAP_EDITOR_ALLOWED_USERS,
     OPID_WOKA_NAME_POLICY,
@@ -344,6 +345,8 @@ class LocalAdmin implements AdminInterface {
             },
             metadata: {
                 enableTutorial: ENABLE_TUTORIAL,
+                // The key is the path alone (no scheme, host or query), like the room paths matched above.
+                ...LOCAL_ADMIN_ROOM_METADATA[roomUrl.pathname],
             },
         });
     }

@@ -113,6 +113,7 @@ export const ANALYTICS_TIMEOUT_MS = 2_000;
 export const ANALYTICS_MAX_QUEUE_SIZE = 10_000;
 export const ANALYTICS_MAX_BATCH_SIZE = 1_000;
 export const DRAIN_TIMEOUT_MS = 20_000;
+export const LOCAL_ADMIN_ROOM_METADATA: Record<string, Record<string, unknown>> = {};
 
 export const FRONT_ENVIRONMENT_VARIABLES: FrontConfigurationInterface = {
     DEBUG_MODE: false,
