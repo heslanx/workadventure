@@ -383,3 +383,61 @@ describe("PositionDispatcher", () => {
         expect(listenedZones).toEqual(new Set(["0,0", "1,0"]));
     });
 });
+
+// The pusher keeps the last rectangle it received from a client, whether it came in a move or in a viewport message.
+// These tests feed the dispatcher what a walking client sends. The rectangles are computed as GameScene computes them:
+// the camera view (960x540 world px, its top-left corner at the player) and that view plus a 300 px margin, cut at
+// the edges of a 6400 px square map (20x20 zones of 320 px). They model the client: the client side of the fix, that
+// the move carries the viewport message's rectangle, is tested in GameSceneMovement.test.ts.
+describe("PositionDispatcher fed by a client that walks for 2 seconds", () => {
+    type Rectangle = Parameters<PositionDispatcher["setViewport"]>[1];
+
+    const cameraView = (x: number, y: number): Rectangle => ({ left: x, top: y, right: x + 960, bottom: y + 540 });
+    const serverView = (x: number, y: number): Rectangle => ({
+        left: Math.max(0, x - 300),
+        top: Math.max(0, y - 300),
+        right: Math.min(6400, x + 960 + 300),
+        bottom: Math.min(6400, y + 540 + 300),
+    });
+
+    /**
+     * The rectangles in the order the pusher receives them: the join, then for each of the 10 moves of 2 seconds
+     * (POSITION_DELAY is 200 ms) the move followed by the viewport message that the scrolling camera triggers. The
+     * player walks right at 180 px/s (WOKA_SPEED 9), 36 px per move, from the middle of the map.
+     */
+    function walk(rectangleOfJoinAndMoves: (x: number, y: number) => Rectangle): Rectangle[] {
+        const y = 3000;
+        const rectangles = [rectangleOfJoinAndMoves(3000, y)];
+        for (let move = 1; move <= 10; move++) {
+            const x = 3000 + 36 * move;
+            rectangles.push(rectangleOfJoinAndMoves(x, y), serverView(x, y));
+        }
+        return rectangles;
+    }
+
+    // Every zone the client enters starts a userJoined for each user in it, and every zone it leaves a userLeft.
+    function countZonesEnteredAndLeft(rectangles: Rectangle[]): { entered: number; left: number } {
+        const { dispatcher, socket, listenedZones } = createDispatcher();
+        // The join subscribes to the zones the client starts in: only what comes after it is churn.
+        dispatcher.setViewport(socket, rectangles[0]);
+        let entered = 0;
+        let left = 0;
+        for (const rectangle of rectangles.slice(1)) {
+            const before = new Set(listenedZones);
+            dispatcher.setViewport(socket, rectangle);
+            entered += [...listenedZones].filter((zone) => !before.has(zone)).length;
+            left += [...before].filter((zone) => !listenedZones.has(zone)).length;
+        }
+        return { entered, left };
+    }
+
+    it("enters and leaves the ring of zones between the two rectangles on every message when they differ", () => {
+        // Before: the join and the moves carry the camera view, the viewport messages the view plus the margin.
+        expect(countZonesEnteredAndLeft(walk(cameraView))).toEqual({ entered: 170, left: 152 });
+    });
+
+    it("enters and leaves only the zones its viewport really crosses when every message carries the same rectangle", () => {
+        // After: the wide rectangle crosses one zone boundary on each side in 2 seconds, a column of 5 zones each.
+        expect(countZonesEnteredAndLeft(walk(serverView))).toEqual({ entered: 5, left: 5 });
+    });
+});

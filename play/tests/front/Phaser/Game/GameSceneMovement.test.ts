@@ -12,6 +12,7 @@ import type { HasPlayerMovedInterface } from "../../../../src/front/Api/Events/H
 import { registerSceneExtension } from "../../../../src/front/ExternalModule/ClientExtensionPoints";
 import type { SceneFrameContext } from "../../../../src/front/ExternalModule/ClientExtensionPoints";
 import { iframeListener } from "../../../../src/front/Api/IframeListener";
+import { gameManager } from "../../../../src/front/Phaser/Game/GameManager";
 import type { Room } from "../../../../src/front/Connection/Room";
 import type { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
 import type { RemotePlayersRepository } from "../../../../src/front/Phaser/Game/RemotePlayersRepository";
@@ -28,7 +29,12 @@ vi.mock("@sentry/svelte", async (importOriginal) => ({
 // GameScene is too heavy to boot in a unit test, so each test builds it with its real constructor (real field
 // initializers, real repository and interpolator) and overrides only what would need a running Phaser game.
 
-const VIEWPORT = { left: 0, top: 0, right: 800, bottom: 600 };
+// A 960x540 camera view on a map much larger than the screen, so that the camera scrolls with the player.
+const WORLD_VIEW = { x: 100, y: 50, right: 1060, bottom: 590 };
+const MAP_SIZE = 6400;
+// What the scene knows of the camera view, and what the server must watch: that view plus 300 px, cut at the map edge.
+const RAW_VIEWPORT = { left: 100, top: 50, right: 1060, bottom: 590 };
+const SERVER_VIEWPORT = { left: 0, top: 0, right: 1360, bottom: 890 };
 
 type UserJoined = Parameters<RemotePlayersRepository["addPlayer"]>[0];
 type UserMoved = Parameters<RemotePlayersRepository["movePlayer"]>[0];
@@ -64,7 +70,9 @@ interface GameSceneInternals {
     gameMapFrontWrapper: unknown;
     actionableItems: Map<number, unknown>;
     remotePlayersSpatialIndex: SpatialMap<number, Movable>;
-    getViewport(): typeof VIEWPORT;
+    playerName: string;
+    joinRoom(): Promise<void>;
+    _sendViewportToServer(): void;
     doAddPlayer(data: { userId: number; position: PositionMessage }): void;
     pushPlayerPosition(event: HasPlayerMovedInterface): void;
     handleCurrentPlayerHasMovedEvent(event: HasPlayerMovedInterface): void;
@@ -96,8 +104,16 @@ function createScene() {
     const scene = new GameScene(room as unknown as Room, "characterization-scene");
     const internals = scene as unknown as GameSceneInternals;
     const sharePosition = vi.fn<SharePosition>();
-    internals.connection = { sharePosition, getUserId: () => 1 };
-    internals.getViewport = () => VIEWPORT;
+    const setViewport = vi.fn<(viewport: unknown) => void>();
+    internals.connection = { sharePosition, setViewport, closeConnection: vi.fn(), getUserId: () => 1 };
+    // The scene's own viewport code reads the renderer, the main camera and the map size.
+    const worldView = { ...WORLD_VIEW };
+    const preRender = vi.fn();
+    Object.assign(scene, {
+        scene: { scene: { renderer: {} } },
+        cameras: { main: { worldView, preRender } },
+        Map: { widthInPixels: MAP_SIZE, heightInPixels: MAP_SIZE },
+    });
     const remotePlayers = new Map<number, FakeRemotePlayer>();
     internals.doAddPlayer = (data) => {
         const player = fakeRemotePlayer(data.userId, data.position.x, data.position.y);
@@ -112,7 +128,16 @@ function createScene() {
             direction,
             moving,
         }));
-    return { scene, internals, sharePosition, shared, remotePlayers };
+    return {
+        scene,
+        internals,
+        sharePosition,
+        setViewport,
+        worldView,
+        preRender,
+        shared,
+        remotePlayers,
+    };
 }
 
 function move(x: number, direction: PositionMessage_Direction, moving = true): HasPlayerMovedInterface {
@@ -233,6 +258,83 @@ describe("GameScene position sharing (pushPlayerPosition)", () => {
         internals.pushPlayerPosition(move(700, PositionMessage_Direction.DOWN, false));
         expect(shared()).toHaveLength(5);
         expect(shared()[4]).toEqual({ x: 700, direction: PositionMessage_Direction.DOWN, moving: false });
+    });
+});
+
+// The pusher keeps the last rectangle it received, from a move or from a viewport message. While the camera scrolled, a
+// move that carried the raw camera view and a viewport message that carried the view plus a margin made it drop and
+// re-add the zones of the ring between the two, up to 5 times per second.
+describe("GameScene server viewport (the rectangle the pusher watches)", () => {
+    it("shares the viewport message's rectangle in every move, not the raw camera view", () => {
+        const { internals, sharePosition } = createScene();
+        internals.currentTick = 10_000;
+        internals.pushPlayerPosition(move(1, PositionMessage_Direction.LEFT));
+        internals.currentTick = 10_010;
+        internals.pushPlayerPosition(move(2, PositionMessage_Direction.UP));
+        internals.currentTick = 10_020;
+        internals.pushPlayerPosition(move(3, PositionMessage_Direction.UP, false));
+
+        expect(sharePosition.mock.calls.map(([, , , , viewport]) => viewport)).toEqual([
+            SERVER_VIEWPORT,
+            SERVER_VIEWPORT,
+            SERVER_VIEWPORT,
+        ]);
+    });
+
+    it("falls back to the camera view when the widened rectangle has no area", () => {
+        const { internals, sharePosition } = createScene();
+        Object.assign(internals, { Map: { widthInPixels: 0, heightInPixels: 0 } });
+
+        internals.currentTick = 10_000;
+        internals.pushPlayerPosition(move(1, PositionMessage_Direction.LEFT));
+
+        expect(sharePosition.mock.calls.map(([, , , , viewport]) => viewport)).toEqual([RAW_VIEWPORT]);
+    });
+
+    it("sends a viewport message only for a rectangle that the last message, a move included, did not carry", () => {
+        const { internals, setViewport, worldView } = createScene();
+        const scroll = (pixels: number) => {
+            worldView.x += pixels;
+            worldView.right += pixels;
+        };
+        internals.currentTick = 10_000;
+        internals.pushPlayerPosition(move(1, PositionMessage_Direction.LEFT));
+        internals._sendViewportToServer();
+        // The camera scrolls and the move comes first: it carries the new rectangle, so the viewport message has nothing
+        // left to say.
+        scroll(400);
+        internals.currentTick = 10_200;
+        internals.pushPlayerPosition(move(2, PositionMessage_Direction.LEFT));
+        internals._sendViewportToServer();
+
+        expect(setViewport).not.toHaveBeenCalled();
+
+        scroll(400);
+        internals._sendViewportToServer();
+
+        expect(setViewport.mock.calls).toEqual([[{ left: 600, top: 0, right: 2160, bottom: 890 }]]);
+    });
+
+    it("sends the same rectangle when joining the room, after bringing the camera up to date", () => {
+        const { internals, preRender, setViewport } = createScene();
+        const emitJoinRoom = vi.fn();
+        Object.assign(internals.connection as object, {
+            emitJoinRoom,
+            roomJoinedPromise: new Promise<never>(() => {}),
+        });
+        vi.spyOn(gameManager, "currentStartedRoom", "get").mockReturnValue({} as Room);
+        internals.CurrentPlayer = { x: 300, y: 400 };
+        internals.playerName = "Alice";
+
+        // The join waits for a room that never answers: the scene is only observed up to the message it sends.
+        expect(internals.joinRoom()).toBeInstanceOf(Promise);
+
+        expect(emitJoinRoom).toHaveBeenCalledTimes(1);
+        expect(emitJoinRoom.mock.calls[0][2]).toEqual(SERVER_VIEWPORT);
+        expect(preRender).toHaveBeenCalledTimes(1);
+        // The join carried the rectangle: a viewport message for the same camera is redundant.
+        internals._sendViewportToServer();
+        expect(setViewport).not.toHaveBeenCalled();
     });
 });
 
@@ -400,6 +502,35 @@ describe("GameScene extensions, once per frame (update)", () => {
         expect([...context.remotePlayers.keys()]).toEqual([7]);
         expect(context.getPlayerVariable("officeSeat")).toEqual({ v: 1, direction: "down" });
         expect(context.getPlayerVariable("missing")).toBeUndefined();
+    });
+
+    it("hands the extension the current player once the scene has one", () => {
+        const { scene, internals } = createScene();
+        const localPlayer = joinWithLocalPlayer(internals);
+        const contexts: SceneFrameContext[] = [];
+        unregisterAll.push(registerSceneExtension({ id: "test", onFrame: (context) => contexts.push(context) }));
+
+        scene.update(1_000, 16);
+
+        expect(contexts).toHaveLength(1);
+        expect(contexts[0].currentPlayer).toBe(localPlayer);
+    });
+
+    it("tells each extension when the scene shuts down, and calls none on a frame after that", () => {
+        const { scene } = createScene();
+        // The scene's cleanup also resets page-wide state: the listener of the map scripts is shared with other tests.
+        vi.spyOn(iframeListener, "cleanup").mockImplementation(() => {});
+        const onFrame = vi.fn();
+        const onShutdown = vi.fn();
+        unregisterAll.push(registerSceneExtension({ id: "test", onFrame, onShutdown }));
+        scene.update(1_000, 16);
+
+        scene.cleanupClosingScene();
+        // An ejected user keeps a scene that still updates.
+        scene.update(1_016, 16);
+
+        expect(onShutdown.mock.calls).toEqual([[scene]]);
+        expect(onFrame).toHaveBeenCalledTimes(1);
     });
 
     it("keeps the frame going when an extension throws, and reports it", () => {

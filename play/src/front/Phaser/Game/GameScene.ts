@@ -313,6 +313,9 @@ const MOVEMENT_CALLBACK_FAILURE_REPORT_INTERVAL_MS = 10_000;
 // How many players the scene reports for one remote-player drift message.
 const MAX_REPORTED_PLAYERS_PER_DRIFT = 10;
 
+// How far past the camera view the server's viewport reaches, in world pixels.
+const SERVER_VIEWPORT_MARGIN = 300;
+
 export class GameScene extends DirtyScene {
     Terrains: Array<Tileset>;
     CurrentPlayer!: Player;
@@ -1748,13 +1751,13 @@ export class GameScene extends DirtyScene {
     }
 
     /**
-     * Calculates the viewport including nearby areas with maxUsersInAreaPropertyData.
-     * Only areas within MAX_AREA_EXTENSION_DISTANCE from the camera viewport are included.
-     * The viewport is also capped to MAX_VIEWPORT_SIZE to prevent performance issues.
+     * The camera view plus `margin` on each side, cut at the map edges: the rectangle the server watches for this
+     * client (join, moves and viewport messages).
      * @param margin - Margin to add around the camera viewport
+     * @param forceRecomputeCamera - Update the camera before reading its view
      * @returns The calculated viewport or null if invalid
      */
-    private calculateViewport(margin = 300): ViewportInterface | null {
+    private calculateViewport(margin = SERVER_VIEWPORT_MARGIN, forceRecomputeCamera = false): ViewportInterface | null {
         if (!this.scene.scene.renderer) {
             // The camera's worldView is empty without a renderer: sending it would replace the viewport of the
             // joinRoom message with a 300 px square at the map origin.
@@ -1763,6 +1766,12 @@ export class GameScene extends DirtyScene {
         const camera = this.cameras.main;
         if (!camera) {
             return null;
+        }
+
+        if (forceRecomputeCamera) {
+            // When calling this before the first render, camera.preRender() must be called before accessing worldView to ensure it's up to date.
+            // See: https://docs.phaser.io/phaser/concepts/cameras#world-view
+            camera.preRender();
         }
 
         const worldView = camera.worldView;
@@ -1818,7 +1827,7 @@ export class GameScene extends DirtyScene {
         );
     }
 
-    private _sendViewportToServer(margin = 300): void {
+    private _sendViewportToServer(margin = SERVER_VIEWPORT_MARGIN): void {
         const newViewport = this.calculateViewport(margin);
         if (!newViewport) {
             return;
@@ -2461,6 +2470,8 @@ export class GameScene extends DirtyScene {
             this.cameras.main.setBackgroundColor(gameManager.currentStartedRoom.backgroundColor);
         }
 
+        const viewport = this.getServerViewport(true);
+        this.lastSentViewport = viewport;
         this.connection.emitJoinRoom(
             this.playerName,
             {
@@ -2469,7 +2480,7 @@ export class GameScene extends DirtyScene {
                 direction: PositionMessage_Direction.DOWN,
                 moving: false,
             },
-            this.getViewport(true),
+            viewport,
             get(availabilityStatusStore),
         );
 
@@ -4518,8 +4529,21 @@ ${escapedMessage}
         this.lastMoveEventSent = event;
         this.lastSentTick = this.currentTick;
 
-        this.connection?.sharePosition(event.x, event.y, event.direction, event.moving, this.getViewport());
+        const viewport = this.getServerViewport();
+        // The move is a viewport message too: the next one only goes out once the rectangle changes again.
+        this.lastSentViewport = viewport;
+        this.connection?.sharePosition(event.x, event.y, event.direction, event.moving, viewport);
         iframeListener.hasPlayerMoved(event);
+    }
+
+    /**
+     * The rectangle the server watches for this client, in every message that carries a viewport: the join, the moves
+     * and the viewport message. The pusher keeps the last one it received, so two different rectangles sent in turn
+     * made it drop and re-add the zones of the ring between them each time they alternated.
+     */
+    private getServerViewport(forceRecomputeCamera = false): ViewportInterface {
+        // No widened rectangle when the map or the view has no area: the camera view is all there is to send.
+        return this.calculateViewport(SERVER_VIEWPORT_MARGIN, forceRecomputeCamera) ?? this.getViewport();
     }
 
     /**
@@ -4539,20 +4563,12 @@ ${escapedMessage}
         };
     }
 
-    private getViewport(forceRecomputeCamera = false): ViewportInterface {
+    private getViewport(): ViewportInterface {
         if (!this.scene.scene.renderer) {
             return this.getHeadlessViewport();
         }
 
-        const camera = this.cameras.main;
-
-        if (forceRecomputeCamera) {
-            // When calling this before the first render, camera.preRender() must be called before accessing worldView to ensure it's up to date.
-            // See: https://docs.phaser.io/phaser/concepts/cameras#world-view
-            camera.preRender();
-        }
-
-        const worldView = camera.worldView;
+        const worldView = this.cameras.main.worldView;
         return {
             left: worldView.x,
             top: worldView.y,
