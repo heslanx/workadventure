@@ -323,49 +323,51 @@ describe("scene extensions", () => {
 
     describe("registration", () => {
         it("has no extension until one registers, so that the scene runs as if there were no port", async () => {
-            const { getSceneExtensions, notifySceneShutdown, runSceneFrame } = await loadPort();
+            const { notifySceneShutdown, runSceneFrame } = await loadPort();
 
-            expect(getSceneExtensions()).toEqual([]);
             expect(() => runSceneFrame(frameContext())).not.toThrow();
             expect(() => notifySceneShutdown(scene)).not.toThrow();
             expect(captureException).not.toHaveBeenCalled();
         });
 
-        it("lists the registered extensions in the order they registered", async () => {
-            const { getSceneExtensions, registerSceneExtension } = await loadPort();
-            const first = recordingExtension("first", []);
-            const second = recordingExtension("second", []);
+        it("keeps the extensions in the order they registered, on a frame and on shutdown", async () => {
+            const { notifySceneShutdown, registerSceneExtension, runSceneFrame } = await loadPort();
+            const calls: string[] = [];
+            registerSceneExtension(recordingExtension("first", calls));
+            registerSceneExtension(recordingExtension("second", calls));
 
-            registerSceneExtension(first);
-            registerSceneExtension(second);
+            runSceneFrame(frameContext(1));
+            notifySceneShutdown(scene);
 
-            expect(getSceneExtensions()).toEqual([first, second]);
+            expect(calls).toEqual(["first frame 1", "second frame 1", "first shutdown", "second shutdown"]);
         });
 
         it("removes only the extension that unregisters", async () => {
-            const { getSceneExtensions, registerSceneExtension } = await loadPort();
-            const first = recordingExtension("first", []);
-            const second = recordingExtension("second", []);
-            const third = recordingExtension("third", []);
-            registerSceneExtension(first);
-            const unregisterSecond = registerSceneExtension(second);
-            registerSceneExtension(third);
+            const { notifySceneShutdown, registerSceneExtension, runSceneFrame } = await loadPort();
+            const calls: string[] = [];
+            registerSceneExtension(recordingExtension("first", calls));
+            const unregisterSecond = registerSceneExtension(recordingExtension("second", calls));
+            registerSceneExtension(recordingExtension("third", calls));
 
             unregisterSecond();
+            runSceneFrame(frameContext(1));
+            notifySceneShutdown(scene);
 
-            expect(getSceneExtensions()).toEqual([first, third]);
+            expect(calls).toEqual(["first frame 1", "third frame 1", "first shutdown", "third shutdown"]);
         });
 
         it("does nothing when an extension unregisters twice", async () => {
-            const { getSceneExtensions, registerSceneExtension } = await loadPort();
-            const extension = recordingExtension("twice", []);
+            const { registerSceneExtension, runSceneFrame } = await loadPort();
+            const calls: string[] = [];
+            const extension = recordingExtension("twice", calls);
             const unregisterFirst = registerSceneExtension(extension);
             registerSceneExtension(extension);
 
             unregisterFirst();
             unregisterFirst();
+            runSceneFrame(frameContext(1));
 
-            expect(getSceneExtensions()).toEqual([extension]);
+            expect(calls).toEqual(["twice frame 1"]);
         });
     });
 

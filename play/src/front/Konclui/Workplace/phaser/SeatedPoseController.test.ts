@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SeatedPoseController, type SeatedPoseScene, type SeatedPoseUpdate } from "./SeatedPoseController";
 
 class TestSprite {
@@ -8,6 +8,7 @@ class TestSprite {
     public height = 32;
     public isCropped = false;
     public crop: number[] | undefined;
+    public failCrop = false;
     public anims = {
         currentAnim: { key: "body-down-idle" },
         play: (key: string) => {
@@ -16,6 +17,9 @@ class TestSprite {
     };
 
     public setCrop(x?: number, y?: number, width?: number, height?: number): this {
+        if (this.failCrop && x !== undefined) {
+            throw new Error("crop failed");
+        }
         this.isCropped = x !== undefined;
         this.crop = x !== undefined ? [x, y ?? 0, width ?? 0, height ?? 0] : undefined;
         return this;
@@ -59,6 +63,12 @@ function character(direction = "down") {
             ["hair", hair],
         ]),
     };
+}
+
+function spriteOf(owner: ReturnType<typeof character>, texture: string): TestSprite {
+    const sprite = owner.sprites.get(texture);
+    if (!sprite) throw new Error(`${texture} sprite missing`);
+    return sprite;
 }
 
 function scene(): SeatedPoseScene & {
@@ -123,10 +133,11 @@ function update(
     currentSeat: unknown,
     remoteCharacters = new Map<number, ReturnType<typeof character>>(),
     remotePlayers = new Map<number, { variables: ReadonlyMap<string, unknown> }>(),
+    baseUrl = "http://localhost:8090/~/escritorio-sede/office.wam",
 ): void {
     const context: SeatedPoseUpdate = {
         scene: game,
-        baseUrl: "http://localhost:8090/~/escritorio-sede/office.wam",
+        baseUrl,
         currentPlayer,
         currentSeat,
         remoteCharacters,
@@ -136,6 +147,10 @@ function update(
 }
 
 describe("SeatedPoseController", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     it.each([
         { direction: "down", height: 32 },
         { direction: "left", height: 32 },
@@ -155,25 +170,205 @@ describe("SeatedPoseController", () => {
         }
     });
 
-    it("clears the pose when the public variable clears or changes to a malformed value", () => {
+    it("applies the crop and the offset the seat sends and clears them when the public variable clears", () => {
         const controller = new SeatedPoseController();
         const game = scene();
         const player = character();
+
         update(controller, game, player, { v: 1, direction: "down", dy: 4, crop: 3 });
+        for (const sprite of player.sprites.values()) {
+            expect(sprite.crop).toEqual([0, 0, 32, 29]);
+            expect(sprite.y).toBe(4);
+        }
 
         update(controller, game, player, null);
         for (const sprite of player.sprites.values()) {
             expect(sprite.crop).toBeUndefined();
             expect(sprite.y).toBe(0);
         }
+    });
 
+    it("accepts the largest crop and the lowest offset a seat may send", () => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+
+        update(controller, game, player, { v: 1, direction: "up", crop: 16, dy: -16 });
+
+        for (const sprite of player.sprites.values()) {
+            expect(sprite.crop).toEqual([0, 0, 32, 16]);
+            expect(sprite.y).toBe(-16);
+        }
+    });
+
+    it.each([
+        ["a crop above the range", { crop: 17 }],
+        ["a crop that is not an integer", { crop: 2.5 }],
+        ["a crop given as a string", { crop: "3" }],
+        ["an offset above the range", { dy: 17 }],
+        ["an offset that is not a number", { dy: Number.NaN }],
+        ["an offset given as a string", { dy: "4" }],
+    ])("falls back to the default of the direction for %s", (_label, fields) => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+
+        update(controller, game, player, { v: 1, direction: "up", ...fields });
+
+        for (const sprite of player.sprites.values()) {
+            expect(sprite.crop).toEqual([0, 0, 32, 22]);
+            expect(sprite.y).toBe(-3);
+        }
+    });
+
+    it.each([
+        ["a direction that is not one of the four", { v: 1, direction: "north" }],
+        ["another version", { v: 2, direction: "down" }],
+        ["no version", { direction: "down" }],
+        ["no direction", { v: 1 }],
+        ["a string", "down"],
+    ])("clears the pose when the public variable changes to %s", (_label, malformed) => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
         update(controller, game, player, { v: 1, direction: "down" });
-        update(controller, game, player, { v: 1, direction: "north" });
+        expect(spriteOf(player, "body").y).toBe(-3);
+
+        update(controller, game, player, malformed);
 
         for (const sprite of player.sprites.values()) {
             expect(sprite.crop).toBeUndefined();
             expect(sprite.y).toBe(0);
         }
+    });
+
+    it("re-asserts the pose on every frame without parsing an unchanged variable again", () => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+        const body = spriteOf(player, "body");
+        let reads = 0;
+        const seat = {
+            v: 1,
+            get direction() {
+                reads += 1;
+                return "up";
+            },
+        };
+        update(controller, game, player, seat);
+        const readsOfFirstFrame = reads;
+        expect(readsOfFirstFrame).toBeGreaterThan(0);
+
+        // What Character.playAnimation does to a sprite between two frames.
+        body.setCrop();
+        body.y = 0;
+        update(controller, game, player, seat);
+        update(controller, game, player, seat);
+
+        expect(reads).toBe(readsOfFirstFrame);
+        expect(body.crop).toEqual([0, 0, 32, 22]);
+        expect(body.y).toBe(-3);
+    });
+
+    it("follows a variable that is replaced by a new object", () => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+        const body = spriteOf(player, "body");
+        update(controller, game, player, { v: 1, direction: "up" });
+
+        update(controller, game, player, { v: 1, direction: "down", dy: 2 });
+        expect(body.anims.currentAnim?.key).toBe("body-down-idle");
+        expect(body.crop).toEqual([0, 0, 32, 32]);
+        expect(body.y).toBe(2);
+
+        update(controller, game, player, { v: 2, direction: "down" });
+        expect(body.crop).toBeUndefined();
+        expect(body.y).toBe(0);
+    });
+
+    it("resolves the front image of an unchanged variable again when the page address changes", () => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+        const seat = { v: 1, direction: "up", front: { src: "/map-storage/chair.png", x: 0, y: 0 } };
+        update(controller, game, player, seat);
+
+        update(controller, game, player, seat, new Map(), new Map(), "http://play.example.test/~/office.wam");
+
+        expect(game.load.queue.map(([, source]) => source)).toEqual([
+            "http://localhost:8090/map-storage/chair.png",
+            "http://play.example.test/map-storage/chair.png",
+        ]);
+    });
+
+    it("restores every sprite, rethrows and stays off after a failure, until the scene resets it", () => {
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+        const body = spriteOf(player, "body");
+        const hair = spriteOf(player, "hair");
+        const cropBody = vi.spyOn(body, "setCrop");
+        hair.failCrop = true;
+
+        expect(() => update(controller, game, player, { v: 1, direction: "up" })).toThrow();
+
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(cropBody.mock.calls).toEqual([[0, 0, 32, 22], []]);
+        expect(body.crop).toBeUndefined();
+        expect(body.y).toBe(0);
+
+        hair.failCrop = false;
+        update(controller, game, player, { v: 1, direction: "up" });
+        expect(body.crop).toBeUndefined();
+        expect(body.y).toBe(0);
+
+        controller.reset(game);
+        update(controller, game, player, { v: 1, direction: "up" });
+        for (const sprite of player.sprites.values()) {
+            expect(sprite.crop).toEqual([0, 0, 32, 22]);
+            expect(sprite.y).toBe(-3);
+        }
+    });
+
+    it("restores a sprite the character replaced or dropped and poses the one that took its place", () => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+        const replaced = spriteOf(player, "hair");
+        const seat = { v: 1, direction: "up" };
+        update(controller, game, player, seat);
+
+        const next = new TestSprite();
+        player.sprites.set("hair", next);
+        update(controller, game, player, seat);
+        expect(replaced.crop).toBeUndefined();
+        expect(replaced.y).toBe(0);
+        expect(next.crop).toEqual([0, 0, 32, 22]);
+        expect(next.y).toBe(-3);
+
+        player.sprites.delete("hair");
+        update(controller, game, player, seat);
+        expect(next.crop).toBeUndefined();
+        expect(next.y).toBe(0);
+        expect(spriteOf(player, "body").crop).toEqual([0, 0, 32, 22]);
+    });
+
+    it("keeps the pose of a sprite the character moved to another texture key", () => {
+        const controller = new SeatedPoseController();
+        const game = scene();
+        const player = character();
+        const hair = spriteOf(player, "hair");
+        const seat = { v: 1, direction: "up" };
+        update(controller, game, player, seat);
+
+        player.sprites.delete("hair");
+        player.sprites.set("hat", hair);
+        update(controller, game, player, seat);
+
+        expect(hair.crop).toEqual([0, 0, 32, 22]);
+        expect(hair.y).toBe(-3);
     });
 
     it("restores the pose while walking and reapplies it after the walk stops", () => {
@@ -344,19 +539,20 @@ describe("SeatedPoseController", () => {
         expect(game.load.events.eventNames()).toEqual([]);
     });
 
-    it("rejects cross-origin front images while keeping the seated pose", () => {
+    it.each([
+        ["of another origin", "https://example.com/map-storage/chair.png"],
+        ["outside the map storage", "/other/chair.png"],
+        ["that is not a PNG", "/map-storage/chair.svg"],
+        ["that climbs out of the map storage", "/map-storage/../admin/x.png"],
+    ])("rejects a front image %s while keeping the seated pose", (_label, src) => {
         const controller = new SeatedPoseController();
         const game = scene();
         const player = character();
 
-        update(controller, game, player, {
-            v: 1,
-            direction: "up",
-            front: { src: "https://example.com/map-storage/chair.png", x: 0, y: 0 },
-        });
+        update(controller, game, player, { v: 1, direction: "up", front: { src, x: 0, y: 0 } });
 
         expect(game.load.queue).toHaveLength(0);
         expect(game.images).toHaveLength(0);
-        expect(player.sprites.get("body")?.crop).toEqual([0, 0, 32, 22]);
+        expect(spriteOf(player, "body").crop).toEqual([0, 0, 32, 22]);
     });
 });

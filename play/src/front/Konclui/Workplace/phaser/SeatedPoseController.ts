@@ -1,4 +1,4 @@
-type SeatDirection = "up" | "down" | "left" | "right";
+import { parseSeatPose, type SeatPose } from "../domain/seatPose";
 
 interface SeatSprite {
     y: number;
@@ -51,14 +51,10 @@ export interface SeatedPoseUpdate {
     remotePlayers: ReadonlyMap<number, RemoteSeatData>;
 }
 
-interface SeatPose {
-    direction: SeatDirection;
-    crop: number;
-    dy: number;
-    front?: { source: string; x: number; y: number };
-}
-
 interface SpriteOrigin {
+    // The key the sprite has in its character's `sprites`, so that a sprite the character dropped is found
+    // without collecting the current ones on every frame.
+    texture: string;
     y: number;
     cropHeight: number | undefined;
 }
@@ -71,70 +67,15 @@ interface FrontLayer {
     cancelLoad?: () => void;
 }
 
-const DEFAULT_POSE: Record<SeatDirection, { crop: number; dy: number }> = {
-    up: { crop: 10, dy: -3 },
-    down: { crop: 0, dy: -3 },
-    left: { crop: 0, dy: -3 },
-    right: { crop: 0, dy: -3 },
-};
-
-function isSeatDirection(value: unknown): value is SeatDirection {
-    return value === "up" || value === "down" || value === "left" || value === "right";
-}
-
-function isNumberInRange(value: unknown, minimum: number, maximum: number): value is number {
-    return typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum;
-}
-
-function parseFront(value: unknown, baseUrl: string): SeatPose["front"] {
-    if (typeof value !== "object" || value === null || !("src" in value) || !("x" in value) || !("y" in value)) {
-        return undefined;
-    }
-    if (
-        typeof value.src !== "string" ||
-        !isNumberInRange(value.x, -100_000, 100_000) ||
-        !isNumberInRange(value.y, -100_000, 100_000)
-    ) {
-        return undefined;
-    }
-
-    try {
-        const base = new URL(baseUrl);
-        const source = new URL(value.src, base);
-        if (
-            source.origin !== base.origin ||
-            !source.pathname.startsWith("/map-storage/") ||
-            !source.pathname.endsWith(".png")
-        ) {
-            return undefined;
-        }
-        return { source: source.href, x: Math.round(value.x), y: Math.round(value.y) };
-    } catch {
-        return undefined;
-    }
-}
-
-function parseSeatPose(value: unknown, baseUrl: string): SeatPose | undefined {
-    if (typeof value !== "object" || value === null || !("v" in value) || value.v !== 1) {
-        return undefined;
-    }
-    if (!("direction" in value) || !isSeatDirection(value.direction)) {
-        return undefined;
-    }
-
-    const defaults = DEFAULT_POSE[value.direction];
-    const crop =
-        "crop" in value && Number.isInteger(value.crop) && isNumberInRange(value.crop, 0, 16)
-            ? value.crop
-            : defaults.crop;
-    const dy = "dy" in value && isNumberInRange(value.dy, -16, 16) ? Math.round(value.dy) : defaults.dy;
-    const front = "front" in value ? parseFront(value.front, baseUrl) : undefined;
-    return { direction: value.direction, crop, dy, front };
-}
-
 export class SeatedPoseController {
     private readonly spriteOrigins = new Map<SeatCharacter, Map<SeatSprite, SpriteOrigin>>();
     private readonly frontLayers = new Map<SeatCharacter, FrontLayer>();
+    // The characters seen on the frame being drawn. One set is kept and emptied after each frame.
+    private readonly live = new Set<SeatCharacter>();
+    // A variable is replaced by a new object when it changes and never changed in place, so the pose parsed
+    // from an object stays right for as long as the page address it was resolved against.
+    private poses = new WeakMap<object, SeatPose | null>();
+    private posesBaseUrl: string | undefined;
     private disabled = false;
 
     public update(context: SeatedPoseUpdate): void {
@@ -143,21 +84,20 @@ export class SeatedPoseController {
         }
 
         try {
-            const live = new Set<SeatCharacter>();
-            this.apply(context.scene, context.currentPlayer, context.currentSeat, context.baseUrl, live);
+            this.apply(context.scene, context.currentPlayer, context.currentSeat, context.baseUrl);
             for (const [id, character] of context.remoteCharacters) {
                 const player = context.remotePlayers.get(id);
-                this.apply(context.scene, character, player?.variables.get("officeSeat"), context.baseUrl, live);
+                this.apply(context.scene, character, player?.variables.get("officeSeat"), context.baseUrl);
             }
 
             let dirty = false;
             for (const character of this.spriteOrigins.keys()) {
-                if (!live.has(character)) {
+                if (!this.live.has(character)) {
                     dirty = this.clearCharacter(context.scene, character) || dirty;
                 }
             }
             for (const character of this.frontLayers.keys()) {
-                if (!live.has(character)) {
+                if (!this.live.has(character)) {
                     dirty = this.dropFront(character) || dirty;
                 }
             }
@@ -171,7 +111,10 @@ export class SeatedPoseController {
                 console.error("[konclui] seated pose reset incomplete:", resetError);
             }
             this.disabled = true;
-            console.error("[konclui] seated pose disabled:", error);
+            // Rethrown so that the scene reports it once; later frames return at the latch above.
+            throw error;
+        } finally {
+            this.live.clear();
         }
     }
 
@@ -189,15 +132,25 @@ export class SeatedPoseController {
         }
     }
 
-    private apply(
-        scene: SeatedPoseScene,
-        character: SeatCharacter,
-        value: unknown,
-        baseUrl: string,
-        live: Set<SeatCharacter>,
-    ): void {
-        live.add(character);
-        const pose = parseSeatPose(value, baseUrl);
+    private poseOf(value: unknown, baseUrl: string): SeatPose | undefined {
+        if (typeof value !== "object" || value === null) {
+            return parseSeatPose(value, baseUrl);
+        }
+        if (this.posesBaseUrl !== baseUrl) {
+            this.poses = new WeakMap<object, SeatPose | null>();
+            this.posesBaseUrl = baseUrl;
+        }
+        let pose = this.poses.get(value);
+        if (pose === undefined) {
+            pose = parseSeatPose(value, baseUrl) ?? null;
+            this.poses.set(value, pose);
+        }
+        return pose ?? undefined;
+    }
+
+    private apply(scene: SeatedPoseScene, character: SeatCharacter, value: unknown, baseUrl: string): void {
+        this.live.add(character);
+        const pose = this.poseOf(value, baseUrl);
         if (!pose || character.sprites.size === 0 || this.isWalking(character)) {
             this.clearCharacter(scene, character);
             if (this.dropFront(character)) {
@@ -213,12 +166,13 @@ export class SeatedPoseController {
             this.spriteOrigins.set(character, origins);
         }
 
-        const currentSprites = new Set(character.sprites.values());
         for (const [texture, sprite] of character.sprites) {
             let origin = origins.get(sprite);
             if (!origin) {
-                origin = { y: sprite.y, cropHeight: undefined };
+                origin = { texture, y: sprite.y, cropHeight: undefined };
                 origins.set(sprite, origin);
+            } else {
+                origin.texture = texture;
             }
 
             const animation = `${texture}-${pose.direction}-idle`;
@@ -242,7 +196,7 @@ export class SeatedPoseController {
         }
 
         for (const [sprite, origin] of origins) {
-            if (!currentSprites.has(sprite)) {
+            if (character.sprites.get(origin.texture) !== sprite) {
                 changed = this.restoreSprite(sprite, origin) || changed;
                 origins.delete(sprite);
             }

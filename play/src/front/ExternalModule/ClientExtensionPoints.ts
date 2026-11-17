@@ -177,11 +177,6 @@ export function registerSceneExtension(extension: SceneExtension): () => void {
     };
 }
 
-/** The registered extensions of the game scene, in registration order. */
-export function getSceneExtensions(): readonly SceneExtension[] {
-    return sceneExtensions;
-}
-
 /**
  * Calls `onFrame` of every registered extension. The game scene calls it once per frame.
  *
