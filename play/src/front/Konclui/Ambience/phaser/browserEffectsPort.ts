@@ -1,13 +1,14 @@
 import * as Phaser from "phaser";
 import { asError } from "catch-unknown";
+import { get } from "svelte/store";
 import { localUserStore } from "../../../Connection/LocalUserStore";
-import { FEATURES_KEY, parseFeatures } from "../../Preferences/domain/effectSwitches";
+import { effectSwitchesStore } from "../../Preferences/stores/effectSwitchesStore";
 import { loadEffectsData } from "./effectsLoader";
 import { SceneEffects, type EffectsEnvironment } from "./SceneEffects";
 import type { SceneEffectsPort } from "./sceneEffectsExtension";
 import { shadersCompile } from "./shaderCheck";
 
-// Kept in localStorage: the switches turned off (FEATURES_KEY), and for QA every effect off ("1") or a fixed hour.
+// Kept in localStorage, for QA: every effect off ("1") or a fixed hour. The switches are the Preferences store's.
 const EFFECTS_OFF_KEY = "konclui.fx.off";
 const FIXED_HOUR_KEY = "konclui.fx.hour";
 
@@ -34,7 +35,7 @@ function browserEnvironment(): EffectsEnvironment {
     };
 }
 
-/** The effects as the browser shows them: settings from localStorage, fx/ fetched beside the map, WebGL. */
+/** The effects as the browser shows them: switches from the Preferences store, fx/ fetched beside the map, WebGL. */
 export function createBrowserEffectsPort(): SceneEffectsPort {
     return {
         supports: (scene) =>
@@ -57,14 +58,16 @@ export function createBrowserEffectsPort(): SceneEffectsPort {
                 ...start,
             });
         },
-        features: () => parseFeatures(readSetting(FEATURES_KEY)),
+        features: () => get(effectSwitchesStore),
         watchFeatures(changed) {
-            // another tab of the office changed them
-            const listener = (event: StorageEvent): void => {
-                if (event.key === FEATURES_KEY) changed(parseFeatures(event.newValue));
-            };
-            window.addEventListener("storage", listener);
-            return () => window.removeEventListener("storage", listener);
+            // A store calls back once as it is subscribed, with the value the effects were just made with: the
+            // extension passes setFeatures here, which would force a refresh, so only the changes after it count.
+            let subscribed = false;
+            const unsubscribe = effectSwitchesStore.subscribe((features) => {
+                if (subscribed) changed(features);
+            });
+            subscribed = true;
+            return unsubscribe;
         },
     };
 }

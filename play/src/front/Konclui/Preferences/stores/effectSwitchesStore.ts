@@ -1,5 +1,5 @@
 import { asError } from "catch-unknown";
-import { get, readable } from "svelte/store";
+import { get, writable, type Readable } from "svelte/store";
 import {
     FEATURES_KEY,
     parseFeatures,
@@ -9,9 +9,13 @@ import {
     type PresetName,
 } from "../domain/effectSwitches";
 
-// The office effects read their switches from localStorage and hear a change through the window's `storage` event
-// (Ambience/phaser/browserEffectsPort.ts). The browser fires that event in the other tabs only, so a change made here
-// is announced to this tab with the same event: the effects follow it without importing Preferences or the reverse.
+// This store owns the effect switches: their value, their saving in localStorage, the changes other tabs make and the
+// choice kept for this visit when the storage refuses it. The settings pane writes through it and the office effects
+// (Ambience/phaser/browserEffectsPort.ts) read it, so no one else touches the key or listens to the `storage` event.
+
+/** A choice the storage refused. It is the value until a save succeeds or another tab changes the key. */
+let thisVisitOnly: FeatureSwitches | undefined;
+let stopHearingOtherTabs: (() => void) | undefined;
 
 function readStored(): string | null {
     try {
@@ -22,9 +26,32 @@ function readStored(): string | null {
     }
 }
 
-/** The effect switches as stored, following a change made in this tab or in another one. */
-export const effectSwitchesStore = readable<FeatureSwitches>(parseFeatures(readStored()), (set) => {
-    set(parseFeatures(readStored()));
+function current(): FeatureSwitches {
+    return thisVisitOnly ?? parseFeatures(readStored());
+}
+
+function dropThisVisitOnly(): void {
+    thisVisitOnly = undefined;
+    stopHearingOtherTabs?.();
+    stopHearingOtherTabs = undefined;
+}
+
+function keepForThisVisit(switches: FeatureSwitches): void {
+    thisVisitOnly = switches;
+    if (stopHearingOtherTabs) return;
+    // Nobody may be subscribed while the choice is kept, and the effects read it again in the next room: the listener
+    // lives as long as the choice does, so another tab's saved value is not shadowed by it.
+    const listener = (event: StorageEvent): void => {
+        if (event.key === FEATURES_KEY) dropThisVisitOnly();
+    };
+    window.addEventListener("storage", listener);
+    stopHearingOtherTabs = () => window.removeEventListener("storage", listener);
+}
+
+// The first subscriber reads again: another tab may have changed the key while nobody listened. Subscribers hear this
+// tab's changes through `set`, and another tab's through the `storage` event, which the browser fires in other tabs only.
+const switches = writable<FeatureSwitches>(parseFeatures(null), (set) => {
+    set(current());
     const listener = (event: StorageEvent): void => {
         if (event.key === FEATURES_KEY) set(parseFeatures(event.newValue));
     };
@@ -32,21 +59,25 @@ export const effectSwitchesStore = readable<FeatureSwitches>(parseFeatures(readS
     return () => window.removeEventListener("storage", listener);
 });
 
-function store(switches: FeatureSwitches): void {
-    const value = JSON.stringify(switches);
+/** The effect switches as saved, following a change made in this tab or in another one. */
+export const effectSwitchesStore: Readable<FeatureSwitches> = { subscribe: switches.subscribe };
+
+function save(next: FeatureSwitches): void {
     try {
-        localStorage.setItem(FEATURES_KEY, value);
+        localStorage.setItem(FEATURES_KEY, JSON.stringify(next));
+        dropThisVisitOnly();
     } catch (error: unknown) {
         // Private browsing or a full storage: the change still applies, for this visit only.
         console.warn(`[konclui] preferences: could not save ${FEATURES_KEY}; this visit only:`, asError(error));
+        keepForThisVisit(next);
     }
-    window.dispatchEvent(new StorageEvent("storage", { key: FEATURES_KEY, newValue: value }));
+    switches.set(next);
 }
 
 export function setEffect(feature: Feature, on: boolean): void {
-    store({ ...get(effectSwitchesStore), [feature]: on });
+    save({ ...get(effectSwitchesStore), [feature]: on });
 }
 
 export function applyEffectsPreset(name: PresetName): void {
-    store(presetFeatures(name));
+    save(presetFeatures(name));
 }

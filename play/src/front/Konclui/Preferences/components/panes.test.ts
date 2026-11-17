@@ -170,18 +170,14 @@ describe("the preference sections", () => {
         expect(automatic.getAttribute("aria-checked")).toBe("false");
     });
 
-    it("switches an effect through localStorage and the storage event the effects hear", () => {
-        const heard: (string | null)[] = [];
-        const listener = (event: StorageEvent) => heard.push(event.newValue);
-        window.addEventListener("storage", listener);
+    it("switches an effect through the switches store, which saves it in localStorage for the effects", () => {
         show(PerformancePane);
         const water = switchFor("konclui.preferences.performance.water");
+        expect(water.getAttribute("aria-checked")).toBe("true");
 
         press(water);
 
-        window.removeEventListener("storage", listener);
         expect(parseFeatures(localStorage.getItem(FEATURES_KEY)).water).toBe(false);
-        expect(heard.map((value) => parseFeatures(value).water)).toEqual([false]);
         expect(water.getAttribute("aria-checked")).toBe("false");
     });
 
