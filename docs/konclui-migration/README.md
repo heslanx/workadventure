@@ -29,3 +29,5 @@ The [release preparation record](release.md) separates local implementation, loc
 [UI boundary characterization](ui-contracts.md) records the inspected profile, navigation, economy, emote, and FX contracts, including source/documentation differences that still require runtime proof.
 
 The [performance verification contract](performance.md) defines variant identities, correctness gates, measurements and the bounded optimization search. Its evidence remains open.
+
+The [engineering decisions of 2026-11-18](decisions.md) (C1-C5 and entry-screen copy) record each decision with its evidence, open hypotheses, first slice and reversal.
