@@ -42,6 +42,14 @@ type RoomWsQuery = {
     connectionId?: string;
 };
 
+// Data of a transport upgraded only to be refused: a resume onto a connection this pusher does not hold.
+type StaleResumeData = {
+    rejected: true;
+    reason: "staleResume";
+};
+
+const STALE_RESUME_CLOSE_REASON = "Cannot replace socket: previous connection not retained";
+
 type RoomWsQueryValidator<TQuery extends RoomWsQuery> = ZodObject<ZodRawShape, "strip", ZodTypeAny, TQuery>;
 
 type RoomWsConfig<TQuery extends RoomWsQuery> = {
@@ -145,7 +153,7 @@ export class PusherRoomSocketController {
     private upgradeSocket(
         aborted: boolean,
         res: HttpResponse,
-        data: ConnectingSocketData | UpgradeFailedData,
+        data: ConnectingSocketData | UpgradeFailedData | StaleResumeData,
         websocketKey: string,
         websocketProtocol: string,
         websocketExtensions: string,
@@ -172,7 +180,7 @@ export class PusherRoomSocketController {
     }
 
     public ws<TQuery extends RoomWsQuery>(path: string, config: RoomWsConfig<TQuery>): void {
-        this.app.ws<ConnectingSocketData | UpgradeFailedData>(path, {
+        this.app.ws<ConnectingSocketData | UpgradeFailedData | StaleResumeData>(path, {
             idleTimeout: config.idleTimeout,
             maxPayloadLength: config.maxPayloadLength,
             maxBackpressure: config.maxBackpressure,
@@ -202,6 +210,25 @@ export class PusherRoomSocketController {
                         query.connectionId === undefined
                             ? undefined
                             : this.retainedByConnectionId.get(query.connectionId);
+
+                    // A resume onto a connection this pusher does not hold (it restarted, or the retention expired) is
+                    // refused by the open handler whatever the authentication says. Refuse it now, so a restart does not
+                    // make every client pay for a token check and an admin lookup that only end in a refusal.
+                    if (
+                        clientLastReceivedNonce !== undefined &&
+                        (retained === undefined || retained.isDisconnecting())
+                    ) {
+                        this.upgradeSocket(
+                            upgradeAborted.aborted,
+                            res,
+                            { rejected: true, reason: "staleResume" } satisfies StaleResumeData,
+                            websocketKey,
+                            websocketProtocol,
+                            websocketExtensions,
+                            context,
+                        );
+                        return;
+                    }
 
                     if (
                         clientLastReceivedNonce !== undefined &&
@@ -265,6 +292,10 @@ export class PusherRoomSocketController {
                     const socketData = ws.getUserData();
 
                     if (socketData.rejected === true) {
+                        if (socketData.reason === "staleResume") {
+                            ws.end(1008, STALE_RESUME_CLOSE_REASON);
+                            return;
+                        }
                         const errorMessage = await config.rejectedOpen(socketData);
                         ws.send(
                             PusherToFrontWebSocketMessage.encode({
@@ -309,7 +340,7 @@ export class PusherRoomSocketController {
                     }
 
                     if (clientLastReceivedNonce !== undefined) {
-                        ws.end(1008, "Cannot replace socket: previous connection not retained");
+                        ws.end(1008, STALE_RESUME_CLOSE_REASON);
                         return;
                     }
 

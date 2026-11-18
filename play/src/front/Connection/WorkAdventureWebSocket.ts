@@ -20,6 +20,9 @@ export class WorkAdventureWebSocket {
     // Spreads the resume attempts of many clients that lost the same pusher, so they do not all reconnect in the same
     // instant. Capped so a lone reconnect is never delayed by more than a few seconds.
     private static readonly RECONNECT_MAX_JITTER_MS = 3_000;
+    // Spreads the page rebuilds of many clients whose resume was refused (the pusher restarted), so they do not all
+    // open a new connection and rebuild their scene at once. With the jitter above, a lone client is at most 5 s slower.
+    private static readonly RESUME_REFUSED_MAX_SPREAD_MS = 2_000;
     private static websocketFactory: WebSocketFactory | null = null;
     private static randomSource: () => number = Math.random;
 
@@ -49,6 +52,10 @@ export class WorkAdventureWebSocket {
     private reconnectAttempt = 0;
     private reconnectStartedAt: number | undefined;
     private reconnectionTimeout: ReturnType<typeof setTimeout> | undefined;
+    // True while the current transport is a resume attempt that has not received a frame yet: if it closes now, the
+    // resume was refused or never landed, and the page is about to rebuild its connection from scratch.
+    private resumeUnconfirmed = false;
+    private delayedClose: { timeout: ReturnType<typeof setTimeout>; deliver: () => void } | undefined;
     private nextOutgoingNonce = 1;
     private lastReceivedNonce = 0;
     private duplicateNonceReported = false;
@@ -88,10 +95,14 @@ export class WorkAdventureWebSocket {
     }
 
     /**
-     * Skips the wait before the next reconnection attempt, for a person who pressed "Try again now".
-     * Does nothing unless an attempt is scheduled (connected, connecting, or closed for good).
+     * Skips the wait before the next reconnection attempt (or before giving up on a refused resume), for a person
+     * who pressed "Try again now". Does nothing unless a wait is under way (connected, connecting, or closed for good).
      */
     public reconnectNow(): void {
+        if (this.delayedClose) {
+            this.delayedClose.deliver();
+            return;
+        }
         if (this.manuallyClosed || this.reconnectionTimeout === undefined) {
             return;
         }
@@ -108,6 +119,7 @@ export class WorkAdventureWebSocket {
         this.manuallyClosed = true;
         this.detachSocketListeners(this.socket);
         this.clearReconnectionTimeout();
+        this.clearDelayedClose();
         this._reconnectingStream.next(false);
         this._reconnectingStream.complete();
         this.socket.close(code, reason);
@@ -116,6 +128,7 @@ export class WorkAdventureWebSocket {
     public closeForPageUnload = (): void => {
         this.manuallyClosed = true;
         this.clearReconnectionTimeout();
+        this.clearDelayedClose();
         if (this.socket.readyState === WebSocket.CLOSED) {
             return;
         }
@@ -152,15 +165,47 @@ export class WorkAdventureWebSocket {
             return;
         }
 
-        this._reconnectingStream.next(false);
         const closeEvent = new CloseEvent("close", {
             code: event.code,
             reason: event.reason,
             wasClean: event.wasClean,
         });
+        if (!this.manuallyClosed && this.resumeUnconfirmed && event.code !== 1000) {
+            this.closeAfterSpread(closeEvent);
+            return;
+        }
+        this.deliverClose(closeEvent);
+    };
+
+    private deliverClose(closeEvent: CloseEvent): void {
+        this._reconnectingStream.next(false);
         this.onclose?.call(this, closeEvent);
         this._reconnectingStream.complete();
-    };
+    }
+
+    /**
+     * Tells the page that the connection is gone after a random wait, so that the clients of a restarted pusher do not
+     * all rebuild their scene in the same instant. The page stays "reconnecting" meanwhile.
+     */
+    private closeAfterSpread(closeEvent: CloseEvent): void {
+        this.clearDelayedClose();
+        this._reconnectingStream.next(true);
+        const deliver = (): void => {
+            this.clearDelayedClose();
+            this.deliverClose(closeEvent);
+        };
+        const spreadMs = WorkAdventureWebSocket.randomSource() * WorkAdventureWebSocket.RESUME_REFUSED_MAX_SPREAD_MS;
+        this.delayedClose = { timeout: setTimeout(deliver, spreadMs), deliver };
+    }
+
+    private clearDelayedClose(): void {
+        if (!this.delayedClose) {
+            return;
+        }
+
+        clearTimeout(this.delayedClose.timeout);
+        this.delayedClose = undefined;
+    }
 
     private handleErrorEvent = (event: Event): void => {
         this.onerror?.call(this, event);
@@ -180,6 +225,7 @@ export class WorkAdventureWebSocket {
             this.close(1003, "Invalid message format");
             return;
         }
+        this.resumeUnconfirmed = false;
 
         // The pusher must never send us the same nonce twice: it only replays frames the client reported
         // as missing. A duplicate means the server-side bookkeeping is broken, and replaying a frame to
@@ -219,6 +265,7 @@ export class WorkAdventureWebSocket {
             : new WebSocket(socketUrl, this.protocols);
         socket.binaryType = "arraybuffer";
 
+        this.resumeUnconfirmed = this.reconnectAttempted;
         this.bindSocketListeners(socket);
         return socket;
     }

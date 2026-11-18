@@ -6,6 +6,7 @@ vi.mock("../../../src/front/Administration/AnalyticsClient", () => ({
     analyticsClient: { trackAdminEvent: vi.fn() },
 }));
 
+import { PusherToFrontWebSocketMessage } from "@workadventure/messages";
 import { WorkAdventureWebSocket } from "../../../src/front/Connection/WorkAdventureWebSocket";
 
 class FakeWebSocket extends EventTarget {
@@ -18,6 +19,16 @@ class FakeWebSocket extends EventTarget {
     constructor(public readonly url: string) {
         super();
         FakeWebSocket.instances.push(this);
+    }
+
+    public serverOpens(): void {
+        this.readyState = WebSocket.OPEN;
+        this.dispatchEvent(new Event("open"));
+    }
+
+    public serverSendsFrame(nonce: number): void {
+        const data = PusherToFrontWebSocketMessage.encode({ nonce, message: { message: undefined } }).finish();
+        this.dispatchEvent(new MessageEvent("message", { data }));
     }
 
     public serverCloses(code: number): void {
@@ -122,5 +133,136 @@ describe("WorkAdventureWebSocket resume jitter", () => {
         expect(FakeWebSocket.instances[3].url).toContain(
             new URL(transportB.url).searchParams.get("connectionId") as string,
         );
+    });
+});
+
+describe("WorkAdventureWebSocket refused resume", () => {
+    let socket: WorkAdventureWebSocket | undefined;
+
+    // The first draw is the resume jitter (0 keeps the resume at its 500 ms base delay), the next ones the spread.
+    function drawRandom(...values: number[]): void {
+        WorkAdventureWebSocket.setRandomSource(() => values.shift() ?? 0);
+    }
+
+    function latestTransport(): FakeWebSocket {
+        return FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
+    }
+
+    // The transport is lost, the resume transport connects, then the pusher closes it with the given code.
+    function loseTransportThenCloseResumeWith(code: number): void {
+        latestTransport().serverCloses(1006);
+        vi.advanceTimersByTime(500);
+        latestTransport().serverOpens();
+        latestTransport().serverCloses(code);
+    }
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        FakeWebSocket.instances = [];
+        WorkAdventureWebSocket.setWebsocketFactory((url) => new FakeWebSocket(url) as unknown as WebSocket);
+    });
+
+    afterEach(() => {
+        socket?.close();
+        socket = undefined;
+        WorkAdventureWebSocket.setRandomSource(null);
+        WorkAdventureWebSocket.setWebsocketFactory(null);
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it("tells the page the connection is gone after a random share of 2 seconds", () => {
+        drawRandom(0, 0.5);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const onclose = vi.fn();
+        socket.onclose = onclose;
+
+        loseTransportThenCloseResumeWith(1008);
+
+        expect(onclose).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(999);
+        expect(onclose).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(onclose).toHaveBeenCalledOnce();
+        expect(onclose.mock.calls[0][0].code).toBe(1008);
+    });
+
+    it("tells the page within 2 seconds at the latest", () => {
+        drawRandom(0, 0.999);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const onclose = vi.fn();
+        socket.onclose = onclose;
+
+        loseTransportThenCloseResumeWith(1008);
+        vi.advanceTimersByTime(2_000);
+
+        expect(onclose).toHaveBeenCalledOnce();
+    });
+
+    it("keeps the page reconnecting until it tells the page the connection is gone", () => {
+        drawRandom(0, 0.5);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const reconnecting: boolean[] = [];
+        const subscription = socket.reconnectingStream.subscribe((value) => reconnecting.push(value));
+
+        loseTransportThenCloseResumeWith(1008);
+        expect(reconnecting[reconnecting.length - 1]).toBe(true);
+
+        vi.advanceTimersByTime(1_000);
+        expect(reconnecting[reconnecting.length - 1]).toBe(false);
+        subscription.unsubscribe();
+    });
+
+    it("tells the page at once when a first connection is refused", () => {
+        drawRandom(0.5);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const onclose = vi.fn();
+        socket.onclose = onclose;
+
+        latestTransport().serverCloses(1008);
+
+        expect(onclose).toHaveBeenCalledOnce();
+    });
+
+    it("tells the page at once when a resumed transport that already got frames is closed", () => {
+        drawRandom(0, 0.5);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const onclose = vi.fn();
+        socket.onclose = onclose;
+
+        latestTransport().serverCloses(1006);
+        vi.advanceTimersByTime(500);
+        latestTransport().serverOpens();
+        latestTransport().serverSendsFrame(1);
+        latestTransport().serverCloses(1008);
+
+        expect(onclose).toHaveBeenCalledOnce();
+    });
+
+    it("tells the page at once when a person asks to try again now", () => {
+        drawRandom(0, 0.5);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const onclose = vi.fn();
+        socket.onclose = onclose;
+        loseTransportThenCloseResumeWith(1008);
+
+        socket.reconnectNow();
+
+        expect(onclose).toHaveBeenCalledOnce();
+        vi.advanceTimersByTime(2_000);
+        expect(onclose).toHaveBeenCalledOnce();
+    });
+
+    it("tells the page nothing once the page closed the socket itself", () => {
+        drawRandom(0, 0.5);
+        socket = new WorkAdventureWebSocket("ws://pusher/ws/room?tabId=tab");
+        const onclose = vi.fn();
+        socket.onclose = onclose;
+        loseTransportThenCloseResumeWith(1008);
+
+        socket.close();
+        vi.advanceTimersByTime(2_000);
+
+        expect(onclose).not.toHaveBeenCalled();
     });
 });

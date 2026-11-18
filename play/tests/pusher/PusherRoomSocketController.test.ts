@@ -20,6 +20,7 @@ import { PusherRoomSocketController } from "../../src/pusher/services/PusherRoom
 import { PusherWebSocket, type RawSocket } from "../../src/pusher/services/PusherWebSocket";
 
 type RegisteredHandlers = {
+    upgrade: (response: unknown, request: unknown, context: unknown) => void;
     open: (socket: unknown) => void | Promise<void>;
     close: (socket: unknown, code?: number, message?: ArrayBuffer) => void | Promise<void>;
     drain: (socket: unknown) => void | Promise<void>;
@@ -361,6 +362,63 @@ describe("PusherRoomSocketController transport resume identity", () => {
         );
     });
 
+    it("refuses a resume onto a connection it does not hold before authenticating the client", async () => {
+        const authenticate = vi.fn();
+        const open = vi.fn();
+        const { handlers } = createRegisteredController({ upgrade: authenticate, open });
+
+        const attempt = startUpgrade(handlers, { connectionId: "unknown", lastReceivedNonce: "7" });
+
+        expect(authenticate).not.toHaveBeenCalled();
+        expect(attempt.upgraded).toHaveBeenCalledOnce();
+
+        // The transport is still upgraded, only to tell the client with a close code it understands.
+        const transport = createSocket(attempt.upgraded.mock.calls[0][0]);
+        await handlers.open(transport);
+        expect(getEndMock(transport)).toHaveBeenCalledWith(
+            1008,
+            "Cannot replace socket: previous connection not retained",
+        );
+        expect(open).not.toHaveBeenCalled();
+    });
+
+    it("authenticates a first connection, which resumes nothing", () => {
+        const authenticate = vi.fn();
+        const { handlers } = createRegisteredController({ upgrade: authenticate });
+
+        startUpgrade(handlers, { connectionId: "first" });
+
+        expect(authenticate).toHaveBeenCalledOnce();
+    });
+
+    it("resumes onto a retained connection without authenticating again", async () => {
+        const authenticate = vi.fn();
+        const { handlers } = createRegisteredController({ upgrade: authenticate });
+        await handlers.open(createSocket({ connectionId: "current", token: "token" }));
+
+        const attempt = startUpgrade(handlers, { connectionId: "current", lastReceivedNonce: "0" }, "token");
+
+        expect(authenticate).not.toHaveBeenCalled();
+        expect(attempt.upgraded).toHaveBeenCalledWith(
+            expect.objectContaining({ connectionId: "current", clientLastReceivedNonce: 0 }),
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+        );
+    });
+
+    it("still authenticates a resume onto a retained connection whose token changed", async () => {
+        const authenticate = vi.fn();
+        const { handlers } = createRegisteredController({ upgrade: authenticate });
+        await handlers.open(createSocket({ connectionId: "current", token: "old-token" }));
+
+        startUpgrade(handlers, { connectionId: "current", lastReceivedNonce: "0" }, "refreshed-token");
+
+        // The same user may hold a refreshed token: the authentication decides, not a refusal made before it.
+        expect(authenticate).toHaveBeenCalledOnce();
+    });
+
     it("rejects a replacement socket carrying a different connection id", () => {
         const previous = createPusherWebSocket(createSocket({ connectionId: "a" }));
         const replacement = createSocket({ connectionId: "b" });
@@ -445,10 +503,39 @@ describe("PusherWebSocket backpressure", () => {
     });
 });
 
+function createRegisteredController(handlers: { upgrade?: () => void; open?: () => void }) {
+    let registered: RegisteredHandlers | undefined;
+    const controller = createController(
+        (h) => {
+            registered = h;
+        },
+        handlers.open ?? vi.fn(),
+        vi.fn(),
+        handlers.upgrade ?? vi.fn(),
+    );
+    return { controller, handlers: registered as RegisteredHandlers };
+}
+
+/** Delivers the HTTP upgrade request of a client to the handlers the controller registered with uWS. */
+function startUpgrade(handlers: RegisteredHandlers, query: Record<string, string>, token = "token") {
+    const search = new URLSearchParams({ roomId: "room-id", tabId: "tab-1", ...query }).toString();
+    const request = {
+        getQuery: () => search,
+        getHeader: (name: string) => (name === "sec-websocket-protocol" ? token : ""),
+        getMethod: () => "get",
+        getUrl: () => "/test",
+    };
+    const upgraded = vi.fn();
+    const response = { onAborted: vi.fn(), cork: (callback: () => void) => callback(), upgrade: upgraded };
+    handlers.upgrade(response, request, {});
+    return { upgraded };
+}
+
 function createController(
     registerHandlers: (handlers: RegisteredHandlers) => void,
     openHandler: (socket: unknown) => void | Promise<void> = vi.fn(),
     closeHandler: (socket: unknown) => void | Promise<void> = vi.fn(),
+    upgradeHandler: () => void = vi.fn(),
 ) {
     const app = {
         ws: vi.fn((_path: string, handlers: unknown) => {
@@ -458,8 +545,12 @@ function createController(
 
     const controller = new PusherRoomSocketController(app as never);
     controller.ws("/test", {
-        queryValidator: z.object({ tabId: z.string() }) as never,
-        upgrade: vi.fn(),
+        queryValidator: z.object({
+            tabId: z.string(),
+            roomId: z.string().optional(),
+            connectionId: z.string().optional(),
+        }) as never,
+        upgrade: upgradeHandler,
         open: openHandler,
         rejectedOpen: vi.fn(),
         reconnect: vi.fn(),
