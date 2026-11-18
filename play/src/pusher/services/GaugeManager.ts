@@ -7,6 +7,7 @@ class GaugeManager {
     private nbGroupsPerRoomGauge: Gauge<string>;
     private nbGroupsPerRoomCounter: Counter<string>;
     private nbSpacesGauge: Gauge<string>;
+    private nbDroppedMovesCounter: Counter<string>;
 
     // Internal counters to track values per room
     private clientsPerRoom: Map<string, number> = new Map();
@@ -38,6 +39,12 @@ class GaugeManager {
         this.nbSpacesGauge = new Gauge({
             name: "workadventure_nb_spaces",
             help: "Number of active spaces",
+            labelNames: [],
+        });
+
+        this.nbDroppedMovesCounter = new Counter({
+            name: "workadventure_counter_dropped_moves",
+            help: "Counter of moves not forwarded to the back because a socket sent more than the allowed rate",
             labelNames: [],
         });
     }
@@ -98,6 +105,10 @@ class GaugeManager {
 
     decNbSpaces(): void {
         this.nbSpacesGauge.dec();
+    }
+
+    incNbDroppedMoves(): void {
+        this.nbDroppedMovesCounter.inc();
     }
 }
 

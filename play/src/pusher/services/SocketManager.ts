@@ -90,6 +90,7 @@ import RecordingService from "./RecordingService";
 import type { PusherWebSocket } from "./PusherWebSocket";
 import { analyticsTimedEventTracker, CONNECTION_SESSION_HANDLE } from "./AnalyticsTimedEventTracker";
 import { isFrameable } from "./EmbeddableHeaders";
+import { MoveRateLimiter } from "./MoveRateLimiter";
 
 const debug = Debug("socket");
 
@@ -114,10 +115,16 @@ type BackConnectionClose = { reason: string | undefined };
 
 export class SocketManager implements ZoneEventListener {
     private static readonly RECORDING_QUERY_TIMEOUT_MS = 60_000;
+    // A client walking straight shares about 5 positions a second, so this only bounds a client that sends more. The
+    // burst lets the first steps after a pause, or a quick zigzag of turns, through at once.
+    private static readonly MAX_MOVES_PER_SECOND = 10;
+    private static readonly MOVE_BURST = 5;
     private rooms: Map<string, PusherRoom> = new Map<string, PusherRoom>();
     // Rooms whose init() has not resolved yet, so concurrent getOrCreateRoom calls share one instance.
     private creatingRooms: Map<string, Promise<PusherRoom>> = new Map<string, Promise<PusherRoom>>();
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
+    // Keyed by socket so that a limiter goes away with its socket.
+    private moveRateLimiters = new WeakMap<PusherWebSocket, MoveRateLimiter>();
 
     constructor(private _spaceConnection: SpaceConnectionInterface = new SpaceConnection()) {
         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
@@ -718,19 +725,42 @@ export class SocketManager implements ZoneEventListener {
             throw new Error("Client has no back connection");
         }
 
-        socketData.backConnection.write({
-            message: {
-                $case: "userMovesMessage",
-                userMovesMessage,
-            },
-        });
+        if (this.isMoveAllowed(client, userMovesMessage)) {
+            socketData.backConnection.write({
+                message: {
+                    $case: "userMovesMessage",
+                    userMovesMessage,
+                },
+            });
+        } else {
+            gaugeManager.incNbDroppedMoves();
+        }
 
+        // The viewport of a move that is not forwarded is still applied: the client sent it along with that move and
+        // will not send it again until its rectangle changes.
         const viewport = userMovesMessage.viewport;
         if (viewport === undefined) {
             throw new Error("Missing viewport in UserMovesMessage");
         }
 
         this.handleViewport(client, viewport);
+    }
+
+    /**
+     * Whether a move goes on to the back, given how many this socket has sent lately. A stop always does: the other
+     * clients keep drawing the avatar walking until they hear it stopped.
+     */
+    private isMoveAllowed(client: PusherWebSocket, userMovesMessage: UserMovesMessage): boolean {
+        if (userMovesMessage.position?.moving === false) {
+            return true;
+        }
+
+        let limiter = this.moveRateLimiters.get(client);
+        if (limiter === undefined) {
+            limiter = new MoveRateLimiter(SocketManager.MOVE_BURST, SocketManager.MAX_MOVES_PER_SECOND);
+            this.moveRateLimiters.set(client, limiter);
+        }
+        return limiter.tryConsume(Date.now());
     }
 
     onGroupUsersUpdated(group: GroupDescriptor, listener: PusherWebSocket): void {
