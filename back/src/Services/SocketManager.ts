@@ -93,12 +93,51 @@ import { isValidEmote } from "./EmoteValidator";
 
 const debug = Debug("socketmanager");
 
-function emitZoneMessage(subMessage: SubToPusherRoomMessage, socket: RoomSocket): void {
-    // TODO: should we batch those every 100ms?
+/**
+ * How long the zone messages for a pusher are gathered before they are written to it. Every write to the stream is a
+ * serialization, a gRPC frame and a syscall, so one write per message costs thousands of them per second in a busy
+ * room. One write per interval is at most 1000 / 50 = 20 per second and per pusher, whatever the number of messages.
+ */
+const ZONE_MESSAGES_BATCH_INTERVAL_MS = 50;
+
+interface PendingZoneMessages {
+    payload: SubToPusherRoomMessage[];
+    timeout: NodeJS.Timeout;
+}
+
+const pendingZoneMessages = new WeakMap<RoomSocket, PendingZoneMessages>();
+
+/**
+ * Writes the zone messages waiting for this pusher, in the order they were emitted.
+ * Anything written to the socket directly must call this first, or it would overtake the waiting messages.
+ */
+function flushZoneMessages(socket: RoomSocket): void {
+    const pending = pendingZoneMessages.get(socket);
+    if (pending === undefined) {
+        return;
+    }
+    clearTimeout(pending.timeout);
+    pendingZoneMessages.delete(socket);
+    if (socket.writableEnded || socket.destroyed) {
+        // The pusher went away while the messages were waiting: nobody reads them anymore.
+        return;
+    }
     const batchMessage: BatchToPusherRoomMessage = {
-        payload: [subMessage],
+        payload: pending.payload,
     };
     socket.write(batchMessage);
+}
+
+function emitZoneMessage(subMessage: SubToPusherRoomMessage, socket: RoomSocket): void {
+    const pending = pendingZoneMessages.get(socket);
+    if (pending !== undefined) {
+        pending.payload.push(subMessage);
+        return;
+    }
+    pendingZoneMessages.set(socket, {
+        payload: [subMessage],
+        timeout: setTimeout(() => flushZoneMessages(socket), ZONE_MESSAGES_BATCH_INTERVAL_MS),
+    });
 }
 
 export class SocketManager {
@@ -947,6 +986,8 @@ export class SocketManager {
             }
         }
 
+        // The zone messages emitted before this subscription describe the state the snapshot replaces: they go first.
+        flushZoneMessages(call);
         call.write(batchMessage);
     }
 
