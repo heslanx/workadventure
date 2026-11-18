@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Niet aanbevolen",
     enable: {
         title: "Zet je camera en microfoon aan",
+        join: "Enter the office",
         start: "Welkom op onze pagina voor het configureren van audio- en videog apparaten! Vind hier de tools om je online ervaring te verbeteren. Pas de instellingen aan naar je voorkeuren om eventuele problemen op te lossen. Zorg ervoor dat je hardware correct is aangesloten en up-to-date is. Verken en test verschillende configuraties om te vinden wat het beste voor jou werkt.",
     },
     help: {

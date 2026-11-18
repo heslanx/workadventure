@@ -1,5 +1,8 @@
 # Microcopy
 
+> Superseded in part (2026-11-18): the entry button copy (name, avatar and camera steps) follows the COPY decision in
+> `docs/konclui-migration/decisions.md`, not the `Enter the world` and `Use this WOKA` proposals below.
+
 Audit of user-visible text in `play/src/front` (490 `.svelte` files) and the catalogues in `play/src/i18n/en-US` and `play/src/i18n/pt-BR`. Audit only, no source edited. Line numbers are from the working tree on branch `chore/orca-docker-ssh-env`. en-US lines are cited first, pt-BR lines in parentheses when they differ.
 
 Reading notes:

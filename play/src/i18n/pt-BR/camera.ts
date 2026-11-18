@@ -13,6 +13,7 @@ const camera: BaseTranslation = {
     notRecommended: "Não recomendado",
     enable: {
         title: "Ligue sua câmera e microfone",
+        join: "Entrar no escritório",
         start: "Bem-vindo à nossa página de configuração de dispositivos de áudio e vídeo! Encontre aqui as ferramentas para melhorar sua experiência online. Ajuste as configurações às suas preferências para resolver possíveis problemas. Certifique-se de que seu hardware esteja conectado corretamente e atualizado. Explore e teste diferentes configurações para encontrar o que funciona melhor para você.",
     },
     help: {

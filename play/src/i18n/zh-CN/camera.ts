@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "不推荐",
     enable: {
         title: "开启你的摄像头和麦克风",
+        join: "Enter the office",
         start: "欢迎来到我们的音视频设备配置页面！在这里找到工具来增强您的在线体验。根据您的偏好调整设置以解决任何潜在问题。确保您的硬件已正确连接并保持最新。探索和测试不同的配置，找到最适合您的配置。",
     },
     help: {

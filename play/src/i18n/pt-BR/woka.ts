@@ -10,9 +10,9 @@ const woka: BaseTranslation = {
         randomize: "Randomizar",
     },
     selectWoka: {
-        title: "Selecionar seu personagem",
-        continue: "Usar este personagem",
-        customize: "Customizar seu personagem",
+        title: "Escolha seu avatar",
+        continue: "Continuar",
+        customize: "Personalizar avatar",
         randomize: "Selecionar aleatoriamente",
     },
     menu: {

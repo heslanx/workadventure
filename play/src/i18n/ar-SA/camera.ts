@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "غير موصى به",
     enable: {
         title: "يرجى تشغيل الكاميرا والميكروفون.", // Please turn on your camera and microphone.
+        join: "Enter the office",
         start: "لنبدأ!", // Let's start!
     },
     help: {

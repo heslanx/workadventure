@@ -14,7 +14,7 @@ const login: BaseTranslation = {
     termsOfUse: "terms of use",
     privacyPolicy: "privacy policy",
     cookiePolicy: "cookie policy",
-    continue: "Enter the world",
+    continue: "Continue",
 };
 
 export default login;

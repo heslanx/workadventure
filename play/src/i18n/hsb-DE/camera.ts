@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "Njeporučeny",
     enable: {
         title: "Prošu zaswěć swoju kameru a swój mikrofon.",
+        join: "Enter the office",
         start: "Witajće na našej stronie za konfiguraciju awdio- a widejogratow! Namakajće tu nastroje, zo byšće swoju online-dožiwjenje polěpšili. Přiměrće nastajenja swojim preferencam, zo byšće eventuelne problemy rozrisali. Zawěsćće, zo waša hardware korektnje zwjazana a aktualizowana je. Wuslědźće a testujće wšelake konfiguracije, zo byšće namakali, što najlěpje za was funguje.",
     },
     help: {

@@ -12,6 +12,7 @@ const camera: BaseTranslation = {
     notRecommended: "Not recommended",
     enable: {
         title: "Turn on your camera and microphone",
+        join: "Enter the office",
         start: "Welcome to our audio and video device configuration page! Find the tools here to enhance your online experience. Adjust settings to your preferences to address any potential issues. Ensure your hardware is properly connected and up to date. Explore and test different configurations to find what works best for you.",
     },
     help: {

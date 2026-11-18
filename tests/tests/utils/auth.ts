@@ -126,7 +126,7 @@ export async function logIn(page: Page, name: UserName): Promise<void> {
 
     // selectMedia
     await expect(page.locator("h2", { hasText: "Turn on your camera and microphone" })).toBeVisible();
-    await page.click("text=Save");
+    await page.click("button.enableCameraSceneFormSubmit");
 
     await dismissDuplicateUserConnectedModalIfShown(page);
     await dismissPwaInstallScreenIfShown(page);

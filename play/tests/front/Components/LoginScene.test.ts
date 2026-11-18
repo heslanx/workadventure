@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mount, unmount } from "svelte";
+import { loadLocale } from "../../../src/i18n/i18n-util.sync";
+import { setLocale } from "../../../src/i18n/i18n-svelte";
 import LoginScene from "../../../src/front/Components/Login/LoginScene.svelte";
 import type { Game } from "../../../src/front/Phaser/Game/Game";
 
@@ -18,22 +20,16 @@ vi.mock("../../../src/front/Phaser/Game/GameManager", () => ({
 // The real module is the Phaser scene: the component only needs its name.
 vi.mock("../../../src/front/Phaser/Login/LoginScene", () => ({ LoginSceneName: "LoginScene" }));
 vi.mock("../../../src/front/Enum/EnvironmentVariable", () => ({ MAX_USERNAME_LENGTH: 10 }));
-vi.mock("../../../src/i18n/i18n-svelte", async () => {
-    const { readable } = await import("svelte/store");
-    const label = () => "Test label";
-    return {
-        LL: readable({
-            a11y: { compRoomLogo: label, compPoweredByWorkAdventure: label },
-            login: { input: { name: { placeholder: label, empty: label } }, continue: label },
-        }),
-        locale: readable("en"),
-    };
-});
 
 describe("login screen branding", () => {
     const target = document.createElement("div");
     const game = { scene: { getScene: () => ({ login: vi.fn() }) } } as unknown as Game;
     let component: ReturnType<typeof mount> | undefined;
+
+    beforeEach(() => {
+        loadLocale("en-US");
+        setLocale("en-US");
+    });
 
     afterEach(async () => {
         const mountedComponent = component;
@@ -100,5 +96,31 @@ describe("login screen branding", () => {
         component = mount(LoginScene, { target, props: { game } });
 
         expect(poweredBy()).toBeNull();
+    });
+});
+
+describe("login screen button", () => {
+    const target = document.createElement("div");
+    const game = { scene: { getScene: () => ({ login: vi.fn() }) } } as unknown as Game;
+    let component: ReturnType<typeof mount> | undefined;
+
+    afterEach(async () => {
+        const mountedComponent = component;
+        component = undefined;
+        if (mountedComponent) await unmount(mountedComponent);
+        target.replaceChildren();
+    });
+
+    // The name screen is the first of up to three steps (avatar, camera), and it reopens from the profile menu inside
+    // the room, so the button says Continue and not that it enters the world.
+    it.each([
+        { locale: "en-US", label: "Continue" },
+        { locale: "pt-BR", label: "Continuar" },
+    ] as const)("reads $label in $locale", ({ locale, label }) => {
+        loadLocale(locale);
+        setLocale(locale);
+        component = mount(LoginScene, { target, props: { game } });
+
+        expect(target.querySelector("button.loginSceneFormSubmit")?.textContent?.trim()).toBe(label);
     });
 });

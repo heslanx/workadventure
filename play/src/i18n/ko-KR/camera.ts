@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "권장하지 않음",
     enable: {
         title: "카메라와 마이크를 켜세요",
+        join: "Enter the office",
         start: "오디오 및 비디오 장치 설정 페이지에 오신 것을 환영합니다! 여기에서 온라인 경험을 향상시킬 수 있는 도구를 찾을 수 있습니다. 선호에 맞게 설정을 조정해 잠재적인 문제를 해결하세요. 하드웨어가 올바르게 연결되어 있고 최신 상태인지 확인한 뒤, 나에게 가장 잘 맞는 구성을 찾을 때까지 여러 설정을 탐색하고 테스트해 보세요.",
     },
     help: {

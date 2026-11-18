@@ -19,7 +19,7 @@
     import { LL, locale } from "../../../i18n/i18n-svelte";
     import { myCameraStore, myMicrophoneStore } from "../../Stores/MyMediaStore";
     import { localUserStore } from "../../Connection/LocalUserStore";
-    import { gameManager } from "../../Phaser/Game/GameManager";
+    import { gameManager, GameSceneNotFoundError } from "../../Phaser/Game/GameManager";
     import { playSpeakerTestSound } from "../../WebRtc/AudioOutputManager";
 
     import Button from "../UI/Button.svelte";
@@ -39,6 +39,22 @@
     const roomBackgroundColor = gameManager.currentStartedRoom.backgroundColor;
     const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage;
     let legals = gameManager.currentStartedRoom?.legals ?? {};
+
+    // A game scene exists when the page was opened from the profile menu (the room was left to edit the devices),
+    // and not on the way into the room. The button saves the settings in the first case and enters the office in the
+    // second.
+    function isOpenedFromRoom(): boolean {
+        try {
+            gameManager.getCurrentGameScene();
+            return true;
+        } catch (error) {
+            if (error instanceof GameSceneNotFoundError) {
+                return false;
+            }
+            throw error;
+        }
+    }
+    const openedFromRoom = isOpenedFromRoom();
 
     let selectedCamera: string | undefined = $state(undefined);
     let selectedMicrophone: string | undefined = $state(undefined);
@@ -293,9 +309,9 @@
                     <Button
                         type="submit"
                         variant="secondary"
-                        class="w-full md:w-1/2 h-12 rounded-full text-base font-semibold block"
+                        class="w-full md:w-1/2 h-12 rounded-full text-base font-semibold block enableCameraSceneFormSubmit"
                     >
-                        {$LL.menu.settings.save()}
+                        {openedFromRoom ? $LL.menu.settings.save() : $LL.camera.enable.join()}
                     </Button>
                 </section>
                 {#if legalString}

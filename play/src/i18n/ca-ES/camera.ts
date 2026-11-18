@@ -9,6 +9,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     notRecommended: "No recomanat",
     enable: {
         title: "Encendre la càmera i el micròfon",
+        join: "Enter the office",
         start: "Benvigut a la nostra pàgina de configuració de dispositius d'àudio i vídeo! Trobeu aquí les eines per millorar la vostra experiència en línia. Ajusteu la configuració segons les vostres preferències per resoldre qualsevol problema potencial. Assegureu-vos que el vostre maquinari estigui connectat correctament i actualitzat. Exploreu i proveu diferents configuracions per trobar la que millor us funciona.",
     },
     help: {
