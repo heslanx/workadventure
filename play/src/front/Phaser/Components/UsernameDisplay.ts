@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { AvailabilityStatus } from "@workadventure/messages";
 import type { GameScene } from "../Game/GameScene";
+import type { UsernameDomLayer } from "../Game/UsernameDomLayer";
 import { waScaleManager, WaScaleManagerEvent } from "../Services/WaScaleManager";
 import { readableTextColor } from "../../Components/Video/readableTextColor";
 import { PLAYER_NAME_GAP, PLAYER_NAME_HEIGHT } from "./UsernameDisplaySizes";
@@ -19,7 +20,141 @@ const PLAYER_NAME_BACKGROUND_COLOR = "rgba(27, 42, 65, 0.7)";
 const PLAYER_NAME_BACKGROUND_RADIUS = 8;
 const PLAYER_NAME_PADDING = 4;
 
-type Position = { x: number; y: number };
+// How long the zoom must stay still before the names are laid out again at their final size.
+const ZOOM_SETTLE_DELAY_MS = 150;
+
+// Both variables are set on the DOM layer and inherited by every name tag (and by the badges inside it), so a zoom
+// step is one write per variable instead of a set of writes per tag.
+// The layout scale: multiplies the font size, the padding and the other lengths of the pill.
+const DOM_SCALE_VARIABLE = "--username-dom-scale";
+// The scale of each tag's own CSS `transform`.
+const TRANSFORM_SCALE_VARIABLE = "--username-transform-scale";
+
+/** A length in game pixels, scaled like the rest of the pill. */
+const scaled = (pixels: number): string => `calc(${pixels}px * var(${DOM_SCALE_VARIABLE}, 1))`;
+
+function getDisplayScale(zoomModifier: number): number {
+    return Math.max(zoomModifier > 0 ? CORRECTION_RATE / zoomModifier : 1, 1);
+}
+
+/**
+ * The scale shared by all the name tags of one DOM layer.
+ *
+ * While the zoom moves, only `--username-transform-scale` follows it: the tags keep the layout they had when the
+ * zoom last settled, so the browser does not lay out and rasterize every pill again on every frame. Once the zoom has
+ * been still for a moment, the tags are laid out again at the size they are shown at (see getTransformScale()).
+ */
+class UsernameLayerScale {
+    private static readonly byLayer = new WeakMap<UsernameDomLayer, UsernameLayerScale>();
+
+    public static acquire(scene: GameScene, layerElement: HTMLElement): UsernameLayerScale {
+        let layerScale = UsernameLayerScale.byLayer.get(scene.usernameDomLayer);
+        if (layerScale === undefined) {
+            layerScale = new UsernameLayerScale(scene, layerElement);
+            UsernameLayerScale.byLayer.set(scene.usernameDomLayer, layerScale);
+        }
+        layerScale.tagCount++;
+        return layerScale;
+    }
+
+    private tagCount = 0;
+    private displayScale: number;
+    // The scales the tags are laid out with: the zoom was last still with these.
+    private settledDisplayScale: number;
+    private settledTransformScale = 1;
+    private settleTimeout: number | undefined;
+
+    private constructor(
+        private readonly scene: GameScene,
+        private readonly layerElement: HTMLElement,
+    ) {
+        this.displayScale = getDisplayScale(waScaleManager.zoomModifier);
+        this.settledDisplayScale = this.displayScale;
+        this.applySettledScale();
+        this.settleAtRender();
+        this.scene.game.events.on(WaScaleManagerEvent.ZoomChanged, this.onZoomChanged);
+    }
+
+    public release(): void {
+        if (--this.tagCount > 0) {
+            return;
+        }
+        this.scene.game.events.off(WaScaleManagerEvent.ZoomChanged, this.onZoomChanged);
+        this.scene.events.off(Phaser.Scenes.Events.RENDER, this.applySettledScale);
+        window.clearTimeout(this.settleTimeout);
+        UsernameLayerScale.byLayer.delete(this.scene.usernameDomLayer);
+    }
+
+    private readonly onZoomChanged = (zoomModifier: number): void => {
+        this.displayScale = getDisplayScale(zoomModifier);
+        // The rendered size of a tag is `displayScale * layerScale`, whatever the layout it was laid out with. The
+        // layer's own scale applies by itself, so what the tag's transform has to change by is the part of
+        // `displayScale` that the layout does not carry yet.
+        this.setVariable(
+            TRANSFORM_SCALE_VARIABLE,
+            (this.settledTransformScale * this.displayScale) / this.settledDisplayScale,
+        );
+        window.clearTimeout(this.settleTimeout);
+        this.settleTimeout = window.setTimeout(() => {
+            this.settleTimeout = undefined;
+            this.settleAtRender();
+            // The zoom has stopped moving, so nothing else is going to ask for a frame.
+            this.scene.markDirty();
+        }, ZOOM_SETTLE_DELAY_MS);
+    };
+
+    private settleAtRender(): void {
+        // The layer scale is measured from the DOM layer, so invalidate it and measure at render time, once Phaser has
+        // updated the layer's transform for the zoom. Measuring immediately would read the previous frame's scale.
+        this.scene.usernameDomLayer.invalidateAncestorScale();
+        this.scene.events.off(Phaser.Scenes.Events.RENDER, this.applySettledScale);
+        this.scene.events.once(Phaser.Scenes.Events.RENDER, this.applySettledScale);
+    }
+
+    private readonly applySettledScale = (): void => {
+        this.settledTransformScale = this.getTransformScale();
+        this.settledDisplayScale = this.displayScale;
+        // Dividing by the transform scale folds the part of the zoom compensation that getTransformScale() cannot
+        // apply without magnifying into the layout size, so the element is laid out — and therefore rasterized — at
+        // full resolution. `displayScale / transformScale` keeps the final rendered size independent of the split:
+        // the parent Phaser DOM layer re-applies the scale getTransformScale() cancelled, leaving the rendered size
+        // at `displayScale * layerScale`.
+        this.setVariable(DOM_SCALE_VARIABLE, this.settledDisplayScale / this.settledTransformScale);
+        this.setVariable(TRANSFORM_SCALE_VARIABLE, this.settledTransformScale);
+    };
+
+    /**
+     * The scale applied through the tags' own CSS `transform`.
+     *
+     * A tag is a promoted compositing layer (`will-change: transform` + `translate3d`). Safari rasterizes such a
+     * layer's backing store at full resolution ONLY when the element's own transform is a *minification* (scale < 1);
+     * when the own transform is a pure translation (scale === 1) it caches the bitmap at `devicePixelRatio` and lets
+     * the parent transform stretch it — blurry on a low-DPI screen, but fine on a 2× Retina screen whose backing store
+     * is already twice as dense. That is exactly why the name was blurry at a medium zoom only on the 2K monitor.
+     *
+     * So we cancel the parent DOM layer's on-screen scale here to bring the layer's total scale to ≤ 1, which makes the
+     * own transform a genuine minification whenever the parent magnifies. We MEASURE that parent scale from the DOM
+     * (`getAncestorScale`) rather than deriving it from `zoomModifier`/`actualZoom`, because the real value depends on
+     * the camera zoom and the device pixel ratio together and does not match either of those numbers.
+     *
+     * Clamp at 1 so we never magnify: a scale ≥ 1 is the pure-translate/upscale case that blurs on Safari. When the
+     * parent is already minifying (ancestorScale < 1, e.g. zoomed out) the clamp leaves the own transform at 1, which
+     * is fine — minifying a bitmap stays sharp everywhere.
+     *
+     * While the zoom moves the tags are not rasterized again, so they are a little soft on a magnifying parent; they
+     * sharpen as soon as the zoom settles.
+     */
+    private getTransformScale(): number {
+        return Math.min(1 / this.scene.usernameDomLayer.getAncestorScale(), 1);
+    }
+
+    private setVariable(name: string, value: number): void {
+        const text = value.toString();
+        if (this.layerElement.style.getPropertyValue(name) !== text) {
+            this.layerElement.style.setProperty(name, text);
+        }
+    }
+}
 
 export class UsernameDisplay {
     private static nextDomUsernameId = 0;
@@ -28,21 +163,11 @@ export class UsernameDisplay {
     private readonly playerNameElement: HTMLParagraphElement;
     private readonly playerName: string;
     private playerNameOutlineColor: number | undefined;
-    private displayScale: number;
+    private layerScale: UsernameLayerScale | undefined;
     private readonly statusDisplay: UsernameStatusDisplay;
     private readonly megaphoneDisplay: UsernameMegaphoneDisplay;
     private readonly raisedHandDisplay: UsernameRaisedHandDisplay;
 
-    private readonly onZoomChanged = (zoomModifier: number): void => {
-        this.displayScale = this.getDisplayScale(zoomModifier);
-        // The ancestor scale we cancel in applyStyles()/applyTransform() is measured from the DOM
-        // layer, so invalidate it and re-apply at render time, once Phaser has updated the layer's
-        // transform for the new zoom. Applying immediately would measure the previous frame's scale.
-        this.gameScene.usernameDomLayer.invalidateAncestorScale();
-        this.scene.events.once(Phaser.Scenes.Events.RENDER, () => {
-            this.applyStyles();
-        });
-    };
     private toForeFront: boolean = false;
     private depth: number = 0;
 
@@ -54,7 +179,6 @@ export class UsernameDisplay {
         outlineColor: number | undefined,
     ) {
         this.playerName = playerName;
-        this.displayScale = this.getDisplayScale(waScaleManager.zoomModifier);
 
         this.playerNameOutlineColor = outlineColor;
         this.statusDisplay = new UsernameStatusDisplay();
@@ -68,7 +192,8 @@ export class UsernameDisplay {
         this.element.className = "username-display";
         this.element.style.background = PLAYER_NAME_BACKGROUND_COLOR;
 
-        this.applyStyles();
+        this.applyLayout();
+        this.applyTransform();
         this.updatePlayerDepth();
         this.element.append(
             this.statusDisplay.element,
@@ -79,20 +204,12 @@ export class UsernameDisplay {
         this.updateUsernameBackgroundColor(outlineColor);
 
         this.gameScene.usernameDomLayer.addUsername(this.element);
-
-        // The immediate applyStyles() above may have measured the ancestor scale before Phaser
-        // applied the layer transform for this frame. Re-apply once at render time so the initial
-        // scale is measured against the real on-screen transform.
-        this.gameScene.usernameDomLayer.invalidateAncestorScale();
-        this.scene.events.once(Phaser.Scenes.Events.RENDER, () => {
-            this.applyStyles();
-        });
-
-        this.scene.game.events.on(WaScaleManagerEvent.ZoomChanged, this.onZoomChanged);
-    }
-
-    private getDisplayScale(zoomModifier: number): number {
-        return Math.max(zoomModifier > 0 ? CORRECTION_RATE / zoomModifier : 1, 1);
+        // The layer element is where the layer put this tag. The scale lives there, shared by all the tags.
+        const layerElement = this.element.parentElement;
+        if (layerElement === null) {
+            throw new Error("The username DOM layer did not attach the name tag");
+        }
+        this.layerScale = UsernameLayerScale.acquire(this.scene, layerElement);
     }
 
     public setPlayerNameOutlineColor(outlineColor: number | undefined): void {
@@ -147,7 +264,9 @@ export class UsernameDisplay {
         this.statusDisplay.destroy();
         this.megaphoneDisplay.destroy();
         this.raisedHandDisplay.destroy();
-        this.scene.game.events.off(WaScaleManagerEvent.ZoomChanged, this.onZoomChanged);
+        // Release once: the layer scale counts its tags, and a second destroy() must not take another tag's place.
+        this.layerScale?.release();
+        this.layerScale = undefined;
     }
 
     private get gameScene(): GameScene {
@@ -160,22 +279,15 @@ export class UsernameDisplay {
         });
     }
 
-    private getDomPosition(): Position {
-        return {
-            x: this.x,
-            y: this.y - (PLAYER_NAME_HEIGHT / 2) * this.displayScale,
-        };
-    }
-
     private createPlayerNameElement(): HTMLParagraphElement {
         const element = document.createElement("p");
 
         element.textContent = this.playerName;
         element.style.margin = "0";
-        element.style.marginRight = `calc(2px * var(--username-dom-scale, 1))`;
+        element.style.marginRight = scaled(2);
         element.style.color = "#ffffff";
         element.style.fontFamily = USERNAME_FONT_FAMILY;
-        element.style.fontSize = `calc(${USERNAME_FONT_SIZE}px * var(--username-dom-scale, 1))`;
+        element.style.fontSize = scaled(USERNAME_FONT_SIZE);
         element.style.fontWeight = `${USERNAME_FONT_WEIGHT}`;
         element.style.whiteSpace = "nowrap";
         element.style.pointerEvents = "none";
@@ -191,56 +303,18 @@ export class UsernameDisplay {
         this.updatePlayerDepth();
     }
 
-    /**
-     * The scale applied through the element's own CSS `transform`.
-     *
-     * This element is a promoted compositing layer (`will-change: transform` + `translate3d`). Safari
-     * rasterizes such a layer's backing store at full resolution ONLY when the element's own
-     * transform is a *minification* (scale < 1); when the own transform is a pure translation
-     * (scale === 1) it caches the bitmap at `devicePixelRatio` and lets the parent transform stretch
-     * it — blurry on a low-DPI screen, but fine on a 2× Retina screen whose backing store is already
-     * twice as dense. That is exactly why the name was blurry at a medium zoom only on the 2K
-     * monitor.
-     *
-     * So we cancel the parent DOM layer's on-screen scale here to bring the layer's total scale to
-     * ≤ 1, which makes the own transform a genuine minification whenever the parent magnifies. We
-     * MEASURE that parent scale from the DOM (`getAncestorScale`) rather than deriving it from
-     * `zoomModifier`/`actualZoom`, because the real value depends on the camera zoom and the device
-     * pixel ratio together and does not match either of those numbers.
-     *
-     * Clamp at 1 so we never magnify: a scale ≥ 1 is the pure-translate/upscale case that blurs on
-     * Safari. When the parent is already minifying (ancestorScale < 1, e.g. zoomed out) the clamp
-     * leaves the own transform at 1, which is fine — minifying a bitmap stays sharp everywhere.
-     */
-    private getTransformScale(): number {
-        return Math.min(1 / this.gameScene.usernameDomLayer.getAncestorScale(), 1);
-    }
-
     private applyTransform(): void {
-        const scale = this.getTransformScale();
-        const position = this.getDomPosition();
-        this.element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%) scale(${scale})`;
+        // The tag's bottom centre is its anchor, so its position does not depend on the scale.
+        this.element.style.transform = `translate3d(${this.x}px, ${this.y}px, 0) translate(-50%, -100%) scale(var(${TRANSFORM_SCALE_VARIABLE}, 1))`;
     }
 
-    private getDomScale(): number {
-        // Layout scale for the name (font-size, padding, …). Dividing by the transform scale folds
-        // the part of the zoom compensation that getTransformScale() cannot apply without magnifying
-        // into the layout size, so the element is laid out — and therefore rasterized — at full
-        // resolution. `displayScale / transformScale` keeps the final rendered size independent of
-        // the split: the parent Phaser DOM layer re-applies `ancestorScale`, which cancels the
-        // `1/ancestorScale` the transform removed, leaving the rendered size at
-        // `displayScale * ancestorScale` — unchanged from before this fix.
-        return this.displayScale / this.getTransformScale();
-    }
-
-    private applyStyles(): void {
-        const domScale = this.getDomScale();
-        this.element.style.setProperty("--username-dom-scale", domScale.toString());
-        this.element.style.height = `${PLAYER_NAME_HEIGHT * domScale}px`;
-        this.element.style.gap = `${PLAYER_NAME_GAP * domScale}px`;
-        this.element.style.padding = `0 ${PLAYER_NAME_PADDING * domScale}px`;
-        this.element.style.borderRadius = `${PLAYER_NAME_BACKGROUND_RADIUS * domScale}px`;
-        this.applyTransform();
+    // The sizes are set once: they follow the layer's scale (see UsernameLayerScale).
+    private applyLayout(): void {
+        this.element.style.transformOrigin = "50% 100%";
+        this.element.style.height = scaled(PLAYER_NAME_HEIGHT);
+        this.element.style.gap = scaled(PLAYER_NAME_GAP);
+        this.element.style.padding = `0 ${scaled(PLAYER_NAME_PADDING)}`;
+        this.element.style.borderRadius = scaled(PLAYER_NAME_BACKGROUND_RADIUS);
     }
 
     private updateUsernameBackgroundColor(color: number | undefined): void {
