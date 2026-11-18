@@ -1,11 +1,12 @@
 import type { Position, Viewport } from "./protocol";
-import { percentile } from "./stats";
+import { type TimeWindow, isInWindow, percentile } from "./stats";
 
 /**
- * positionAt returns to the same rounded point after 377 steps (three turns of 0.05 rad), so a received position can
+ * The ellipse returns to the same rounded point after 377 steps (three turns of 0.05 rad), so a received position can
  * match several steps. Matching walks back from the mover's latest step and takes the first hit: the most recent
  * send. A window of 376 steps holds each point at most once, so a move delayed by a full repeat period (about 75 s at
- * 5 Hz) or more is reported as unmatched instead of being matched to a later send.
+ * 5 Hz) or more is reported as unmatched instead of being matched to a later send. A pattern with a shorter period
+ * passes its own look-back through `lookbackSteps`.
  */
 const LOOKBACK_STEPS = 376;
 
@@ -19,6 +20,13 @@ export interface MoveProbeOptions {
     firstObserver: number;
     observers: number;
     positionOf: (index: number, step: number) => Position;
+    /** How many steps back a received position may match; the period of the movement pattern minus one. */
+    lookbackSteps?: number;
+    /**
+     * Only moves sent inside the window count as expected or received, and only arrivals inside it count as stray.
+     * Moves sent outside it are still followed, so their late arrivals are ignored rather than called unexpected.
+     */
+    window?: TimeWindow;
 }
 
 export interface MoveProbeSummary {
@@ -64,6 +72,9 @@ export class MoveProbe {
     private readonly accepted: boolean[];
     private readonly indexByUser = new Map<string, number>();
     private readonly expectedKeys: Set<number>[];
+    /** Deliveries expected of moves sent outside the window; not counted, but known, so they are not "unexpected". */
+    private readonly outsideWindowKeys: Set<number>[];
+    private readonly lookbackSteps: number;
     private readonly firstObserver: number;
     private readonly endObserver: number;
     private readonly latenciesMs: number[] = [];
@@ -78,6 +89,8 @@ export class MoveProbe {
         this.viewports = new Array<Viewport | undefined>(count).fill(undefined);
         this.accepted = new Array<boolean>(count).fill(false);
         this.expectedKeys = Array.from({ length: count }, () => new Set<number>());
+        this.outsideWindowKeys = Array.from({ length: count }, () => new Set<number>());
+        this.lookbackSteps = options.lookbackSteps ?? LOOKBACK_STEPS;
         this.firstObserver = Math.min(options.firstObserver, count);
         this.endObserver = Math.min(this.firstObserver + options.observers, count);
     }
@@ -102,6 +115,7 @@ export class MoveProbe {
     /** Called when a move is sent. Records the observers that should receive it. */
     public recordSend(index: number, step: number, position: Position, sentAtMs: number): void {
         this.sentAt[index][step] = sentAtMs;
+        const counted = isInWindow(this.options.window, sentAtMs);
         for (let observer = this.firstObserver; observer < this.endObserver; observer++) {
             const viewport = this.viewports[observer];
             if (
@@ -111,8 +125,12 @@ export class MoveProbe {
                 viewport !== undefined &&
                 insideViewport(viewport, position)
             ) {
-                this.expectedKeys[observer].add(index * STEP_SPAN + step);
-                this.expected += 1;
+                if (counted) {
+                    this.expectedKeys[observer].add(index * STEP_SPAN + step);
+                    this.expected += 1;
+                } else {
+                    this.outsideWindowKeys[observer].add(index * STEP_SPAN + step);
+                }
             }
         }
     }
@@ -126,13 +144,19 @@ export class MoveProbe {
         if (index === undefined) {
             return;
         }
+        const arrivedInWindow = isInWindow(this.options.window, receivedAtMs);
         const step = this.findSentStep(index, position);
         if (step === undefined) {
-            this.unmatched += 1;
+            if (arrivedInWindow) {
+                this.unmatched += 1;
+            }
             return;
         }
-        if (!this.expectedKeys[observer].delete(index * STEP_SPAN + step)) {
-            this.outsideExpectation += 1;
+        const key = index * STEP_SPAN + step;
+        if (!this.expectedKeys[observer].delete(key)) {
+            if (!this.outsideWindowKeys[observer].delete(key) && arrivedInWindow) {
+                this.outsideExpectation += 1;
+            }
             return;
         }
         this.received += 1;
@@ -161,7 +185,7 @@ export class MoveProbe {
     private findSentStep(index: number, position: Position): number | undefined {
         const sent = this.sentAt[index];
         const latest = sent.length - 1;
-        for (let step = latest; step >= 0 && step >= latest - LOOKBACK_STEPS; step--) {
+        for (let step = latest; step >= 0 && step >= latest - this.lookbackSteps; step--) {
             if (sent[step] === undefined) {
                 continue;
             }

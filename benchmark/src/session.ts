@@ -2,19 +2,22 @@ import { randomUUID } from "node:crypto";
 import WebSocket from "ws";
 import {
     type ClientMessage,
-    type Position,
+    type ViewportKind,
     buildRoomSocketUrl,
     decodeServerFrame,
     encodeClientFrame,
     joinRoomMessage,
+    joinWorldSpaceMessage,
     pongMessage,
     userMovesMessage,
-    viewportAround,
+    viewportFor,
     viewportMessage,
+    watchWorldSpaceMessage,
     withTrailingSlash,
 } from "./protocol";
 import type { MoveProbe } from "./probe";
-import { type RunStats, type TimerRegistry, increment } from "./stats";
+import type { MotionPlan } from "./scenario";
+import { type RunStats, type TimerRegistry, increment, isInWindow } from "./stats";
 
 export type SessionState = "idle" | "connecting" | "accepted" | "rejected" | "leaving" | "closed";
 export type SessionEvent = "start" | "joined" | "rejected" | "leave" | "socketClosed";
@@ -39,7 +42,10 @@ export function nextState(state: SessionState, event: SessionEvent): SessionStat
 }
 
 export interface SessionOptions {
+    /** Index inside this process: the probe and the ramp use it. */
     index: number;
+    /** Index across every process of the run (index + --index-offset): paths and roles use it. */
+    pathIndex: number;
     name: string;
     pusherUrl: string;
     wsUrl: string;
@@ -48,23 +54,19 @@ export interface SessionOptions {
     characterTextureId: string;
     auth: "anonymous" | "none";
     moveHz: number;
+    motion: MotionPlan;
+    viewport: ViewportKind;
+    /** False for a bot that only stands where it joined: it sends no move at all. */
+    walker: boolean;
+    /** Joins the world space after the room join, as the client does at scene start. */
+    joinWorldSpace: boolean;
+    /** Subscribes to the world space's user list once joined. */
+    watchWorldSpace: boolean;
     joinTimeoutMs: number;
     closeTimeoutMs: number;
 }
 
 const CLOSE_CODE_NORMAL = 1000;
-const MOVE_AREA = { centerX: 1056, centerY: 745, radiusX: 736, radiusY: 545 };
-const GOLDEN_ANGLE = 2.399963229728653;
-const ANGLE_STEP = 0.05;
-
-/** Deterministic position on an ellipse: the same session index and step always give the same point. */
-export function positionAt(index: number, step: number): Position {
-    const angle = index * GOLDEN_ANGLE + step * ANGLE_STEP;
-    return {
-        x: Math.round(MOVE_AREA.centerX + MOVE_AREA.radiusX * Math.sin(angle)),
-        y: Math.round(MOVE_AREA.centerY + MOVE_AREA.radiusY * Math.cos(angle)),
-    };
-}
 
 export async function fetchAnonymousToken(pusherUrl: string, signal?: AbortSignal): Promise<string> {
     const response = await fetch(new URL("anonymLogin", withTrailingSlash(pusherUrl)), { method: "POST", signal });
@@ -86,6 +88,12 @@ export class RoomSession {
     private socketWasOpen = false;
     private nextNonce = 1;
     private step = 0;
+    private pauseTicks = 0;
+    private nextQueryId = 1;
+    private worldQueryId: number | undefined;
+    private worldJoinStartedAt = 0;
+    private worldSpaceJoined = false;
+    private peers = 0;
     private connectStartedAt = 0;
     private joinTimer: NodeJS.Timeout | undefined;
     private moveTimer: NodeJS.Timeout | undefined;
@@ -191,28 +199,56 @@ export class RoomSession {
         });
     }
 
+    /** Users this bot currently knows of: those that joined its watched zones minus those that left them. */
+    public get knownPeers(): number {
+        return Math.max(0, this.peers);
+    }
+
     private handleFrame(data: Buffer): void {
         const receivedAt = performance.now();
-        this.stats.receivedFrames += 1;
-        this.stats.receivedBytes += data.byteLength;
+        this.stats.receivedFramesTotal += 1;
+        this.stats.receivedBytesTotal += data.byteLength;
         let frame;
         try {
-            frame = decodeServerFrame(data, this.probe.isObserver(this.options.index));
+            frame = decodeServerFrame(data, this.probe.isObserver(this.options.index), true);
         } catch {
             increment(this.stats.errors, "undecodable_server_frame");
             return;
         }
+        const counted = isInWindow(this.stats.window, receivedAt);
+        if (counted) {
+            this.stats.receivedFrames += 1;
+            this.stats.receivedBytes += data.byteLength;
+        }
+        if (frame.accounting !== undefined) {
+            this.stats.traffic.record(receivedAt, data.byteLength, frame.accounting);
+        }
         for (const eventType of frame.eventTypes) {
-            increment(this.stats.received, eventType);
+            if (counted) {
+                increment(this.stats.received, eventType);
+            }
+            if (eventType === "userJoinedMessage") {
+                this.peers += 1;
+            } else if (eventType === "userLeftMessage") {
+                this.peers -= 1;
+            }
         }
         for (const move of frame.moves) {
             this.probe.recordReceive(this.options.index, move.userId, move, receivedAt);
         }
         for (const signal of frame.signals) {
             switch (signal.kind) {
-                case "roomConnected":
-                    this.send(joinRoomMessage(this.options.name, positionAt(this.options.index, 0)));
+                case "roomConnected": {
+                    const joinPosition = this.options.motion.positionAt(this.options.pathIndex, 0);
+                    this.send(
+                        joinRoomMessage(
+                            this.options.name,
+                            joinPosition,
+                            viewportFor(this.options.viewport, joinPosition),
+                        ),
+                    );
                     break;
+                }
                 case "roomJoined":
                     this.accept(signal.userId);
                     break;
@@ -225,7 +261,35 @@ export class RoomSession {
                 case "serverError":
                     increment(this.stats.errors, `server:${signal.message}`);
                     break;
+                case "queryAnswer":
+                    this.handleQueryAnswer(signal.id, signal.error);
+                    break;
             }
+        }
+    }
+
+    private joinWorldSpace(): void {
+        const queryId = this.nextQueryId;
+        this.nextQueryId += 1;
+        this.worldQueryId = queryId;
+        this.worldJoinStartedAt = performance.now();
+        this.send(joinWorldSpaceMessage(queryId));
+    }
+
+    private handleQueryAnswer(queryId: number, error: string | undefined): void {
+        if (queryId !== this.worldQueryId || this.worldSpaceJoined) {
+            return;
+        }
+        this.worldQueryId = undefined;
+        if (error !== undefined) {
+            increment(this.stats.worldSpaceJoinErrors, error);
+            return;
+        }
+        this.worldSpaceJoined = true;
+        this.stats.worldSpaceJoined += 1;
+        this.stats.worldSpaceJoinLatenciesMs.push(performance.now() - this.worldJoinStartedAt);
+        if (this.options.watchWorldSpace && this.send(watchWorldSpaceMessage())) {
+            this.stats.worldSpaceWatching += 1;
         }
     }
 
@@ -245,18 +309,29 @@ export class RoomSession {
         room.accepted += 1;
         room.userIds.add(userId);
 
-        const joinPosition = positionAt(this.options.index, 0);
-        this.send(viewportMessage(joinPosition));
-        this.probe.setViewport(this.options.index, viewportAround(joinPosition));
-        if (this.options.moveHz > 0) {
+        const { motion, pathIndex, viewport: viewportKind } = this.options;
+        const joinPosition = motion.positionAt(pathIndex, 0);
+        const joinViewport = viewportFor(viewportKind, joinPosition);
+        this.send(viewportMessage(joinPosition, joinViewport));
+        this.probe.setViewport(this.options.index, joinViewport);
+        if (this.options.joinWorldSpace) {
+            this.joinWorldSpace();
+        }
+        if (this.options.walker && this.options.moveHz > 0) {
             this.moveTimer = this.timers.setInterval(() => {
+                if (this.pauseTicks > 0) {
+                    this.pauseTicks -= 1;
+                    return;
+                }
                 this.step += 1;
-                const position = positionAt(this.options.index, this.step);
+                const position = motion.positionAt(pathIndex, this.step);
+                const viewport = viewportFor(viewportKind, position);
                 const sentAt = performance.now();
-                if (this.send(userMovesMessage(position))) {
-                    this.probe.setViewport(this.options.index, viewportAround(position));
+                if (this.send(userMovesMessage(position, viewport, motion.movingAt(pathIndex, this.step)))) {
+                    this.probe.setViewport(this.options.index, viewport);
                     this.probe.recordSend(this.options.index, this.step, position, sentAt);
                 }
+                this.pauseTicks = motion.pauseTicksAfter(pathIndex, this.step);
             }, 1000 / this.options.moveHz);
         }
     }

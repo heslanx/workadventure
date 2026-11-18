@@ -1,4 +1,6 @@
 import { apiVersionHash } from "../../libs/messages/src/JsonMessages/ApiVersion";
+import { VIEWPORT_KINDS, type ViewportKind } from "./protocol";
+import { PATTERN_KINDS, type PatternKind } from "./scenario";
 
 export interface LoadConfig {
     pusherUrl: string;
@@ -19,6 +21,20 @@ export interface LoadConfig {
     probeObservers: number;
     minAccepted: number;
     output: string | undefined;
+    /** What the camera reports to the pusher: the 640 x 400 bot box, a browser window, or the whole map. */
+    viewport: ViewportKind;
+    pattern: PatternKind;
+    /** Share of the bots that walk; the others join, report a viewport and then send nothing. */
+    movingFraction: number;
+    /** Share of the bots that subscribe to the world space's user list. */
+    worldSpaceWatchFraction: number;
+    /** Share of the bots that join the world space; at least the watchers. */
+    worldSpaceMemberFraction: number;
+    /** Added to every session index for names, paths and roles, so several processes never overlap. */
+    indexOffset: number;
+    /** Length of the closing stretch of the run that the traffic and move statistics cover; 0 is the whole run. */
+    steadyWindowSeconds: number;
+    metricsUrls: string[];
 }
 
 export class ConfigError extends Error {}
@@ -43,7 +59,17 @@ export const USAGE = `Usage: npm start -- [--key=value ...]   (every flag is als
   --probe-observers WA_PROBE_OBSERVERS    20        sessions after the early leavers that record move delivery
   --min-accepted WA_MIN_ACCEPTED          1         exit code 2 when fewer sessions were accepted
   --output       WA_OUTPUT                optional  also write the JSON summary to this file
+  --viewport     WA_VIEWPORT              bot       bot (640x400, the baselines) | browser (960x540 + 300 px margin, clipped to the map) | zoomout (whole map)
+  --pattern      WA_PATTERN               ellipse   ellipse (the baselines) | plaza (laps of the Plateia) | ring (300 px circle) | walk-stop (stop and go over the floor)
+  --moving-fraction WA_MOVING_FRACTION    1         share of the sessions that walk; the others stand still and send no move
+  --world-space  WA_WORLD_SPACE           0         share of the sessions (0..1, or on/off) that join the allWorldUser space and watch its roster
+  --world-members WA_WORLD_MEMBERS        1 when --world-space > 0, else 0   share that joins the space; the watchers are part of it
+  --index-offset WA_INDEX_OFFSET          0         added to every session index (names, paths, roles): give each process its own range
+  --steady-window WA_STEADY_WINDOW        0         seconds at the end of the run that traffic, delivery and latency cover (0 = whole run)
+  --metrics-urls WA_METRICS_URLS          optional  comma-separated Prometheus /metrics URLs, scraped at the window edges and every 5 s
 `;
+
+const SHARE_NAMES = new Set(["on", "off"]);
 
 function flagToEnvName(flag: string): string {
     return `WA_${flag.replace(/-/g, "_").toUpperCase()}`;
@@ -92,17 +118,52 @@ export function parseConfig(argv: readonly string[], env: Record<string, string 
         throw new ConfigError("WA_SESSIONS must be an integer");
     }
     const durationSeconds = number("WA_DURATION_SECONDS", 60, 0);
+    const rampSeconds = number("WA_RAMP_SECONDS", 10, 0);
     const probeObservers = number("WA_PROBE_OBSERVERS", 20, 0);
     if (!Number.isInteger(probeObservers)) {
         throw new ConfigError("WA_PROBE_OBSERVERS must be an integer");
     }
+
+    const choice = <T extends string>(name: string, allowed: readonly T[], fallback: T): T => {
+        const value = text(name, fallback);
+        const match = allowed.find((candidate) => candidate === value);
+        if (match === undefined) {
+            throw new ConfigError(`${name} must be one of ${allowed.join(", ")}`);
+        }
+        return match;
+    };
+    // A share may also be written on (1) or off (0), the way the world space switch reads in the plans.
+    const share = (name: string, fallback: string): number => {
+        const raw = text(name, fallback);
+        if (SHARE_NAMES.has(raw)) {
+            return raw === "on" ? 1 : 0;
+        }
+        return number(name, Number(raw), 0, 1);
+    };
+
+    const worldSpaceWatchFraction = share("WA_WORLD_SPACE", "0");
+    const worldSpaceMemberFraction = share("WA_WORLD_MEMBERS", worldSpaceWatchFraction > 0 ? "1" : "0");
+    if (worldSpaceMemberFraction < worldSpaceWatchFraction) {
+        throw new ConfigError("WA_WORLD_MEMBERS must be at least WA_WORLD_SPACE: a watcher is a member");
+    }
+    const indexOffset = number("WA_INDEX_OFFSET", 0, 0);
+    if (!Number.isInteger(indexOffset)) {
+        throw new ConfigError("WA_INDEX_OFFSET must be an integer");
+    }
+    const steadyWindowSeconds = number("WA_STEADY_WINDOW", 0, 0);
+    if (steadyWindowSeconds > 0 && steadyWindowSeconds > durationSeconds - rampSeconds) {
+        throw new ConfigError(
+            `WA_STEADY_WINDOW (${steadyWindowSeconds} s) must fit after the ramp: the duration is ${durationSeconds} s and the ramp ${rampSeconds} s`,
+        );
+    }
+    const metricsUrls = parseMetricsUrls(values.WA_METRICS_URLS);
 
     return {
         pusherUrl,
         wsUrl: text("WA_WS_URL", pusherUrl),
         roomUrls,
         sessions,
-        rampSeconds: number("WA_RAMP_SECONDS", 10, 0),
+        rampSeconds,
         durationSeconds,
         moveHz: number("WA_MOVE_HZ", 1, 0, 60),
         joinTimeoutSeconds: number("WA_JOIN_TIMEOUT_SECONDS", 30, 0.001),
@@ -116,5 +177,26 @@ export function parseConfig(argv: readonly string[], env: Record<string, string 
         probeObservers,
         minAccepted: number("WA_MIN_ACCEPTED", 1, 0),
         output: values.WA_OUTPUT === "" ? undefined : values.WA_OUTPUT,
+        viewport: choice("WA_VIEWPORT", VIEWPORT_KINDS, "bot"),
+        pattern: choice("WA_PATTERN", PATTERN_KINDS, "ellipse"),
+        movingFraction: number("WA_MOVING_FRACTION", 1, 0, 1),
+        worldSpaceWatchFraction,
+        worldSpaceMemberFraction,
+        indexOffset,
+        steadyWindowSeconds,
+        metricsUrls,
     };
+}
+
+function parseMetricsUrls(raw: string | undefined): string[] {
+    const urls = (raw ?? "")
+        .split(",")
+        .map((url) => url.trim())
+        .filter((url) => url !== "");
+    for (const url of urls) {
+        if (!URL.canParse(url) || !/^https?:$/.test(new URL(url).protocol)) {
+            throw new ConfigError(`WA_METRICS_URLS holds "${url}", which is not an http(s) URL`);
+        }
+    }
+    return urls;
 }

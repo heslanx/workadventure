@@ -26,8 +26,31 @@ connecting ──roomJoinedMessage──▶ accepted ──▶ leaving ──▶
 ```
 
 Accepted room sessions and open sockets are counted separately. The bot answers server pings, sends one
-`viewportMessage` after joining and then `userMovesMessage` at `--move-hz` along a deterministic ellipse
-(same session index, same path), and leaves with close code 1000.
+`viewportMessage` after joining and then `userMovesMessage` at `--move-hz` along a deterministic path
+(same global bot index, same path; see `--pattern`), and leaves with close code 1000.
+
+## Scenario
+
+The defaults reproduce the baseline runs: every bot walks the same ellipse at `--move-hz`, with a 640 x 400 viewport,
+and never joins the world space. The flags below change the load without changing that default, so old numbers stay
+comparable. Everything that picks a bot (path, walker, world-space role) depends only on its *global* index, the
+session index plus `--index-offset`, so the same bot behaves the same in any process.
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--viewport` | `bot` | What the camera reports to the pusher: `bot` is the 640 x 400 box of the baselines; `browser` is a 960 x 540 canvas plus the 300 px margin the client adds on each side, clipped to the 2752 x 1792 map; `zoomout` is the whole map |
+| `--pattern` | `ellipse` | `ellipse` is the baseline path (736 x 545 px around (1056, 745)); `ring` a 300 px circle around the same centre, 36 px per move; `plaza` laps of the Plateia rectangle (192, 416, 416 x 544) on four lanes; `walk-stop` stop and go over the whole floor: 12 moves to the next stop, then 5 to 30 silent ticks, the last move of a leg carrying `moving=false` |
+| `--moving-fraction` | `1` | Share of the bots that walk. The others join, report their viewport and send nothing. The selection is spread evenly over any run of consecutive indexes: 20% of 250 bots is 50 +- 2 |
+| `--world-space` | `0` | Share of the bots (`0`..`1`, also `on`/`off`) that subscribe to the user list of the `allWorldUser` space. Joining and subscribing are what `GameScene` and `Space` send: a `joinSpaceQuery` (ALL_USERS, `availabilityStatus` and `chatID`), then an `addSpaceFilterMessage` once it is answered |
+| `--world-members` | `1` when `--world-space` is above 0, else `0` | Share of the bots that join the space. The watchers are part of it, so it cannot be lower than `--world-space`. `--world-members=1` alone measures members that never subscribe to the roster |
+| `--index-offset` | `0` | Added to every session index for the name (`<prefix>-<global index>`), the path and the roles. Give each generator process its own range |
+| `--steady-window` | `0` (whole run) | Seconds at the end of the run that traffic, delivery, latency and the per-type bytes cover. Must fit after the ramp: at most duration minus ramp |
+| `--metrics-urls` | none | Comma-separated Prometheus `/metrics` URLs, scraped when the window starts (or at the start of the run), every 5 s and once more at the stop |
+
+A pattern is a pure function of the global index and the step, so the probe can recompute it. `ring` and `plaza`
+repeat exactly after 52 and 54 moves and the probe looks back one move fewer than that (a move delayed by a whole lap,
+about 10 s at 5 Hz, is reported as unmatched). `walk-stop` never repeats on purpose, but two legs can cross on the
+same pixel: then the later send takes the arrival, which affects at most a few moves in a thousand.
 
 ## Run
 
@@ -73,13 +96,37 @@ reconcile, cleanup incomplete, or fewer than `--min-accepted` sessions accepted)
 
 ## Summary
 
-One JSON document on stdout: `sessions` (requested, started, neverStarted, accepted, rejected,
+One JSON document on stdout (`schemaVersion` 4): `sessions` (requested, started, neverStarted, accepted, rejected,
 abortedBeforeJoin, unexpectedCloses, uniqueUserIds), `earlyLeave` (planned, fired, and the state of each planned
 leaver when the leave fired: `accepted` left the room, `connecting` aborted its join, `idle` never started,
 `rejected`, `leaving` and `closed` were already out of the room),
 `sockets` (opened, openPeak, openAtStop, closed),
-`joinLatencyMs` (p50, p95, max; `null` without samples), `rooms`, `sent`, `received.eventsByType`, `rejections`,
+`joinLatencyMs` (p50, p95, max; `null` without samples), `rooms`, `sent`, `received`, `rejections`,
 `errors`, `closeCodes`, `moveProbe` (see below), `generator` (CPU, RSS, event-loop lag), `cleanup` and `reconciled`.
+New in version 4:
+
+- `window`: whether a steady window was set, its length, where it starts and ends (seconds after the first start) and
+  how long it was actually measured (`measuredSeconds`; shorter when the run was interrupted).
+- `scenario`: viewport, pattern, moving fraction, how many bots walk, and the global index range of this process.
+- `received`: frames, bytes and `eventsByType` over the window (the whole run without one); `wholeRun` always holds
+  the frames and bytes of the ramp too.
+- `traffic`: what the server sent over the measured span, by message type. Every type has `frames` (frames that
+  carried it), `messages`, `records`, `bytes`, `messagesPerSecond`, `bytesPerSecond`, `peakBytesPerSecond` (the busiest
+  second) and `kbitPerSecondPerSession`. `overheadBytes` is the nonce, envelope and batch headers; the typed bytes plus
+  the overhead add up to `received.bytes`. Message sizes are read off the wire, so they include each batch entry's tag
+  and length prefix.
+- `worldSpace`: the same figures for the five roster messages of `allWorldUser` (`initSpaceUsersMessage`,
+  `addSpaceUserMessage`, `removeSpaceUserMessage`, `updateSpaceUserMessage`, `spaceStatePatchMessage`) and for no other
+  space, plus members and watchers planned and reached, `joinLatencyMs` of the space join and `joinErrors`. A roster
+  snapshot counts one message and as many `records` as it has users. Zero everywhere unless `--world-space` or
+  `--world-members` is set.
+- `knownPeers`: how many other users each bot still in the room knew of at the stop (the `userJoinedMessage` of its
+  watched zones minus the `userLeftMessage`): p50, p95 and max over this process's bots. In a single process this is
+  the share of the room a viewport reaches; across processes read it with the population from the merged summary.
+- `metrics`: one report per `--metrics-urls` entry: scrapes taken, errors, `cpuSeconds` and `cpuPercentOfOneCore` from
+  `process_cpu_seconds_total` between the first and the last scrape (100 is a saturated single-threaded server),
+  `rssPeakBytes`, the worst `nodejs_eventloop_lag_p99_seconds`, and `series` for every `workadventure_*` metric with its
+  first, last, delta and max. A scrape that fails is counted in `errors`, never fatal.
 
 ### Move probe
 
@@ -100,6 +147,9 @@ that do not leave early (`--disconnect-fraction`) are the observers; they record
   The server delivers by 320 px zone, not by viewport, so this is normally above zero.
 - `unmatched`: arrivals from a bot of this process that matched no sent step.
 
+With `--steady-window` only moves sent inside the window are expected and counted, and a late arrival of a move sent
+before it is ignored, not called unexpected.
+
 Both numbers come from one generator process. With several processes, report each process's `moveProbe` on its own.
 Only observers decode and match arrivals, which adds CPU there; a run that is generator-bound (see below) does not
 measure server latency. Memory grows for the length of the run: one number per move sent by any bot, one per
@@ -115,19 +165,59 @@ membership; compare `sessions.accepted` with the back and pusher connection gaug
 
 Discard a run whose `generator.cpuPercentOfOneCore` approaches 100 or whose `generator.eventLoopLagMs.p99`
 grows: the generator, not the server, was the bottleneck. Spread the population over several generator
-processes instead, each with its own `--name-prefix` and `--output`. Add their counters (sessions, sockets,
-frames, bytes, events, errors), but not their percentiles: a combined p95 needs every sample, so report each
-process's latency and lag percentiles separately, or take the worst of them as an upper bound. Session indexes
-restart at 0 in every process, so processes with the same room list follow the same movement paths.
-`benchmark_multi_core.sh` predates this harness (it starts four identical processes with yarn) and does not do
-this.
+processes instead, each with its own `--index-offset` (and `--output`); `scripts/load-staircase.sh` does this. Counters
+add up, but percentiles do not: a combined p95 needs every sample, so the merge reports the worst process's percentile
+as an upper bound, and pools delivery as total received over total expected.
+`benchmark_multi_core.sh` predates this harness (it starts four identical processes with yarn, on the same paths) and
+does not do this.
+
+## Staircase over several processes
+
+```bash
+cd benchmark
+scripts/load-staircase.sh --levels=300,500,700,1000 --processes=4 \
+  --ramp-seconds=60 --duration-seconds=240 --steady-window=120 \
+  --metrics-urls=http://127.0.0.1:9100/metrics \
+  -- --pusher-url=http://127.0.0.1:3010 --ws-url=http://127.0.0.1:3001 \
+     --room-urls=http://127.0.0.1:3010/~/konclui-office/office.wam \
+     --move-hz=5 --viewport=browser --pattern=walk-stop --moving-fraction=0.2 --world-space=1
+```
+
+For every level it starts `--processes` generators, each with its share of the bots and its own `--index-offset`
+range, `--stagger-seconds` (default 4) apart; process k runs k x stagger less, so all of them stop together and their
+windows line up. It waits for them, merges `gen-<k>.json` into `merged.json` and prints a verdict line, rests
+`--pause-seconds`, and goes on. `--repeat=3` runs the whole staircase three times, interleaved. At the end
+`staircase.json` lists every level with its failures and the knee of each repeat: the first level where the run is
+invalid, delivery falls below 0.99, or a scraped server is at or above 100% of one core (override with
+`merge-summaries.ts staircase --min-delivery=... --max-server-cpu=... --max-move-p95=...`).
+
+It starts nothing else: no server, no docker, no browser. Bring the servers up yourself, from a pinned commit, and
+restart them between levels if you need `nodejs_eventloop_lag_max` or memory to start from zero. It runs on macOS
+(bash 3.2) and Linux; `--taskset=4-7` pins the generators on Linux. `--dry-run` prints the plan and the commands.
+A merged run is invalid when any process had a rejected session, a close code other than 1000, an unreconciled ledger,
+fewer accepted sessions than requested, was stopped before its duration (`stopReason` other than `completed`), measured
+more than 2 s less than its window (or its duration, with no window), or was generator-bound (CPU at 70% of a core or
+more, event-loop lag p99 above 10 ms); the reasons are in `merged.json`.
+
+The summaries cannot show a process that never wrote one, so the launcher runs the merge as
+`merge-summaries.ts run <dir> --expect-processes=<P> --expect-sessions=<level>`: a different number of `gen-*.json`
+files (a dead process or a leftover file), or requested bots that do not add up to the level, make the run invalid.
+`staircase.json` also counts a level as failed when its `merged.json` requested another number of bots than the level.
+Run the merge by hand without the two flags and those checks are skipped.
 
 ## Checks
 
 ```bash
 cd benchmark
-npm test -- tests/harness.test.ts   # envelope handling, accepted vs rejected sessions, cleanup
-npm test -- tests/probe.test.ts     # move probe matching, delivery ratio, percentiles
+npm test -- tests/harness.test.ts      # envelope handling, accepted vs rejected sessions, cleanup
+npm test -- tests/probe.test.ts        # move probe matching, delivery ratio, percentiles, steady window
+npm test -- tests/config.test.ts       # parsing of every scenario flag
+npm test -- tests/scenario.test.ts     # viewports, movement patterns, who walks and who watches
+npm test -- tests/traffic.test.ts      # bytes by message type, world-space roster counters, steady window
+npm test -- tests/loadscenario.test.ts # the flags end to end against the fake pusher
+npm test -- tests/metrics.test.ts      # /metrics scraping and the CPU figure
+npm test -- tests/merge.test.ts        # merging processes, validity, staircase knee
+npm test -- tests/staircase.test.ts    # load-staircase.sh plan and a real two-process run
 npm run typecheck
 ```
 

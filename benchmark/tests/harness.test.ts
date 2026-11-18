@@ -1,116 +1,17 @@
 import { spawn } from "node:child_process";
-import { type Server, createServer } from "node:http";
-import type { AddressInfo } from "node:net";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { WebSocket, WebSocketServer } from "ws";
 import {
     ErrorScreenMessage,
     FrontToPusherWebSocketMessage,
-    PusherToFrontWebSocketMessage,
-    RoomConnectedMessage,
     RoomJoinedMessage,
-    type ServerToClientMessage,
 } from "../../libs/messages/src/ts-proto-generated/messages";
 import { ConfigError, type LoadConfig, parseConfig } from "../src/config";
 import { buildRoomSocketUrl, decodeServerFrame, encodeClientFrame, userMovesMessage } from "../src/protocol";
 import { runLoad } from "../src/runner";
 import { nextState } from "../src/session";
 import { eventLoopLagMs, percentile } from "../src/stats";
-
-type ServerMessage = NonNullable<ServerToClientMessage["message"]>;
-
-function serverFrame(nonce: number, message: ServerMessage): Uint8Array {
-    return PusherToFrontWebSocketMessage.encode({ nonce, message: { message } }).finish();
-}
-
-/** Speaks the pusher side of the "/ws/room" handshake over a real socket. */
-async function startFakePusher(mode: "accept" | "reject") {
-    const observed = {
-        tokens: [] as (string | undefined)[],
-        roomIds: [] as (string | null)[],
-        clientMessages: [] as string[],
-        closeCodes: [] as number[],
-    };
-    let issuedTokens = 0;
-    // Like the back, every room numbers its users from 1.
-    const lastUserIdByRoom = new Map<string | null, number>();
-    const membersByRoom = new Map<string | null, Map<WebSocket, number>>();
-    const http: Server = createServer((request, response) => {
-        if (request.method === "POST" && request.url === "/anonymLogin") {
-            issuedTokens += 1;
-            response.setHeader("content-type", "application/json");
-            response.end(JSON.stringify({ authToken: `token-${issuedTokens}`, userUuid: `uuid-${issuedTokens}` }));
-            return;
-        }
-        response.statusCode = 404;
-        response.end();
-    });
-    const sockets = new WebSocketServer({ server: http, path: "/ws/room" });
-    sockets.on("connection", (socket, request) => {
-        observed.tokens.push(request.headers["sec-websocket-protocol"]);
-        const roomId = new URL(request.url ?? "", "http://fake").searchParams.get("roomId");
-        observed.roomIds.push(roomId);
-        socket.on("close", (code) => observed.closeCodes.push(code));
-        if (mode === "reject") {
-            const error = ErrorScreenMessage.fromPartial({ type: "retry", code: "NEW_VERSION" });
-            socket.send(serverFrame(1, { $case: "errorScreenMessage", errorScreenMessage: error }));
-            socket.close(1000, "Error message sent");
-            return;
-        }
-        socket.send(
-            serverFrame(1, {
-                $case: "roomConnectedMessage",
-                roomConnectedMessage: RoomConnectedMessage.fromPartial({}),
-            }),
-        );
-        const members = membersByRoom.get(roomId) ?? new Map<WebSocket, number>();
-        membersByRoom.set(roomId, members);
-        socket.on("close", () => members.delete(socket));
-        socket.on("message", (data: Buffer) => {
-            const message = FrontToPusherWebSocketMessage.decode(data).message?.message;
-            observed.clientMessages.push(message?.$case ?? "empty");
-            if (message?.$case === "joinRoomFrontMessage") {
-                const userId = (lastUserIdByRoom.get(roomId) ?? 0) + 1;
-                lastUserIdByRoom.set(roomId, userId);
-                members.set(socket, userId);
-                const joined = RoomJoinedMessage.fromPartial({ currentUserId: userId });
-                socket.send(serverFrame(2, { $case: "roomJoinedMessage", roomJoinedMessage: joined }));
-            } else if (message?.$case === "userMovesMessage") {
-                // Like the pusher, relay a move to every other user of the room inside a batch.
-                const userId = members.get(socket);
-                const position = message.userMovesMessage.position;
-                if (userId === undefined || position === undefined) {
-                    return;
-                }
-                const moved = serverFrame(3, {
-                    $case: "batchMessage",
-                    batchMessage: {
-                        event: "",
-                        payload: [{ message: { $case: "userMovedMessage", userMovedMessage: { userId, position } } }],
-                    },
-                });
-                for (const other of members.keys()) {
-                    if (other !== socket && other.readyState === WebSocket.OPEN) {
-                        other.send(moved);
-                    }
-                }
-            }
-        });
-    });
-    await new Promise<void>((resolve) => http.listen(0, "127.0.0.1", resolve));
-    const url = `http://127.0.0.1:${(http.address() as AddressInfo).port}`;
-    return {
-        url,
-        observed,
-        openSockets: () => sockets.clients.size,
-        close: () =>
-            new Promise<void>((resolve) => {
-                sockets.close();
-                http.close(() => resolve());
-            }),
-    };
-}
+import { serverFrame, startFakePusher } from "./support/fakePusher";
 
 function configFor(pusherUrl: string, overrides: Partial<LoadConfig> = {}): LoadConfig {
     return {
@@ -119,7 +20,9 @@ function configFor(pusherUrl: string, overrides: Partial<LoadConfig> = {}): Load
             WA_ROOM_URLS: "http://play.test/_/global/maps.test/a.json,http://play.test/_/global/maps.test/b.json",
             WA_SESSIONS: "3",
             WA_RAMP_SECONDS: "0.05",
-            WA_DURATION_SECONDS: "0.5",
+            // Long enough for every session to join on a host that is busy with other work: at 0.5 s these runs
+            // stopped before all sessions were accepted when the load average was far above the core count.
+            WA_DURATION_SECONDS: "1.5",
             WA_MOVE_HZ: "20",
         }),
         ...overrides,

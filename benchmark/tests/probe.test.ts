@@ -190,6 +190,93 @@ describe("move probe", () => {
     });
 });
 
+describe("move probe window", () => {
+    // Moves are sent at 100 ms, 300 ms and 500 ms; the window covers 200..400 ms, so only the one at 300 counts.
+    const window = { startMs: 200, endMs: 400 };
+
+    function windowedProbe(lookbackSteps?: number) {
+        const probe = new MoveProbe({
+            roomUrlOf: [ROOM, ROOM],
+            firstObserver: 0,
+            observers: 1,
+            positionOf,
+            lookbackSteps,
+            window,
+        });
+        probe.registerUser(1, 99);
+        probe.setAccepted(1, true);
+        probe.setAccepted(0, true);
+        probe.setViewport(0, viewportAround({ x: 1, y: 1 }));
+        return probe;
+    }
+
+    it("expects and counts only the moves sent inside the window", () => {
+        // Remove the in-window check in recordSend and all three moves are expected.
+        const probe = windowedProbe();
+        probe.recordSend(1, 1, { x: 1, y: 1 }, 100);
+        probe.recordSend(1, 2, { x: 0, y: 1 }, 300);
+        probe.recordSend(1, 3, { x: 1, y: 1 }, 500);
+
+        probe.recordReceive(0, 99, { x: 0, y: 1 }, 330);
+
+        expect(probe.summary().delivery).toEqual({ expected: 1, received: 1, ratio: 1 });
+        expect(probe.summary().moveLatencyMs.count).toBe(1);
+    });
+
+    it("does not call a late arrival of a move sent before the window unexpected", () => {
+        // The move at 100 ms arrives at 250 ms, inside the window: it was never expected, but it is not stray either.
+        const probe = windowedProbe();
+        probe.recordSend(1, 1, { x: 1, y: 1 }, 100);
+
+        probe.recordReceive(0, 99, { x: 1, y: 1 }, 250);
+
+        const summary = probe.summary();
+        expect(summary.outsideExpectation).toBe(0);
+        expect(summary.delivery).toEqual({ expected: 0, received: 0, ratio: null });
+    });
+
+    it("still counts a stray arrival inside the window, and ignores one outside it", () => {
+        const probe = windowedProbe();
+        probe.recordSend(1, 1, { x: 1, y: 1 }, 300);
+        probe.recordReceive(0, 99, { x: 1, y: 1 }, 320);
+
+        probe.recordReceive(0, 99, { x: 1, y: 1 }, 350);
+        probe.recordReceive(0, 99, { x: 1, y: 1 }, 600);
+        probe.recordReceive(0, 99, { x: 9, y: 9 }, 380);
+        probe.recordReceive(0, 99, { x: 9, y: 9 }, 700);
+
+        // The repeat at 350 and the unknown point at 380 are inside the window; the ones at 600 and 700 are not.
+        expect(probe.summary()).toMatchObject({ outsideExpectation: 1, unmatched: 1 });
+    });
+
+    it.each([
+        [2, "unmatched"],
+        [4, "matched"],
+    ])("with a look-back of %i steps, an arrival of a move five sends old is %s", (lookbackSteps, outcome) => {
+        // A pattern with a short period passes its own look-back; the probe must not search further back than that.
+        const probe = new MoveProbe({
+            roomUrlOf: [ROOM, ROOM],
+            firstObserver: 0,
+            observers: 1,
+            positionOf: (index, step) => ({ x: step, y: index }),
+            lookbackSteps,
+        });
+        probe.registerUser(1, 99);
+        probe.setAccepted(1, true);
+        probe.setAccepted(0, true);
+        probe.setViewport(0, { left: 0, top: 0, right: 100, bottom: 100 });
+        for (let step = 1; step <= 5; step++) {
+            probe.recordSend(1, step, { x: step, y: 1 }, step * 100);
+        }
+
+        probe.recordReceive(0, 99, { x: 1, y: 1 }, 700);
+
+        const summary = probe.summary();
+        expect(summary.unmatched).toBe(outcome === "unmatched" ? 1 : 0);
+        expect(summary.delivery.received).toBe(outcome === "matched" ? 1 : 0);
+    });
+});
+
 describe("move extraction in decodeServerFrame", () => {
     const position = { x: 3, y: 4, direction: PositionMessage_Direction.DOWN, moving: true };
 

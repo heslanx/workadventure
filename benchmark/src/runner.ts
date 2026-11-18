@@ -1,11 +1,26 @@
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import type { LoadConfig } from "./config";
+import { MetricsScraper } from "./metrics";
 import { MoveProbe, firstObserverIndex } from "./probe";
-import { RoomSession, positionAt } from "./session";
-import { type Counter, RunStats, TimerRegistry, eventLoopLagMs, increment, percentile } from "./stats";
+import { WORLD_SPACE_NAME } from "./protocol";
+import { hasRole, motionFor } from "./scenario";
+import { RoomSession } from "./session";
+import {
+    type Counter,
+    RunStats,
+    TimerRegistry,
+    eventLoopLagMs,
+    increment,
+    percentile,
+    perSecondOf,
+    reportTypeTraffic,
+    worldSecondKey,
+} from "./stats";
 
 export type StopReason = "completed" | "aborted";
 
+/** A move delayed by more than this many steps cannot be told from the next lap; see probe.ts. */
+const PROBE_LOOKBACK_STEPS = 376;
 const EVENT_LOOP_RESOLUTION_MS = 10;
 const RSS_SAMPLE_INTERVAL_MS = 1000;
 
@@ -18,9 +33,14 @@ function round(value: number | null, digits = 1): number | null {
  * Aborting the signal stops the run early, including in the middle of the ramp.
  */
 export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
-    const stats = new RunStats();
+    const startedAtMs = performance.now();
+    const windowStartMs = startedAtMs + (config.durationSeconds - config.steadyWindowSeconds) * 1000;
+    const windowEndMs = startedAtMs + config.durationSeconds * 1000;
+    const steadyWindow = config.steadyWindowSeconds > 0 ? { startMs: windowStartMs, endMs: windowEndMs } : undefined;
+    const stats = new RunStats(startedAtMs, steadyWindow);
     const timers = new TimerRegistry();
     const sessions: RoomSession[] = [];
+    const motion = motionFor(config.pattern);
     const roomUrlOf = Array.from(
         { length: config.sessions },
         (_, index) => config.roomUrls[index % config.roomUrls.length],
@@ -30,11 +50,14 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
         roomUrlOf,
         firstObserver: firstObserverIndex(config.sessions, earlyLeavers, config.probeObservers),
         observers: config.probeObservers,
-        positionOf: positionAt,
+        positionOf: (index, step) => motion.positionAt(config.indexOffset + index, step),
+        lookbackSteps:
+            motion.periodSteps === undefined ? undefined : Math.min(PROBE_LOOKBACK_STEPS, motion.periodSteps - 1),
+        window: steadyWindow,
     });
+    const scraper = new MetricsScraper(config.metricsUrls, timers);
     const rampStarts: NodeJS.Timeout[] = [];
     const startedAt = new Date();
-    const startedAtMs = performance.now();
     const cpuAtStart = process.cpuUsage();
     const eventLoopDelay = monitorEventLoopDelay({ resolution: EVENT_LOOP_RESOLUTION_MS });
     eventLoopDelay.enable();
@@ -45,11 +68,22 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
         }, RSS_SAMPLE_INTERVAL_MS),
     ];
 
+    let walkers = 0;
+    let plannedMembers = 0;
+    let plannedWatchers = 0;
     for (let index = 0; index < config.sessions; index++) {
+        const pathIndex = config.indexOffset + index;
+        const walker = hasRole("walker", pathIndex, config.movingFraction);
+        const member = hasRole("member", pathIndex, config.worldSpaceMemberFraction);
+        const watcher = member && hasRole("watcher", pathIndex, config.worldSpaceWatchFraction);
+        walkers += walker ? 1 : 0;
+        plannedMembers += member ? 1 : 0;
+        plannedWatchers += watcher ? 1 : 0;
         const session = new RoomSession(
             {
                 index,
-                name: `${config.namePrefix}-${index}`,
+                pathIndex,
+                name: `${config.namePrefix}-${pathIndex}`,
                 pusherUrl: config.pusherUrl,
                 wsUrl: config.wsUrl,
                 roomUrl: roomUrlOf[index],
@@ -57,6 +91,11 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
                 characterTextureId: config.characterTextureId,
                 auth: config.auth,
                 moveHz: config.moveHz,
+                motion,
+                viewport: config.viewport,
+                walker,
+                joinWorldSpace: member,
+                watchWorldSpace: watcher,
                 joinTimeoutMs: config.joinTimeoutSeconds * 1000,
                 closeTimeoutMs: config.closeTimeoutSeconds * 1000,
             },
@@ -70,6 +109,13 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
         );
     }
     runTimers.push(...rampStarts);
+    if (config.metricsUrls.length > 0) {
+        if (steadyWindow === undefined) {
+            scraper.begin();
+        } else {
+            runTimers.push(timers.setTimeout(() => scraper.begin(), Math.max(0, windowStartMs - performance.now())));
+        }
+    }
 
     // State of each planned leaver when the leave fires: "accepted" left the room, "connecting" aborted its join,
     // "idle" had not started yet and never starts; "rejected", "leaving" and "closed" were already out of the room.
@@ -98,13 +144,19 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
         runTimers.push(timers.setTimeout(() => resolve("completed"), config.durationSeconds * 1000));
     });
 
+    const stoppedAtMs = performance.now();
     const acceptedAtStop = stats.accepted;
     const openSocketsAtStop = stats.socketsOpen;
+    const knownPeersAtStop = sessions
+        .filter((session) => session.state === "accepted")
+        .map((session) => session.knownPeers);
     // Pending ramp starts go first, so no session starts while the others close. Each session releases its own
     // timers in leave(); the registry must then be empty without a blanket clear, which is what cleanup reports.
     for (const timer of runTimers) {
         timers.clear(timer);
     }
+    // The closing scrape is taken while every bot is still in the room, so the server's CPU covers the window.
+    await scraper.finish();
     for (const session of sessions) {
         session.leave();
     }
@@ -113,6 +165,9 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     eventLoopDelay.disable();
     const cpu = process.cpuUsage(cpuAtStart);
     const wallMs = performance.now() - startedAtMs;
+    const measuredFromMs = steadyWindow === undefined ? startedAtMs : steadyWindow.startMs;
+    const measuredToMs = steadyWindow === undefined ? stoppedAtMs : Math.min(steadyWindow.endMs, stoppedAtMs);
+    const measuredSeconds = Math.max(0, measuredToMs - measuredFromMs) / 1000;
     const rssEndBytes = process.memoryUsage.rss();
     // The back numbers users per room, so the same id in two rooms is two users.
     const uniqueUserIds = [...stats.rooms.values()].reduce((total, room) => total + room.userIds.size, 0);
@@ -121,7 +176,7 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
     const moves = probe.summary();
 
     return {
-        schemaVersion: 3,
+        schemaVersion: 4,
         notice: "Headless protocol bots: this certifies neither client rendering nor audio/video performance.",
         startedAt: startedAt.toISOString(),
         wallSeconds: round(wallMs / 1000, 3),
@@ -159,7 +214,78 @@ export async function runLoad(config: LoadConfig, signal?: AbortSignal) {
             uniqueUserIds: room.userIds.size,
         })),
         sent: stats.sent,
-        received: { frames: stats.receivedFrames, bytes: stats.receivedBytes, eventsByType: stats.received },
+        // Inside the steady window when one is set; wholeRun always covers the ramp too.
+        received: {
+            frames: stats.receivedFrames,
+            bytes: stats.receivedBytes,
+            eventsByType: stats.received,
+            wholeRun: {
+                frames: stats.receivedFramesTotal,
+                bytes: stats.receivedBytesTotal,
+            },
+        },
+        window: {
+            enabled: steadyWindow !== undefined,
+            seconds: config.steadyWindowSeconds,
+            startsAtSeconds: round((measuredFromMs - startedAtMs) / 1000, 3),
+            endsAtSeconds: round((measuredToMs - startedAtMs) / 1000, 3),
+            measuredSeconds: round(measuredSeconds, 3),
+        },
+        scenario: {
+            viewport: config.viewport,
+            pattern: config.pattern,
+            movingFraction: config.movingFraction,
+            walkers,
+            indexOffset: config.indexOffset,
+            firstPathIndex: config.indexOffset,
+            lastPathIndex: config.indexOffset + config.sessions - 1,
+        },
+        // Bytes by message type over the measured span, for the whole pusher-to-client stream.
+        traffic: {
+            measuredSeconds: round(measuredSeconds, 3),
+            frames: stats.traffic.frames,
+            bytes: stats.traffic.bytes,
+            overheadBytes: stats.traffic.overheadBytes,
+            bytesPerSecond: perSecondOf(stats.traffic.bytes, measuredSeconds),
+            kbitPerSecondPerSession:
+                acceptedAtStop > 0
+                    ? perSecondOf((stats.traffic.bytes * 8) / 1000 / acceptedAtStop, measuredSeconds)
+                    : null,
+            byType: reportTypeTraffic(stats.traffic.byType, measuredSeconds, acceptedAtStop, (type) =>
+                stats.traffic.peakBytesPerSecond(type),
+            ),
+        },
+        // The cost of knowing who is online: the five roster messages of the allWorldUser space, as a client that
+        // joined it receives them. Zero everywhere unless --world-space or --world-members is set.
+        worldSpace: {
+            spaceName: WORLD_SPACE_NAME,
+            membersPlanned: plannedMembers,
+            membersJoined: stats.worldSpaceJoined,
+            watchersPlanned: plannedWatchers,
+            watchersSubscribed: stats.worldSpaceWatching,
+            joinLatencyMs: {
+                count: stats.worldSpaceJoinLatenciesMs.length,
+                p50: round(percentile(stats.worldSpaceJoinLatenciesMs, 0.5)),
+                p95: round(percentile(stats.worldSpaceJoinLatenciesMs, 0.95)),
+                max: round(percentile(stats.worldSpaceJoinLatenciesMs, 1)),
+            },
+            joinErrors: stats.worldSpaceJoinErrors,
+            measuredSeconds: round(measuredSeconds, 3),
+            frames: stats.traffic.worldFrames,
+            records: [...stats.traffic.world.values()].reduce((total, entry) => total + entry.records, 0),
+            bytes: [...stats.traffic.world.values()].reduce((total, entry) => total + entry.bytes, 0),
+            byType: reportTypeTraffic(stats.traffic.world, measuredSeconds, acceptedAtStop, (type) =>
+                stats.traffic.peakBytesPerSecond(worldSecondKey(type)),
+            ),
+        },
+        // Users each bot still in the room knew of at the stop: joins minus leaves of its watched zones.
+        knownPeers: {
+            sessions: knownPeersAtStop.length,
+            p50: percentile(knownPeersAtStop, 0.5),
+            p95: percentile(knownPeersAtStop, 0.95),
+            max: percentile(knownPeersAtStop, 1),
+        },
+        metrics: scraper.report(startedAtMs),
         // Only observers record this, and only bots of this process are matched: compare per generator process.
         moveProbe: {
             observers: moves.observers,
