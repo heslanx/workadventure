@@ -63,6 +63,7 @@ import { localUserStore } from "../../Connection/LocalUserStore";
 import { HtmlUtils } from "../../WebRtc/HtmlUtils";
 import { Loader } from "../Components/Loader";
 import { RemotePlayer } from "../Entity/RemotePlayer";
+import { AvatarBuildQueue } from "../Entity/AvatarBuildQueue";
 import { SelectCharacterScene, SelectCharacterSceneName } from "../Login/SelectCharacterScene";
 import { hasMovedEventName, Player, requestEmoteEventName } from "../Player/Player";
 import { ErrorSceneName } from "../Reconnecting/ErrorScene";
@@ -256,6 +257,7 @@ import { ScriptingVideoManager } from "./ScriptingVideoManager";
 import { UsernameDomLayer } from "./UsernameDomLayer";
 import { ThinWallsController } from "./ThinWallsController";
 import { TileAnimationRefreshTracker } from "./TileAnimationRefreshTracker";
+import { RemotePlayerCulling } from "./RemotePlayerCulling";
 
 import Tileset = Phaser.Tilemaps.Tileset;
 import Tilemap = Phaser.Tilemaps.Tilemap;
@@ -383,6 +385,10 @@ export class GameScene extends DirtyScene {
     private playerName!: string;
     private popUpElements: Map<number, DOMElement> = new Map<number, DOMElement>();
     private remotePlayersSpatialIndex = new SpatialMap<number, RemotePlayer>(CONVERSATION_BUBBLE_SPATIAL_GRID_SIZE);
+    // Stops drawing and updating the remote players that are outside the camera view.
+    private remotePlayersCulling = new RemotePlayerCulling<RemotePlayer>();
+    // The remote players that are in the scene but whose sprites, name and companion are not built yet.
+    private avatarBuildQueue = new AvatarBuildQueue();
     private originalMapUrl: string | undefined;
     private pinchManager: PinchManager | undefined;
     private outlineManager!: OutlineManager;
@@ -1494,9 +1500,45 @@ export class GameScene extends DirtyScene {
         }
         this.hasMovedThisFrame = false;
 
+        this.cullRemotePlayers();
+
         if (DEBUG_MODE) {
             this.updateServerViewportDebugOverlay();
         }
+    }
+
+    private cullRemotePlayers(): void {
+        const worldView = this.cameras?.main?.worldView;
+        // The camera's worldView is empty without a renderer (see calculateViewport()), and nothing is drawn anyway.
+        if (worldView === undefined || !this.scene.scene.renderer) {
+            return;
+        }
+        if (this.remotePlayersCulling.update(worldView, this.getRemotePlayersKeptDrawn())) {
+            this.dirty = true;
+        }
+    }
+
+    /**
+     * The remote players that stay drawn wherever the camera is: the one it follows, the ones the player follows or is
+     * followed by, and the ones in the player's conversation bubble.
+     */
+    private getRemotePlayersKeptDrawn(): RemotePlayer[] {
+        const kept: RemotePlayer[] = [];
+        const cameraTarget = this.cameraManager?.playerFollowing;
+        if (cameraTarget instanceof RemotePlayer) {
+            kept.push(cameraTarget);
+        }
+        const userIds = [...get(followUsersStore)];
+        if (this.currentPlayerGroupId !== undefined) {
+            userIds.push(...(this.groups.get(this.currentPlayerGroupId)?.getUserIds() ?? []));
+        }
+        for (const userId of userIds) {
+            const player = this.MapPlayersByKey.get(userId);
+            if (player !== undefined) {
+                kept.push(player);
+            }
+        }
+        return kept;
     }
 
     private applyBufferedRemotePlayerChanges(): void {
@@ -1524,6 +1566,9 @@ export class GameScene extends DirtyScene {
         }
 
         this.remotePlayersRepository.reset();
+
+        // A player that joined is already in MapPlayersByKey, so each lookup finds it while it waits to be built.
+        this.avatarBuildQueue.drain(this.CurrentPlayer);
     }
 
     /**
@@ -1556,8 +1601,12 @@ export class GameScene extends DirtyScene {
         const interpolatedPositions = this.playersPositionInterpolator.getUpdatedPositions(time);
         const conversationBubblesToUpdate = new Set<ConversationBubble>();
         interpolatedPositions.forEach((interpolatedPosition: HasPlayerMovedInterface, userId: number) => {
-            this.dirty = true;
             const player: RemotePlayer | undefined = this.MapPlayersByKey.get(userId);
+            // A culled player's move changes nothing that is drawn. If it walks into the view, cullRemotePlayers()
+            // marks the scene dirty.
+            if (player === undefined || !this.remotePlayersCulling.isMoveHidden(player)) {
+                this.dirty = true;
+            }
             if (player === undefined) {
                 this.reportRemotePlayerDrift(
                     "Cannot draw an interpolated remote player that is not in the scene",
@@ -4019,6 +4068,7 @@ ${escapedMessage}
         });
         this.MapPlayersByKey.clear();
         this.remotePlayersSpatialIndex.clear();
+        this.remotePlayersCulling.clear();
     }
 
     private tryOpenMapEditorWithToolEditorParameter(): void {
@@ -4609,6 +4659,7 @@ ${escapedMessage}
                 undefined,
                 addPlayerData.chatID,
                 addPlayerData.sayMessage,
+                this.avatarBuildQueue,
             );
         } catch (error) {
             if (error instanceof CharacterTextureError) {
@@ -4633,6 +4684,7 @@ ${escapedMessage}
         this.MapPlayersByKey.set(player.userId, player);
         player.updatePosition(addPlayerData.position);
         this.remotePlayersSpatialIndex.set(player.userId, player);
+        this.remotePlayersCulling.track(player);
 
         player.on(Phaser.Input.Events.POINTER_OVER, () => {
             this.activatablesManager.handlePointerOverActivatableObject(player);
@@ -4706,6 +4758,9 @@ ${escapedMessage}
         }
         this.MapPlayersByKey.delete(userId);
         this.remotePlayersSpatialIndex.delete(userId);
+        if (player !== undefined) {
+            this.remotePlayersCulling.untrack(player);
+        }
         this.playersPositionInterpolator.removePlayer(userId);
     }
 

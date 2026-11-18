@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import * as Sentry from "@sentry/svelte";
 import type { Unsubscriber, Readable } from "svelte/store";
 import { get, readable } from "svelte/store";
 import type { CancelablePromise } from "cancelable-promise";
@@ -79,6 +80,12 @@ export abstract class Character extends Container implements OutlineableInterfac
     protected readonly outlineColorStore = createColorStore();
     private outlineColorStoreUnsubscribe: Unsubscriber | undefined;
     private texturePromise: CancelablePromise<string[] | void> | undefined;
+    private readonly companionTexturePromise: CancelablePromise<string> | undefined;
+    // Resolves when the character took its build turn, i.e. when its name and companion exist (see build()).
+    private buildTurn: Promise<void> | undefined;
+    // The last pose asked for, so that a character built after it was asked for still shows it.
+    private animationDirection: PositionMessage_Direction;
+    private animationMoving: boolean;
     private destroyed = false;
     protected pathToFollow?: { x: number; y: number }[];
     protected pathWalkingSpeed?: number;
@@ -141,14 +148,16 @@ export abstract class Character extends Container implements OutlineableInterfac
                 });
         }
 
+        this.animationDirection = direction;
+        this.animationMoving = moving;
+        this.companionTexturePromise = companionTexturePromise;
+        // The companion is created when the character is built, which can be several frames from now. A texture that
+        // fails to load before then must not be left as an unhandled rejection.
+        companionTexturePromise?.catch(() => undefined);
+
         //textures are inside a Promise in case they need to be lazyloaded before use.
         this.texturePromise = texturesPromise
-            .then((textures) => {
-                this.addTextures(textures, frame);
-                this.invisible = false;
-                this.playAnimation(direction, moving);
-                this.textureLoadedDeferred.resolve();
-            })
+            .then((textures) => this.build(() => this.showTextures(textures, frame)))
             .catch(() => {
                 return lazyLoadPlayerCharacterTextures(scene.superLoad, [
                     {
@@ -160,52 +169,17 @@ export abstract class Character extends Container implements OutlineableInterfac
                         url: "resources/customisation/character_eyes/character_eyes23.png",
                     },
                 ])
-                    .then((textures) => {
-                        this.addTextures(textures, frame);
-                        this.invisible = false;
-                        this.playAnimation(direction, moving);
-                        this.textureLoadedDeferred.resolve();
-                    })
+                    .then((textures) => this.build(() => this.showTextures(textures, frame)))
                     .catch((e) => {
                         this.textureLoadedDeferred.reject(e);
+                        // Without a texture, the character still shows its name and companion.
+                        this.build(() => undefined).catch((error) => console.error(error));
                         throw e;
                     });
             })
             .finally(() => {
                 this.texturePromise = undefined;
             });
-
-        if (companionTexturePromise != undefined) {
-            this.addCompanion(companionTexturePromise);
-        }
-
-        // We delay the assignment of the text because it can take up to 16ms.
-        // If we enter a zone with 100 people, that is a 1.6s freeze.
-        // requestAnimationFrame has the priority over setTimeout so the game will keep running smoothly.
-        setTimeout(() => {
-            if (this.destroyed) {
-                // The character has been destroyed before the timeout
-                return;
-            }
-
-            const playerNameOutlineColor = get(this.outlineColorStore);
-            this.usernameDisplay = new UsernameDisplay(
-                scene,
-                this.x,
-                this.y + playerNameY,
-                this.playerName,
-                playerNameOutlineColor,
-            );
-            this.usernameDisplay.setAvailabilityStatus(this.availabilityStatus, true);
-            this.usernameDisplay.setRaisedHand(this.raisedHand, true);
-            this.usernameDisplay.setPlayerDepth(this.depth);
-
-            this.outlineColorStoreUnsubscribe = this.outlineColorStore.subscribe((color) => {
-                this.usernameDisplay?.setPlayerNameOutlineColor(color);
-                this.scene.markDirty();
-            });
-            this.scene.markDirty();
-        }, 0);
 
         if (isClickable) {
             this.setInteractive({
@@ -356,6 +330,82 @@ export abstract class Character extends Container implements OutlineableInterfac
         this.companion = new Companion(this.scene, this.x, this.y, texturePromise);
     }
 
+    /**
+     * Calls `grant` when the character may be built, i.e. may create its sprites, its name and its companion. A
+     * character is built at once. A subclass that is created in numbers, like a remote player, can spread the
+     * builds over several frames (see AvatarBuildQueue).
+     */
+    protected requestBuildTurn(grant: () => void): void {
+        grant();
+    }
+
+    /**
+     * Builds the character when its turn comes: the name and the companion, then `show`, which creates the sprites.
+     * All of it runs in the one call that grants the turn, so whoever grants turns can measure the whole build.
+     * The returned promise settles with `show`.
+     *
+     * A character is built once. If `show` fails and is called again with other textures, only `show` runs again.
+     */
+    private build(show: () => void): Promise<void> {
+        if (this.buildTurn !== undefined) {
+            return this.buildTurn.then(show);
+        }
+        return new Promise<void>((resolve, reject) => {
+            this.buildTurn = new Promise<void>((turnTaken) => {
+                this.requestBuildTurn(() => {
+                    if (this.destroyed) {
+                        return;
+                    }
+                    turnTaken();
+                    try {
+                        this.buildNameAndCompanion();
+                    } catch (error) {
+                        // The sprites do not depend on the name, and a throw must not stop the builds that follow.
+                        console.error("Could not build the name or the companion of a character", error);
+                        Sentry.captureException(error);
+                    }
+                    try {
+                        show();
+                        resolve();
+                    } catch (error) {
+                        reject(error instanceof Error ? error : new Error(String(error)));
+                    }
+                });
+            });
+        });
+    }
+
+    private buildNameAndCompanion(): void {
+        if (this.companionTexturePromise !== undefined) {
+            this.addCompanion(this.companionTexturePromise);
+        }
+
+        const playerNameOutlineColor = get(this.outlineColorStore);
+        this.usernameDisplay = new UsernameDisplay(
+            this.scene,
+            this.x,
+            this.y + playerNameY,
+            this.playerName,
+            playerNameOutlineColor,
+        );
+        this.usernameDisplay.setAvailabilityStatus(this.availabilityStatus, true);
+        this.usernameDisplay.setRaisedHand(this.raisedHand, true);
+        this.usernameDisplay.setPlayerDepth(this.depth);
+
+        this.outlineColorStoreUnsubscribe = this.outlineColorStore.subscribe((color) => {
+            this.usernameDisplay?.setPlayerNameOutlineColor(color);
+            this.scene.markDirty();
+        });
+        this.scene.markDirty();
+    }
+
+    private showTextures(textures: string[], frame: string | number): void {
+        this.addTextures(textures, frame);
+        this.invisible = false;
+        this.playAnimation(this.animationDirection, this.animationMoving);
+        this.textureLoadedDeferred.resolve();
+    }
+
     private addTextures(textures: string[], frame?: string | number): void {
         if (textures.length < 1) {
             throw new CharacterTextureError("No texture given");
@@ -386,6 +436,8 @@ export abstract class Character extends Container implements OutlineableInterfac
     }
 
     protected playAnimation(direction: PositionMessage_Direction, moving: boolean): void {
+        this.animationDirection = direction;
+        this.animationMoving = moving;
         if (this.invisible) return;
         for (const [texture, sprite] of this.sprites.entries()) {
             if (!sprite.anims) {

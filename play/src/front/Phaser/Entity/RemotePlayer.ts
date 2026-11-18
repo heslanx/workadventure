@@ -11,6 +11,7 @@ import {
 import type { WokaMenuAction } from "../../Stores/WokaMenuStore";
 import { wokaMenuStore } from "../../Stores/WokaMenuStore";
 import { Character } from "../Entity/Character";
+import type { AvatarBuildQueue } from "../Entity/AvatarBuildQueue";
 import type { GameScene } from "../Game/GameScene";
 import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
 import type { ActivatableInterface } from "../Game/ActivatableInterface";
@@ -29,6 +30,9 @@ import { modals } from "@wa-modals";
 
 /**
  * Class representing the sprite of a remote player (a player that plays on another computer)
+ *
+ * With an `avatarBuildQueue`, the player exists at once (it has a position and the scene can find it) but its sprites,
+ * name and companion are created when the queue gets to it.
  */
 export class RemotePlayer extends Character implements ActivatableInterface {
     public readonly userId: number;
@@ -53,6 +57,7 @@ export class RemotePlayer extends Character implements ActivatableInterface {
         activationRadius?: number,
         private chatID: string | undefined = undefined,
         sayMessage?: SayMessage,
+        private readonly avatarBuildQueue?: AvatarBuildQueue,
     ) {
         super(Scene, x, y, texturesPromise, name, direction, moving, 1, true, companionTexturePromise);
 
@@ -68,6 +73,14 @@ export class RemotePlayer extends Character implements ActivatableInterface {
         }
 
         this.pathFollowingUpdateCallback = (_time: number, delta: number) => this.followPath(delta);
+    }
+
+    protected requestBuildTurn(grant: () => void): void {
+        if (this.avatarBuildQueue === undefined) {
+            grant();
+            return;
+        }
+        this.avatarBuildQueue.enqueue(this, grant);
     }
 
     public updatePosition(position: PositionMessage): void {
@@ -158,6 +171,7 @@ export class RemotePlayer extends Character implements ActivatableInterface {
     }
 
     public destroy(): void {
+        this.avatarBuildQueue?.remove(this);
         this.stopMoveTo();
         wokaMenuStore.removeRemotePlayer(this.userUuid);
         super.destroy();
