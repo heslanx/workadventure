@@ -12,6 +12,24 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "La liste des personnes n'est pas disponible.",
     dockLabel: "Commandes du bureau",
     mediaSettings: "Paramètres de la caméra et du microphone",
+    nearby: "{count} nearby",
+    pill: {
+        online: "{count} online",
+        alone: "Only you online",
+        nobodyNearby: "Nobody nearby",
+    },
+    place: {
+        here: "You are in",
+        entrance: "Entrance",
+        hall: "Hall",
+        outside: "Outside",
+    },
+    call: {
+        conversation: "Conversation with {count} {{person|people}}",
+        conversationIn: "{place} · conversation with {count} {{person|people}}",
+        stepAway: "step away to leave",
+        leaveRoom: "leave the room to end it",
+    },
     preferences: {
         dialog: "Settings",
         title: "Preferences",

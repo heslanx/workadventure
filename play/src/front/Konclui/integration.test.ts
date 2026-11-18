@@ -1,14 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { mount } from "svelte";
+import { get } from "svelte/store";
 import {
     registerActionBar,
     registerAppFrame,
     registerSceneExtension,
     setEmbeddedChatHost,
 } from "../ExternalModule/ClientExtensionPoints";
+import type { SceneFrameContext } from "../ExternalModule/ClientExtensionPoints";
 import { installKonclui } from "./integration";
 import { gameActions } from "./Preferences/phaser/gameActions";
 import { installGameCommands } from "./Preferences/stores/gameCommands";
+import { presenceStore } from "./Presence/stores/presenceStore";
 
 vi.mock("./Shell/components/Frame.svelte", () => ({ default: {} }));
 vi.mock("./Shell/components/Dock.svelte", () => ({ default: {} }));
@@ -39,7 +42,30 @@ describe("installKonclui", () => {
         expect(installGameCommands).toHaveBeenCalledWith(gameActions);
         expect(vi.mocked(registerSceneExtension).mock.calls.map(([extension]) => extension.id)).toEqual([
             "konclui.seatedPose",
+            "konclui.presence",
             "konclui.sceneEffects",
         ]);
+    });
+
+    it("feeds the presence store from the one presence extension, so the pill and the place chip share one walk of the scene", () => {
+        installKonclui();
+        const presence = vi
+            .mocked(registerSceneExtension)
+            .mock.calls.map(([extension]) => extension)
+            .find((extension) => extension.id === "konclui.presence");
+        const context = {
+            scene: { getGameMapFrontWrapper: () => ({ getAreas: () => undefined }) },
+            time: 0,
+            currentPlayer: { x: 10, y: 10 },
+            remoteCharacters: new Map([[4, { userId: 4, playerName: "Ana Ribeiro", x: 40, y: 10 }]]),
+        } as unknown as SceneFrameContext;
+
+        presence?.onFrame?.(context);
+
+        expect(get(presenceStore)).toEqual({
+            nearest: [{ id: 4, name: "Ana Ribeiro" }],
+            nearCount: 1,
+            place: undefined,
+        });
     });
 });

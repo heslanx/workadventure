@@ -23,6 +23,8 @@
     import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
     import { openPreferences } from "../../Preferences/stores/preferencesStore";
     import ChatSidebar from "../../../Chat/ChatSidebar.svelte";
+    import PeoplePill from "../../Presence/components/PeoplePill.svelte";
+    import PlaceChip from "../../Presence/components/PlaceChip.svelte";
     import { IconUsersGroup, IconSettings, IconMessageCircle2, IconChevronLeft } from "@wa-icons";
 
     let { children }: { children: Snippet } = $props();
@@ -167,17 +169,20 @@
                 <IconSettings font-size="20" />
             </button>
         </nav>
-        <button
-            class="mobile-people"
-            bind:this={mobilePeopleButton}
-            type="button"
-            onclick={togglePeople}
-            aria-expanded={peopleShown}
-        >
-            <IconUsersGroup font-size="18" />
-            {$LL.konclui.people()}
-        </button>
+        <!-- The top of the map: the place you are in at every width, and on a phone the pill that opens the panel. -->
+        <div class="top-row">
+            <div class="people-slot">
+                <PeoplePill
+                    bind:button={mobilePeopleButton}
+                    expanded={peopleShown}
+                    controls="konclui-side-panel"
+                    onclick={togglePeople}
+                />
+            </div>
+            <PlaceChip />
+        </div>
         <aside
+            id="konclui-side-panel"
             bind:this={panel}
             class="side-panel"
             data-konclui-panel
@@ -217,17 +222,21 @@
         min-height: 0;
     }
     .konclui {
+        /* The grid's measures, which the top row reads to stand at the map's corner. */
+        --rail-width: 60px;
+        --panel-width: 296px;
+        --frame-gap: 6px;
         display: grid;
-        grid-template-columns: 60px minmax(0, 1fr);
+        grid-template-columns: var(--rail-width) minmax(0, 1fr);
         gap: 0;
-        padding: 6px 6px 6px 0;
+        padding: var(--frame-gap) var(--frame-gap) var(--frame-gap) 0;
         box-sizing: border-box;
         background: var(--k-page);
         color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
     }
     .konclui.panel-open {
-        grid-template-columns: 60px 296px minmax(0, 1fr);
+        grid-template-columns: var(--rail-width) var(--panel-width) minmax(0, 1fr);
     }
     .konclui .viewport {
         border-radius: var(--k-radius-surface);
@@ -281,7 +290,7 @@
     }
     .side-panel {
         position: relative;
-        margin-right: 6px;
+        margin-right: var(--frame-gap);
         min-width: 0;
         min-height: 0;
         border-radius: var(--k-radius-surface);
@@ -315,8 +324,27 @@
         font-size: 13px;
         line-height: 1.5;
     }
-    .mobile-people {
+    /* The row stands 12 px inside the map's corner: past the rail, and past the panel when it is open. It lets a click
+       through to the map; its controls take it back. */
+    .top-row {
+        position: absolute;
+        z-index: 30;
+        top: calc(var(--frame-gap) + 12px);
+        left: calc(var(--rail-width) + 12px);
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        pointer-events: none;
+    }
+    .konclui.panel-open .top-row {
+        left: calc(var(--rail-width) + var(--panel-width) + var(--frame-gap) + 12px);
+    }
+    /* Beside the rail the people button is the rail's; the pill is for the phone. */
+    .people-slot {
         display: none;
+        flex: none;
+        pointer-events: auto;
     }
     @media (max-width: 767px) {
         .konclui,
@@ -331,26 +359,13 @@
         .konclui :global(#game > canvas) {
             border-radius: 0;
         }
-        .mobile-people {
-            display: flex;
-            position: absolute;
+        .top-row,
+        .konclui.panel-open .top-row {
             top: 12px;
             left: 12px;
-            z-index: 30;
-            gap: 6px;
-            padding: 8px 12px;
-            border-radius: 22px;
-            min-height: 44px;
-            /* The chrome material (konclui.css), like the dock. The rim is an inset shadow, not a border, so the
-               pill keeps its size. */
-            background: var(--k-chrome);
-            -webkit-backdrop-filter: var(--k-chrome-backdrop);
-            backdrop-filter: var(--k-chrome-backdrop);
-            box-shadow:
-                inset 0 0 0 1px var(--k-chrome-border),
-                var(--k-chrome-shadow);
-            font: inherit;
-            font-size: 13px;
+        }
+        .people-slot {
+            display: block;
         }
         .side-panel {
             position: absolute;

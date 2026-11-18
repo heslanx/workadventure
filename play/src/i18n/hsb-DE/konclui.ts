@@ -12,6 +12,26 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "Lisćina wosobow k dispoziciji njesteji.",
     dockLabel: "Wodźenje běrowa",
     mediaSettings: "Nastajenja kamery a mikrofona",
+    nearby: "{count} nearby",
+    pill: {
+        online: "{count} online",
+        alone: "Only you online",
+        nobodyNearby: "Nobody nearby",
+    },
+    place: {
+        here: "You are in",
+        entrance: "Entrance",
+        hall: "Hall",
+        outside: "Outside",
+    },
+    // This locale has plural forms the two English ones do not cover (zero, two, few, many): one per form, in that
+    // order, then the rest, so a count of 0 or 2 is not left blank.
+    call: {
+        conversation: "Conversation with {count} {{people|person|people|people|people|people}}",
+        conversationIn: "{place} · conversation with {count} {{people|person|people|people|people|people}}",
+        stepAway: "step away to leave",
+        leaveRoom: "leave the room to end it",
+    },
     preferences: {
         dialog: "Settings",
         title: "Preferences",

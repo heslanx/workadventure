@@ -11,6 +11,24 @@ const konclui: BaseTranslation = {
     rosterUnavailable: "The people list is not available.",
     dockLabel: "Office controls",
     mediaSettings: "Camera and microphone settings",
+    nearby: "{count:number} nearby",
+    pill: {
+        online: "{count:number} online",
+        alone: "Only you online",
+        nobodyNearby: "Nobody nearby",
+    },
+    place: {
+        here: "You are in",
+        entrance: "Entrance",
+        hall: "Hall",
+        outside: "Outside",
+    },
+    call: {
+        conversation: "Conversation with {count:number} {{person|people}}",
+        conversationIn: "{place:string} · conversation with {count:number} {{person|people}}",
+        stepAway: "step away to leave",
+        leaveRoom: "leave the room to end it",
+    },
     preferences: {
         dialog: "Settings",
         title: "Preferences",

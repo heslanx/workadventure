@@ -24,6 +24,7 @@
     import CloseChatMenuItem from "../../../Components/ActionBar/MenuIcons/CloseChatMenuItem.svelte";
     import MediaSettingsList from "../../../Components/ActionBar/MediaSettingsList/MediaSettingsList.svelte";
     import SilentBlock from "../../../Components/ActionBar/SilentBlock.svelte";
+    import CallIndicator from "../../Presence/components/CallIndicator.svelte";
     import { navChat } from "../../../Chat/Stores/ChatStore";
     import { shellRoomStore } from "../stores/shellStore";
     import { LL } from "../../../../i18n/i18n-svelte";
@@ -47,6 +48,8 @@
 </script>
 
 <div class="dock-stack">
+    <!-- The stack is anchored to the bottom, so the chip rises above the dock and moves nothing else. -->
+    <CallIndicator />
     <div class="dock" role="group" aria-label={$LL.konclui.dockLabel()} data-testid="konclui-dock">
         <!-- The reference's order: who you are, what others hear and see of you, then what you do. -->
         <!-- The profile menu draws its own button, with its name, state and keys: the wrapper only sizes it. -->

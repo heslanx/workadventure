@@ -8,6 +8,8 @@ import {
 import Frame from "./Shell/components/Frame.svelte";
 import Dock from "./Shell/components/Dock.svelte";
 import { shellActiveStore, shellEnabledStore } from "./Shell/stores/shellStore";
+import { createPresenceExtension } from "./Presence/phaser/presenceExtension";
+import { publishPresence } from "./Presence/stores/presenceStore";
 import { createSeatedPoseExtension } from "./Workplace/phaser/seatedPoseExtension";
 import { createBrowserEffectsPort } from "./Ambience/phaser/browserEffectsPort";
 import { createSceneEffectsExtension } from "./Ambience/phaser/sceneEffectsExtension";
@@ -28,6 +30,9 @@ export function installKonclui(): void {
     registerActionBar({ component: Dock, active: shellEnabledStore });
     setEmbeddedChatHost(shellActiveStore);
     registerSceneExtension(createSeatedPoseExtension());
+    // One extension reads the player's surroundings for the people pill and the place chip; it hands what it reads to
+    // the store, so the Phaser layer writes no Konclui state.
+    registerSceneExtension(createPresenceExtension(publishPresence));
     registerSceneExtension(createSceneEffectsExtension(createBrowserEffectsPort()));
     // The dialog's components reach the game through this registry, not through the Phaser layer.
     installGameCommands(gameActions);
