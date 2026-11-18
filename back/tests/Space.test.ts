@@ -1105,6 +1105,133 @@ describe("Space with filter", () => {
         });
     });
 
+    describe("dispatchPrivateEvent sender lookup", () => {
+        const sendersSpace = () => {
+            const space = new Space("test", FilterType.LIVE_STREAMING_USERS, mock<EventProcessor>(), [], "world");
+            const receiverWrite = vi.fn();
+            const receiverWatcher = mock<SpacesWatcher>({ id: "uuid-watcher-receiver", write: receiverWrite });
+            const senderWatcher = mock<SpacesWatcher>({ id: "uuid-watcher-sender", write: vi.fn() });
+            const sender = SpaceUser.fromPartial({ spaceUserId: "sender_1", uuid: "uuid-sender" });
+            const receiver = SpaceUser.fromPartial({ spaceUserId: "receiver_1", uuid: "uuid-receiver" });
+            const users = (space as unknown as { users: Map<SpacesWatcher, Map<string, SpaceUser>> }).users;
+            users.set(receiverWatcher, new Map([["receiver_1", receiver]]));
+            users.set(senderWatcher, new Map([["sender_1", sender]]));
+            return { space, receiverWrite, sender };
+        };
+
+        it("should attach the sender whichever pusher holds it", () => {
+            const { space, receiverWrite, sender } = sendersSpace();
+
+            space.dispatchPrivateEvent(
+                PrivateEvent.fromPartial({ senderUserId: "sender_1", spaceName: "test", receiverUserId: "receiver_1" }),
+            );
+
+            expect(receiverWrite).toHaveBeenCalledWith(
+                BackToPusherSpaceMessage.fromPartial({
+                    message: {
+                        $case: "privateEvent",
+                        privateEvent: { spaceName: "test", receiverUserId: "receiver_1", sender },
+                    },
+                }),
+            );
+        });
+
+        it("should throw when the sender is not in the space", () => {
+            const { space } = sendersSpace();
+
+            expect(() =>
+                space.dispatchPrivateEvent(
+                    PrivateEvent.fromPartial({
+                        senderUserId: "ghost",
+                        spaceName: "test",
+                        receiverUserId: "receiver_1",
+                    }),
+                ),
+            ).toThrow("Sender ghost not found in space test");
+        });
+
+        it("should drop a message of the server to a receiver who is gone", () => {
+            const { space, receiverWrite } = sendersSpace();
+
+            expect(() =>
+                space.dispatchPrivateEvent(
+                    PrivateEvent.fromPartial({ senderUserId: "gone", spaceName: "test", receiverUserId: "gone" }),
+                ),
+            ).not.toThrow();
+            expect(receiverWrite).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("getUser", () => {
+        const spaceWithPushers = (usersByPusher: SpaceUser[][]) => {
+            const space = new Space("test", FilterType.LIVE_STREAMING_USERS, mock<EventProcessor>(), [], "world");
+            const users = (space as unknown as { users: Map<SpacesWatcher, Map<string, SpaceUser>> }).users;
+            const usersToNotify = (space as unknown as { usersToNotify: Map<SpacesWatcher, Map<string, SpaceUser>> })
+                .usersToNotify;
+            const watchers = usersByPusher.map((pusherUsers, index) => {
+                const watcher = mock<SpacesWatcher>({ id: `uuid-watcher-${index}`, write: () => true });
+                users.set(watcher, new Map(pusherUsers.map((user) => [user.spaceUserId, user])));
+                usersToNotify.set(watcher, new Map());
+                return watcher;
+            });
+            return { space, watchers };
+        };
+
+        it("should find a user held by any pusher", () => {
+            const first = SpaceUser.fromPartial({ spaceUserId: "foo_1", uuid: "uuid-1" });
+            const second = SpaceUser.fromPartial({ spaceUserId: "foo_2", uuid: "uuid-2" });
+            const { space } = spaceWithPushers([[first], [second]]);
+
+            expect(space.getUser("foo_1")).toBe(first);
+            expect(space.getUser("foo_2")).toBe(second);
+        });
+
+        it("should find nobody for an id the space does not hold", () => {
+            const { space } = spaceWithPushers([[SpaceUser.fromPartial({ spaceUserId: "foo_1", uuid: "uuid-1" })], []]);
+
+            expect(space.getUser("foo_2")).toBeUndefined();
+        });
+
+        it("should follow the users a pusher synced and the ones that left", () => {
+            const kept = SpaceUser.fromPartial({ spaceUserId: "foo_1", uuid: "uuid-1" });
+            const left = SpaceUser.fromPartial({ spaceUserId: "foo_2", uuid: "uuid-2" });
+            const synced = SpaceUser.fromPartial({ spaceUserId: "foo_3", uuid: "uuid-3" });
+            const { space, watchers } = spaceWithPushers([[kept, left]]);
+
+            space.removeUser(watchers[0], "foo_2");
+            space.syncUsersFromPusher(watchers[0], [kept, synced]);
+
+            expect(space.getUser("foo_2")).toBeUndefined();
+            expect(space.getUser("foo_3")).toBe(synced);
+        });
+
+        // A megaphone invitation burst looks every listener up: a lookup that visited every user of the space made the
+        // burst quadratic, which was 22 ms for 999 listeners on a quiet machine (see SpaceUserLookup.bench.ts).
+        it("should answer a lookup without visiting the other users of the space", () => {
+            let idReads = 0;
+            const crowd = Array.from({ length: 1000 }, (_, index) => {
+                const spaceUserId = `user_${index}`;
+                const user = SpaceUser.fromPartial({ uuid: `uuid-${index}` });
+                Object.defineProperty(user, "spaceUserId", {
+                    get: () => {
+                        idReads++;
+                        return spaceUserId;
+                    },
+                    enumerable: true,
+                });
+                return user;
+            });
+            const { space } = spaceWithPushers([crowd]);
+            idReads = 0;
+
+            for (let index = 1; index < crowd.length; index++) {
+                space.getUser(`user_${index}`);
+            }
+
+            expect(idReads).toBe(0);
+        });
+    });
+
     describe("canBeDeleted", () => {
         it("should return true if the space has no users", () => {
             const space = new Space("test", FilterType.LIVE_STREAMING_USERS, mock<EventProcessor>(), [], "world");

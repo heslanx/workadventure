@@ -520,7 +520,7 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
     }
 
     public dispatchPrivateEvent(privateEvent: PrivateEvent) {
-        const sender = this.getAllUsers().find((user) => user.spaceUserId === privateEvent.senderUserId);
+        const sender = this.getUser(privateEvent.senderUserId);
         if (!sender) {
             // If the sender is the receiver, it means the message is sent from the server itself.
             // This is a special case, where (if the receiver is gone), we don't want to throw an error.
@@ -830,9 +830,15 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
     }
 
     public getUser(spaceUserId: string): SpaceUser | undefined {
-        return Array.from(this.users.values())
-            .flatMap((users: Map<string, SpaceUser>) => Array.from(users.values()))
-            .find((user: SpaceUser) => user.spaceUserId === spaceUserId);
+        // The users of each pusher are already keyed by id: one hash lookup per pusher, instead of flattening every
+        // user of the space into a new array for each call (a 1000-listener invitation burst made 999 such scans).
+        for (const users of this.users.values()) {
+            const user = users.get(spaceUserId);
+            if (user) {
+                return user;
+            }
+        }
+        return undefined;
     }
 
     public getSpaceName(): string {

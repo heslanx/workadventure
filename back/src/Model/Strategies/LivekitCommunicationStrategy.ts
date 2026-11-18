@@ -1,7 +1,8 @@
-import type {
-    HandleRecordingWebhookRequest,
-    MeetingConnectionRestartMessage,
-    SpaceUser,
+import {
+    FilterType,
+    type HandleRecordingWebhookRequest,
+    type MeetingConnectionRestartMessage,
+    type SpaceUser,
 } from "@workadventure/messages";
 import * as Sentry from "@sentry/node";
 import type { S3Upload } from "livekit-server-sdk";
@@ -10,9 +11,22 @@ import type { IRecordableStrategy } from "../Interfaces/ICommunicationStrategy";
 import type { EgressFile } from "../Interfaces/ICommunicationState";
 import type { LiveKitService, RecordingStartInfo } from "../Services/LivekitService";
 
+/**
+ * How long a broadcast space (a megaphone) keeps its LiveKit room, and its listeners in it, after its last speaker
+ * left. A speaker who stops and starts again within this delay finds the room as it was: the listeners are still
+ * connected and none of them has to be sent a new invitation (1000 listeners rejoining at once is 1000 token
+ * requests and 1000 simultaneous joins on the SFU).
+ */
+export const DEFAULT_BROADCAST_ROOM_GRACE_PERIOD_MS = 30_000;
+
 export class LivekitCommunicationStrategy implements IRecordableStrategy {
     private usersReady: Set<string> = new Set();
     private createRoomPromise: Promise<void> | null = null;
+    /** Whether `createRoomPromise` resolved: a room that failed to be created is not worth keeping. */
+    private roomReady = false;
+    /** Set while the room of a broadcast without speaker is being kept for the grace period. */
+    private roomCloseTimer: NodeJS.Timeout | null = null;
+    private cleanedUp = false;
 
     private streamingUsers: Map<string, SpaceUser> = new Map<string, SpaceUser>();
     private receivingUsers: Map<string, SpaceUser> = new Map<string, SpaceUser>();
@@ -26,6 +40,7 @@ export class LivekitCommunicationStrategy implements IRecordableStrategy {
     constructor(
         private space: ICommunicationSpace,
         private livekitService: LiveKitService,
+        private readonly broadcastRoomGracePeriodMs: number = DEFAULT_BROADCAST_ROOM_GRACE_PERIOD_MS,
     ) {}
 
     /**
@@ -68,15 +83,23 @@ export class LivekitCommunicationStrategy implements IRecordableStrategy {
                 return;
             }
 
+            // A speaker is back before the grace period ended: the room is still there with its listeners in it
+            const roomWasKept = this.cancelRoomClose();
+
             // Ensure the Livekit room is created (only once)
             if (!this.createRoomPromise) {
                 this.createRoomPromise = this.livekitService.createRoom(this.space.getSpaceName());
             }
 
-            await this.createRoomPromise;
+            const createRoomPromise = this.createRoomPromise;
+            await createRoomPromise;
+            // The room may have been closed while it was being created
+            if (this.createRoomPromise === createRoomPromise) {
+                this.roomReady = true;
+            }
 
             // Send invitation to all receiving users if this is the first room creation
-            if (this.receivingUsers.size > 0 && this.streamingUsers.size === 0) {
+            if (!roomWasKept && this.receivingUsers.size > 0 && this.streamingUsers.size === 0) {
                 for (const receivingUser of this.receivingUsers.values()) {
                     this.sendLivekitInvitationMessage(receivingUser).catch((error) => {
                         console.error(
@@ -140,17 +163,78 @@ export class LivekitCommunicationStrategy implements IRecordableStrategy {
                     Sentry.captureException(error);
                 }
 
-                this.createRoomPromise = null;
-                for (const receivingUser of this.receivingUsers.values()) {
-                    this.sendLivekitDisconnectMessage(receivingUser);
+                // A speaker may have started while the recording was stopping
+                if (this.streamingUsers.size > 0) {
+                    return;
                 }
 
-                await this.livekitService.deleteRoom(this.space.getSpaceName());
+                if (this.shouldKeepRoomForGracePeriod()) {
+                    this.scheduleRoomClose();
+                    return;
+                }
+                await this.closeRoom();
             }
         }).catch((error) => {
             console.error(`Error in deleteUser for ${user.spaceUserId}:`, error);
             Sentry.captureException(error);
         });
+    }
+
+    /**
+     * Only an existing room of a broadcast with listeners is kept: nobody is waiting in a meeting that has no one
+     * left, without listeners there is no herd to spare, and a room that failed to be created must be created again
+     * by the next speaker, as it is when the room is closed at once.
+     */
+    private shouldKeepRoomForGracePeriod(): boolean {
+        return (
+            !this.cleanedUp &&
+            this.roomReady &&
+            this.broadcastRoomGracePeriodMs > 0 &&
+            this.space.filterType !== FilterType.ALL_USERS &&
+            this.receivingUsers.size > 0
+        );
+    }
+
+    private scheduleRoomClose(): void {
+        if (this.roomCloseTimer) {
+            return;
+        }
+        this.roomCloseTimer = setTimeout(() => {
+            this.roomCloseTimer = null;
+            // No speaker came back: the broadcast is over for good
+            if (this.streamingUsers.size > 0) {
+                return;
+            }
+            this.closeRoom().catch((error) => {
+                console.error(`Error closing the Livekit room of space ${this.space.getSpaceName()}:`, error);
+                Sentry.captureException(error);
+            });
+        }, this.broadcastRoomGracePeriodMs);
+        // The room is not worth keeping the process alive for
+        this.roomCloseTimer.unref();
+    }
+
+    /**
+     * Cancels the pending close of the room.
+     * @returns whether there was one, that is whether the room was kept from a previous session
+     */
+    private cancelRoomClose(): boolean {
+        if (!this.roomCloseTimer) {
+            return false;
+        }
+        clearTimeout(this.roomCloseTimer);
+        this.roomCloseTimer = null;
+        return true;
+    }
+
+    private async closeRoom(): Promise<void> {
+        this.createRoomPromise = null;
+        this.roomReady = false;
+        for (const receivingUser of this.receivingUsers.values()) {
+            this.sendLivekitDisconnectMessage(receivingUser);
+        }
+
+        await this.livekitService.deleteRoom(this.space.getSpaceName());
     }
 
     updateUser(user: SpaceUser): void {}
@@ -265,6 +349,9 @@ export class LivekitCommunicationStrategy implements IRecordableStrategy {
     }
 
     cleanup(): void {
+        // Nothing is kept past a cleanup: the room is deleted below
+        this.cleanedUp = true;
+        this.cancelRoomClose();
         for (const user of this.streamingUsers.values()) {
             this.deleteUser(user);
         }
