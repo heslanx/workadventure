@@ -1,0 +1,112 @@
+# The stack a load run measures: one pusher, one back, map-storage, redis and Traefik on one Docker network.
+# run-load.sh starts it, joins the generator to the same network and removes it. Nothing is published on the host, so
+# it runs on a CI pool runner (rootless Docker, a network namespace of its own) and beside any other stack.
+name: konclui-load
+
+services:
+    reverse-proxy:
+        image: traefik:v3.6.1
+        command:
+            - --log.level=WARN
+            - --ping=true
+            - --providers.file.filename=/etc/traefik/routes.yaml
+            - --entryPoints.web.address=:8094
+        # The back fetches the map through the public URL, so that name must resolve inside the network.
+        networks:
+            default:
+                aliases: [konclui-load.localhost]
+        volumes:
+            - ./traefik-routes.yaml:/etc/traefik/routes.yaml:ro
+        healthcheck:
+            test: [CMD, traefik, healthcheck, --ping]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    play:
+        image: ${LOAD_IMAGE_PREFIX:?}/play:${LOAD_IMAGE_TAG:?}
+        pull_policy: never
+        environment:
+            SECRET_KEY: ${SECRET_KEY:?}
+            API_URL: back:50051
+            PUSHER_URL: http://konclui-load.localhost:8094/
+            FRONT_URL: /
+            INTERNAL_MAP_STORAGE_URL: http://map-storage:3000
+            PUBLIC_MAP_STORAGE_URL: http://konclui-load.localhost:8094/map-storage
+            MAP_STORAGE_API_TOKEN: ${MAP_STORAGE_API_TOKEN:?}
+            START_ROOM_URL: /~/konclui-office/office.wam
+            REDIS_HOST: redis
+            ENABLE_MAP_EDITOR: "true"
+            MAP_EDITOR_ALLOW_ALL_USERS: "true"
+            DISABLE_ANONYMOUS: "false"
+            ICON_URL: /icon
+            UPLOADER_URL: /uploader
+            ENABLE_CHAT_UPLOAD: "false"
+            ENABLE_TUTORIAL: "false"
+            ENABLE_OPENAPI_ENDPOINT: "false"
+            MAX_USERNAME_LENGTH: "24"
+            # /metrics on a port of its own needs no token; the port is reachable inside this network only.
+            PROMETHEUS_PORT: "9100"
+            # The engine flags a scenario turns on (run-load.sh). Off is the default of the code.
+            PUSHER_VIEWER_BUDGET_ENABLED: ${PUSHER_VIEWER_BUDGET_ENABLED:-false}
+        volumes:
+            # The CPU profiler of the profile scenario.
+            - ../scripts/inspector-profile.mjs:/tools/inspector-profile.mjs:ro
+        depends_on:
+            - back
+            - redis
+
+    back:
+        image: ${LOAD_IMAGE_PREFIX:?}/back:${LOAD_IMAGE_TAG:?}
+        pull_policy: never
+        environment:
+            PLAY_URL: http://konclui-load.localhost:8094
+            SECRET_KEY: ${SECRET_KEY:?}
+            REDIS_HOST: redis
+            ENABLE_MAP_EDITOR: "true"
+            MAP_STORAGE_URL: map-storage:50053
+            INTERNAL_MAP_STORAGE_URL: http://map-storage:3000
+            PUBLIC_MAP_STORAGE_URL: http://konclui-load.localhost:8094/map-storage
+            ENABLE_TELEMETRY: "false"
+            # The map URL is on localhost, which the back treats as a local map and would not keep variables for.
+            STORE_VARIABLES_FOR_LOCAL_MAPS: "true"
+            PROMETHEUS_PORT: "9101"
+            WORLD_HEADCOUNT_ENABLED: ${WORLD_HEADCOUNT_ENABLED:-false}
+        depends_on:
+            - redis
+
+    map-storage:
+        image: ${LOAD_IMAGE_PREFIX:?}/map-storage:${LOAD_IMAGE_TAG:?}
+        pull_policy: never
+        environment:
+            API_URL: back:50051
+            SECRET_KEY: ${SECRET_KEY:?}
+            MAP_STORAGE_API_TOKEN: ${MAP_STORAGE_API_TOKEN:?}
+            ENABLE_BEARER_AUTHENTICATION: "true"
+            AUTHENTICATION_TOKEN: ${MAP_STORAGE_AUTHENTICATION_TOKEN:?}
+            PATH_PREFIX: /map-storage
+            PUSHER_URL: http://konclui-load.localhost:8094/
+        volumes:
+            - map-data:/maps
+        depends_on:
+            seed:
+                condition: service_completed_successfully
+
+    # Copies the map fixture into the volume and gives it to the user map-storage runs as.
+    seed:
+        image: ${LOAD_IMAGE_PREFIX:?}/map-storage:${LOAD_IMAGE_TAG:?}
+        pull_policy: never
+        user: "0"
+        command:
+            - sh
+            - -c
+            - mkdir -p /maps/konclui-office && cp /input/office.wam /input/office.tmj /maps/konclui-office/ && chown -R 1000:1000 /maps
+        volumes:
+            - ./fixtures/konclui-office:/input:ro
+            - map-data:/maps
+
+    redis:
+        image: redis:6-alpine
+
+volumes:
+    map-data:

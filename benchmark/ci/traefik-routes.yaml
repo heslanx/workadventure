@@ -1,0 +1,37 @@
+# One origin for the bots and for the containers, as in production: the front and the pusher HTTP API on /, the pusher
+# WebSocket on /ws/, map-storage on /map-storage.
+http:
+    routers:
+        play:
+            entryPoints: [web]
+            rule: PathPrefix(`/`)
+            priority: 1
+            service: play
+        ws:
+            entryPoints: [web]
+            rule: PathPrefix(`/ws/`)
+            priority: 20
+            service: ws
+        map-storage:
+            entryPoints: [web]
+            rule: PathPrefix(`/map-storage`)
+            priority: 20
+            middlewares: [strip-map-storage]
+            service: map-storage
+    middlewares:
+        strip-map-storage:
+            stripPrefix:
+                prefixes: [/map-storage]
+    services:
+        play:
+            loadBalancer:
+                servers:
+                    - url: http://play:3000
+        ws:
+            loadBalancer:
+                servers:
+                    - url: http://play:3001
+        map-storage:
+            loadBalancer:
+                servers:
+                    - url: http://map-storage:3000
