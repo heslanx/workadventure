@@ -1,6 +1,5 @@
 <script lang="ts">
     import { LL } from "../../../../i18n/i18n-svelte";
-    import { localUserStore } from "../../../Connection/LocalUserStore";
     import {
         CUSTOM_PRESET,
         isPresetName,
@@ -10,7 +9,7 @@
         type PresetName,
     } from "../domain/effectSwitches";
     import { applyEffectsPreset, effectSwitchesStore, setEffect } from "../stores/effectSwitchesStore";
-    import { pauseTileAnimations } from "../stores/gameCommands";
+    import { mapAnimations } from "../stores/performanceSettings";
     import PrefChoice from "./PrefChoice.svelte";
     import PrefSection from "./PrefSection.svelte";
     import PrefToggle from "./PrefToggle.svelte";
@@ -29,7 +28,6 @@
         "iris",
     ];
 
-    let animations = $state(!localUserStore.getDisableAnimations());
     let preset = $derived(presetOf($effectSwitchesStore));
 
     let t = $derived($LL.konclui.preferences.performance);
@@ -50,12 +48,6 @@
         tv: { title: t.tv(), hint: t.tvHint() },
         iris: { title: t.iris(), hint: t.irisHint() },
     });
-
-    function changeAnimations(on: boolean): void {
-        animations = on;
-        localUserStore.setDisableAnimations(!on);
-        pauseTileAnimations(!on);
-    }
 </script>
 
 <PrefSection title={t.effects()}>
@@ -78,5 +70,10 @@
     {/each}
 </PrefSection>
 <PrefSection title={t.motion()}>
-    <PrefToggle title={t.animations()} hint={t.animationsHint()} checked={animations} onchange={changeAnimations} />
+    <PrefToggle
+        title={t.animations()}
+        hint={t.animationsHint()}
+        checked={$mapAnimations}
+        onchange={(on) => mapAnimations.set(on)}
+    />
 </PrefSection>

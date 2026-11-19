@@ -2,15 +2,40 @@
 /* eslint-disable @typescript-eslint/unbound-method -- expect() on vi.fn() members of module mocks */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushSync, mount, unmount, type Component } from "svelte";
-import { get } from "svelte/store";
+import { get, type Readable, type Writable } from "svelte/store";
 import { localUserStore } from "../../../Connection/LocalUserStore";
-import { allowPictureInPictureStore } from "../../../Stores/PeerStore";
+import { playOnSelectedOutput } from "../../../WebRtc/AudioOutputManager";
+import { bandwidthConstrainedPreferenceStore } from "../../../Stores/BandwidthConstrainedPreferenceStore";
+import {
+    requestedCameraDeviceIdStore,
+    requestedMicrophoneDeviceIdStore,
+    videoQualityStore,
+} from "../../../Stores/MediaStore";
+import {
+    browserNoiseSuppressionSupportedStore,
+    microphoneAutoGainControlStore,
+    microphoneBrowserNoiseSuppressionStore,
+    microphoneEchoCancellationStore,
+    noiseSuppressionEnabledStore,
+    noiseSuppressionEngineStore,
+    noiseSuppressionProviderStore,
+    voiceIsolationSupportedStore,
+} from "../../../Stores/NoiseSuppressionStore";
+import { allowPictureInPictureStore, volumeProximityDiscussionStore } from "../../../Stores/PeerStore";
+import { screenShareQualityStore } from "../../../Stores/ScreenSharingStore";
 import { FEATURES_KEY, parseFeatures } from "../domain/effectSwitches";
 import { pauseTileAnimations } from "../stores/gameCommands";
 import { closePreferences } from "../stores/preferencesStore";
+import MediaPane from "./MediaPane.svelte";
 import MiniPane from "./MiniPane.svelte";
 import NotificationsPane from "./NotificationsPane.svelte";
 import PerformancePane from "./PerformancePane.svelte";
+import SoundsPane from "./SoundsPane.svelte";
+
+/** The module mocks below make these stores writable; their real types only expose their own setters. */
+function writableMock<T>(store: Readable<T>): Writable<T> {
+    return store as unknown as Writable<T>;
+}
 
 // One section per kind of storage: a saved setting (localUserStore), an upstream store, and the effect switches in
 // localStorage. Each test presses a switch and checks the write went through the API upstream's own screen uses.
@@ -23,17 +48,84 @@ vi.mock("../../../../i18n/i18n-svelte", async () => {
         });
     return { LL: readable(path([])), locale: readable("en-US") };
 });
+// The saved values stay readable after a write, as the panes read them back.
+const initialSaved = {
+    notification: false,
+    askSites: false,
+    ignoreFollow: false,
+    noAnimations: false,
+    cameraHidden: false,
+    microphoneHidden: false,
+    lowerMusic: false,
+    blockAudio: false,
+    bubbleSound: "ding",
+    chatSounds: true,
+};
+const saved = vi.hoisted(() => ({
+    notification: false,
+    askSites: false,
+    ignoreFollow: false,
+    noAnimations: false,
+    cameraHidden: false,
+    microphoneHidden: false,
+    lowerMusic: false,
+    blockAudio: false,
+    bubbleSound: "ding",
+    chatSounds: true,
+}));
 vi.mock("../../../Connection/LocalUserStore", () => ({
     localUserStore: {
-        getNotification: vi.fn(() => false),
-        setNotification: vi.fn(),
-        getForceCowebsiteTrigger: vi.fn(() => false),
-        setForceCowebsiteTrigger: vi.fn(),
-        getIgnoreFollowRequests: vi.fn(() => false),
-        setIgnoreFollowRequests: vi.fn(),
-        getDisableAnimations: vi.fn(() => false),
-        setDisableAnimations: vi.fn(),
+        getNotification: vi.fn(() => saved.notification),
+        setNotification: vi.fn((value: boolean) => {
+            saved.notification = value;
+        }),
+        getForceCowebsiteTrigger: vi.fn(() => saved.askSites),
+        setForceCowebsiteTrigger: vi.fn((value: boolean) => {
+            saved.askSites = value;
+        }),
+        getIgnoreFollowRequests: vi.fn(() => saved.ignoreFollow),
+        setIgnoreFollowRequests: vi.fn((value: boolean) => {
+            saved.ignoreFollow = value;
+        }),
+        getDisableAnimations: vi.fn(() => saved.noAnimations),
+        setDisableAnimations: vi.fn((value: boolean) => {
+            saved.noAnimations = value;
+        }),
+        getCameraPrivacySettings: vi.fn(() => saved.cameraHidden),
+        setCameraPrivacySettings: vi.fn((value: boolean) => {
+            saved.cameraHidden = value;
+        }),
+        getMicrophonePrivacySettings: vi.fn(() => saved.microphoneHidden),
+        setMicrophonePrivacySettings: vi.fn((value: boolean) => {
+            saved.microphoneHidden = value;
+        }),
+        getDecreaseAudioPlayerVolumeWhileTalking: vi.fn(() => saved.lowerMusic),
+        setDecreaseAudioPlayerVolumeWhileTalking: vi.fn((value: boolean) => {
+            saved.lowerMusic = value;
+        }),
+        getBlockAudio: vi.fn(() => saved.blockAudio),
+        setBlockAudio: vi.fn((value: boolean) => {
+            saved.blockAudio = value;
+        }),
+        getBubbleSound: vi.fn(() => saved.bubbleSound),
+        setBubbleSound: vi.fn((value: string) => {
+            saved.bubbleSound = value;
+        }),
+        getChatSounds: vi.fn(() => saved.chatSounds),
+        setChatSounds: vi.fn((value: boolean) => {
+            saved.chatSounds = value;
+        }),
+        getAudioPlayerVolume: vi.fn(() => 1),
+        setAudioPlayerVolume: vi.fn(),
+        setAudioPlayerMuted: vi.fn(),
+        setVolumeProximityDiscussion: vi.fn(),
+        setPreferredVideoInputDevice: vi.fn(),
+        setPreferredAudioInputDevice: vi.fn(),
     },
+}));
+vi.mock("../../../Connection/ConnectionManager", () => ({ connectionManager: { currentRoom: undefined } }));
+vi.mock("../../../Connection/Room", () => ({
+    Room: { DEFAULT_CAMERA_PRIVACY_SETTINGS: false, DEFAULT_MICROPHONE_PRIVACY_SETTINGS: false },
 }));
 vi.mock("../../../Administration/AnalyticsClient", () => ({ analyticsClient: { trackAdminEvent: vi.fn() } }));
 vi.mock("../../../Stores/BrowserNotificationStore", () => ({ browserNotificationStore: { refresh: vi.fn() } }));
@@ -41,6 +133,7 @@ vi.mock("../../../Stores/PeerStore", async () => {
     const { writable } = await import("svelte/store");
     const allow = writable(true);
     return {
+        volumeProximityDiscussionStore: { subscribe: writable(1).subscribe, set: vi.fn() },
         allowPictureInPictureStore: { subscribe: allow.subscribe, set: vi.fn(allow.set) },
         askPictureInPictureActivatingStore: writable(false),
         pictureInPictureSupportedStore: writable(true),
@@ -50,6 +143,83 @@ vi.mock("../../../Stores/StreamableCollectionStore", async () => {
     const { writable } = await import("svelte/store");
     return { isInRemoteConversation: writable(false) };
 });
+// The media and sound panes' upstream stores: each setter is a spy, so a test sees which store a control reached.
+vi.mock("../../../Stores/AudioOutputStore", async () => {
+    const { writable } = await import("svelte/store");
+    return { speakerSelectedStore: writable<string | undefined>(undefined), speakerSelectionSupported: false };
+});
+vi.mock("../../../Stores/BandwidthConstrainedPreferenceStore", async () => {
+    const { writable } = await import("svelte/store");
+    return {
+        bandwidthConstrainedPreferenceStore: { ...writable("balanced"), setPreference: vi.fn() },
+    };
+});
+vi.mock("../../../Stores/DisplayVideoQualityStore", async () => {
+    const { writable } = await import("svelte/store");
+    return { displayVideoQualityStore: writable(false) };
+});
+vi.mock("../../../Stores/MediaStore", async () => {
+    const { writable } = await import("svelte/store");
+    const devices = (deviceId: string, label: string) => [{ deviceId, label } as MediaDeviceInfo];
+    return {
+        cameraListStore: writable(devices("camera-1", "Front camera")),
+        microphoneListStore: writable(devices("microphone-1", "Desk microphone")),
+        speakerListStore: writable<MediaDeviceInfo[]>([]),
+        requestedCameraDeviceIdStore: { ...writable<string | undefined>(undefined), set: vi.fn() },
+        requestedMicrophoneDeviceIdStore: { ...writable<string | undefined>(undefined), set: vi.fn() },
+        requestedCameraState: { ...writable(false), enableWebcam: vi.fn(), disableWebcam: vi.fn() },
+        requestedMicrophoneState: { ...writable(false), enableMicrophone: vi.fn(), disableMicrophone: vi.fn() },
+        usedCameraDeviceIdStore: writable<string | undefined>(undefined),
+        usedMicrophoneDeviceIdStore: writable<string | undefined>(undefined),
+        silentStore: writable(false),
+        videoQualityStore: { ...writable("recommended"), setQuality: vi.fn() },
+    };
+});
+vi.mock("../../../Stores/NoiseSuppressionStore", async () => {
+    const { derived, writable } = await import("svelte/store");
+    const toggle = (on: boolean) => ({ ...writable(on), setEnabled: vi.fn() });
+    const enabled = { ...writable(false), setEnabled: vi.fn() };
+    const provider = { ...writable("workadventure"), setProvider: vi.fn() };
+    const voiceIsolationSupported = writable(false);
+    return {
+        browserNoiseSuppressionSupportedStore: writable(false),
+        voiceIsolationSupportedStore: voiceIsolationSupported,
+        microphoneAutoGainControlStore: toggle(false),
+        microphoneBrowserNoiseSuppressionStore: toggle(false),
+        microphoneEchoCancellationStore: toggle(false),
+        noiseSuppressionEnabledStore: enabled,
+        noiseSuppressionProviderStore: provider,
+        effectiveNoiseSuppressionProviderStore: derived(provider, (value) => value),
+        noiseSuppressionEngineStore: { ...writable("deepfilternet"), setEngine: vi.fn() },
+        noiseSuppressionStateStore: writable({ status: "ready" }),
+    };
+});
+vi.mock("../../../Stores/ScreenSharingStore", async () => {
+    const { writable } = await import("svelte/store");
+    return { screenShareQualityStore: { ...writable("recommended"), setQuality: vi.fn() } };
+});
+vi.mock("../../../Stores/AudioManagerStore", async () => {
+    const { writable } = await import("svelte/store");
+    return {
+        audioManagerFileStore: { unloadAudio: vi.fn() },
+        audioManagerVisibilityStore: { set: vi.fn() },
+        audioManagerVolumeStore: {
+            ...writable({ muted: false }),
+            setDecreaseWhileTalking: vi.fn(),
+            setVolume: vi.fn(),
+            setMuted: vi.fn(),
+        },
+        bubbleSoundStore: { set: vi.fn() },
+    };
+});
+vi.mock("../../../Stores/BackgroundTransformStore", () => ({ backgroundConfigStore: {} }));
+vi.mock("../../../WebRtc/AudioOutputManager", () => ({
+    playSpeakerTestSound: vi.fn(() => Promise.resolve()),
+    playOnSelectedOutput: vi.fn(() => Promise.resolve()),
+}));
+// The camera test and background picker draw upstream's live camera; the wiring under test is in the pane itself.
+vi.mock("./CameraPreview.svelte", () => ({ default: () => undefined }));
+vi.mock("./CameraBackground.svelte", () => ({ default: () => undefined }));
 vi.mock("../stores/preferencesStore", () => ({ closePreferences: vi.fn() }));
 vi.mock("../stores/gameCommands", () => ({ pauseTileAnimations: vi.fn() }));
 
@@ -63,6 +233,11 @@ describe("the preference sections", () => {
         if (mounted) await unmount(mounted);
         target.replaceChildren();
         localStorage.clear();
+        Object.assign(saved, initialSaved);
+        writableMock(noiseSuppressionEnabledStore).set(false);
+        writableMock(voiceIsolationSupportedStore).set(false);
+        browserNoiseSuppressionSupportedStore.set(false);
+        writableMock(noiseSuppressionProviderStore).set("workadventure");
         vi.clearAllMocks();
         vi.unstubAllGlobals();
     });
@@ -79,6 +254,37 @@ describe("the preference sections", () => {
         const button = target.querySelector<HTMLButtonElement>(`[role="switch"][aria-labelledby="${title?.id}"]`);
         if (!button) throw new Error(`no switch titled ${key}`);
         return button;
+    }
+
+    /** The element of `selector` labelled by the title whose text is the text of `key`. */
+    function labelledBy<T extends HTMLElement>(selector: string, key: string): T {
+        const title = [...target.querySelectorAll("b")].find((element) => element.textContent === key);
+        const element = target.querySelector<T>(`${selector}[aria-labelledby="${title?.id}"]`);
+        if (!element) throw new Error(`no ${selector} titled ${key}`);
+        return element;
+    }
+
+    /** Presses the option whose label is the text of `option` in the choice titled `key`. */
+    function choose(key: string, option: string): void {
+        const radio = [
+            ...labelledBy("[role=radiogroup]", key).querySelectorAll<HTMLButtonElement>("[role=radio]"),
+        ].find((element) => element.textContent === option);
+        if (!radio) throw new Error(`no option ${option} in ${key}`);
+        press(radio);
+    }
+
+    function pick(key: string, value: string): void {
+        const select = labelledBy<HTMLSelectElement>("select", key);
+        select.value = value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        flushSync();
+    }
+
+    function slide(key: string, value: number): void {
+        const slider = labelledBy<HTMLInputElement>("input", key);
+        slider.value = String(value);
+        slider.dispatchEvent(new Event("change", { bubbles: true }));
+        flushSync();
     }
 
     function press(button: HTMLButtonElement): void {
@@ -197,15 +403,154 @@ describe("the preference sections", () => {
     it("turns the map animations off in the saved setting and in the running map", () => {
         show(PerformancePane);
 
-        press(switchFor("konclui.preferences.performance.animations"));
+        const animations = switchFor("konclui.preferences.performance.animations");
+        expect(animations.getAttribute("aria-checked")).toBe("true");
+
+        press(animations);
 
         expect(localUserStore.setDisableAnimations).toHaveBeenCalledWith(true);
         expect(pauseTileAnimations).toHaveBeenCalledWith(true);
+        expect(animations.getAttribute("aria-checked")).toBe("false");
     });
 
     it("leaves out the vignette, which nothing in this client draws", () => {
         show(PerformancePane);
 
         expect(target.textContent).not.toContain("vignette");
+    });
+
+    const media = "konclui.preferences.media";
+    const sounds = "konclui.preferences.sounds";
+
+    it("sends the video quality and the screen quality each to its own store", () => {
+        show(MediaPane);
+
+        choose(`${media}.videoQuality`, `${media}.qualityHigh`);
+        expect(videoQualityStore.setQuality).toHaveBeenCalledWith("high");
+        expect(screenShareQualityStore.setQuality).not.toHaveBeenCalled();
+
+        choose(`${media}.screenQuality`, `${media}.qualityLow`);
+        expect(screenShareQualityStore.setQuality).toHaveBeenCalledWith("low");
+        expect(videoQualityStore.setQuality).toHaveBeenCalledTimes(1);
+    });
+
+    it("sends the bandwidth preference to its store", () => {
+        show(MediaPane);
+
+        choose(`${media}.bandwidth`, `${media}.smoothness`);
+
+        expect(bandwidthConstrainedPreferenceStore.setPreference).toHaveBeenCalledWith("maintain-framerate");
+    });
+
+    it("sends each microphone processing switch to its own store", () => {
+        browserNoiseSuppressionSupportedStore.set(true);
+        show(MediaPane);
+        const stores = {
+            noise: noiseSuppressionEnabledStore,
+            autoGain: microphoneAutoGainControlStore,
+            echo: microphoneEchoCancellationStore,
+            browserNoise: microphoneBrowserNoiseSuppressionStore,
+        };
+
+        for (const [key, store] of Object.entries(stores)) {
+            vi.clearAllMocks();
+
+            press(switchFor(`${media}.${key}`));
+
+            expect(store.setEnabled).toHaveBeenCalledExactlyOnceWith(true);
+            for (const other of Object.values(stores).filter((candidate) => candidate !== store)) {
+                expect(other.setEnabled).not.toHaveBeenCalled();
+            }
+        }
+    });
+
+    it("sends the noise suppression mode and engine to their stores", () => {
+        writableMock(noiseSuppressionEnabledStore).set(true);
+        writableMock(voiceIsolationSupportedStore).set(true);
+        show(MediaPane);
+
+        pick(`${media}.noiseEngine`, "dtln");
+        choose(`${media}.noiseMode`, `${media}.noiseVoiceIsolation`);
+
+        expect(noiseSuppressionEngineStore.setEngine).toHaveBeenCalledWith("dtln");
+        expect(noiseSuppressionProviderStore.setProvider).toHaveBeenCalledWith("voiceIsolation");
+    });
+
+    it("saves the camera and the microphone kept on while hidden each as its own setting", () => {
+        show(MediaPane);
+        const camera = switchFor(`${media}.cameraHidden`);
+        const microphone = switchFor(`${media}.microphoneHidden`);
+
+        press(camera);
+        expect(localUserStore.setCameraPrivacySettings).toHaveBeenCalledWith(true);
+        expect(localUserStore.setMicrophonePrivacySettings).not.toHaveBeenCalled();
+        expect(camera.getAttribute("aria-checked")).toBe("true");
+        expect(microphone.getAttribute("aria-checked")).toBe("false");
+
+        press(microphone);
+        expect(localUserStore.setMicrophonePrivacySettings).toHaveBeenCalledWith(true);
+        expect(localUserStore.setCameraPrivacySettings).toHaveBeenCalledTimes(1);
+        expect(microphone.getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("chooses the camera and the microphone each through its own device store", () => {
+        show(MediaPane);
+
+        pick(`${media}.camera`, "camera-1");
+        expect(requestedCameraDeviceIdStore.set).toHaveBeenCalledWith("camera-1");
+        expect(localUserStore.setPreferredVideoInputDevice).toHaveBeenCalledWith("camera-1");
+        expect(requestedMicrophoneDeviceIdStore.set).not.toHaveBeenCalled();
+
+        pick(`${media}.microphone`, "microphone-1");
+        expect(requestedMicrophoneDeviceIdStore.set).toHaveBeenCalledWith("microphone-1");
+        expect(localUserStore.setPreferredAudioInputDevice).toHaveBeenCalledWith("microphone-1");
+        expect(requestedCameraDeviceIdStore.set).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves each sound switch as its own setting and shows it back", () => {
+        show(SoundsPane);
+        const lower = switchFor(`${sounds}.lowerMusic`);
+        const block = switchFor(`${sounds}.blockAudio`);
+        const chat = switchFor(`${sounds}.chatSounds`);
+        expect(chat.getAttribute("aria-checked")).toBe("true");
+
+        press(lower);
+        expect(localUserStore.setDecreaseAudioPlayerVolumeWhileTalking).toHaveBeenCalledWith(true);
+        expect(localUserStore.setBlockAudio).not.toHaveBeenCalled();
+        expect(lower.getAttribute("aria-checked")).toBe("true");
+
+        press(block);
+        expect(localUserStore.setBlockAudio).toHaveBeenCalledWith(true);
+        expect(block.getAttribute("aria-checked")).toBe("true");
+
+        press(chat);
+        expect(localUserStore.setChatSounds).toHaveBeenCalledWith(false);
+        expect(chat.getAttribute("aria-checked")).toBe("false");
+        expect(localUserStore.setDecreaseAudioPlayerVolumeWhileTalking).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves the bubble sound and previews the one chosen now, not the one shown before", () => {
+        show(SoundsPane);
+
+        pick(`${sounds}.bubble`, "wobble");
+        const preview = target.querySelector<HTMLButtonElement>(`[aria-label="${sounds}.playBubble"]`);
+        preview?.click();
+
+        expect(localUserStore.setBubbleSound).toHaveBeenCalledWith("wobble");
+        expect(playOnSelectedOutput).toHaveBeenCalledOnce();
+        expect(vi.mocked(playOnSelectedOutput).mock.calls[0][0].src).toContain("webrtc-in-wobble.mp3");
+    });
+
+    it("sets the voices volume and the music volume each in its own place", () => {
+        show(SoundsPane);
+
+        slide(`${sounds}.voices`, 0.3);
+        expect(localUserStore.setVolumeProximityDiscussion).toHaveBeenCalledWith(0.3);
+        expect(volumeProximityDiscussionStore.set).toHaveBeenCalledWith(0.3);
+        expect(localUserStore.setAudioPlayerVolume).not.toHaveBeenCalled();
+
+        slide(`${sounds}.music`, 0.4);
+        expect(localUserStore.setAudioPlayerVolume).toHaveBeenCalledWith(0.4);
+        expect(localUserStore.setVolumeProximityDiscussion).toHaveBeenCalledTimes(1);
     });
 });

@@ -9,11 +9,12 @@ import {
 } from "../../../Stores/AudioManagerStore";
 import { volumeProximityDiscussionStore } from "../../../Stores/PeerStore";
 import { playOnSelectedOutput } from "../../../WebRtc/AudioOutputManager";
+import { savedSetting } from "./savedSetting";
 
 // The sound settings, written the way upstream's settings and music player write them (SettingsSubMenu.svelte,
 // AudioManager.svelte, ChatSettings.svelte).
 
-export type BubbleSound = "ding" | "wobble";
+type BubbleSound = "ding" | "wobble";
 
 export function setVoicesVolume(volume: number): void {
     analyticsClient.trackAdminEvent("settings.audio_volume.opened");
@@ -34,24 +35,33 @@ export function setMusicVolume(volume: number): void {
     localUserStore.setAudioPlayerMuted(false);
 }
 
-export function setLowerMusicWhileTalking(on: boolean): void {
-    analyticsClient.trackAdminEvent("settings.decrease_audio_volume.changed", { value: on ? "true" : "false" });
-    localUserStore.setDecreaseAudioPlayerVolumeWhileTalking(on);
-    audioManagerVolumeStore.setDecreaseWhileTalking(on);
-}
+export const lowerMusicWhileTalking = savedSetting(
+    () => localUserStore.getDecreaseAudioPlayerVolumeWhileTalking(),
+    (on: boolean) => {
+        analyticsClient.trackAdminEvent("settings.decrease_audio_volume.changed", { value: on ? "true" : "false" });
+        localUserStore.setDecreaseAudioPlayerVolumeWhileTalking(on);
+        audioManagerVolumeStore.setDecreaseWhileTalking(on);
+    },
+);
 
-export function setBlockMapAudio(on: boolean): void {
-    if (on) {
-        audioManagerFileStore.unloadAudio();
-        audioManagerVisibilityStore.set("disabledBySettings");
-    }
-    localUserStore.setBlockAudio(on);
-}
+export const blockMapAudio = savedSetting(
+    () => localUserStore.getBlockAudio(),
+    (on: boolean) => {
+        if (on) {
+            audioManagerFileStore.unloadAudio();
+            audioManagerVisibilityStore.set("disabledBySettings");
+        }
+        localUserStore.setBlockAudio(on);
+    },
+);
 
-export function setBubbleSound(sound: BubbleSound): void {
-    localUserStore.setBubbleSound(sound);
-    bubbleSoundStore.set(sound);
-}
+export const bubbleSound = savedSetting<BubbleSound>(
+    () => localUserStore.getBubbleSound(),
+    (sound) => {
+        localUserStore.setBubbleSound(sound);
+        bubbleSoundStore.set(sound);
+    },
+);
 
 /** Upstream's sound picker previews at this volume (SoundSelect.svelte). */
 export const BUBBLE_PREVIEW_VOLUME = 0.2;
@@ -65,6 +75,7 @@ export function previewBubbleSound(sound: BubbleSound): void {
     );
 }
 
-export function setChatSounds(on: boolean): void {
-    localUserStore.setChatSounds(on);
-}
+export const chatSounds = savedSetting(
+    () => localUserStore.getChatSounds(),
+    (on: boolean) => localUserStore.setChatSounds(on),
+);

@@ -24,6 +24,7 @@
         microphoneEchoCancellationStore,
         noiseSuppressionEnabledStore,
         noiseSuppressionEngineStore,
+        noiseSuppressionProviderStore,
         noiseSuppressionStateStore,
         voiceIsolationSupportedStore,
     } from "../../../Stores/NoiseSuppressionStore";
@@ -41,17 +42,6 @@
         selectCamera,
         selectMicrophone,
         selectSpeaker,
-        setAutoGainControl,
-        setBandwidthPreference,
-        setBrowserNoiseSuppression,
-        setCameraWhenHidden,
-        setEchoCancellation,
-        setMicrophoneWhenHidden,
-        setNoiseSuppression,
-        setNoiseSuppressionEngine,
-        setNoiseSuppressionProvider,
-        setScreenShareQuality,
-        setVideoQuality,
         setVideoQualityStats,
         testSpeaker,
     } from "../stores/mediaSettings";
@@ -64,8 +54,6 @@
     import { IconUnMute } from "@wa-icons";
 
     let t = $derived($LL.konclui.preferences.media);
-    let keepCamera = $state(cameraWhenHidden());
-    let keepMicrophone = $state(microphoneWhenHidden());
 
     function devices(
         list: readonly MediaDeviceInfo[] | undefined,
@@ -169,7 +157,7 @@
         options={qualities}
         value={$videoQualityStore}
         onchange={(value) => {
-            if (isQualityName(value)) setVideoQuality(value);
+            if (isQualityName(value)) videoQualityStore.setQuality(value);
         }}
     />
 </PrefSection>
@@ -179,7 +167,7 @@
         options={qualities}
         value={$screenShareQualityStore}
         onchange={(value) => {
-            if (isQualityName(value)) setScreenShareQuality(value);
+            if (isQualityName(value)) screenShareQualityStore.setQuality(value);
         }}
     />
     <PrefChoice
@@ -192,7 +180,7 @@
         ]}
         value={$bandwidthConstrainedPreferenceStore}
         onchange={(value) => {
-            if (isBandwidthPreference(value)) setBandwidthPreference(value);
+            if (isBandwidthPreference(value)) bandwidthConstrainedPreferenceStore.setPreference(value);
         }}
     />
 </PrefSection>
@@ -201,7 +189,7 @@
         title={t.noise()}
         hint={t.noiseHint()}
         checked={$noiseSuppressionEnabledStore}
-        onchange={setNoiseSuppression}
+        onchange={(on) => noiseSuppressionEnabledStore.setEnabled(on)}
     />
     {#if $noiseSuppressionEnabledStore && $voiceIsolationSupportedStore}
         <PrefChoice
@@ -212,7 +200,9 @@
             ]}
             value={$effectiveNoiseSuppressionProviderStore}
             onchange={(value) =>
-                setNoiseSuppressionProvider(value === "voiceIsolation" ? "voiceIsolation" : "workadventure")}
+                noiseSuppressionProviderStore.setProvider(
+                    value === "voiceIsolation" ? "voiceIsolation" : "workadventure",
+                )}
         />
     {/if}
     {#if $noiseSuppressionEnabledStore && workAdventureNoise}
@@ -224,27 +214,27 @@
                 { value: "deepfilternet", label: t.engineDeepFilterNet() },
                 { value: "dtln", label: t.engineDtln() },
             ]}
-            onchange={(value) => setNoiseSuppressionEngine(value === "dtln" ? "dtln" : "deepfilternet")}
+            onchange={(value) => noiseSuppressionEngineStore.setEngine(value === "dtln" ? "dtln" : "deepfilternet")}
         />
     {/if}
     <PrefToggle
         title={t.autoGain()}
         hint={t.autoGainHint()}
         checked={$microphoneAutoGainControlStore}
-        onchange={setAutoGainControl}
+        onchange={(on) => microphoneAutoGainControlStore.setEnabled(on)}
     />
     <PrefToggle
         title={t.echo()}
         hint={t.echoHint()}
         checked={$microphoneEchoCancellationStore}
-        onchange={setEchoCancellation}
+        onchange={(on) => microphoneEchoCancellationStore.setEnabled(on)}
     />
     {#if $browserNoiseSuppressionSupportedStore}
         <PrefToggle
             title={t.browserNoise()}
             hint={t.browserNoiseHint()}
             checked={$microphoneBrowserNoiseSuppressionStore}
-            onchange={setBrowserNoiseSuppression}
+            onchange={(on) => microphoneBrowserNoiseSuppressionStore.setEnabled(on)}
         />
     {/if}
 </PrefSection>
@@ -252,20 +242,14 @@
     <PrefToggle
         title={t.cameraHidden()}
         hint={t.hiddenHint()}
-        checked={keepCamera}
-        onchange={(on) => {
-            keepCamera = on;
-            setCameraWhenHidden(on);
-        }}
+        checked={$cameraWhenHidden}
+        onchange={(on) => cameraWhenHidden.set(on)}
     />
     <PrefToggle
         title={t.microphoneHidden()}
         hint={t.hiddenHint()}
-        checked={keepMicrophone}
-        onchange={(on) => {
-            keepMicrophone = on;
-            setMicrophoneWhenHidden(on);
-        }}
+        checked={$microphoneWhenHidden}
+        onchange={(on) => microphoneWhenHidden.set(on)}
     />
 </PrefSection>
 <PrefSection title={t.advanced()}>
