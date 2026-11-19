@@ -92,7 +92,16 @@ export class LivekitCommunicationStrategy implements IRecordableStrategy {
             }
 
             const createRoomPromise = this.createRoomPromise;
-            await createRoomPromise;
+            try {
+                await createRoomPromise;
+            } catch (error) {
+                // Keep a failed creation out of the next speaker's way: nothing closes the room of a speaker who
+                // never made it into it, so until the last speaker left every next one would await the same failure.
+                if (this.createRoomPromise === createRoomPromise) {
+                    this.createRoomPromise = null;
+                }
+                throw error;
+            }
             // The room may have been closed while it was being created
             if (this.createRoomPromise === createRoomPromise) {
                 this.roomReady = true;

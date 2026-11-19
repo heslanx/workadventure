@@ -159,6 +159,12 @@ Note that anonymous players don't have any TTL limit because their data is store
         .or(z.string().max(0))
         .transform((val) => toNumber(val, 4))
         .describe("The maximum number of users for WebRTC."),
+    MAX_P2P_PEERS: PositiveIntAsString.optional()
+        .transform((val) => (val === undefined || val === "" ? undefined : Number(val)))
+        .refine((val) => val === undefined || val > 0, { message: "Must be a positive integer number" })
+        .describe(
+            "The most peers one user holds at once in a WebRTC (peer-to-peer) space. Pairs past it are refused, so a space that cannot move to LiveKit never becomes a mesh of hundreds of connections in one browser tab. Unset or empty means no limit",
+        ),
     LIVEKIT_SWITCH_ON_CPU_LIMITATION: BoolAsString.optional()
         .transform((val) => toBool(val, true))
         .describe(

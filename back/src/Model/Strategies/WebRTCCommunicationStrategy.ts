@@ -47,6 +47,10 @@ class ConnectionManager {
         return new Set(this.connections.get(userId)?.keys());
     }
 
+    countConnections(userId: string): number {
+        return this.connections.get(userId)?.size ?? 0;
+    }
+
     private getOrCreateUserConnections(userId: string): Map<string, string> {
         if (!this.connections.has(userId)) {
             this.connections.set(userId, new Map());
@@ -60,10 +64,17 @@ class ConnectionManager {
 }
 
 export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
+    /** Whether a refused pair was already reported for this strategy (one report per space and state, not one per pair). */
+    private peerCapReported = false;
+
+    /**
+     * @param maxPeers - The most peers one user holds at once. Unlimited when undefined, as upstream.
+     */
     constructor(
         private readonly _space: ICommunicationSpace,
         private users: ReadonlyMap<string, SpaceUser>,
         private usersToNotify: ReadonlyMap<string, SpaceUser>,
+        private readonly maxPeers?: number,
         private readonly _connections: ConnectionManager = new ConnectionManager(),
     ) {}
     addUserReady(userId: string): void {}
@@ -187,9 +198,48 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
     }
 
     private shouldEstablishConnection(user1: SpaceUser, user2: SpaceUser): boolean {
-        const hasExisting = this.hasExistingConnection(user1.spaceUserId, user2.spaceUserId);
         // Only establish if we need media connection AND don't already have one
-        return !hasExisting;
+        return this.canPair(user1, user2);
+    }
+
+    /**
+     * Whether two users may be paired: they have no connection yet, and neither holds `maxPeers` peers already.
+     *
+     * The cap fails closed: a refused pair is not retried when a slot frees, and with several speakers a watcher
+     * past the cap gets no stream. That is the point of it: a space that cannot move to LiveKit never becomes a
+     * mesh of hundreds of peer connections in the speaker's tab.
+     */
+    private canPair(user1: SpaceUser, user2: SpaceUser): boolean {
+        if (this.hasExistingConnection(user1.spaceUserId, user2.spaceUserId)) {
+            return false;
+        }
+        if (this.maxPeers === undefined) {
+            return true;
+        }
+        if (
+            this._connections.countConnections(user1.spaceUserId) < this.maxPeers &&
+            this._connections.countConnections(user2.spaceUserId) < this.maxPeers
+        ) {
+            return true;
+        }
+        this.reportRefusedPair(user1, user2);
+        return false;
+    }
+
+    /** Reports the first refused pair only: a crowd past the cap would otherwise log once per watcher. */
+    private reportRefusedPair(user1: SpaceUser, user2: SpaceUser): void {
+        if (this.peerCapReported) {
+            return;
+        }
+        this.peerCapReported = true;
+        const spaceName = this._space.getSpaceName();
+        console.warn(
+            `MAX_P2P_PEERS (${this.maxPeers}) reached in space ${spaceName}: no WebRTC connection between ${user1.spaceUserId} and ${user2.spaceUserId}. Other refused pairs of this space are not logged.`,
+        );
+        Sentry.captureMessage("WebRTC peer cap reached: a pair was refused", {
+            level: "warning",
+            extra: { spaceName, maxPeers: this.maxPeers },
+        });
     }
 
     private establishConnection(user1: SpaceUser, user2: SpaceUser): void {
@@ -264,9 +314,8 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
                     return;
                 }
                 try {
-                    if (!this.hasExistingConnection(user1.spaceUserId, user2.spaceUserId)) {
+                    if (this.canPair(user1, user2)) {
                         this.establishConnection(user1, user2);
-                        return;
                     }
                 } catch (error) {
                     console.error(
@@ -314,7 +363,10 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
                 );
                 return;
             }
-            this.establishConnection(receiver, sender);
+            // A client message must not open a pair the peer cap refused.
+            if (this.canPair(receiver, sender)) {
+                this.establishConnection(receiver, sender);
+            }
             return;
         }
 

@@ -303,6 +303,39 @@ describe("LivekitCommunicationStrategy room grace period", () => {
         expect(messagesTo("speaker-1").at(-1)).toBe("invitation");
     });
 
+    it("creates the room again for the speakers who start after it failed to be created for the first one", async () => {
+        const { strategy, livekitService, messagesTo, settle } = createBroadcast();
+        livekitService.createRoom.mockRejectedValueOnce(new Error("livekit down"));
+        await strategy.addUserToNotify(createUser("listener-1"));
+        await expect(strategy.addUser(createUser("speaker-1"))).rejects.toThrow("livekit down");
+
+        // speaker-1 is still present, so nothing ever closed the room: the speakers after it must not inherit the failure
+        await expect(strategy.addUser(createUser("speaker-2"))).resolves.toBeUndefined();
+        await expect(strategy.addUser(createUser("speaker-3"))).resolves.toBeUndefined();
+        await settle();
+
+        expect(livekitService.createRoom).toHaveBeenCalledTimes(2);
+        expect(messagesTo("speaker-2")).toEqual(["invitation"]);
+        expect(messagesTo("speaker-3")).toEqual(["invitation"]);
+        expect(messagesTo("listener-1")).toEqual(["invitation"]);
+    });
+
+    it("creates the room once for speakers who start together, and again for the next one after it failed", async () => {
+        const { strategy, livekitService, messagesTo, settle } = createBroadcast();
+        livekitService.createRoom.mockRejectedValueOnce(new Error("livekit down"));
+
+        const together = await Promise.allSettled([
+            strategy.addUser(createUser("speaker-1")),
+            strategy.addUser(createUser("speaker-2")),
+        ]);
+        await strategy.addUser(createUser("speaker-3"));
+        await settle();
+
+        expect(together.map((result) => result.status)).toEqual(["rejected", "rejected"]);
+        expect(livekitService.createRoom).toHaveBeenCalledTimes(2);
+        expect(messagesTo("speaker-3")).toEqual(["invitation"]);
+    });
+
     it("invites the listeners at the first session even if a user who never spoke was removed before", async () => {
         const { strategy, messagesTo, settle } = createBroadcast();
         await strategy.addUserToNotify(createUser("listener-1"));

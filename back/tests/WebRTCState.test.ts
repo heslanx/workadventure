@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SpaceUser } from "@workadventure/messages";
 // The states and CommunicationManager import each other: load them in the order the back does, from the manager.
 import "../src/Model/CommunicationManager";
@@ -104,5 +104,61 @@ describe("WebRTCState", () => {
 
         expect(receivedBy(dispatchPrivateEvent, "alice")).not.toContain("switchMessage");
         expect(receivedBy(dispatchPrivateEvent, "bob")).toEqual(["switchMessage"]);
+    });
+});
+
+describe("WebRTCState peer cap", () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.resetModules();
+    });
+
+    /** One speaker and ten watchers, paired when the state starts. */
+    async function startsToTheSpeaker(
+        newState: (
+            space: ICommunicationSpace,
+            users: ReadonlyMap<string, SpaceUser>,
+            usersToNotify: ReadonlyMap<string, SpaceUser>,
+        ) => { init(): Promise<void> },
+    ): Promise<number> {
+        const dispatchPrivateEvent = vi.fn();
+        const speaker = createUser("speaker");
+        const watchers = Array.from({ length: 10 }, (_, index) => createUser(`watcher-${index + 1}`));
+        const usersToNotify = new Map([speaker, ...watchers].map((user) => [user.spaceUserId, user]));
+        const users = new Map([[speaker.spaceUserId, speaker]]);
+
+        await newState(createSpace(dispatchPrivateEvent, [speaker, ...watchers]), users, usersToNotify).init();
+
+        return receivedBy(dispatchPrivateEvent, "speaker").filter((event) => event === "webRtcStartMessage").length;
+    }
+
+    it("holds the speaker to the peers it was given", async () => {
+        const peers = await startsToTheSpeaker(
+            (space, users, usersToNotify) => new WebRTCState(space, users, usersToNotify, 3),
+        );
+
+        expect(peers).toBe(3);
+    });
+
+    it("holds the speaker to MAX_P2P_PEERS when no cap is given, as a state created on a switch back from LiveKit is", async () => {
+        vi.stubEnv("MAX_P2P_PEERS", "3");
+        vi.resetModules();
+        // Same load order as the back: the manager first
+        await import("../src/Model/CommunicationManager");
+        const { WebRTCState: CappedByEnvironment } = await import("../src/Model/States/WebRTCState");
+
+        const peers = await startsToTheSpeaker(
+            (space, users, usersToNotify) => new CappedByEnvironment(space, users, usersToNotify),
+        );
+
+        expect(peers).toBe(3);
+    });
+
+    it("pairs the speaker with every watcher when there is no cap", async () => {
+        const peers = await startsToTheSpeaker(
+            (space, users, usersToNotify) => new WebRTCState(space, users, usersToNotify),
+        );
+
+        expect(peers).toBe(10);
     });
 });

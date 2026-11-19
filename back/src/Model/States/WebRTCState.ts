@@ -1,4 +1,5 @@
 import type { SpaceUser } from "@workadventure/messages";
+import { MAX_P2P_PEERS } from "../../Enum/EnvironmentVariable";
 import { WebRTCCommunicationStrategy } from "../Strategies/WebRTCCommunicationStrategy";
 import { CommunicationType } from "../Types/CommunicationTypes";
 import type { ICommunicationSpace } from "../Interfaces/ICommunicationSpace";
@@ -12,7 +13,8 @@ export class WebRTCState extends CommunicationState<WebRTCCommunicationStrategy>
         protected readonly _space: ICommunicationSpace,
         users: ReadonlyMap<string, SpaceUser>,
         usersToNotify: ReadonlyMap<string, SpaceUser>,
+        maxPeers: number | undefined = MAX_P2P_PEERS,
     ) {
-        super(_space, new WebRTCCommunicationStrategy(_space, users, usersToNotify), users, usersToNotify);
+        super(_space, new WebRTCCommunicationStrategy(_space, users, usersToNotify, maxPeers), users, usersToNotify);
     }
 }
