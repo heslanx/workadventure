@@ -16,6 +16,12 @@ function notificationsBlocked(): boolean {
     return notificationsSupported() && Notification.permission === "denied";
 }
 
+/** Saves the notification choice and tells the browser notification switch to read it again. */
+function saveNotification(on: boolean): void {
+    localUserStore.setNotification(on);
+    browserNotificationStore.refresh();
+}
+
 /**
  * Turns the browser notifications on or off and answers what they end up as: turning them on asks the browser
  * first, and a refusal leaves them off.
@@ -23,13 +29,11 @@ function notificationsBlocked(): boolean {
 async function setNotification(on: boolean): Promise<boolean> {
     analyticsClient.trackAdminEvent("settings.notification.changed", { value: on ? "true" : "false" });
     if (!on || Notification.permission === "granted") {
-        localUserStore.setNotification(on);
-        browserNotificationStore.refresh();
+        saveNotification(on);
         return on;
     }
     const granted = (await Notification.requestPermission()) === "granted";
-    localUserStore.setNotification(granted);
-    browserNotificationStore.refresh();
+    saveNotification(granted);
     return granted;
 }
 
