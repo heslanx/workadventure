@@ -312,6 +312,8 @@
         background: transparent;
         backdrop-filter: none;
     }
+    /* !important: during a call upstream's .profile-menu-force-burger rules (ProfileMenu.svelte) are !important too, and
+       only an !important rule of higher specificity beats them. The dock keeps the full button in a call. */
     .dock-profile :global(.profile-menu-burger-icon) {
         display: none !important;
     }
@@ -395,6 +397,8 @@
         }
     }
     @media (prefers-reduced-motion: reduce) {
+        /* !important: the standard reduced-motion reset must also win over the upstream buttons' own animation and
+           transition rules, whatever their specificity. */
         .dock :global(*) {
             animation-duration: 0s !important;
             transition-duration: 0s !important;

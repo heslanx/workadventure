@@ -280,9 +280,9 @@
         border-radius: var(--k-radius-surface);
         color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
-        animation: office-menu-in var(--k-dur-fast) var(--k-ease-out-expo) backwards;
+        animation: k-office-menu-in var(--k-dur-fast) var(--k-ease-out-expo) backwards;
     }
-    @keyframes office-menu-in {
+    @keyframes k-office-menu-in {
         from {
             opacity: 0;
             transform: translateX(-6px);
