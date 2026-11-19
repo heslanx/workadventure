@@ -636,23 +636,123 @@ describe("Konclui theme contrast", () => {
 
     describe("the dock, as the reference lays it out", () => {
         const dock = readFileSync(resolve(front, "Konclui/Shell/components/Dock.svelte"), "utf8");
+        // The markup alone: the imports come first in the file and would make every control look early.
+        const markup = dock.slice(dock.indexOf("</script>"), dock.indexOf("<style>"));
         const position = (fragment: string): number => {
-            const index = dock.indexOf(fragment);
+            const index = markup.indexOf(fragment);
             if (index < 0) throw new Error(`The dock has no ${fragment}`);
             return index;
         };
 
-        it("puts the profile first, then the microphone and its settings chevron, the camera, and the chat last", () => {
+        // Tab order follows the DOM, and the eye follows the layout: they agree only when the markup is in the order
+        // seen, so the dock does not reorder anything with CSS `order`.
+        it("has its controls in the DOM in the order they are seen: the profile, the devices, the reaction, the conversation, the desk, the sound, then the place's other tools", () => {
             const order = [
                 "<ProfileMenu ",
                 "<MicrophoneMenuItem ",
                 'data-testid="media-settings-toggle-button"',
                 "<CameraMenuItem ",
-                "<ContextualMenuItems ",
-                "<ChatMenuItem",
+                "<ScreenSharingMenuItem ",
+                "<PictureInPictureMenuItem ",
+                "<EmojiMenuItem ",
+                "<ChatMenuItem ",
+                "<DeskButton ",
+                "<AmbientSoundButton ",
+                "<MusicMenuItem ",
+                "<AppsMenuItem ",
+                "<FollowMenuItem ",
+                "<LockDiscussionMenuItem ",
+                "<RecordingMenuItem ",
+                "<MegaphoneMenuItem ",
+                "<RaiseHandMenuItem ",
             ].map(position);
 
             expect(order).toEqual([...order].sort((first, second) => first - second));
+            expect(new Set(order).size).toBe(order.length);
+        });
+
+        it("does not reorder anything with CSS, so the tab order cannot differ from the layout", () => {
+            const styles = dock.slice(dock.indexOf("<style>"));
+
+            expect(styles).not.toMatch(/(^|[\s;{])order\s*:/);
+            expect(markup).not.toMatch(/style="[^"]*\border\s*:/);
+        });
+
+        it("draws every control upstream's ContextualMenuItems draws, so splitting that block loses none of them", () => {
+            const contextual = readFileSync(
+                resolve(front, "Components/ActionBar/MenuIcons/ContextualMenuItems.svelte"),
+                "utf8",
+            );
+            const upstream = [...contextual.replace(/<!--[\s\S]*?-->/g, "").matchAll(/<(\w+MenuItem)\b/g)]
+                .map((match) => match[1])
+                .filter((name) => name !== "HeaderMenuItem");
+
+            expect(upstream.length).toBeGreaterThan(5);
+            for (const name of upstream) expect(markup, name).toContain(`<${name} `);
+        });
+
+        it("has the ambient sound toggle in the dock, with the place's other tools", () => {
+            expect(dock).toContain(
+                'import AmbientSoundButton from "../../Focus/components/AmbientSoundButton.svelte";',
+            );
+            expect(position("<AmbientSoundButton />")).toBeGreaterThan(position("<DeskButton />"));
+        });
+
+        it("keeps the reactions, the bubble lock and the ambient sound in the dock, not in the profile menu", () => {
+            // The dock draws upstream's emoji, lock and music buttons itself, and tells the profile menu not to repeat them.
+            expect(dock).toContain("<ProfileMenu showContextualMenuItems={false} />");
+            expect(markup).toMatch(
+                /<div class="dock-controls">[\s\S]*<EmojiMenuItem \/>[\s\S]*<LockDiscussionMenuItem \/>/,
+            );
+            expect(dock).not.toContain("<ContextualMenuItems");
+        });
+
+        it("hides the wrapper's fill and padding only on the dock's own buttons, so a popup keeps its surface", () => {
+            const styles = dock.slice(dock.indexOf("<style>"));
+
+            expect(styles).toMatch(
+                /\.dock-controls > :global\(div:has\(> button\)\),\s*\.dock-devices > :global\(div:has\(> button\)\) \{\s*padding: 0;\s*background: transparent;/,
+            );
+            // A descendant selector would also strip the apps and reactions popups, whose rows are buttons in a div.
+            expect(styles).not.toMatch(/\.dock-controls :global\(div:has\(> button\)\)/);
+        });
+
+        it("raises the focus chip above the dock row, beside the call indicator, so it moves nothing else", () => {
+            const order = ["<CallIndicator ", "<FocusChip ", 'class="dock"'].map(position);
+
+            expect(order).toEqual([...order].sort((first, second) => first - second));
+        });
+
+        it("opens the reason a button gives for doing nothing above it, because the dock sits on the bottom edge", () => {
+            expect(dock).toMatch(
+                /\.dock-controls :global\(\[data-testid\$="-blocked-reason"\]\) \{\s*top: auto;\s*bottom: calc\(100% \+ 4px\);/,
+            );
+        });
+
+        it("keeps the reason inside the screen: it is clamped to the viewport, and on a phone centered on the dock", () => {
+            expect(dock).toMatch(
+                /\.dock-controls :global\(\[data-testid\$="-blocked-reason"\]\) \{[^}]*max-width: min\(16rem, calc\(100vw - 24px\)\);/,
+            );
+            const phone = dock.slice(dock.indexOf("@media (max-width: 767px)"));
+            expect(phone).toMatch(/:global\(div:has\(> \[data-testid\$="-blocked-reason"\]\)\) \{\s*position: static;/);
+            expect(phone).toMatch(/\[data-testid\$="-blocked-reason"\]\) \{\s*inset-inline: 0;\s*margin-inline: auto;/);
+        });
+
+        it("opens the reason of the last buttons toward the middle on a wide screen, so it cannot run off the right edge", () => {
+            const wide = dock.slice(dock.indexOf("@media (min-width: 768px)"));
+
+            expect(wide).toMatch(
+                /\.dock-controls > :global\(div:nth-last-child\(-n \+ \d+\)\) :global\(\[data-testid\$="-blocked-reason"\]\) \{\s*inset-inline: auto 0;/,
+            );
+        });
+
+        it("lifts the map's action messages above the dock stack while the dock is on the page, using the height the dock publishes", () => {
+            expect(dock).toMatch(
+                /:global\(body:has\(\[data-testid="konclui-dock"\]\) \.popups\) \{\s*margin-bottom: calc\(var\(--konclui-dock-stack-height, \d+px\) \+ 8px\);/,
+            );
+            expect(dock).toContain('root.style.setProperty("--konclui-dock-stack-height"');
+            expect(dock).toContain('root.style.removeProperty("--konclui-dock-stack-height")');
+            expect(dock).toContain("bind:this={stackElement}");
         });
 
         it("shows a device turned off without the red fill, with the dock's hover", () => {

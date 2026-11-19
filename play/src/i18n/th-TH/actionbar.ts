@@ -240,6 +240,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         screenSharingOff: "แผนที่นี้ปิดการแชร์หน้าจอในจุดนี้ ขอให้เจ้าของแผนที่เปิดกลับมา",
         chatConnecting: "แชทยังกำลังเชื่อมต่อ ลองอีกครั้งในอีกไม่กี่วินาที",
         alreadyAtDesk: "คุณอยู่ที่โต๊ะของคุณแล้ว",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 export default actionbar;

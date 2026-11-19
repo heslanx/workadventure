@@ -34,6 +34,7 @@ const konclui: DeepPartial<Translation["konclui"]> = {
     rosterUnavailable: "A lista de pessoas não está disponível.",
     dockLabel: "Controles do escritório",
     mediaSettings: "Configurações de câmera e microfone",
+    ambientSound: "Som ambiente",
     nearby: "{count} por perto",
     pill: {
         online: "{count} online",
@@ -51,6 +52,20 @@ const konclui: DeepPartial<Translation["konclui"]> = {
         conversationIn: "{place} · conversa com {count} {{pessoa|pessoas}}",
         stepAway: "afaste-se para sair",
         leaveRoom: "saia da sala para encerrar",
+    },
+    focus: {
+        title: "Modo foco",
+        offerHint: "Escurece as bordas do mapa. Seu status, câmera e microfone continuam como estão.",
+        active: "Em foco",
+        activeHint: "Seu status, câmera e microfone continuam como estão.",
+        ended: "Foco encerrado",
+        endedHint: "As bordas do mapa voltaram ao normal.",
+        start: "Iniciar foco",
+        end: "Encerrar foco",
+        resume: "Retomar foco",
+        justStarted: "começou agora",
+        minutes: "{minutes} min",
+        hoursMinutes: "{hours} h {minutes} min",
     },
     preferences: {
         dialog: "Configurações",

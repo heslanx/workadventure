@@ -16,6 +16,13 @@
     import PlayerMusicIcon from "../../Icons/PlayerMusicIcon.svelte";
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { IconLoader } from "@wa-icons";
+
+    // The buttons are dimmed while the user's settings turn the ambient sounds off: say so, and where to undo it.
+    let blockedReason = $derived(
+        $audioManagerVisibilityStore === "disabledBySettings"
+            ? $LL.actionbar.blocked.ambientOffInSettings()
+            : undefined,
+    );
 </script>
 
 <ActionBarButton
@@ -35,6 +42,7 @@
           : $audioManagerVisibilityStore === "disabledBySettings"
             ? "disabled"
             : undefined}
+    {blockedReason}
     dataTestId="music-pause-button"
 >
     {#if $audioManagerPlayerState === "loading"}
@@ -68,6 +76,7 @@
           : $audioManagerVisibilityStore === "disabledBySettings"
             ? "disabled"
             : undefined}
+    {blockedReason}
     dataTestId="music-stop-button"
 >
     <PlayerStopIcon height="h-5" width="w-5" strokeWidth="2" />
@@ -104,6 +113,7 @@
           : $audioManagerVisibilityStore === "disabledBySettings"
             ? "disabled"
             : undefined}
+    {blockedReason}
     dataTestId="music-button"
 >
     <PlayerMusicIcon height="h-5" width="w-5" strokeWidth="2" />

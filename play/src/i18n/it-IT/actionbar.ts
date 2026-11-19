@@ -246,6 +246,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             "Questa mappa ha disattivato qui la condivisione dello schermo. Chiedi al proprietario della mappa di riattivarla.",
         chatConnecting: "La chat si sta ancora connettendo. Riprova tra qualche secondo.",
         alreadyAtDesk: "Sei già alla tua scrivania.",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 

@@ -1,8 +1,21 @@
 // @vitest-environment jsdom
+import * as Phaser from "phaser";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { GameScene } from "../../../Phaser/Game/GameScene";
 import { FEATURES_KEY, type FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import { applyEffectsPreset, setEffect } from "../../Preferences/stores/effectSwitchesStore";
 import { createBrowserEffectsPort } from "./browserEffectsPort";
+import type { EffectsEnvironment } from "./SceneEffects";
+
+// The scene effects need a WebGL renderer and the map's pictures. The port is only asked what it hands them.
+const made = vi.hoisted(() => [] as { environment: EffectsEnvironment }[]);
+vi.mock("./SceneEffects", () => ({
+    SceneEffects: class {
+        constructor(options: { environment: EffectsEnvironment }) {
+            made.push(options);
+        }
+    },
+}));
 
 // The port reads the effect switches from the Preferences store, which owns them. These tests change them the way the
 // settings and another tab do, and look at what the scene effects are given.
@@ -47,6 +60,41 @@ describe("browserEffectsPort", () => {
 
             expect(localStorage.getItem(FEATURES_KEY)).toBeNull();
             expect(createBrowserEffectsPort().features().water).toBe(false);
+        });
+    });
+
+    describe("focused", () => {
+        /** The environment the port gives the effects it creates for a scene drawn with WebGL. */
+        function environmentOf(port: ReturnType<typeof createBrowserEffectsPort>): EffectsEnvironment {
+            vi.stubGlobal("matchMedia", () => ({ matches: false }));
+            const scene = { renderer: Object.create(Phaser.Renderer.WebGL.WebGLRenderer.prototype) } as GameScene;
+            port.create(scene, { manifest: {}, images: {} } as never, {
+                generation: 1,
+                features: port.features(),
+                time: 0,
+                reveal: false,
+            });
+            const environment = made.at(-1)?.environment;
+            if (environment === undefined) throw new Error("the port made no effects");
+            return environment;
+        }
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+            made.length = 0;
+        });
+
+        it("asks the caller whether the user is in focus each time the effects look, so the vignette follows it", () => {
+            let focused = false;
+            const environment = environmentOf(createBrowserEffectsPort({ focused: () => focused }));
+
+            expect(environment.focused()).toBe(false);
+            focused = true;
+            expect(environment.focused()).toBe(true);
+        });
+
+        it("never darkens the edges when nobody says the user is in focus", () => {
+            expect(environmentOf(createBrowserEffectsPort()).focused()).toBe(false);
         });
     });
 

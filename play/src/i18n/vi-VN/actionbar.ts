@@ -243,6 +243,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         screenSharingOff: "Bản đồ này đã tắt chia sẻ màn hình tại đây. Hãy nhờ chủ sở hữu bản đồ bật lại.",
         chatConnecting: "Trò chuyện vẫn đang kết nối. Hãy thử lại sau vài giây.",
         alreadyAtDesk: "Bạn đã ở bàn làm việc của mình.",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 export default actionbar;

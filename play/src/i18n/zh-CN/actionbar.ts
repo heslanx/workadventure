@@ -239,6 +239,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         screenSharingOff: "此地图已关闭此处的屏幕共享。请让地图所有者重新开启。",
         chatConnecting: "聊天仍在连接中。请几秒后再试。",
         alreadyAtDesk: "你已经在自己的办公桌前了。",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 

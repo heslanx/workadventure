@@ -16,4 +16,8 @@ describe("motion", () => {
         expect(progress(900, 0, 500)).toBe(1);
         expect(progress(10, 0, 0)).toBe(1);
     });
+
+    it("finishes a transition of no length at the very moment it starts, not as NaN", () => {
+        expect(progress(7, 7, 0)).toBe(1);
+    });
 });

@@ -236,6 +236,9 @@ const actionbar: BaseTranslation = {
         screenSharingOff: "Este mapa desativou o compartilhamento de tela aqui. Peça ao dono do mapa para reativá-lo.",
         chatConnecting: "O chat ainda está conectando. Tente de novo em alguns segundos.",
         alreadyAtDesk: "Você já está na sua mesa.",
+        lockNotAllowed: "Você não tem permissão para trancar aqui. Pergunte ao dono do mapa qual tag permite.",
+        ambientOffInSettings:
+            "Os sons ambiente estão desativados nas suas configurações. Reative-os por lá para usar este botão.",
     },
     personalDesk: {
         label: "Ir para minha mesa",

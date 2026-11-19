@@ -6,12 +6,27 @@ import type { Player } from "../../../Phaser/Player/Player";
 import { EFFECT_TEXTURES, type EffectTexture, type EffectsManifest } from "../domain/effectsManifest";
 import { parseFeatures, type FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import { SceneEffects, isKoiSchool, type EffectsEnvironment, type EffectsHost } from "./SceneEffects";
+import type * as PostFilter from "./postFilter";
 
 // The effects are built on a hand-made scene (EffectsHost): it records what they add to it and what they give back.
 // jsdom stands in for the page; its canvases have no 2D context, so a made one draws nothing and answers
 // getImageData with one colour per picture.
 
 const PRE_RENDER = Phaser.Scenes.Events.PRE_RENDER;
+
+// What the camera pass is given on each draw, read through the sources the effects hand to `addPostFilter`; the pass
+// itself is the real one.
+const postSources = vi.hoisted(() => [] as { postUniforms(): Record<string, unknown> }[]);
+vi.mock("./postFilter", async (importOriginal) => {
+    const actual = await importOriginal<typeof PostFilter>();
+    return {
+        ...actual,
+        addPostFilter: (...args: Parameters<typeof actual.addPostFilter>) => {
+            postSources.push(args[2]);
+            return actual.addPostFilter(...args);
+        },
+    };
+});
 
 type Colour = readonly [number, number, number, number];
 
@@ -372,6 +387,9 @@ interface Setup {
     readonly hour?: number;
     readonly features?: Partial<FeatureSwitches>;
     readonly glassFaces?: EffectsManifest["glassFaces"];
+    /** Whether the user is in focus when the effects ask. Defaults to never. */
+    readonly focused?: () => boolean;
+    readonly reducedMotion?: boolean;
 }
 
 interface Built {
@@ -380,16 +398,19 @@ interface Built {
     readonly hourReads: () => number;
 }
 
-function construct(scene: TestScene, { hour = 12, features = {}, glassFaces = [] }: Setup = {}): Built {
+function construct(
+    scene: TestScene,
+    { hour = 12, features = {}, glassFaces = [], focused = () => false, reducedMotion = false }: Setup = {},
+): Built {
     let reads = 0;
     const environment: EffectsEnvironment = {
-        reducedMotion: () => false,
+        reducedMotion: () => reducedMotion,
         animationsOff: () => false,
         fixedHour: () => {
             reads += 1;
             return hour;
         },
-        focused: () => false,
+        focused,
     };
     const effects = new SceneEffects({
         scene: scene.host,
@@ -657,6 +678,105 @@ describe("the effects of a scene, while they run", () => {
 
         // a second of wind is 3 px: the drawn offset changes on every tick, so every tick asks for a draw
         expect(scene.dirty - before).toBe(5);
+    });
+});
+
+describe("the vignette that follows the user's focus", () => {
+    /** The vignette's strength as the camera pass is given it: the first of the two numbers of `uVignette`. */
+    function vignette(): number {
+        const uniform = postSources.at(-1)?.postUniforms().uVignette;
+        if (!Array.isArray(uniform) || typeof uniform[0] !== "number") throw new Error("the pass has no vignette");
+        return uniform[0];
+    }
+
+    /** The effects of a scene whose user is in focus once `state.focused` says so; the first draw is at time 0. */
+    function focusable(setup: Setup = {}): { effects: SceneEffects; scene: TestScene; state: { focused: boolean } } {
+        const state = { focused: false };
+        const scene = new TestScene();
+        const { effects } = construct(scene, { ...setup, focused: () => state.focused });
+        scene.emit(PRE_RENDER);
+        return { effects, scene, state };
+    }
+
+    beforeEach(() => {
+        postSources.length = 0;
+    });
+
+    it("stays off while the user is not in focus", () => {
+        const { effects, scene } = focusable();
+
+        for (const time of [1000, 2000, 3000]) {
+            effects.onFrame(time);
+            scene.emit(PRE_RENDER);
+        }
+
+        expect(vignette()).toBe(0);
+    });
+
+    it("fades the edges in to 0.24 over half a second once the refresh sees the focus", () => {
+        const { effects, scene, state } = focusable();
+        state.focused = true;
+
+        effects.onFrame(1000); // the once-a-second refresh reads the focus
+        scene.emit(PRE_RENDER);
+        expect(vignette()).toBe(0);
+
+        effects.onFrame(1250);
+        scene.emit(PRE_RENDER);
+        expect(vignette()).toBeCloseTo(0.12, 5);
+
+        effects.onFrame(1500);
+        scene.emit(PRE_RENDER);
+        expect(vignette()).toBeCloseTo(0.24, 5);
+    });
+
+    it("fades the edges out again when the focus ends", () => {
+        const { effects, scene, state } = focusable();
+        state.focused = true;
+        effects.onFrame(1000);
+        effects.onFrame(1500);
+        state.focused = false;
+
+        effects.onFrame(2000); // the next refresh reads that it ended
+        effects.onFrame(2500);
+        scene.emit(PRE_RENDER);
+
+        expect(vignette()).toBe(0);
+    });
+
+    it("shows the full vignette at once, not NaN, under reduced motion", () => {
+        const { effects, scene, state } = focusable({ reducedMotion: true });
+        state.focused = true;
+
+        effects.onFrame(1000);
+        scene.emit(PRE_RENDER);
+
+        expect(vignette()).toBe(0.24);
+    });
+
+    it("keeps the switch's say: with the vignette switched off, focus darkens nothing", () => {
+        const { effects, scene, state } = focusable({ features: { vignette: false } });
+        state.focused = true;
+
+        for (const time of [1000, 1500, 2000]) {
+            effects.onFrame(time);
+            scene.emit(PRE_RENDER);
+        }
+
+        expect(vignette()).toBe(0);
+    });
+
+    it("answers a switch turned on while the user is in focus, without a new focus", () => {
+        const { effects, scene, state } = focusable({ features: { vignette: false } });
+        state.focused = true;
+        effects.onFrame(1000);
+
+        effects.setFeatures({ ...parseFeatures(null), vignette: true });
+        effects.onFrame(1500);
+        effects.onFrame(2000);
+        scene.emit(PRE_RENDER);
+
+        expect(vignette()).toBe(0.24);
     });
 });
 

@@ -244,6 +244,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         screenSharingOff: "Tuta karta je dźělenje wobrazowki tu znjemóžniła. Proš wobsedźerja karty, jo zaso zmóžnić.",
         chatConnecting: "Chat so hišće zwjazuje. Spytaj za někotre sekundy hišće raz.",
         alreadyAtDesk: "Sy hižo při swojim pisanskim blidźe.",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 

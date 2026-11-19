@@ -14,10 +14,10 @@ WorkAdventure. It reads upstream stores and classes as they are, and upstream ne
 
 ## Domains and layers
 
-Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Rooms`, `Expression`, `Identity`, `Ambience`,
-`Notifications`, `Preferences`, `OfficeMenu`) with up to four layers. Files are named by feature, tests sit beside their
-source, and there are no barrel `index.ts` files. `OfficeMenu` joined the graph on 2026-11-18, under the standing
-instruction in the opening paragraph of `docs/konclui-migration/decisions.md`.
+Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Focus`, `OfficeMenu`, `Rooms`, `Expression`, `Identity`,
+`Ambience`, `Notifications`, `Preferences`) with up to four layers. Files are named by feature, tests sit beside their
+source, and there are no barrel `index.ts` files. `Focus` and `OfficeMenu` joined the graph on 2026-11-18
+(`docs/konclui-migration/decisions.md`, entry DOCK).
 
 | Layer         | May import                                                                                                  | Must not import                                              |
 | ------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |

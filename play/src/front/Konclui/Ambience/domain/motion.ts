@@ -15,8 +15,13 @@ export function motionAllowed({
     return !(reducedMotion || saver || simple || animationsOff);
 }
 
-/** 0..1 eased progress of a transition that started at `start` and lasts `ms`. */
+/**
+ * 0..1 eased progress of a transition that started at `start` and lasts `ms`. A transition of no length is over as it
+ * starts, including at the very moment it started (a plain division would give NaN there, which a shader reads as
+ * garbage).
+ */
 export function progress(now: number, start: number, ms: number): number {
+    if (ms <= 0) return 1;
     const t = Math.max(0, Math.min(1, (now - start) / ms));
     return t * t * (3 - 2 * t);
 }

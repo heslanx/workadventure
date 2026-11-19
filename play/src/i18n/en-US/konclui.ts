@@ -33,6 +33,7 @@ const konclui: BaseTranslation = {
     rosterUnavailable: "The people list is not available.",
     dockLabel: "Office controls",
     mediaSettings: "Camera and microphone settings",
+    ambientSound: "Ambient sound",
     nearby: "{count:number} nearby",
     pill: {
         online: "{count:number} online",
@@ -50,6 +51,20 @@ const konclui: BaseTranslation = {
         conversationIn: "{place:string} · conversation with {count:number} {{person|people}}",
         stepAway: "step away to leave",
         leaveRoom: "leave the room to end it",
+    },
+    focus: {
+        title: "Focus mode",
+        offerHint: "Dims the edges of the map. Your status, camera and microphone stay as they are.",
+        active: "In focus",
+        activeHint: "Your status, camera and microphone stay as they are.",
+        ended: "Focus ended",
+        endedHint: "The edges of the map are back to normal.",
+        start: "Start focus",
+        end: "End focus",
+        resume: "Resume focus",
+        justStarted: "just started",
+        minutes: "{minutes:number} min",
+        hoursMinutes: "{hours:number} h {minutes:string} min",
     },
     preferences: {
         dialog: "Settings",

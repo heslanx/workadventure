@@ -21,7 +21,7 @@ function readSetting(key: string): string | null {
     }
 }
 
-function browserEnvironment(): EffectsEnvironment {
+function browserEnvironment(focused: () => boolean): EffectsEnvironment {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     return {
         reducedMotion: () => reduced.matches,
@@ -30,13 +30,20 @@ function browserEnvironment(): EffectsEnvironment {
             const fixed = Number.parseFloat(readSetting(FIXED_HOUR_KEY) ?? "");
             return Number.isFinite(fixed) ? fixed : undefined;
         },
-        // The desk focus mode is not in the native client yet: the vignette stays off.
-        focused: () => false,
+        focused,
     };
 }
 
+export interface BrowserEffectsOptions {
+    /**
+     * Whether the user is in focus right now, which darkens the map's edges (the vignette). The effects ask once a
+     * second, and only act on it while the vignette switch is on. Defaults to never.
+     */
+    readonly focused?: () => boolean;
+}
+
 /** The effects as the browser shows them: switches from the Preferences store, fx/ fetched beside the map, WebGL. */
-export function createBrowserEffectsPort(): SceneEffectsPort {
+export function createBrowserEffectsPort({ focused = () => false }: BrowserEffectsOptions = {}): SceneEffectsPort {
     return {
         supports: (scene) =>
             readSetting(EFFECTS_OFF_KEY) !== "1" &&
@@ -54,7 +61,7 @@ export function createBrowserEffectsPort(): SceneEffectsPort {
                 renderer,
                 manifest,
                 images,
-                environment: browserEnvironment(),
+                environment: browserEnvironment(focused),
                 ...start,
             });
         },

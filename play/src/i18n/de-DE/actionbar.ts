@@ -246,6 +246,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             "Diese Karte hat die Bildschirmfreigabe hier deaktiviert. Bitte den Kartenbesitzer, sie wieder zu aktivieren.",
         chatConnecting: "Der Chat verbindet sich noch. Versuche es in ein paar Sekunden erneut.",
         alreadyAtDesk: "Du bist bereits an deinem Schreibtisch.",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 

@@ -238,3 +238,17 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 - Working tree note: when this record was written, the uncommitted working tree already showed `selectWoka.continue` as "Continuar" / "Continue" (the 360 px fallback in rule 2) and `camera.enable.join` as "Entrar no escritório" / "Enter the office". Check `git diff play/src/i18n` before treating the catalog as final.
 
 **Reverse.** Each commit reverts alone. Reverting commit 1 restores `login.continue`, `woka.selectWoka`; reverting commit 2 restores the `menu.settings.save` button and the text-based locators.
+
+## DOCK. Knock prompt deferred; Focus and OfficeMenu in the domain graph (2026-11-18)
+
+**Decision.**
+
+1. The knock prompt "Sala trancada · [Espaço] Bater" is deferred. Upstream has no knock action, and building one needs a new message between the pusher and the back. Decision C5 forbids edits under `messages/protos` for now. It returns when a knock message is accepted upstream, or when C5 is revisited.
+2. `Focus` and `OfficeMenu` are Konclui domains. The domain graph in `play/src/front/Konclui/architecture.test.ts` (`domainEdges`) reads: `Shell` -> `OfficeMenu`, `Shell` -> `Focus`, `Focus` -> `Workplace`, `Focus` -> `Preferences`, `OfficeMenu` -> `Preferences`. `play/src/front/Konclui/AGENTS.md` lists both domains, citing this entry.
+
+**Evidence.**
+
+- A locked room today is told by the lock button's state and, when the player may not open it, by the reason the button gives (`actionbar.blocked.lockNotAllowed`). There is no upstream message a client could send to ask the people inside to let it in.
+- The dock keeps its tab order equal to its visual order (WCAG 2.4.3): it draws upstream's place actions one by one instead of through `ContextualMenuItems`, so the lock sits after the desk and the ambient sound, as in the reference.
+
+**Reverse.** Item 1: build the knock message in a slice of its own, with the proto change recorded under C5. Item 2: removing a domain means deleting its `domainEdges` entry and its folder, which `architecture.test.ts` checks.

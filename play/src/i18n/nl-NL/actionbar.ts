@@ -247,6 +247,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
             "Deze kaart heeft schermdelen hier uitgeschakeld. Vraag de eigenaar van de kaart om het weer in te schakelen.",
         chatConnecting: "De chat maakt nog verbinding. Probeer het over een paar seconden opnieuw.",
         alreadyAtDesk: "Je bent al aan je bureau.",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 

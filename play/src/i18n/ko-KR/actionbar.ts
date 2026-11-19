@@ -242,6 +242,9 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         screenSharingOff: "이 맵에서는 이곳의 화면 공유가 꺼져 있습니다. 맵 소유자에게 다시 켜 달라고 요청하세요.",
         chatConnecting: "채팅이 아직 연결 중입니다. 몇 초 후에 다시 시도하세요.",
         alreadyAtDesk: "이미 내 책상에 있습니다.",
+        lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
+        ambientOffInSettings:
+            "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
     },
 };
 export default actionbar;

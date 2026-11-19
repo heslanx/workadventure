@@ -1,4 +1,5 @@
 import { mount } from "svelte";
+import { get } from "svelte/store";
 import {
     registerActionBar,
     registerAppFrame,
@@ -20,6 +21,10 @@ import { cameraSceneAdapter } from "./OfficeMenu/phaser/cameraSceneAdapter";
 import { mapToolsAdapter } from "./OfficeMenu/phaser/mapToolsAdapter";
 import { installCameraScene } from "./OfficeMenu/stores/cameraScene";
 import { installMapTools } from "./OfficeMenu/stores/mapTools";
+import { createFocusSeatExtension } from "./Focus/phaser/focusSeatExtension";
+import { deskActions } from "./Focus/phaser/deskActions";
+import { installDeskCommands } from "./Focus/stores/deskCommands";
+import { focusActiveStore, publishSeat } from "./Focus/stores/focusStore";
 
 let installed = false;
 
@@ -37,13 +42,21 @@ export function installKonclui(): void {
     // One extension reads the player's surroundings for the people pill and the place chip; it hands what it reads to
     // the store, so the Phaser layer writes no Konclui state.
     registerSceneExtension(createPresenceExtension(publishPresence));
-    registerSceneExtension(createSceneEffectsExtension(createBrowserEffectsPort()));
+    // The vignette is the one effect that follows the user's own state: it darkens the map's edges while focus runs.
+    // Ambience cannot import Focus (the domain graph), so the root gives it the question.
+    registerSceneExtension(
+        createSceneEffectsExtension(createBrowserEffectsPort({ focused: () => get(focusActiveStore) })),
+    );
+    // Whether the player sits is what makes focus on offer; the extension reads it, the focus store keeps it.
+    registerSceneExtension(createFocusSeatExtension(publishSeat));
     // The dialog's components reach the game through this registry, not through the Phaser layer.
     installGameCommands(gameActions);
     // The logo's menu switches the map editor and the explorer through the scene's editor manager, by the same road.
     installMapTools(mapToolsAdapter);
     // Its camera and microphone row opens the camera scene, as the profile menu's row does.
     installCameraScene(cameraSceneAdapter);
+    // The dock's desk button walks to the desk through this registry, for the same reason.
+    installDeskCommands(deskActions);
     // The preferences dialog lives beside the app, over everything: the rail opens it with `openPreferences()`.
     const preferences = document.createElement("div");
     document.body.append(preferences);
