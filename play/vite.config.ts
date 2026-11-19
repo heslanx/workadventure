@@ -2,6 +2,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { Plugin } from "vite";
 import { defineConfig, loadEnv } from "vite";
+// Adds the test hooks (configureVitest) to the Plugin type.
+import type {} from "vitest/config";
 import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import posthog from "@posthog/rollup-plugin";
@@ -38,6 +40,18 @@ const matrixStaysLazy: Plugin = {
                 visit(chunk.fileName);
             }
         }
+    },
+};
+
+// What a module that expands import.meta.glob becomes depends on which files exist, which its own source does not
+// say. The on-disk module cache of the tests (experimental.fsModuleCache) would keep serving the old list after a
+// file is added, renamed or deleted: a test that reads every source file would miss the new one, or fail on the old.
+const globsAreNeverCached: Plugin = {
+    name: "workadventure-globs-are-never-cached",
+    configureVitest({ experimental_defineCacheKeyGenerator }) {
+        experimental_defineCacheKeyGenerator(({ sourceCode }) =>
+            sourceCode.includes("import.meta.glob") ? false : undefined,
+        );
     },
 };
 
@@ -114,6 +128,7 @@ export default defineConfig(({ mode }) => {
                 ],
             },
             matrixStaysLazy,
+            globsAreNeverCached,
             tailwindcss(),
             noiseSuppressionAudioWorkletVitePlugin(),
             nodePolyfills({
