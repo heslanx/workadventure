@@ -109,6 +109,8 @@ html [data-theme="default"] {
 
     --k-radius-row: 6px;
     --k-radius-inner: 8px;
+    /* The dock's 36 px control and every control sized like it (`.k-control`): between a row and a menu. */
+    --k-radius-control: 10px;
     --k-radius-menu: 12px;
     --k-radius-surface: 16px;
     --k-radius-pill: 9999px;
@@ -393,6 +395,296 @@ html [data-theme="default"] {
   /* More contrast needs no rule of its own: `.k-chrome` and the dock read `--k-chrome-border`, which is then the
      strong border. A rim on every mapped fill would also draw one inside each joined bar segment and dock control. */
 
+  /* Menus and controls over the map: the office menu's rows (OfficeMenu.svelte) and the dock's controls (Dock.svelte),
+     as classes for upstream markup. The standard and the markup each class expects are in
+     docs/konclui-migration/ui-contracts.md, "Menus and controls over the map". These rules come after Tailwind's own
+     utilities in this layer, so they win over a conflicting utility on the same element. */
+  /* No specificity: a `hidden` utility on the row still hides it, and an `absolute` or `fixed` one still places the
+     control. The control only has to be positioned for its wider touch area below. */
+  :where(.k-menu-row) {
+    display: flex;
+  }
+
+  :where(.k-control) {
+    display: inline-flex;
+    position: relative;
+  }
+
+  .k-menu-row {
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--k-radius-inner);
+    background: transparent;
+    color: var(--k-fg-2);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .k-menu-row:is([aria-checked="true"], [aria-current="true"]) {
+    color: var(--k-accent);
+  }
+
+  /* A row that cannot act stays focusable (`aria-disabled`) and keeps its place in the list. */
+  .k-menu-row[aria-disabled="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Inside the box, so a scrolling parent does not clip the ring. */
+  .k-menu-row:focus-visible {
+    outline: 2px solid var(--k-accent);
+    outline-offset: -2px;
+  }
+
+  .k-menu-lead {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* The Tabler plugin sizes a glyph at 1.2em; the box sets it here instead. A picture keeps its proportions. */
+  :is(.k-menu-lead, .k-control) > :is(svg, img),
+  .k-menu-mark {
+    display: block;
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  :is(.k-menu-lead, .k-control) > img {
+    object-fit: contain;
+  }
+
+  .k-menu-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .k-menu-title {
+    display: block;
+    margin: 0;
+    padding: 6px 12px 2px;
+    color: var(--k-fg-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  /* Between two groups, in a list that has no gap of its own: 6 px, the rule, 6 px, as in the office menu. */
+  .k-divider {
+    flex: none;
+    height: 1px;
+    margin: 6px 0;
+    border: 0;
+    background-color: var(--k-border-subtle);
+  }
+
+  .k-control {
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--k-radius-control);
+    background: transparent;
+    color: var(--k-fg);
+    cursor: pointer;
+  }
+
+  /* The dock's selected look: the mint fill with dark ink. */
+  .k-control[aria-pressed="true"] {
+    background: var(--k-accent);
+    color: var(--k-on-accent);
+  }
+
+  .k-control[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .k-control:focus-visible {
+    outline: 2px solid var(--k-accent);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    :is(.k-menu-row, .k-control):hover {
+      background: var(--k-hover);
+      color: var(--k-fg);
+    }
+
+    .k-menu-row:is([aria-checked="true"], [aria-current="true"]):hover {
+      color: var(--k-accent);
+    }
+
+    .k-control[aria-pressed="true"]:hover {
+      background: var(--k-accent-active);
+      color: var(--k-on-accent);
+    }
+
+    .k-menu-row[aria-disabled="true"]:hover {
+      background: transparent;
+      color: var(--k-fg-2);
+    }
+
+    .k-control[aria-disabled="true"]:hover {
+      background: transparent;
+      color: var(--k-fg);
+    }
+  }
+
+  /* A phone keeps the 36 px box and widens what a finger can hit to 42x44, as the dock does. In a column
+     (`.k-control-column`) the wide side turns, so the areas of two controls 6 px apart never overlap. */
+  @media (max-width: 767px) {
+    .k-control::after {
+      content: "";
+      position: absolute;
+      inset: -4px -3px;
+    }
+
+    .k-control-column .k-control::after {
+      inset: -3px -4px;
+    }
+  }
+
+  /* Forced colours replace the fill that marks a pressed control: the outline keeps the state readable. */
+  @media (forced-colors: active) {
+    .k-control[aria-pressed="true"] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+
+  /* A scroller inside a menu or popover, never the chrome surface itself: the mask would fade its rim and shadow. */
+  .k-scroll-y {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--k-border-strong) transparent;
+  }
+
+  /* A row of chips: no scrollbar, the fade is the cue. */
+  .k-scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  /* The edge fade follows the scroll position (`k-scroll-fade` below): 24 px at an end only while content is hidden
+     past it. A scroller with nothing to scroll has an inactive timeline, so nothing fades; a browser without scroll
+     timelines shows no fade at all. */
+  @supports (animation-timeline: scroll()) {
+    .k-scroll-y,
+    .k-scroll-x {
+      animation-name: k-scroll-fade;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+
+    .k-scroll-y {
+      scroll-padding-block: 24px;
+      animation-timeline: scroll(self block);
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--k-fade-start),
+        #000 calc(100% - var(--k-fade-end)),
+        transparent
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--k-fade-start),
+        #000 calc(100% - var(--k-fade-end)),
+        transparent
+      );
+    }
+
+    .k-scroll-x {
+      scroll-padding-inline: 24px;
+      animation-timeline: scroll(self inline);
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--k-fade-start),
+        #000 calc(100% - var(--k-fade-end)),
+        transparent
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--k-fade-start),
+        #000 calc(100% - var(--k-fade-end)),
+        transparent
+      );
+    }
+
+    /* The inline timeline starts at the right edge here. */
+    .k-scroll-x:dir(rtl) {
+      -webkit-mask-image: linear-gradient(
+        to left,
+        transparent,
+        #000 var(--k-fade-start),
+        #000 calc(100% - var(--k-fade-end)),
+        transparent
+      );
+      mask-image: linear-gradient(
+        to left,
+        transparent,
+        #000 var(--k-fade-start),
+        #000 calc(100% - var(--k-fade-end)),
+        transparent
+      );
+    }
+
+    /* The fade never moves by itself: it is the scroll position. The reduced-motion resets (style.css, Dock.svelte)
+       shorten every animation with `!important`, which would cut the fade off the scroll range; an important rule in a
+       layer outranks their unlayered ones. */
+    @media (prefers-reduced-motion: reduce) {
+      .k-scroll-y,
+      .k-scroll-x {
+        animation-duration: auto !important;
+      }
+    }
+  }
+
+  /* More contrast: the separator takes the full border, and no text fades below its contrast at a scroll edge (the
+     scrollbar stays the cue). */
+  @media (prefers-contrast: more) {
+    .k-divider {
+      background-color: var(--k-border);
+    }
+
+    .k-scroll-y,
+    .k-scroll-x {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+
   /* A fill nested in another panel fill (reply rows in the composer) takes the hover step, so it stays visible. */
   :where([data-konclui-panel])
     :is(.bg-contrast\/50, .bg-contrast\/80, .bg-contrast\/90)
@@ -419,4 +711,59 @@ html [data-theme="default"] {
       background-color: var(--k-hover);
     }
   }
+}
+
+/* The edge fade of `.k-scroll-y` and `.k-scroll-x`. Registered lengths, so the keyframes interpolate them; at 0px,
+   their initial value, nothing fades. The ramps over the first and last 10% of the range let a fade grow in. */
+@property --k-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --k-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes k-scroll-fade {
+  0% {
+    --k-fade-start: 0px;
+    --k-fade-end: 24px;
+  }
+  10%,
+  90% {
+    --k-fade-start: 24px;
+    --k-fade-end: 24px;
+  }
+  100% {
+    --k-fade-start: 24px;
+    --k-fade-end: 0px;
+  }
+}
+
+/* Unlayered on purpose: chat.css styles `::-webkit-scrollbar` for the whole page outside any layer, which beats every
+   layered rule. WebKit reads only these pseudo-elements; Chromium and Firefox take `scrollbar-color` instead. */
+.k-scroll-y::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 4px;
+}
+
+.k-scroll-y::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.k-scroll-y::-webkit-scrollbar-thumb {
+  min-height: 20px;
+  border-radius: var(--k-radius-pill);
+  background-color: var(--k-border-strong);
+}
+
+.k-scroll-y::-webkit-scrollbar-thumb:active {
+  background-color: var(--k-fg-muted);
+}
+
+.k-scroll-x::-webkit-scrollbar {
+  display: none;
 }

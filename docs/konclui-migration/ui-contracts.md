@@ -142,3 +142,20 @@ The effects include water, time-of-day lighting, glass, locked-room appearance, 
 The legacy design avoids an independent timer that redraws every idle frame. Animated effects follow scene invalidation and visible animation cadence; static data recomputes on relevant map/state changes. The native implementation must preserve those bounds and measure its result. A copied shader file or exported FX manifest is not runtime proof.
 
 Acceptance covers map entry/reentry, missing/malformed manifest, compile failure, preference changes, reduced motion/economy, editor mutations, local/remote people and pets in reflections, locked-room names with effects disabled, and day/night captures. Scene objects and listeners must return to their expected count after repeated transitions. GPU draw counters and idle redraw counts follow the existing `hq-office/perf.py` scenarios, with raw receipts and independent visual review before any performance or parity claim.
+
+## Menus and controls over the map
+
+Every menu, popover, and control that floats over the map follows the bottom dock and the office menu. The utilities in `libs/tailwind/style/konclui.css` are the single source of these values. Upstream and Konclui markup applies them as plain classes, as with `.k-chrome`. `Konclui/OfficeMenu/components/OfficeMenu.svelte` still carries the same values in its scoped styles; it is to move to the utilities.
+
+| Aspect | Standard | Utility |
+|---|---|---|
+| Edge | The surface is `.k-chrome` with radius `var(--k-radius-surface)` (16 px) and 6 px padding, the dock's padding. Nothing touches the rim. | `.k-chrome rounded-lg p-1.5` |
+| Row | Minimum height 44 px, 12 px inline padding, 12 px between the icon and the label, 2 px between rows, radius `var(--k-radius-inner)`. Text is 14 px/600 in `--k-fg-2`; hover fills `--k-hover` and turns the text `--k-fg`. A checked or current row is `--k-accent`. The focus ring is 2 px `--k-accent`, inside the row. A row that cannot act keeps `aria-disabled`, the focus, and 60% opacity. | `.k-menu-row`, `.k-menu-label` (one line, ellipsis), `.k-menu-mark` (18 px trailing mark); rows sit in a `flex flex-col gap-0.5` group |
+| Lead icon | Every row has an 18x18 lead slot, empty when its icon cannot be known, so the labels align. The icon is a Tabler outline glyph from `Components/Icons.ts` at Tabler's own stroke, sized by the slot, never by `font-size`, never a `-filled` variant. A picture keeps its proportions in the slot. | `.k-menu-lead` |
+| Group | The title is 12 px/600 in `--k-fg-muted`, sentence case. Groups are separated by 6 px, a 1 px `--k-border-subtle` rule, and 6 px. | `.k-menu-title`, `.k-divider` |
+| Scroll | An inner scroller, never the chrome surface: a 4 px `--k-border-strong` thumb on a transparent track, and contained overscroll. A 24 px fade marks an end only while content is hidden past it. It needs scroll-driven animations, so a browser without them shows no fade. Nothing fades when nothing scrolls, and more contrast drops the fade. A chip row scrolls sideways with no scrollbar. | `.k-scroll-y`, `.k-scroll-x` |
+| Control box | 36x36 with an 18 px glyph, radius `var(--k-radius-control)`, and 6 px between controls. Hover fills `--k-hover`. The selected control (`aria-pressed="true"`) is the dock's mint fill with `--k-on-accent` ink. Under forced colours a 2 px `Highlight` outline carries that state. Below 768 px wide, the hit area grows to 42x44 in a row and to 44x42 in a column, so two controls 6 px apart never share a hit pixel. | `.k-control`, in a `gap-1.5` row or a `gap-1.5` column marked `.k-control-column` |
+
+`.scrollable-content` in `play/src/front/style/style.css` takes the same scrollbar values for its two media popover users.
+
+`--k-radius-control` (10 px) exists under UI-02: the dock's controls and the rail repeated a 10 px literal. No radius token expressed it, because it lies between `--k-radius-inner` (8 px) and `--k-radius-menu` (12 px), and every control sized like the dock needs the same value.

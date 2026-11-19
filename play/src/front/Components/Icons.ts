@@ -102,7 +102,7 @@ export { default as IconFileMusic } from "~icons/tabler/file-music";
 export { default as IconWorldWWW } from "~icons/tabler/world-www";
 export { default as IconTooltip } from "~icons/tabler/tooltip";
 export { default as IconSpeakerPhone } from "~icons/tabler/speakerphone";
-export { default as IconHeadphones } from "~icons/tabler/headphones-filled";
+export { default as IconHeadphones } from "~icons/tabler/headphones";
 export { default as IconFile } from "~icons/tabler/file";
 export { default as IconMap } from "~icons/tabler/map";
 export { default as IconPlus } from "~icons/tabler/plus";
