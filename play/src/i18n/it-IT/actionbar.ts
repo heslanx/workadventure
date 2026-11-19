@@ -250,6 +250,10 @@ const actionbar: DeepPartial<Translation["actionbar"]> = {
         lockNotAllowed: "You are not allowed to lock here. Ask the map owner which tag allows it.",
         ambientOffInSettings:
             "Ambient sounds are turned off in your settings. Turn them back on there to use this button.",
+        recordingNeedLogin: "Recording is only for signed-in users. Sign in to record.",
+        recordingBusy: "A recording is starting or stopping. Wait a few seconds, then try again.",
+        recordingByOther: "Someone else is recording here. Only that person can stop it.",
+        recordingOffHere: "Recording is turned off here. Ask the map owner to turn it on.",
     },
 };
 

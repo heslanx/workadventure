@@ -26,6 +26,25 @@
     let closeFloatingUi: (() => void) | undefined = undefined;
     let triggerElement: HTMLElement | undefined = $state(undefined);
 
+    // The button is dimmed when it cannot act: say why, and what to do next. The first matching cause wins, in the
+    // order computeRecordingButtonState checks them.
+    let blockedReason = $derived.by(() => {
+        if ($recordingMenuState.buttonState !== "disabled") {
+            return undefined;
+        }
+        if (!localUserStore.isLogged()) {
+            return $LL.actionbar.blocked.recordingNeedLogin();
+        }
+        if ($recordingMenuState.hasPendingRequest) {
+            return $LL.actionbar.blocked.recordingBusy();
+        }
+        if ($recordingMenuState.hasOtherRecording) {
+            return $LL.actionbar.blocked.recordingByOther();
+        }
+        // The map's own words, when it gives them.
+        return recording?.disabledReason || $LL.actionbar.blocked.recordingOffHere();
+    });
+
     function closeSpacePicker(): void {
         closeFloatingUi?.();
         closeFloatingUi = undefined;
@@ -128,6 +147,7 @@
               ? $LL.recording.actionbar.title.inProgress()
               : $LL.recording.actionbar.title.start()}
     state={$recordingMenuState.buttonState}
+    {blockedReason}
     dataTestId="recordingButton-{$recordingMenuState.actionMode}"
     media="./static/Videos/Record.mp4"
     tooltipDelay={0}

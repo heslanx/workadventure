@@ -240,6 +240,10 @@ const actionbar: BaseTranslation = {
         lockNotAllowed: "Você não tem permissão para trancar aqui. Pergunte ao dono do mapa qual tag permite.",
         ambientOffInSettings:
             "Os sons ambiente estão desativados nas suas configurações. Reative-os por lá para usar este botão.",
+        recordingNeedLogin: "Só quem entrou com uma conta pode gravar. Entre na sua conta para gravar.",
+        recordingBusy: "Uma gravação está começando ou parando. Espere alguns segundos e tente de novo.",
+        recordingByOther: "Outra pessoa está gravando aqui. Só ela pode parar a gravação.",
+        recordingOffHere: "A gravação está desativada aqui. Peça ao dono do mapa para ativá-la.",
     },
     personalDesk: {
         label: "Ir para minha mesa",
