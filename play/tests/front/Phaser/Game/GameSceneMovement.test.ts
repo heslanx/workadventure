@@ -350,13 +350,13 @@ describe("GameScene remote players, once per frame (update)", () => {
 
         const player = remotePlayers.get(7);
         // 2_000 to 2_200: interpolation. 2_300: extrapolated 100 px past the received position. 2_301: outdated, drawn
-        // once more where extrapolation left it, as stopped. 2_400: no longer updated.
+        // once more at the end of the extrapolation window, as stopped. 2_400: no longer updated.
         expect(player?.positions.map(({ x, y, moving }) => ({ x, y, moving }))).toEqual([
             { x: 100, y: 200, moving: true },
             { x: 200, y: 200, moving: true },
             { x: 300, y: 200, moving: true },
             { x: 400, y: 200, moving: true },
-            { x: 401, y: 200, moving: false },
+            { x: 400, y: 200, moving: false },
         ]);
     });
 

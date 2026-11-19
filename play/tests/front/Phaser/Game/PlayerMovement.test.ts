@@ -64,6 +64,29 @@ describe("Interpolation / Extrapolation", () => {
         });
     });
 
+    it("should not carry the avatar past the extrapolation window on a long frame", () => {
+        const playerMovement = new PlayerMovement(
+            { x: 100, y: 200 },
+            START_TICK,
+            {
+                x: 200,
+                y: 100,
+                oldX: 100,
+                oldY: 200,
+                moving: true,
+                direction: PositionMessage_Direction.UP,
+            },
+            END_TICK,
+        );
+
+        const atWindowEnd = playerMovement.getPosition(END_TICK + MAX_EXTRAPOLATION_TIME);
+        const afterLongFrame = playerMovement.getPosition(END_TICK + 800);
+
+        expect(afterLongFrame.x).toBe(atWindowEnd.x);
+        expect(afterLongFrame.y).toBe(atWindowEnd.y);
+        expect(afterLongFrame.moving).toBe(false);
+    });
+
     it("should not extrapolate if we stop", () => {
         const playerMovement = new PlayerMovement(
             {

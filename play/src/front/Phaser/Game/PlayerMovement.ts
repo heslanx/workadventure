@@ -25,12 +25,11 @@ export class PlayerMovement {
             return this.endPosition;
         }
 
-        const x =
-            (this.endPosition.x - this.startPosition.x) * ((tick - this.startTick) / (this.endTick - this.startTick)) +
-            this.startPosition.x;
-        const y =
-            (this.endPosition.y - this.startPosition.y) * ((tick - this.startTick) / (this.endTick - this.startTick)) +
-            this.startPosition.y;
+        // A long frame must not carry the avatar past the extrapolation window: draw it where the window ends.
+        const drawTick = Math.min(tick, this.endTick + MAX_EXTRAPOLATION_TIME);
+        const progress = (drawTick - this.startTick) / (this.endTick - this.startTick);
+        const x = (this.endPosition.x - this.startPosition.x) * progress + this.startPosition.x;
+        const y = (this.endPosition.y - this.startPosition.y) * progress + this.startPosition.y;
         return {
             x,
             y,

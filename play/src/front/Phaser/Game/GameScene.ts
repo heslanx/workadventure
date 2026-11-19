@@ -231,7 +231,6 @@ import { SharedVariablesManager } from "./SharedVariablesManager";
 import { AreaPropertyVariablesManager } from "./AreaPropertyVariablesManager";
 import { EmbeddedWebsiteManager } from "./EmbeddedWebsiteManager";
 import { DynamicAreaManager } from "./DynamicAreaManager";
-import { PlayerMovement } from "./PlayerMovement";
 import { PlayersPositionInterpolator } from "./PlayersPositionInterpolator";
 import { DirtyScene } from "./DirtyScene";
 import { computeStartPosition } from "./StartPositionCalculator";
@@ -4786,16 +4785,14 @@ ${escapedMessage}
         }
 
         // A walking player shares its position at most once per POSITION_DELAY, so the move is not drawn at once:
-        // the PlayersPositionInterpolator draws it from where the player is now over the next POSITION_DELAY.
-        const playerMovement = new PlayerMovement(
+        // the PlayersPositionInterpolator draws it from where the player is now over the interval it observes between
+        // this player's samples, which is POSITION_DELAY at the rate of an unthinned stream.
+        this.playersPositionInterpolator.receiveSample(
+            player.userId,
             { x: player.x, y: player.y },
             this.currentTick,
-            {
-                ...message.position,
-            },
-            this.currentTick + POSITION_DELAY,
+            message.position,
         );
-        this.playersPositionInterpolator.updatePlayerPosition(player.userId, playerMovement);
     }
 
     private shareGroupPosition(groupPositionMessage: GroupCreatedUpdatedMessageInterface) {
