@@ -1,11 +1,13 @@
 <script lang="ts">
     import { writable } from "svelte/store";
     import { onMount } from "svelte";
-    import type { OpenWebsitePropertyData } from "@workadventure/map-editor";
+    import type {
+        AreaDataPropertiesKeys,
+        EntityDataPropertiesKeys,
+        OpenWebsitePropertyData,
+    } from "@workadventure/map-editor";
     import { activateOnEnterOrSpace } from "../../Utils/activateOnEnterOrSpace";
     import { LL } from "../../../i18n/i18n-svelte";
-    import AreaToolImg from "../images/icon-tool-area.png";
-    import EntityToolImg from "../images/icon-tool-entity.svg";
     import {
         mapEditorModeStore,
         mapExplorationAreasStore,
@@ -23,7 +25,34 @@
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import { warningMessageStore } from "../../Stores/ErrorStore";
     import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
-    import { IconChevronUp, IconEye, IconWalk } from "@wa-icons";
+    import { IconChevronDown, IconEye, IconLamp, IconTexture, IconWalk } from "@wa-icons";
+
+    // The property filters, in the order their chips are shown.
+    const propertyFilters: ReadonlyArray<AreaDataPropertiesKeys | EntityDataPropertiesKeys> = [
+        "personalAreaPropertyData",
+        "restrictedRightsPropertyData",
+        "jitsiRoomProperty",
+        "playAudio",
+        "openWebsite",
+        "speakerMegaphone",
+        "listenerMegaphone",
+        "exit",
+        "start",
+        "focusable",
+        "matrixRoomPropertyData",
+        "openFile",
+        "livekitRoomProperty",
+    ];
+
+    // A chip is upstream's property button, which takes no class and exposes no pressed state: the action gives the
+    // button the dock control's class and the filter's state, which that class draws with the dock's selected look.
+    function filterChip(node: HTMLElement, pressed: boolean) {
+        const button = node.querySelector("button");
+        button?.classList.add("k-control");
+        const show = (value: boolean) => button?.setAttribute("aria-pressed", String(value));
+        show(pressed);
+        return { update: show };
+    }
 
     let filter = $state("");
     let selectFilters = writable<Array<string>>(new Array<string>());
@@ -271,158 +300,68 @@
                 placeholder={$LL.mapEditor.entityEditor.itemPicker.searchPlaceholder()}
             />
         </div>
-        <div class="flex flex-row overflow-y-hidden overflow-x-scroll">
-            <AddPropertyButtonWrapper
-                property="personalAreaPropertyData"
-                isActive={$selectFilters.includes("personalAreaPropertyData")}
-                onclick={() => addFilter("personalAreaPropertyData")}
-            />
-            <AddPropertyButtonWrapper
-                property="restrictedRightsPropertyData"
-                isActive={$selectFilters.includes("restrictedRightsPropertyData")}
-                onclick={() => addFilter("restrictedRightsPropertyData")}
-            />
-            <AddPropertyButtonWrapper
-                property="jitsiRoomProperty"
-                isActive={$selectFilters.includes("jitsiRoomProperty")}
-                onclick={() => {
-                    addFilter("jitsiRoomProperty");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="playAudio"
-                isActive={$selectFilters.includes("playAudio")}
-                onclick={() => {
-                    addFilter("playAudio");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="openWebsite"
-                isActive={$selectFilters.includes("openWebsite")}
-                onclick={() => {
-                    addFilter("openWebsite");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="speakerMegaphone"
-                isActive={$selectFilters.includes("speakerMegaphone")}
-                onclick={() => {
-                    addFilter("speakerMegaphone");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="listenerMegaphone"
-                isActive={$selectFilters.includes("listenerMegaphone")}
-                onclick={() => {
-                    addFilter("listenerMegaphone");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="exit"
-                isActive={$selectFilters.includes("exit")}
-                onclick={() => {
-                    addFilter("exit");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="start"
-                isActive={$selectFilters.includes("start")}
-                onclick={() => {
-                    addFilter("start");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="focusable"
-                isActive={$selectFilters.includes("focusable")}
-                onclick={() => {
-                    addFilter("focusable");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="matrixRoomPropertyData"
-                isActive={$selectFilters.includes("matrixRoomPropertyData")}
-                onclick={() => {
-                    addFilter("matrixRoomPropertyData");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="openFile"
-                isActive={$selectFilters.includes("openFile")}
-                onclick={() => {
-                    addFilter("openFile");
-                }}
-            />
-            <AddPropertyButtonWrapper
-                property="livekitRoomProperty"
-                isActive={$selectFilters.includes("livekitRoomProperty")}
-                onclick={() => {
-                    addFilter("livekitRoomProperty");
-                }}
-            />
+        <div class="filter-chips flex flex-row flex-wrap gap-1.5">
+            {#each propertyFilters as property (property)}
+                <span class="contents" use:filterChip={$selectFilters.includes(property)}>
+                    <AddPropertyButtonWrapper {property} onclick={() => addFilter(property)} />
+                </span>
+            {/each}
 
             {#each applicationManager.applications as app, index (`my-own-app-${index}`)}
-                <AddPropertyButtonWrapper
-                    property="openWebsite"
-                    subProperty={app.name}
-                    onclick={() => {
-                        addFilter(app.name);
-                    }}
-                />
+                <span class="contents" use:filterChip={$selectFilters.includes(app.name)}>
+                    <AddPropertyButtonWrapper
+                        property="openWebsite"
+                        subProperty={app.name}
+                        onclick={() => {
+                            addFilter(app.name);
+                        }}
+                    />
+                </span>
             {/each}
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-0.5">
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
-                class="group entities p-2 rounded flex flex-row justify-between items-center cursor-pointer hover:bg-white/10 transition-all"
+                class="group entities k-menu-row"
                 onclick={toggleEntityList}
                 role="button"
                 tabindex="0"
                 onkeydown={(event) => activateOnEnterOrSpace(event, toggleEntityList)}
             >
-                <div class="flex flex-row items-center justify-start gap-2">
-                    <img draggable="false" class="w-10 h-auto pointer-events-none" src={EntityToolImg} alt="" />
-                    {#if $entitiesListFiltered.size > 0}
-                        <span class="pointer-events-none flex flex-row items-center gap-2">
-                            <span
-                                class="flex items-center justify-center p-2 aspect-square rounded-md h-8 font-bold bg-white text-secondary"
-                            >
-                                {$entitiesListFiltered.size}
-                            </span>
-                            <span class="text-white/75 group-hover:text-white"
-                                >{$LL.mapEditor.explorer.entitiesFound($entitiesListFiltered.size > 1)}</span
-                            >
-                        </span>
-                    {:else}
-                        <p class="m-0">
-                            {filter !== "" || $selectFilters.length > 0
-                                ? $LL.mapEditor.explorer.noEntitiesMatch()
-                                : $LL.mapEditor.explorer.noEntitiesFound()}
-                        </p>
-                    {/if}
-                </div>
+                <span class="k-menu-lead" aria-hidden="true"><IconLamp /></span>
+                {#if $entitiesListFiltered.size > 0}
+                    <span class="count px-1.5">{$entitiesListFiltered.size}</span>
+                    <span class="k-menu-label">{$LL.mapEditor.explorer.entitiesFound($entitiesListFiltered.size)}</span>
+                {:else}
+                    <span class="k-menu-label">
+                        {filter !== "" || $selectFilters.length > 0
+                            ? $LL.mapEditor.explorer.noEntitiesMatch()
+                            : $LL.mapEditor.explorer.noEntitiesFound()}
+                    </span>
+                {/if}
 
                 <button
                     type="button"
                     aria-expanded={entityListActive}
                     aria-label={$LL.mapEditor.explorer.entitiesList()}
-                    class="transition-all group-hover:bg-white/10 min-h-7 min-w-7 p-1 rounded aspect-square flex items-center justify-center text-white"
+                    class="k-control"
                     data-testid="toggleFolderEntity"
                     onclick={(event) => {
                         event.stopPropagation();
                         toggleEntityList();
                     }}
                 >
-                    <IconChevronUp
-                        class={`transform transition ${!entityListActive ? "" : "rotate-180"}`}
+                    <IconChevronDown
+                        class={`transition-transform motion-reduce:transition-none ${entityListActive ? "rotate-180" : ""}`}
                         aria-hidden="true"
                     />
                 </button>
             </div>
 
             {#if entityListActive && $entitiesListFiltered.size > 0}
-                <div class="entity-items p-2 flex flex-col">
+                <div class="entity-items flex flex-col gap-0.5">
                     {#each sortByName($entitiesListFiltered, getEntityDisplayName) as [key, entity] (key)}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -436,52 +375,53 @@
                             role="button"
                             tabindex="0"
                             onkeydown={(event) => activateOnEnterOrSpace(event, () => handlerToSelectEntity(entity))}
-                            class={[
-                                "item p-2 rounded flex flex-row justify-start gap-2 items-center cursor-pointer hover:bg-white/10 transition-all",
-                                {
-                                    "bg-white/10": $mapExplorationObjectSelectedStore === entity,
-                                },
-                            ]}
+                            class="item k-menu-row"
+                            class:is-selected={$mapExplorationObjectSelectedStore === entity}
                             title={getEntityDisplayName(entity)}
                         >
-                            <img
-                                draggable="false"
-                                class="w-6 max-h-10 h-auto mr-2 pointer-events-none object-contain"
-                                src={entity.getPrefab().imagePath}
-                                alt=""
-                            />
-                            <span
-                                class="pointer-events-none w-full text-nowrap text-ellipsis overflow-hidden whitespace-nowrap"
+                            <span class="k-menu-lead" aria-hidden="true"
+                                ><img
+                                    draggable="false"
+                                    class="pointer-events-none"
+                                    src={entity.getPrefab().imagePath}
+                                    alt=""
+                                /></span
+                            >
+                            <span class="k-menu-label"
                                 >{entity.getEntityData().name && entity.getEntityData().name !== ""
                                     ? entity.getEntityData().name
                                     : entity.getPrefab().name}</span
                             >
-                            <button
-                                type="button"
-                                aria-label={$LL.mapEditor.explorer.details.moveToEntity({
-                                    name: getEntityDisplayName(entity),
-                                })}
-                                class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
-                                onclick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    goTo(entity);
-                                }}
-                            >
-                                <IconWalk font-size="16" aria-hidden="true" />
-                            </button>
-                            <button
-                                type="button"
-                                aria-label={$LL.mapEditor.explorer.details.show({ name: getEntityDisplayName(entity) })}
-                                class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
-                                onclick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    handlerToSelectEntity(entity);
-                                }}
-                            >
-                                <IconEye font-size="16" aria-hidden="true" />
-                            </button>
+                            <span class="flex flex-none items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    aria-label={$LL.mapEditor.explorer.details.moveToEntity({
+                                        name: getEntityDisplayName(entity),
+                                    })}
+                                    class="k-control"
+                                    onclick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        goTo(entity);
+                                    }}
+                                >
+                                    <IconWalk aria-hidden="true" />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label={$LL.mapEditor.explorer.details.show({
+                                        name: getEntityDisplayName(entity),
+                                    })}
+                                    class="k-control"
+                                    onclick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handlerToSelectEntity(entity);
+                                    }}
+                                >
+                                    <IconEye aria-hidden="true" />
+                                </button>
+                            </span>
                         </div>
                     {/each}
                 </div>
@@ -490,52 +430,42 @@
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
-                class="group areas p-2 rounded flex flex-row justify-between items-center cursor-pointer hover:bg-white/10 transition-all"
+                class="group areas k-menu-row"
                 onclick={toggleAreaList}
                 role="button"
                 tabindex="0"
                 onkeydown={(event) => activateOnEnterOrSpace(event, toggleAreaList)}
             >
-                <div class="flex flex-row items-center justify-start gap-2">
-                    <img draggable="false" class="w-10 h-auto pointer-events-none" src={AreaToolImg} alt="" />
-                    {#if $areasListFiltered.size > 0}
-                        <span class="pointer-events-none flex flex-row items-center gap-2">
-                            <span
-                                class="flex items-center justify-center p-2 aspect-square rounded-md h-8 font-bold bg-white text-secondary"
-                            >
-                                {$areasListFiltered.size}
-                            </span>
-                            <span class="text-white/75 group-hover:text-white"
-                                >{$LL.mapEditor.explorer.areasFound($areasListFiltered.size > 1)}</span
-                            >
-                        </span>
-                    {:else}
-                        <p class="m-0 text-white/75 group-hover:text-white">
-                            {filter !== "" || $selectFilters.length > 0
-                                ? $LL.mapEditor.explorer.noAreasMatch()
-                                : $LL.mapEditor.explorer.noAreasFound()}
-                        </p>
-                    {/if}
-                </div>
+                <span class="k-menu-lead" aria-hidden="true"><IconTexture /></span>
+                {#if $areasListFiltered.size > 0}
+                    <span class="count px-1.5">{$areasListFiltered.size}</span>
+                    <span class="k-menu-label">{$LL.mapEditor.explorer.areasFound($areasListFiltered.size)}</span>
+                {:else}
+                    <span class="k-menu-label">
+                        {filter !== "" || $selectFilters.length > 0
+                            ? $LL.mapEditor.explorer.noAreasMatch()
+                            : $LL.mapEditor.explorer.noAreasFound()}
+                    </span>
+                {/if}
                 <button
                     type="button"
                     aria-expanded={areaListActive}
                     aria-label={$LL.mapEditor.explorer.areasList()}
-                    class="transition-all group-hover:bg-white/10 min-h-7 min-w-7 p-1 rounded aspect-square flex items-center justify-center text-white"
+                    class="k-control"
                     data-testid="toggleFolderArea"
                     onclick={(event) => {
                         event.stopPropagation();
                         toggleAreaList();
                     }}
                 >
-                    <IconChevronUp
-                        class={`transform transition ${!areaListActive ? "" : "rotate-180"}`}
+                    <IconChevronDown
+                        class={`transition-transform motion-reduce:transition-none ${areaListActive ? "rotate-180" : ""}`}
                         aria-hidden="true"
                     />
                 </button>
             </div>
             {#if areaListActive && $areasListFiltered.size > 0}
-                <div class="area-items p-2 flex flex-col">
+                <div class="area-items flex flex-col gap-0.5">
                     {#if $areasListFiltered.size > 0}
                         {#each sortByName($areasListFiltered, getAreaDisplayName) as [key, area] (key)}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -550,55 +480,48 @@
                                 role="button"
                                 tabindex="0"
                                 onkeydown={(event) => activateOnEnterOrSpace(event, () => handlerToSelectArea(area))}
-                                class={[
-                                    "item p-2 rounded flex flex-row justify-start gap-2 items-center cursor-pointer hover:bg-white/10 transition-all",
-                                    {
-                                        "bg-white/10": $mapExplorationObjectSelectedStore === area,
-                                    },
-                                ]}
+                                class="item k-menu-row"
+                                class:is-selected={$mapExplorationObjectSelectedStore === area}
                                 title={area.getAreaData().name || "No name"}
                             >
-                                <img
-                                    draggable="false"
-                                    class="w-6 h-auto pointer-events-none"
-                                    src={AreaToolImg}
-                                    alt=""
-                                />
+                                <span class="k-menu-lead" aria-hidden="true"><IconTexture /></span>
                                 <span
-                                    class="pointer-events-none w-full text-nowrap text-ellipsis overflow-hidden whitespace-nowrap"
+                                    class="k-menu-label"
                                     class:italic={!area.getAreaData().name || area.getAreaData().name == ""}
                                     class:font-bold={area.getAreaData().name && area.getAreaData().name != ""}
                                 >
                                     {area.getAreaData().name || "No name"}
                                 </span>
-                                <button
-                                    type="button"
-                                    aria-label={$LL.mapEditor.explorer.details.moveToArea({
-                                        name: area.getAreaData().name || "No name",
-                                    })}
-                                    class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
-                                    onclick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        goTo(area);
-                                    }}
-                                >
-                                    <IconWalk font-size="16" aria-hidden="true" />
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label={$LL.mapEditor.explorer.details.show({
-                                        name: area.getAreaData().name || "No name",
-                                    })}
-                                    class="transition-all hover:bg-white/10 p-2 rounded aspect-square flex items-center justify-center m-0"
-                                    onclick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handlerToSelectArea(area);
-                                    }}
-                                >
-                                    <IconEye font-size="16" aria-hidden="true" />
-                                </button>
+                                <span class="flex flex-none items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        aria-label={$LL.mapEditor.explorer.details.moveToArea({
+                                            name: area.getAreaData().name || "No name",
+                                        })}
+                                        class="k-control"
+                                        onclick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            goTo(area);
+                                        }}
+                                    >
+                                        <IconWalk aria-hidden="true" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label={$LL.mapEditor.explorer.details.show({
+                                            name: area.getAreaData().name || "No name",
+                                        })}
+                                        class="k-control"
+                                        onclick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            handlerToSelectArea(area);
+                                        }}
+                                    >
+                                        <IconEye aria-hidden="true" />
+                                    </button>
+                                </span>
                             </div>
                         {/each}
                     {/if}
@@ -607,3 +530,41 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* The chips are upstream's property buttons (AddPropertyButton.svelte), sized here to the dock's control: the
+       filter action puts `.k-control` and the pressed state on each button, and these rules fit the glyph box inside. */
+    .filter-chips :global(.add-property-button > div) {
+        width: 18px;
+        height: 18px;
+    }
+    .filter-chips :global(.add-property-button > div > :is(svg, img)) {
+        width: 18px;
+        height: 18px;
+        max-width: none;
+        max-height: none;
+        object-fit: contain;
+    }
+    /* The glyph carries its own white ink; a pressed chip draws it in the dock's on-accent ink. */
+    .filter-chips :global(.add-property-button[aria-pressed="true"] svg) {
+        color: inherit;
+    }
+    .count {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 20px;
+        border-radius: var(--k-radius-row);
+        background: var(--k-elevated);
+        color: var(--k-fg);
+        font-size: 12px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+    .item.is-selected {
+        background: var(--k-hover);
+        color: var(--k-fg);
+    }
+</style>

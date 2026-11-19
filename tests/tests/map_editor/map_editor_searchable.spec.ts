@@ -62,7 +62,7 @@ test.describe("Map editor @oidc @nomobile @nowebkit", () => {
 
         // Expected 1 entity and 1 zone in the search result
         // Test if the entity is searchable
-        await expect(page.locator(".map-editor .sidebar .entities")).toContainText("1 objects found");
+        await expect(page.locator(".map-editor .sidebar .entities")).toContainText("1 object found");
         await page.getByTestId("toggleFolderEntity").click();
         await expect(page.locator(".map-editor .sidebar .entity-items .item")).toHaveCount(1);
 
@@ -74,7 +74,7 @@ test.describe("Map editor @oidc @nomobile @nowebkit", () => {
         );
 
         // Test if the area is searchable
-        await expect(page.locator(".map-editor .sidebar .areas")).toContainText("1 areas found");
+        await expect(page.locator(".map-editor .sidebar .areas")).toContainText("1 area found");
         await page.getByTestId("toggleFolderArea").click();
         await expect(page.locator(".map-editor .sidebar .area-items .item")).toHaveCount(1);
     });

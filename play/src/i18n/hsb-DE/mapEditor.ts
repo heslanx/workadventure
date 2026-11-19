@@ -523,9 +523,9 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         description:
             "Dowolić wobłuk wužiwać. Móžeće so po wobłuku hibać a z objektami interagować. 2 modusa steji k dispoziciji: 'Wužiwanje' a 'Pytanje'. Modus 'Pytanje' wam předstaja, zo byšće entity a wobłuki w wobłuku pytałi abo filtrowali. Modus 'Wužiwanje' wam dowoli, lichotnje so po wobłuku hibać.",
         noEntitiesFound: "Žana entita w wobłuku namakana 🙅‍♂️",
-        entitiesFound: "objekt{{s}} namakany",
+        entitiesFound: "objekt namakany",
         noAreasFound: "Žadyn wobłuk w wobłuku namakany 🙅‍♀️",
-        areasFound: "wobłuk{{s}} namakany",
+        areasFound: "wobłuk namakany",
         noDescriptionFound: "Žane předstajenje namakane 🫥",
         details: {
             close: "zawrěć",

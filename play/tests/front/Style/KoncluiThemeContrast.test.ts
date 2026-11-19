@@ -541,9 +541,9 @@ describe("Konclui theme contrast", () => {
         });
 
         it.each<[file: string, surface: string, count: number]>([
-            ["Components/ActionsMenu/ExplorerMenu.svelte", "k-chrome rounded-lg pointer-events-auto p-2", 1],
+            ["Components/ActionsMenu/ExplorerMenu.svelte", "k-chrome rounded-lg pointer-events-auto p-1.5", 1],
             ["Components/Cowebsites/ImageCowebsiteComponent.svelte", "k-chrome rounded-lg pointer-events-auto p-2", 1],
-            ["Components/MapEditor/MapEditorSideBar.svelte", "p-2 k-chrome rounded-lg flex flex-col gap-2", 2],
+            ["Components/MapEditor/MapEditorSideBar.svelte", "p-1.5 k-chrome rounded-lg flex flex-col gap-1.5", 2],
             ["Components/Menu/Menu.svelte", "p-2 rounded-lg k-chrome flex", 2],
             ["Components/ActionBar/MenuIcons/ProfileMenuContent.svelte", "k-chrome rounded-lg p-1.5 w-66", 1],
             ["Components/ActionBar/MediaSettingsList/MediaSettingsList.svelte", "k-chrome rounded-lg w-64", 1],
@@ -626,10 +626,13 @@ describe("Konclui theme contrast", () => {
             const explorer = read("Components/ActionsMenu/ExplorerMenu.svelte");
             const image = read("Components/Cowebsites/ImageCowebsiteComponent.svelte");
 
-            // `rounded-lg` is the 16 px surface radius, `rounded` the 8 px inner one, `p-2` the 8 px padding.
+            // `rounded-lg` is the 16 px surface radius, `rounded` the 8 px inner one, `p-2` the 8 px padding. The zoom
+            // controls and the map editor tools take the dock's 36 px box and 10 px radius from `.k-control`.
             expect(theme).toMatch(/--radius-lg: 16px;/);
             expect(theme).toMatch(/--radius: 8px;/);
-            expect(explorer.match(/min-h-7 min-w-7 p-2 rounded hover:bg-white\/30/g)).toHaveLength(4);
+            expect(explorer.match(/class="group k-control"/g)).toHaveLength(4);
+            const rail = read("Components/MapEditor/MapEditorSideBar.svelte");
+            expect(rail.match(/class="(?:peer )?k-control"/g)).toHaveLength(3);
             expect(image.match(/min-h-7 min-w-7 p-2 rounded hover:bg-white\/30/g)).toHaveLength(3);
         });
     });

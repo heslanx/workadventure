@@ -77,4 +77,29 @@ describe("ExplorerMenu", () => {
 
         expect(controls().style.right).toBe("calc(306px + 0.5rem)");
     });
+
+    // jsdom applies no stylesheet: the dock's 36 px box, 10 px radius and 18 px glyph come from `.k-control`
+    // (konclui.css), which sizes the glyph only when it is the button's direct child.
+    it("draws every zoom control as a dock control with its glyph as the direct child", () => {
+        component = mount(ExplorerMenu, { target, props: {} });
+        flushSync();
+
+        const buttons = [...controls().querySelectorAll("button")];
+        expect(buttons).toHaveLength(3);
+        for (const button of buttons) {
+            expect(button.classList.contains("k-control"), button.getAttribute("aria-label") ?? "").toBe(true);
+            expect(button.querySelector(":scope > svg")).not.toBeNull();
+            expect(button.className).not.toMatch(/(?:^|\s)(?:p-2|min-h-7|min-w-7|rounded)(?:\s|$)/);
+        }
+    });
+
+    it("sets the controls 6 px apart inside a 6 px edge, as the dock does", () => {
+        component = mount(ExplorerMenu, { target, props: {} });
+        flushSync();
+
+        expect(controls().classList.contains("p-1.5")).toBe(true);
+        const columns = [...controls().querySelectorAll(":scope > div, :scope > div > div")];
+        expect(columns).toHaveLength(2);
+        for (const column of columns) expect(column.classList.contains("gap-1.5")).toBe(true);
+    });
 });

@@ -173,16 +173,16 @@
 <svelte:window onblur={stopZoom} bind:innerWidth={windowWidth} />
 
 <div
-    class="fixed bottom-2 mobile:bottom-24 k-chrome rounded-lg pointer-events-auto p-2"
+    class="fixed bottom-2 mobile:bottom-24 k-chrome rounded-lg pointer-events-auto p-1.5"
     style:right={`calc(${mapEditorRightOffset + rightGutter}px + 0.5rem)`}
     data-testid="actions-explorer"
 >
-    <div class="flex flex-col justify-center gap-2">
-        <div class="flex flex-col justify-center gap-1">
+    <div class="k-control-column flex flex-col justify-center gap-1.5">
+        <div class="flex flex-col justify-center gap-1.5">
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.zoomIn()}
-                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
+                class="group k-control"
                 onpointerdown={(event) => startZoom("in", event)}
                 onpointerup={stopZoom}
                 onpointercancel={stopZoom}
@@ -201,7 +201,7 @@
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.zoomOut()}
-                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
+                class="group k-control"
                 onpointerdown={(event) => startZoom("out", event)}
                 onpointerup={stopZoom}
                 onpointercancel={stopZoom}
@@ -222,7 +222,7 @@
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.title()}
-                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
+                class="group k-control"
                 onclick={openMapExplorer}
             >
                 <IconMapSearch aria-hidden="true" />
@@ -237,7 +237,7 @@
                 type="button"
                 aria-label={$LL.mapEditor.explorer.showMyLocation()}
                 data-testid="center-camera-on-player"
-                class="group flex justify-center items-center min-h-7 min-w-7 p-2 rounded hover:bg-white/30 cursor-pointer"
+                class="group k-control"
                 onclick={centerToUser}
             >
                 <IconFocusCentered aria-hidden="true" />

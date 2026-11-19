@@ -258,6 +258,18 @@
     .konclui :global(#game > canvas) {
         border-radius: var(--k-radius-surface);
     }
+    /* Upstream's map zoom column (ExplorerMenu.svelte) is fixed to the window and ignores the dock: here it stands on
+       the dock's line, 14 px above the map's bottom edge. The column is 48 px wide and 8 px in; beside an open panel
+       (rail 60 + panel 296 + gap 6) the centred dock leaves it room on its side only from 1024 px up, so below that it
+       stands 8 px above the whole dock stack, whose height Dock.svelte publishes. */
+    .konclui :global([data-testid="actions-explorer"]) {
+        bottom: calc(var(--frame-gap) + 14px);
+    }
+    @media (max-width: 1023px) {
+        .konclui.panel-open :global([data-testid="actions-explorer"]) {
+            bottom: calc(var(--frame-gap) + var(--konclui-dock-stack-height, 76px) + 8px);
+        }
+    }
     .rail {
         display: flex;
         flex-direction: column;
@@ -396,6 +408,11 @@
             margin-right: 0;
             z-index: 35;
             box-shadow: 0 8px 32px #0008;
+        }
+        /* The map reaches the window's edge and the dock wraps under the column: it stands above the dock stack. */
+        .konclui :global([data-testid="actions-explorer"]),
+        .konclui.panel-open :global([data-testid="actions-explorer"]) {
+            bottom: calc(var(--konclui-dock-stack-height, 76px) + 8px);
         }
     }
 </style>

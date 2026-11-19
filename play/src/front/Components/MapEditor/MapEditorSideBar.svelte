@@ -101,9 +101,9 @@
 >
     <!--put a section to avoid lower div to be affected by some css-->
     <div class="flex flex-col items-center gap-4 pt-24 side-bar">
-        <div class="close-window p-2 k-chrome rounded-lg flex flex-col gap-2">
+        <div class="close-window k-control-column p-1.5 k-chrome rounded-lg flex flex-col gap-1.5">
             <button
-                class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
+                class="k-control"
                 data-testid="closeMapEditorButton"
                 aria-label={$LL.mapEditor.sideBar.closeMapEditor()}
                 onclick={(event) => {
@@ -111,10 +111,10 @@
                     switchTool(EditorToolName.CloseMapEditor);
                 }}
             >
-                <IconX font-size="20" aria-hidden="true" />
+                <IconX aria-hidden="true" />
             </button>
             <button
-                class="p-3 hover:bg-white/10 rounded aspect-square w-12 m-0"
+                class="k-control"
                 data-testid="hideMapEditorButton"
                 aria-label={$LL.a11y.mapEditorToggleSidebar()}
                 aria-expanded={$mapEditorVisibilityStore}
@@ -124,8 +124,8 @@
                 }}
             >
                 <ArrowBarRight
-                    height="h-5"
-                    width="w-5"
+                    height="h-4.5"
+                    width="w-4.5"
                     strokeColor="stroke-white"
                     fillColor="fill-transparent"
                     classList={`aspect-ratio transition-all motion-reduce:transition-none ${direction === "rtl" ? "rotate-180" : ""} ${
@@ -134,14 +134,12 @@
                 />
             </button>
         </div>
-        <div class="p-2 k-chrome rounded-lg flex flex-col gap-2">
+        <div class="k-control-column p-1.5 k-chrome rounded-lg flex flex-col gap-1.5">
             {#each availableTools as tool (tool.toolName)}
                 {@const ToolIcon = tool.iconComponent}
-                <div class="tool-button relative">
+                <div class="tool-button relative flex">
                     <button
-                        class="peer p-3 aspect-square w-12 rounded {$mapEditorSelectedToolStore === tool.toolName
-                            ? 'bg-secondary'
-                            : 'hover:bg-white/10'}"
+                        class="peer k-control"
                         id={tool.toolName}
                         aria-label={tool.tooltiptext}
                         aria-pressed={$mapEditorSelectedToolStore === tool.toolName}
@@ -152,10 +150,10 @@
                         }}
                         type="button"
                     >
-                        <ToolIcon font-size="22" aria-hidden="true" />
+                        <ToolIcon aria-hidden="true" />
                     </button>
                     <div
-                        class=" bg-contrast/90 backdrop-blur-xl text-white tooltip absolute text-nowrap p-2 invisible opacity-0 transition-all motion-reduce:transition-none peer-hover:visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100 rounded top-1/2 -translate-y-1/2 right-[130%]"
+                        class=" bg-contrast/90 backdrop-blur-xl text-white tooltip absolute text-nowrap px-2 py-1 text-sm invisible opacity-0 transition-all motion-reduce:transition-none peer-hover:visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100 rounded top-1/2 -translate-y-1/2 right-11"
                     >
                         {tool.tooltiptext}
                     </div>

@@ -510,9 +510,9 @@ const mapEditor: DeepPartial<Translation["mapEditor"]> = {
         description:
             '允许探索房间。您可以在房间内移动并与对象交互。有两种模式可用："探索"和"搜索"。"搜索模式"将建议您搜索或过滤房间中的实体和区域。"探索模式"将让您在房间内自由移动。',
         noEntitiesFound: "在房间中未找到实体 🙅‍♂️",
-        entitiesFound: "找到对象{{s}}",
+        entitiesFound: "找到对象",
         noAreasFound: "在房间中未找到区域 🙅‍♀️",
-        areasFound: "找到区域{{s}}",
+        areasFound: "找到区域",
         noDescriptionFound: "未找到描述 🫥",
         details: {
             close: "关闭",
