@@ -33,3 +33,7 @@ play/src/i18n/ko-KR/*.backup
 # Local migration evidence and build outputs.
 /.audit/
 /.local/
+
+# Generated code-graph caches (graphify, archify)
+graphify-out/
+.archify/
