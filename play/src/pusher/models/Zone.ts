@@ -144,6 +144,10 @@ export class UserDescriptor {
         return userJoinedMessage;
     }
 
+    public getPosition(): PositionMessage {
+        return this.position;
+    }
+
     public toUserMovedMessage(): UserMovedMessage {
         return {
             userId: this.userId,

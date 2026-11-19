@@ -109,6 +109,19 @@ describe("PostHog session replay", () => {
     });
 });
 
+describe("Per-viewer budget", () => {
+    it("is off unless PUSHER_VIEWER_BUDGET_ENABLED is set, with 150 full-rate peers and a ceiling of 400", () => {
+        const { shape } = EnvironmentVariables;
+
+        expect(shape.PUSHER_VIEWER_BUDGET_ENABLED.parse(undefined)).toBe(false);
+        expect(shape.PUSHER_VIEWER_BUDGET_ENABLED.parse("true")).toBe(true);
+        expect(shape.PUSHER_VIEWER_FULL_RATE_PEERS.parse(undefined)).toBe(150);
+        expect(shape.PUSHER_VIEWER_MAX_PEERS.parse(undefined)).toBe(400);
+        expect(shape.PUSHER_VIEWER_MAX_PEERS.parse("250")).toBe(250);
+        expect(() => shape.PUSHER_VIEWER_MAX_PEERS.parse("-1")).toThrow();
+    });
+});
+
 describe("LOCAL_ADMIN_ROOM_METADATA", () => {
     beforeEach(() => {
         vi.resetModules();

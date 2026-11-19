@@ -34,6 +34,9 @@ Environment variables for the Play service (frontend and pusher).
 | `SOCKET_IDLE_TIMER` | No | maximum time (in second) without activity before a socket is closed. Should be greater than 60 seconds in order to cope for Chrome intensive throttling (https://developer.chrome.com/blog/timer-throttling-in-chrome-88/#intensive-throttling) |
 | `CLIENT_DISCONNECTION_RETENTION_MS` | No | Maximum time, in milliseconds, the client keeps sent websocket messages for replay after a short disconnection. Defaults to 30000. |
 | `PUSHER_ADMIN_WS_MAX_BACKPRESSURE_BYTES` | No | Maximum uWebSockets backpressure bytes accepted on admin websocket connections. Defaults to 1048576. |
+| `PUSHER_VIEWER_BUDGET_ENABLED` | No | Bounds what each client hears about the users around it: the PUSHER_VIEWER_FULL_RATE_PEERS nearest at the rate they move, the others in view once a second, and no more than PUSHER_VIEWER_MAX_PEERS at all. Stops, joins and leaves are never dropped. Defaults to false. |
+| `PUSHER_VIEWER_FULL_RATE_PEERS` | No | With PUSHER_VIEWER_BUDGET_ENABLED, how many of the nearest users a client receives every move of. Defaults to 150. |
+| `PUSHER_VIEWER_MAX_PEERS` | No | With PUSHER_VIEWER_BUDGET_ENABLED, the most users a client is told about at once, whatever its zoom. Defaults to 400. |
 | `ALLOWED_CORS_ORIGIN` | No | Allowed CORS origin for API requests. Use '*' to allow any domain |
 | `PUSHER_URL` | No | Public URL of the pusher service |
 | `FRONT_URL` | No | Public URL of the frontend application |

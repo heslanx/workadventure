@@ -142,6 +142,21 @@ export const EnvironmentVariables = z.object({
         .describe(
             "Maximum uWebSockets backpressure bytes accepted on admin websocket connections. Defaults to 1048576.",
         ),
+    PUSHER_VIEWER_BUDGET_ENABLED: BoolAsString.optional()
+        .transform((val) => toBool(val, false))
+        .describe(
+            "Bounds what each client hears about the users around it: the PUSHER_VIEWER_FULL_RATE_PEERS nearest at the rate they move, the others in view once a second, and no more than PUSHER_VIEWER_MAX_PEERS at all. Stops, joins and leaves are never dropped. Defaults to false.",
+        ),
+    PUSHER_VIEWER_FULL_RATE_PEERS: PositiveIntAsString.optional()
+        .transform((val) => toNumber(val, 150))
+        .describe(
+            "With PUSHER_VIEWER_BUDGET_ENABLED, how many of the nearest users a client receives every move of. Defaults to 150.",
+        ),
+    PUSHER_VIEWER_MAX_PEERS: PositiveIntAsString.optional()
+        .transform((val) => toNumber(val, 400))
+        .describe(
+            "With PUSHER_VIEWER_BUDGET_ENABLED, the most users a client is told about at once, whatever its zoom. Defaults to 400.",
+        ),
     // Use "*" to allow any domain
     ALLOWED_CORS_ORIGIN: z
         .string()
