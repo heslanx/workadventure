@@ -25,6 +25,7 @@ const video: BaseTranslation = {
     },
     remoteAway: {
         inAnotherWindow: "{name} is in another window or tab",
+        idle: "{name} has been inactive for a while",
         cameraAndMicPaused: "Camera and mic paused until they're back",
         cameraPaused: "Camera paused until they're back",
     },

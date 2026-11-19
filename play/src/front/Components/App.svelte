@@ -30,6 +30,7 @@
     import { HtmlUtils } from "../WebRtc/HtmlUtils";
     import { iframeListener } from "../Api/IframeListener";
     import { desktopApi } from "../Api/Desktop";
+    import { startIdleRules } from "../Rules/IdleRules";
     import { canvasSize, coWebsiteManager, coWebsites, fullScreenCowebsite } from "../Stores/CoWebsiteStore";
     import { urlManager } from "../Url/UrlManager";
     import { FileListener } from "../Phaser/FileUpload/FileListener";
@@ -256,6 +257,7 @@
 
         //updateScreenSize();
         iframeListener.init();
+        stopIdleRules = startIdleRules();
         desktopApi.init();
     });
 
@@ -281,6 +283,7 @@
     let canvasSizeUnsubscriber: Unsubscriber;
     let stopBootPump: (() => void) | undefined;
     let stopPerformanceMonitoring: (() => void) | undefined;
+    let stopIdleRules: (() => void) | undefined;
     onMount(() => {
         // The store emits on every layout pass, also when the game area kept its size (inside a frame, a window
         // resize first emits with the bounds measured before it). Resizing the canvas is costly: do it once per size.
@@ -308,6 +311,7 @@
         canvasSizeUnsubscriber?.();
         stopBootPump?.();
         stopPerformanceMonitoring?.();
+        stopIdleRules?.();
         if (canvas && handleCanvasClick) {
             canvas.removeEventListener("click", handleCanvasClick);
         }
