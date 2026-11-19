@@ -344,23 +344,7 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
             this._connections.getConnectionId(receiverId, senderUserId);
 
         if (existingConnectionId === undefined) {
-            // The tracking was lost (partial cleanup) but the front still expects a connection between
-            // these two users: silently ignoring would leave them without media until one reloads.
-            const sender = this.users.get(senderUserId) ?? this.usersToNotify.get(senderUserId);
-            const receiver = this.users.get(receiverId) ?? this.usersToNotify.get(receiverId);
-            if (!sender || !receiver) {
-                console.warn(
-                    "No existing connection found for meetingConnectionRestartMessage ",
-                    senderUserId,
-                    receiverId,
-                );
-                Sentry.captureMessage(
-                    `No existing connection found for meetingConnectionRestartMessage from ${senderUserId} to ${receiverId}`,
-                );
-                return;
-            }
-            // A client message must not open a pair the peer cap refused: tryEstablish checks it.
-            this.tryEstablish(receiver, sender);
+            this.recoverLostConnection(senderUserId, receiverId);
             return;
         }
 
@@ -375,6 +359,28 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
         const connectionId = uuidv4();
         this.sendWebRTCStart(receiverId, senderUserId, true, connectionId);
         this.sendWebRTCStart(senderUserId, receiverId, false, connectionId);
+    }
+
+    /**
+     * The tracking was lost (partial cleanup) but the front still expects a connection between these two users:
+     * silently ignoring would leave them without media until one reloads.
+     */
+    private recoverLostConnection(senderUserId: string, receiverId: string): void {
+        const sender = this.lookupUser(senderUserId);
+        const receiver = this.lookupUser(receiverId);
+        if (!sender || !receiver) {
+            console.warn("No existing connection found for meetingConnectionRestartMessage ", senderUserId, receiverId);
+            Sentry.captureMessage(
+                `No existing connection found for meetingConnectionRestartMessage from ${senderUserId} to ${receiverId}`,
+            );
+            return;
+        }
+        // A client message must not open a pair the peer cap refused: tryEstablish checks it.
+        this.tryEstablish(receiver, sender);
+    }
+
+    private lookupUser(userId: string): SpaceUser | undefined {
+        return this.users.get(userId) ?? this.usersToNotify.get(userId);
     }
 
     cleanup(): void {
