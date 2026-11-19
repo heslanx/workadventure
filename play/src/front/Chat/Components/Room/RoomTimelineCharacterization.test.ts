@@ -164,19 +164,17 @@ function defineGetter(name: string, get: (this: Element) => number, set?: (this:
     Object.defineProperty(Element.prototype, name, { get, set, configurable: true });
 }
 
+/** Timers are fake in every test (see beforeEach): time moves only when a test moves it, never with the machine's load. */
 async function settle(): Promise<void> {
     flushSync();
     await tick();
-    await new Promise<void>((resolve) => {
-        setTimeout(resolve, 0);
-    });
+    await vi.advanceTimersByTimeAsync(0);
     flushSync();
 }
 
+/** Lets `ms` of fake time pass, firing the component's timers that fall inside it, then settles. */
 async function wait(ms: number): Promise<void> {
-    await new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-    });
+    await vi.advanceTimersByTimeAsync(ms);
     await settle();
 }
 
@@ -242,6 +240,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     vi.stubGlobal(
         "ResizeObserver",
         class {
@@ -647,9 +646,9 @@ describe("RoomTimeline characterization", () => {
 
         userScrollsToTop();
         listElement().dispatchEvent(new Event("scroll"));
-        await wait(50);
+        await wait(99);
         expect(room.loadMorePreviousMessages).toHaveBeenCalledTimes(1);
-        await wait(100);
+        await wait(1);
         expect(room.loadMorePreviousMessages).toHaveBeenCalledTimes(2);
 
         listElement().dispatchEvent(new Event("scroll"));
