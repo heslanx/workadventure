@@ -34,6 +34,15 @@ describe("shareUnchanged", () => {
         expect(shared.recording).toBe(previous.recording);
     });
 
+    it("carries the world headcount, a slice it has no sharing rule for", () => {
+        const next: SpaceState = { ...structuredClone(previous), headcount: 42 };
+
+        const shared = shareUnchanged(previous, next);
+
+        expect(shared.headcount).toBe(42);
+        expect(shared.polls).toBe(previous.polls);
+    });
+
     it("keeps the other polls when one poll gets a vote", () => {
         const next = structuredClone(previous);
         next.polls.a.votes.bob = { answerIds: ["a"], updatedAt: 11 };

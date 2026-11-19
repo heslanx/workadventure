@@ -10,6 +10,8 @@ import type { SpaceState } from "@workadventure/shared-utils";
  */
 export function shareUnchanged(previous: SpaceState, next: SpaceState): SpaceState {
     return {
+        // Slices with no sharing rule below (a number such as the headcount) are taken from `next` as they are.
+        ...next,
         raisedHands: keep(previous.raisedHands, next.raisedHands),
         floorHolders: keep(previous.floorHolders, next.floorHolders),
         recording: keep(previous.recording, next.recording),
