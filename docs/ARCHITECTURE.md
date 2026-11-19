@@ -215,7 +215,7 @@ bench that produced them. This audit did not re-run them. The C1-C5 entries summ
 - The premise that a Rust or Go pusher is 5 to 15 times cheaper per delivery is a HYPOTHESIS. No profile splits the 2.7 microseconds between JavaScript object work, uWebSockets (C++) and syscalls.
 - Pusher replicas are not proven either: C1 records that the reference project's 2-replica row did not halve CPU, with same-host contention not excluded (decisions.md C1). Any pusher change reaches production only when fork-built server images replace the official v1.34.5 images (decisions.md C5). The five seats were three models of one family, so their agreement is not independent evidence.
 
-**Language per tier, 2026-11-19: kill criteria.** Status open; the council review date is 2026-11-26.
+**Language per tier, 2026-11-19: kill criteria.** Status open; the council review date is 2026-11-26. The first row was measured on 2026-11-19 (MEASURED, two runs, `~/.claude/orchestrate/konclui-native/evidence/perf/pusher-profile-2026-11-19/README.md`): JavaScript is 61.0% and 61.4% of the pusher's busy main-thread time at 300 walking bots, 66 to 67% with the garbage collector; the native `send` is 19% and the loop outside JavaScript 10%. That is above the 50% line, so the Rust contingency stays alive and its next step is the message trace. The pusher was not saturated in these runs (28 to 31% of a core).
 
 | By | Signal | Threshold | Then |
 |---|---|---|---|
