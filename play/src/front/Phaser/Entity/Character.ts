@@ -61,6 +61,8 @@ export abstract class Character extends Container implements OutlineableInterfac
 
     private bubble: RenderTexture | null | DOMElement = null;
     private usernameDisplay: UsernameDisplay | undefined;
+    // Whether the name is hidden (see setNameHidden()). A name that is built while it is hidden starts hidden.
+    private nameHidden = false;
     private availabilityStatus: AvailabilityStatusType = AvailabilityStatus.ONLINE;
     private raisedHand = false;
     public readonly playerName: string;
@@ -326,6 +328,15 @@ export abstract class Character extends Container implements OutlineableInterfac
         return this.usernameDisplay?.getAvailabilityStatus() ?? this.availabilityStatus;
     }
 
+    /**
+     * Hides the name, or shows it again. A hidden name costs nothing while the character moves: it is placed again
+     * when it is shown. A name that is built after this call starts as the call left it.
+     */
+    protected setNameHidden(hidden: boolean): void {
+        this.nameHidden = hidden;
+        this.usernameDisplay?.setHidden(hidden);
+    }
+
     public addCompanion(texturePromise: CancelablePromise<string>): void {
         this.companion = new Companion(this.scene, this.x, this.y, texturePromise);
     }
@@ -391,6 +402,7 @@ export abstract class Character extends Container implements OutlineableInterfac
         this.usernameDisplay.setAvailabilityStatus(this.availabilityStatus, true);
         this.usernameDisplay.setRaisedHand(this.raisedHand, true);
         this.usernameDisplay.setPlayerDepth(this.depth);
+        this.usernameDisplay.setHidden(this.nameHidden);
 
         this.outlineColorStoreUnsubscribe = this.outlineColorStore.subscribe((color) => {
             this.usernameDisplay?.setPlayerNameOutlineColor(color);

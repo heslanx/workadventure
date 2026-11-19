@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
-import type { Writable } from "svelte/store";
-import { writable } from "svelte/store";
+import type { Readable } from "svelte/store";
+import { readable } from "svelte/store";
 import type { CancelablePromise } from "cancelable-promise";
 import { PositionMessage_Direction } from "@workadventure/messages";
 import type { PictureStore } from "../../Stores/PictureStore";
@@ -31,8 +31,10 @@ export class Companion extends Container {
 
     private direction: PositionMessage_Direction;
     private animationType: PlayerAnimationTypes;
-    private readonly _pictureStore: Writable<string | undefined>;
+    private readonly _pictureStore: Readable<string | undefined>;
     private texturePromise: CancelablePromise<string | void> | undefined;
+    // The picture of the companion, read back once (see takePicture()).
+    private picture: Promise<string | undefined> | undefined;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texturePromise: CancelablePromise<string>) {
         super(scene, x + 14, y + 4);
@@ -46,15 +48,22 @@ export class Companion extends Container {
         this.direction = PositionMessage_Direction.DOWN;
         this.animationType = PlayerAnimationTypes.Idle;
 
-        this._pictureStore = writable(undefined);
+        // Reading the picture back from the GPU takes about 16 ms, and most companions are never looked at: it is read
+        // when the first subscriber asks for it, and kept.
+        this._pictureStore = readable<string | undefined>(undefined, (set) => {
+            this.takePicture()
+                .then((src) => {
+                    if (src !== undefined) {
+                        set(src);
+                    }
+                })
+                .catch((_) => debugRepo("No companion picture for this player"));
+        });
 
         this.texturePromise = texturePromise
             .then((resource) => {
                 this.addResource(resource);
                 this.invisible = false;
-                return this.getSnapshot().then((htmlImageElementSrc) => {
-                    this._pictureStore.set(htmlImageElementSrc);
-                });
             })
             .catch((_) => debugRepo("No companion texture for this player"));
 
@@ -126,6 +135,17 @@ export class Companion extends Container {
 
         this.setDepth(this.y);
         this.playAnimation(this.direction, this.animationType);
+    }
+
+    /**
+     * The picture of the companion once its texture is loaded, read back once whoever asks: `undefined` if the
+     * texture could not be loaded.
+     */
+    private takePicture(): Promise<string | undefined> {
+        this.picture ??= Promise.resolve(this.texturePromise).then(() =>
+            this.sprites.size === 0 ? undefined : this.getSnapshot(),
+        );
+        return this.picture;
     }
 
     public async getSnapshot(): Promise<string> {

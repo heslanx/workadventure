@@ -3,12 +3,15 @@ import * as Phaser from "phaser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UsernameDisplay } from "../../../../src/front/Phaser/Components/UsernameDisplay";
 import type { GameScene } from "../../../../src/front/Phaser/Game/GameScene";
+import { UsernameDomLayer } from "../../../../src/front/Phaser/Game/UsernameDomLayer";
 import { waScaleManager, WaScaleManagerEvent } from "../../../../src/front/Phaser/Services/WaScaleManager";
 
 // The scale the layer shares with every name tag, and the one the tags' own transform follows.
 const DOM_SCALE = "--username-dom-scale";
 const TRANSFORM_SCALE = "--username-transform-scale";
 
+// The width of the probe the layer measures its scale with, in layout pixels.
+const PROBE_SIZE = 100;
 // One wheel notch: the zoom tween runs for about this many frames.
 const NOTCH_FRAMES = 15;
 // Zooming in or out must cost a handful of style writes, however many name tags there are.
@@ -63,30 +66,34 @@ function setup(tagCount: number, startZoom = 1) {
     let zoom = startZoom;
     vi.spyOn(waScaleManager, "zoomModifier", "get").mockImplementation(() => zoom);
 
-    const layerElement = document.createElement("div");
-    // Like the real layer: the on-screen scale is the camera zoom, measured once per invalidation.
-    let measuredScale = zoom;
-    let measurementStale = true;
-    const usernameDomLayer = {
-        addUsername: (element: HTMLDivElement) => layerElement.appendChild(element),
-        invalidateAncestorScale: () => {
-            measurementStale = true;
-        },
-        getAncestorScale: () => {
-            if (measurementStale) {
-                measuredScale = zoom;
-                measurementStale = false;
-            }
-            return measuredScale;
-        },
+    let layerElement!: HTMLElement;
+    const domElement = {
+        pointerEvents: "",
+        setOrigin: () => domElement,
+        setDepth: () => domElement,
+        setVisible: () => {},
+        destroy: () => {},
     };
     const markDirty = vi.fn();
     const scene = {
         events: new Phaser.Events.EventEmitter(),
         game: { events: new Phaser.Events.EventEmitter() },
-        usernameDomLayer,
+        add: {
+            dom: (_x: number, _y: number, element: HTMLElement) => {
+                layerElement = element;
+                return domElement;
+            },
+        },
         markDirty,
     } as unknown as GameScene;
+    // Like the browser: the layer measures the on-screen width of its probe, which is the camera zoom. It is laid out
+    // at the zoom the camera has when the layer asks, as the real one is once per frame.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+        const width = this === layerElement.firstElementChild ? zoom * PROBE_SIZE : 0;
+        return { width } as DOMRect;
+    });
+    const usernameDomLayer = new UsernameDomLayer(scene);
+    Object.assign(scene, { usernameDomLayer });
 
     const render = () => scene.events.emit(Phaser.Scenes.Events.RENDER);
     const createTag = (index: number) =>
@@ -117,6 +124,7 @@ function setup(tagCount: number, startZoom = 1) {
 
     return {
         scene,
+        usernameDomLayer,
         markDirty,
         tags,
         layerElement,
@@ -200,8 +208,9 @@ describe("name tags while the camera zooms", () => {
         const { tags, layerElement, zoomNotch, render } = setup(3);
         tags[1].setPosition(120, 40);
         render();
+        // The first child of the layer is the probe that measures its scale.
         const transformOf = (index: number) =>
-            (layerElement.children[index] as HTMLElement).style.getPropertyValue("transform");
+            (layerElement.children[index + 1] as HTMLElement).style.getPropertyValue("transform");
         const before = transformOf(1);
         expect(before).toContain("translate3d(120px, 40px, 0)");
 
@@ -222,15 +231,16 @@ describe("name tags while the camera zooms", () => {
         expect(tag.style.getPropertyValue(TRANSFORM_SCALE)).toBe("");
     });
 
-    it("keeps following the zoom while a name tag is left, and stops with the last one", () => {
-        const { scene, tags, zoomFrame, zoomNotch, layerVariable } = setup(2);
+    it("keeps following the zoom while the layer exists, and stops when it is destroyed", () => {
+        const { scene, usernameDomLayer, tags, zoomFrame, zoomNotch, layerVariable } = setup(2);
 
         tags[0].destroy();
+        tags[1].destroy();
         zoomNotch(2);
         expect(layerVariable(DOM_SCALE)).toBeCloseTo(2);
 
         zoomFrame(3);
-        tags[1].destroy();
+        usernameDomLayer.destroy();
 
         expect(scene.game.events.listenerCount(WaScaleManagerEvent.ZoomChanged)).toBe(0);
         expect(vi.getTimerCount()).toBe(0);

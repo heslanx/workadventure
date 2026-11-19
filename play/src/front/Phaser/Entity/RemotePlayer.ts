@@ -83,6 +83,17 @@ export class RemotePlayer extends Character implements ActivatableInterface {
         this.avatarBuildQueue.enqueue(this, grant);
     }
 
+    /**
+     * Tells the player that it is out of the camera view and not drawn (`true`), or drawn again (`false`): see
+     * RemotePlayerCulling, which hides the sprites and the companion itself.
+     *
+     * The name is a DOM element that Phaser's visibility does not reach, so the player hides it here. A culled player's
+     * moves then leave nothing to draw, which is what lets the scene skip the frame they would ask for.
+     */
+    public setCulled(culled: boolean): void {
+        this.setNameHidden(culled);
+    }
+
     public updatePosition(position: PositionMessage): void {
         this.stopMoveTo();
         this.playAnimation(position.direction, position.moving);
