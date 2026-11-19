@@ -1,0 +1,6774 @@
+{
+ "version": "2.1.0",
+ "mapUrl": "office.tmj",
+ "entities": {
+  "eaee08cf-bc03-5fca-8958-1ab06fd6255f": {
+   "x": 672,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "df8be95d-d9c3-5203-a0c0-130dd7dbc68d": {
+   "x": 2016,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "dffd418a-077b-506a-bcb6-42bcdfa091b1": {
+   "x": 704,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "e8eb6092-f880-557f-b005-4a3773d1fa2c": {
+   "x": 2048,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "00d222d1-7083-5280-8922-8c549de526fd": {
+   "x": 672,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "02d7b425-7a6e-5880-979c-fbe4aac4b852": {
+   "x": 2016,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "f0124114-0e61-559a-9054-56699a1ae494": {
+   "x": 704,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "8e5401e5-a2b6-5b47-9a64-9fb0993729d4": {
+   "x": 2048,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "6d53d788-f610-515e-8225-036dd5e7919c": {
+   "x": 768,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "3f9e0a97-9de5-5c1a-a515-25e18a359264": {
+   "x": 1920,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "037ab8e7-59d5-5914-876d-562fe8a24af6": {
+   "x": 800,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "bb46318a-9912-5300-a741-4219edb5fa5c": {
+   "x": 1952,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "8d6fc08f-ce90-5427-a799-9e55f72a0fca": {
+   "x": 768,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "78b799d6-41cc-58e9-9f3d-346201c1475a": {
+   "x": 1920,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "91caab7e-f475-5b73-8686-13835d02e81a": {
+   "x": 800,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "1c653dcc-6dd6-5742-a579-d455eee23f22": {
+   "x": 1952,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "668e9903-180c-51aa-b99b-eaa0e8b2ef21": {
+   "x": 864,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "9218a671-5cb2-5048-800f-9ae43b8f2ddc": {
+   "x": 1824,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "17c8ebd8-6b41-592d-a579-b800fb383e03": {
+   "x": 896,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "4870d0b9-a0c9-5ca4-9400-39378486c12b": {
+   "x": 1856,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "83cae912-7bf9-58cd-9cb0-7aac2a41522a": {
+   "x": 864,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "3e1163a5-a24b-567c-a12b-7737e0f977d8": {
+   "x": 1824,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "65f89948-a2d5-5d8f-9599-d3c56d25e4e3": {
+   "x": 896,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "4def43ed-ec23-5031-bf07-1848cfc8d221": {
+   "x": 1856,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "d2a20b81-77a0-5ae5-a9b3-69490e05319d": {
+   "x": 928,
+   "y": 480,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "e0708b6b-8afc-5a06-be59-03511df4d81b": {
+   "x": 1824,
+   "y": 480,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "0ab165a3-a152-56a5-af9c-f90ac8c27b48": {
+   "x": 1024,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "8406a589-bd5d-5ad3-a6bf-13e910251e2f": {
+   "x": 1664,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "d0715f13-b011-5f2a-9d76-3447619a3018": {
+   "x": 1056,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "75918ab7-6ce2-50ad-aa6d-8c5ed6f8278d": {
+   "x": 1696,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "7766df47-592e-5639-b751-e9a8b3ff5416": {
+   "x": 1024,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "0f6360ac-3078-5dd6-9545-b68637779488": {
+   "x": 1664,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "b1d853c1-b85b-52b8-9ae5-271c4b6a1832": {
+   "x": 1056,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "9f685667-7311-57fa-9246-ade76b912307": {
+   "x": 1696,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "12e41538-402e-5112-b72a-2a7772b2954f": {
+   "x": 1120,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "c4a4b35f-5847-5098-ba37-8489845ef263": {
+   "x": 1568,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "22e16229-37ea-52e0-a46e-51ec4bb2df76": {
+   "x": 1152,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "44080919-8d84-5749-869f-819b4c235913": {
+   "x": 1600,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "b0e64cba-de22-5ffd-abdd-894c6781b5f1": {
+   "x": 1120,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "0682571d-f523-564f-a825-245dddd13e63": {
+   "x": 1568,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "050b6ae1-9d88-57ea-8cf8-56b91c61a2c7": {
+   "x": 1152,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "9445bd7f-7ff5-5879-9d37-72630c863935": {
+   "x": 1600,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "b5a77f27-8a9b-5dcc-a34a-671c4199abf3": {
+   "x": 1216,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "bb2613f6-aac5-53c3-8fe6-43bf6bda42b7": {
+   "x": 1472,
+   "y": 288,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "01cda212-37eb-555e-858d-c6540132a70f": {
+   "x": 1248,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "bebb8f3f-0439-55f2-8d9e-894fb917a240": {
+   "x": 1504,
+   "y": 320,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "35cae624-23e2-5b0c-8482-586f85ab211f": {
+   "x": 1216,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "7f950444-8e73-5c0e-aca3-452237a426eb": {
+   "x": 1472,
+   "y": 416,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "c59856bb-33d4-583b-b712-7e884a6891de": {
+   "x": 1248,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "74846e29-4695-52a9-a508-a69e04483279": {
+   "x": 1504,
+   "y": 448,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "5d123f8a-8612-50a8-a15f-218bfea12af7": {
+   "x": 1280,
+   "y": 480,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "0334bba8-0df4-5152-a788-1c94a1bab380": {
+   "x": 1472,
+   "y": 480,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "10728a3e-bf6c-5843-8876-770df2f0fe2e": {
+   "x": 288,
+   "y": 192,
+   "name": "Telão de LED Koncluí",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-led-wall-ink"
+   }
+  },
+  "7feab504-80f4-53ee-b5e2-6a328904a6fa": {
+   "x": 400,
+   "y": 320,
+   "name": "Púlpito moderno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-bc17706a-2e05-4006-ac74-7d1f1fd440b3"
+   }
+  },
+  "cc795789-0f8c-5a1c-9590-27e43b5de784": {
+   "x": 224,
+   "y": 224,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "d03f270f-8276-52d8-8bfd-8bd11cad9ec9": {
+   "x": 580,
+   "y": 480,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "066bcabc-3152-574b-8645-37d5efdf6a15": {
+   "x": 256,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "1f12e42a-2b48-56a2-b403-ad855ed6eec6": {
+   "x": 288,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "d2dda11f-6824-59ad-be11-4d822d3fba1e": {
+   "x": 320,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "ec57e0da-f930-514b-a327-54a523bf3584": {
+   "x": 352,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "f3390e0a-bde1-5f93-9e07-fc496accc1ee": {
+   "x": 448,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "406fc7f7-e988-5eb6-94ac-50f04507f13e": {
+   "x": 480,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "fd55e75d-00fe-5164-b24e-80ebba4c75de": {
+   "x": 512,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "4e6041ad-7ee6-58fc-87b1-414b49872353": {
+   "x": 544,
+   "y": 448,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "196ea77e-73ad-5ea5-b43a-837e7cc85087": {
+   "x": 256,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "fe58c44c-e138-56f1-9c96-ef74c5bf8214": {
+   "x": 288,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "c86ab73b-a2d5-5095-9de2-13782ea0106b": {
+   "x": 320,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "8581149a-75e7-5090-ace6-9b95552dd9a9": {
+   "x": 352,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "a2dacc88-52b1-5242-9f0b-0c1b02573f7d": {
+   "x": 448,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "4914cb20-a82e-51c2-833c-7754e8b4ba71": {
+   "x": 480,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "eb0bc38c-ea3c-53a8-b7a3-b67fef39d158": {
+   "x": 512,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "02177b76-18c9-5854-9526-7f505d3f92b6": {
+   "x": 544,
+   "y": 512,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "3592edca-75c5-5a6b-b5e3-e96a41bd3df4": {
+   "x": 256,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "3102e6af-d276-5f24-8706-8ed424aefb30": {
+   "x": 288,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "3edaac61-b523-5e17-8d09-7f2adce0f9bf": {
+   "x": 320,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "03c74a92-6530-5452-9960-a4ca3c19ba62": {
+   "x": 352,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "31515e43-e71e-5f5e-9545-f6f26cc296a0": {
+   "x": 448,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "99f4ea23-8346-5ebf-ad22-0d0e17635332": {
+   "x": 480,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "9bda6aec-786b-5599-8c55-74c18d8692ab": {
+   "x": 512,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "516159ca-9386-522a-abd7-f62ad66aa1db": {
+   "x": 544,
+   "y": 576,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "672cc44f-917e-5e0f-a6b6-10f0c2c1f3b0": {
+   "x": 256,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "fad670b4-b5ea-507b-90c4-d2e9b8faa611": {
+   "x": 288,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "e6925df6-d725-5912-ab6d-dbac9149c1a3": {
+   "x": 320,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "32811c5e-8692-5d32-b281-4084e4b7b84b": {
+   "x": 352,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "d471c01e-963b-5682-8030-16584c6f3865": {
+   "x": 448,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "4fa764cb-b701-5dbc-814b-ae62ffc029e4": {
+   "x": 480,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "be14c3f8-fcad-5b17-89cc-4efa24901275": {
+   "x": 512,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "bcaaf88b-337b-5caa-a48e-5e940a95f291": {
+   "x": 544,
+   "y": 640,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "47578a83-0a46-5123-a361-222fe743fc47": {
+   "x": 256,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "3a5f53ba-48a5-51e4-976b-3117f27f0b1e": {
+   "x": 288,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "95168696-08e8-53e7-8539-2f8408d8fb09": {
+   "x": 320,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "7edaf111-eaa7-5fb1-a7ed-dcb25d1b921b": {
+   "x": 352,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "1cbaf640-9030-5654-ab65-5e28e507d127": {
+   "x": 448,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "fcfd5cd5-9fb7-5de4-aa91-b8ae51b50b78": {
+   "x": 480,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "4f3ada07-dee4-5f8c-81da-93fe75c51065": {
+   "x": 512,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "aad6b838-56a8-5bf8-afd9-0dc525eab479": {
+   "x": 544,
+   "y": 704,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "fbd935e1-620b-52a9-8d33-b17f26961cb3": {
+   "x": 256,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "b81e4e9e-b305-58a2-98a2-706f9e613bfa": {
+   "x": 288,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "b298fa0e-54bd-50a8-81fc-67ce257713a0": {
+   "x": 320,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "2bdaba21-311c-5e1c-b934-3dcaae937f7b": {
+   "x": 352,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "cd690f45-67b0-5fd7-9c94-2ff050277e16": {
+   "x": 448,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "b659ac08-75d9-5073-9903-241b27b739c5": {
+   "x": 480,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "c68881ed-a0e7-57cc-835c-346d789a8f74": {
+   "x": 512,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "d3db04ef-7a0f-53ab-b377-590cc6c8e02c": {
+   "x": 544,
+   "y": 768,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "cbfdba84-823c-5ad8-b7a2-ec4227f8ea93": {
+   "x": 256,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "97970618-e5cd-5b59-b8ba-6e5e2b58a298": {
+   "x": 288,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "b442237a-b1ca-50a0-9b27-d0f8b33629bd": {
+   "x": 320,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "9c399559-c88a-5a0a-976e-f4eb69abf09a": {
+   "x": 352,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "2b4086cb-898d-5b65-aff3-bd3701c8a668": {
+   "x": 448,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "1eeea9e5-8042-5702-a706-f4d46a54f2e4": {
+   "x": 480,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "ffd29821-7ead-54fd-8aa0-87e9b9efb572": {
+   "x": 512,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "f08bd3fc-fa7c-5491-bfab-bbc04a5edfd1": {
+   "x": 544,
+   "y": 832,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "4cb5c67b-c182-584e-8797-49322eeab03d": {
+   "x": 256,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "3983e1af-a6b5-563a-8825-c96f0dd5173f": {
+   "x": 288,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "eca62967-80c9-5857-9660-2d81133682af": {
+   "x": 320,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "2a13bf5a-aedd-5444-b221-4a31526be1cb": {
+   "x": 352,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "9cd01969-e702-5c60-948e-cbe84b6825b9": {
+   "x": 448,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "0fcddec4-d1e3-5b9a-8a40-fd1870726c13": {
+   "x": 480,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "7cecfd57-6ece-5467-b0e8-e4e28e39a881": {
+   "x": 512,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "982692a1-f347-549f-9e14-b17bd020ac41": {
+   "x": 544,
+   "y": 896,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "73a07b04-027e-5997-98fa-6ecf54145271": {
+   "x": 416,
+   "y": 384,
+   "name": "Câmera no tripé",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-999b5849-deed-48f8-928d-a237c8b2bf6c"
+   }
+  },
+  "2d5563b9-6771-591a-b0bc-43e916d41a4e": {
+   "x": 288,
+   "y": 288,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-fe2e3920-e493-4a75-a279-55f90dc93bc3"
+   }
+  },
+  "d88c5176-ebec-5445-a202-cb64d5406165": {
+   "x": 512,
+   "y": 288,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a86c724c-1baf-4013-92be-4bb27abaf73c"
+   }
+  },
+  "05464919-7fd6-5c44-bb0f-7465e4615bf4": {
+   "x": 288,
+   "y": 352,
+   "name": "Mesa lateral mid-century",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-20dc9cf0-19cc-4f59-ac6c-f0227fb987ce"
+   }
+  },
+  "b50bf96e-69ae-5865-91b0-dcbe9f2ce59c": {
+   "x": 512,
+   "y": 352,
+   "name": "Mesa lateral mid-century",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-20dc9cf0-19cc-4f59-ac6c-f0227fb987ce"
+   }
+  },
+  "fbd58265-d59d-5e00-a7c9-5ea536888001": {
+   "x": 320,
+   "y": 1088,
+   "name": "Mesa de reunião 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-903d4cf4-84b8-44d5-939a-4aaa586d674f"
+   }
+  },
+  "3b06ee98-aade-5bd0-822c-20d43db8a708": {
+   "x": 416,
+   "y": 1088,
+   "name": "Mesa de reunião 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-903d4cf4-84b8-44d5-939a-4aaa586d674f"
+   }
+  },
+  "24b0cb38-66d8-5e8c-92ec-35fcb9b10144": {
+   "x": 352,
+   "y": 1024,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "2b1a9a4b-6de6-513a-bd4b-c863cec85b76": {
+   "x": 352,
+   "y": 1152,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "e743154d-76b6-5021-bf45-13686c49fe8b": {
+   "x": 384,
+   "y": 1024,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "3206bb91-b1c4-5dbc-9309-16a77cf34b13": {
+   "x": 384,
+   "y": 1152,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "6d4b8dd7-f8ed-58f2-bb15-425cce0eae2e": {
+   "x": 416,
+   "y": 1024,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "be82402d-d135-50d2-b816-af0cedaa48d9": {
+   "x": 416,
+   "y": 1152,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "040aff76-bf2d-5b00-8cea-e28dfdbd717c": {
+   "x": 448,
+   "y": 1024,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "0846ca56-9559-5bc6-a2d7-9658c8a21619": {
+   "x": 448,
+   "y": 1152,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "33d00e36-b7f5-569d-b8e1-708a2e7e1008": {
+   "x": 296,
+   "y": 1074,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-fe2e3920-e493-4a75-a279-55f90dc93bc3"
+   }
+  },
+  "3fabb9bf-9aa0-51a1-83ad-6b76401b9322": {
+   "x": 508,
+   "y": 1077,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a86c724c-1baf-4013-92be-4bb27abaf73c"
+   }
+  },
+  "50a4f90d-ca72-5b42-b578-3795edc37722": {
+   "x": 192,
+   "y": 1152,
+   "name": "Arquivo de gavetas",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-201a71f5-3652-4646-a347-098feeb12b27"
+   }
+  },
+  "fdd7fbfa-d4c9-5afc-bd94-6843eac37a7e": {
+   "x": 544,
+   "y": 992,
+   "name": "Cavalete com cartaz",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e7e8fc78-4445-46ac-8520-af922cb5c050"
+   }
+  },
+  "dbdcda77-5d23-5fee-864f-7ddf05d12db7": {
+   "x": 576,
+   "y": 1152,
+   "name": "Luminária de chão com franjas",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5037b0bd-c0c0-4bd0-a381-edd1c595aaf2"
+   }
+  },
+  "ccd04cac-1a66-58ec-879f-85d4114d5876": {
+   "x": 368,
+   "y": 960,
+   "name": "TV de parede",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-55d2799f-0db5-47c6-bc1e-e33e6c246461"
+   }
+  },
+  "0b956fcc-bbd6-532d-b494-dd687f92b45e": {
+   "x": 480,
+   "y": 960,
+   "name": "Quadro branco de parede",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-aa2d686e-ec1b-44e6-9aa5-6d8d75b573d8"
+   },
+   "properties": [
+    {
+     "id": "83be3f9a-891f-538b-bd02-9e4b7f24e653",
+     "type": "openWebsite",
+     "link": "https://excalidraw.com/",
+     "application": "excalidraw",
+     "trigger": "onaction",
+     "triggerMessage": "ESPAÇO para abrir o quadro da reunião 01",
+     "closable": true,
+     "newTab": false,
+     "width": 70,
+     "buttonLabel": "Quadro da Reunião 01"
+    },
+    {
+     "id": "948b5605-02dd-5bc5-b490-6cd2217c2f53",
+     "type": "entityDescriptionProperties",
+     "name": "Quadro da Reunião 01",
+     "description": "Quadro branco compartilhado da sala.",
+     "searchable": true
+    }
+   ]
+  },
+  "afcbb621-6ef3-5c52-a1e1-5afe2a2c39a4": {
+   "x": 224,
+   "y": 1152,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "c8b4b1c2-4856-5146-9aae-a82361c7f5ea": {
+   "x": 320,
+   "y": 1376,
+   "name": "Mesa de reunião 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-903d4cf4-84b8-44d5-939a-4aaa586d674f"
+   }
+  },
+  "e7e95221-d3ca-5f91-b6f4-1a8d52de3a49": {
+   "x": 416,
+   "y": 1376,
+   "name": "Mesa de reunião 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-903d4cf4-84b8-44d5-939a-4aaa586d674f"
+   }
+  },
+  "05155cda-7de5-5822-b7a6-cbb12ade0ebf": {
+   "x": 352,
+   "y": 1312,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "9170448e-c4da-5a82-8c9d-f501a6915346": {
+   "x": 352,
+   "y": 1440,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "e2b6cc41-a049-5304-aad4-42f0a48fb64a": {
+   "x": 384,
+   "y": 1312,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "05649459-1b6c-562b-82d9-050963285553": {
+   "x": 384,
+   "y": 1440,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "003b0104-faac-5fdd-ba54-3859a7a990a9": {
+   "x": 416,
+   "y": 1312,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "b3a25740-428d-51ae-941a-d295f781c451": {
+   "x": 416,
+   "y": 1440,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "1c45edca-7a75-5b6e-b81d-d03f07cc2cbb": {
+   "x": 448,
+   "y": 1312,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803"
+   }
+  },
+  "be98492d-828a-5929-9197-2637e3aaffba": {
+   "x": 448,
+   "y": 1440,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e8bedd99-174a-444c-9c1b-3047387be390"
+   }
+  },
+  "8eeead77-f580-5b33-91e2-964b918dca7c": {
+   "x": 293,
+   "y": 1366,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-fe2e3920-e493-4a75-a279-55f90dc93bc3"
+   }
+  },
+  "d2d00890-32bc-5eec-b1c7-ee7d650b80e4": {
+   "x": 508,
+   "y": 1364,
+   "name": "Poltrona Eames",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a86c724c-1baf-4013-92be-4bb27abaf73c"
+   }
+  },
+  "79f99b2f-9cf1-5643-922c-070e596cc000": {
+   "x": 192,
+   "y": 1440,
+   "name": "Arquivo de gavetas",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-201a71f5-3652-4646-a347-098feeb12b27"
+   }
+  },
+  "ad664698-f952-5bdf-9259-dfbb727f150d": {
+   "x": 544,
+   "y": 1280,
+   "name": "Cavalete com cartaz",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e7e8fc78-4445-46ac-8520-af922cb5c050"
+   }
+  },
+  "9e3f8288-782e-5e1a-9e32-a49ffb686b17": {
+   "x": 576,
+   "y": 1440,
+   "name": "Luminária de chão com franjas",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-5037b0bd-c0c0-4bd0-a381-edd1c595aaf2"
+   }
+  },
+  "3003b14e-fda0-53db-a581-12732b4fb53e": {
+   "x": 368,
+   "y": 1248,
+   "name": "TV de parede",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-55d2799f-0db5-47c6-bc1e-e33e6c246461"
+   }
+  },
+  "f714c593-3c32-54e5-bed2-aaa02e440898": {
+   "x": 480,
+   "y": 1248,
+   "name": "Quadro branco de parede",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-aa2d686e-ec1b-44e6-9aa5-6d8d75b573d8"
+   },
+   "properties": [
+    {
+     "id": "8edce04a-638f-58dd-bcef-605f0ad944a0",
+     "type": "openWebsite",
+     "link": "https://excalidraw.com/",
+     "application": "excalidraw",
+     "trigger": "onaction",
+     "triggerMessage": "ESPAÇO para abrir o quadro da reunião 02",
+     "closable": true,
+     "newTab": false,
+     "width": 70,
+     "buttonLabel": "Quadro da Reunião 02"
+    },
+    {
+     "id": "dd29bf70-5fe9-56ec-954a-d8de2013d2e9",
+     "type": "entityDescriptionProperties",
+     "name": "Quadro da Reunião 02",
+     "description": "Quadro branco compartilhado da sala.",
+     "searchable": true
+    }
+   ]
+  },
+  "0e9ba076-a125-51b7-9adc-e1799c82094f": {
+   "x": 224,
+   "y": 1440,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "5ea0bafc-2a8b-5066-a586-84986755e4f9": {
+   "x": 992,
+   "y": 736,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e4bba280-ef68-4a53-8a1e-043b066f3732"
+   }
+  },
+  "46aee9e2-3256-5eb0-b766-c29f1cdc8b24": {
+   "x": 1024,
+   "y": 672,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "6b152bc3-f128-5150-951d-712be2908c45": {
+   "x": 1696,
+   "y": 736,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e4bba280-ef68-4a53-8a1e-043b066f3732"
+   }
+  },
+  "2b873360-be7d-5c8e-961a-791546f0b8d9": {
+   "x": 1728,
+   "y": 672,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "f8b20158-f5e5-54ab-bfa6-298b6a9b94e4": {
+   "x": 992,
+   "y": 832,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "825d6f1b-d194-5430-b1bd-14f4d9927edc": {
+   "x": 1024,
+   "y": 864,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "58d3ad26-84b6-5301-8a5b-055766a9767a": {
+   "x": 1696,
+   "y": 832,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "7cfe1ae6-25e2-55ec-9dfe-71e47ebc3d74": {
+   "x": 1728,
+   "y": 864,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "71d99e18-105d-54ff-8c05-62dbe1185d6e": {
+   "x": 864,
+   "y": 736,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e4bba280-ef68-4a53-8a1e-043b066f3732"
+   }
+  },
+  "ef9dca45-1e40-5c49-a72d-cf1e08c43826": {
+   "x": 896,
+   "y": 672,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "9f92c4d1-86f9-5ede-9159-76c5d866612c": {
+   "x": 1824,
+   "y": 736,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e4bba280-ef68-4a53-8a1e-043b066f3732"
+   }
+  },
+  "8a568cb8-7217-55fe-9a8e-c47a2f06bf28": {
+   "x": 1856,
+   "y": 672,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "38659cf2-6d41-58d6-b3f4-0faf8fc6ea53": {
+   "x": 864,
+   "y": 832,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "6556a441-b3f8-5985-964f-87ba3ef24fc2": {
+   "x": 896,
+   "y": 864,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "b3b2d660-11b2-51c7-bdec-8279c6d1ad7d": {
+   "x": 1824,
+   "y": 832,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "678517bb-f3f5-58d7-ab7c-8987bd301a92": {
+   "x": 1856,
+   "y": 864,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "4f9bc616-9f9b-5e90-84b4-d07e936180a7": {
+   "x": 736,
+   "y": 736,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e4bba280-ef68-4a53-8a1e-043b066f3732"
+   }
+  },
+  "4efde2ca-4064-5e68-9003-565663b16f6a": {
+   "x": 768,
+   "y": 672,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "f72d58cb-22a8-50fb-b2df-b1f71039f3dd": {
+   "x": 1952,
+   "y": 736,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e4bba280-ef68-4a53-8a1e-043b066f3732"
+   }
+  },
+  "3cc3fb03-74fc-5b31-87ef-c3226e0a5806": {
+   "x": 1984,
+   "y": 672,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "231f5756-23ba-5965-a0ad-35554ffa8a46": {
+   "x": 736,
+   "y": 832,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "2e31a7b8-4383-5bb4-a0eb-ac5d29cbbd09": {
+   "x": 768,
+   "y": 864,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "39ce2ead-7f5f-555b-8a1e-999fd5c61222": {
+   "x": 1952,
+   "y": 832,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "5b808fdb-5087-5452-8861-4b6a7785a957": {
+   "x": 1984,
+   "y": 864,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "16f3fc93-a2df-57e0-afb7-c7e63f28fd62": {
+   "x": 704,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "cc6a18ad-babc-5ef7-8b52-22ab2eabbfdc": {
+   "x": 1984,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "706e2f58-f89b-5790-b059-d68269742409": {
+   "x": 736,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "898908a7-0dea-5de4-9736-9d0279cce9b5": {
+   "x": 2016,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "4a7603dc-68bf-5d9b-85cc-82ecddb64cbf": {
+   "x": 800,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "0aaf88ac-ba59-5b5a-99e1-aa6f376c0d35": {
+   "x": 1888,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "43ab245a-357b-57f9-bb1c-8a0c22688aba": {
+   "x": 832,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "2aeef377-8f67-579c-aba0-3c12d397006f": {
+   "x": 1920,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "72fedcd0-f44f-5855-bd8c-e58e5babc089": {
+   "x": 896,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "7349acce-4258-5ca1-9d5c-955ca72ec109": {
+   "x": 1792,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "72d07f6a-a248-501a-ac47-355bd1f6a998": {
+   "x": 928,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "4e6ae3f8-f98b-5bca-b85b-9c63b5c901f9": {
+   "x": 1824,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "7077fc9c-7f6a-544a-84d1-7d5765d5f1bb": {
+   "x": 992,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "34cfc45e-8439-557e-a423-4864ffcd0770": {
+   "x": 1696,
+   "y": 992,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "4c2661e6-e274-5bfb-8d67-58b0b4709d83": {
+   "x": 1024,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "b0155c92-53eb-56c2-b943-9c3942b88350": {
+   "x": 1728,
+   "y": 1024,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "78cf8a65-e517-5056-a8bc-bef2d973ebf3": {
+   "x": 704,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "0dd26dd0-a0f4-5d9c-86c3-5faf940cf86a": {
+   "x": 1984,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "639388f3-6346-5fb8-a3d2-7066622dd894": {
+   "x": 736,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "21075d3d-5bea-53b3-906f-2f1641909c40": {
+   "x": 2016,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "bf854fad-13d3-5dad-b214-bc2a9ad657bf": {
+   "x": 800,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "3ee07e78-b3e2-5b48-8e5e-3f23889f4a8b": {
+   "x": 1888,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "dcc7ac7a-657a-5b66-9914-ef719f9fbb9b": {
+   "x": 832,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "5f4c3b93-102b-5f75-9f06-420dc534f70a": {
+   "x": 1920,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "a316f157-be53-536e-8308-666990138a41": {
+   "x": 896,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "66c1db13-b333-539e-b82d-3b6e75810f4d": {
+   "x": 1792,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "2ee7087d-a5ea-521a-a549-ca05b23bc435": {
+   "x": 928,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "f2645d4f-d5f0-5d45-b545-b1a37d798de3": {
+   "x": 1824,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "f5c7016c-b382-544d-a331-9016bba883b5": {
+   "x": 992,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "e9dfaf7e-62ae-5e24-af32-99aca7fa164e": {
+   "x": 1696,
+   "y": 1120,
+   "name": "Mesa de escritório",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c"
+   }
+  },
+  "e40bdf21-5597-548d-8f53-f8ebf7589177": {
+   "x": 1024,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "da18946b-5517-51ae-adc0-c87976b76f4d": {
+   "x": 1728,
+   "y": 1152,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-up-ds-petrol"
+   }
+  },
+  "00606283-a2e7-5d38-a834-e0c50a70d126": {
+   "x": 672,
+   "y": 928,
+   "name": "Espada-de-são-jorge",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-1e6e3d8d-eebc-4b6b-afc5-58e48f71794c"
+   }
+  },
+  "4560377b-8063-5a02-af0f-ea6e1b1e4363": {
+   "x": 2080,
+   "y": 928,
+   "name": "Espada-de-são-jorge",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-1e6e3d8d-eebc-4b6b-afc5-58e48f71794c"
+   }
+  },
+  "6b18c421-6f4c-5bdb-8faa-54da08c0213b": {
+   "x": 1088,
+   "y": 928,
+   "name": "Espada-de-são-jorge",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-1e6e3d8d-eebc-4b6b-afc5-58e48f71794c"
+   }
+  },
+  "12483910-adb2-5038-a72a-b4968113ae47": {
+   "x": 1664,
+   "y": 928,
+   "name": "Espada-de-são-jorge",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-1e6e3d8d-eebc-4b6b-afc5-58e48f71794c"
+   }
+  },
+  "550922fa-14b0-5e8e-9415-236ec84149eb": {
+   "x": 1088,
+   "y": 1152,
+   "name": "Bebedouro",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a40ece75-7da2-4a57-8c29-1f32e317dce2"
+   }
+  },
+  "82b5520a-8c63-5f4c-88e2-ee32ff55f131": {
+   "x": 1664,
+   "y": 1152,
+   "name": "Bebedouro",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a40ece75-7da2-4a57-8c29-1f32e317dce2"
+   }
+  },
+  "44421ae4-e78f-5b07-97ca-bb798fb0eda6": {
+   "x": 1222,
+   "y": 750,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "0199a14f-fe57-5cbe-a1e5-a00f40aec623": {
+   "x": 1569,
+   "y": 787,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "02e2024b-1044-5c79-82f9-06ce9b652bbb": {
+   "x": 1177,
+   "y": 862,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "e4ed486e-e5a6-5dd6-8c01-15cd83e23606": {
+   "x": 1577,
+   "y": 864,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "ecbbba1c-b0a5-5043-8735-36ee0f39075c": {
+   "x": 1177,
+   "y": 968,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-69d38f3e-27ac-4bcb-b963-f32f873dc367"
+   }
+  },
+  "18e0c3cc-b893-57b3-9417-016de5437f4a": {
+   "x": 1576,
+   "y": 960,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-69d38f3e-27ac-4bcb-b963-f32f873dc367"
+   }
+  },
+  "793661ef-ede4-579f-a29f-b2f02b43b56b": {
+   "x": 1173,
+   "y": 1054,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "2d47d44b-4402-57e7-ba98-0062b3175397": {
+   "x": 1579,
+   "y": 1059,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "9da9c445-9ce8-5d06-8550-db74d3081147": {
+   "x": 1180,
+   "y": 1106,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "b7c6ca74-c6da-56ff-b9b9-4358088ed9f4": {
+   "x": 1572,
+   "y": 1106,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "84442dec-9dcb-5339-97d5-dfdbc9efc072": {
+   "x": 1225,
+   "y": 1145,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "5290f5db-0575-532e-8b0f-511e11cc894c": {
+   "x": 1528,
+   "y": 1148,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "f83e8d21-75b5-59f0-89a7-b77ab8d80c79": {
+   "x": 1310,
+   "y": 1146,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-70a53160-3a2e-43d4-b279-6a0a588072b4"
+   }
+  },
+  "72ac58f9-5940-50c1-9565-3c90dc50d5df": {
+   "x": 1432,
+   "y": 1146,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-70a53160-3a2e-43d4-b279-6a0a588072b4"
+   }
+  },
+  "abad1159-c462-5d3e-8418-fbfb79cc3956": {
+   "x": 1308,
+   "y": 640,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-920b1507-1b94-4d7f-8c15-cac21f9da3a7"
+   }
+  },
+  "4ce8314c-0482-5daf-b164-42fc281938b7": {
+   "x": 1452,
+   "y": 639,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-920b1507-1b94-4d7f-8c15-cac21f9da3a7"
+   }
+  },
+  "a644e389-2356-5817-a384-19084bde2005": {
+   "x": 1302,
+   "y": 730,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "f4e864d6-e200-5579-b420-b4324958817a": {
+   "x": 1448,
+   "y": 729,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "28b9113a-773e-59d9-b156-d5876043383b": {
+   "x": 1190,
+   "y": 777,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "cc7a8d15-a468-5e0c-a885-f22546bb5313": {
+   "x": 1534,
+   "y": 750,
+   "name": "Hosta",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-743b0b9b-2916-4665-99e3-6526328f529d"
+   }
+  },
+  "346c523b-96f7-5509-a90c-cefb18808de0": {
+   "x": 1302,
+   "y": 625,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "56fee2cf-0bf5-564c-b1aa-4e9aafd6fece": {
+   "x": 1450,
+   "y": 640,
+   "name": "Samambaia",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c55cc63f-8edf-422b-ad0c-6494e4098eac"
+   }
+  },
+  "43ec45ee-5195-5ce3-b6c9-612586c68b8a": {
+   "x": 1312,
+   "y": 1344,
+   "name": "Balcão de recepção Koncluí",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-reception-desk-oak"
+   }
+  },
+  "766f52e7-35ab-50c8-82eb-f34b63243d12": {
+   "x": 1376,
+   "y": 1280,
+   "name": "Cadeira de escritório giratória (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-office-chair-down-ds-petrol"
+   }
+  },
+  "bdf888a2-6d99-55a2-81ae-b42b78b93292": {
+   "x": 1344,
+   "y": 1472,
+   "name": "Tapete de entrada com o K",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-entrance-mat-ink"
+   }
+  },
+  "397e53a9-c0f4-5f54-9001-d40c5c48523d": {
+   "x": 1280,
+   "y": 1568,
+   "name": "Totem com o K",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-logo-totem-ink"
+   }
+  },
+  "8d88f07e-f8a2-5318-ad88-982062e2879d": {
+   "x": 1472,
+   "y": 1568,
+   "name": "Totem com o K",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-logo-totem-ink"
+   }
+  },
+  "608b46d9-9856-57b2-9f95-f6aaecbba8e7": {
+   "x": 1216,
+   "y": 1472,
+   "name": "Floreira branca",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planter-white"
+   }
+  },
+  "95be27b9-5f9f-538f-ab42-8f3892e86193": {
+   "x": 1504,
+   "y": 1472,
+   "name": "Floreira branca",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planter-white"
+   }
+  },
+  "99e01ae5-5282-5285-9c72-76e0b3a42d7d": {
+   "x": 1024,
+   "y": 1344,
+   "name": "Tapete de lã 5×3",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-rug-5x3-mist"
+   }
+  },
+  "00610f12-39cc-5693-8dd5-b2a2979d0e8d": {
+   "x": 1600,
+   "y": 1344,
+   "name": "Tapete de lã 5×3",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-rug-5x3-mist"
+   }
+  },
+  "1434948d-0be1-58a2-9d21-541e8c1fcadb": {
+   "x": 1056,
+   "y": 1312,
+   "name": "Sofá Knoll (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-knoll-couch-down-ds-petrol"
+   }
+  },
+  "0c0b1f12-10cf-544b-9366-e46213cda7fe": {
+   "x": 1632,
+   "y": 1312,
+   "name": "Sofá Knoll (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-knoll-couch-down-ds-petrol"
+   }
+  },
+  "482d9fac-0e4c-55ce-bea7-b9aee2687b79": {
+   "x": 1056,
+   "y": 1408,
+   "name": "Sofá Knoll (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-knoll-couch-up-ds-petrol"
+   }
+  },
+  "d1c7d465-82e7-5433-afa3-096a614cccfa": {
+   "x": 1632,
+   "y": 1408,
+   "name": "Sofá Knoll (cores da marca)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-knoll-couch-up-ds-petrol"
+   }
+  },
+  "79e9c425-447a-52f5-bfdb-ea1f6126297d": {
+   "x": 1088,
+   "y": 1376,
+   "name": "Mesa de centro redonda",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-bd44f4ea-b883-4503-97d1-42fe33071558"
+   }
+  },
+  "eabe894b-ec8b-5e0b-b239-e7f7f0b93db0": {
+   "x": 1632,
+   "y": 1376,
+   "name": "Mesa de centro redonda",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-bd44f4ea-b883-4503-97d1-42fe33071558"
+   }
+  },
+  "885935ca-731f-575a-9cba-1d226ffee142": {
+   "x": 1184,
+   "y": 1344,
+   "name": "Poltrona Knoll",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-abaa90b0-ea32-43e2-be3d-beca6c9ff682"
+   }
+  },
+  "917437aa-4257-5159-bffe-acad790a811e": {
+   "x": 1536,
+   "y": 1344,
+   "name": "Poltrona Knoll",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3b86db60-e3ec-4e8d-81bd-4a335d334c5a"
+   }
+  },
+  "411dad63-49ae-5d5b-9777-376e14a322db": {
+   "x": 1024,
+   "y": 1280,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "4888d082-0bc2-5f90-8e4a-0703382661b4": {
+   "x": 1664,
+   "y": 1280,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "5a2b950b-6df7-5152-9b1e-48e43e8cfbb2": {
+   "x": 1568,
+   "y": 1280,
+   "name": "Luminária de arco",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0092afb7-c02a-4ab9-930b-217394bc1522"
+   }
+  },
+  "9d5ffbf2-a009-5ea7-bced-36d1d3563e7d": {
+   "x": 1504,
+   "y": 1280,
+   "name": "Sino da venda",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-sino-da-venda-ouro"
+   }
+  },
+  "73a1c8e4-8a6b-5a2e-9d78-7b0996f89d9c": {
+   "x": 704,
+   "y": 1280,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "df4dd55c-42fa-590e-b491-a3bc83d668b2": {
+   "x": 1984,
+   "y": 1280,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "91e8640d-8fb2-56bc-84ce-6be38e6add44": {
+   "x": 896,
+   "y": 1280,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "001475a9-6af1-58d0-89bb-504eb5c8ef65": {
+   "x": 1792,
+   "y": 1280,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "78dd747b-558d-53d1-8a99-8c8d076051bf": {
+   "x": 704,
+   "y": 1472,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "0d398ac7-4e26-5246-ab0d-b381fd2dbb65": {
+   "x": 1984,
+   "y": 1472,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "933f6379-4093-5ae0-a6e6-e9794bb944ef": {
+   "x": 896,
+   "y": 1472,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "39aaedfa-5e14-5277-81cf-9124516aab2f": {
+   "x": 1792,
+   "y": 1472,
+   "name": "Costela-de-adão (monstera)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7"
+   }
+  },
+  "0ec6bdee-5d39-5592-a4de-1e935ba0dcbe": {
+   "x": 768,
+   "y": 1312,
+   "name": "Sofá Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-4363342e-80d8-4fb3-9262-01e6242e5c81"
+   }
+  },
+  "337e1ffd-c09d-585e-b650-c808de24ab31": {
+   "x": 1920,
+   "y": 1312,
+   "name": "Sofá Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-4363342e-80d8-4fb3-9262-01e6242e5c81"
+   }
+  },
+  "def7c96e-7560-52f5-b42b-ffb5adb45610": {
+   "x": 864,
+   "y": 1312,
+   "name": "Poltrona Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d57e51ef-a793-41b2-81f3-7d523299e0a2"
+   }
+  },
+  "e224607d-c752-5e28-8ca0-2aae9ffc1fc9": {
+   "x": 1888,
+   "y": 1312,
+   "name": "Poltrona Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d57e51ef-a793-41b2-81f3-7d523299e0a2"
+   }
+  },
+  "7a64249a-110e-53c7-abca-26024b3acfb1": {
+   "x": 800,
+   "y": 1408,
+   "name": "Mesa de centro redonda",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-28a54590-8b59-47c9-bcdc-ed5f13caada3"
+   }
+  },
+  "a223384e-946c-52a9-ae8b-45d33573e926": {
+   "x": 1920,
+   "y": 1408,
+   "name": "Mesa de centro redonda",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-28a54590-8b59-47c9-bcdc-ed5f13caada3"
+   }
+  },
+  "b2fc4a82-027d-5513-b4c8-58562c5757b1": {
+   "x": 896,
+   "y": 1408,
+   "name": "Mesa lateral mid-century",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-6ec15ffb-fc53-45f1-9c3f-4db5f6165062"
+   }
+  },
+  "86ff99b3-80de-51c5-bf7b-bc71b76e34be": {
+   "x": 1856,
+   "y": 1408,
+   "name": "Mesa lateral mid-century",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-6ec15ffb-fc53-45f1-9c3f-4db5f6165062"
+   }
+  },
+  "2f0e4417-ee6c-5155-ba49-bc6d690ee8eb": {
+   "x": 768,
+   "y": 1440,
+   "name": "Poltrona Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-23747e7d-72e1-46da-bcf8-2b3f138a94fa"
+   }
+  },
+  "6d22d718-8736-53a9-8700-615463262d3a": {
+   "x": 1984,
+   "y": 1440,
+   "name": "Poltrona Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-23747e7d-72e1-46da-bcf8-2b3f138a94fa"
+   }
+  },
+  "51f34e2a-24c4-5a40-b758-8ac32e53803f": {
+   "x": 800,
+   "y": 1440,
+   "name": "Sofá Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-261cd100-5723-4390-b863-654920efbf0e"
+   }
+  },
+  "f25552ee-cddd-5166-aea6-d23f7705351a": {
+   "x": 1888,
+   "y": 1440,
+   "name": "Sofá Le Corbusier",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-261cd100-5723-4390-b863-654920efbf0e"
+   }
+  },
+  "40eba100-754c-5654-8589-e6b71463bcaf": {
+   "x": 672,
+   "y": 1472,
+   "name": "Luminária de arco",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0092afb7-c02a-4ab9-930b-217394bc1522"
+   }
+  },
+  "fde776e1-aa64-58ee-a080-22b0ea56212b": {
+   "x": 2048,
+   "y": 1472,
+   "name": "Luminária de arco",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0092afb7-c02a-4ab9-930b-217394bc1522"
+   }
+  },
+  "435e0bc2-a6ba-5dda-a548-8cfaacaf02f0": {
+   "x": 960,
+   "y": 1280,
+   "name": "Estante 6",
+   "prefabRef": {
+    "collectionName": "Estantes e livros",
+    "id": "bookshelves-005"
+   }
+  },
+  "ced82c01-d039-51c2-bb11-83fa735a9e1e": {
+   "x": 1760,
+   "y": 1280,
+   "name": "Estante 6",
+   "prefabRef": {
+    "collectionName": "Estantes e livros",
+    "id": "bookshelves-005"
+   }
+  },
+  "253c122a-b8e6-5971-9e97-b11609027ff5": {
+   "x": 640,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "c9e22c77-80ec-5fac-8829-16f63b4244ce": {
+   "x": 2112,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "88c7b7ce-9e14-5108-88a2-08222debacca": {
+   "x": 928,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "7ac65df7-3229-5848-9e93-4dff6e9168a0": {
+   "x": 1824,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "64fc806b-422c-5d71-95ed-bb5a7f6eec69": {
+   "x": 992,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "a1f066e1-621e-5f88-9315-e125b81e9474": {
+   "x": 1760,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "b5e3694f-a9f2-580b-ac9a-5a4a357a05e4": {
+   "x": 1280,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "646cc81b-b5e3-56f8-8371-68f1dcdf54e9": {
+   "x": 1472,
+   "y": 576,
+   "name": "Figueira-lira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82"
+   }
+  },
+  "90ddeeef-34f8-54ee-989b-e2bfbf858bfa": {
+   "x": 2176,
+   "y": 256,
+   "name": "Armário de cozinha grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-09792257-d9ca-41a3-8cf6-04c91c34764f"
+   }
+  },
+  "8a2afcbd-8fa8-51e3-a4cf-5da746c33dcb": {
+   "x": 2240,
+   "y": 256,
+   "name": "Armário de cozinha grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-09792257-d9ca-41a3-8cf6-04c91c34764f"
+   }
+  },
+  "58c31afd-b9f4-5747-b0b4-1a5cff574223": {
+   "x": 2304,
+   "y": 256,
+   "name": "Armário de cozinha grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-09792257-d9ca-41a3-8cf6-04c91c34764f"
+   }
+  },
+  "7519295d-3473-5669-8d33-9be80b1aa4e7": {
+   "x": 2368,
+   "y": 256,
+   "name": "Armário de cozinha grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-09792257-d9ca-41a3-8cf6-04c91c34764f"
+   }
+  },
+  "276f9b11-d66c-5de0-94cb-28def41fdd9b": {
+   "x": 2432,
+   "y": 224,
+   "name": "Geladeira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-61e7f940-5196-4883-9909-7d202cee6dd5"
+   }
+  },
+  "a5054de1-54e3-5894-95d2-90a7ec721db2": {
+   "x": 2528,
+   "y": 224,
+   "name": "Bebedouro",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a40ece75-7da2-4a57-8c29-1f32e317dce2"
+   }
+  },
+  "c5c1f3db-265a-56d1-bc86-b0405d581bf6": {
+   "x": 2208,
+   "y": 384,
+   "name": "Mesa octogonal 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "d83910e1-e68a-5ae8-beb8-a94980c877a8": {
+   "x": 2208,
+   "y": 320,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3977c61e-b73e-47b3-9d81-61d764f326f4"
+   }
+  },
+  "ccd83188-03e3-543a-a4bc-9bad5bd6a37f": {
+   "x": 2208,
+   "y": 448,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f"
+   }
+  },
+  "2dcb0477-860f-522b-8888-c227a6d6f383": {
+   "x": 2240,
+   "y": 320,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3977c61e-b73e-47b3-9d81-61d764f326f4"
+   }
+  },
+  "4db74e6c-9d8c-5da5-b7eb-44e1ba9e25dc": {
+   "x": 2240,
+   "y": 448,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f"
+   }
+  },
+  "6fa0f5c7-feda-51ed-a44c-43b56692a0b8": {
+   "x": 2272,
+   "y": 320,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3977c61e-b73e-47b3-9d81-61d764f326f4"
+   }
+  },
+  "9f489653-4cdf-5ba1-b47f-133fb3856a1b": {
+   "x": 2272,
+   "y": 448,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f"
+   }
+  },
+  "eda1361a-1f91-5943-a15e-85158dc84378": {
+   "x": 2400,
+   "y": 384,
+   "name": "Mesa octogonal 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "1437dedc-3020-56a3-aee6-e4b005610952": {
+   "x": 2400,
+   "y": 320,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3977c61e-b73e-47b3-9d81-61d764f326f4"
+   }
+  },
+  "6a176927-a098-53d1-a1b3-b15b876e1e7a": {
+   "x": 2400,
+   "y": 448,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f"
+   }
+  },
+  "04b0d1e4-c408-5af0-a360-39af581098c2": {
+   "x": 2432,
+   "y": 320,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3977c61e-b73e-47b3-9d81-61d764f326f4"
+   }
+  },
+  "c52deb19-b6da-527d-beec-e4f8818e6966": {
+   "x": 2432,
+   "y": 448,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f"
+   }
+  },
+  "905c3cae-28a2-5d5a-8188-4a35255f26ed": {
+   "x": 2464,
+   "y": 320,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3977c61e-b73e-47b3-9d81-61d764f326f4"
+   }
+  },
+  "67a40ded-febd-5ced-bde8-c476430ce4f2": {
+   "x": 2464,
+   "y": 448,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f"
+   }
+  },
+  "9a9c207c-9090-5c00-bea1-e17ea65acef4": {
+   "x": 2208,
+   "y": 576,
+   "name": "Mesa octogonal 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "7d171cd7-422b-53f1-9d47-04510b2c660f": {
+   "x": 2208,
+   "y": 512,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62"
+   }
+  },
+  "4d94fb5c-4f60-50ff-943f-4a781e14e03e": {
+   "x": 2208,
+   "y": 640,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef"
+   }
+  },
+  "81dd8301-28b4-5e43-8e47-19c1d66dc0df": {
+   "x": 2240,
+   "y": 512,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62"
+   }
+  },
+  "4982bdab-b6f1-5c6b-8bf2-ae3a39ff5a73": {
+   "x": 2240,
+   "y": 640,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef"
+   }
+  },
+  "4b2e9952-96ea-55e6-8a32-ccc4e4f0e7d7": {
+   "x": 2272,
+   "y": 512,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62"
+   }
+  },
+  "2f22634c-d917-57b0-91e3-2aa0d40c304e": {
+   "x": 2272,
+   "y": 640,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef"
+   }
+  },
+  "7e70b04b-6413-5071-9f98-7bd5231ed71c": {
+   "x": 2400,
+   "y": 576,
+   "name": "Mesa octogonal 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "c50144e2-adc1-5a16-b234-3dfbccd01b34": {
+   "x": 2400,
+   "y": 512,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62"
+   }
+  },
+  "c07328af-eb8f-52a4-a40f-4587f0cd6448": {
+   "x": 2400,
+   "y": 640,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef"
+   }
+  },
+  "deeae72a-303f-558e-bd6d-3353078dd261": {
+   "x": 2432,
+   "y": 512,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62"
+   }
+  },
+  "90b998f4-7f45-52b9-a1a2-aabae8d3be35": {
+   "x": 2432,
+   "y": 640,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef"
+   }
+  },
+  "5ef1c523-77c6-5a6d-85f3-e39837138d40": {
+   "x": 2464,
+   "y": 512,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62"
+   }
+  },
+  "3b231ff0-947a-5dd3-b073-ebc75362ac50": {
+   "x": 2464,
+   "y": 640,
+   "name": "Cadeira wabi-sabi",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef"
+   }
+  },
+  "c074b927-8425-5699-a927-06dfd917b03b": {
+   "x": 2208,
+   "y": 768,
+   "name": "Mesa octogonal 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "a8a2fa75-129d-5ded-935e-2cad6ad63c1f": {
+   "x": 2208,
+   "y": 704,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0ad2677b-b361-45e9-8949-85185f01e3c7"
+   }
+  },
+  "e6a52f59-87b4-5c86-aee5-3a5a75666e90": {
+   "x": 2208,
+   "y": 832,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7910276d-10da-4380-b750-c91d6dc1df87"
+   }
+  },
+  "c0402457-100d-56e2-b9ca-d9cc75a74d07": {
+   "x": 2240,
+   "y": 704,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0ad2677b-b361-45e9-8949-85185f01e3c7"
+   }
+  },
+  "2fd1c0cc-6a04-58ac-a1e7-43e679dfdc5c": {
+   "x": 2240,
+   "y": 832,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7910276d-10da-4380-b750-c91d6dc1df87"
+   }
+  },
+  "fc2f6ff7-30e1-5c8d-8453-3b86d6e821d7": {
+   "x": 2272,
+   "y": 704,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0ad2677b-b361-45e9-8949-85185f01e3c7"
+   }
+  },
+  "14e15f43-95a8-54b5-a203-36cdd971cea1": {
+   "x": 2272,
+   "y": 832,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7910276d-10da-4380-b750-c91d6dc1df87"
+   }
+  },
+  "2f32ac3c-db3f-5ff4-aa91-a9e3cec3bd29": {
+   "x": 2400,
+   "y": 768,
+   "name": "Mesa octogonal 2x3",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "a2b608b9-ae67-5676-9a31-5d1b93dcf44a": {
+   "x": 2400,
+   "y": 704,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0ad2677b-b361-45e9-8949-85185f01e3c7"
+   }
+  },
+  "4828fbe6-5e37-5d01-82ca-c96a251b4e0b": {
+   "x": 2400,
+   "y": 832,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7910276d-10da-4380-b750-c91d6dc1df87"
+   }
+  },
+  "17b4059a-3cd2-51b7-83c2-0b00c13dcaa3": {
+   "x": 2432,
+   "y": 704,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0ad2677b-b361-45e9-8949-85185f01e3c7"
+   }
+  },
+  "f01449a9-29d5-5f85-ae82-a05a39caa280": {
+   "x": 2432,
+   "y": 832,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7910276d-10da-4380-b750-c91d6dc1df87"
+   }
+  },
+  "c0bf98d2-5b7b-54fc-96a1-6ef78bb5d513": {
+   "x": 2464,
+   "y": 704,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0ad2677b-b361-45e9-8949-85185f01e3c7"
+   }
+  },
+  "0942db72-8651-5206-80da-c8610c95912b": {
+   "x": 2464,
+   "y": 832,
+   "name": "Cadeira de café",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7910276d-10da-4380-b750-c91d6dc1df87"
+   }
+  },
+  "eec758d2-9cde-5112-8e34-53ddd2af3233": {
+   "x": 2240,
+   "y": 896,
+   "name": "Estante de livros média",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3cd7296b-cc4c-40b5-96ac-53b6ea152e4d"
+   }
+  },
+  "2cbaeae3-9f32-5351-96d1-235b30f5c1b8": {
+   "x": 2400,
+   "y": 896,
+   "name": "Estante de livros média",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3cd7296b-cc4c-40b5-96ac-53b6ea152e4d"
+   }
+  },
+  "3a2420e0-ac8d-5be7-bfa7-e0767862194d": {
+   "x": 2496,
+   "y": 864,
+   "name": "Estante de plantas",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-f69631b3-6395-4b66-a609-0dde42feac73"
+   }
+  },
+  "9a09352c-19c5-5d5c-bc7b-229bcea820ee": {
+   "x": 2272,
+   "y": 960,
+   "name": "Painel de destaque navy com quadros",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-painel-navy"
+   }
+  },
+  "3c5a5557-6318-5c2c-9f81-78bb900aad16": {
+   "x": 2360,
+   "y": 959,
+   "name": "Letreiro neon de ondas",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-neon-ondas"
+   }
+  },
+  "d53face8-8029-5f51-aaa0-9bfcadc56014": {
+   "x": 2272,
+   "y": 992,
+   "name": "Aparador baixo de teca com livros e plantas",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-aparador-teca"
+   }
+  },
+  "bb05b18b-40e8-5e68-ab8b-54be5c775d65": {
+   "x": 2176,
+   "y": 1088,
+   "name": "Balcão de bar de teca com cafeteira",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-balc-o-de-bar-teca"
+   }
+  },
+  "3490e17b-9c2b-5369-9667-4fadfe6c39a0": {
+   "x": 2176,
+   "y": 1131,
+   "name": "Banqueta de bar turquesa",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-banqueta-turquesa"
+   }
+  },
+  "e99434d8-877c-5a20-837e-91b1fcc41788": {
+   "x": 2208,
+   "y": 1131,
+   "name": "Banqueta de bar turquesa",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-banqueta-turquesa"
+   }
+  },
+  "b60809dc-4ab2-59d2-b7a5-709c65c53b3a": {
+   "x": 2240,
+   "y": 1131,
+   "name": "Banqueta de bar turquesa",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-banqueta-turquesa"
+   }
+  },
+  "dc03437b-f1f3-5e25-ac30-cb360ed54511": {
+   "x": 2336,
+   "y": 1056,
+   "name": "Sofá de três lugares ardósia com almofadas",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-sof-manta"
+   }
+  },
+  "ea11b568-7e0f-523a-8a19-8fcf48a9eefe": {
+   "x": 2336,
+   "y": 1184,
+   "name": "Sofá de três lugares ardósia com almofadas",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-sof-almofadas"
+   }
+  },
+  "897a0cd3-6e6d-5f44-9da8-3e12ace03487": {
+   "x": 2240,
+   "y": 1056,
+   "name": "Criado-mudo de nogueira",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-criado-mudo-alto"
+   }
+  },
+  "03d5e095-bb68-5f94-bd62-f1e789b812d0": {
+   "x": 2240,
+   "y": 1184,
+   "name": "Criado-mudo de nogueira",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-criado-mudo-baixo"
+   }
+  },
+  "3a3cd0a6-8362-5ed7-b5ec-fdb8f7fd398d": {
+   "x": 2336,
+   "y": 1120,
+   "name": "Mesa de centro oval branca com xadrez",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-mesa-de-centro-branca"
+   }
+  },
+  "24f4a96b-4e18-593e-b362-9f6bc313256f": {
+   "x": 2453,
+   "y": 1108,
+   "name": "Luminária de arco com cúpula",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-lumin-ria-de-arco-preto"
+   }
+  },
+  "cb00a3b3-4920-5872-a628-cf0dede8729d": {
+   "x": 2474,
+   "y": 1056,
+   "name": "Violão",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-540ec809-04c2-49b6-857d-72ada4b136be"
+   }
+  },
+  "f6452361-ddac-5e5e-8079-78498bc6eb17": {
+   "x": 2446,
+   "y": 1079,
+   "name": "Banquinho com samambaia",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-banco-de-plantas-teca"
+   }
+  },
+  "cb00e715-759b-5fd3-a1bb-482d058d2577": {
+   "x": 2176,
+   "y": 1056,
+   "name": "Máquina de lanches",
+   "prefabRef": {
+    "collectionName": "Escritório moderno",
+    "id": "mo-212"
+   }
+  },
+  "0ef21f49-1e3e-52a7-bbc1-c6a82b627082": {
+   "x": 2240,
+   "y": 1024,
+   "name": "Geladeira de bebidas",
+   "prefabRef": {
+    "collectionName": "Escritório moderno",
+    "id": "mo-211"
+   }
+  },
+  "a303a8da-9f75-581d-8cd8-d714951bd2cb": {
+   "x": 2181,
+   "y": 940,
+   "name": "Ave-do-paraíso grande",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planta-ave-do-paraiso-branco"
+   }
+  },
+  "58173a4e-6171-598f-b4d1-bb1bdbb340a8": {
+   "x": 2531,
+   "y": 948,
+   "name": "Ave-do-paraíso grande",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planta-ave-do-paraiso-branco"
+   }
+  },
+  "d6dd1c4e-f9fb-5b00-9766-69056e374902": {
+   "x": 2525,
+   "y": 1066,
+   "name": "Ave-do-paraíso grande",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planta-ave-do-paraiso-alta"
+   }
+  },
+  "3f84078f-71c2-567f-97db-d47fd2440e8d": {
+   "x": 2178,
+   "y": 1399,
+   "name": "Costela-de-adão grande",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planta-costela-de-ad-o-branco"
+   }
+  },
+  "03e6066a-d6d7-5612-84ff-cf412c143534": {
+   "x": 2532,
+   "y": 1399,
+   "name": "Ave-do-paraíso grande",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planta-ave-do-paraiso-alta"
+   }
+  },
+  "a1c782bb-1387-5f59-b9ed-9cb2d26c3b23": {
+   "x": 2256,
+   "y": 1175,
+   "name": "Aglaonema",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-planta-aglaonema-branco"
+   }
+  },
+  "16c0cbbe-db65-5b9c-b355-0e4dd8359487": {
+   "x": 2198,
+   "y": 1282,
+   "name": "Carpete navy da sala de jogos",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-carpete-de-jogos-navy"
+   }
+  },
+  "eafedb9a-cf26-5de5-a674-bef106557487": {
+   "x": 2240,
+   "y": 1312,
+   "name": "Mesa de pingue-pongue",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-22e4adfc-0737-4960-9171-7306a85bfb94"
+   }
+  },
+  "0e7ae846-6e23-5e8d-a780-f36d2b06444e": {
+   "x": 2240,
+   "y": 1376,
+   "name": "Pebolim do salão de jogos",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-pebolim-verde"
+   }
+  },
+  "c88fc07a-0f38-5091-b3d3-8e60e4d850ce": {
+   "x": 2368,
+   "y": 1344,
+   "name": "Mesa de sinuca",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-36f3855e-5ace-439f-b0f6-5721ce48a7bb"
+   }
+  },
+  "9f715057-4565-51b3-b452-ef2bf27d9c8a": {
+   "x": 2373,
+   "y": 1278,
+   "name": "Luminária pendente",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-pendente-preto"
+   }
+  },
+  "c1a7eb5b-cb63-5e35-9f14-7ad48210db4e": {
+   "x": 2304,
+   "y": 1280,
+   "name": "Suporte de tacos e alvo de dardos",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-tacos-escuro"
+   }
+  },
+  "cd74ffa7-cc27-5719-9a59-e4dde85a993e": {
+   "x": 2464,
+   "y": 1280,
+   "name": "Fliperama",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-e6b64011-9e8e-45b8-81dc-cd8e4fdb173a"
+   }
+  },
+  "3242aa8f-4825-5fd3-b66e-854854eb0248": {
+   "x": 2496,
+   "y": 1280,
+   "name": "Fliperama de Breakout",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-fliperama-breakout-turquesa"
+   }
+  },
+  "84978419-2012-5faa-a4be-b9e20a3b1159": {
+   "x": 2528,
+   "y": 1280,
+   "name": "Fliperama de Tetris",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-fliperama-tetris-cor"
+   }
+  },
+  "659dde70-a606-560b-a4cc-962968cb1eb4": {
+   "x": 2560,
+   "y": 1280,
+   "name": "Fliperama de 2048",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-fliperama-2048-cor"
+   }
+  },
+  "f472af45-ba90-592f-a8ef-0044c35842f6": {
+   "x": 2456,
+   "y": 1390,
+   "name": "Par de pufes",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-pufe-par"
+   }
+  },
+  "86644318-3a74-58ec-8013-55cd0e71661c": {
+   "x": 2504,
+   "y": 1374,
+   "name": "Mesinha redonda de nogueira com caneca",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-mesinha-nogueira"
+   }
+  },
+  "c151ef97-281b-5602-958b-19e1ff893012": {
+   "x": 2304,
+   "y": 1408,
+   "name": "Mesa com Lig 4",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-mesa-com-lig-4-clara"
+   }
+  },
+  "ff9d6196-6098-547e-9f5c-489647448579": {
+   "x": 2496,
+   "y": 1184,
+   "name": "Mesa de air hockey",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-air-hockey-navy"
+   }
+  },
+  "fee8a8ae-264e-5436-a6ba-f10ef5df3df1": {
+   "x": 2208,
+   "y": 1184,
+   "name": "Piano vertical",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c847382d-6646-4104-9966-e720579493ea"
+   }
+  },
+  "ad0d7b59-6ac9-542c-a484-8d2b04c877a4": {
+   "x": 256,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "a3dc4193-540d-532d-b32e-6c89a3787d84": {
+   "x": 2432,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "f4ba6692-7871-505b-95bd-640c45a12269": {
+   "x": 448,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "9e5595ea-40b9-588c-8f9d-0cfe774064bc": {
+   "x": 2240,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "bf99147a-0cfb-5cbb-ba41-42bd848d1a34": {
+   "x": 704,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "554141f9-fe56-5e31-b7e4-03425afc6225": {
+   "x": 1984,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "5837ac2f-33d1-5157-8938-29b49edb91a6": {
+   "x": 896,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "69162556-7b99-5cf2-96e7-c00b7e974d4b": {
+   "x": 1792,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "8879fd36-baa7-5a60-bee4-212f4fd77ce9": {
+   "x": 1088,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "d99430ab-16df-53be-b1b9-f291728c31ce": {
+   "x": 1600,
+   "y": 1600,
+   "name": "Roseira",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-8945d1c2-50b6-482b-bcd5-2804a0f95682"
+   }
+  },
+  "96adf2f8-d50b-5405-9294-0e25d25c5fcd": {
+   "x": 32,
+   "y": 96,
+   "name": "Árvore de bordo",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7b58a2ed-20eb-499d-a5a5-6787951f2846"
+   }
+  },
+  "cbd123cd-afc4-59b9-9e30-1aa83b82b8ea": {
+   "x": 2592,
+   "y": 96,
+   "name": "Árvore de bordo",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7b58a2ed-20eb-499d-a5a5-6787951f2846"
+   }
+  },
+  "ccab5c6c-8412-556c-a884-9bb3fa1b0ccd": {
+   "x": 64,
+   "y": 448,
+   "name": "Pinheiro grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-619f3393-15b0-4884-a27c-90ebae88b2a6"
+   }
+  },
+  "1b5e2d61-35d4-5459-bcd0-273c9401d9ab": {
+   "x": 2624,
+   "y": 448,
+   "name": "Pinheiro grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-619f3393-15b0-4884-a27c-90ebae88b2a6"
+   }
+  },
+  "04a51812-028e-5b90-b912-38df74fabd90": {
+   "x": 32,
+   "y": 768,
+   "name": "Bétula",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d42a8630-9665-4afc-ab25-fbe99c299050"
+   }
+  },
+  "374269cb-8be5-5c9d-af3a-7e5a9909d658": {
+   "x": 2592,
+   "y": 768,
+   "name": "Bétula",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d42a8630-9665-4afc-ab25-fbe99c299050"
+   }
+  },
+  "7d54c7fa-1889-5355-81a9-0d85954011f6": {
+   "x": 64,
+   "y": 1120,
+   "name": "Pinheiro pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d"
+   }
+  },
+  "19aadb9c-7160-534b-9e4c-3d1495fac7f1": {
+   "x": 2624,
+   "y": 1120,
+   "name": "Pinheiro pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d"
+   }
+  },
+  "33eefea6-7f41-5f6e-bef1-64856b11acdd": {
+   "x": 32,
+   "y": 1408,
+   "name": "Árvore de bordo",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7b58a2ed-20eb-499d-a5a5-6787951f2846"
+   }
+  },
+  "288e33c3-6923-50f5-8151-06687bb63b2f": {
+   "x": 2592,
+   "y": 1408,
+   "name": "Árvore de bordo",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7b58a2ed-20eb-499d-a5a5-6787951f2846"
+   }
+  },
+  "e823053b-fec8-5ad5-9346-915eb77f81c9": {
+   "x": 320,
+   "y": 0,
+   "name": "Bétula",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d42a8630-9665-4afc-ab25-fbe99c299050"
+   }
+  },
+  "41983469-bb0e-597e-9790-e95e5b51bd0d": {
+   "x": 2304,
+   "y": 0,
+   "name": "Bétula",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d42a8630-9665-4afc-ab25-fbe99c299050"
+   }
+  },
+  "9f1aea11-0827-5452-b1ad-f09088c7f4fe": {
+   "x": 672,
+   "y": 32,
+   "name": "Pinheiro pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d"
+   }
+  },
+  "f038dcfe-021d-55bf-ac45-b025110d3faf": {
+   "x": 2016,
+   "y": 32,
+   "name": "Pinheiro pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d"
+   }
+  },
+  "99e0b07f-5a43-595d-9ba7-20f114a978be": {
+   "x": 992,
+   "y": 0,
+   "name": "Árvore de bordo",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7b58a2ed-20eb-499d-a5a5-6787951f2846"
+   }
+  },
+  "c2802909-e939-5dc0-aebe-71fdda9b9a14": {
+   "x": 1632,
+   "y": 0,
+   "name": "Árvore de bordo",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-7b58a2ed-20eb-499d-a5a5-6787951f2846"
+   }
+  },
+  "2027a635-0ab5-542a-a68d-e3d39087c9d5": {
+   "x": 544,
+   "y": 1600,
+   "name": "Pinheiro grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-619f3393-15b0-4884-a27c-90ebae88b2a6"
+   }
+  },
+  "19ffaaf4-bd60-5845-94a3-d403071ed612": {
+   "x": 2144,
+   "y": 1600,
+   "name": "Pinheiro grande",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-619f3393-15b0-4884-a27c-90ebae88b2a6"
+   }
+  },
+  "51824947-bcc8-5db9-90dd-371b5a4bb44e": {
+   "x": 864,
+   "y": 1600,
+   "name": "Pinheiro pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d"
+   }
+  },
+  "36ba96de-2d8d-5342-a8ec-6b7fc2616264": {
+   "x": 1824,
+   "y": 1600,
+   "name": "Pinheiro pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d"
+   }
+  },
+  "1f9b1ca1-2f1a-58d0-a56d-fd9a2019cf08": {
+   "x": 128,
+   "y": 1600,
+   "name": "Bétula",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d42a8630-9665-4afc-ab25-fbe99c299050"
+   }
+  },
+  "45f8fce5-b6c3-5980-8569-e6e261d8c285": {
+   "x": 2496,
+   "y": 1600,
+   "name": "Bétula",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d42a8630-9665-4afc-ab25-fbe99c299050"
+   }
+  },
+  "c40dac1f-ea8c-5a24-8a52-22526e9d55ef": {
+   "x": 320,
+   "y": 1664,
+   "name": "Mesa de piquenique",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-27452e37-ffee-48dd-8c41-8ea22256049d"
+   }
+  },
+  "59f1e996-75a9-521f-ace3-585822191f1c": {
+   "x": 2368,
+   "y": 1664,
+   "name": "Mesa de piquenique",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-27452e37-ffee-48dd-8c41-8ea22256049d"
+   }
+  },
+  "18cbae2d-8813-5729-912e-f34092741bae": {
+   "x": 960,
+   "y": 1664,
+   "name": "Cadeira Adirondack",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-46c60b8c-48f5-4b5e-ad5c-93dc4406782e"
+   }
+  },
+  "2fb304fd-dd1e-5ea5-a633-f90afc8e9db8": {
+   "x": 1760,
+   "y": 1664,
+   "name": "Cadeira Adirondack",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0120d5d7-3959-4e9a-9658-0692d255e7a7"
+   }
+  },
+  "9b1b6b8d-fec2-59ea-a5ed-5d7bcb23e0d9": {
+   "x": 1024,
+   "y": 1696,
+   "name": "Mesa de centro de tronco",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-405abae6-562c-4812-8506-7abbae89e1cc"
+   }
+  },
+  "a3adcdc8-519b-5d57-8894-477a21e1ea57": {
+   "x": 1696,
+   "y": 1696,
+   "name": "Mesa de centro de tronco",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-405abae6-562c-4812-8506-7abbae89e1cc"
+   }
+  },
+  "8da7a11e-a8f4-536d-b825-941e36837a2a": {
+   "x": 1088,
+   "y": 1664,
+   "name": "Cadeira Adirondack",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0120d5d7-3959-4e9a-9658-0692d255e7a7"
+   }
+  },
+  "dfe01639-4dab-5a93-a413-d4fc0e84e60c": {
+   "x": 1632,
+   "y": 1664,
+   "name": "Cadeira Adirondack",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-46c60b8c-48f5-4b5e-ad5c-93dc4406782e"
+   }
+  },
+  "9a786909-c9fe-592b-9765-8cbd401d66b1": {
+   "x": 256,
+   "y": 1056,
+   "name": "Tapete de lã 10×5",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-rug-10x5-mist"
+   }
+  },
+  "17107191-fe8f-52f1-856f-c05cee630fa4": {
+   "x": 211,
+   "y": 960,
+   "name": "Quadro: a cozinha",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-cozinha-ink"
+   }
+  },
+  "8979aa1a-1706-5f1e-a1ef-69f26b11610c": {
+   "x": 291,
+   "y": 960,
+   "name": "Quadro: o salão",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-salao-ink"
+   }
+  },
+  "2672b3a6-6b5d-566d-834d-e670c83ae74a": {
+   "x": 576,
+   "y": 960,
+   "name": "Relógio de parede minimalista",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c9f0adcd-98b8-40f9-9b0c-3d6f6a409336"
+   }
+  },
+  "3805071b-5e86-565e-ad97-b941d4e5ae80": {
+   "x": 256,
+   "y": 1344,
+   "name": "Tapete de lã 10×5",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-rug-10x5-mist"
+   }
+  },
+  "114fb183-2f4a-54e7-9df0-38a1c0481ba8": {
+   "x": 211,
+   "y": 1248,
+   "name": "Quadro: a gestora e o checklist",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-gestor-ink"
+   }
+  },
+  "ad295725-9b53-5095-98c9-ce307b49ab9d": {
+   "x": 291,
+   "y": 1248,
+   "name": "Quadro: a equipe",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-equipe-ink"
+   }
+  },
+  "551875e0-8b5e-518d-86f0-c43304d6bd0e": {
+   "x": 576,
+   "y": 1248,
+   "name": "Relógio de parede minimalista",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c9f0adcd-98b8-40f9-9b0c-3d6f6a409336"
+   }
+  },
+  "b092cdd2-77e6-584e-9752-e95c4fa2eb5e": {
+   "x": 192,
+   "y": 192,
+   "name": "Painéis acústicos hexagonais",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-343bb8f2-c216-4f96-8db6-f8cae8f394d1"
+   }
+  },
+  "3e24c394-5cc6-59f0-a9e5-3d0c99e21672": {
+   "x": 544,
+   "y": 192,
+   "name": "Painéis acústicos hexagonais",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-343bb8f2-c216-4f96-8db6-f8cae8f394d1"
+   }
+  },
+  "0d929ce6-c146-52fb-ae39-a3b2afbd4d51": {
+   "x": 236,
+   "y": 192,
+   "name": "Quadro: Koru apresentando",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-koru-apresentando-ink"
+   }
+  },
+  "ca2c250a-490b-595c-bff1-4b0d439b894a": {
+   "x": 500,
+   "y": 192,
+   "name": "Quadro: Koru comemorando",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-koru-comemorando-ink"
+   }
+  },
+  "4f0950ad-3802-5dd1-a460-cd0f0209ea02": {
+   "x": 992,
+   "y": 768,
+   "name": "Quadro: o K da Koncluí",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-marca-k-ink"
+   }
+  },
+  "623d42d3-d12f-5efe-89ba-3cc80baba4bc": {
+   "x": 1728,
+   "y": 768,
+   "name": "Quadro: Koru com o checklist",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-koru-checklist-ink"
+   }
+  },
+  "91d01942-6ea0-5b13-88c1-63442cffe55a": {
+   "x": 864,
+   "y": 768,
+   "name": "Quadro: Koncluí",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-marca-palavra-ink"
+   }
+  },
+  "7a0ecba4-4f74-5d0c-b354-f397b86482d8": {
+   "x": 1856,
+   "y": 768,
+   "name": "Quadro: o prato",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-prato-ink"
+   }
+  },
+  "c63ef621-5a92-5f0c-be32-c239dee9c8a3": {
+   "x": 736,
+   "y": 768,
+   "name": "Quadro: Koru no notebook",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-koru-notebook-ink"
+   }
+  },
+  "1416a90f-eadc-5376-a0dd-07fdd64fff33": {
+   "x": 1984,
+   "y": 768,
+   "name": "Quadro: o K em menta",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-marca-k-menta-ink"
+   }
+  },
+  "3adc84a6-85c9-50ff-a645-d51af4321967": {
+   "x": 1220,
+   "y": 1216,
+   "name": "Quadro: Koru acenando",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-koru-acenando-ink"
+   }
+  },
+  "71a16c4a-b9ca-56b6-9dbb-d2d1bd693ad0": {
+   "x": 1498,
+   "y": 1216,
+   "name": "Quadro: o restaurante",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-fachada-ink"
+   }
+  },
+  "41670fe0-77da-5ed9-b190-728c423fb584": {
+   "x": 2246,
+   "y": 180,
+   "name": "Quadro: Koru no café",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-koru-cafe-ink"
+   }
+  },
+  "c4dd3601-f6bc-57ec-84a6-d6a95a457fb5": {
+   "x": 2505,
+   "y": 180,
+   "name": "Quadro: o café",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-quadro-icp-cafe-ink"
+   }
+  },
+  "854a1b09-2b4a-51cc-8e27-63a4b4436818": {
+   "x": 2176,
+   "y": 192,
+   "name": "Prateleira flutuante com livros",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-c2946885-d808-44e1-9211-097bb0530e74"
+   }
+  },
+  "9f6dc64b-030a-5119-9cbe-be64afb75b61": {
+   "x": 2304,
+   "y": 192,
+   "name": "Relógio de parede minimalista",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-d0ebad46-1037-4e7c-8fa3-8b49a9b209e5"
+   }
+  },
+  "fe8ff52c-ae58-526a-9b62-9480332d6981": {
+   "x": 2344,
+   "y": 192,
+   "name": "Vaso de parede pequeno",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-3d503fea-0884-4eeb-8170-202e76cc5437"
+   }
+  },
+  "8c16ed45-1f59-5a53-90d0-c6ba54957984": {
+   "x": 2294,
+   "y": 1122,
+   "name": "Tapete de losangos 6×3",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-tapete-6x3-losangos"
+   }
+  },
+  "834dd462-7687-591c-9a34-86a3504c0750": {
+   "x": 630,
+   "y": 206,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "14ad4e75-6853-5974-86ce-7945264e2ec1": {
+   "x": 2053,
+   "y": 213,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "1b201a05-eda6-5861-a8c6-1948ab4c58d1": {
+   "x": 929,
+   "y": 212,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "c48bfae6-ce98-5c8b-9287-1fb173066888": {
+   "x": 1791,
+   "y": 211,
+   "name": "Ave-do-paraíso (folhagem)",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-805bc9b5-8179-4376-81d8-099e96eca613"
+   }
+  },
+  "1eb82bb9-d35b-5b1f-8621-48802f2f7376": {
+   "x": 640,
+   "y": 640,
+   "name": "Ave-do-paraíso florida",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-ed0d2801-ff4e-428d-9068-909933b24ece"
+   }
+  },
+  "322e0543-6825-5562-9696-60d491a7e5e7": {
+   "x": 2048,
+   "y": 640,
+   "name": "Ave-do-paraíso florida",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-ed0d2801-ff4e-428d-9068-909933b24ece"
+   }
+  },
+  "8e99be47-7729-5677-b8be-371fa6de38b1": {
+   "x": 640,
+   "y": 1248,
+   "name": "Ave-do-paraíso florida",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-ed0d2801-ff4e-428d-9068-909933b24ece"
+   }
+  },
+  "b4a79b6c-2d25-5fc7-a8bd-a1181f1134cf": {
+   "x": 2048,
+   "y": 1248,
+   "name": "Ave-do-paraíso florida",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-ed0d2801-ff4e-428d-9068-909933b24ece"
+   }
+  },
+  "2132f884-d094-527b-b97d-63451b67656c": {
+   "x": 1088,
+   "y": 1472,
+   "name": "Ave-do-paraíso florida",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-ed0d2801-ff4e-428d-9068-909933b24ece"
+   }
+  },
+  "bc024c9b-3af6-5af8-b7cd-90bfdc7a8ede": {
+   "x": 1600,
+   "y": 1472,
+   "name": "Ave-do-paraíso florida",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-ed0d2801-ff4e-428d-9068-909933b24ece"
+   }
+  },
+  "76b2c3f7-0073-52ec-9674-44c5c1e56c32": {
+   "x": 1280,
+   "y": 1696,
+   "name": "Banco de praça",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-da5dc64e-f437-4d16-8955-d3146afc068e"
+   }
+  },
+  "1dacbda2-cd34-5aa3-a5ae-0260a12edc75": {
+   "x": 1472,
+   "y": 1696,
+   "name": "Banco de praça",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-6cdb5db3-9ae2-46b4-8780-668de4c42474"
+   }
+  },
+  "45d07f0c-ea7e-5d70-87f7-8a90fa6f38ba": {
+   "x": 1248,
+   "y": 1728,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-920b1507-1b94-4d7f-8c15-cac21f9da3a7"
+   }
+  },
+  "7a47e7a3-1ad5-556a-b86d-c69deac825e5": {
+   "x": 1504,
+   "y": 1728,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-920b1507-1b94-4d7f-8c15-cac21f9da3a7"
+   }
+  },
+  "7788cbbd-0d39-5ccc-bd6e-b8dd28560604": {
+   "x": 1216,
+   "y": 1664,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-70a53160-3a2e-43d4-b279-6a0a588072b4"
+   }
+  },
+  "28128183-80dd-5cf7-863b-2762212453c0": {
+   "x": 1536,
+   "y": 1664,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-70a53160-3a2e-43d4-b279-6a0a588072b4"
+   }
+  },
+  "bf1c65a7-6f65-5170-a22b-ab8db3832988": {
+   "x": 1280,
+   "y": 1760,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-69d38f3e-27ac-4bcb-b963-f32f873dc367"
+   }
+  },
+  "7d66a6c8-b0c9-5551-93af-8d4498fa70fa": {
+   "x": 1472,
+   "y": 1760,
+   "name": "Equinácea",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-69d38f3e-27ac-4bcb-b963-f32f873dc367"
+   }
+  },
+  "2ed27ef9-7555-558f-9494-05bbad87ca25": {
+   "x": 702,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "c4be28b2-14f9-58db-a2bf-a99b23ee4fd0": {
+   "x": 2046,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "777c5f52-4766-5aee-b77a-b1819051457c": {
+   "x": 733,
+   "y": 289,
+   "name": "Copo térmico Stanley (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d4d92e2a-bdc9-4df3-aede-549f2d0f2be4-on21"
+   }
+  },
+  "e6390ea3-79bc-5319-8d86-5bf972310eb7": {
+   "x": 702,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "5e8084b1-8d63-5dd4-9c9c-6e46463d6c9b": {
+   "x": 2046,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "2f0a71c2-7b3e-59cc-96c9-213cc1d95836": {
+   "x": 685,
+   "y": 427,
+   "name": "Porta-retratos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-photo-frame-pet-on13"
+   }
+  },
+  "42cf2556-120b-52f2-99d9-69c5cb983026": {
+   "x": 732,
+   "y": 416,
+   "name": "Lata de refrigerante (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1552d022-8ca6-4125-aa59-9af8023e1f44-on20"
+   }
+  },
+  "f7e615be-2249-5e72-95e0-7245647de87f": {
+   "x": 2080,
+   "y": 417,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-9efdbe45-1575-4280-83ed-5e3f907c5194-on21"
+   }
+  },
+  "de6d7367-e130-5dcb-b760-d0241485d662": {
+   "x": 2015,
+   "y": 418,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-6a5897a7-b0a3-4802-8fe5-7fa87db3747f-on22"
+   }
+  },
+  "3a3351e8-f6d8-5753-820a-b7ca0048ef93": {
+   "x": 798,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "b77539d4-2b0e-5b7a-9d7d-2f53f449da94": {
+   "x": 1950,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "13f47f9d-efbe-54ab-a5f1-a3227fc8b2c4": {
+   "x": 830,
+   "y": 287,
+   "name": "Patinho de borracha (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-c1a73206-fc0c-477c-ba72-7f72944e4d31-on19"
+   }
+  },
+  "d46299b6-d9c0-572a-bae8-1fa3c56912d3": {
+   "x": 767,
+   "y": 290,
+   "name": "Livro fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-deed0ec7-d680-40e1-ba1b-cd99e59dc10b-on22"
+   }
+  },
+  "a200bf53-0199-56d7-a4ea-1b2f2f3ac343": {
+   "x": 1986,
+   "y": 286,
+   "name": "Babosa (aloe vera) (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d110bd2a-a862-48f4-bb67-fa45b1099b1b-on18"
+   }
+  },
+  "72d858f2-bd03-5908-8bed-a6b857e7bf23": {
+   "x": 1923,
+   "y": 286,
+   "name": "Copo térmico Stanley (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d8585f28-488b-450d-b970-51d9b749b3a6-on18"
+   }
+  },
+  "5ef8d063-dbb1-5176-8c70-307c22a2d12c": {
+   "x": 798,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "34939957-f043-5e23-bd8a-6cb76059b313": {
+   "x": 1950,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "c8bf3b9c-908b-5c9d-a7ea-c8b6390fc972": {
+   "x": 834,
+   "y": 419,
+   "name": "Fone de ouvido (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-8c969711-3773-4b97-978c-80c8482ab409-on23"
+   }
+  },
+  "f84eca2e-e9e0-5dd0-8d15-ac174d1feb2b": {
+   "x": 778,
+   "y": 425,
+   "name": "Porta-retratos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-photo-frame-mountain-on11"
+   }
+  },
+  "1440b8f5-56dd-50a9-90fc-a917be607960": {
+   "x": 1924,
+   "y": 412,
+   "name": "Broto (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-55789498-365a-442a-bf5c-ad6118e58e49-on16"
+   }
+  },
+  "6a398bbe-fabc-5211-bbea-e931da331eab": {
+   "x": 1984,
+   "y": 419,
+   "name": "Café gelado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-a1ed8609-d061-4979-b431-7ca824c6fe51-on23"
+   }
+  },
+  "5f74f82c-8e9e-50e2-a2d3-8a04c7819a19": {
+   "x": 894,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "928b6516-e073-51d7-bde3-10db376f68f0": {
+   "x": 1854,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "69f889db-fed7-5307-81d0-ea41e0b093cd": {
+   "x": 862,
+   "y": 294,
+   "name": "Documento avulso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-813e4d85-4b1d-4126-b836-e91c69c57aaa-on26"
+   }
+  },
+  "f23b01e7-357b-54f0-9f1e-16598eed5865": {
+   "x": 926,
+   "y": 287,
+   "name": "Café gelado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-a1ed8609-d061-4979-b431-7ca824c6fe51-on19"
+   }
+  },
+  "9ff0d519-0f9e-5440-9e63-3990122b476f": {
+   "x": 894,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "f72939b6-6d39-5f62-bcd2-3b4ead818b1c": {
+   "x": 1854,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "723a89f2-8bbe-5eb0-8a2e-b39cad8793b2": {
+   "x": 864,
+   "y": 418,
+   "name": "Copo térmico Stanley (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-c049f7f0-d9c7-442f-84e2-87f7f8c2028d-on22"
+   }
+  },
+  "b91d789f-17a1-5177-b096-db6e425cf334": {
+   "x": 924,
+   "y": 414,
+   "name": "Livro fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-461ede90-00b8-4bc0-9324-3f36e574fbfb-on18"
+   }
+  },
+  "a2e34c0a-9bb9-58ef-8fe7-d1f7def13b7e": {
+   "x": 1888,
+   "y": 416,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3bbbdb1d-4e91-4e42-830b-1cfbad6a9623-on20"
+   }
+  },
+  "5f7920a3-d4f3-5b85-a3f3-5ea6a0054269": {
+   "x": 1825,
+   "y": 420,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-6a5897a7-b0a3-4802-8fe5-7fa87db3747f-on24"
+   }
+  },
+  "61712167-4ae9-570c-b335-29c2dc751799": {
+   "x": 670,
+   "y": 253,
+   "name": "Luminária molecular (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1fad38cd-8519-4fb5-8acb-8154aa262156-on17"
+   }
+  },
+  "d7f005f4-53ba-56ea-b3e9-726b2c97b5d3": {
+   "x": 2082,
+   "y": 253,
+   "name": "Luminária molecular (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1fad38cd-8519-4fb5-8acb-8154aa262156-on17"
+   }
+  },
+  "05703ef9-a6f7-5864-b8a2-a86763792a9c": {
+   "x": 1054,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "b21d58f8-9c98-5620-9e29-12c49cf54001": {
+   "x": 1694,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "a219ef6a-e51d-5bb0-9db5-8e35b7bc5529": {
+   "x": 1084,
+   "y": 283,
+   "name": "Babosa (aloe vera) (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d110bd2a-a862-48f4-bb67-fa45b1099b1b-on15"
+   }
+  },
+  "63562bac-6138-569a-9444-e9d3d13d80a6": {
+   "x": 1730,
+   "y": 291,
+   "name": "Livro fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-7cf9bd1b-c012-423e-a9ec-67d45b8530f9-on23"
+   }
+  },
+  "6e899973-48b5-58d1-b69d-b58797412c34": {
+   "x": 1054,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "653d91d7-4091-5d34-8dcd-58aeb0d157a6": {
+   "x": 1694,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "cd6db09e-b451-5e3b-be71-f9e25f5b5b9d": {
+   "x": 1085,
+   "y": 416,
+   "name": "Fone de ouvido (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-85836ce4-2c63-4a14-9aa9-43ef55c40272-on20"
+   }
+  },
+  "40b78a6d-7013-5c99-a592-46888616fa66": {
+   "x": 1030,
+   "y": 420,
+   "name": "Patinho de borracha (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1f5d9315-9534-40b5-b8a5-50f4e52ca85a-on24"
+   }
+  },
+  "fc67a34b-831f-5de9-94b7-9ef1963a60c8": {
+   "x": 1666,
+   "y": 415,
+   "name": "Babosa (aloe vera) (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d110bd2a-a862-48f4-bb67-fa45b1099b1b-on19"
+   }
+  },
+  "74d45ee5-94a9-52ab-9a9e-11f4c7d956c2": {
+   "x": 1726,
+   "y": 416,
+   "name": "Caneca (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-79c76f08-0925-4468-91b1-b2dea57f024f-on20"
+   }
+  },
+  "fcb547e4-1727-55bf-a775-b538815e0cb1": {
+   "x": 1150,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "495e2c00-80d4-521b-9fb0-22b964623136": {
+   "x": 1598,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "87145ba7-82f5-5787-b06c-b3c62d10a948": {
+   "x": 1629,
+   "y": 284,
+   "name": "Broto (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-55789498-365a-442a-bf5c-ad6118e58e49-on16"
+   }
+  },
+  "6f0c4cb0-39bb-5660-ad30-36c9e61b160c": {
+   "x": 1568,
+   "y": 291,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-51e85145-96ba-4fed-835b-5b0aa7191311-on23"
+   }
+  },
+  "78c0e210-35c5-5824-9940-821c9ffd7e3c": {
+   "x": 1150,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "7c862ce2-5d49-540a-8de9-e940130cd257": {
+   "x": 1598,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "4aaa0472-af10-50a6-9e47-85416a50c402": {
+   "x": 1122,
+   "y": 417,
+   "name": "Garrafa térmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-9f805443-5047-4bb9-a8e9-a5a57735b9bb-on21"
+   }
+  },
+  "b0701419-ca7e-5df0-a46b-7e91cc06c7f8": {
+   "x": 1631,
+   "y": 419,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-6a5897a7-b0a3-4802-8fe5-7fa87db3747f-on23"
+   }
+  },
+  "bb136cc8-47b8-55b0-8fe8-9c7d2ae30f12": {
+   "x": 1569,
+   "y": 413,
+   "name": "Lata de refrigerante (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-20b9de90-c47f-4174-8d1d-0463d946d3e5-on17"
+   }
+  },
+  "3a4f83ad-833a-5f2f-81de-3f82b8d5773f": {
+   "x": 1246,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "7af33a98-7ea2-5e2f-968e-76e71dbb5c07": {
+   "x": 1502,
+   "y": 256,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "384d701c-7b3b-569c-a495-dc778a917897": {
+   "x": 1214,
+   "y": 288,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-c64d5e19-fb06-4dfe-bb5e-19d4b7875901-on20"
+   }
+  },
+  "6caa6398-e2f1-5a51-9be6-a9d87781cca8": {
+   "x": 1276,
+   "y": 291,
+   "name": "Bubble tea (boba) (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-615bf1ca-6bd9-434e-bfe1-4dbcc8751995-on23"
+   }
+  },
+  "dc80d425-6be9-51e7-b310-d61d9e2f90a8": {
+   "x": 1532,
+   "y": 286,
+   "name": "Babosa (aloe vera) (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d110bd2a-a862-48f4-bb67-fa45b1099b1b-on18"
+   }
+  },
+  "6408e8f1-c573-5156-bde9-f5e3826d1cc3": {
+   "x": 1472,
+   "y": 292,
+   "name": "Documento avulso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-4902e533-a730-40a8-a12e-2d6e507ed625-on24"
+   }
+  },
+  "d289961c-3a06-526f-86bb-ba48c152301f": {
+   "x": 1246,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "03e07df2-097d-5f3f-91fe-aa06614e14f0": {
+   "x": 1502,
+   "y": 384,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "1169fcfd-9dba-5e63-9d52-49cdca62efea": {
+   "x": 1274,
+   "y": 416,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3299d29b-0aef-48ad-8973-eb84ad140da1-on20"
+   }
+  },
+  "ead7bd93-58c8-5110-9ed7-85bed32004ed": {
+   "x": 1227,
+   "y": 424,
+   "name": "Porta-retratos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-photo-frame-mountain-on10"
+   }
+  },
+  "70c4ce6f-801f-5ea6-99ba-a71a061889d9": {
+   "x": 1475,
+   "y": 412,
+   "name": "Lata de refrigerante (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-20b9de90-c47f-4174-8d1d-0463d946d3e5-on16"
+   }
+  },
+  "91895911-39d1-52fa-b087-790cc13f86ae": {
+   "x": 1536,
+   "y": 416,
+   "name": "Caderno fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-8bf95209-c70e-4e1b-bdd0-ddb4fa06870d-on20"
+   }
+  },
+  "4e8a8abf-2ba4-584b-a5d8-85333473ccca": {
+   "x": 1022,
+   "y": 253,
+   "name": "Luminária molecular (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1fad38cd-8519-4fb5-8acb-8154aa262156-on17"
+   }
+  },
+  "39c0040d-fbc3-5571-b86f-77e244bceee2": {
+   "x": 1730,
+   "y": 253,
+   "name": "Luminária molecular (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1fad38cd-8519-4fb5-8acb-8154aa262156-on17"
+   }
+  },
+  "47d40cac-3d5f-5da7-b034-23e7644cb241": {
+   "x": 288,
+   "y": 345,
+   "name": "Caneca (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-a354ade9-9e5f-45c6-bf37-56c911a918a2-on9"
+   }
+  },
+  "31aa4934-2433-5840-9813-b4a380c8cec3": {
+   "x": 512,
+   "y": 343,
+   "name": "Garrafa térmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e5725809-b61c-49f7-a882-57f10348d877-on7"
+   }
+  },
+  "b899bf63-e51d-5002-979c-496acc378a50": {
+   "x": 326,
+   "y": 1070,
+   "name": "Notebook (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-63468875-3a41-4ffb-8eb3-62809f727006-on30"
+   }
+  },
+  "a4cc5678-e662-5578-8e1c-23440d3ee81d": {
+   "x": 430,
+   "y": 1105,
+   "name": "Livro aberto (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-03761ab2-32b1-463c-b081-8821fa9fe5a2-on33"
+   }
+  },
+  "0a3ded96-aa39-5026-8bff-c69aad490b34": {
+   "x": 474,
+   "y": 1106,
+   "name": "Pilha de documentos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-b2d450d9-cab0-4424-bd29-efa3fd040887-on34"
+   }
+  },
+  "952a69cf-ebbb-5eab-a223-f99d106704ac": {
+   "x": 192,
+   "y": 1152,
+   "name": "Globo terrestre (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-adba2363-77d1-49e5-8480-6a9bd6aee2af-on-14"
+   }
+  },
+  "31fa7274-fba6-50d3-af41-2871dba24c85": {
+   "x": 400,
+   "y": 1100,
+   "name": "Telefone de conferência (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-14f86cd6-c9eb-414a-975e-b118ce39853d-on28"
+   }
+  },
+  "eabd36d9-b3e9-5a9b-bc3b-52bc5182c5a2": {
+   "x": 326,
+   "y": 1358,
+   "name": "Notebook (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-63468875-3a41-4ffb-8eb3-62809f727006-on30"
+   }
+  },
+  "88e0bb82-72e7-5406-b7f7-b38a4f9a0e7d": {
+   "x": 430,
+   "y": 1393,
+   "name": "Livro aberto (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-03761ab2-32b1-463c-b081-8821fa9fe5a2-on33"
+   }
+  },
+  "389731ff-a82a-54bf-9a80-92ddf756ed22": {
+   "x": 474,
+   "y": 1394,
+   "name": "Pilha de documentos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-b2d450d9-cab0-4424-bd29-efa3fd040887-on34"
+   }
+  },
+  "9c936c8a-a841-5bc7-b54c-3fb437be4b4b": {
+   "x": 192,
+   "y": 1440,
+   "name": "Globo terrestre (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-adba2363-77d1-49e5-8480-6a9bd6aee2af-on-14"
+   }
+  },
+  "e165647d-3bcf-5a08-83ef-a59736c5e264": {
+   "x": 400,
+   "y": 1388,
+   "name": "Telefone de conferência (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-14f86cd6-c9eb-414a-975e-b118ce39853d-on28"
+   }
+  },
+  "9bfc2aa5-8037-55b6-8851-cf9463a4f4d9": {
+   "x": 1024,
+   "y": 711,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474-on27"
+   }
+  },
+  "12f137aa-84df-529f-bee6-07b6d8e8b747": {
+   "x": 992,
+   "y": 736,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d008b33d-fc20-4640-aab4-23fc17ce9921-on20"
+   }
+  },
+  "1b0c84dc-8c90-594e-b873-927103e7077f": {
+   "x": 1056,
+   "y": 738,
+   "name": "Maçã (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2493debc-b983-4ea5-a082-c0b4a78e3cca-on22"
+   }
+  },
+  "ca4deb39-6599-5477-970d-b8a7cdc666e9": {
+   "x": 1728,
+   "y": 711,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474-on27"
+   }
+  },
+  "864a4f93-9c8a-588f-b071-3d0ea5d23d62": {
+   "x": 1760,
+   "y": 741,
+   "name": "Documento avulso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3b442e91-c0c7-4190-b84b-2e8a3bbf5aee-on25"
+   }
+  },
+  "194b676a-a2dc-5078-a461-b62d4886f6ff": {
+   "x": 1022,
+   "y": 800,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "38e25df9-cef5-506b-bd9b-4738b130101d": {
+   "x": 1056,
+   "y": 829,
+   "name": "Caneca alta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-870feb00-9bf5-43f4-a2fd-eaddcc54c5af-on17"
+   }
+  },
+  "c8fbd99d-765c-5fd0-9164-9b4cf1f03a12": {
+   "x": 1726,
+   "y": 800,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "979ea6eb-1ac2-5aa3-a730-79285af36132": {
+   "x": 1758,
+   "y": 836,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-17820a56-098f-4fce-9d72-fd34b8891ce2-on24"
+   }
+  },
+  "78e64894-6955-5063-bea2-39f262110777": {
+   "x": 1695,
+   "y": 836,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2164645c-683c-4b3d-8968-d4c4a4f9f037-on24"
+   }
+  },
+  "430bc821-4afb-5ceb-a6ca-343315a3a270": {
+   "x": 896,
+   "y": 711,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474-on27"
+   }
+  },
+  "b8e0b4a0-5c74-5b9e-8325-864040f6f1cc": {
+   "x": 930,
+   "y": 734,
+   "name": "Livro fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-5b0c3caa-856d-468d-abc3-7212e673c910-on18"
+   }
+  },
+  "4a06ed47-6bbb-51bc-be71-d88f26b21c7f": {
+   "x": 866,
+   "y": 735,
+   "name": "Lata de refrigerante (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-5cb4d851-03f4-48c8-acaa-3effd8b31a38-on19"
+   }
+  },
+  "bd667f49-4d6c-5b02-9412-f8900b198fbc": {
+   "x": 1856,
+   "y": 711,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474-on27"
+   }
+  },
+  "0b5d468f-43b2-510c-b90f-28a2949952b0": {
+   "x": 1826,
+   "y": 740,
+   "name": "Maçã (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2493debc-b983-4ea5-a082-c0b4a78e3cca-on24"
+   }
+  },
+  "fe863491-5ad4-5a74-b1a9-62ed8d37f75a": {
+   "x": 894,
+   "y": 800,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "a2215736-92bf-5be8-85fe-a07444a164c2": {
+   "x": 864,
+   "y": 828,
+   "name": "Cacto pequeno (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ce5922e6-2812-4c20-aceb-59045fb8d07a-on16"
+   }
+  },
+  "dea7bec5-cbdf-5075-a0ad-27e2d857c01b": {
+   "x": 926,
+   "y": 829,
+   "name": "Garrafa térmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-9f805443-5047-4bb9-a8e9-a5a57735b9bb-on17"
+   }
+  },
+  "c97b8956-501a-512b-89b1-bd0a1e9f90fa": {
+   "x": 1854,
+   "y": 800,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "e0f43637-cb41-5199-9cdf-62eab38c49d7": {
+   "x": 1828,
+   "y": 833,
+   "name": "Garrafa térmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-23a241c5-c9d5-47fe-812e-bb2f0f290be3-on21"
+   }
+  },
+  "858bd2b4-1953-5f1b-90c2-fbb2f6916ba4": {
+   "x": 1886,
+   "y": 836,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-51e85145-96ba-4fed-835b-5b0aa7191311-on24"
+   }
+  },
+  "d3297059-279c-5dbe-b219-ef35393a302d": {
+   "x": 768,
+   "y": 711,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474-on27"
+   }
+  },
+  "887db6a1-f11f-5a75-8d80-e2ba58648a2a": {
+   "x": 799,
+   "y": 741,
+   "name": "Caneca (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2ccf5d0e-b2e6-4e73-b838-47cb8aadfc29-on25"
+   }
+  },
+  "3fcada18-6908-5dbb-a6ee-9eb90c6ad3f3": {
+   "x": 1984,
+   "y": 711,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474-on27"
+   }
+  },
+  "7b9e816e-ca80-58e4-91d0-5c5b19aaef83": {
+   "x": 1954,
+   "y": 733,
+   "name": "Grama em vaso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-c43d2cd7-1432-4e9b-9b56-71f371841edf-on17"
+   }
+  },
+  "b68a44c5-d68f-5ab5-9d50-19fee5bdc4fd": {
+   "x": 2013,
+   "y": 736,
+   "name": "Copo térmico Stanley (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-a3b4d465-f1d2-4d75-a42a-20f133c09203-on20"
+   }
+  },
+  "fbde29f4-304b-587f-a54f-8eaedad41b00": {
+   "x": 766,
+   "y": 800,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "12c9479f-d156-5351-a5c0-140e9c1ec070": {
+   "x": 801,
+   "y": 833,
+   "name": "Caneca (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e595bd32-5dc2-4a85-a42d-7fee489825b2-on21"
+   }
+  },
+  "f5e031ab-1eb2-5b75-8704-b82433359d9c": {
+   "x": 736,
+   "y": 825,
+   "name": "Hosta em vaso pequeno (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-b7b384e4-58fb-48d6-ab0d-fd51c50f946e-on13"
+   }
+  },
+  "5602ff83-869f-5e54-b595-776c95b07295": {
+   "x": 1982,
+   "y": 800,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "a6f53fa1-a7eb-5fcc-a533-563d02256dbe": {
+   "x": 1951,
+   "y": 833,
+   "name": "Tablet e celular (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-50405c5e-ec02-407e-bec1-e4241311fea2-on21"
+   }
+  },
+  "0a095daa-7e37-5e03-b648-8b1d3f2791b9": {
+   "x": 2014,
+   "y": 833,
+   "name": "Xícara de chá (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-38c1b75b-4869-4c36-b3e6-00873d3e896e-on21"
+   }
+  },
+  "6cbffca2-306c-5b7c-8d77-e6dab27be23d": {
+   "x": 734,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "767bcf18-8dad-58dd-a5e4-f145cdc3bed3": {
+   "x": 2014,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "5805d304-5bfd-54cc-98ad-a852f5b1d600": {
+   "x": 765,
+   "y": 991,
+   "name": "Caderno fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3f67ae2e-ca75-445f-ab9f-73cbe2dcd753-on19"
+   }
+  },
+  "b9ff9abd-2bb4-502e-88a9-bca44b8417bb": {
+   "x": 704,
+   "y": 986,
+   "name": "Cacto pequeno (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ce5922e6-2812-4c20-aceb-59045fb8d07a-on14"
+   }
+  },
+  "9be68dac-4ef1-5ebd-9cd8-e3ac1659d4b2": {
+   "x": 1984,
+   "y": 996,
+   "name": "Documento avulso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-4902e533-a730-40a8-a12e-2d6e507ed625-on24"
+   }
+  },
+  "fbc26c8c-9491-5894-af35-eaebbd8a9084": {
+   "x": 2048,
+   "y": 997,
+   "name": "Patinho de borracha (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-c1a73206-fc0c-477c-ba72-7f72944e4d31-on25"
+   }
+  },
+  "8c517aba-2ee7-5b8e-ab12-3d2e323868e8": {
+   "x": 830,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "b9f78a34-1f08-5778-850e-e225042d95e9": {
+   "x": 1918,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "8d42e12a-570d-5692-afc0-0ed1f85c616e": {
+   "x": 864,
+   "y": 991,
+   "name": "Caderno fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-8bf95209-c70e-4e1b-bdd0-ddb4fa06870d-on19"
+   }
+  },
+  "1ac8567d-69e4-5503-b63e-3e9e5c815716": {
+   "x": 813,
+   "y": 1000,
+   "name": "Porta-retratos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-photo-frame-pet-on10"
+   }
+  },
+  "f67025ae-ac0c-519d-80af-8ea6a75e3db7": {
+   "x": 1950,
+   "y": 995,
+   "name": "Xícara de chá (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-722a3bb0-c7c4-43f2-8fec-3fa790d6608b-on23"
+   }
+  },
+  "89f31c2c-7625-5a5d-88dc-f74633e854c8": {
+   "x": 1889,
+   "y": 993,
+   "name": "Livro fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-461ede90-00b8-4bc0-9324-3f36e574fbfb-on21"
+   }
+  },
+  "d4dae976-535b-5001-ad76-0cf6f414871f": {
+   "x": 926,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "f16e2594-00f5-588a-ad41-8a8f06802885": {
+   "x": 1822,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "2dfa32dd-dc25-595a-9624-aa25ba6c3645": {
+   "x": 894,
+   "y": 992,
+   "name": "Café gelado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-a1ed8609-d061-4979-b431-7ca824c6fe51-on20"
+   }
+  },
+  "fda1975c-a0c9-54d3-b13c-7cb6000042a6": {
+   "x": 968,
+   "y": 1001,
+   "name": "Porta-retratos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-photo-frame-beach-on11"
+   }
+  },
+  "33a6eaf8-7b30-5dc2-bdc9-626171068c5f": {
+   "x": 1802,
+   "y": 1003,
+   "name": "Porta-retratos (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-photo-frame-mountain-on13"
+   }
+  },
+  "0ed6a0a8-5ea5-5e52-8fb0-ec6bb0e3552e": {
+   "x": 1851,
+   "y": 993,
+   "name": "Caneca (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-fcd9f709-25fd-45ea-807f-46c9257c976a-on21"
+   }
+  },
+  "ad4f728e-9eac-5f0e-b322-4ab2723dfc36": {
+   "x": 1022,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "8aadfb62-41aa-5aa3-aac6-af4c9466d9bb": {
+   "x": 1726,
+   "y": 960,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "0074797e-d1f9-58f1-bf34-c1bd6da3b1a5": {
+   "x": 1055,
+   "y": 995,
+   "name": "Caderno fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-59544dd5-840f-43c5-87e1-d9783021d714-on23"
+   }
+  },
+  "97268f09-c529-5b7b-bbaf-71eb2f85d759": {
+   "x": 995,
+   "y": 989,
+   "name": "Tablet e celular (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-8c7cf95c-a997-4d0e-997f-b06685279b6d-on17"
+   }
+  },
+  "f8cca47d-b24f-526f-a829-ab36b362940a": {
+   "x": 1756,
+   "y": 996,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-6a5897a7-b0a3-4802-8fe5-7fa87db3747f-on24"
+   }
+  },
+  "a7a218e5-155b-5460-acbb-5a15b318c4df": {
+   "x": 1696,
+   "y": 993,
+   "name": "Maçã (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2493debc-b983-4ea5-a082-c0b4a78e3cca-on21"
+   }
+  },
+  "7fde4dd9-72d4-5aed-9079-d365cce31030": {
+   "x": 734,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "5d7f60e0-844e-5165-8ea3-f4170bfb571d": {
+   "x": 2014,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "7470fa60-1b8d-557b-a44d-bbb10daeb3f4": {
+   "x": 770,
+   "y": 1123,
+   "name": "Documento avulso",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-0f6dc8d6-19ca-4090-bf7b-2036e4b3247d"
+   }
+  },
+  "7a41f753-b61a-535f-a429-32d7ee9b6ff1": {
+   "x": 1986,
+   "y": 1117,
+   "name": "Fone de ouvido (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-06c21df2-34d1-4a6f-88cd-f0d3cd06a7e9-on17"
+   }
+  },
+  "1d7a3782-b53c-5e16-860a-f6adf6e1ea3d": {
+   "x": 2050,
+   "y": 1127,
+   "name": "Maçã (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-cef2c7de-0849-497a-8de1-e51011229ea5-on27"
+   }
+  },
+  "6eda2e37-58cc-5a4b-b37f-cfe3feee3a19": {
+   "x": 830,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "863975bb-b9ea-515b-aef6-7b6fc10ccf42": {
+   "x": 1918,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "68ebb463-42a4-5dde-8621-218a012a09d3": {
+   "x": 862,
+   "y": 1120,
+   "name": "Garrafa térmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-9f805443-5047-4bb9-a8e9-a5a57735b9bb-on20"
+   }
+  },
+  "9ae91e27-d73c-5b3d-97b0-fd333f29e45e": {
+   "x": 800,
+   "y": 1119,
+   "name": "Anotações a caneta (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-6a5897a7-b0a3-4802-8fe5-7fa87db3747f-on19"
+   }
+  },
+  "8f2d6cbc-e7ec-5da2-91d0-a8d6571141e6": {
+   "x": 1952,
+   "y": 1122,
+   "name": "Caneca (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-7c1d7e50-36c3-436e-85ef-d64a8bb99c89-on22"
+   }
+  },
+  "246c1d14-a5cf-5d70-ac76-61b337c5657b": {
+   "x": 926,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "4b537375-1674-5799-9f14-4c5dc8edbf53": {
+   "x": 1822,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "4b5c78d8-b0c2-5c00-899b-3e03a851a4ec": {
+   "x": 896,
+   "y": 1124,
+   "name": "Maçã (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2493debc-b983-4ea5-a082-c0b4a78e3cca-on24"
+   }
+  },
+  "09cba10d-c5ca-5a04-a61f-cd058b25fe6e": {
+   "x": 959,
+   "y": 1115,
+   "name": "Lata de refrigerante (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-5cb4d851-03f4-48c8-acaa-3effd8b31a38-on15"
+   }
+  },
+  "34bceaed-1f90-5c71-bb81-a7f2b0e9fd32": {
+   "x": 1852,
+   "y": 1120,
+   "name": "Copo térmico Stanley (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d8585f28-488b-450d-b970-51d9b749b3a6-on20"
+   }
+  },
+  "c64c6c1a-0b80-55e1-90ad-59cf98c61222": {
+   "x": 1796,
+   "y": 1121,
+   "name": "Documento avulso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3b442e91-c0c7-4190-b84b-2e8a3bbf5aee-on21"
+   }
+  },
+  "ad73ec80-18fd-51aa-b658-15e49bd80667": {
+   "x": 1022,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "53ae882b-f408-559c-bceb-2496d9d2e675": {
+   "x": 1726,
+   "y": 1088,
+   "name": "Computador iMac (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3-on20"
+   }
+  },
+  "0b61eb60-bc5e-585d-b918-a15cba7ac461": {
+   "x": 1056,
+   "y": 1121,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-8c6d1edb-4eb5-4571-914d-cfd37063417a-on21"
+   }
+  },
+  "ddad0d94-d1ae-54ac-ba4d-b1a94e512f01": {
+   "x": 1348,
+   "y": 1312,
+   "name": "Computador iMac",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-87e53678-a56e-4db1-a04d-7b45d0d8f474"
+   }
+  },
+  "bc23d2f0-1e86-54ca-885a-5730919004fe": {
+   "x": 1426,
+   "y": 1335,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on11"
+   }
+  },
+  "b0d3e175-897a-51b0-b0a1-f6f5b277673a": {
+   "x": 1104,
+   "y": 1363,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on13"
+   }
+  },
+  "af8609c2-ca6a-5ae6-a79b-2dfccc7852c5": {
+   "x": 1648,
+   "y": 1363,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on13"
+   }
+  },
+  "ce8d2321-9dbf-59df-ac39-6dd9ab4f2f4e": {
+   "x": 829,
+   "y": 1397,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on13"
+   }
+  },
+  "77742282-55c5-5715-be35-3262c8d91af5": {
+   "x": 1925,
+   "y": 1398,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on13"
+   }
+  },
+  "dba4613a-e69c-5c13-92f5-712a283657b7": {
+   "x": 807,
+   "y": 1397,
+   "name": "Broto",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-55789498-365a-442a-bf5c-ad6118e58e49"
+   }
+  },
+  "5e6305af-1cb5-5061-91fb-fe8ffee1ad85": {
+   "x": 1946,
+   "y": 1399,
+   "name": "Broto",
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-55789498-365a-442a-bf5c-ad6118e58e49"
+   }
+  },
+  "e8758909-d940-55d8-8171-7c3890334927": {
+   "x": 895,
+   "y": 1401,
+   "name": "Caderno fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3f67ae2e-ca75-445f-ab9f-73cbe2dcd753-on9"
+   }
+  },
+  "74ee1a07-ce92-569a-896e-94f49d6250a2": {
+   "x": 1855,
+   "y": 1401,
+   "name": "Caderno fechado (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-3f67ae2e-ca75-445f-ab9f-73cbe2dcd753-on9"
+   }
+  },
+  "bb9d1b90-882a-5f04-a21e-4493a32d7df6": {
+   "x": 2192,
+   "y": 222,
+   "name": "Máquina de café expresso (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-6624c793-3ab8-40bb-b74b-1f208ed4bcb3-on15"
+   }
+  },
+  "16d5e486-71d1-5147-9791-3eebc61594f2": {
+   "x": 2246,
+   "y": 233,
+   "name": "Cafeteira de cápsula (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-fab25061-2a2f-48ec-b593-b0a609724608-on26"
+   }
+  },
+  "26ffe8c4-36dc-5c25-881a-9d387969851d": {
+   "x": 2268,
+   "y": 244,
+   "name": "Caneca larga (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-d8c09305-1179-420d-b566-388233e4c217-on5"
+   }
+  },
+  "8bad1a43-fe7e-5f6c-b11c-6575a12b1374": {
+   "x": 2384,
+   "y": 244,
+   "name": "Cesta de frutas vermelhas (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-2d39cbc6-c5bb-4925-bd51-dffdc15a4dfe-on5"
+   }
+  },
+  "ca3312bf-fc00-56b9-8aeb-a3e86ea419b5": {
+   "x": 2226,
+   "y": 392,
+   "name": "Coxinha (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-4e67b39b-5493-43a9-9fe5-c6aee2eafd1b-on31"
+   }
+  },
+  "26ca9f74-a755-5b9b-b027-85de537935fe": {
+   "x": 2254,
+   "y": 396,
+   "name": "Xícara de chá (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-de01c12c-4045-4a00-9748-3db8b2e4c5a4-on35"
+   }
+  },
+  "98bf6456-38e0-58b0-8305-34a6dc264f28": {
+   "x": 2432,
+   "y": 359,
+   "name": "Pizza (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ae9b4039-bd9c-4978-bd51-d1bc1aebbf75-on30"
+   }
+  },
+  "e138b283-51bd-5dc6-981e-145c26bd5c93": {
+   "x": 2226,
+   "y": 583,
+   "name": "Açaí na tigela (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-a5908937-e2c2-4e95-a4d5-4f8993f54466-on30"
+   }
+  },
+  "ecf86c30-106b-58de-b5a2-e672212fec7a": {
+   "x": 2254,
+   "y": 581,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on28"
+   }
+  },
+  "72ba6968-9fce-5b82-87d2-f2bf5f7efe88": {
+   "x": 2422,
+   "y": 583,
+   "name": "Caixa de donuts (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-4e3216fe-ee90-44ad-80f8-6ab747a65b83-on30"
+   }
+  },
+  "afd2ff7a-ee92-5a17-9000-0ac2bd82bd55": {
+   "x": 2448,
+   "y": 578,
+   "name": "Bule de café (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-26fda9fc-2b77-4eb2-98a5-87e9ddc53241-on25"
+   }
+  },
+  "0556e421-1265-5315-980f-cc41770144d7": {
+   "x": 2228,
+   "y": 775,
+   "name": "Salada (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-48882b95-9026-470e-b90b-db3b8665c409-on30"
+   }
+  },
+  "547824a1-8e49-5811-a923-94e5493c53ca": {
+   "x": 2253,
+   "y": 779,
+   "name": "Bandeja de sushi (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ebab97d5-9cd1-44fe-992b-23fba888e39d-on34"
+   }
+  },
+  "e56cfea7-3bd4-5e61-adf6-376f19100a51": {
+   "x": 2432,
+   "y": 773,
+   "name": "Planta em vaso de cerâmica (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ac871da8-583c-4ddd-b84b-baa638df46bf-on28"
+   }
+  },
+  "77ddeae3-e2dd-5df3-b16a-c12f41c59c6f": {
+   "x": 2257,
+   "y": 889,
+   "name": "Hosta em vaso pequeno (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-ad953b3b-8cd1-44be-94cf-82a918be0a93-on-27"
+   }
+  },
+  "a2e8eb88-6d9a-5d99-98cf-ead65fcf2d6f": {
+   "x": 2416,
+   "y": 890,
+   "name": "Busto de mármore feminino (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-1e938292-ee46-4ed5-a7a8-159ce6d7d2e4-on-26"
+   }
+  },
+  "40d725e5-e92c-5d16-8dd1-e3fa0867c690": {
+   "x": 2300,
+   "y": 1064,
+   "name": "Luminária de mesa com cúpula clara (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-lumin-ria-de-mesa-creme-on-11"
+   }
+  },
+  "25e917c1-a175-5f79-b573-87f6d1665710": {
+   "x": 2300,
+   "y": 1185,
+   "name": "Luminária de mesa com cúpula clara (sobre móvel)",
+   "prefabRef": {
+    "collectionName": "Koncluí",
+    "id": "konclui-konclui-lumin-ria-de-mesa-creme-on-18"
+   }
+  },
+  "e0fc128e-c422-4e8f-b228-88708d538039": {
+   "x": 2048,
+   "y": 1280,
+   "properties": [
+    {
+     "id": "9ff89356-70f6-45e2-a3db-edda5d886186",
+     "type": "entityDescriptionProperties",
+     "description": "",
+     "searchable": false
+    },
+    {
+     "id": "fe406e9a-55d9-47be-a28a-e0b8c78e9344",
+     "type": "entityDescriptionProperties",
+     "description": "",
+     "searchable": false
+    }
+   ],
+   "prefabRef": {
+    "collectionName": "Estantes e livros",
+    "id": "bookshelves-005"
+   }
+  },
+  "de3c4fb2-7a45-4fd8-975b-8879bb57c64d": {
+   "x": 608,
+   "y": 224,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Estantes e livros",
+    "id": "bookshelves-011"
+   }
+  },
+  "b35aab2e-1450-4f6a-8fa1-418ebe0734b8": {
+   "x": 1664,
+   "y": 289,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Escritório moderno",
+    "id": "mo-164"
+   }
+  },
+  "4820bbba-b1a8-404a-bfdf-9e79e1347639": {
+   "x": 1827,
+   "y": 286,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Escritório moderno",
+    "id": "mo-160"
+   }
+  },
+  "fde64cec-c0c4-4f61-9a3c-56d59eac5c88": {
+   "x": 2320,
+   "y": 239,
+   "properties": [
+    {
+     "id": "f053ce62-bdd4-4e3a-a1c7-82cc01f15780",
+     "type": "entityDescriptionProperties",
+     "description": "",
+     "searchable": false
+    }
+   ],
+   "prefabRef": {
+    "collectionName": "LPC",
+    "id": "lpc-interior-052"
+   }
+  },
+  "e475ea3f-283a-46e8-bcdc-6974e2e5a788": {
+   "x": 2112,
+   "y": 224,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Estantes e livros",
+    "id": "bookshelves-011"
+   }
+  },
+  "29dfd826-c127-4ba6-a27c-b51e6f6fe3e6": {
+   "x": 97,
+   "y": 615,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-03f657fd-a27e-4517-a4c4-e03bf5d96c87"
+   }
+  },
+  "956b2168-107d-4859-9890-4c9fd0d3599e": {
+   "x": 97,
+   "y": 351,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-03f657fd-a27e-4517-a4c4-e03bf5d96c87"
+   }
+  },
+  "5c2c9ad2-bf18-4f45-9e7f-85fc5f3e4644": {
+   "x": 737,
+   "y": 715,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Escritório moderno",
+    "id": "mo-320"
+   }
+  },
+  "578bc597-cc77-4330-aad2-a047edd2616e": {
+   "x": 672,
+   "y": 1280,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Estantes e livros",
+    "id": "bookshelves-005"
+   }
+  },
+  "4c41dd7c-93fe-4db1-b879-68e4f58302b3": {
+   "x": 2208,
+   "y": 384,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-84dc073e-3f0d-441b-a765-ab4cca62bfed"
+   }
+  },
+  "103ef70d-1fe4-4dc3-8fc6-b13068282a8b": {
+   "x": 1151,
+   "y": 1281,
+   "properties": [],
+   "prefabRef": {
+    "collectionName": "Mobília",
+    "id": "mob-86fcec6a-3b67-498d-be33-125a2c69a7ba"
+   }
+  }
+ },
+ "areas": [
+  {
+   "x": 1360,
+   "y": 1658,
+   "width": 64,
+   "height": 64,
+   "id": "6caa5e5a-c0d7-5c8d-b759-0d48decb9202",
+   "visible": true,
+   "name": "",
+   "properties": [
+    {
+     "id": "d017b268-86ec-57dc-9d75-e935fe559399",
+     "type": "start",
+     "isDefault": true
+    },
+    {
+     "id": "c14e303e-c5c4-4ed5-8f45-d3d71ae72ed3",
+     "type": "areaDescriptionProperties",
+     "description": "Entrada do escritório e acesso aos espaços da equipe.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "76241fb1-76ac-5745-8caf-c293f40fee48",
+   "name": "Sala 01",
+   "x": 608,
+   "y": 256,
+   "width": 352,
+   "height": 288,
+   "visible": true,
+   "properties": [
+    {
+     "id": "c04c6d29-23b8-576a-833c-a8b054b4782b",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-room_01",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "4ff2ebd3-19e7-5f33-b7a4-131ba7931358",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 12
+    },
+    {
+     "id": "f8b4a439-728a-54d2-a051-48727e6dff63",
+     "type": "areaDescriptionProperties",
+     "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "x": 962,
+   "y": 256,
+   "width": 352,
+   "height": 288,
+   "id": "5c7d434f-6e99-5f24-95e6-2c6cfb6613f1",
+   "visible": true,
+   "name": "Sala 02",
+   "properties": [
+    {
+     "id": "8e53bfc4-ad66-5246-8c96-21647a965a29",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-room_02",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "ee2b8ee0-81c0-5572-ad73-087a9c3975d8",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 12
+    },
+    {
+     "id": "c9e1ff65-48b5-5f7e-b67e-944b86a1f1a5",
+     "type": "areaDescriptionProperties",
+     "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "9614f136-0cfe-5ff3-a3e9-0e04a63b5b31",
+   "name": "Sala 03",
+   "x": 1472,
+   "y": 256,
+   "width": 352,
+   "height": 288,
+   "visible": true,
+   "properties": [
+    {
+     "id": "3858ae00-69fe-5044-8b23-bb2879aebe8b",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-room_03",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "b1dbff31-a032-5661-b74d-3a059c3cd8b1",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 12
+    },
+    {
+     "id": "cbdfef1b-6b8c-5159-8296-02dc95c0cb3b",
+     "type": "areaDescriptionProperties",
+     "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "376afa5e-4024-5116-b629-47654618fedb",
+   "name": "Sala 04",
+   "x": 1824,
+   "y": 256,
+   "width": 352,
+   "height": 288,
+   "visible": true,
+   "properties": [
+    {
+     "id": "f066348c-8273-514b-8df3-8d686ee4f911",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-room_04",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "add34f68-b453-54d8-9e30-cd9338f5540c",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 12
+    },
+    {
+     "id": "9c19d24a-a863-568a-8e02-ca790d74c64b",
+     "type": "areaDescriptionProperties",
+     "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "c7f8fc11-abe2-5c54-858e-60cab886f43d",
+   "name": "Reunião 01",
+   "x": 192,
+   "y": 1024,
+   "width": 416,
+   "height": 224,
+   "visible": true,
+   "properties": [
+    {
+     "id": "bf0491ad-da79-5d75-a9d8-0d79c09fefd0",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-meeting_01",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "06d84e11-2536-59a0-89f5-8396b2235f03",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 10
+    },
+    {
+     "id": "1f63cd20-7a7a-533a-82ff-7e6826a8ec67",
+     "type": "areaDescriptionProperties",
+     "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "2f4cec99-8dd8-51dc-9c6e-21e9587179f4",
+   "name": "Reunião 02",
+   "x": 192,
+   "y": 1312,
+   "width": 416,
+   "height": 224,
+   "visible": true,
+   "properties": [
+    {
+     "id": "e36ab83d-3a1e-5173-b162-085a521ba655",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-meeting_02",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "faa9a926-a7ed-5d74-856c-366eab68d5b0",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 10
+    },
+    {
+     "id": "a8b84ba9-0dae-5971-b671-049842f0fce9",
+     "type": "areaDescriptionProperties",
+     "description": "Conversa separada das outras salas. Ative câmera e microfone quando desejar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "d834fe31-404a-5131-ab9c-ba3d5f57b2a4",
+   "name": "Cabine de foco A1",
+   "x": 960,
+   "y": 704,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "98fbeb29-5743-5073-b776-83d51a376334",
+     "type": "silent"
+    },
+    {
+     "id": "f922f141-dd0a-5dbe-910d-fee76b7ddd41",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "fe93846b-b7fd-5ab2-a710-2f0251f3e7d1",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "95a3ba4c-fa73-50df-b2cb-750c2ebe4808",
+   "name": "Cabine de foco B1",
+   "x": 1696,
+   "y": 704,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "5a4f5117-c886-5e63-abea-ea5bdd971b74",
+     "type": "silent"
+    },
+    {
+     "id": "d44baa2b-8fbe-5310-afec-d51061cd4bb5",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "8f7bc413-e478-56c7-9072-981aafb6a134",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "f3142715-68b0-5217-9a25-e30c8c83feab",
+   "name": "Cabine de foco A4",
+   "x": 960,
+   "y": 832,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "b0a18c4e-b2f1-5e73-a339-6dd82e5eb23c",
+     "type": "silent"
+    },
+    {
+     "id": "6362693a-dfb2-5518-8369-703328fd7c5f",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "37bdcee1-8184-516a-a9c4-c84b5819a9a5",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "e3bed848-e1e9-5a67-8cc8-021b526d1288",
+   "name": "Cabine de foco B4",
+   "x": 1696,
+   "y": 832,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "87803e18-cb78-5961-a76c-f8c6a90e64fb",
+     "type": "silent"
+    },
+    {
+     "id": "6dbc38c5-05c3-5a1e-8d7f-40b091247200",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "9702eb47-f78c-5de3-b49f-e16e26e41d3b",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "d7bd4f42-aea2-5b83-8b35-8a5bfdab2746",
+   "name": "Cabine de foco A2",
+   "x": 832,
+   "y": 704,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "80a605dd-cb60-5489-9f45-d0a98828900f",
+     "type": "silent"
+    },
+    {
+     "id": "fc2153ce-e17d-5b6a-ad03-2a062d5b69aa",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "0d775336-fad5-5a6f-8b48-e4489de644e8",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "edbabfa9-cd77-5e57-9cff-90736439ef75",
+   "name": "Cabine de foco B2",
+   "x": 1824,
+   "y": 704,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "d6a0c3ee-236b-54e9-9bdd-0276248a13c9",
+     "type": "silent"
+    },
+    {
+     "id": "beaa9bbb-097e-590b-9571-d4c533ceaf72",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "b6e13cab-47b3-59e8-8634-585269835235",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "62e8ae5b-2238-513f-89c5-af9fb13c9d9c",
+   "name": "Cabine de foco A5",
+   "x": 832,
+   "y": 832,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "f922b4b9-7766-594a-86b5-2a15f8866715",
+     "type": "silent"
+    },
+    {
+     "id": "64fcb5ef-2b4d-548f-b39e-2399481aa869",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "2a0d9d3f-c350-56b7-8bf6-6a096da6526c",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "19271ebb-86d1-5417-b0c0-ee387ec50ebf",
+   "name": "Cabine de foco B5",
+   "x": 1824,
+   "y": 832,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "6349cf37-f769-5248-9e41-f639460c8717",
+     "type": "silent"
+    },
+    {
+     "id": "dcf4666f-1b7f-565a-8d3f-1b42c2a096a4",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "02ea1645-b995-52db-ada4-8d133e33b693",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "047d592f-6117-5764-9b02-b27f7d4a9dc5",
+   "name": "Cabine de foco A3",
+   "x": 704,
+   "y": 704,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "1b95ebc8-a31f-59a0-8e62-144c8b938ca8",
+     "type": "silent"
+    },
+    {
+     "id": "316d98f1-3c7f-5ba4-988a-33059bb5eb63",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "9e869cd1-6e3e-54fa-aaf1-8034c83ae142",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "68af2e4a-c517-5572-ae1e-bc535f03eb76",
+   "name": "Cabine de foco B3",
+   "x": 1952,
+   "y": 704,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "b788bbf3-6e90-565e-bbae-60710a632672",
+     "type": "silent"
+    },
+    {
+     "id": "ccd719ed-5d57-5d5c-890e-0d27bc145269",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "4d9bc059-6062-57ec-8c05-53555c0d9f85",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "93b25910-d749-577a-ba73-b92910e2f6a1",
+   "name": "Cabine de foco A6",
+   "x": 704,
+   "y": 832,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "fd30073a-c42a-5750-833b-e41e573f144a",
+     "type": "silent"
+    },
+    {
+     "id": "50c66236-b582-5adc-81c6-7b674c0b06b0",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "809a623a-6065-5399-89a2-8e8a234d1dea",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "fa3aaa0c-d31c-539d-b1b8-99372f373a50",
+   "name": "Cabine de foco B6",
+   "x": 1952,
+   "y": 832,
+   "width": 128,
+   "height": 64,
+   "visible": true,
+   "properties": [
+    {
+     "id": "3ece1b0a-d89f-5f6e-b6e9-a3e2ab704471",
+     "type": "silent"
+    },
+    {
+     "id": "9829341f-af01-54c4-8ca8-01ffd67b1959",
+     "type": "maxUsersInAreaPropertyData",
+     "maxUsers": 1
+    },
+    {
+     "id": "143da3aa-476b-57a1-b988-a00c5102bfae",
+     "type": "areaDescriptionProperties",
+     "description": "Área silenciosa para uma pessoa: sem conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "c604f0ae-a7c6-5ecd-b433-20badb99a38c",
+   "name": "Palco",
+   "x": 192,
+   "y": 256,
+   "width": 416,
+   "height": 160,
+   "visible": true,
+   "properties": [
+    {
+     "id": "bdccb629-a08a-50d9-851b-7e3342375056",
+     "type": "speakerMegaphone",
+     "name": "Palco Koncluí",
+     "chatEnabled": true,
+     "seeAttendees": true
+    },
+    {
+     "id": "96b8f482-dfcf-5e27-883d-445ef1ae8d13",
+     "type": "areaDescriptionProperties",
+     "description": "Área de apresentação para a plateia.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "d6754c14-9ade-517c-8f66-eea1ab7f6bb4",
+   "name": "Plateia",
+   "x": 192,
+   "y": 416,
+   "width": 416,
+   "height": 544,
+   "visible": true,
+   "properties": [
+    {
+     "id": "4d19a9ac-d567-5dfd-9e31-b9b10c54f33b",
+     "type": "listenerMegaphone",
+     "speakerZoneName": "c604f0ae-a7c6-5ecd-b433-20badb99a38c",
+     "chatEnabled": true,
+     "allowTalking": false,
+     "raiseHandEnabled": true
+    },
+    {
+     "id": "81a3f0c4-d341-5ef8-b77d-39f613db2583",
+     "type": "areaDescriptionProperties",
+     "description": "Ouça a apresentação e levante a mão para participar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "e5805c60-2b6d-519a-b3de-bf241296d4a6",
+   "name": "Café e convivência",
+   "x": 2176,
+   "y": 256,
+   "width": 416,
+   "height": 1280,
+   "visible": true,
+   "properties": [
+    {
+     "id": "bee58aa0-c27e-52ec-a256-35b30e5f7292",
+     "type": "livekitRoomProperty",
+     "roomName": "konclui-sede-cafe",
+     "livekitRoomConfig": {
+      "startWithAudioMuted": true,
+      "startWithVideoMuted": true,
+      "disableChat": false,
+      "raiseHandEnabled": true
+     }
+    },
+    {
+     "id": "f870b7a9-fd23-5a8e-bd29-b6403bc42fa1",
+     "type": "areaDescriptionProperties",
+     "description": "Copa, mesas e espaço de convivência da equipe.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "c28b2143-f783-5081-bfb6-347c04e4e730",
+   "name": "Estações de trabalho — oeste",
+   "x": 640,
+   "y": 928,
+   "width": 512,
+   "height": 352,
+   "visible": true,
+   "properties": [
+    {
+     "id": "289bc2f0-3447-5aa3-9dd0-92291a117cfb",
+     "type": "areaDescriptionProperties",
+     "description": "Postos de trabalho e conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "x": 1631,
+   "y": 928,
+   "width": 512,
+   "height": 352,
+   "id": "02caf6e6-5964-5cc2-a51c-d0ed7f3d242b",
+   "visible": true,
+   "name": "Estações de trabalho — leste",
+   "properties": [
+    {
+     "id": "aed84d9f-6f7c-5229-ad74-3ae07619531b",
+     "type": "areaDescriptionProperties",
+     "description": "Postos de trabalho e conversas por proximidade.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "b16f9298-92fa-5c90-9dee-b833f767ab93",
+   "name": "Recepção",
+   "x": 640,
+   "y": 1280,
+   "width": 1504,
+   "height": 256,
+   "visible": true,
+   "properties": [
+    {
+     "id": "04181833-6451-549c-9cf1-62bbc20365b5",
+     "type": "areaDescriptionProperties",
+     "description": "Entrada do escritório e acesso aos espaços da equipe.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "x": 1152,
+   "y": 607,
+   "width": 480,
+   "height": 672,
+   "id": "fd022fe8-a4bc-53dc-9ab6-5d7670fa3d47",
+   "visible": true,
+   "name": "Lago das carpas",
+   "properties": [
+    {
+     "id": "cc151ec6-7a93-5c6d-86f5-b1d0da4cdbc6",
+     "type": "areaDescriptionProperties",
+     "description": "Canal da fonte da Koru e lago com o K. Clique na água para alimentar.",
+     "searchable": true
+    }
+   ]
+  },
+  {
+   "id": "514e4011-559a-5de5-b8d1-9d5b7fa1440d",
+   "name": "Sino da venda",
+   "x": 1472,
+   "y": 1280,
+   "width": 96,
+   "height": 96,
+   "visible": true,
+   "properties": [
+    {
+     "id": "2c8d8d1e-b14c-5270-b76d-2065958f567f",
+     "type": "areaDescriptionProperties",
+     "description": "Fechou uma venda? Aperte ESPAÇO aqui para tocar o sino para todo o escritório.",
+     "searchable": true
+    }
+   ]
+  }
+ ],
+ "entityCollections": [
+  {
+   "url": "entities/mobilia/collection.json",
+   "type": "file"
+  },
+  {
+   "url": "entities/konclui/collection.json",
+   "type": "file"
+  },
+  {
+   "url": "entities/escritorio-moderno/collection.json",
+   "type": "file"
+  },
+  {
+   "url": "entities/estantes-e-livros/collection.json",
+   "type": "file"
+  },
+  {
+   "url": "entities/plantas-em-vaso/collection.json",
+   "type": "file"
+  },
+  {
+   "url": "entities/lpc/collection.json",
+   "type": "file"
+  }
+ ],
+ "settings": {
+  "megaphone": {
+   "enabled": true,
+   "title": "Koncluí · todo o escritório",
+   "scope": "ROOM",
+   "rights": []
+  }
+ }
+}
