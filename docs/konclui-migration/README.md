@@ -14,7 +14,7 @@ The native migration preserves the existing office on official WorkAdventure v1.
 
 Preserve the current Konclui design tokens, map, art, controls, and interactions. Evaluate the affected flows at 360, 768, 1000, and 1440 pixels. Include keyboard/touch, reduced motion, denied media, reconnect, root/direct entry, chat/panel transitions, and resource cleanup. A hidden control or a skipped scenario is not a pass.
 
-Use the existing package runners for focused unit, type, Svelte, lint, and formatting checks. Use actual local engine captures for visual changes, then an independent Sonnet review through `klaude` when available. Check every reported visual finding against the image and source. Independent code review is a separate gate.
+Use the existing package runners for focused unit, type, Svelte, lint, and formatting checks. `scripts/gate.sh play` and `scripts/gate.sh back` run a package's type checks, tests, and the lint and format of its changed files side by side, print each exit code, and let one gate run at a time on the machine. Use actual local engine captures for visual changes, then an independent Sonnet review through `klaude` when available. Check every reported visual finding against the image and source. Independent code review is a separate gate.
 
 Benchmark only identified production bundles. Keep A upstream, B reference product, and C native candidate distinct. Product claims compare equivalent B/C capabilities with at least five interleaved runs and error counters. Scale tests use protocol clients plus one to three browsers; they do not launch 1000 browsers. Physical modest-device and multi-node claims require their own evidence.
 
