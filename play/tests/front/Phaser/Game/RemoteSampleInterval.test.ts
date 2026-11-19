@@ -384,5 +384,21 @@ describe("Remote sample interval", () => {
 
             expect(third.snap).toBe(false);
         });
+
+        it("does not mistake a speed-up walk on a diagonal, whose sample arrives 80 ms early, for a teleport", () => {
+            const intervals = new RemoteSampleIntervals();
+            // Both axes move at the speed-up speed: the keyboard does not shorten a diagonal.
+            const perAxisPxPerS = WALK_SPEED_PX_PER_S * 2.5;
+            intervals.observe(USER_ID, 0, { x: 0, y: 0, moving: true });
+            intervals.observe(USER_ID, 1000, { x: perAxisPxPerS, y: perAxisPxPerS, moving: true });
+
+            const third = intervals.observe(USER_ID, 1920, {
+                x: perAxisPxPerS * 2,
+                y: perAxisPxPerS * 2,
+                moving: true,
+            });
+
+            expect(third.snap).toBe(false);
+        });
     });
 });

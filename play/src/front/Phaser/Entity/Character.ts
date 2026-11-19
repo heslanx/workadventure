@@ -18,6 +18,7 @@ import { CharacterTextureError } from "../../Exception/CharacterTextureError";
 import { getPlayerAnimations, PlayerAnimationTypes } from "../Player/Animation";
 import { ProtobufClientUtils } from "../../Network/ProtobufClientUtils";
 import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
+import { PIXELS_PER_SECOND_PER_SPEED_UNIT } from "../Player/WalkSpeed";
 import { isReducedMotion } from "../../Utils/reducedMotion";
 
 import { UsernameDisplay } from "../Components/UsernameDisplay";
@@ -565,7 +566,8 @@ export abstract class Character extends Container implements OutlineableInterfac
         let yDistance = segmentEndPos.y - segmentStartPos.y;
         let pathSegmentLength = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
 
-        this.currentPathSegmentDistanceFromStart += (this.getPathWalkingSpeed() * delta * 20) / 1000;
+        this.currentPathSegmentDistanceFromStart +=
+            (this.getPathWalkingSpeed() * delta * PIXELS_PER_SECOND_PER_SPEED_UNIT) / 1000;
 
         while (this.currentPathSegmentDistanceFromStart >= pathSegmentLength) {
             this.currentPathSegmentDistanceFromStart -= pathSegmentLength;

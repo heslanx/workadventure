@@ -17,6 +17,7 @@ import { visibilityStore } from "../../Stores/VisibilityStore";
 import { passStatusToOnline } from "../../Rules/StatusRules/statusChangerFunctions";
 import { localUserStore } from "../../Connection/LocalUserStore";
 import { WalkDestinationMarker } from "../Components/WalkDestinationMarker";
+import { PIXELS_PER_SECOND_PER_SPEED_UNIT, SPEED_UP_WALK_SPEED } from "./WalkSpeed";
 
 export const hasMovedEventName = "hasMoved";
 export const startMovingEventName = "startMoving";
@@ -117,7 +118,11 @@ export class Player extends Character {
     }
 
     private deduceSpeed(speedUp: boolean, followMode: boolean): number {
-        return this.pathWalkingSpeed ? this.pathWalkingSpeed : speedUp && !followMode ? 2.5 * WOKA_SPEED : WOKA_SPEED;
+        return this.pathWalkingSpeed
+            ? this.pathWalkingSpeed
+            : speedUp && !followMode
+              ? SPEED_UP_WALK_SPEED
+              : WOKA_SPEED;
     }
 
     private inputStep(activeEvents: ActiveEventList, x: number, y: number) {
@@ -137,7 +142,7 @@ export class Player extends Character {
         // Compute movement deltas
         const followMode = get(followStateStore) !== "off";
         const speed = this.deduceSpeed(activeEvents.get(UserInputEvent.SpeedUp), followMode);
-        const moveAmount = speed * 20;
+        const moveAmount = speed * PIXELS_PER_SECOND_PER_SPEED_UNIT;
         x = x * moveAmount;
         y = y * moveAmount;
 

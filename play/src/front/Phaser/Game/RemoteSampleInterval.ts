@@ -1,4 +1,5 @@
-import { POSITION_DELAY, WOKA_SPEED } from "../../Enum/EnvironmentVariable";
+import { POSITION_DELAY } from "../../Enum/EnvironmentVariable";
+import { MAX_WALK_SPEED_PX_PER_SECOND } from "../Player/WalkSpeed";
 
 /**
  * Remote positions arrive once per POSITION_DELAY while a player walks, and the receiver draws each one over the next
@@ -14,8 +15,7 @@ export const MAX_DRAW_DURATION_MS = 1500;
 export const MAX_SAMPLE_GAP_MS = 3000;
 // Weight of the newest gap in the smoothed interval when the gap is shorter than the estimate.
 const INTERVAL_FALL_SMOOTHING = 0.3;
-// Fastest walk is the speed-up key at 2.5 times WOKA_SPEED, moving WOKA_SPEED * 20 pixels per second.
-const MAX_WALK_SPEED_PX_PER_MS = (WOKA_SPEED * 20 * 2.5) / 1000;
+const MAX_WALK_SPEED_PX_PER_MS = MAX_WALK_SPEED_PX_PER_SECOND / 1000;
 // Slack over the fastest walk before a jump counts as a teleport.
 const TELEPORT_SLACK = 1.5;
 

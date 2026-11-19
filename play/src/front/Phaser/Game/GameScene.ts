@@ -55,7 +55,6 @@ import {
     MAX_PER_GROUP,
     POSITION_DELAY,
     PUBLIC_MAP_STORAGE_PREFIX,
-    WOKA_SPEED,
 } from "../../Enum/EnvironmentVariable";
 import { Room } from "../../Connection/Room";
 import { CharacterTextureError } from "../../Exception/CharacterTextureError";
@@ -66,6 +65,7 @@ import { RemotePlayer } from "../Entity/RemotePlayer";
 import { AvatarBuildQueue } from "../Entity/AvatarBuildQueue";
 import { SelectCharacterScene, SelectCharacterSceneName } from "../Login/SelectCharacterScene";
 import { hasMovedEventName, Player, requestEmoteEventName } from "../Player/Player";
+import { SPEED_UP_WALK_SPEED } from "../Player/WalkSpeed";
 import { ErrorSceneName } from "../Reconnecting/ErrorScene";
 import { ReconnectingSceneName } from "../Reconnecting/ReconnectingScene";
 import { TextUtils } from "../Components/TextUtils";
@@ -4262,7 +4262,7 @@ ${escapedMessage}
                 }
             }
 
-            this.moveTo(endPos, false, WOKA_SPEED * 2.5).catch((e) => console.warn(e));
+            this.moveTo(endPos, false, SPEED_UP_WALK_SPEED).catch((e) => console.warn(e));
             return true;
         } catch (err) {
             console.warn(`Cannot proceed with moveTo command:\n\t-> ${err}`);
@@ -4441,7 +4441,7 @@ ${escapedMessage}
         const centerY = personalAreaData.y + personalAreaData.height * 0.5;
 
         try {
-            await this.moveTo({ x: centerX, y: centerY }, true, WOKA_SPEED * 2.5);
+            await this.moveTo({ x: centerX, y: centerY }, true, SPEED_UP_WALK_SPEED);
             analyticsClient.trackAdminEvent("personal_desk.entered");
         } catch (error) {
             console.warn("Error while moving to personal desk", error);
