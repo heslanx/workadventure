@@ -1,0 +1,66 @@
+# The load staircase of the fork, on the CI pool of Koncluí (self-hosted, never a GitHub-hosted runner).
+#
+# A push to a branch named konclui/load/<anything> starts it: the run measures the commit that branch points at, with
+# the parameters of benchmark/ci/load-run.env at that commit. Nothing else starts it, so a push to konclui/main costs
+# no load run. A branch named konclui/load/smoke<anything> runs every step once with 100 bots and short levels: it
+# proves the job on the pool before a full run spends its hour and a half.
+#
+# It uses nothing GitHub bills: the runner is ours, and the results travel in the job log, not in an artifact
+# (artifact storage is metered). benchmark/ci/fetch-results.sh <run id> <dir> reads them back from the log.
+name: Konclui load staircase
+
+on:
+  push:
+    branches:
+      - "konclui/load/**"
+  workflow_dispatch:
+
+# One load run at a time: two would measure each other.
+concurrency:
+  group: konclui-load
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  staircase:
+    name: Staircase on the CI pool
+    runs-on: [self-hosted, ci-host]
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the load staircase
+        run: |
+          case "$GITHUB_REF_NAME" in
+          konclui/load/smoke*)
+            export LEVELS=100 PROCESSES=2 RAMP_SECONDS=15 DURATION_SECONDS=60 STEADY_WINDOW=30
+            export PROFILE_LEVEL=100 CALIBRATION_LEVEL=100
+            ;;
+          esac
+          exec benchmark/ci/run-load.sh "$RUNNER_TEMP/konclui-load"
+
+      # A cancel or the timeout kills the step, not the containers: they belong to the runner's Docker daemon. The
+      # script goes first, or it would start the next level after its stack is removed.
+      - name: Remove what the run left
+        if: always()
+        run: |
+          pkill -KILL -f benchmark/ci/run-load.sh || true
+          docker ps -aq --filter label=konclui-load.generator | xargs -r docker rm -f
+          docker ps -aq --filter label=com.docker.compose.project=konclui-load | xargs -r docker rm -fv
+          docker network rm konclui-load_default 2>/dev/null || true
+          docker volume rm konclui-load_map-data 2>/dev/null || true
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo '```'
+            cat "$RUNNER_TEMP/konclui-load/run.txt" 2>/dev/null || echo "no run.txt: the run stopped before its first step"
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Results in the log
+        if: always()
+        run: benchmark/ci/print-results.sh "$RUNNER_TEMP/konclui-load"
