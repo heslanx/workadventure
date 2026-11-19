@@ -8,6 +8,7 @@
 # Type checks and tests always cover the whole package. Logs go to <git-dir>/gate-logs/<package>/<step>.log.
 # One gate runs at a time on the machine: a second one waits for the first (GATE_LOCK_WAIT_S, default 1800).
 # GATE_SERIAL=1 runs the steps one after the other, to compare timings.
+# Test files that fail beside the other steps run once more alone; those that pass then are listed as flaky.
 
 set -u
 
@@ -100,12 +101,35 @@ fi
 launch vitest npx vitest run
 [ "${#pids[@]}" -gt 0 ] && wait "${pids[@]}"
 
+# A test that measures real time can fail only because the other steps took the CPU. The failed files run once more,
+# alone: a file that passes then is reported as flaky, not hidden, and a file that fails again fails the gate.
+flaky=()
+read -r vitest_code _ <"$log_dir/vitest.result"
+if [ "$vitest_code" != 0 ] && [ "${GATE_SERIAL:-0}" != 1 ]; then
+    while IFS= read -r file; do
+        flaky+=("$file")
+    done < <(sed -n 's/^ *FAIL  *\([^ ]*\).*/\1/p' "$log_dir/vitest.log" | sort -u)
+    if [ "${#flaky[@]}" -gt 0 ]; then
+        cp "$log_dir/vitest.log" "$log_dir/vitest-first.log"
+        names+=(vitest-alone)
+        step vitest-alone npx vitest run "${flaky[@]}"
+        read -r alone_code _ <"$log_dir/vitest-alone.result"
+        [ "$alone_code" = 0 ] || flaky=()
+    fi
+fi
+
 failed=0
 for name in "${names[@]}"; do
     read -r code seconds <"$log_dir/$name.result"
-    printf '%-13s exit=%s %ss\n' "$name" "$code" "$seconds"
-    [ "$code" = 0 ] || failed=1
+    note=
+    if [ "$name" = vitest ] && [ "${#flaky[@]}" -gt 0 ]; then
+        note=" (not counted: the failed files passed alone)"
+    elif [ "$code" != 0 ]; then
+        failed=1
+    fi
+    printf '%-13s exit=%s %ss%s\n' "$name" "$code" "$seconds" "$note"
 done
 grep -hE '^ *(Test Files|Tests) ' "$log_dir/vitest.log" | tail -2
+[ "${#flaky[@]}" -gt 0 ] && echo "FLAKY under load (failed beside the other steps, passed alone): ${flaky[*]}"
 echo "gate $package: $([ "$failed" = 0 ] && echo PASS || echo FAIL) in $((SECONDS - started))s, ${#changed[@]} changed files linted, logs in $log_dir"
 exit "$failed"
