@@ -26,6 +26,8 @@ export class Companion extends Container {
 
     private delta: number;
     private invisible: boolean;
+    // See setSuspended().
+    private suspended = false;
     private updateListener: (time: number, delta: number) => void;
     private target: { x: number; y: number; direction: PositionMessage_Direction };
 
@@ -85,6 +87,30 @@ export class Companion extends Container {
 
     public setTarget(x: number, y: number, direction: PositionMessage_Direction) {
         this.target = { x, y: y + 4, direction };
+    }
+
+    /**
+     * Stops the companion while its owner is not drawn in full (a remote player drawn as a dot): it no longer follows
+     * its target nor plays an animation, and a sprite whose texture loads meanwhile is created inactive. Started again,
+     * it stands next to its target at once, in the target's pose.
+     */
+    public setSuspended(suspended: boolean): void {
+        if (suspended === this.suspended) {
+            return;
+        }
+        this.suspended = suspended;
+        if (suspended) {
+            this.scene.events.removeListener("update", this.updateListener);
+            this.getBody().stop();
+            return;
+        }
+        this.scene.events.addListener("update", this.updateListener);
+        this.setPosition(this.target.x + 14, this.target.y);
+        this.setDepth(this.y);
+        this.delta = 0;
+        this.direction = this.target.direction;
+        this.animationType = PlayerAnimationTypes.Idle;
+        this.playAnimation(this.direction, this.animationType);
     }
 
     public step(time: number, delta: number) {
@@ -175,6 +201,9 @@ export class Companion extends Container {
 
     private addResource(resource: string, frame?: string | number): void {
         const sprite = new Sprite(this.scene, 0, 0, resource, frame);
+        if (this.suspended) {
+            sprite.setActive(false);
+        }
 
         this.add(sprite);
 

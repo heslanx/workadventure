@@ -15,6 +15,7 @@ import type { AvatarBuildQueue } from "../Entity/AvatarBuildQueue";
 import type { GameScene } from "../Game/GameScene";
 import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
 import type { ActivatableInterface } from "../Game/ActivatableInterface";
+import type { AvatarDetailLevel } from "../Game/AvatarDetail";
 import { LL } from "../../../i18n/i18n-svelte";
 import { blackListManager } from "../../WebRtc/BlackListManager";
 import { openModerationModal } from "../../Components/Moderation/openModerationModal";
@@ -40,6 +41,8 @@ export class RemotePlayer extends Character implements ActivatableInterface {
     public readonly activationRadius: number;
 
     private visitCardUrl: string | null;
+    private culled = false;
+    private dot = false;
     private pathFollowingUpdateCallback: (time: number, delta: number) => void;
 
     constructor(
@@ -76,11 +79,18 @@ export class RemotePlayer extends Character implements ActivatableInterface {
     }
 
     protected requestBuildTurn(grant: () => void): void {
-        if (this.avatarBuildQueue === undefined) {
+        // What a dot builds (sprites, name, companion) is hidden in the call that builds it.
+        const build = () => {
             grant();
+            if (this.dot) {
+                this.applyDetail();
+            }
+        };
+        if (this.avatarBuildQueue === undefined) {
+            build();
             return;
         }
-        this.avatarBuildQueue.enqueue(this, grant);
+        this.avatarBuildQueue.enqueue(this, build);
     }
 
     /**
@@ -91,11 +101,55 @@ export class RemotePlayer extends Character implements ActivatableInterface {
      * moves then leave nothing to draw, which is what lets the scene skip the frame they would ask for.
      */
     public setCulled(culled: boolean): void {
-        this.setNameHidden(culled);
+        this.culled = culled;
+        this.applyDetail();
+    }
+
+    /**
+     * Draws the player in full, or as a dot that AvatarDotLayer draws in its place: then its sprites, name and companion
+     * are hidden and not animated, and its companion does not move. A culled player stays culled whatever its detail; drawn again, it shows its detail.
+     */
+    public setDetail(detail: AvatarDetailLevel): void {
+        const dot = detail === "dot";
+        if (dot === this.dot) {
+            return;
+        }
+        this.dot = dot;
+        this.applyDetail();
+        if (!dot) {
+            // The moves made as a dot were remembered, not played.
+            this.replayAnimation();
+        }
+    }
+
+    protected isAnimated(): boolean {
+        return !this.dot;
+    }
+
+    private applyDetail(): void {
+        this.setNameHidden(this.culled || this.dot);
+        // The companion follows the detail whether or not it is culled: a dot's companion neither moves nor animates.
+        this.companion?.setSuspended(this.dot);
+        if (this.culled) {
+            // The culling hid everything already.
+            return;
+        }
+        const drawn = !this.dot;
+        this.setVisible(drawn);
+        this.setActive(drawn);
+        for (const sprite of this.sprites.values()) {
+            sprite.setActive(drawn);
+        }
+        this.companion?.setVisible(drawn);
+        this.companion?.setActive(drawn);
+        for (const sprite of this.companion?.sprites.values() ?? []) {
+            sprite.setActive(drawn);
+        }
     }
 
     public updatePosition(position: PositionMessage): void {
         this.stopMoveTo();
+        // A dot only remembers the pose (see isAnimated()); its suspended companion only remembers the target.
         this.playAnimation(position.direction, position.moving);
         this.setPosition(position.x, position.y);
 

@@ -447,10 +447,23 @@ export abstract class Character extends Container implements OutlineableInterfac
         }
     }
 
+    /**
+     * Whether the sprites play the pose asked for. A subclass that hides its sprites for a while (a remote player drawn
+     * as a dot) returns false: the pose is only remembered, and replayAnimation() shows it when the sprites are back.
+     */
+    protected isAnimated(): boolean {
+        return true;
+    }
+
+    /** Plays the last pose asked for (see isAnimated()). */
+    protected replayAnimation(): void {
+        this.playAnimation(this.animationDirection, this.animationMoving);
+    }
+
     protected playAnimation(direction: PositionMessage_Direction, moving: boolean): void {
         this.animationDirection = direction;
         this.animationMoving = moving;
-        if (this.invisible) return;
+        if (this.invisible || !this.isAnimated()) return;
         for (const [texture, sprite] of this.sprites.entries()) {
             if (!sprite.anims) {
                 console.error("ANIMS IS NOT DEFINED!!!");

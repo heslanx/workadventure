@@ -81,6 +81,38 @@ describe("UsernameDomLayer", () => {
         expect(scene.game.events.listenerCount(WaScaleManagerEvent.ZoomChanged)).toBe(0);
     });
 
+    it("hides every name below the zoom it is given, as one write, and shows them again above it", () => {
+        const { scene, layerElements } = createScene();
+        const layer = new UsernameDomLayer(scene, 0.65);
+        const [element] = layerElements;
+        const shown = () => element.style.display !== "none";
+        const atStart = shown();
+
+        scene.game.events.emit(WaScaleManagerEvent.ZoomChanged, 0.64);
+        const zoomedOut = shown();
+        const mutations = new MutationObserver(() => {});
+        mutations.observe(element, { attributes: true, attributeFilter: ["style"] });
+        scene.game.events.emit(WaScaleManagerEvent.ZoomChanged, 0.3);
+        // The zoom step writes its own scale variable; the display is not written again.
+        const writesWhileHidden = mutations.takeRecords().length;
+        scene.game.events.emit(WaScaleManagerEvent.ZoomChanged, 0.65);
+
+        expect([atStart, zoomedOut, shown()]).toEqual([true, false, true]);
+        expect(writesWhileHidden).toBe(1);
+        mutations.disconnect();
+        layer.destroy();
+    });
+
+    it("keeps the names at every zoom without a zoom to hide them below", () => {
+        const { scene, layerElements } = createScene();
+        const layer = new UsernameDomLayer(scene);
+
+        scene.game.events.emit(WaScaleManagerEvent.ZoomChanged, 0.1);
+
+        expect(layerElements[0].style.display).not.toBe("none");
+        layer.destroy();
+    });
+
     it("has no timer and no render listener left once it is destroyed in the middle of a zoom", () => {
         const { scene } = createScene();
         const layer = new UsernameDomLayer(scene);

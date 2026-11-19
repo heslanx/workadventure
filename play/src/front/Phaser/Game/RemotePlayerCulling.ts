@@ -34,7 +34,8 @@ export interface CullableAvatar extends CullableObject {
      *
      * Culled, the tag must be hidden and must not follow the avatar's moves, so that a move costs nothing; drawn again,
      * it must be where the avatar is. Calling it twice with the same value changes nothing. An avatar that builds its
-     * tag late must remember the last call, so that the tag it builds while culled starts hidden.
+     * tag late must remember the last call, so that the tag it builds while culled starts hidden. It is called after
+     * the avatar and its companion were drawn or hidden.
      *
      * An avatar without this member keeps a tag that follows every move (see isMoveHidden()).
      */
@@ -192,12 +193,14 @@ function built(avatar: CullableAvatar): number {
     return avatar.sprites.size + (avatar.companion === undefined ? 0 : 1 + avatar.companion.sprites.size);
 }
 
+// `setCulled()` comes last, so that an avatar drawn again can hide what its own state does not draw (a dot, see
+// RemotePlayer.setDetail()).
 function setDrawn(avatar: CullableAvatar, drawn: boolean): void {
     setObjectDrawn(avatar, drawn);
-    avatar.setCulled?.(!drawn);
     if (avatar.companion !== undefined) {
         setObjectDrawn(avatar.companion, drawn);
     }
+    avatar.setCulled?.(!drawn);
 }
 
 function setObjectDrawn(object: CullableObject, drawn: boolean): void {

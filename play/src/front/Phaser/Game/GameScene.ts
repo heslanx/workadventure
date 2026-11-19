@@ -41,7 +41,7 @@ import { iceServersManager } from "../../WebRtc/IceServersManager";
 import { ActiveEventList, UserInputEvent, UserInputManager } from "../UserInput/UserInputManager";
 import { touchScreenManager } from "../../Touch/TouchScreenManager";
 import { PinchManager } from "../UserInput/PinchManager";
-import { waScaleManager } from "../Services/WaScaleManager";
+import { waScaleManager, WaScaleManagerEvent } from "../Services/WaScaleManager";
 import { lazyLoadPlayerCharacterTextures } from "../Entity/PlayerTexturesLoadingManager";
 import { lazyLoadPlayerCompanionTexture } from "../Companion/CompanionTexturesLoadingManager";
 import { iframeListener } from "../../Api/IframeListener";
@@ -257,6 +257,8 @@ import { UsernameDomLayer } from "./UsernameDomLayer";
 import { ThinWallsController } from "./ThinWallsController";
 import { TileAnimationRefreshTracker } from "./TileAnimationRefreshTracker";
 import { RemotePlayerCulling } from "./RemotePlayerCulling";
+import { DETAIL_ZOOM_SETTLE_MS, isAvatarDetailBudgetEnabled, NAME_TAGS_MIN_ZOOM_MODIFIER } from "./AvatarDetail";
+import { AVATAR_DOT_HOVER_RADIUS, AvatarDotLayer, createAvatarDotBlitter } from "./AvatarDotLayer";
 
 import Tileset = Phaser.Tilemaps.Tileset;
 import Tilemap = Phaser.Tilemaps.Tilemap;
@@ -386,6 +388,8 @@ export class GameScene extends DirtyScene {
     private remotePlayersSpatialIndex = new SpatialMap<number, RemotePlayer>(CONVERSATION_BUBBLE_SPATIAL_GRID_SIZE);
     // Stops drawing and updating the remote players that are outside the camera view.
     private remotePlayersCulling = new RemotePlayerCulling<RemotePlayer>();
+    // Draws the remote players over the detail budget as dots. Undefined while the budget is off.
+    private avatarDotLayer: AvatarDotLayer<RemotePlayer> | undefined;
     // The remote players that are in the scene but whose sprites, name and companion are not built yet.
     private avatarBuildQueue = new AvatarBuildQueue();
     private originalMapUrl: string | undefined;
@@ -774,7 +778,14 @@ export class GameScene extends DirtyScene {
         //permit to set bound collision
         this.physics.world.setBounds(0, 0, this.Map.widthInPixels, this.Map.heightInPixels);
 
-        this.usernameDomLayer = new UsernameDomLayer(this);
+        const avatarDetailBudget = isAvatarDetailBudgetEnabled();
+        this.usernameDomLayer = new UsernameDomLayer(
+            this,
+            avatarDetailBudget ? NAME_TAGS_MIN_ZOOM_MODIFIER : undefined,
+        );
+        if (avatarDetailBudget) {
+            this.createAvatarDotLayer();
+        }
 
         this.embeddedWebsiteManager = new EmbeddedWebsiteManager(this);
 
@@ -1346,6 +1357,7 @@ export class GameScene extends DirtyScene {
         this.playersEventDispatcher.cleanup();
         this.playersMovementEventDispatcher.cleanup();
         this.usernameDomLayer?.destroy();
+        this.destroyAvatarDotLayer();
         this.gameMapFrontWrapper?.close();
         this.followManager?.close();
         this.inviteManager?.close();
@@ -1500,6 +1512,9 @@ export class GameScene extends DirtyScene {
         this.hasMovedThisFrame = false;
 
         this.cullRemotePlayers();
+        if (this.avatarDotLayer?.update(time)) {
+            this.dirty = true;
+        }
 
         if (DEBUG_MODE) {
             this.updateServerViewportDebugOverlay();
@@ -1515,6 +1530,60 @@ export class GameScene extends DirtyScene {
         if (this.remotePlayersCulling.update(worldView, this.getRemotePlayersKeptDrawn())) {
             this.dirty = true;
         }
+    }
+
+    /**
+     * Starts the detail budget (see AvatarDotLayer): it follows the zoom once it settles, and the player under the
+     * pointer is drawn in full.
+     * Known gap: the scene effects still process the hidden avatars of the dots, and should skip them.
+     */
+    private createAvatarDotLayer(): void {
+        this.avatarDotLayer = new AvatarDotLayer<RemotePlayer>(
+            {
+                avatars: () => this.MapPlayersByKey.values(),
+                isCulled: (player) => this.remotePlayersCulling.isCulled(player),
+                pinned: () => this.getRemotePlayersKeptDrawn(),
+                origin: () => this.CurrentPlayer,
+                pointer: () => this.avatarDetailPointer(),
+            },
+            createAvatarDotBlitter(this),
+        );
+        this.game.events.on(WaScaleManagerEvent.ZoomChanged, this.onAvatarDetailZoomChanged);
+        this.input.on(Phaser.Input.Events.POINTER_MOVE, this.onAvatarDetailPointerMove);
+        this.input.on(Phaser.Input.Events.GAME_OUT, this.onAvatarDetailPointerMove);
+    }
+
+    private destroyAvatarDotLayer(): void {
+        if (this.avatarDotLayer === undefined) {
+            return;
+        }
+        this.game.events.off(WaScaleManagerEvent.ZoomChanged, this.onAvatarDetailZoomChanged);
+        this.input?.off(Phaser.Input.Events.POINTER_MOVE, this.onAvatarDetailPointerMove);
+        this.input?.off(Phaser.Input.Events.GAME_OUT, this.onAvatarDetailPointerMove);
+        this.avatarDotLayer.destroy();
+        this.avatarDotLayer = undefined;
+    }
+
+    private readonly onAvatarDetailZoomChanged = (): void => {
+        this.avatarDotLayer?.requestRecompute(DETAIL_ZOOM_SETTLE_MS);
+    };
+
+    private readonly onAvatarDetailPointerMove = (): void => {
+        this.avatarDotLayer?.pointerMoved();
+    };
+
+    /**
+     * Where the pointer is in the world now, from its place on the screen: the camera may have moved under a pointer
+     * that did not. The radius is in screen pixels, so an avatar is as easy to point at whatever the zoom.
+     */
+    private avatarDetailPointer(): { x: number; y: number; radius: number } | undefined {
+        if (this.input?.isOver !== true) {
+            return undefined;
+        }
+        const camera = this.cameras.main;
+        const pointer = this.input.activePointer;
+        const world = camera.getWorldPoint(pointer.x, pointer.y);
+        return { x: world.x, y: world.y, radius: AVATAR_DOT_HOVER_RADIUS / (camera.zoom || 1) };
     }
 
     /**
@@ -4058,6 +4127,7 @@ ${escapedMessage}
     private removeAllRemotePlayers(): void {
         this.MapPlayersByKey.forEach((player: RemotePlayer) => {
             player.destroy();
+            this.avatarDotLayer?.forget(player);
 
             if (player.companion) {
                 player.companion.destroy();
@@ -4684,6 +4754,7 @@ ${escapedMessage}
         player.updatePosition(addPlayerData.position);
         this.remotePlayersSpatialIndex.set(player.userId, player);
         this.remotePlayersCulling.track(player);
+        this.avatarDotLayer?.requestRecompute();
 
         player.on(Phaser.Input.Events.POINTER_OVER, () => {
             this.activatablesManager.handlePointerOverActivatableObject(player);
@@ -4759,6 +4830,7 @@ ${escapedMessage}
         this.remotePlayersSpatialIndex.delete(userId);
         if (player !== undefined) {
             this.remotePlayersCulling.untrack(player);
+            this.avatarDotLayer?.forget(player);
         }
         this.playersPositionInterpolator.removePlayer(userId);
     }

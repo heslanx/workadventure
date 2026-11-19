@@ -49,7 +49,14 @@ export class UsernameDomLayer {
     private settledTransformScale = 1;
     private settleTimeout: number | undefined;
 
-    constructor(private readonly scene: GameScene) {
+    /**
+     * @param hideBelowZoomModifier Below this zoom modifier the whole layer is hidden, as one write: a zoomed-out view
+     * draws no name tag. Undefined keeps the tags at every zoom.
+     */
+    constructor(
+        private readonly scene: GameScene,
+        private readonly hideBelowZoomModifier?: number,
+    ) {
         this.container = document.createElement("div");
         this.container.style.position = "relative";
         this.container.style.pointerEvents = "none";
@@ -70,6 +77,7 @@ export class UsernameDomLayer {
         this.domElement.pointerEvents = "none";
 
         this.displayScale = getDisplayScale(waScaleManager.zoomModifier);
+        this.hideBelowZoom(waScaleManager.zoomModifier);
         this.settledDisplayScale = this.displayScale;
         this.applySettledScale();
         this.settleAtRender();
@@ -91,7 +99,18 @@ export class UsernameDomLayer {
         this.domElement.destroy();
     }
 
+    private hideBelowZoom(zoomModifier: number): void {
+        if (this.hideBelowZoomModifier === undefined) {
+            return;
+        }
+        const display = zoomModifier < this.hideBelowZoomModifier ? "none" : "";
+        if (this.container.style.display !== display) {
+            this.container.style.display = display;
+        }
+    }
+
     private readonly onZoomChanged = (zoomModifier: number): void => {
+        this.hideBelowZoom(zoomModifier);
         this.displayScale = getDisplayScale(zoomModifier);
         // The rendered size of a tag is `displayScale * layerScale`, whatever the layout it was laid out with. The
         // layer's own scale applies by itself, so what the tag's transform has to change by is the part of
