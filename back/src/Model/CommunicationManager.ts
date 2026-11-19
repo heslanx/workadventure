@@ -712,10 +712,3 @@ export class CommunicationManager implements ICommunicationManager {
         }
     }
 }
-
-/**
- * Export configuration for backward compatibility.
- */
-export const CommunicationConfig = {
-    MAX_USERS_FOR_WEBRTC,
-};
