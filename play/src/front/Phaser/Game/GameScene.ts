@@ -8,7 +8,7 @@ import { throttle } from "throttle-debounce";
 import { ForwardableStore, MapStore } from "@workadventure/store-utils";
 import { MathUtils } from "@workadventure/math-utils";
 import { CancelablePromise } from "cancelable-promise";
-import { ChatMessageTypes, Deferred, SpatialMap } from "@workadventure/shared-utils";
+import { ChatMessageTypes, Deferred, SpatialMap, WORLD_SPACE_NAME } from "@workadventure/shared-utils";
 import {
     AvailabilityStatus,
     availabilityStatusToJSON,
@@ -303,7 +303,6 @@ interface PositionCoordinates {
     y: number;
 }
 
-const WORLD_SPACE_NAME = "allWorldUser";
 const debug = Debug("GameScene");
 
 // Safety cap for moveTo() reroutes when the collision grid keeps changing while the path is followed.

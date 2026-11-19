@@ -19,7 +19,7 @@ import {
     UpdateSpaceMetadataMessage,
 } from "@workadventure/messages";
 import type { SpaceState } from "@workadventure/shared-utils";
-import { emptySpaceState } from "@workadventure/shared-utils";
+import { emptySpaceState, WORLD_SPACE_NAME } from "@workadventure/shared-utils";
 // Default import: under Node ESM this CommonJS package exposes no named exports.
 import jsonpatch from "fast-json-patch";
 import { Subject } from "rxjs";
@@ -43,8 +43,6 @@ import { ScreenAnnotationManager } from "./ScreenAnnotationManager";
 
 const debug = Debug("space");
 
-// The space every client joins to see who is in the world, named `<world>.allWorldUser` on the back.
-const WORLD_SPACE_LOCAL_NAME = "allWorldUser";
 // The headcount patch is sent once the count has been changing for this long, so a join burst costs one patch.
 export const WORLD_HEADCOUNT_DEBOUNCE_MS = 1000;
 
@@ -100,7 +98,7 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
         this.proximityPollManager = new ProximityPollManager(this);
         this.proximityQAManager = new ProximityQAManager(this);
         this.screenAnnotationManager = new ScreenAnnotationManager(this);
-        if (publishWorldHeadcount && name === `${world}.${WORLD_SPACE_LOCAL_NAME}`) {
+        if (publishWorldHeadcount && name === `${world}.${WORLD_SPACE_NAME}`) {
             this.worldHeadcount = new DistinctCounter();
         }
         debug(`${name} => created`);

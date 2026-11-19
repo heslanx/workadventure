@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FilterType, SpaceUser } from "@workadventure/messages";
 import { mock } from "vitest-mock-extended";
 import type { BackToPusherSpaceMessage } from "@workadventure/messages";
+import { WORLD_SPACE_NAME } from "@workadventure/shared-utils";
 import { Space, WORLD_HEADCOUNT_DEBOUNCE_MS } from "../src/Model/Space";
 import { DistinctCounter } from "../src/Model/DistinctCounter";
 import type { SpacesWatcher } from "../src/Model/SpacesWatcher";
 import type { EventProcessor } from "../src/Model/EventProcessor";
 
 const WORLD = "world";
-const WORLD_SPACE = `${WORLD}.allWorldUser`;
+const WORLD_SPACE = `${WORLD}.${WORLD_SPACE_NAME}`;
 
 type StatePatchOperation = { op: string; path: string; value?: unknown };
 

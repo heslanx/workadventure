@@ -123,6 +123,10 @@ export const screenAnnotationSchema = z.object({
     elements: z.record(z.string(), screenAnnotationElementSchema),
 });
 
+// The space every client joins to see who is in the world. The back names it `<world>.<WORLD_SPACE_NAME>` and counts
+// the headcount only there.
+export const WORLD_SPACE_NAME = "allWorldUser";
+
 export const spaceStateSchema = z.object({
     // What the space is (bubble, meeting area, megaphone...), declared by the clients that join it. Absent until
     // the first one does: a space that never declares a kind is nobody's meeting, so the back measures nothing in it.
