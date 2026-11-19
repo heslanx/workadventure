@@ -7,6 +7,8 @@ import { localUserStore } from "../../../Connection/LocalUserStore";
 import { playOnSelectedOutput } from "../../../WebRtc/AudioOutputManager";
 import { bandwidthConstrainedPreferenceStore } from "../../../Stores/BandwidthConstrainedPreferenceStore";
 import {
+    cameraListStore,
+    microphoneListStore,
     requestedCameraDeviceIdStore,
     requestedMicrophoneDeviceIdStore,
     videoQualityStore,
@@ -234,6 +236,10 @@ describe("the preference sections", () => {
         target.replaceChildren();
         localStorage.clear();
         Object.assign(saved, initialSaved);
+        writableMock(cameraListStore).set([{ deviceId: "camera-1", label: "Front camera" } as MediaDeviceInfo]);
+        writableMock(microphoneListStore).set([
+            { deviceId: "microphone-1", label: "Desk microphone" } as MediaDeviceInfo,
+        ]);
         writableMock(noiseSuppressionEnabledStore).set(false);
         writableMock(voiceIsolationSupportedStore).set(false);
         browserNoiseSuppressionSupportedStore.set(false);
@@ -505,6 +511,37 @@ describe("the preference sections", () => {
         expect(requestedMicrophoneDeviceIdStore.set).toHaveBeenCalledWith("microphone-1");
         expect(localUserStore.setPreferredAudioInputDevice).toHaveBeenCalledWith("microphone-1");
         expect(requestedCameraDeviceIdStore.set).toHaveBeenCalledTimes(1);
+    });
+
+    /** The values of the options of the list titled `key`. */
+    function optionValues(key: string): string[] {
+        return [...labelledBy<HTMLSelectElement>("select", key).options].map((option) => option.value);
+    }
+
+    // With access denied the browser lists one entry per kind with no id and no label.
+    const placeholder = { deviceId: "", label: "" } as MediaDeviceInfo;
+
+    it("mounts with the blank placeholders a browser lists while camera and microphone are blocked", () => {
+        writableMock(cameraListStore).set([placeholder]);
+        writableMock(microphoneListStore).set([placeholder]);
+
+        expect(() => show(MediaPane)).not.toThrow();
+
+        expect(optionValues(`${media}.camera`)).toEqual([""]);
+        expect(optionValues(`${media}.microphone`)).toEqual([""]);
+        expect(target.textContent?.split(`${media}.listAfterPermission`)).toHaveLength(3);
+    });
+
+    it("lists the off option and the real camera, never the placeholder beside it", () => {
+        writableMock(cameraListStore).set([
+            placeholder,
+            { deviceId: "camera-1", label: "Front camera" } as MediaDeviceInfo,
+        ]);
+
+        show(MediaPane);
+
+        expect(optionValues(`${media}.camera`)).toEqual(["", "camera-1"]);
+        expect(target.textContent).toContain("Front camera");
     });
 
     it("saves each sound switch as its own setting and shows it back", () => {

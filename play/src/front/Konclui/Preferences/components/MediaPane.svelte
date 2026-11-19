@@ -55,14 +55,17 @@
 
     let t = $derived($LL.konclui.preferences.media);
 
+    /** A browser without access lists a placeholder with an empty id: that id is NO_DEVICE, so it is not a device. */
     function devices(
         list: readonly MediaDeviceInfo[] | undefined,
         name: (index: number) => string,
     ): { value: string; label: string }[] {
-        return (list ?? []).map((device, index) => ({
-            value: device.deviceId,
-            label: device.label || name(index + 1),
-        }));
+        return (list ?? [])
+            .filter((device) => device.deviceId !== NO_DEVICE)
+            .map((device, index) => ({
+                value: device.deviceId,
+                label: device.label || name(index + 1),
+            }));
     }
 
     /** The list of a device kind: off, the devices, and "starting" while the device starts unseen. */
@@ -76,9 +79,9 @@
     }
 
     /** The note under a device list: the silent zone, or else a list the browser has not filled yet. */
-    function deviceHint(silent: boolean, list: readonly MediaDeviceInfo[] | undefined): string | undefined {
+    function deviceHint(silent: boolean, listed: readonly unknown[]): string | undefined {
         if (silent) return t.silentZone();
-        return (list?.length ?? 0) === 0 ? t.listAfterPermission() : undefined;
+        return listed.length === 0 ? t.listAfterPermission() : undefined;
     }
 
     let cameras = $derived(devices($cameraListStore, (index) => t.cameraNumber({ index })));
@@ -116,14 +119,14 @@
 <PrefSection title={t.devices()}>
     <PrefSelect
         title={t.camera()}
-        hint={deviceHint($silentStore, $cameraListStore)}
+        hint={deviceHint($silentStore, cameras)}
         value={cameraValue}
         options={cameraOptions}
         onchange={selectCamera}
     />
     <PrefSelect
         title={t.microphone()}
-        hint={deviceHint($silentStore, $microphoneListStore)}
+        hint={deviceHint($silentStore, microphones)}
         value={microphoneValue}
         options={microphoneOptions}
         onchange={selectMicrophone}
