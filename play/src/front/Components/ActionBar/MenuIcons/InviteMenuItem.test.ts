@@ -118,6 +118,24 @@ describe("InviteMenuItem", () => {
         await unmount(component);
     });
 
+    it("draws its row in a menu with no fill and the menu's outline glyph, and keeps its fill in the action bar", async () => {
+        const inMenu = mount(InviteMenuItem, { target, context: new Map([["inMenu", true]]) });
+        flushSync();
+        const row = target.querySelector("button");
+
+        expect(row?.classList.contains("k-menu-row")).toBe(true);
+        expect(row?.getAttribute("style") ?? "").not.toContain("--bg-color");
+        expect(row?.querySelector(".k-menu-lead > svg")?.classList.contains("icon-tabler-share")).toBe(false);
+        await unmount(inMenu);
+
+        const inBar = mount(InviteMenuItem, { target });
+        flushSync();
+
+        // In the bar the colour is set on the button's wrapper.
+        expect(target.querySelector("div")?.getAttribute("style")).toContain("--bg-color: rgba(255, 255, 255, 0.1)");
+        await unmount(inBar);
+    });
+
     it("does not close the popup when the button itself is clicked", async () => {
         const component = mount(InviteMenuItem, { target });
         flushSync();

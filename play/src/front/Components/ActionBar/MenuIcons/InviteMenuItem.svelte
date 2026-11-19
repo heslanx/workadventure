@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { onDestroy } from "svelte";
+    import { getContext, onDestroy } from "svelte";
     import { inviteUserActivated } from "../../../Stores/MenuStore";
     import ActionBarButton from "../ActionBarButton.svelte";
     import LL from "../../../../i18n/i18n-svelte";
     import { analyticsClient } from "../../../Administration/AnalyticsClient";
     import ShareIcon from "../../Icons/ShareIcon.svelte";
+    import { IconShare } from "../../Icons";
     import GuestSubMenu from "../../Menu/GuestSubMenu.svelte";
     import { showFloatingUi } from "../../../Utils/svelte-floatingui-show";
 
@@ -15,6 +16,9 @@
     }
 
     let { first = undefined, last = undefined, classList = undefined }: Props = $props();
+
+    // In a menu the row is an idle row like the others: no fill, and the menu's outline glyph.
+    const inMenu = getContext("inMenu") === true;
 
     let closeFloatingUi: (() => void) | undefined = undefined;
     let triggerElement: HTMLElement | undefined = $state(undefined);
@@ -64,11 +68,15 @@
         hideIconInActionBar={false}
         onclick={showInviteScreen}
         bind:wrapperDiv={triggerElement}
-        bgColor="rgba(255, 255, 255, 0.1)"
+        bgColor={inMenu ? undefined : "rgba(255, 255, 255, 0.1)"}
         {first}
         {last}
         {classList}
     >
-        <ShareIcon height="h-5" width="w-5" strokeWidth="stroke-2" />
+        {#if inMenu}
+            <IconShare aria-hidden="true" />
+        {:else}
+            <ShareIcon height="h-5" width="w-5" strokeWidth="stroke-2" />
+        {/if}
     </ActionBarButton>
 {/if}

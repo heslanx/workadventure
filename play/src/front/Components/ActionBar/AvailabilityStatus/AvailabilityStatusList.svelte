@@ -9,7 +9,6 @@
     import HeaderMenuItem from "../MenuIcons/HeaderMenuItem.svelte";
     import { openedMenuStore } from "../../../Stores/MenuStore";
     import type { StatusInformationInterface } from "./Interfaces/AvailabilityStatusPropsInterface";
-    import AvailabilityStatusCircle from "./AvailabilityStatusCircle.svelte";
     import { IconCheck } from "@wa-icons";
 
     interface Props {
@@ -33,32 +32,31 @@
     };
 </script>
 
-<div>
+<div class="flex flex-col gap-0.5">
     <ExternalComponents zone="availabilityStatus" />
 
-    <HeaderMenuItem label={$LL.actionbar.listStatusTitle.enable()} />
+    <HeaderMenuItem label={$LL.actionbar.listStatusTitle.enable()} separated={false} />
     <!-- Some status (silent, in a meeting...) are locking the status bar to only one option -->
     {#if [AvailabilityStatus.LISTENER, AvailabilityStatus.SPEAKER, AvailabilityStatus.JITSI, AvailabilityStatus.LIVEKIT, AvailabilityStatus.BBB, AvailabilityStatus.DENY_PROXIMITY_MEETING, AvailabilityStatus.SILENT, AvailabilityStatus.SOUND_BLOCKED].includes($availabilityStatusStore)}
-        <button
-            class="status-button group flex px-2 py-1 gap-2 items-center min-h-7 transition-all cursor-pointer text-sm text-neutral-100 w-full pointer-events-auto text-start rounded"
-        >
-            <AvailabilityStatusCircle
-                cursorType="pointer"
-                position="relative"
-                colorHex={getColorHexOfStatus($availabilityStatusStore)}
-            />
-            <div class="grow text-start leading-4 opacity-50">{getStatusLabel($availabilityStatusStore)}</div>
-            <IconCheck aria-hidden="true" class="text-white transition-all" />
+        <button type="button" class="status-button k-menu-row pointer-events-auto" aria-current="true">
+            <span class="k-menu-lead" aria-hidden="true">
+                <span
+                    class="size-2.5 rounded-full"
+                    style:background-color={getColorHexOfStatus($availabilityStatusStore)}
+                ></span>
+            </span>
+            <span class="k-menu-label">{getStatusLabel($availabilityStatusStore)}</span>
+            <IconCheck class="k-menu-mark" aria-hidden="true" />
         </button>
     {:else}
         {#each statusInformation as statusInformationValue (statusInformationValue.AvailabilityStatus)}
+            {@const current = $availabilityStatusStore === statusInformationValue.AvailabilityStatus}
+            <!-- The current status is shown as the office menu shows it: mint ink and the check mark. -->
             <button
-                class="status-button group flex px-2 py-1 gap-2 items-center min-h-7 transition-all cursor-pointer text-sm text-neutral-100 w-full pointer-events-auto text-start rounded"
+                type="button"
+                class="status-button k-menu-row pointer-events-auto"
                 class:justify-end={align === "end"}
-                aria-current={$availabilityStatusStore === statusInformationValue.AvailabilityStatus
-                    ? "true"
-                    : undefined}
-                class:disabled={$availabilityStatusStore === statusInformationValue.AvailabilityStatus}
+                aria-current={current ? "true" : undefined}
                 onkeyup={(e) => {
                     handleKeyPress(e, statusInformationValue.AvailabilityStatus);
                 }}
@@ -67,25 +65,13 @@
                     handleClick(statusInformationValue.AvailabilityStatus);
                 }}
             >
-                <AvailabilityStatusCircle
-                    cursorType="pointer"
-                    position="relative"
-                    colorHex={statusInformationValue.colorHex}
-                    isActive={$availabilityStatusStore === statusInformationValue.AvailabilityStatus}
-                />
-                <div
-                    class="text-start leading-4"
-                    class:grow={align === "start"}
-                    class:opacity-50={$availabilityStatusStore === statusInformationValue.AvailabilityStatus}
-                >
-                    {statusInformationValue.label}
-                </div>
-                <IconCheck
-                    aria-hidden="true"
-                    class="text-white {($availabilityStatusStore !== statusInformationValue.AvailabilityStatus
-                        ? 'opacity-0 '
-                        : '') + 'group-hover:opacity-100 transition-all'}"
-                />
+                <span class="k-menu-lead" aria-hidden="true">
+                    <span class="size-2.5 rounded-full" style:background-color={statusInformationValue.colorHex}></span>
+                </span>
+                <span class="k-menu-label">{statusInformationValue.label}</span>
+                {#if current}
+                    <IconCheck class="k-menu-mark" aria-hidden="true" />
+                {/if}
             </button>
         {/each}
     {/if}

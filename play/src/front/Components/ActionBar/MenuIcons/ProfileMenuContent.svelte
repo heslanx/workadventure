@@ -32,13 +32,19 @@
     import { LL } from "../../../../i18n/i18n-svelte";
     import ActionBarButton from "../ActionBarButton.svelte";
     import AvailabilityStatusList from "../AvailabilityStatus/AvailabilityStatusList.svelte";
-    import Companion from "../../Companion/Companion.svelte";
     import ExternalComponents from "../../ExternalModules/ExternalComponents.svelte";
-    import CamSettingsIcon from "../../Icons/CamSettingsIcon.svelte";
-    import { IconAppWindow, IconBug, IconFileDownload, IconHelpCircle, IconLogout } from "../../Icons";
-    import ProfilIcon from "../../Icons/ProfilIcon.svelte";
-    import SettingsIcon from "../../Icons/SettingsIcon.svelte";
-    import Woka from "../../Woka/WokaFromUserId.svelte";
+    import {
+        IconAppWindow,
+        IconBug,
+        IconCamera,
+        IconFileDownload,
+        IconHelpCircle,
+        IconLogout,
+        IconPencil,
+        IconSettings,
+        IconUserEdit,
+        IconUserPlus,
+    } from "../../Icons";
     import AdditionalMenuItems from "./AdditionalMenuItems.svelte";
     import ContextualMenuItems from "./ContextualMenuItems.svelte";
     import HeaderMenuItem from "./HeaderMenuItem.svelte";
@@ -153,8 +159,17 @@
     }
 </script>
 
-<div class="k-chrome rounded-lg p-1 w-56 text-white select-none" data-testid="profile-menu">
-    <div class="p-0 m-0 list-none overflow-y-auto max-h-[calc(100vh-96px)]">
+<!-- The office menu's surface and width. The list scrolls inside it, never the surface: its edge fade would fade the
+     rim. The list keeps 28px free: the 8px offset from the avatar, the surface's 12px of padding and 8px at the top
+     edge. Without the dock (upstream's action bar), 68px gives upstream's former 100vh - 96px. -->
+<div
+    class="k-chrome rounded-lg p-1.5 w-66 max-w-[calc(100vw_-_16px)] text-white select-none"
+    data-testid="profile-menu"
+>
+    <div
+        class="k-scroll-y flex min-h-0 flex-col gap-0.5 m-0 p-0 list-none max-h-[calc(100dvh_-_var(--konclui-dock-stack-height,68px)_-_28px)]"
+        data-testid="profile-menu-list"
+    >
         <ExternalComponents zone="menuTop" />
         <AvailabilityStatusList statusInformation={getStatusInformation(statusToShow)} />
         <HeaderMenuItem label={$LL.menu.sub.profile()} />
@@ -166,7 +181,7 @@
                     analyticsClient.trackAdminEvent("profile.name_edit_opened");
                 }}
             >
-                <ProfilIcon height="h-5" width="w-5" strokeWidth="2" />
+                <IconPencil aria-hidden="true" />
             </ActionBarButton>
         {/if}
         <ActionBarButton
@@ -176,7 +191,7 @@
                 analyticsClient.trackAdminEvent("profile.woka_edit_opened");
             }}
         >
-            <Woka userId={-1} placeholderSrc="" customWidth="26px" />
+            <IconUserEdit aria-hidden="true" />
         </ActionBarButton>
         <ActionBarButton
             label={$LL.actionbar.companion()}
@@ -185,17 +200,17 @@
                 analyticsClient.trackAdminEvent("profile.companion_edit_opened");
             }}
         >
-            <Companion userId={-1} placeholderSrc="../static/images/default-companion.png" width="26px" height="26px" />
+            <IconUserPlus aria-hidden="true" />
         </ActionBarButton>
 
         <HeaderMenuItem label={$LL.menu.sub.settings()} />
         <ActionBarButton label={$LL.actionbar.editCamMic()} onclick={openEnableCameraScene}>
-            <CamSettingsIcon height="h-5" width="w-5" strokeWidth="2" />
+            <IconCamera aria-hidden="true" />
         </ActionBarButton>
 
         {#if SENTRY_DSN_FRONT != undefined && connectionManager.currentRoom?.isIssueReportEnabled}
             <ActionBarButton label={$LL.actionbar.issueReport.menuAction()} onclick={openFeedbackScene}>
-                <IconBug font-size="20" aria-hidden="true" />
+                <IconBug aria-hidden="true" />
             </ActionBarButton>
         {/if}
 
@@ -207,7 +222,7 @@
                 openedMenuStore.close("profileMenu");
             }}
         >
-            <SettingsIcon height="h-5" width="w-5" strokeWidth="2" />
+            <IconSettings aria-hidden="true" />
         </ActionBarButton>
 
         {#if window.WAD?.desktop && window.WAD.windows}
@@ -220,12 +235,12 @@
                 }}
                 dataTestId="desktop-open-mini-window"
             >
-                <IconAppWindow font-size="20" aria-hidden="true" />
+                <IconAppWindow aria-hidden="true" />
             </ActionBarButton>
         {/if}
 
         {#if showContextualMenuItems}
-            <div class="items-center">
+            <div class="flex flex-col gap-0.5">
                 <ContextualMenuItems />
             </div>
         {/if}
@@ -242,17 +257,11 @@
                 data-testid="profile-menu-install-web-app"
                 disabled={$pwaInstallProfileMenuEligibleStore !== true}
                 onclick={openPwaInstallPrompt}
-                class="group flex p-2 gap-2 items-center font-bold text-sm w-full pointer-events-auto text-start rounded transition-all {$pwaInstallProfileMenuEligibleStore ===
-                true
-                    ? 'hover:bg-white/10 cursor-pointer'
-                    : 'opacity-50 cursor-not-allowed'}"
+                type="button"
+                class="k-menu-row pointer-events-auto"
             >
-                <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
-                    <IconFileDownload height="20" width="20" class="text-white" aria-hidden="true" />
-                </div>
-                <div class="text-start leading-4 text-white flex items-center">
-                    {$LL.actionbar.installPwa()}
-                </div>
+                <span class="k-menu-lead" aria-hidden="true"><IconFileDownload /></span>
+                <span class="k-menu-label">{$LL.actionbar.installPwa()}</span>
             </button>
         {/if}
 
@@ -261,14 +270,11 @@
                 onboardingStore.restart();
                 openedMenuStore.close("profileMenu");
             }}
-            class="group flex p-2 gap-2 items-center hover:bg-white/10 transition-all cursor-pointer font-bold text-sm w-full pointer-events-auto text-start rounded"
+            type="button"
+            class="k-menu-row pointer-events-auto"
         >
-            <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
-                <IconHelpCircle height="20" width="20" class="text-white" aria-hidden="true" />
-            </div>
-            <div class="text-start leading-4 text-white flex items-center">
-                {$LL.menu.profile.helpAndTips()}
-            </div>
+            <span class="k-menu-lead" aria-hidden="true"><IconHelpCircle /></span>
+            <span class="k-menu-label">{$LL.menu.profile.helpAndTips()}</span>
         </button>
 
         {#if ENABLE_OPENID && $userIsConnected}
@@ -277,19 +283,15 @@
                     analyticsClient.trackAdminEvent("auth.logout_clicked");
                     connectionManager.logout();
                 }}
-                class="group flex p-2 gap-2 items-center hover:bg-danger-600 transition-all cursor-pointer font-bold text-sm w-full pointer-events-auto text-start rounded"
+                type="button"
+                class="k-menu-row group pointer-events-auto hover:bg-danger-600"
             >
-                <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
-                    <IconLogout
-                        height="20"
-                        width="20"
-                        class="text-danger-400 group-hover:text-contrast-900"
-                        aria-hidden="true"
-                    />
-                </div>
-                <div class="text-start leading-4 text-danger-400 group-hover:text-contrast-900 flex items-center">
+                <span class="k-menu-lead" aria-hidden="true">
+                    <IconLogout class="text-danger-400 group-hover:text-contrast-900" />
+                </span>
+                <span class="k-menu-label text-danger-400 group-hover:text-contrast-900">
                     {$LL.menu.profile.logout()}
-                </div>
+                </span>
             </button>
         {/if}
     </div>

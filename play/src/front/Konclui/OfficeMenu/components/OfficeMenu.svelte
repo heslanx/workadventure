@@ -204,7 +204,8 @@
 
 {#if $officeMenuOpenStore}
     <div class="office-menu k-chrome block-user-action" bind:this={panel} data-testid="office-menu">
-        <div role="menu" aria-label={$LL.konclui.officeMenu()}>
+        <!-- The list scrolls, not the panel: the scroller's edge fade would fade the panel's rim and shadow. -->
+        <div class="list k-scroll-y" role="menu" aria-label={$LL.konclui.officeMenu()}>
             {#each $menuGroupsStore as group (group.id)}
                 <div class="group" role="group" aria-label={groupTitles[group.id]}>
                     <span class="group-title" aria-hidden="true">{groupTitles[group.id]}</span>
@@ -231,7 +232,7 @@
                                 </span>
                                 <span class="label">{statusLabels[entry.choice]}</span>
                                 {#if $statusStateStore.choice === entry.choice}
-                                    <IconCheck class="mark" font-size="16" aria-hidden="true" />
+                                    <IconCheck class="mark" width="18" height="18" aria-hidden="true" />
                                 {/if}
                             </button>
                         {:else}
@@ -249,10 +250,10 @@
                                 onfocus={() => (active = index)}
                                 onclick={() => activate(entry)}
                             >
-                                <span class="lead" aria-hidden="true"><Icon font-size="18" /></span>
+                                <span class="lead" aria-hidden="true"><Icon width="18" height="18" /></span>
                                 <span class="label">{row.label()}</span>
                                 {#if toggle && on}
-                                    <IconCheck class="mark" font-size="16" aria-hidden="true" />
+                                    <IconCheck class="mark" width="18" height="18" aria-hidden="true" />
                                 {/if}
                             </button>
                         {/if}
@@ -273,10 +274,11 @@
         top: calc(var(--frame-gap, 6px) + 8px);
         left: calc(var(--rail-width, 60px) + 4px);
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
         width: min(264px, calc(100vw - 16px));
         max-height: calc(100dvh - 24px);
         padding: 6px;
-        overflow-y: auto;
         border-radius: var(--k-radius-surface);
         color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
@@ -287,6 +289,10 @@
             opacity: 0;
             transform: translateX(-6px);
         }
+    }
+    .list {
+        flex: 1 1 auto;
+        min-height: 0;
     }
     .group + .group {
         margin-top: 6px;
@@ -333,7 +339,7 @@
         background: var(--k-hover);
         color: var(--k-fg);
     }
-    /* Inside the box, so the panel's scroll does not clip the ring. */
+    /* Inside the box, so the list's scroll does not clip the ring. */
     .row:focus-visible {
         outline: 2px solid var(--k-accent);
         outline-offset: -2px;

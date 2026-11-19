@@ -105,6 +105,7 @@ describe("the office menu", () => {
     afterEach(async () => {
         closeOfficeMenu({ returnFocus: false });
         closePreferences();
+        mapEditorModeStore.switchMode(false);
         const mounted = menu;
         menu = undefined;
         if (mounted) await unmount(mounted);
@@ -173,6 +174,28 @@ describe("the office menu", () => {
             open();
 
             expect(panel()?.classList.contains("block-user-action")).toBe(true);
+        });
+
+        it("scrolls the list of rows with the menu scroller, not the panel, whose rim the edge fade would fade", () => {
+            open();
+
+            expect(target.querySelector('[role="menu"]')?.classList.contains("k-scroll-y")).toBe(true);
+            expect(panel()?.classList.contains("k-scroll-y")).toBe(false);
+            expect(panel()?.querySelectorAll(".k-scroll-y")).toHaveLength(1);
+        });
+
+        it("draws every icon in an 18 px box set by its size, never by a font size the plugin scales by 1.2", () => {
+            store<boolean>(mapEditorMenuVisibleStore).set(true);
+            mapEditorModeStore.switchMode(true);
+            open();
+
+            const icons = [...(panel()?.querySelectorAll("svg") ?? [])];
+            // Six action glyphs, the status mark and the switched-on editor's mark.
+            expect(icons.length).toBeGreaterThanOrEqual(8);
+            for (const icon of icons) {
+                expect(icon.hasAttribute("font-size")).toBe(false);
+                expect([icon.getAttribute("width"), icon.getAttribute("height")]).toEqual(["18", "18"]);
+            }
         });
     });
 

@@ -4,6 +4,7 @@
     import type { Action } from "svelte/action";
     import HelpTooltip from "../Tooltip/HelpTooltip.svelte";
     import { helpTextDisabledStore } from "../../Stores/MenuStore";
+    import { IconCheck } from "../Icons";
 
     interface Props {
         label?: string;
@@ -238,22 +239,21 @@
         {/if}
     </div>
 {:else}
+    <!-- The menu row of the office menu (`.k-menu-row`). Its state is drawn by the classes of the style block below. -->
     <button
-        class="group flex p-2 gap-2 mb-1 items-center hover:bg-white/10 transition-all cursor-pointer font-bold text-sm text-neutral-100 w-full pointer-events-auto text-start rounded select-none
-                    {(buttonState === 'disabled' && !blockedReason) || statusDot ? 'opacity-50' : ''}
-                    {buttonState === 'disabled' || heldOff ? blockedCursor : ''}
-                    {buttonState === 'disabledForbidden' ? `bg-danger opacity-70 ${blockedCursor}` : ''}
-                    {buttonState === 'active' && !isGradient
-            ? 'bg-secondary hover:bg-secondary-800 cursor-pointer'
-            : ''}
-                    {buttonState === 'forbidden' ? 'bg-danger hover:bg-danger-600 cursor-pointer' : ''}
-                    {buttonState === 'live' ? 'bg-success hover:bg-success-600 cursor-pointer' : ''}
-                    {isGradient ? 'gradient overflow-hidden' : ''}
-                    {bgColor && !isGradient ? 'bg-[var(--bg-color)]' : ''}
-                    {textColor ? 'text-[var(--text-color)]' : darkLabel ? 'text-contrast-900' : 'text-neutral-100'}
-                    {isGradient ? 'relative' : ''}"
+        type="button"
+        class="k-menu-row group pointer-events-auto select-none"
+        class:opacity-50={Boolean(statusDot) && !blocked}
+        class:row-on={buttonState === "active" && !isGradient}
+        class:row-danger={buttonState === "forbidden" || buttonState === "disabledForbidden"}
+        class:row-live={buttonState === "live"}
+        class:row-fill={bgColor !== undefined && !isGradient}
+        class:row-ink={textColor !== undefined}
+        class:gradient={isGradient}
+        class:overflow-hidden={isGradient}
+        class:relative={isGradient}
         use:action
-        aria-disabled={explained || undefined}
+        aria-disabled={blocked || undefined}
         aria-pressed={pressed}
         onclick={handleClick}
         {onkeydown}
@@ -263,25 +263,17 @@
         data-testid={dataTestId}
         bind:this={wrapperDiv}
     >
-        {#if hasImage}
-            <div
-                class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center {explained &&
-                buttonState === 'disabled'
-                    ? 'opacity-50'
-                    : ''}"
-            >
+        <!-- Always there, empty when the row has no picture, so every label starts at the same place. -->
+        <span class="k-menu-lead" aria-hidden="true">
+            {#if hasImage}
                 {@render children?.()}
-            </div>
-        {/if}
-        <div class="flex flex-col min-w-0">
-            <div
-                class="text-start h-6 leading-4 flex items-center text-nowrap {explained && buttonState === 'disabled'
-                    ? 'opacity-50'
-                    : ''}"
-            >
+            {/if}
+        </span>
+        <span class="flex min-w-0 flex-1 flex-col">
+            <span class="k-menu-label">
                 {label ?? tooltipTitle ?? ""}
                 {@render end?.()}
-            </div>
+            </span>
             {#if explained}
                 <!-- In a menu row the reason is always on show, under the label (and part of the row's name). -->
                 <span
@@ -291,7 +283,10 @@
                     {blockedReason}
                 </span>
             {/if}
-        </div>
+        </span>
+        {#if pressed === true}
+            <IconCheck class="k-menu-mark" aria-hidden="true" />
+        {/if}
     </button>
 {/if}
 
@@ -320,5 +315,38 @@
     .gradient {
         border: 1px solid rgb(from var(--bg-color) r g b / 0.3);
         transition: all 0.2s ease-in-out;
+    }
+
+    /* `.k-menu-row` sets the fill and the ink of a row in the utilities layer, where they beat any Tailwind colour.
+       These rules are unlayered, so a row's state wins over it. A switched-on row reads as the office menu's: mint
+       ink and the check mark, no fill. */
+    .k-menu-row.row-on {
+        color: var(--k-accent);
+    }
+    .k-menu-row.row-danger {
+        background: var(--k-danger);
+        color: var(--k-on-danger);
+    }
+    .k-menu-row.row-live {
+        background: var(--k-success);
+        color: hsl(var(--contrast-900));
+    }
+    /* The colours a map script gives its button. */
+    .k-menu-row.row-fill {
+        background: var(--bg-color);
+    }
+    .k-menu-row.row-ink {
+        color: var(--text-color);
+    }
+    @media (hover: hover) {
+        .k-menu-row.row-danger:not([aria-disabled="true"]):hover {
+            background: hsl(var(--danger-800));
+        }
+        .k-menu-row.row-live:hover {
+            background: hsl(var(--success-800));
+        }
+        .k-menu-row.row-fill:not([aria-disabled="true"]):hover {
+            background: var(--k-hover);
+        }
     }
 </style>

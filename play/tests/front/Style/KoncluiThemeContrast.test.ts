@@ -545,7 +545,7 @@ describe("Konclui theme contrast", () => {
             ["Components/Cowebsites/ImageCowebsiteComponent.svelte", "k-chrome rounded-lg pointer-events-auto p-2", 1],
             ["Components/MapEditor/MapEditorSideBar.svelte", "p-2 k-chrome rounded-lg flex flex-col gap-2", 2],
             ["Components/Menu/Menu.svelte", "p-2 rounded-lg k-chrome flex", 2],
-            ["Components/ActionBar/MenuIcons/ProfileMenuContent.svelte", "k-chrome rounded-lg p-1 w-56", 1],
+            ["Components/ActionBar/MenuIcons/ProfileMenuContent.svelte", "k-chrome rounded-lg p-1.5 w-66", 1],
             ["Components/ActionBar/MediaSettingsList/MediaSettingsList.svelte", "k-chrome rounded-lg w-64", 1],
             ["Components/ActionBar/MenuIcons/MapSubMenu.svelte", "absolute k-chrome rounded-lg", 1],
             ["Components/ActionBar/MenuIcons/ParticipantMenuItem.svelte", "absolute k-chrome rounded-lg", 1],
