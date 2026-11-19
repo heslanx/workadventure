@@ -16,6 +16,10 @@ import { createSceneEffectsExtension } from "./Ambience/phaser/sceneEffectsExten
 import PreferencesHost from "./Preferences/components/PreferencesHost.svelte";
 import { gameActions } from "./Preferences/phaser/gameActions";
 import { installGameCommands } from "./Preferences/stores/gameCommands";
+import { cameraSceneAdapter } from "./OfficeMenu/phaser/cameraSceneAdapter";
+import { mapToolsAdapter } from "./OfficeMenu/phaser/mapToolsAdapter";
+import { installCameraScene } from "./OfficeMenu/stores/cameraScene";
+import { installMapTools } from "./OfficeMenu/stores/mapTools";
 
 let installed = false;
 
@@ -36,6 +40,10 @@ export function installKonclui(): void {
     registerSceneExtension(createSceneEffectsExtension(createBrowserEffectsPort()));
     // The dialog's components reach the game through this registry, not through the Phaser layer.
     installGameCommands(gameActions);
+    // The logo's menu switches the map editor and the explorer through the scene's editor manager, by the same road.
+    installMapTools(mapToolsAdapter);
+    // Its camera and microphone row opens the camera scene, as the profile menu's row does.
+    installCameraScene(cameraSceneAdapter);
     // The preferences dialog lives beside the app, over everything: the rail opens it with `openPreferences()`.
     const preferences = document.createElement("div");
     document.body.append(preferences);

@@ -11,6 +11,10 @@ import type { SceneFrameContext } from "../ExternalModule/ClientExtensionPoints"
 import { installKonclui } from "./integration";
 import { gameActions } from "./Preferences/phaser/gameActions";
 import { installGameCommands } from "./Preferences/stores/gameCommands";
+import { cameraSceneAdapter } from "./OfficeMenu/phaser/cameraSceneAdapter";
+import { mapToolsAdapter } from "./OfficeMenu/phaser/mapToolsAdapter";
+import { installCameraScene } from "./OfficeMenu/stores/cameraScene";
+import { installMapTools } from "./OfficeMenu/stores/mapTools";
 import { presenceStore } from "./Presence/stores/presenceStore";
 
 vi.mock("./Shell/components/Frame.svelte", () => ({ default: {} }));
@@ -20,6 +24,10 @@ vi.mock("./Ambience/phaser/browserEffectsPort", () => ({ createBrowserEffectsPor
 vi.mock("./Preferences/components/PreferencesHost.svelte", () => ({ default: {} }));
 vi.mock("./Preferences/phaser/gameActions", () => ({ gameActions: { openNameEditor: vi.fn() } }));
 vi.mock("./Preferences/stores/gameCommands", () => ({ installGameCommands: vi.fn() }));
+vi.mock("./OfficeMenu/phaser/cameraSceneAdapter", () => ({ cameraSceneAdapter: { openCameraScene: vi.fn() } }));
+vi.mock("./OfficeMenu/stores/cameraScene", () => ({ installCameraScene: vi.fn() }));
+vi.mock("./OfficeMenu/phaser/mapToolsAdapter", () => ({ mapToolsAdapter: { equip: vi.fn() } }));
+vi.mock("./OfficeMenu/stores/mapTools", () => ({ installMapTools: vi.fn() }));
 vi.mock("svelte", () => ({ mount: vi.fn() }));
 vi.stubGlobal("document", { createElement: () => ({}), body: { append: vi.fn() } });
 vi.mock("../ExternalModule/ClientExtensionPoints", () => ({
@@ -40,6 +48,10 @@ describe("installKonclui", () => {
         expect(mount).toHaveBeenCalledTimes(1);
         expect(installGameCommands).toHaveBeenCalledTimes(1);
         expect(installGameCommands).toHaveBeenCalledWith(gameActions);
+        expect(installMapTools).toHaveBeenCalledTimes(1);
+        expect(installMapTools).toHaveBeenCalledWith(mapToolsAdapter);
+        expect(installCameraScene).toHaveBeenCalledTimes(1);
+        expect(installCameraScene).toHaveBeenCalledWith(cameraSceneAdapter);
         expect(vi.mocked(registerSceneExtension).mock.calls.map(([extension]) => extension.id)).toEqual([
             "konclui.seatedPose",
             "konclui.presence",

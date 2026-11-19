@@ -354,8 +354,17 @@ describe("Konclui theme contrast", () => {
             for (const file of ["Konclui/Shell/components/Frame.svelte", "Konclui/Shell/components/Dock.svelte"]) {
                 const source = readFileSync(resolve(front, file), "utf8");
                 expect(source).not.toMatch(/k-glass|feDisplacementMap|blur\(/);
-                expect(source).toContain("background: var(--k-chrome);");
-                expect(source).toContain("var(--k-chrome-shadow)");
+            }
+            // The dock draws its own surface; the chips at the top of the map take the shared `.k-chrome` material.
+            const dock = readFileSync(resolve(front, "Konclui/Shell/components/Dock.svelte"), "utf8");
+            expect(dock).toContain("background: var(--k-chrome);");
+            expect(dock).toContain("var(--k-chrome-shadow)");
+            for (const file of [
+                "Konclui/Presence/components/PeoplePill.svelte",
+                "Konclui/Presence/components/PlaceChip.svelte",
+                "Konclui/Presence/components/CallIndicator.svelte",
+            ]) {
+                expect(readFileSync(resolve(front, file), "utf8")).toMatch(/class="[^"]*\bk-chrome\b/);
             }
         });
 
@@ -652,5 +661,38 @@ describe("Konclui theme contrast", () => {
                 /\.dock-controls :global\(button\.bg-danger:hover\) \{\s*background: var\(--k-hover\);/,
             );
         });
+    });
+});
+
+describe("the frame's logo and the office menu", () => {
+    const frame = readFileSync(resolve(front, "Konclui/Shell/components/Frame.svelte"), "utf8");
+    const menu = readFileSync(resolve(front, "Konclui/OfficeMenu/components/OfficeMenu.svelte"), "utf8");
+    const phoneRules = (source: string): string => source.slice(source.indexOf("@media (max-width: 767px)"));
+
+    it("opens the office menu from the logo, as a menu button that says whether it is open", () => {
+        const start = frame.indexOf("{#snippet logoButton");
+        const logo = start < 0 ? undefined : frame.slice(start, frame.indexOf("<svg", start));
+
+        expect(logo).toBeDefined();
+        expect(logo).toContain('aria-haspopup="menu"');
+        expect(logo).toContain("aria-expanded={$officeMenuOpenStore}");
+        expect(logo).toContain("onclick={(event) => toggleOfficeMenu(event.currentTarget)}");
+        expect(logo).not.toContain("openPreferences");
+    });
+
+    it("keeps the preferences on the gear, and the logo in the rail and in the phone's top row", () => {
+        expect(frame).toMatch(
+            /class="settings"[\s\S]*?onclick=\{\(event\) => openPreferences\(undefined, event\.currentTarget\)\}/,
+        );
+        expect(frame.match(/\{@render logoButton\(/g)).toHaveLength(2);
+        expect(frame).toMatch(/\.people-slot,\s*\.logo-slot \{\s*display: none;/);
+        expect(phoneRules(frame)).toMatch(/\.people-slot,\s*\.logo-slot \{\s*display: block;/);
+    });
+
+    it("fits the menu in the screen below the phone's top row, so its last row can be reached", () => {
+        const top = /top: (\d+)px;\s*left: 8px;/.exec(phoneRules(menu))?.[1];
+
+        expect(top).toBe("64");
+        expect(phoneRules(menu)).toContain(`max-height: calc(100dvh - ${top}px - 12px);`);
     });
 });

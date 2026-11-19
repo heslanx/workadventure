@@ -21,7 +21,7 @@ const selfPath = fileURLToPath(import.meta.url);
  * domains, so nothing imports it, and `Preferences` is the leaf every domain may read.
  */
 const domainEdges: Readonly<Record<string, readonly string[]>> = {
-    Shell: ["Presence", "Expression", "Identity", "Notifications", "Ambience"],
+    Shell: ["Presence", "Expression", "Identity", "Notifications", "Ambience", "OfficeMenu"],
     Presence: ["Rooms", "Workplace"],
     Workplace: ["Preferences"],
     Rooms: ["Preferences"],
@@ -29,6 +29,7 @@ const domainEdges: Readonly<Record<string, readonly string[]>> = {
     Identity: ["Rooms", "Preferences"],
     Notifications: ["Rooms", "Preferences"],
     Ambience: ["Rooms", "Preferences"],
+    OfficeMenu: ["Preferences"],
     Preferences: [],
 };
 

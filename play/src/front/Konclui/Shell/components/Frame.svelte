@@ -22,6 +22,8 @@
     } from "../domain/sidePanel";
     import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
     import { openPreferences } from "../../Preferences/stores/preferencesStore";
+    import OfficeMenu from "../../OfficeMenu/components/OfficeMenu.svelte";
+    import { officeMenuOpenStore, toggleOfficeMenu } from "../../OfficeMenu/stores/officeMenuStore";
     import ChatSidebar from "../../../Chat/ChatSidebar.svelte";
     import PeoplePill from "../../Presence/components/PeoplePill.svelte";
     import PlaceChip from "../../Presence/components/PlaceChip.svelte";
@@ -116,6 +118,32 @@
 
 <svelte:window {onkeydown} />
 
+<!-- The Konclui logo opens the office menu (status, profile, settings, tools); the gear opens the preferences. It is in
+     the rail, and on a phone, where the rail is hidden, at the start of the top row. -->
+{#snippet logoButton(chrome: boolean)}
+    <button
+        class="logo"
+        class:k-chrome={chrome}
+        type="button"
+        aria-label={$LL.konclui.officeMenu()}
+        aria-haspopup="menu"
+        aria-expanded={$officeMenuOpenStore}
+        onclick={(event) => toggleOfficeMenu(event.currentTarget)}
+    >
+        <svg viewBox="0 0 162 162" fill="currentColor" aria-hidden="true">
+            <path
+                d="M152.548 0.0123053C158.963 0.0123053 162.165 7.7812 157.609 12.2997L42.0282 126.912C37.0039 131.887 30.8592 134.103 24.8376 134.103C12.1541 134.103 0 124.253 0 109.392V43.129C0 39.1646 3.21399 35.9388 7.19145 35.9388H35.4401C39.4052 35.9388 42.6315 39.1523 42.6315 43.129V72.838L113.721 2.09305C115.063 0.75103 116.886 0 118.794 0H152.572L152.548 0.0123053Z"
+            />
+            <path
+                d="M157.617 149.434C162.164 153.943 158.993 161.708 152.591 161.709H118.884C116.979 161.709 115.16 160.959 113.821 159.62L65.7827 111.812L92.7343 85.0928L157.617 149.434Z"
+            />
+            <path
+                d="M0 127.637C5.86924 135.38 15.253 139.906 24.7757 139.906C30.8917 139.906 37.0985 138.066 42.528 134.103V155.025C42.2945 158.782 39.1716 161.748 35.3662 161.748H7.1766C3.20745 161.748 7.61852e-06 158.529 0 154.573V127.637Z"
+            />
+        </svg>
+    </button>
+{/snippet}
+
 <div
     class="office-frame"
     class:konclui={$shellActiveStore}
@@ -124,24 +152,7 @@
 >
     {#if $shellActiveStore}
         <nav class="rail" aria-label={$LL.konclui.office()}>
-            <button
-                class="logo"
-                type="button"
-                aria-label={$LL.konclui.officeMenu()}
-                onclick={(event) => openPreferences(undefined, event.currentTarget)}
-            >
-                <svg viewBox="0 0 162 162" fill="currentColor" aria-hidden="true">
-                    <path
-                        d="M152.548 0.0123053C158.963 0.0123053 162.165 7.7812 157.609 12.2997L42.0282 126.912C37.0039 131.887 30.8592 134.103 24.8376 134.103C12.1541 134.103 0 124.253 0 109.392V43.129C0 39.1646 3.21399 35.9388 7.19145 35.9388H35.4401C39.4052 35.9388 42.6315 39.1523 42.6315 43.129V72.838L113.721 2.09305C115.063 0.75103 116.886 0 118.794 0H152.572L152.548 0.0123053Z"
-                    />
-                    <path
-                        d="M157.617 149.434C162.164 153.943 158.993 161.708 152.591 161.709H118.884C116.979 161.709 115.16 160.959 113.821 159.62L65.7827 111.812L92.7343 85.0928L157.617 149.434Z"
-                    />
-                    <path
-                        d="M0 127.637C5.86924 135.38 15.253 139.906 24.7757 139.906C30.8917 139.906 37.0985 138.066 42.528 134.103V155.025C42.2945 158.782 39.1716 161.748 35.3662 161.748H7.1766C3.20745 161.748 7.61852e-06 158.529 0 154.573V127.637Z"
-                    />
-                </svg>
-            </button>
+            {@render logoButton(false)}
             <button
                 type="button"
                 aria-label={$LL.konclui.people()}
@@ -171,6 +182,7 @@
         </nav>
         <!-- The top of the map: the place you are in at every width, and on a phone the pill that opens the panel. -->
         <div class="top-row">
+            <div class="logo-slot">{@render logoButton(true)}</div>
             <div class="people-slot">
                 <PeoplePill
                     bind:button={mobilePeopleButton}
@@ -204,6 +216,7 @@
                 <p class="notice" role="status">{$LL.konclui.rosterUnavailable()}</p>
             {/if}
         </aside>
+        <OfficeMenu />
     {/if}
     <div class="viewport" bind:this={viewport}>
         {@render children()}
@@ -340,11 +353,20 @@
     .konclui.panel-open .top-row {
         left: calc(var(--rail-width) + var(--panel-width) + var(--frame-gap) + 12px);
     }
-    /* Beside the rail the people button is the rail's; the pill is for the phone. */
-    .people-slot {
+    /* Beside the rail the people button and the logo are the rail's; the pill and the logo's chip are for the phone. */
+    .people-slot,
+    .logo-slot {
         display: none;
         flex: none;
         pointer-events: auto;
+    }
+    .logo-slot .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+    }
+    .logo-slot .logo:hover {
+        background-color: var(--k-hover);
     }
     @media (max-width: 767px) {
         .konclui,
@@ -364,7 +386,8 @@
             top: 12px;
             left: 12px;
         }
-        .people-slot {
+        .people-slot,
+        .logo-slot {
             display: block;
         }
         .side-panel {
