@@ -165,6 +165,11 @@ Note that anonymous players don't have any TTL limit because their data is store
         .describe(
             "The most peers one user holds at once in a WebRTC (peer-to-peer) space. Pairs past it are refused, so a space that cannot move to LiveKit never becomes a mesh of hundreds of connections in one browser tab. Unset or empty means no limit",
         ),
+    WORLD_HEADCOUNT_ENABLED: BoolAsString.optional()
+        .transform((val) => toBool(val, false))
+        .describe(
+            "Publish how many distinct people are in a world as one number in the state of its world space, at most once per second, so a client can show the count without watching the whole roster. Clients that predate the number ignore it. Defaults to false",
+        ),
     LIVEKIT_SWITCH_ON_CPU_LIMITATION: BoolAsString.optional()
         .transform((val) => toBool(val, true))
         .describe(

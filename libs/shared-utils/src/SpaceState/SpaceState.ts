@@ -134,6 +134,10 @@ export const spaceStateSchema = z.object({
     questions: z.record(z.string(), proximityQuestionSchema),
     // Absent from a state sent before annotations existed: defaults to none.
     annotations: z.record(z.string(), screenAnnotationSchema).default({}),
+    // How many distinct people (uuid) are in the world space, so the clients can show one number without watching
+    // the whole roster. Only the world space sets it, with at most one patch per second. Absent means "not known":
+    // any other space, a world space nobody joined yet, or a back that predates it.
+    headcount: z.number().int().min(0).optional(),
 });
 
 export type RaisedHandEntry = z.infer<typeof raisedHandEntrySchema>;

@@ -20,6 +20,19 @@ describe("EnvironmentVariable", () => {
         expect(result.success).toBe(true);
     });
 
+    describe("WORLD_HEADCOUNT_ENABLED", () => {
+        const parse = (WORLD_HEADCOUNT_ENABLED?: string) =>
+            EnvironmentVariables.safeParse({ PLAY_URL: "https://example.com", WORLD_HEADCOUNT_ENABLED });
+
+        it("is off unless it is set", () => {
+            expect(parse(undefined).data?.WORLD_HEADCOUNT_ENABLED).toBe(false);
+        });
+
+        it("is on when it is set to true", () => {
+            expect(parse("true").data?.WORLD_HEADCOUNT_ENABLED).toBe(true);
+        });
+    });
+
     describe("MAX_P2P_PEERS", () => {
         const parse = (MAX_P2P_PEERS?: string) =>
             EnvironmentVariables.safeParse({ PLAY_URL: "https://example.com", MAX_P2P_PEERS });

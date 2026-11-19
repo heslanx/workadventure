@@ -204,6 +204,7 @@ Environment variables for the Back service (backend API).
 | `LIVEKIT_API_SECRET` | No | The Livekit API secret. |
 | `MAX_USERS_FOR_WEBRTC` | Yes | The maximum number of users for WebRTC. |
 | `MAX_P2P_PEERS` | No | The most peers one user holds at once in a WebRTC (peer-to-peer) space. Pairs past it are refused, so a space that cannot move to LiveKit never becomes a mesh of hundreds of connections in one browser tab. Unset or empty means no limit |
+| `WORLD_HEADCOUNT_ENABLED` | No | Publish how many distinct people are in a world as one number in the state of its world space, at most once per second, so a client can show the count without watching the whole roster. Clients that predate the number ignore it. Defaults to false |
 | `LIVEKIT_SWITCH_ON_CPU_LIMITATION` | No | Move a bubble of more than two users to LiveKit as soon as one of them reports that its video encoders cannot keep up in WebRTC (one encoder per peer), even below MAX_USERS_FOR_WEBRTC, and keep it there while that user is present. Costs LiveKit bandwidth for bubbles that would have stayed peer-to-peer. Defaults to true |
 | `LIVEKIT_RECORDING_S3_ENDPOINT` | No | The S3 endpoint for Livekit recording. |
 | `LIVEKIT_RECORDING_S3_ACCESS_KEY` | No | The S3 access key for Livekit recording. |

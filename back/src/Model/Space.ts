@@ -26,11 +26,13 @@ import { Subject } from "rxjs";
 import Debug from "debug";
 import { asError } from "catch-unknown";
 import { clientEventsEmitter } from "../Services/ClientEventsEmitter";
+import { WORLD_HEADCOUNT_ENABLED } from "../Enum/EnvironmentVariable";
 import type { SessionEndReason } from "./SessionAnalytics";
 import type { CustomJsonReplacerInterface } from "./CustomJsonReplacerInterface";
 import type { SpacesWatcher } from "./SpacesWatcher";
 import type { EventProcessor } from "./EventProcessor";
 import { CommunicationManager } from "./CommunicationManager";
+import { DistinctCounter } from "./DistinctCounter";
 import type { ICommunicationManager } from "./Interfaces/ICommunicationManager";
 import type { ICommunicationSpace } from "./Interfaces/ICommunicationSpace";
 import type { ManagedRecordingState } from "./RecordingManager";
@@ -40,6 +42,16 @@ import { ProximityQAManager } from "./ProximityQAManager";
 import { ScreenAnnotationManager } from "./ScreenAnnotationManager";
 
 const debug = Debug("space");
+
+// The space every client joins to see who is in the world, named `<world>.allWorldUser` on the back.
+const WORLD_SPACE_LOCAL_NAME = "allWorldUser";
+// The headcount patch is sent once the count has been changing for this long, so a join burst costs one patch.
+export const WORLD_HEADCOUNT_DEBOUNCE_MS = 1000;
+
+// A person is their uuid; a user without one (anonymous) is counted by its space user id.
+function headcountKey(user: SpaceUser): string {
+    return user.uuid || user.spaceUserId;
+}
 
 type Filter = Exclude<FilterType, FilterType.UNRECOGNIZED>;
 
@@ -65,6 +77,9 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
     private _nbUsers = 0;
     // If there is at least one publishers, nbWatchers = nbUsers. Otherwise nbWatchers = 0
     private _nbWatchers = 0;
+    // Distinct people in the world space. Undefined in every other space, and when WORLD_HEADCOUNT_ENABLED is off.
+    private readonly worldHeadcount: DistinctCounter | undefined;
+    private headcountTimer: NodeJS.Timeout | undefined;
 
     constructor(
         name: string,
@@ -73,6 +88,7 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
         private _propertiesToSync: string[],
         public readonly world: string,
         private _spaceUpdatedSubject = clientEventsEmitter.spaceUpdatedSubject,
+        publishWorldHeadcount: boolean = WORLD_HEADCOUNT_ENABLED,
     ) {
         this.name = name;
         this.users = new Map<SpacesWatcher, Map<SpaceUser["spaceUserId"], SpaceUser>>();
@@ -84,13 +100,21 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
         this.proximityPollManager = new ProximityPollManager(this);
         this.proximityQAManager = new ProximityQAManager(this);
         this.screenAnnotationManager = new ScreenAnnotationManager(this);
+        if (publishWorldHeadcount && name === `${world}.${WORLD_SPACE_LOCAL_NAME}`) {
+            this.worldHeadcount = new DistinctCounter();
+        }
         debug(`${name} => created`);
     }
 
     public addUser(sourceWatcher: SpacesWatcher, spaceUser: SpaceUser): void {
         try {
             const usersList = this.usersList(sourceWatcher);
+            const replacedUser = usersList.get(spaceUser.spaceUserId);
+            if (replacedUser) {
+                this.countUserLeft(replacedUser);
+            }
             usersList.set(spaceUser.spaceUserId, spaceUser);
+            this.countUserJoined(spaceUser);
             this._nbUsers++;
             if (this.isPublishing(spaceUser)) {
                 this._nbPublishers++;
@@ -253,6 +277,7 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
             wasToNotify = usersToNotifyList.delete(spaceUserId);
 
             usersList.delete(spaceUserId);
+            this.countUserLeft(user);
             this.userRemoved$.next(user);
 
             if (this.isPublishing(user)) {
@@ -370,6 +395,7 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
 
         if (spaceUsers) {
             for (const spaceUser of spaceUsers.values()) {
+                this.countUserLeft(spaceUser);
                 // A pusher going away takes its users with it; without this they would
                 // stay "present" until the back itself shut down.
                 this.userRemoved$.next(spaceUser);
@@ -610,7 +636,13 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
     }
 
     public syncUsersFromPusher(watcher: SpacesWatcher, users: SpaceUser[]) {
+        for (const previousUser of this.users.get(watcher)?.values() ?? []) {
+            this.countUserLeft(previousUser);
+        }
         this.users.set(watcher, new Map<string, SpaceUser>(users.map((user) => [user.spaceUserId, user])));
+        for (const user of users) {
+            this.countUserJoined(user);
+        }
     }
 
     public async handleQuery(
@@ -905,7 +937,46 @@ export class Space implements CustomJsonReplacerInterface, ICommunicationSpace {
         return this.communicationManager.closeSession(endReason);
     }
 
+    private countUserJoined(user: SpaceUser): void {
+        if (!this.worldHeadcount) {
+            return;
+        }
+        this.worldHeadcount.add(headcountKey(user));
+        this.scheduleHeadcountPublication();
+    }
+
+    private countUserLeft(user: SpaceUser): void {
+        if (!this.worldHeadcount) {
+            return;
+        }
+        this.worldHeadcount.remove(headcountKey(user));
+        this.scheduleHeadcountPublication();
+    }
+
+    /**
+     * Arms one timer when the count starts changing, and publishes the count it holds when the timer fires. Resetting
+     * the timer on every change instead would publish nothing while users keep joining, however long that lasts.
+     */
+    private scheduleHeadcountPublication(): void {
+        if (!this.worldHeadcount || this.headcountTimer) {
+            return;
+        }
+        this.headcountTimer = setTimeout(() => {
+            this.headcountTimer = undefined;
+            const headcount = this.worldHeadcount?.size ?? 0;
+            if (headcount === 0 && this.state.headcount === undefined) {
+                return;
+            }
+            this.updateState((state) => {
+                state.headcount = headcount;
+            });
+        }, WORLD_HEADCOUNT_DEBOUNCE_MS);
+        this.headcountTimer.unref();
+    }
+
     public destroy() {
+        clearTimeout(this.headcountTimer);
+        this.headcountTimer = undefined;
         // The manager closes the session it owns.
         this.communicationManager.destroy();
         this.raiseHandManager.destroy();
