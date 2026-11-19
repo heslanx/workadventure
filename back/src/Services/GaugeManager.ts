@@ -1,4 +1,4 @@
-import { Gauge } from "prom-client";
+import { Counter, Gauge } from "prom-client";
 import type { Space } from "../Model/Space";
 import { clientEventsEmitter } from "./ClientEventsEmitter";
 
@@ -10,6 +10,7 @@ class GaugeManager {
     private nbSpacesGauge: Gauge<string>;
     private nbPublishersPerWorldGauge: Gauge<string>;
     private nbWatchersPerWorldGauge: Gauge<string>;
+    private nbMovesShedCounter: Counter<string>;
 
     private worldStats: Map<string, { publishers: number; watchers: number }> = new Map();
     private clientsPerRoom: Map<string, number> = new Map();
@@ -45,6 +46,11 @@ class GaugeManager {
             name: "workadventure_nb_watchers_per_world",
             help: "Number of watchers per space",
             labelNames: ["world"] as const,
+        });
+
+        this.nbMovesShedCounter = new Counter({
+            name: "workadventure_moves_shed_total",
+            help: "Number of user moves dropped by the back because the CPU is overheating",
         });
 
         // It's ok to never unsubscribe from these subjects, as they live as long as the server
@@ -117,6 +123,9 @@ class GaugeManager {
     }
     decNbRoomGauge(): void {
         this.nbRoomsGauge.dec();
+    }
+    incNbMovesShed(): void {
+        this.nbMovesShedCounter.inc();
     }
 }
 

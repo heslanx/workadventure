@@ -298,6 +298,7 @@ export class SocketManager {
 
         // If CPU is high, let's drop messages of users moving (we will only dispatch the final position)
         if (cpuTracker.isOverHeating() && userMoves.position?.moving === true) {
+            gaugeManager.incNbMovesShed();
             return;
         }
 
