@@ -21,15 +21,11 @@ const selfPath = fileURLToPath(import.meta.url);
  * domains, so nothing imports it, and `Preferences` is the leaf every domain may read.
  */
 const domainEdges: Readonly<Record<string, readonly string[]>> = {
-    Shell: ["Presence", "Expression", "Identity", "Notifications", "Ambience", "OfficeMenu", "Focus"],
-    Presence: ["Rooms", "Workplace"],
+    Shell: ["Presence", "Ambience", "OfficeMenu", "Focus"],
+    Presence: ["Workplace"],
     Workplace: ["Preferences"],
     Focus: ["Workplace", "Preferences"],
-    Rooms: ["Preferences"],
-    Expression: ["Rooms", "Preferences"],
-    Identity: ["Rooms", "Preferences"],
-    Notifications: ["Rooms", "Preferences"],
-    Ambience: ["Rooms", "Preferences"],
+    Ambience: ["Preferences"],
     OfficeMenu: ["Preferences"],
     Preferences: [],
 };
@@ -387,12 +383,30 @@ describe("Konclui architecture", () => {
             [],
         );
         expect(
-            findViolations([at("front/Konclui/Workplace/stores/a.ts", 'import "../../Rooms/stores/b";')]),
+            findViolations([at("front/Konclui/Workplace/stores/a.ts", 'import "../../Focus/stores/b";')]),
         ).toHaveLength(1);
-        expect(findViolations([at("front/Konclui/Rooms/stores/a.ts", 'import "../../Shell/stores/b";')])).toHaveLength(
-            1,
-        );
+        expect(
+            findViolations([at("front/Konclui/Preferences/stores/a.ts", 'import "../../Shell/stores/b";')]),
+        ).toHaveLength(1);
+        // A name that is on no disk is not a domain: a folder made under it is refused.
+        expect(findViolations([at("front/Konclui/Rooms/stores/a.ts", "export const a = 1;")])).toHaveLength(1);
         expect(findViolations([at("front/Konclui/Billing/stores/a.ts", "export const a = 1;")])).toHaveLength(1);
         expect(findViolations([at("front/Konclui/integration.ts", "export const a = 1;")])).toEqual([]);
+    });
+
+    it("names the domains that are on disk, and the doc lists the same ones", () => {
+        const onDisk = readdirSync(contextDir, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => entry.name)
+            .filter((name) => readdirSync(join(contextDir, name)).some((child) => layers.has(child)));
+        const named = Object.keys(domainEdges);
+        expect([...named].sort()).toEqual([...onDisk].sort());
+        for (const targets of Object.values(domainEdges)) {
+            for (const target of targets) expect(named).toContain(target);
+        }
+
+        const guide = readFileSync(join(contextDir, "AGENTS.md"), "utf8");
+        const listed = /Each domain is a folder \(([^)]*)\)/s.exec(guide)?.[1].match(/\w+/g) ?? [];
+        expect([...listed].sort()).toEqual([...named].sort());
     });
 });
