@@ -1,5 +1,30 @@
 import { Counter, Gauge } from "prom-client";
 
+interface SubMessageTotal {
+    messages: number;
+    bytes: number;
+}
+
+/** A counter, by sub-message type, that copies one field of `totals` each time Prometheus scrapes it. */
+function subMessageTotalsCounter(
+    name: string,
+    help: string,
+    totals: ReadonlyMap<string, SubMessageTotal>,
+    pick: (total: SubMessageTotal) => number,
+): void {
+    new Counter({
+        name,
+        help,
+        labelNames: ["type"] as const,
+        collect() {
+            this.reset();
+            for (const [type, total] of totals) {
+                this.inc({ type }, pick(total));
+            }
+        },
+    });
+}
+
 //this class should manage all the custom metrics used by prometheus
 class GaugeManager {
     private nbClientsGauge: Gauge<string>;
@@ -12,7 +37,7 @@ class GaugeManager {
 
     // What the pusher sent in batches, by sub-message type. Plain integers, because every socket adds to them about ten
     // times a second for each type it is sent: the two sub-message counters copy them when Prometheus scrapes.
-    private subMessageTotals: Map<string, { messages: number; bytes: number }> = new Map();
+    private subMessageTotals: Map<string, SubMessageTotal> = new Map();
 
     // Internal counters to track values per room
     private clientsPerRoom: Map<string, number> = new Map();
@@ -59,29 +84,18 @@ class GaugeManager {
             labelNames: [],
         });
 
-        const totals = this.subMessageTotals;
-        new Counter({
-            name: "workadventure_pusher_sub_messages_total",
-            help: "Counter of sub-messages sent to the clients in batches, by type",
-            labelNames: ["type"] as const,
-            collect() {
-                this.reset();
-                for (const [type, total] of totals) {
-                    this.inc({ type }, total.messages);
-                }
-            },
-        });
-        new Counter({
-            name: "workadventure_pusher_sub_messages_bytes_total",
-            help: "Counter of the bytes of the sub-messages sent to the clients in batches, by type, with the tag and length of each entry",
-            labelNames: ["type"] as const,
-            collect() {
-                this.reset();
-                for (const [type, total] of totals) {
-                    this.inc({ type }, total.bytes);
-                }
-            },
-        });
+        subMessageTotalsCounter(
+            "workadventure_pusher_sub_messages_total",
+            "Counter of sub-messages sent to the clients in batches, by type",
+            this.subMessageTotals,
+            (total) => total.messages,
+        );
+        subMessageTotalsCounter(
+            "workadventure_pusher_sub_messages_bytes_total",
+            "Counter of the bytes of the sub-messages sent to the clients in batches, by type, with the tag and length of each entry",
+            this.subMessageTotals,
+            (total) => total.bytes,
+        );
     }
 
     incNbClientPerRoomGauge(roomId: string): void {

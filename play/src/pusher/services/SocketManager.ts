@@ -129,6 +129,14 @@ const VIEWER_BUDGET_LIMITS: ViewerBudgetLimits | undefined = PUSHER_VIEWER_BUDGE
 // Written by a socket's back-stream data handler, read by its end handler.
 type BackConnectionClose = { reason: string | undefined };
 
+/** What the pusher keeps about the moves of a socket. */
+interface SocketMoveState {
+    /** Bounds how many moves of the socket go on to the back. */
+    readonly limiter: MoveRateLimiter;
+    /** Whether the last move of the socket had moving=true; the moving sockets gauge counts these sockets. */
+    moving: boolean;
+}
+
 export class SocketManager implements ZoneEventListener {
     private static readonly RECORDING_QUERY_TIMEOUT_MS = 60_000;
     // A client walking straight shares about 5 positions a second, so this only bounds a client that sends more. The
@@ -139,10 +147,8 @@ export class SocketManager implements ZoneEventListener {
     // Rooms whose init() has not resolved yet, so concurrent getOrCreateRoom calls share one instance.
     private creatingRooms: Map<string, Promise<PusherRoom>> = new Map<string, Promise<PusherRoom>>();
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
-    // Keyed by socket so that a limiter goes away with its socket.
-    private moveRateLimiters = new WeakMap<PusherWebSocket, MoveRateLimiter>();
-    // The sockets whose last move had moving=true; the moving sockets gauge counts them.
-    private movingSockets = new WeakSet<PusherWebSocket>();
+    // Keyed by socket so that the state goes away with its socket.
+    private moveStates = new WeakMap<PusherWebSocket, SocketMoveState>();
     // Keyed by socket so that a budget goes away with its socket. Empty while viewerBudgetLimits is undefined.
     private viewerBudgets = new WeakMap<PusherWebSocket, ViewerBudget>();
 
@@ -780,14 +786,14 @@ export class SocketManager implements ZoneEventListener {
 
     /** Keeps the moving sockets gauge in step with the last move of a socket; a socket that is cleaned up has none. */
     private trackMoving(client: PusherWebSocket, moving: boolean): void {
-        if (moving === this.movingSockets.has(client)) {
+        const moveState = this.moveStateOf(client);
+        if (moving === moveState.moving) {
             return;
         }
+        moveState.moving = moving;
         if (moving) {
-            this.movingSockets.add(client);
             gaugeManager.incNbMovingSockets();
         } else {
-            this.movingSockets.delete(client);
             gaugeManager.decNbMovingSockets();
         }
     }
@@ -801,12 +807,19 @@ export class SocketManager implements ZoneEventListener {
             return true;
         }
 
-        let limiter = this.moveRateLimiters.get(client);
-        if (limiter === undefined) {
-            limiter = new MoveRateLimiter(SocketManager.MOVE_BURST, SocketManager.MAX_MOVES_PER_SECOND);
-            this.moveRateLimiters.set(client, limiter);
+        return this.moveStateOf(client).limiter.tryConsume(Date.now());
+    }
+
+    private moveStateOf(client: PusherWebSocket): SocketMoveState {
+        let moveState = this.moveStates.get(client);
+        if (moveState === undefined) {
+            moveState = {
+                limiter: new MoveRateLimiter(SocketManager.MOVE_BURST, SocketManager.MAX_MOVES_PER_SECOND),
+                moving: false,
+            };
+            this.moveStates.set(client, moveState);
         }
-        return limiter.tryConsume(Date.now());
+        return moveState;
     }
 
     onGroupUsersUpdated(group: GroupDescriptor, listener: PusherWebSocket): void {
