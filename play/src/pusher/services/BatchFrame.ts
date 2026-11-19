@@ -82,6 +82,31 @@ export function encodeBatchFrame(nonce: number, subMessages: readonly SubMessage
     return frame;
 }
 
+/**
+ * The size of each entry of a frame made by encodeBatchFrame, in order: the tag of the entry (one byte), the length of
+ * its sub-message and the sub-message, which is what a client receives of it. The sizes are read off the frame, so the
+ * entries shared by many frames are not encoded again to be measured.
+ */
+export function entrySizes(frame: Uint8Array): number[] {
+    let offset = 0;
+    if (frame[offset] === NONCE_TAG) {
+        offset = skipVarint(frame, offset + 1);
+    }
+    // MESSAGE_TAG and BATCH_MESSAGE_TAG, each followed by the length of its wrapper.
+    offset = skipVarint(frame, offset + 1);
+    offset = skipVarint(frame, offset + 1);
+
+    const sizes: number[] = [];
+    while (offset < frame.length) {
+        const lengthOffset = offset + 1;
+        const subMessageOffset = skipVarint(frame, lengthOffset);
+        const end = subMessageOffset + readVarint(frame, lengthOffset);
+        sizes.push(end - offset);
+        offset = end;
+    }
+    return sizes;
+}
+
 /** The bytes the BatchMessage encoder writes for these sub-messages: one entry (tag, length, bytes) after the other. */
 function encodeEntries(subMessages: SubMessage[]): Uint8Array {
     return BatchMessage.encode({ event: "", payload: subMessages }).finish();
@@ -103,4 +128,29 @@ function writeVarint(target: Uint8Array, offset: number, value: number): number 
     }
     target[offset++] = rest;
     return offset;
+}
+
+function readVarint(bytes: Uint8Array, offset: number): number {
+    let value = 0;
+    let multiplier = 1;
+    for (let cursor = offset; cursor < bytes.length; cursor++) {
+        const byte = bytes[cursor];
+        value += (byte & 0x7f) * multiplier;
+        if ((byte & 0x80) === 0) {
+            break;
+        }
+        multiplier *= 128;
+    }
+    return value;
+}
+
+/** The offset of the byte after the varint that starts at `offset`. */
+function skipVarint(bytes: Uint8Array, offset: number): number {
+    let cursor = offset;
+    while (cursor < bytes.length) {
+        if ((bytes[cursor++] & 0x80) === 0) {
+            break;
+        }
+    }
+    return cursor;
 }

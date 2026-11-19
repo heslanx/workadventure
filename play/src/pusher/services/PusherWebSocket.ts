@@ -10,7 +10,7 @@ import * as Sentry from "@sentry/node";
 import { CLIENT_DISCONNECTION_RETENTION_MS } from "../enums/EnvironmentVariable";
 import { NoncedMessageStore } from "../../common/NoncedMessageStore";
 import type { SocketData } from "../models/Websocket/SocketData";
-import { encodeBatchFrame } from "./BatchFrame";
+import { encodeBatchFrame, entrySizes } from "./BatchFrame";
 import { gaugeManager } from "./GaugeManager";
 
 export type RawSocket = WebSocket<SocketData>;
@@ -356,56 +356,14 @@ export class PusherWebSocket {
 
 /**
  * Adds the sub-messages of a batch to the counters of the pusher, by type, with the bytes each took in `frame`: its
- * entry, tag and length prefix included, which is what a client sees of it. The sizes are read off the frame instead of
- * encoding the sub-messages again, because the frame was made from entries that are shared by many sockets.
+ * entry, tag and length prefix included, which is what a client sees of it.
  */
 function countSubMessages(batch: readonly SubMessage[], frame: Uint8Array): void {
-    let offset = firstEntryOffset(frame);
-    for (const subMessage of batch) {
-        if (offset >= frame.length) {
-            return;
-        }
-        // An entry is the tag of the payload field of the BatchMessage (one byte), the length of the sub-message and it.
-        let cursor = offset + 1;
-        let length = 0;
-        let multiplier = 1;
-        let byte: number;
-        do {
-            byte = frame[cursor++];
-            length += (byte & 0x7f) * multiplier;
-            multiplier *= 128;
-        } while ((byte & 0x80) !== 0 && cursor < frame.length);
+    const sizes = entrySizes(frame);
+    batch.forEach((subMessage, index) => {
         const type = subMessage.message?.$case;
         if (type !== undefined) {
-            gaugeManager.addSubMessage(type, cursor + length - offset);
+            gaugeManager.addSubMessage(type, sizes[index]);
         }
-        offset = cursor + length;
-    }
-}
-
-/**
- * The offset of the first entry of a batch frame (see BatchFrame.ts): after the nonce, when there is one, and the tag
- * and length of the two wrappers, ServerToClientMessage and BatchMessage.
- */
-function firstEntryOffset(frame: Uint8Array): number {
-    const NONCE_TAG = 0x08;
-    let offset = 0;
-    if (frame[offset] === NONCE_TAG) {
-        offset = skipVarint(frame, offset + 1);
-    }
-    for (let wrapper = 0; wrapper < 2; wrapper++) {
-        // The tag is one byte; what follows it is the length of the wrapper.
-        offset = skipVarint(frame, offset + 1);
-    }
-    return offset;
-}
-
-function skipVarint(bytes: Uint8Array, offset: number): number {
-    let cursor = offset;
-    while (cursor < bytes.length) {
-        if ((bytes[cursor++] & 0x80) === 0) {
-            break;
-        }
-    }
-    return cursor;
+    });
 }
