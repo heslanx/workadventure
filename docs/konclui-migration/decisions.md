@@ -2,7 +2,7 @@
 
 On 2026-11-18 the owner delegated these decisions: "decide yourselves, validate every hypothesis, never wait on me". Each section gives the decision, the evidence, the open hypotheses and how each is checked, the first slice, and how to reverse it. Every slice is a separate, reversible commit made through the integrator session ([integration loop](../integration/LOOP.md)).
 
-Status at the time of writing: decided. No implementation slice below is committed. The C5 rule in `messages/AGENTS.md` lands with this file, and the COPY catalog edits are in the working tree, uncommitted.
+Status at the time of writing: decided. No implementation slice below was committed. The C5 rule in `messages/AGENTS.md` landed with this file. Refreshed 2026-11-19 at `a0fc2bf18`: C4 slices 1 and 1b landed in `850605bee`, C5 slices (a) and (b) in `8c6034a42`, and the COPY catalog in `8b843ea1b`. This file does not track the other slices. Refreshed again 2026-11-19 at `47865006b`: C5 slice (c), C1 slice 3, C2 slice 1 and the back half of C3 slice 1b landed, all with unit-harness numbers only and the three flags off. Their shas are marked in the sections below, and the deviations from the text of this file are listed in the last section, "Landed slices and deviations (2026-11-19)". Line numbers above that section stay stable on purpose: other documents cite them.
 
 | ID | Subject | First slice |
 |---|---|---|
@@ -45,7 +45,7 @@ Evidence notes:
 | A second pusher halves per-pusher CPU | Slice 1, 2 pushers at 600 bots; if not halved, the scale-out claim stays dead (the reference's 2-replica row did not halve it; same-host contention is not excluded) |
 | 1000 avatars exceed the 16.7 ms client budget | C2 slice 0 |
 | A bot sees about 236 of 1000 at 1000 (derived; the 1000 run failed) | Slice 1 known peers at N=1000 |
-| K=150 and the 400 ceiling are the right values | Slice 3 sets them from the slice 1 table |
+| K=150 and the 400 ceiling are the right values | Slice 3 sets them from the slice 1 table. ASSUMED: slice 3 landed with the suggested 150 and 400, because no slice 1 table exists yet (`7a37a5178`) |
 
 **First slice** (size S, `benchmark/` only, no product code, no flag). This is the Phase 0 gate.
 
@@ -56,9 +56,9 @@ Evidence notes:
 - Table: N = 50, 200, 1000 by four viewport/pattern combinations by 5/20/100% walking by world space on/off, 3 interleaved runs, median, plus one 600 s ramp. N = 300 may run on the Mac as a smoke. N = 1000 runs only on the Linux host with pusher and bots on one network, never on Colima (it dropped its VM at 1000).
 - Flag reconciliation: C1 and C3 both name a `--world-space` flag. One flag serves both: a watch fraction from 0 to 1, with `off` = 0 (default, keeps baselines comparable) and `on` = 1.
 
-Next slices, each flagged and measured with the slice 1 table: (2) headcount and lazy roster, which is C3; (3) the per-viewer budget: new `play/src/pusher/models/ViewerBudget.ts`, hook in `Zone.ts` `notifyUserMove` (`:468-475`), env `PUSHER_VIEWER_FULL_RATE_PEERS` (0 = off, suggested 150) and `PUSHER_VIEWER_MAX_PEERS` (suggested 400), client interpolation from C5 slice (c); (4) coarse place per person only if the minimap needs it (the only tier that adds a proto field).
+Next slices, each flagged and measured with the slice 1 table: (2) headcount and lazy roster, which is C3; (3) the per-viewer budget: new `play/src/pusher/models/ViewerBudget.ts`, hook in `Zone.ts` `notifyUserMove` (`:468-475`), env `PUSHER_VIEWER_FULL_RATE_PEERS` (0 = off, suggested 150) and `PUSHER_VIEWER_MAX_PEERS` (suggested 400), client interpolation from C5 slice (c); (4) coarse place per person only if the minimap needs it (the only tier that adds a proto field). Slice 3 landed 2026-11-19 in `7a37a5178` (flag `PUSHER_VIEWER_BUDGET_ENABLED`, off; harness numbers only, no load run); the client interpolation of slice (c) landed in `0ff4a395d`. Deviations: last section.
 
-Go/no-go for slice 3, read at N=1000 with the flag off: if uniform/browser at 20% walking holds delivery at or above 0.99, move p95 at or below 250 ms and the pusher under about 0.7 core, build the budget anyway for whole-map and plaza viewers, but keep K high. If it fails everywhere, the budget is mandatory.
+Go/no-go for slice 3, read at N=1000 with the flag off: if uniform/browser at 20% walking holds delivery at or above 0.99, move p95 at or below 250 ms and the pusher under about 0.7 core, build the budget anyway for whole-map and plaza viewers, but keep K high. If it fails everywhere, the budget is mandatory. The go/no-go read has not been taken (no valid N=1000 run exists); `7a37a5178` was built behind a flag that is off, so it commits nothing.
 
 **Reverse.** Slice 1 changes no product behaviour (benchmark only). Slice 2 is C3 1b, behind one flag, default on in Konclui; turn it off to restore the permanent roster watch. Slice 3 is reverted by turning its env flag off. If the budget fails its gate on a Linux host, the fallback is option D, floors of about 250-300 people per map.
 
@@ -86,8 +86,8 @@ Go/no-go for slice 3, read at N=1000 with the flag off: if uniform/browser at 20
 **First slice.**
 
 - Slice 0 (about 1 hour, no product code): add a whole-map step to `.local/konclui/qa/frame-probe/probe.mjs`. After a 5 s settle, send `page.mouse.wheel(0, 800)` twice, let the zoom settle, record 25 s with `e2eHooks.startFrameRecording()` and `stopFrameRecording()`. Matrix: bots 0/100/300 at 5 moves/s by default/whole-map by effects on/off, Metal GPU, 3 interleaved runs, median. Record name tags in DOM, work/step/render p50/p95, long tasks (including the 2 s after the wheel), WebSocket bytes. Write `evidence/perf/zoomout-<date>.md` next to the baseline.
-- Slice 1 (size M, client only, flag default off): new `play/src/front/Phaser/Game/AvatarDetail.ts` (pure `chooseDetail` with hysteresis), `AvatarDotLayer.ts`, and tests in `play/tests/front/Phaser/Game/AvatarDetail.test.ts`. Recompute on zoom change (debounced), a 250 ms timer and player add/remove. First commit inside the slice: hide name tags below zoom 0.65. Do not touch `HdpiManager`, `CameraManager` or any zoom path. Coordinate before editing `UsernameDisplay.ts` (uncommitted edits by another session). No user-visible text, so no locale work.
-- Accept: 300 bots whole-map, work p50 at least 50% below flag-off and no long task over 50 ms; 100 bots (below B) within noise with identical screenshots at default zoom; projected p95 at 1000 at or below 16.7 ms on a GPU. If the gain is under 30%, stop and re-plan.
+- Slice 1 (size M, client only, flag default off): new `play/src/front/Phaser/Game/AvatarDetail.ts` (pure `chooseDetail` with hysteresis), `AvatarDotLayer.ts`, and tests in `play/tests/front/Phaser/Game/AvatarDetail.test.ts`. Recompute on zoom change (debounced), a 250 ms timer and player add/remove. First commit inside the slice: hide name tags below zoom 0.65. Do not touch `HdpiManager`, `CameraManager` or any zoom path. Coordinate before editing `UsernameDisplay.ts` (another session's edits landed in `e3aeb7bc2`). No user-visible text, so no locale work. Landed 2026-11-19 in `47865006b`, flag off, as `chooseFullDetail` (not `chooseDetail`); deviations in the last section.
+- Accept: 300 bots whole-map, work p50 at least 50% below flag-off and no long task over 50 ms; 100 bots (below B) within noise with identical screenshots at default zoom; projected p95 at 1000 at or below 16.7 ms on a GPU. If the gain is under 30%, stop and re-plan. NOT VERIFIED: this gate has not been run, so the flag stays off (see the last section).
 
 Later: a flat plan view with a low-frequency overview feed, and a 1 Hz per-viewer position tier for dot viewers (C1 slice 3).
 
@@ -120,12 +120,12 @@ Later: a flat plan view with a low-frequency overview feed, and a 1 Hz per-viewe
 **First slice.**
 
 - 1a (size S, the instrument): world-space support in the generator (`benchmark/src/protocol.ts`, `session.ts`, `config.ts`, `runner.ts`, `stats.ts`, `benchmark/tests/harness.test.ts`). `--world-space=<watchFraction>` (default 0): a bot sends `joinSpaceQuery` for `allWorldUser` (ALL_USERS, `availabilityStatus`, `chatID`) then `addSpaceFilter` for the watching fraction; the report gives records and bytes by type per second and per client; add a mass-rejoin step. BEFORE: N = 50, 200, 300, 500 with fraction 1, 60 s ramp, 60 s steady, one mass rejoin, production build, 3 interleaved runs, median. 1000 only on the Linux host. This is the same generator slice as C1 slice 1.
-- 1b (size M, one flag, default on in Konclui): `headcount` (non-negative int, default 0) in `libs/shared-utils/src/SpaceState/SpaceState.ts`; the back keeps a `Map<uuid, refcount>` for the world space only (identified by the `allWorldUser` name) with a trailing 1000 ms debounce, then `updateState`; `GameScene.ts` reads `space.state.observe('headcount')` and falls back to the user count for an older back; a lazy gate around the world provider with pure mode rules in a new `play/src/front/Konclui/Presence/domain`; clear stale rows when the filter is registered again (`Space.ts:665-706,927-948`).
+- 1b (size M, one flag, default on in Konclui): `headcount` (non-negative int, default 0) in `libs/shared-utils/src/SpaceState/SpaceState.ts`; the back keeps a `Map<uuid, refcount>` for the world space only (identified by the `allWorldUser` name) with a trailing 1000 ms debounce, then `updateState`; `GameScene.ts` reads `space.state.observe('headcount')` and falls back to the user count for an older back; a lazy gate around the world provider with pure mode rules in a new `play/src/front/Konclui/Presence/domain`; clear stale rows when the filter is registered again (`Space.ts:665-706,927-948`). Back half landed 2026-11-19 in `aab3487b1` (flag `WORLD_HEADCOUNT_ENABLED`, off) and the client keeps the field since `c973c394a`; the front half (`GameScene` reading the number, lazy gate, panel, stale-row clearing) is not built. Deviations: last section.
 - Tests that fail on revert: back unit (two sessions of one uuid count 1; leave decrements; 10 joins in 1 s give 1 patch); pusher (a state patch reaches a member that never sent `addSpaceFilter`); front (the count store never subscribes `usersStore`; no `addSpaceFilter` while the panel is closed or above T; no stale user after re-watch; no flicker inside 180-220).
 
 Later: Presence directory store with windowed rows; pusher-served name search; pulled positions for "Ver no mapa" (new low-frequency contract, then retire `office-presence`); `encodeOnce` for space add/remove, kept only if CPU per 1000 joins improves by more than 10%; set T from data.
 
-**Reverse.** Turn the flag off to restore the permanent watch. The `headcount` field has a default, so older clients and backs ignore it.
+**Reverse.** Turn the flag off to restore the permanent watch. The `headcount` field was meant to have a default, so older clients and backs ignore it. It landed optional instead, which an older client strips and an older back never sets (last section).
 
 ## C4. WebRTC and LiveKit roles
 
@@ -148,7 +148,7 @@ Later: Presence directory store with windowed rows; pusher-served name search; p
 | Hidden listeners (`canPublish=false`) cut SFU cost | Measure in the load test before slice 3 |
 | The 200-listener trigger is right | Load test table (cores, Gbps, join p95, loss) |
 
-**First slice** (size S, back only, no protocol change, upstreamable).
+**First slice** (size S, back only, no protocol change, upstreamable). Landed in `850605bee`, with slice 1b.
 
 - `back/src/Enum/EnvironmentVariableValidator.ts`: optional `MAX_P2P_PEERS` next to `MAX_USERS_FOR_WEBRTC` (`:158-161`), no default.
 - `back/src/Model/Strategies/WebRTCCommunicationStrategy.ts`: constructor takes an optional `maxPeers`, passed from `States/WebRTCState.ts:18` and the factory in `CommunicationManager.ts:75-79`. One helper `canPair(a, b)`: no existing connection, and both peer counts below the cap. Use it in `shouldEstablishConnection` and in `initialize`. Log once per space and report with Sentry when a pair is refused. Do not touch the LiveKit path.
@@ -163,7 +163,7 @@ Later: Presence directory store with windowed rows; pusher-served name search; p
 
 **Decision.** Stay wire-compatible with upstream through phase 3 of the engine plan. Edit nothing under `messages/protos`: no velocity, no sender-side dead reckoning, no ack nonce, no new oneof arm, no second proto file. Cut the rate with server policy plus a client receiver that follows the observed update interval. Plan item 4.2 (fork-only sender protocol) becomes a gated option: first additive optional fields, then a relay-side stage in the pusher, only after the gate trips. Replace the ack nonce of plan item 2.3 with a cherry-pick of upstream `04634ad3f` (store cap) plus the existing `CLIENT_DISCONNECTION_RETENTION_MS`.
 
-The gate, measured on a Linux host after the first slice, the interval-aware receiver and C1 slice 3, with `--moving-fraction` and a browser-sized viewport: the 1000-person dense run still fails any of move latency p95 at or below 250 ms, pusher at or below 0.10 core per 100 users (a threshold proposed here, about 60% of a core at 1000 and 20% walking), or near-band downlink at or below about 50 kbit/s per client; and a pusher CPU profile attributes at least 25% to move fan-out; and fork-built pusher and back images are the release path.
+The gate, measured on a Linux host after the first slice, the interval-aware receiver and C1 slice 3, with `--moving-fraction` and a browser-sized viewport: the 1000-person dense run still fails any of move latency p95 at or below 250 ms, pusher at or below 0.7 core at 1000 (the budget of C1 at 20% walking; 1.0 core is the saturation line), or near-band downlink at or below about 50 kbit/s per client; and a pusher CPU profile attributes at least 25% to move fan-out; and fork-built pusher and back images are the release path. Budget note, 2026-11-19: this gate first read "at most 0.10 core per 100 users (about 60% of a core at 1000)". Those two figures disagree, since 0.10 per 100 users is 1.0 core at 1000, so the 0.7-core budget of C1 governs, as decided in `docs/PERFORMANCE.md` (Baselines & Budgets). The engine plan's 0.26-core projection at 1000 (DERIVED) includes item 4.2, which this decision defers. With the per-observer budget (2.4) alone the pusher needs about 0.86 core (DERIVED: about 320 thousand deliveries a second at 2.7 microseconds each), above the budget, so the gate can trip (council session 2026-11-19, `docs/ARCHITECTURE.md` Decision Log).
 
 If the gate trips, fork additions are `optional` fields numbered 100 or higher, only in `PositionMessage`, `UserMovesMessage` and `UserMovedMessage`. See `messages/AGENTS.md`.
 
@@ -184,7 +184,7 @@ If the gate trips, fork additions are `optional` fields numbered 100 or higher, 
 | Pusher CPU is dominated by move fan-out (at least 25%) | Pusher `--cpu-prof` in the 1000-bot dense run |
 | The N squared model and per-client kbit/s extrapolations hold | Slice (a) counters plus the dense run at f = 0.2 and 1.0 |
 | Real walking fraction f is well below 1 | Slice (a) gauge of sockets whose last move had `moving=true` |
-| Without the receiver, still frames at 5/2.5/1.5/1/0.5 Hz are 8/24/54/69/85% | Deterministic test in slice (c) reproduces it |
+| Without the receiver, still frames at 5/2.5/1.5/1/0.5 Hz are 8/24/54/69/85% | Deterministic test in slice (c) reproduces it. MEASURED in `RemoteSampleInterval.test.ts:195` (`0ff4a395d`): 8.3% at 5 Hz, 70.1% at 1 Hz, 16.6% at 10 Hz without it; 2.5, 1.5 and 0.5 Hz are not run |
 | Slice (b) cuts pusher CPU median from 35% to about 27% | Exact `pusher-300-after` procedure, 3 interleaved runs, median |
 | RemotePlayer has no collider, so no extrapolation beyond 100 ms is needed | Re-read `RemotePlayer` (not re-read for this record) |
 
@@ -192,9 +192,9 @@ If the gate trips, fork additions are `optional` fields numbered 100 or higher, 
 
 Then three small slices, pusher-only (a, b) and client-only (c):
 
-- (a) per-type accounting in `play/src/pusher/services/GaugeManager.ts`, incremented in `PusherWebSocket.emitInBatch` and `flushBatch`: `workadventure_pusher_sub_messages_total{type}`, `..._bytes_total{type}`, and a gauge of sockets whose last move had `moving=true`. Pass: counters match the bot-side counts of `pusher-300-after.json` within 1%.
-- (b) in `Zone.ts` `handleGroupUpdateZone` (`:285-299`), compare size and lock before notifying; keep updating the descriptor so late listeners get the current position. Test next to `play/tests/pusher/PositionDispatcher.test.ts`. Pass: group updates under 10% of the 2,365,979 baseline, userMoved and delivery within noise. Revert if any bubble sticks locked or unlocked in a browser.
-- (c) new `play/src/front/Phaser/Game/RemoteSampleInterval.ts`: per-user EWMA (alpha 0.3) of the gap between `UserMoved` receipts; draw duration 200 ms while the EWMA is at or below 300 ms (so 5 Hz walkers look exactly as today), clamped to 200-1500 ms above. `GameScene.ts:4741` uses it. Deterministic test with a fake clock at 5, 2.5, 1.5, 1, 0.5 Hz. Target: still frames at or below 15% down to 1 Hz; 5 Hz identical within 1 px.
+- (a) per-type accounting in `play/src/pusher/services/GaugeManager.ts`, incremented in `PusherWebSocket.emitInBatch` and `flushBatch`: `workadventure_pusher_sub_messages_total{type}`, `..._bytes_total{type}`, and a gauge of sockets whose last move had `moving=true`. Pass: counters match the bot-side counts of `pusher-300-after.json` within 1%. Landed in `8c6034a42`; the 1% check is not run yet.
+- (b) in `Zone.ts` `handleGroupUpdateZone` (`:285-299` at `700362b82`, `:302` at `a0fc2bf18`), compare size and lock before notifying; keep updating the descriptor so late listeners get the current position. Test next to `play/tests/pusher/PositionDispatcher.test.ts`. Pass: group updates under 10% of the 2,365,979 baseline, userMoved and delivery within noise. Revert if any bubble sticks locked or unlocked in a browser. Landed in `8c6034a42`; the harness number is 451,200 to 1,200 notifications, and the real-run pass is not measured yet.
+- (c) new `play/src/front/Phaser/Game/RemoteSampleInterval.ts`: per-user EWMA (alpha 0.3) of the gap between `UserMoved` receipts; draw duration 200 ms while the EWMA is at or below 300 ms (so 5 Hz walkers look exactly as today), clamped to 200-1500 ms above. `GameScene.ts:4741` uses it. Deterministic test with a fake clock at 5, 2.5, 1.5, 1, 0.5 Hz. Target: still frames at or below 15% down to 1 Hz; 5 Hz identical within 1 px. Landed 2026-11-19 in `0ff4a395d`: 1 Hz still frames 70.1% to 1.7%, 5 Hz and 10 Hz identical frame for frame (MEASURED in a unit harness, no browser). Deviations: last section.
 
 Order after that: C1 slice 3 behind a flag; the `04634ad3f` cherry-pick in a scratch worktree; generator flags; the 1000-bot dense run; then the gate.
 
@@ -235,7 +235,7 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 - Commit 2, camera step: port master's hunks verbatim (`isOpenedFromRoom`, the button text, the class, `camera.enable.join` in all 17 locales, the class-based e2e locators), then set pt-BR "Entrar no escritório" and en-US "Enter the office". The other 15 locales carry the en-US text until translated.
 - Checks from `play/`: `npm run typesafe-i18n`, `npm run i18n:check`, `npm run typecheck`, `npm run svelte-check`, `npm run lint`, `npm run pretty-check`, `npx vitest run tests/front/Components/LoginScene.test.ts` (it stubs `$LL`, so it shows no regression, not the copy), then the Playwright entry flow.
 - Before and after: `rg 'Entrar no mundo|Enter the world|Usar este personagem|Use this WOKA' play/src/i18n` has hits before and none after.
-- Working tree note: when this record was written, the uncommitted working tree already showed `selectWoka.continue` as "Continuar" / "Continue" (the 360 px fallback in rule 2) and `camera.enable.join` as "Entrar no escritório" / "Enter the office". Check `git diff play/src/i18n` before treating the catalog as final.
+- Catalog note: when this record was written, the uncommitted working tree already showed `selectWoka.continue` as "Continuar" / "Continue" (the 360 px fallback in rule 2) and `camera.enable.join` as "Entrar no escritório" / "Enter the office". Both values are committed at `a0fc2bf18` (MEASURED, `git show HEAD:play/src/i18n/pt-BR/woka.ts` and `en-US/camera.ts`); the entry-copy commit is `8b843ea1b`.
 
 **Reverse.** Each commit reverts alone. Reverting commit 1 restores `login.continue`, `woka.selectWoka`; reverting commit 2 restores the `menu.settings.save` button and the text-based locators.
 
@@ -252,3 +252,52 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 - The dock keeps its tab order equal to its visual order (WCAG 2.4.3): it draws upstream's place actions one by one instead of through `ContextualMenuItems`, so the lock sits after the desk and the ambient sound, as in the reference.
 
 **Reverse.** Item 1: build the knock message in a slice of its own, with the proto change recorded under C5. Item 2: removing a domain means deleting its `domainEdges` entry and its folder, which `architecture.test.ts` checks.
+
+## Landed slices and deviations (2026-11-19)
+
+Five commits landed after `a0fc2bf18`. Each carries unit-harness numbers (`docs/PERFORMANCE.md` Optimization Ledger) and none has a load run or a browser frame-time run. The three flags are off by default, Konclui included. This section records where the landed code differs from the text of C1, C2, C3 and C5 above, and why. The text above is kept as decided.
+
+### C1 slice 3: per-viewer budget, `7a37a5178` (flag off)
+
+Landed: `ViewerBudget.ts` (pure `selectViewerBudget`), `PUSHER_VIEWER_FULL_RATE_PEERS` (default 150), `PUSHER_VIEWER_MAX_PEERS` (default 400), a 1 Hz tier for the rest of the view, stops, joins and leaves never held back, a 32 px seat margin so users at the edge do not churn. MEASURED in a harness (`play/tests/pusher/ViewerBudgetTraffic.test.ts:222,228`): one viewer among 1000 dense movers receives 4,995 moves a second and 89,137 bytes a second without it, 1,000 and 18,005 with it. No protocol change.
+
+Deviations:
+
+- A separate boolean `PUSHER_VIEWER_BUDGET_ENABLED` replaces "`PUSHER_VIEWER_FULL_RATE_PEERS` 0 = off". Reason: the full-rate default is 150, so a default on that variable would turn the budget on for everyone.
+- A user that joins the 1 Hz tier while walking gets one extra move with the join. Reason: the client times its stream from the moves it receives, and without that move a joining walker stands still for 800 ms (`play/tests/pusher/ViewerBudget.test.ts:280`).
+- The hook is in the zone callbacks of the pusher `SocketManager.ts` (`onUserEnters`, `onUserMoves`, `onUserLeaves`), with one budget per socket in a `WeakMap`, not in `Zone.notifyUserMove` as written above. `Zone.ts` gained one getter, `UserDescriptor.getPosition`. Reason: the budget is state of one viewer, and the socket manager already owns the socket. The structural `ZoneListener` (ARCHITECTURE V2) did not precede it, and `ViewerBudget.ts` takes a `PusherWebSocket`.
+- 150 and 400 are the suggested values, not values set from a slice 1 table (none exists), and the go/no-go read of C1 was not taken. Both are ASSUMED until a valid N=1000 run exists.
+
+### C2 slice 1: detail budget, `47865006b` (flag off)
+
+Landed: `AvatarDetail.ts` (`chooseFullDetail`, B = 80), `AvatarDotLayer.ts` (dots on one Blitter), `RemotePlayer.applyDetail`, name tags hidden as one layer below zoom modifier 0.65, recompute on join or leave, 150 ms after the zoom settles, when the pointer reaches a dot, and every 250 ms. The flag is `localStorage` `avatarDetailBudget` = "1" and is off by default. COUNTED in a harness (`play/tests/front/Phaser/Game/AvatarDetailCost.test.ts:347,362`): 1000 avatars at whole-map zoom go from 1,000 full avatars to 80, and from 3,000 objects rendered per frame to 240. These are operation counts.
+
+Deviations:
+
+- Hysteresis is a distance ratio of 1.25 (`DETAIL_HYSTERESIS_RATIO`, `AvatarDetail.ts:19`: an avatar that was full ranks as if it were 1.25 times closer), not a plus or minus 15% band. The text of C2 above gives no number; the ratio is what the code does.
+- The acceptance gate is NOT verified: 300 avatars at whole-map zoom, work p50 at least 50% below flag off, no long task over 50 ms. No browser frame time exists for this slice, so the flag stays off.
+- Scene effects still process the hidden avatars of the dots. C2 asked for dots "skipped by `SceneEffects`"; this is a known gap of the commit.
+
+### C3 slice 1b, back half: world headcount, `aab3487b1` (flag off), and `c973c394a`
+
+Landed: `WORLD_HEADCOUNT_ENABLED`, `DistinctCounter.ts` (refcount per uuid, across tabs and pushers), the count in the world space state, a resync that recounts a pusher's users. MEASURED on a simulated clock (`back/tests/WorldHeadcount.test.ts:285`): 1,000 users joining over 60 s cost 58 state patches, against 1,000 without the timer. `c973c394a` makes `shareUnchanged` on the client start from the new state, so a field it has no rule for reaches the stores (`play/src/front/Space/tests/SpaceStateSharing.test.ts:37`).
+
+Deviations:
+
+- The field is optional (`z.number().int().min(0).optional()` in `SpaceState.ts`), not `default(0)`. Reason: a default would hide an older back behind a 0, and would break a literal `SpaceState` on the client.
+- The timer is armed on the first change and publishes the count it holds when it fires, instead of a trailing 1000 ms debounce. Reason: a debounce that resets on every change publishes nothing while joins keep arriving.
+- A back flag `WORLD_HEADCOUNT_ENABLED` exists and is off by default everywhere, Konclui included, where C3 said "default on in Konclui". Reason: no client reads the number until the front half lands, so turning it on would add patches for no reader.
+- The front half is not built: `GameScene` reading `headcount` with a fallback to the user count, the lazy roster gate with T = 200, the panel, and the stale-row clearing. Every client still watches `allWorldUser`, so the roster cost C3 targets is unchanged. The front tests C3 lists are not written.
+- A user without a uuid is counted by its space user id (`headcountKey`, `back/src/Model/Space.ts`). C3 does not say how to count an anonymous user.
+
+### C5 slice (c): interval-aware receiver, `0ff4a395d`
+
+Landed: `RemoteSampleInterval.ts`, called by `PlayersPositionInterpolator.receiveSample` from `GameScene`. MEASURED in a unit harness (`play/tests/front/Phaser/Game/RemoteSampleInterval.test.ts:195`, 180 px/s walker, 60 fps): at 1 Hz still frames go from 70.1% to 1.7% and the longest still from 717 ms to 17 ms, and the avatar trails the sender by one interval (mean error 58.2 px to 183.4 px). 5 Hz and 10 Hz are drawn frame for frame as before. No sender or protocol change.
+
+Deviations:
+
+- There is no sender hint, so the first slow sample after a rate drop costs one stall of about 680 ms (683 ms in the commit message; the test bounds it under 750 ms, `:275`). No receiver can foresee the drop. A rise from 1 Hz to 5 Hz has no stall and a catch-up peak of 422 px/s, 2.3 times the walk (bounded under 450 in the test, `:290`).
+- `PlayerMovement.getPosition` now clamps at the end of its 100 ms extrapolation window, which changes one frame of today's behaviour: the frame that deletes a stopped avatar no longer overshoots (x 400 where it was 401, `GameSceneMovement.test.ts`, edited in the commit; `PlayerMovement.test.ts` has a new case). The C5 "Reverse" line says (c) draws exactly as today for a 5 Hz walker; that holds for the path but not for this frame.
+- The interval is not a plain EWMA. A longer gap is taken at once and a shorter one is smoothed with alpha 0.3, a stop or a gap over 3 s resets it, and a jump that no walk can make in the gap (1.5 times the fastest walk) is placed at once. Reason: a draw shorter than the real interval leaves the avatar still, while one that is too long only slows it.
+- The test runs 10, 5 and 1 Hz and the two rate changes. The 2.5, 1.5 and 0.5 Hz cases that C5 asks for are not run.
+- The constants are imports (`POSITION_DELAY`, `WOKA_SPEED` from `Enum/EnvironmentVariable`), not parameters as ARCHITECTURE V9 asked, and the fastest walk restates the speed-up factor of `Player.ts` (TECH-DEBT DS-31).
