@@ -1,0 +1,231 @@
+# Performance
+
+Measured performance state of Koncluí (a WorkAdventure fork) for the goal of 1000 live participants in one world without stalls in movement, audio or video. Phase 1 of the architecture-optimization journey (performance net and ledger). Written 2026-11-18 at HEAD `700362b82` with an uncommitted working tree.
+
+Claim labels: MEASURED is a number from a log, report or test. DERIVED is arithmetic over measured numbers. HYPOTHESIS has no measurement yet and names the check that would settle it. Budgets are DECIDED by the coordinator. "Proposed here" marks a budget that no plan or decision file states and that this document supplied, so the coordinator may overrule it.
+
+Times are CET (UTC+1), as in BASE; each report's `startedAt` is UTC (the 1000 run is `2026-11-17T17:43:40Z`).
+
+Path shorthand used in every source citation:
+
+| Short | Path |
+|---|---|
+| EV | `/Users/erickheslan/.claude/orchestrate/konclui-native/evidence` (outside git; numbers are copied inline below and the path is provenance only) |
+| PERF | `EV/perf` |
+| BASE | `PERF/baseline-2026-11-17.md` |
+| PLAN | `EV/engine-1000-plan.md` |
+| DEC | `docs/konclui-migration/decisions.md` (in git; sections C1 to C5) |
+| BENCH | the `bench` key of `EV/decisions/decide-and-map-2026-11-18.json` |
+
+## Phase 1 gate
+
+**Verdict: PARTIAL.** A measurement net exists for four of the five hot flows, but no valid 1000-person run has ever completed.
+
+Why the gate stays open:
+
+1. The only 1000 run (2026-11-17 18:42) predates seven landed optimizations, so no current 1000 baseline exists (see Load Reality).
+2. The client frame has never been measured with more than 300 avatars or at whole-map zoom (DEC `decisions.md:74`, "All measurements are default zoom only").
+3. The frame probe lives in `.local/konclui/qa/frame-probe/probe.mjs`, which is ignored by git (`.gitignore:35` is `/.local/`; `git ls-files .local` is empty). A fresh checkout cannot reproduce the client numbers.
+4. The back sheds moves above the CPU threshold with no counter: `back/src/Services/SocketManager.ts:300` returns silently, and the only log lines are on entering and leaving the mode (`back/src/Services/QuotaAwareCpuTracker.ts:328,331`). A run can lose delivery without the report saying so (BENCH finding; PLAN H1 asks for a counter).
+5. Media (LiveKit, SFU) has no harness. DEC names `lk load-test` as the missing tool (`decisions.md:146`).
+
+What is in place:
+
+- Headless load generator `benchmark/` (`b7a9aed2c`, "187 tests" per its message). It reports move latency p50/p95/p99, delivery ratio, bytes per message type, known peers, a `--steady-window` and a `--metrics-urls` scrape (`benchmark/README.md:47-48,126-128,142`).
+- `benchmark/scripts/load-staircase.sh` splits N bots over P staggered processes and marks a level invalid on a missing or aborted process, on generator CPU at 70% of a core or more, or on generator event-loop lag p99 above 10 ms (`benchmark/README.md:191,199-200`).
+- Client frame recorder `e2eHooks.startFrameRecording` and `stopFrameRecording` (`2e2631fc0`, in git, tested by `play/tests/front/Utils/E2EHooksFrameRecorder.test.ts`).
+- Vitest measurement files: `back/tests/SpaceUserLookup.bench.ts` and `back/tests/RoomSocketBatching.test.ts` (tracked), `play/tests/front/Phaser/Game/RemotePlayerCulling.test.ts:466-480` (tracked; 1000 avatars, 322 drawn) and `play/tests/front/Phaser/Game/RemotePlayerCullingCost.test.ts` (untracked, `??`). The cost test counts DOM and scene work per frame, not milliseconds (its header).
+
+The gate passes when a valid 1000 staircase exists on the Linux host and the items marked P1 in Next actions are done.
+
+## Intake (decided)
+
+The tracker `docs/ARCHITECTURE-OPTIMIZATION-PLAN.md` does not exist yet, so the intake is recorded here; copy it into the tracker's Intake table when the tracker is created. Operating rule from the user's standing instruction: decide, record, continue.
+
+| Question | Decision |
+|---|---|
+| System and cost of slow | Koncluí, a WorkAdventure fork for a virtual office. Goal: 1000 live participants in one world without stalls in movement, audio or video. |
+| Measured now | 100 and 300 bots hold. 1000 does not: 823 of 1000 accepted, delivery 0.468 (`PERF/load-1000.json`). |
+| Hot flows | (a) pusher zone fan-out and move traffic, (b) back room batching and space state, (c) client scene with many remote avatars, (d) media pairing, (e) the Koncluí shell over the map. |
+| Tests | Vitest per workspace, green at the last full gate (play 2473 tests on `75901117c`, `EV/qa/interactive-qa-2026-11-17.md:68-69`). Playwright in `tests/`. |
+| Stack | TypeScript, Svelte 5, Phaser 4, Node 24, uWebSockets pusher, gRPC and protobuf to the back, Redis, LiveKit. Local QA on Colima with 8 GB VM limits (`colima.yaml:3,13` per BENCH). |
+| Load host | A Linux host with pusher and bots on one network. Never 1000 bots on this Mac or Colima. Open item (BASE, "1000 bots"). |
+| Scope | All 8 phases. Phases 2 and 3 audit first (the Koncluí seam already has an enforced domain graph in `play/src/front/Konclui/architecture.test.ts`). Phases 5 and 6 are carried by the engine plan items C1 to C5. Phase 1 is a gate. |
+
+## Baselines & Budgets
+
+Baseline conditions unless a row says otherwise: bots walk a fixed ellipse at 5 moves/s (the browser rate, `POSITION_DELAY` 200 ms, DEC `decisions.md:173`), 640x400 viewport, 20 observers, ramp 20 s inside a 60 s run (`--duration-seconds` includes the ramp, `benchmark/README.md:77`; `wallSeconds` 60.0 in `baseline-300.json`), so about 40 s at full population (BASE writes "60 s steady"; the report config contradicts it), local QA stack on the Mac with load average 5.6 to 8 (BASE header). Absolute latencies are indicative; the ratio between runs is the signal. Every baseline is MEASURED unless the cell says DERIVED. All walkers walk all the time, but the budgets below are set at 1000 dense with 20% walking (DEC `decisions.md:61`), so a budget row and its baseline row are not yet the same workload.
+
+Reconciliation, DECIDED: DEC C5 says "at most 0.10 core per 100 users" and, in the same sentence, "about 60% of a core at 1000" (`decisions.md:166`). They disagree, since 0.10 per 100 users is 1.0 core at 1000. The 0.7-core budget of DEC C1 (`decisions.md:61`) governs, and 1.0 core is the saturation line.
+
+### (a) Pusher zone fan-out and move traffic
+
+Tool of record: `benchmark/` generator through `benchmark/scripts/load-staircase.sh` on the Linux host, with `--metrics-urls` and `--steady-window`. Gate: run valid (no rejected session, generator CPU under 70%).
+
+| Metric | Baseline (date, source) | Budget | Gate |
+|---|---|---|---|
+| Move latency p95, dense room | 113 ms at 300 bots after `605fec17b` (11-17 19:10, `PERF/pusher-300-after.json`). 164 ms before it (11-17 18:16, `PERF/baseline-300.json`). 3,157.8 ms at 1000 with 823 accepted (11-17 18:42, `PERF/load-1000.json`). | 250 ms at 1000 (DEC `decisions.md:61,166`; PLAN H-series) | A staircase level fails above it. |
+| Move latency p50 and p99 | 62.3 and 131.5 ms at 300 (`pusher-300-after.json`). 199.1 and 4,428.8 ms at 1000 (`load-1000.json`). | p50 under 125 ms, p99 under 500 ms (proposed here) | Report only. |
+| Delivery ratio | 0.9896 at 300 after, 0.9949 before (`pusher-300-after.json`, `pusher-300-before.json`). 0.468 at 1000 (`load-1000.json`). | At least 0.99 (DEC `decisions.md:61`; staircase default, `benchmark/README.md:191`) | Knee of the staircase. |
+| Accepted sessions | 823 of 1000, 177 rejected (`load-1000.json`) | 1000 of 1000, 0 rejected | A rejected session invalidates the level (`benchmark/README.md:199`). |
+| Join latency p95 | 33.2 ms at 300 (`baseline-300.json`). 5,178.9 ms at 1000 (`load-1000.json`). | 1,000 ms at 1000 (proposed here) | Report. |
+| Pusher CPU (docker %, 100 = one core) | Steady median 65% before and 35% after at 300 (BASE, "Pusher encodes each zone event once"). Whole-run median 60.1% before and 26.4% after (DERIVED from 16 samples in each of `pusher-300-before-stats.log` and `pusher-300-after-stats.log`). At 1000: six samples 36.5, 59.2, 94.3, 143.7, 124.3, 134.9% (`load-1000-stats.log`). | At most 70% of one core at 1000 dense with 20% walking (DEC `decisions.md:61`). Saturation line 100%. | `--metrics-urls` `cpuPercentOfOneCore` (`benchmark/README.md:126`). |
+| Pusher RSS | 780.8 MiB of a 3 GiB cap at 823 bots (`load-1000-stats.log`). The cap is `mem_limit: 3g` (`.local/konclui/qa/compose.yaml:36`, untracked). | At most 1.5 GB at 1000 (PLAN item 2.3, H3) | `--metrics-urls` RSS. |
+| Downlink per client | 24.0 kbit/s at 100 bots and 89.0 kbit/s at 300 (DERIVED: `received.bytes` x 8 / `wallSeconds` / accepted sessions, from `baseline-100.json`, `baseline-300.json`; includes the ramp). | At most 50 kbit/s (DEC `decisions.md:166`), target 32 kbit/s (PLAN section 6, item 1) | `kbitPerSecondPerSession` in the report `traffic` block (`benchmark/README.md:115`). |
+| Delivered moves in 60 s | 502,382 at 100 and 4,711,110 at 300 (`baseline-100.json`, `baseline-300.json`) | Informational | Per-type bytes from the report. |
+
+Growth shape (DERIVED from `baseline-100.json` and `baseline-300.json`): 3x the bots gives 11.1x the bytes (200.4 MB over 18.0 MB), 9.4x the moves and 18.6x the group updates (BASE, "Reading"). That is quadratic growth, as the plan predicted.
+
+### (b) Back room batching and space state
+
+Tool of record: the staircase scrape for CPU and event-loop lag, plus vitest harnesses for the per-operation numbers.
+
+| Metric | Baseline (date, source) | Budget | Gate |
+|---|---|---|---|
+| Back CPU | 4.6% to 18.7% at 823 bots (`PERF/load-1000-stats.log`). Not the bottleneck. | At most 50% at 1000 and no `Going in "overheat" mode` log line (proposed here). The shed line is `CPU_OVERHEAT_THRESHOLD`, default 80 (`back/src/Enum/EnvironmentVariableValidator.ts:33-36`). | `--metrics-urls`, plus the shed counter once it exists (Next actions). |
+| gRPC writes per RoomSocket | 1,687.5 per second at 300 moving users before, 20 after (`b323baca9` message; harness `back/tests/RoomSocketBatching.test.ts:278`) | 20 per second (50 ms batch, PLAN item 2.2) | `back/tests/RoomSocketBatching.test.ts`. |
+| 999 space-user lookups (megaphone burst) | 23.6 ms and 54.2 ms before, 0.14 ms and 0.10 ms after (`back/tests/SpaceUserLookup.bench.ts:17-22`). Mac load average was about 200, so only the ratio is solid (same header). | Under 1 ms (PLAN item 5.2) | `vitest bench` on that file. |
+| Back event-loop lag p99 | None recorded. The scrape supports it (`nodejs_eventloop_lag_p99_seconds`, `benchmark/README.md:128`). | At most 100 ms (proposed here) | The first staircase run sets the baseline. |
+
+### (c) Client scene with many remote avatars
+
+Tool of record: the frame probe (`.local/konclui/qa/frame-probe/probe.mjs`, to be moved into git) on `e2eHooks` frame recording. Headless Chromium on SwiftShader (CPU rendering, pessimistic) and on the Metal GPU (ANGLE, Apple M1 Max), viewport 1451x855, 5 s settle, 25 s recording on SwiftShader and 15 s on Metal (BASE). Plus `RemotePlayerCullingCost.test.ts` for DOM and scene work per frame.
+
+| Metric | Baseline (date, source) | Budget | Gate |
+|---|---|---|---|
+| Frame work p50 / p95, SwiftShader | 0 bots: 0.7 / 0.9 ms (`PERF/client-frame-0.json`). 100 bots: 2.0 / 2.5 ms (`client-frame-after-100.json`, BASE "Cause and fix"). 300 bots: 7.7 / 8.6 ms with 114 name tags in the DOM (`client-frame-after-300.json`). Before the bubble fix: 188 / 844 ms at 100 and 9,327 / 17,356 ms at 300 (`client-frame-100.json`, `client-frame-300.json`). | p95 at most 16.7 ms with 200 visible avatars and at most 33.3 ms at 1000 (PLAN phase 3, H4) | Frame probe. |
+| Frame work, Metal GPU, effects on | 300 bots: 7.4 / 8.5 ms, 901 frames in 15 s (BASE, "Scene effects ported", `57077c211`) | Same as above | Frame probe. |
+| Long tasks over 50 ms | 0 at 100 and 300 after the fix (`client-frame-after-100.json`, `client-frame-after-300.json`) | 0, including the 2 s after a zoom (DEC C2 slice 0, `decisions.md:88`) | Frame probe. |
+| Per-avatar slope | 62 us per present avatar (DERIVED, DEC `decisions.md:71`: 7.7 ms at 114 name tags minus 0.7 ms at 1). Extrapolates to about 62 ms at 1000 and about 20 ms at 322 drawn. HYPOTHESIS: step cost is 4.6 of the 7.7 ms (`client-frame-after-300.json`, `stepMs.p50`), and culling does not remove it. | Verify at whole-map and above 300 bots | DEC C2 slice 0 (not run). |
+| Avatars drawn at 1000 over the office | 322 of 1000 drawn and 1,610 of 5,000 quads (`700362b82` message; `play/tests/front/Phaser/Game/RemotePlayerCulling.test.ts:466-480`) | Informational | That test. |
+| Name-tag style writes per zoom notch, 1000 tags | 90,000 before and 17 after (`c5bd4ad97` message, MEASURED in a harness) | At most 20, the bound the test already pins (`MAX_STYLE_WRITES_PER_NOTCH`, `play/tests/front/Phaser/Components/UsernameDisplay.test.ts:18,169`) | That test. |
+
+### (d) Media pairing
+
+Tool of record: vitest strategy tests (`back/tests/WebRTCCommunicationStrategy.test.ts`). No SFU harness exists; `lk load-test` is open (DEC `decisions.md:146`).
+
+| Metric | Baseline (source) | Budget | Gate |
+|---|---|---|---|
+| P2P start messages, 1 speaker and 999 watchers | 1,998 messages and 999 peer connections in the speaker's tab (DERIVED from code: `WebRTCCommunicationStrategy.ts:189-199` at `700362b82`; the uncommitted C4 diff shifts these lines, DEC `decisions.md:137`; pinned by the uncommitted test "one speaker and 999 watchers", `decisions.md:155`) | 6 with `MAX_P2P_PEERS=3` (DEC `decisions.md:155`, uncommitted) | The strategy test. |
+| SFU load: cores, Gbps, join p95 and loss for one publisher and N listeners | Not measured. The only SFU numbers are the 2026-10-08 grid tests on a shared 3-vCPU VPS: 20 cameras fine, 40 cameras 44% loss (DEC `decisions.md:140`). They are not the one-publisher shape. | Open until the load test fills a table. DEC trigger: a dedicated node before any broadcast above about 200 listeners or any screen-share broadcast (`decisions.md:132`). | `lk load-test` at N = 50, 200, 1000 (`decisions.md:146`). |
+
+### (e) Koncluí shell over the map
+
+Tool of record: the frame probe with `konclui.fx.off` toggled.
+
+| Metric | Baseline (source) | Budget | Gate |
+|---|---|---|---|
+| Scene effects, added frame work, Metal GPU, 0 bots | 0.8 to 0.9 / 1.6 to 1.8 ms off and 1.0 to 1.1 / 2.6 to 2.8 ms on (BASE, "Scene effects ported") | At most +2 ms p95 added (proposed here) | Frame probe, on versus off. |
+| Effects on CPU rendering | 178 to 230 frames in 15 s on versus 430 to 488 off (SwiftShader, same table). The frame rate halves. | The lean preset or `konclui.fx.off` stays reachable (BASE, "Reading") | Manual check of the Performance pane. |
+| Seated pose, per-frame cost, 50 to 1000 seated | 0.53 to 0.68 of the previous cost (`b7e754c64` message; Node measurement) | No regression | The differential test in that commit. |
+| Shell DOM (Dock, Frame, side panels) | Not measured. | Set after a first probe. | Gap. |
+
+## Load Reality
+
+This is the single source for load numbers; `docs/ARCHITECTURE.md` (when it exists) cites this section. All numbers are MEASURED unless marked. Source for every row: `PERF/*.json` and BASE.
+
+| Run | Bots | Result |
+|---|---|---|
+| 2026-11-17 18:16, `184e96848`, image `candidate-4adc365948de` | 100 | 100 accepted, join p95 36 ms, move p50/p95/p99 96/113/119 ms, delivery 0.9997, 18.0 MB, 502 k moves, 115 k group updates (`baseline-100.json`) |
+| Same | 300 | 300 accepted, join p95 33 ms, move 90/164/181 ms, delivery 0.9951, 200.4 MB, 4.71 M moves, 2.13 M group updates (`baseline-300.json`) |
+| 18:42, image `candidate-85fbe0a13024`, pusher cap 3 GiB, ramp 40 s inside a 45 s run (`config`, `wallSeconds` 45.0), so about 5 s at full population (BASE writes "45 s steady") | 1000 | 823 accepted, 177 rejected (socket hang up 91, closed before join 46, fetch failed 31, reset 6, plus 3 empty socket errors). All 823 accepted sessions closed with 1006 (969 close events in total, `closeCodes`). Join p95 5,178.9 ms. Move p50/p95/p99 199.1/3,157.8/4,428.8 ms. Delivery 0.468 (116,494 of 248,931). Pusher 135% at the last sample, back under 19% (`load-1000.json`, `load-1000-stats.log`). |
+| 19:10, `605fec17b`, image `candidate-9400feaadbae` | 300 | Pusher CPU median 65% to 35%. Move p95 167 to 113 ms. Delivery 0.9949 to 0.9896. Bytes 197.4 to 207.0 MB (`pusher-300-before.json`, `pusher-300-after.json`, BASE). |
+
+- **Workload shape.** Every bot walks the same ellipse at 5 moves/s. The 640x400 viewport sees about 236 of 1000 (DERIVED, BENCH; PLAN phase 0 "Today a bot sees 236 of 1000"). That is a worst-case stress, not a real office.
+- **What the 1000 run left out.** A steady phase: the run lasted 45 s with a 40 s ramp (`load-1000.json`, `config`), so its latency and delivery mix ramp and full load. The world roster `allWorldUser`, which every browser joins (DEC `decisions.md:35`). Any walking fraction below 1 (DEC `decisions.md:178`: the bots always walk). Media, a GPU and a real browser. The report's own notice says the bots certify neither client rendering nor audio or video (`load-1000.json`, `notice`).
+- **The 1000 run is stale.** Its image already had the bubble fix (`25685a03f`) and `63986e480`, `6b38839ef` and `6da6e7a0c`. It predates `605fec17b` (19:10 run), `b323baca9`, `1c9047960`, `34ec1cdc6`, `59dfb7cac`, `c5bd4ad97`, `700362b82` and every uncommitted C4, C5 and scene change. Treat it as a pre-optimization baseline, not a current result.
+- **Environment.** The Mac load average was 5.6 to 8 during the 100 and 300 runs, 9 to 14 during the client runs and 22 to 37 during the effects runs (BASE). It was 299 on 10 cores at 02:09 on 2026-11-18 (BENCH). Bots reached the VM through one Lima ssh port forwarder (`colima.yaml:170` per BENCH) that also carries the Docker socket; the socket and every forwarded port died together at the end of the 1000 run (BASE, "1000 bots"). Those artifacts are why 1000 must run elsewhere.
+- **Production concurrency.** HYPOTHESIS and a gap: no real concurrency, QPS or growth figure appears in the evidence. PostHog events `wa_game_performance` and `wa_room_connection` exist (`docs/observability.md:12-13`), but no values are recorded. Take a 30-day p50 and p95 of room population before sizing anything beyond the 1000 target.
+- **Extrapolation.** HYPOTHESIS: 3.3 MB/s at 300 (200.4 MB over 60 s, `baseline-300.json`) times (1000/300)^2 = 11.1 gives about 37 MB/s through one forwarder (BENCH).
+- **Next load step, DECIDED.** Run `benchmark/scripts/load-staircase.sh` with levels 300, 500, 700, 1000 and 4 staggered processes (`benchmark/README.md:178-180`), with `--repeat=3` where the script supports it, on a CI-pool job (runners `ci-host-1..4`, Contabo 16 vCPU / 62 GiB, `ci.slice` 10 cores / 20 GiB, BENCH). Use a pinned commit, not the dirty checkout. Add a start and end guard that prints `nproc`, `/proc/loadavg` and `/proc/pressure/cpu`, because production meeting bots share that host (BENCH: production noise on the host is unknown). Expect a saturated single pusher first and report that as the knee, not as a harness failure.
+
+## Profile Findings
+
+USE per resource, from the 1000 run (`PERF/load-1000-stats.log`, `PERF/load-1000.json`) unless noted. Utilization is how busy, saturation is queueing or loss, errors are counted failures.
+
+| Resource | Utilization | Saturation | Errors |
+|---|---|---|---|
+| Pusher CPU | 134.9% at the last sample, max 143.65% (`load-1000-stats.log`) | Join p95 5.2 s and delivery 0.468 (`load-1000.json`). CPU-bound (BASE). | 177 rejected sessions, 969 close events at 1006 |
+| Pusher memory | 780.8 MiB of 3 GiB, 25% (`load-1000-stats.log`) | None reached. HYPOTHESIS: the 30 s replay store would add 0.57 to 2.85 GB at 1000 (PLAN finding 5, itself derived). In this run saturation cut the delivered rate, so memory is understated. | None |
+| Back CPU | 4.6% to 18.7% (`load-1000-stats.log`) | None visible. The back log was not captured, so overheat shedding is unknown. | Not recorded |
+| Load generator | 18.8% of one core, event-loop lag p99 5.11 ms, max 81.16 ms (`load-1000.json`, `generator`) | Valid: below the 70% CPU and 10 ms lag p99 discard lines (`benchmark/README.md:199-200`) | None |
+| Client frame | See section (c). With 300 bots after the bubble fix the profile is 72.4% idle and `step` is 5.5% (`PERF/client-profile-300-after.txt`). | None below 300 avatars | 0 long tasks |
+| Host network (Lima ssh forwarder) | Not measured | HYPOTHESIS: the single ssh thread caps or kills the run. Check with `ps -o pcpu` on the forwarder during a 300 run. | The Docker socket died with it (BASE) |
+
+| Hotspot | Evidence (profiler/APM) | Suspected cause | Fix | Status |
+|---|---|---|---|---|
+| Client frame at 100 bots (188 ms p50) | `PERF/client-profile-100-callers.txt`: 40% `texImage2D`, 15% canvas `save`, 13% `getProgramParameter`, 4% canvas `width` (BASE, "Cause and fix") | `ConversationBubble.drawSpline` built a canvas, a texture and a shader program per bubble per frame | `25685a03f` | Fixed. MEASURED 188 to 2.0 ms at 100 bots and 9.3 s to 7.7 ms at 300 |
+| Pusher CPU at 300 | 65% steady median (BASE) | Per-recipient protobuf encode in `Zone.ts` and `PusherWebSocket.ts` (PLAN item 2.1) | `605fec17b` | Fixed. MEASURED 65% to 35% |
+| Pusher CPU at 1000 | 135% (`load-1000-stats.log`) | HYPOTHESIS: move fan-out takes at least 25% of CPU (DEC `decisions.md:166`, unconfirmed). | None yet | Open. Take a pusher `--cpu-prof` in the dense 1000 run. |
+| Group updates | 2,134,326 against 4,711,110 moves at 300, 45% of moves (`baseline-300.json`). After `605fec17b`: 2,365,979 against 4,689,707 moves, 50.5% of moves and 29.9% of all received messages (`pusher-300-after.json`, DERIVED). Both runs already include the in-batch conflation of `50632e874` (DEC `decisions.md:176`). | A group update is sent when only its position changed; the remaining gain is that position-only subset (DEC `decisions.md:176,196`) | Uncommitted `Zone.ts` change (C5 b). Harness: 451,200 group notifications become 1,200 at 300 users in bubbles of 3 (`docs/TESTING.md:87`, MEASURED in a harness). | Pending. Target: under 10% of 2,365,979 (DEC `decisions.md:196`). |
+| World roster join cost | Not measured. `notifyAll` does not use `encodeOnce` (DEC C1). | Every client watches `allWorldUser` (DEC `decisions.md:35`) | C3 headcount behind a flag | Open. `--world-space` now exists in the generator (`b7a9aed2c`). |
+| Client at 1000 avatars or whole-map | Never measured | HYPOTHESIS: 62 us per avatar (section (c)) | C2 detail budget (B = 80, DEC `decisions.md:67`) | Open (DEC C2 slice 0). |
+| Silent back shedding | No counter: `back/src/Services/SocketManager.ts:300` returns without a count (BENCH) | `isOverHeating()` drops moving updates and only logs the mode change | Add a counter | Open. Belongs to the code workflow. |
+
+## Optimization Ledger
+
+Verdict key. `keep` means tests pin the behavior and the gain was measured in a run. `keep, needs 1000 run` means the gain is derived or came from a unit harness and no end-to-end number exists. `revert` has no rows: no landed optimization has been rejected. The date is the commit date. Numbers come from the commit message plus the file named.
+
+| Change | Before | After | Verdict | Date |
+|---|---|---|---|---|
+| `605fec17b` Encode each zone event once for all its watchers (MEASURED) | Pusher CPU median 65%, move p95 167 ms at 300 bots, sampled every 3 s (`PERF/pusher-300-before.json`, BASE). Encoder calls for one move watched by 200 sockets: 200. | CPU 35%, move p95 113 ms (`pusher-300-after.json`). Encoder calls: 1. Bytes unchanged by design, frames pinned by golden tests (`play/tests/pusher/ZoneFanOutEncoding.test.ts`). Side effect in the run: delivery 0.9949 to 0.9896, bytes +4.9% and group updates +17% (DERIVED from the two JSON files). BASE calls this noise on a loaded Mac; 3 interleaved runs would settle it. | keep, needs 1000 run | 2026-11-17 |
+| `b323baca9` One 50 ms batch per pusher stream (MEASURED in a harness, 300 moving users) | 1,687.5 gRPC writes/s | 20 writes/s, about 84x fewer (DERIVED). Latency added is up to 50 ms by design. With move p95 at 113 ms at 300 (`pusher-300-after.json`), 163 ms worst case stays under 250 ms (DERIVED). | keep, needs 1000 run. The back was at 5% to 19% CPU in the 1000 run, so the effect on end-to-end lag is unmeasured. PLAN item 2.2 itself says "unverified". | 2026-11-18 |
+| `1c9047960` Space user index and megaphone room kept between talks | 999 lookups: 23.6 ms and 54.2 ms | 0.14 ms and 0.10 ms (`back/tests/SpaceUserLookup.bench.ts:17-22`, MEASURED at load average about 200). The grace period has no number (HYPOTHESIS). | keep. The grace period needs the SFU load test. | 2026-11-18 |
+| `34ec1cdc6` Token bucket, about 10 moves/s per socket | A client sending 60/s reached the back at 60.0/s (comment in `play/tests/pusher/SocketManagerUserMoves.test.ts:68`) | 10.4/s (commit message; the test bounds it at 9.5 to 11, MEASURED in a harness). Normal clients send 5/s, so nothing changes for them (DERIVED, DEC `decisions.md:173`). A ceiling, not a throughput gain, at 1000. | keep | 2026-11-18 |
+| `59dfb7cac` Refuse a stale resume before authenticating, plus a 0 to 2 s rebuild spread | 2.00 authenticated upgrades per reconnecting client | 1.00 (`play/tests/pusher/PusherRestartReconnect.test.ts:26`, MEASURED in a harness). At 1000 clients 2,000 become 1,000 (DERIVED). A lone reconnect can be up to 2 s slower from the rebuild spread (commit message) and the plan names a risk of up to 5 s (PLAN item 5.3). | keep, needs 1000 run | 2026-11-18 |
+| `c5bd4ad97` One scale variable for every name tag during a zoom | 90,000 style writes per wheel notch at 1000 tags | 17 (commit message, MEASURED in a harness; the test bounds it at 20, `UsernameDisplay.test.ts:18,169`). Tags may look soft during a magnifying zoom; not checked in Safari (commit message). | keep, needs a Safari check | 2026-11-18 |
+| `700362b82` Avatar build queue and camera culling | About 100 avatar builds in one frame per 320 px walked. 1000 avatars drawn, 5,000 quads. | 322 drawn, 1,610 quads (`RemotePlayerCulling.test.ts:472-480`). Build timing has no number (TECH-DEBT DL-04). The message lists what is not done: culled avatars keep their DOM name and still dirty the scene. | keep, needs a probe run at 300 bots or more | 2026-11-18 |
+| `25685a03f` Conversation bubbles as vector geometry | Frame work p50/p95 188 / 844 ms at 100 bots and 9,327 / 17,356 ms at 300. Frames in 25 s: 69 and 3. | 2.0 / 2.5 ms and 7.7 / 8.6 ms. Frames in 25 s: 854 and 729 (BASE, "Cause and fix"). | keep. MEASURED end to end. | 2026-11-17 |
+| `63986e480` One viewport rectangle while walking | 170 zones entered and 152 left in a 2 s walk (`play/tests/pusher/PositionDispatcher.test.ts:436`) | 5 and 5 (commit message). The plan estimate of 270 to 295 joins per walker-second is DERIVED, not measured. | keep. A joins-per-walker-second reading needs a generator report (HYPOTHESIS). | 2026-11-17 |
+| `6b38839ef` Talk indicator kept out of spaces that do not draw it | One flip: 43 sub-messages (40 world watchers plus a 3-person bubble) | 3 (commit message, MEASURED in a test). The plan estimate of 50 k to 200 k sub-messages/s (PLAN item 1.2) is DERIVED. | keep | 2026-11-17 |
+| `6da6e7a0c` Jitter on reconnect attempts | Every client retried in the same instant | Base delay plus a random share, capped at 3 s (commit message). No number. | keep, needs 1000 run | 2026-11-17 |
+| `a589e9fdf` Skip zone reconciliation inside the same zones | Reference time 1.0 | 0.27x walking inside the zones and 0.28x for a 1,000-socket crowd walk (single-process micro-benchmark, commit message) | keep | 2026-11-12 |
+| `50632e874` Only the last update of a group per batch | Group updates 75 to 87 per session-second, event-loop lag p99 896 ms (500 sessions, pusher capped at 0.65 core) | 49 to 51 and 518 ms, no overlapping ranges, 3 interleaved runs (commit message) | keep | 2026-11-12 |
+| `e38c3d8f5` Redraw animated tiles only when a visible tile changes | Whole frame repainted on every tick | No number in the commit message. A fallback keeps the old behavior. | keep | 2026-11-16 |
+| `b7e754c64` Seated idle animation key built once per change | Reference frame cost 1.0 | 0.53 to 0.68 over 50 to 1000 seated (Node measurement, commit message) | keep | 2026-11-18 |
+
+### Pending rows (uncommitted in the working tree)
+
+| Item | Claim and source | Verification still owed |
+|---|---|---|
+| C4: `MAX_P2P_PEERS` (`back/src/Model/Strategies/WebRTCCommunicationStrategy.ts`, `back/src/Enum/EnvironmentVariableValidator.ts`, `back/src/Model/States/WebRTCState.ts`) | 1,998 starts become 6 with cap 3 (DEC `decisions.md:155`). Opt-in; unset is upstream behavior. | Unit tests only. The real effect needs the SFU load test. |
+| C4: a failed LiveKit `createRoom` no longer blocks the next speaker (`back/src/Model/Strategies/LivekitCommunicationStrategy.ts`) | Correctness fix, not a performance claim (DEC C4) | The unit test in the diff. |
+| C5 (a): `workadventure_pusher_sub_messages_total`, `workadventure_pusher_sub_messages_bytes_total` by type and `workadventure_pusher_moving_sockets` (`GaugeManager.ts`, `PusherWebSocket.ts`, `SocketManager.ts`) | Pass condition: counters match the bot-side counts of `pusher-300-after.json` within 1% (DEC C5) | Run the 300 procedure and compare. This also gives the real walking fraction. |
+| C5 (b): skip the group notification when only the position changed (`play/src/pusher/models/Zone.ts`, `GroupDescriptor.update`) | Target: group updates under 10% of 2,365,979 with moves and delivery within noise (DEC `decisions.md:196`). Harness number: 451,200 to 1,200 (`docs/TESTING.md:87`). Revert if a bubble sticks locked or unlocked. | The 300 procedure, plus a bubble check in a browser. |
+| Scene 3.2 part 2: name hidden while culled (`RemotePlayer.setCulled`, `Character.setNameHidden`, `UsernameDisplay.setHidden`), scale logic moved into `UsernameDomLayer.ts` | Intended effect: a culled avatar's moves no longer dirty the scene (code comment). No number. | `RemotePlayerCullingCost.test.ts` (untracked) prints DOM and scene work. Needs a probe run. |
+| Scene 3.3 part 2: companion picture read lazily (`play/src/front/Phaser/Companion/Companion.ts`) | Removes about 16 ms of GPU readback per companion (code comment and PLAN item 3.3, derived) | A probe run with companions. |
+| Not performance | `motion.ts` zero-length transition guard, the `browserEffectsPort` `focused` option, Preferences panes, Dock and Frame, 17 locale files | No performance claim is made for these. |
+
+## Decisions and next actions
+
+Decisions, recorded by the coordinator:
+
+1. The Phase 1 gate stays open until a valid 1000 staircase exists on the Linux host. Passing it takes the three P1 code items below plus the C5 (a) counters landing.
+2. The budgets in Baselines & Budgets stand. Rows marked "proposed here" carry no plan source and are the first to revisit once real data arrives.
+3. No Mac 1000 run, ever. The 300-bot run on the Mac stays a smoke test only (DEC `decisions.md:56`).
+4. DEC C5's "0.10 core per 100 users" is overruled by the 0.7-core budget of DEC C1; 1.0 core is the saturation line.
+
+Next actions. Owner "code workflow" is the session that edits `back/`, `play/src` and `play/tests`; this docs task cannot do those.
+
+| Done | Action | Owner | Priority |
+|---|---|---|---|
+| [ ] | Move the frame probe from `.local/konclui/qa/frame-probe/probe.mjs` into git under `benchmark/` or `tests/` | code workflow | P1 |
+| [ ] | Add a counter for moves shed at `back/src/Services/SocketManager.ts:300` and export it on the back scrape | code workflow | P1 |
+| [ ] | Run C5 (a) and (b) against the exact `pusher-300-after` procedure and compare the counters with the bot-side counts | code workflow | P1 |
+| [ ] | Run a valid staircase 300, 500, 700, 1000 on a CI-pool host from a pinned commit, with the load guard printing `nproc`, `/proc/loadavg`, `/proc/pressure/cpu` | coordinator with infra | P1 |
+| [ ] | Take a pusher `--cpu-prof` during the dense 1000 run to settle the 25% fan-out hypothesis | code workflow | P1 |
+| [ ] | C2 slice 0: whole-map frame measurements at bots 0, 100, 300 (DEC `decisions.md:88`) | code workflow | P2 |
+| [ ] | Repeat `605fec17b` before and after with 3 interleaved 300-bot runs to settle the delivery 0.9949 to 0.9896 difference | code workflow | P2 |
+| [ ] | `lk load-test` with one publisher and N = 50, 200, 1000 listeners, once with screen share; fill the SFU row of section (d) | coordinator with infra | P2 |
+| [ ] | Pull a 30-day p50 and p95 of room population from PostHog and add it to Load Reality | coordinator | P2 |
+| [ ] | First probe of the shell DOM cost (Dock, Frame, side panels) to set its budget | code workflow | P3 |
+| [ ] | Check `ps -o pcpu` of the Lima forwarder during a 300 run to test the host-network hypothesis | code workflow | P3 |
+| [ ] | Check the name-tag zoom in Safari (`c5bd4ad97`) | code workflow | P3 |
+| [ ] | Link this file from `docs/konclui-migration/performance.md`, which is a contract with no results | docs | P3 |
+
+## Cross-references
+
+- `docs/TECH-DEBT.md` rows SM-04 (a gRPC stream per socket, line 38), SM-05 (per-recipient fan-out, line 39; answered by `605fec17b`, 200 encoder calls to 1) and GS-04 and GS-05 (per-frame scans in `GameScene`, lines 12 and 13) are not repeated here.
+- `docs/TESTING.md:160` already marks "Measure SM-05" closed by `605fec17b`, and `docs/TESTING.md:87,99,101,108-110` hold the harness numbers for C5 (b), the back batch, the space index, culling, name tags and the companion picture. The ledger cites them rather than restating their test detail.
+- `docs/konclui-migration/performance.md` states the bounded optimization loop and has no results; this file holds the results.
+- One discrepancy, kept visible: BASE reports pusher CPU 65% and 35% for the steady part, while a recompute over each whole sample log gives 60.1% and 26.4%. Both show the same direction, and the ledger quotes BASE.

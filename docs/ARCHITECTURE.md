@@ -1,0 +1,240 @@
+# Architecture
+
+System structure and decisions for the Koncluí fork of WorkAdventure. Phase 2 (clean architecture) of the
+architecture-optimization journey filled `## System Context`, `## Layer Map & Dependency Rule` and
+`## Decision Log`. The other sections are placeholders for later phases.
+
+Conventions of this file:
+
+- Claims carry a tag. MEASURED is a number from a log, a test run, or a `wc`/`rg` count. DERIVED is arithmetic over
+  measured or read values. HYPOTHESIS is not verified.
+- Every number names its source as `path:line`, a commit sha, or the command that produced it.
+- Evidence base: `konclui/main` at `700362b82` (2026-11-18), plus uncommitted edits by other sessions in `back/` and
+  `play/src`. Line numbers drift under those edits. Search by symbol when one no longer matches.
+- Counts marked "rg" were taken from the working tree on 2026-11-18.
+
+## System Context
+
+Koncluí is a fork of WorkAdventure for a virtual office. Its goal is 1000 live participants in one world without
+stalls in movement, audio or video.
+
+Parts of the system:
+
+| Part | Where | Role |
+|---|---|---|
+| Client | `play/src/front` | Svelte 5 UI and a Phaser 4 scene |
+| Pusher | `play/src/pusher` | uWebSockets server. Holds one socket per client and fans zone events out to them |
+| Back | `back/src` | gRPC/protobuf server behind the pusher. Owns room, zone, group, space and media-pairing state |
+| Redis | external | Shared state |
+| LiveKit | external | Media above 4 people in a bubble and for every broadcast |
+| Admin API, map-storage | external | Room metadata and map files |
+| Konclui shell | `play/src/front/Konclui` | Downstream context that draws the office UI over the map through the extension ports |
+
+Facts that bound the architecture:
+
+- One room per office, no shards (`docs/konclui-migration/decisions.md`, C1).
+- The fork stays wire-identical to upstream. `git diff upstream/master...HEAD -- messages/protos` is empty
+  (decisions.md C1 evidence). The rule is recorded at `messages/AGENTS.md:12`. The pusher rejects any other
+  `apiVersionHash` (`play/src/pusher/controllers/IoSocketController.ts:291`, as cited by decisions.md C1).
+- The release path runs the official v1.34.5 server images (`deployment/konclui/compose.yaml:24,60,74`, as cited by
+  decisions.md C5). A fork protocol cannot ship until fork-built server images are scheduled.
+
+Load reality, the 100/300/1000-bot runs and the client frame probes, is in `docs/PERFORMANCE.md` `## Load Reality`.
+This section does not copy those numbers. At the time of writing, `docs/PERFORMANCE.md` does not exist yet: it is the
+Phase 1 gate artifact and is owed. Until it lands, the raw sources are
+`~/.claude/orchestrate/konclui-native/evidence/perf/{baseline-2026-11-17.md,load-1000.json,load-1000-stats.log}`.
+
+## Layer Map & Dependency Rule
+
+Method: Dependency Rule, source dependencies point inward (frameworks, then adapters, then use cases, then entities),
+with the procedure of `architecture-optimization/references/methods.md` section 2. The audit read imports, not
+intentions. Boundaries are kept only where there is volatility, meaning a second implementation can be named (a test
+double counts).
+
+### Layers as they exist
+
+**Pusher (`play/src/pusher`)**
+
+- Models: `models/Zone.ts`, `PositionDispatcher.ts`, `Space.ts`, `SpaceToFrontDispatcher.ts`.
+- Orchestration: `services/SocketManager.ts` (1879 lines, MEASURED `wc -l`), `models/PusherRoom.ts`.
+- Adapters: `services/PusherWebSocket.ts` (the uWS wrapper), `services/BatchFrame.ts` (protobuf encoding),
+  `services/ApiClientRepository.ts`, `services/MoveRateLimiter.ts`.
+- Direction is bidirectional. `models/` imports `services/` in 7 files (MEASURED,
+  `rg -n 'from "\.\./services/' play/src/pusher/models`): `Zone.ts:23-24`, `PositionDispatcher.ts:13`, `Space.ts:7`,
+  `SpaceToFrontDispatcher.ts:20`, `SpaceToBackForwarder.ts:12-13`, `PusherRoom.ts:8-10`, `SpaceConnection.ts:6`.
+
+**Back (`back/src`)**
+
+- Domain: `Model/GameRoom.ts` (1653 lines), `Model/Space.ts` (966), `Group`, `PositionNotifier` (MEASURED `wc -l`).
+- Media policy and state: `CommunicationManager`, `Strategies/`, `States/`, `Policies/`, `Interfaces/`.
+- Adapters: `Services/SocketManager.ts` (1886 lines, MEASURED), `RoomManager.ts` (the gRPC server), `AdminApi`,
+  `MapStorageClient`, `LivekitService`.
+- The media seam points inward. Strategies depend on `Interfaces/ICommunicationSpace`
+  (`WebRTCCommunicationStrategy.ts:5`, `LivekitCommunicationStrategy.ts:9`). `TransitionPolicy` depends on
+  `ITransitionPolicy` (`TransitionPolicy.ts:2`). LiveKit sits behind `LivekitService`; only a type import of
+  `S3Upload` from the SDK remains (`LivekitCommunicationStrategy.ts:8`).
+- The rest of `Model/` points outward (MEASURED, `rg -l` on `back/src/Model`): 5 files import `@grpc/grpc-js` or
+  `RoomManager` types (`GameRoom`, `Admin`, `Zone`, `PositionNotifier`, `User`); 14 files reach `Services/`; 9 files
+  import `Enum/EnvironmentVariable`.
+
+**Client (`play/src/front`)**
+
+- Upstream scene: `Phaser/Game/GameScene.ts` (5066 lines, MEASURED), with 197 `import` statements and 23 lines that
+  name `gameManager` or `connectionManager` (MEASURED, `rg -c`).
+- Entities: `Phaser/Entity/RemotePlayer.ts`, `Character.ts`. Svelte stores and components. `Connection/`.
+- Konclui, downstream of all of these.
+- `GameScene` as a god class is already ledgered in `docs/TECH-DEBT.md:72`. It is not added again here.
+
+### The Konclui seam holds
+
+- MEASURED: `npx vitest run src/front/Konclui/architecture.test.ts src/front/ExternalModule/ClientExtensionPoints.test.ts`
+  in `play/` gave 2 files and 48 tests passed (re-run on 2026-11-18, 312 ms, under `node v26.10.0`; no Node 24
+  install was found on this machine, and `play/src/front/Konclui/AGENTS.md` says Node 24 first).
+- The only upstream import of Konclui code is `play/src/svelte.ts:7` (`installKonclui`). MEASURED, `rg 'from ".*Konclui'`
+  outside the Konclui folder, generated caches excluded.
+- Upstream reaches the ports through `ExternalModule/ClientExtensionPoints.ts`: `GameScene.ts:195` (import),
+  `:1265` (`notifySceneShutdown`), `:1446` (`runSceneFrame`); stores for the action bar, embedded chat host and game
+  viewport bounds are read by upstream components.
+- `domain/` layers import only `./`, `zod` and type-only upstream modules. An empty port keeps upstream behaviour
+  (`play/src/front/Konclui/AGENTS.md`).
+- Inversion already done at the root: `integration.ts` hands Ambience a `focused()` callback, because Ambience cannot
+  import Focus under the domain graph.
+
+### Inversions already done (the pattern to copy)
+
+- `Phaser/Game/RemotePlayerCulling.ts` imports only `rxjs` types and defines structural `CullableAvatar` and
+  `CullableObject` interfaces (`:8-37`). No Phaser import. Built in `700362b82`.
+- `Phaser/Entity/AvatarBuildQueue.ts` has no imports (MEASURED, `rg -c '^import'` finds none).
+- `pusher/services/BatchFrame.ts` imports only `@workadventure/messages`. `MoveRateLimiter.ts` is pure.
+- Back batching: `emitZoneMessage` and `flushZoneMessages` (`back/src/Services/SocketManager.ts:101-139`) sit in the
+  adapter, keyed by the gRPC stream in a `WeakMap`. Model code does not know about the queue.
+
+### Violations
+
+Status values: fix-now (do next, XS size, blocked only by another workflow's uncommitted edits), ledgered (recorded
+with a trigger, not scheduled), accepted (deliberate, recorded so nobody "fixes" it).
+
+| # | Violation | Location | Fix | Status |
+|---|---|---|---|---|
+| V1 | Import cycle `CommunicationManager` and `AbstractCommunicationState`, 3 paths (fallow). The state needs only a config constant that lives in the manager | `back/src/Model/States/AbstractCommunicationState.ts:6,18`; `back/src/Model/CommunicationManager.ts:719-721` (`CommunicationConfig`) | Move `CommunicationConfig` to its own module, or pass `MAX_USERS_FOR_WEBRTC` through the constructor (the parameter exists at `:18`). Structure-only commit | fix-now (XS). Sequence after the in-flight `back/` workflow: `WebRTCState.ts` is in the uncommitted diff |
+| V2 | The zone fan-out port is typed to the uWS wrapper. `ZoneEventListener` (`Zone.ts:26-37`) and the listener set use `PusherWebSocket`, but Zone needs only identity and `getUserData().userId` (`Zone.ts:489-492`). The same type appears in 5 more model files | `Zone.ts:23`, `PositionDispatcher.ts:13`, `Space.ts:7`, `SpaceToFrontDispatcher.ts:20`, `SpaceToBackForwarder.ts:13`, `PusherRoom.ts:10` | Replace with a structural `ZoneListener { getUserData(): { userId: number } }`. Do it as the preparatory refactoring (methods.md section 4.4) of C1 slice 3, in its own structure-only commit | ledgered. Trigger: start of C1 slice 3. Second implementation: the test fakes in `play/tests/pusher/ZoneFanOutEncoding.test.ts` |
+| V3 | Pusher import cycle `PusherRoom` and `SocketManager` through the module singleton (fallow, 4th cycle) | `PusherRoom.ts:9`, `services/SocketManager.ts` (`socketManager` singleton) | Inject the cleanup callback | ledgered as SM-07, `docs/TECH-DEBT.md:41,101` (open). No new row |
+| V4 | `SocketManager` (pusher) is a god class that also implements `ZoneEventListener`, and imports axios, grpc `Metadata`, uWS types and the admin service | `services/SocketManager.ts:56-62,75,86,116`; zone callbacks near `:1135-1156` | Extract the zone listener adapter, per the existing ledger row | ledgered as `docs/TECH-DEBT.md:97` (open). No new row |
+| V5 | The back domain model holds gRPC and infrastructure types | `GameRoom.ts:3,53` (grpc `Metadata`, `RoomSocket`), `:54-62` (adminApi, `MapStorageClient`, variables manager); direct stream writes at `:230,238,251,356,576,704,1425,1500,1570`; `new Metadata()` at `:1486` | Wrap the map-storage call and the stream writes behind a port in `Services/`. Ordering hazard to keep: anything written to a `RoomSocket` directly must call `flushZoneMessages` first (`back/src/Services/SocketManager.ts:114` doc comment) | ledgered. HYPOTHESIS: `GameRoom`'s `.write` calls go to per-user streams, not the batched `listenRoom` stream, so there is no ordering bug today. Check before any change |
+| V6 | Back `Model/` reads env constants directly: 9 files import `Enum/EnvironmentVariable`, e.g. `CommunicationManager.ts:12`, `WebRTCState.ts:2` | Same files | `WebRTCState.ts:16` already shows the target shape: the constant is a default parameter (`maxPeers = MAX_P2P_PEERS`). Apply it where a test needs a different value | ledgered, low risk. Fallow lists 20 consumers of the env module (public-API decision in the fallow brief) |
+| V7 | A Phaser entity carries UI and telemetry behaviour. `RemotePlayer` builds the woka menu, tracks analytics, opens a Svelte modal and a chat room | `RemotePlayer.ts:11-29` (imports); menu `:162-215`; actions `:239-281`; `modals.open(RequiresLoginForChatModal)` at `:277` | Extract the menu-action assembly into a service the scene injects. The entity only emits "clicked". Fallow: fan-in 19, fan-out 16, 10 consumers outside the diff | ledgered. Edit after the in-flight culling work on this file lands (uncommitted) |
+| V8 | `Character` reads Svelte stores for outline colour and picture | `Character.ts:3-4,10,12-13`; `get()` near `:394`, subscription near `:407` | Pass the outline colour in as a plain value or callback | ledgered, low. Fallow: 5 consumers |
+| V9 | A frame-path class reads a global config constant | `play/src/front/Phaser/Game/PlayerMovement.ts:1,19` (`MAX_EXTRAPOLATION_TIME`) | Constructor parameter. The planned C5 (c) `RemoteSampleInterval` must take its constants as parameters, not imports | ledgered |
+| V10 | The seam's context type leaks Phaser classes. `SceneFrameContext` exposes `scene: GameScene`, `currentPlayer: Player | undefined` and `remoteCharacters: ReadonlyMap<number, RemotePlayer>`, and Konclui's phaser layer imports those types | `ExternalModule/ClientExtensionPoints.ts:118-131`; `Ambience/phaser/SceneEffects.ts:18-20`, `sceneEffectsExtension.ts:3`, `Preferences/phaser/gameActions.ts:4-5` | Narrow to structural interfaces, as `CullableAvatar` does. Needed because C2 and plan item 3.x change `RemotePlayer` | ledgered. Trigger: the next change to `RemotePlayer` that breaks a Konclui type check |
+| V11 | Konclui `stores/` import upstream infrastructure singletons. The `AGENTS.md` table allows "upstream stores"; `architecture.test.ts` does not enforce it | `analyticsClient` in 7 store files: `OfficeMenu/stores/{mapTools,globalMessage}.ts`, `Preferences/stores/{generalSettings,mediaSettings,miniSettings,soundSettings,notificationSettings}.ts` (MEASURED `rg -l`). `localUserStore` in 6 store files. `connectionManager`, `Room` and `AudioOutputManager` in `mediaSettings.ts` and `soundSettings.ts` | One `Preferences/stores` port file for telemetry and persistence, once a second consumer needs a double. Tests already mock these modules, so the volatility is low | ledgered |
+| V12 | The Konclui shell re-hosts upstream internals: `Dock.svelte` imports 10 upstream `ActionBar/*` components, `Frame.svelte` imports `ChatSidebar` | `Shell/components/Dock.svelte:17-26`, `Frame.svelte:27`. Fallow: `Dock.svelte` fan-out 23, `Frame.svelte` fan-out 14 | Not a rule breach, since components may import upstream components. It is merge risk: re-check at each upstream merge | ledgered |
+| V13 | `domainEdges` and `AGENTS.md` name domains that are not on disk and omit two that are. Disk (MEASURED `ls`): `Ambience, Focus, OfficeMenu, Preferences, Presence, Shell, Workplace`. `AGENTS.md` lists `Rooms, Expression, Identity, Notifications` as domains. `domainEdges` keeps those four. The working tree already adds `Focus` and `OfficeMenu` to `domainEdges` (uncommitted 3-line diff on `architecture.test.ts`, another session) but `AGENTS.md` does not list them | `play/src/front/Konclui/architecture.test.ts:23-35` (working tree); `play/src/front/Konclui/AGENTS.md:17-18` | Remove the four dead names from both files and add `Focus` and `OfficeMenu` to `AGENTS.md`. A rule change needs the owner's recorded decision per `AGENTS.md`: the owner's standing instruction (2026-11-18, "decide yourselves", `decisions.md:3`) supplies it, so name it in the commit. A new folder called `Rooms` would pass the test silently today | fix-now (XS), after the in-flight `play/src` edits land |
+| A1 | Accepted: entities cache wire-format bytes. `UserDescriptor` and `GroupDescriptor` hold encoded `SubMessage`s, invalidated on change | `Zone.ts:41-45,94,155-165,229-236` (`encodeOnce` from `services/BatchFrame`) | None. Encoding depends only on `@workadventure/messages`. `605fec17b`: encoder calls for one move watched by 200 sockets go from 200 to 1 (commit message; counts pinned in `play/tests/pusher/ZoneFanOutEncoding.test.ts:211-212`; MEASURED) | accepted. Recorded in the Decision Log |
+| A2 | Accepted: `Preferences` is declared the leaf every domain may read, but `Preferences/phaser/gameActions.ts:6-9` imports upstream scenes (`LoginScene`, `PwaInstallScene`, `SelectCharacterScene`, `SelectCompanionScene`). The test cannot see it | `Preferences/phaser/gameActions.ts:6-9` | None. The `phaser/` layer row allows upstream Phaser classes; registered through `installGameCommands` at `integration.ts` | accepted |
+
+Row counts: 13 violation rows (V1-V13), 2 accepted rows (A1, A2). fix-now: V1, V13. Ledgered by this audit:
+V2, V5-V12. Already in `docs/TECH-DEBT.md`: V3 (`:41,101`), V4 (`:97`).
+
+### Recommendations
+
+| Done | Action | Owner lane | Priority |
+|---|---|---|---|
+| [ ] | V1: move `CommunicationConfig` out of `CommunicationManager.ts`, structure-only commit (removes 3 of 4 cycles) | back | P2 |
+| [ ] | V13: delete the 4 dead domain names in `architecture.test.ts` and `AGENTS.md`, list `Focus` and `OfficeMenu`, cite the standing instruction in the commit | Konclui | P2 |
+| [ ] | V2: introduce `ZoneListener` before C1 slice 3 starts (separate structure-only commit) | pusher | P1 (gates C1 slice 3) |
+| [ ] | Insert the per-viewer budget at `Zone.notifyUserMove` only after V2 (see the boundary map below) | pusher | P1 |
+| [ ] | V10: narrow `SceneFrameContext` to structural interfaces before C2 changes `RemotePlayer` | Konclui, play front | P2 |
+| [ ] | V7: extract the woka-menu assembly after the culling work on `RemotePlayer.ts` lands | play front | P3 |
+| [ ] | V5: port for `RoomSocket` writes in `GameRoom`; first check the ordering hypothesis | back | P3 |
+| [ ] | V6, V8, V9, V11, V12: touch only when a test or an upstream merge needs it (triggers in the table) | owner of the file at the time | P3 |
+| [ ] | Run the Konclui fitness test under Node 24 once an install exists (this audit ran Node 26) | Konclui | P3 |
+
+### Fallow cross-check (`/tmp/fallow-brief.txt`, MEASURED)
+
+- 4 circular dependencies (`:322-329`): 3 in the `CommunicationManager` group (V1), 1 in `PusherRoom` and
+  `SocketManager` (V3). No cycle is reported inside Konclui.
+- Metrics line (`:400`): 23,495 LOC, dead files 0.0%, dead exports 0.0%, maintainability 89.3.
+- 4,789 duplicated lines (1.9%) across 18 files (`:398`).
+- 15 unused dependencies and 5 dev or optional ones (`:334`). These belong in `docs/TECH-DEBT.md` (DEP-01, `:31`), not here.
+- The four public-API decisions the brief asks about: `EnvironmentVariable.ts` (20 consumers outside the diff),
+  `RemotePlayer.ts` (10), `PusherWebSocket.ts` (8), `Character.ts` (5). They map to V6, V7, V2 and V8.
+
+## Bounded Contexts & Context Map
+
+Not filled by Phase 2. One fact is already enforced: Konclui is a downstream context of upstream WorkAdventure,
+reached only through the extension ports, and its domains follow the edge table in
+`play/src/front/Konclui/architecture.test.ts` (`domainEdges`). Owner of the full map: the next architecture phase.
+
+## Domain Glossary (Ubiquitous Language)
+
+Not filled by Phase 2.
+
+| Term | Meaning | Code name |
+|---|---|---|
+
+## Data & Storage Decisions
+
+Not filled by Phase 2. The one data fact recorded so far: the world headcount will be one integer owned by the back and
+carried in the space state patch (Decision Log, C3), not derived from the roster.
+
+## Decision Log
+
+All entries below were taken between 2026-11-17 and 2026-11-18 under the standing instruction to decide, record and
+continue. Engine commits carry their before/after numbers in their messages; each of those commits adds the tests or
+bench that produced them. This audit did not re-run them. The C1-C5 entries summarize
+`docs/konclui-migration/decisions.md`, which owns the full reasoning, hypotheses and slices.
+
+| Date | Decision | Why | Alternatives rejected |
+|---|---|---|---|
+| 2026-11-17 | Encode each zone sub-message once and cache it on its descriptor (`605fec17b`) | 300 walking bots: pusher CPU median 65% to 35%, move p95 167 to 113 ms (commit message, MEASURED). Encoder calls per move watched by 200 sockets: 200 to 1 | A per-zone shared buffer; a 1 Hz dense relay; last-move dedupe in the batch (near-zero gain, ordering hazard, per `evidence/engine-1000-plan.md` section 5) |
+| 2026-11-18 | One 50 ms batch per pusher stream, in the back adapter (`b323baca9`) | 300 moving users: 1,687.5 writes/s to 20 (commit message, harness; MEASURED) | Multiplexing per-user gRPC streams. The back is idle (4.64-18.67% CPU in `load-1000-stats.log`) |
+| 2026-11-18 | Token bucket of about 10 moves/s per socket in the pusher; a stop is never dropped (`34ec1cdc6`) | A client sending 60/s reaches the back at 10.4/s (commit message, MEASURED) | Sender-side dead reckoning, now gated (C5) |
+| 2026-11-18 | Refuse a stale resume before authentication; spread the scene rebuild over 0-2 s (`59dfb7cac`) | Upgrades per reconnecting client 2 to 1 (commit message) | Pacing invitations |
+| 2026-11-18 | Name tags read two CSS variables set once per layer (`c5bd4ad97`) | One notch with 1000 tags: 90,000 style writes to 17 (commit message). Safari sharpness unchecked (HYPOTHESIS) | Per-tag style writes |
+| 2026-11-18 | Build avatars from a nearest-first queue with a per-frame budget, and cull avatars outside the camera (`700362b82`) | 1000 avatars over the office with a 1451x855 camera draw 322, not 1000 (1,610 quads vs 5,000; commit message) | An avatar pool keyed by user id (helps only oscillation) |
+| 2026-11-18 | Index space users by id; keep the LiveKit room for a grace period after a speaker stops (`1c9047960`) | 999 lookups 23 ms to about 0.1 ms (`SpaceUserLookup.bench.ts`, via commit message) | Lowering `MAX_USERS_FOR_WEBRTC` to 1-2 (the plan says it causes the freeze) |
+| 2026-11-18 | **C1**: one room per office, no shards. Awareness through the viewport-to-zone subscription plus an env-flagged per-viewer budget in the pusher (about 150 nearest at full rate, the rest at 1 Hz, ceiling about 400). Default off | At 1000 bots 823 joined, delivery 0.468 (116,494 of 248,931 expected), pusher 94-144% CPU in the last four samples while the back stayed at 4.6-18.7% (`evidence/perf/load-1000.json:33-35,96-100`, `load-1000-stats.log`; MEASURED) | All-see-all live; shards; a zoom floor. Fallback if the budget fails its gate: floors of 250-300 people per map (decisions.md C1) |
+| 2026-11-18 | **C2**: keep upstream zoom-out. Bound client cost with a detail budget keyed on avatars in view (B = 80, flag default off) | A zoom limit cannot meet "never stall" (DERIVED, decisions.md C2: slope 62 us per present avatar, 276-380 avatars cost 17-24 ms against a 16.7 ms frame) | A floor inside `HdpiManager` (it clamps `WA.camera.set`) |
+| 2026-11-18 | **C3**: the world headcount is one integer owned by the back and carried in the space state patch, at most one per second. The roster is watched lazily, only at or below T = 200 | Every client watches the whole roster to show one number (`GameScene.ts:2633-2645`, `WorldUserProvider.ts:23-26`, re-read at `700362b82`; decisions.md C3 cites older lines) | A permanent live roster; porting the reference presence broadcast |
+| 2026-11-18 | **C4**: bubbles are P2P up to `MAX_USERS_FOR_WEBRTC` = 4. LiveKit is the only transport above that and for every broadcast. First slice is the opt-in `MAX_P2P_PEERS` cap, unset = upstream behaviour. In the working tree, uncommitted (validator, `WebRTCState`, strategy and tests) | Without a cap, one speaker and 999 watchers is 999 peer connections in one tab (DERIVED, decisions.md C4) | A derived default (it breaks self-hosters without LiveKit); pacing invitations |
+| 2026-11-18 | **C5**: stay wire-compatible through phase 3. Edit nothing under `messages/protos` (`messages/AGENTS.md:12-13`). Replace the ack nonce of plan item 2.3 with upstream `04634ad3f` plus `CLIENT_DISCONNECTION_RETENTION_MS`. Plan item 4.2 becomes a gated option | The release path is wire-bound to the official images (`deployment/konclui/compose.yaml:24,60,74`) | Fork the protocol now; the ack nonce |
+| 2026-11-18 | Boundary only at volatility (methods.md section 2.4). The listener port and the other insertion points below are kept. No new ceremony layers in `GameScene`, which stays under the existing sprout policy (`docs/TECH-DEBT.md:118-122`) | Both cited rules already exist | A full hexagonal rewrite. The plan is about fifteen local fixes, not a rewrite |
+| 2026-11-18 | Record the Phaser 4 and uWS typing violations (V2, V7, V10) as ledgered with triggers instead of fixing them now | They sit in files with uncommitted edits by another workflow; none is on the critical path before C1 slice 3 | Fix all in one structure-only pass (conflicts with the in-flight work) |
+
+### Where a cache, a queue or a budget goes (the boundary map)
+
+A boundary is an insertion point (methods.md section 2.5). This table lists the existing and the missing ones on the hot
+flows.
+
+| Flow | Boundary | Location | Holds or would hold | Item and status |
+|---|---|---|---|---|
+| Pusher ingress, per socket | `isMoveAllowed` with `MoveRateLimiter` | `play/src/pusher/services/SocketManager.ts:93,127,734,773-780` | budget (shipped, `34ec1cdc6`) | plan item 4.1, done |
+| Pusher fan-out, per viewer | `ZoneEventListener` | `Zone.ts:26-37`; `notifyUserMove` at `:489-496`; `onUserMoves` near `SocketManager.ts:1139` | budget: new `ViewerBudget.ts`, env `PUSHER_VIEWER_FULL_RATE_PEERS` and `PUSHER_VIEWER_MAX_PEERS` | C1 slice 3, not started. Needs V2 first |
+| Pusher fan-out, encode | cached `SubMessage` on descriptors | `Zone.ts:41-45,94,155-165,229-236` | cache; invalidated when the descriptor updates | plan item 2.1, done (`605fec17b`) |
+| Pusher egress, per socket | `PusherWebSocket.emitInBatch` and `flushBatch` (100 ms timer), group-update conflation, replay store | `PusherWebSocket.ts:72-100` | queue with a replay window of `CLIENT_DISCONNECTION_RETENTION_MS` | exists. The memory cap is replaced by the `04634ad3f` cherry-pick (C5, not done) |
+| Back to pusher stream | `emitZoneMessage` and `flushZoneMessages`, 50 ms | `back/src/Services/SocketManager.ts:101-139` | queue (20 writes/s per pusher) | plan item 2.2, done (`b323baca9`) |
+| Back space state | `updateState` carrier | `back/src/Model/Space.ts:787` (`updateState`, re-read in the working tree) | headcount with a 1000 ms trailing debounce and a `Map<uuid, refcount>` for the world space | C3 slice 1b, not started |
+| Back space users | index by id | `back/src/Model/Space.ts` (`1c9047960`) | cache | done |
+| Media pairing | `ICommunicationSpace`, `ICommunicationStrategy`, `ITransitionPolicy` | `back/src/Model/Interfaces/`; `WebRTCState.ts:16` | budget: `MAX_P2P_PEERS` cap in `WebRTCCommunicationStrategy`; cache: LiveKit room grace timer in `LivekitCommunicationStrategy` | C4 slice 1 uncommitted; grace timer done |
+| Client avatar build | `AvatarBuildQueue` (pure) | `GameScene.ts:66,391` | queue with a per-frame time budget | plan item 3.3, done |
+| Client avatar draw | `RemotePlayerCulling` with `CullableAvatar.setCulled?` | `GameScene.ts:260,389`; `RemotePlayerCulling.ts:8-37` | budget: the C2 detail tier hooks here and in `SceneEffects` | culling done; C2 slice 1 not started |
+| Client receive | `PlayerMovement` and the `POSITION_DELAY` draw (`GameScene.ts:4788-4796`, re-read at `700362b82`; decisions.md C5 cites older lines) | `PlayerMovement.ts:1,19` | new pure `RemoteSampleInterval.ts` | C5 slice (c), not started. Needs V9 first |
+| Konclui per-frame cost | `runSceneFrame` loop | `ClientExtensionPoints.ts:185-194`, called at `GameScene.ts:1446` | HYPOTHESIS: the one place to add a per-extension frame-time budget. It has `try/catch` and failure reports but no timing today | not decided. No measurement of extension cost exists beyond the 300-bot probe with effects on (p50/p95 7.4/8.5 ms, `baseline-2026-11-17.md`, via decisions.md C1) |
+
+Two boundaries are missing that the plan needs:
+
+- No pusher-to-world roster boundary. `joinSpace(allWorldUser)` is wired at scene start (`GameScene.ts:2633-2645`,
+  `WorldUserProvider.ts:23-26`). The C3 lazy gate needs a wrapper there, plus pure mode rules in a new
+  `Konclui/Presence/domain`.
+- No client-side budget for what the shell does per avatar. C2 must make `SceneEffects` skip dots.
+
+### Open items (HYPOTHESIS, not verified by this audit)
+
+- No pusher or back test ran, and no measurement was made. Every number above comes from commit messages, evidence
+  files, `wc`/`rg` counts, the fallow brief, or the one vitest run named above.
+- The C3 and C5 insertion points were re-read by the fresh-eyes check. The `GameScene.ts` lines in decisions.md
+  (spot-checked at `75901117c`) had drifted by about 50 lines; this file uses the `700362b82` lines.
+- The Konclui seam claim holds for the committed rules in `architecture.test.ts`. The V11 coupling (stores reading
+  upstream singletons) is outside what that test enforces.
+- Next phase evidence still owed: `docs/PERFORMANCE.md` `## Load Reality` (Phase 1 gate, cited above), and a 1000-bot
+  run on a remote Linux host (never on this machine; the local Colima VM dropped at 1000, decisions.md C1).
