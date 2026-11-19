@@ -95,9 +95,7 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
                 continue;
             }
             try {
-                if (this.shouldEstablishConnection(newUser, existingUser)) {
-                    this.establishConnection(newUser, existingUser);
-                }
+                this.tryEstablish(newUser, existingUser);
             } catch (error) {
                 console.error(
                     "An error occurred while adding a new user to WebRTC discussion",
@@ -141,9 +139,7 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
                 continue;
             }
             try {
-                if (this.shouldEstablishConnection(user, userInFilter)) {
-                    this.establishConnection(user, userInFilter);
-                }
+                this.tryEstablish(user, userInFilter);
             } catch (error) {
                 console.error(
                     "An error occurred while adding a user to notify in WebRTCCommunicationStrategy",
@@ -197,11 +193,6 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
         }
     }
 
-    private shouldEstablishConnection(user1: SpaceUser, user2: SpaceUser): boolean {
-        // Only establish if we need media connection AND don't already have one
-        return this.canPair(user1, user2);
-    }
-
     /**
      * Whether two users may be paired: they have no connection yet, and neither holds `maxPeers` peers already.
      *
@@ -242,7 +233,14 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
         });
     }
 
-    private establishConnection(user1: SpaceUser, user2: SpaceUser): void {
+    /**
+     * Opens a connection between two users unless `canPair` refuses the pair. This is the only way a new pair is
+     * opened, so the peer cap holds for every caller without each one having to check it.
+     */
+    private tryEstablish(user1: SpaceUser, user2: SpaceUser): void {
+        if (!this.canPair(user1, user2)) {
+            return;
+        }
         const connectionId = uuidv4();
         this.sendWebRTCStart(user1.spaceUserId, user2.spaceUserId, true, connectionId);
         this.sendWebRTCStart(user2.spaceUserId, user1.spaceUserId, false, connectionId);
@@ -314,9 +312,7 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
                     return;
                 }
                 try {
-                    if (this.canPair(user1, user2)) {
-                        this.establishConnection(user1, user2);
-                    }
+                    this.tryEstablish(user1, user2);
                 } catch (error) {
                     console.error(
                         "An error occurred while initializing WebRTCCommunicationStrategy",
@@ -363,10 +359,8 @@ export class WebRTCCommunicationStrategy implements ICommunicationStrategy {
                 );
                 return;
             }
-            // A client message must not open a pair the peer cap refused.
-            if (this.canPair(receiver, sender)) {
-                this.establishConnection(receiver, sender);
-            }
+            // A client message must not open a pair the peer cap refused: tryEstablish checks it.
+            this.tryEstablish(receiver, sender);
             return;
         }
 
