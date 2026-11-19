@@ -60,28 +60,6 @@
         away: t.away(),
         doNotDisturb: t.doNotDisturb(),
     });
-    let actionLabels = $derived<Record<MenuActionId, string>>({
-        editName: t.editName(),
-        avatar: t.avatar(),
-        companion: t.companion(),
-        cameraMicrophone: t.cameraMicrophone(),
-        settings: t.allSettings(),
-        shareLink: t.shareLink(),
-        mapEditor: t.mapEditor(),
-        explore: t.explore(),
-        broadcast: t.broadcast(),
-    });
-    const icons: Record<MenuActionId, Component> = {
-        editName: IconPencil,
-        avatar: IconUserEdit,
-        companion: IconUserPlus,
-        cameraMicrophone: IconCamera,
-        settings: IconSettings,
-        shareLink: IconLink,
-        mapEditor: IconMapEditor,
-        explore: IconMapSearch,
-        broadcast: IconSpeakerPhone,
-    };
     let feedbackText = $derived(
         feedback === "copied" ? t.linkCopied() : feedback === "failed" ? t.linkCopyFailed() : "",
     );
@@ -135,55 +113,64 @@
         return closeOfficeMenu({ returnFocus: true });
     }
 
-    function activate(entry: MenuEntry, event: Event): void {
+    function leaveThen(open: () => void): () => void {
+        return () => {
+            leave();
+            open();
+        };
+    }
+
+    // One entry per action row: what it says, its icon, what it does, and for a switch whether it is on. The type
+    // keeps the table exhaustive: a new MenuActionId does not compile until it has its entry.
+    interface ActionRow {
+        label: () => string;
+        icon: Component;
+        run: () => void;
+        on?: () => boolean;
+    }
+    const actionRows: Record<MenuActionId, ActionRow> = {
+        editName: { label: () => t.editName(), icon: IconPencil, run: leaveThen(openNameEditor) },
+        avatar: { label: () => t.avatar(), icon: IconUserEdit, run: leaveThen(openWokaEditor) },
+        companion: { label: () => t.companion(), icon: IconUserPlus, run: leaveThen(openCompanionEditor) },
+        // The screen upstream's profile menu opens for "Edit cam / mic", with the preview and the save button.
+        cameraMicrophone: { label: () => t.cameraMicrophone(), icon: IconCamera, run: leaveThen(openCameraScene) },
+        settings: { label: () => t.allSettings(), icon: IconSettings, run: () => openPreferences(undefined, leave()) },
+        shareLink: {
+            label: () => t.shareLink(),
+            icon: IconLink,
+            run: () => {
+                shareLink().catch((error: unknown) => console.error(error));
+            },
+        },
+        mapEditor: {
+            label: () => t.mapEditor(),
+            icon: IconMapEditor,
+            run: leaveThen(toggleMapEditor),
+            on: () => $mapEditorOnStore,
+        },
+        explore: {
+            label: () => t.explore(),
+            icon: IconMapSearch,
+            run: leaveThen(toggleMapExplorer),
+            on: () => $mapExplorerOnStore,
+        },
+        broadcast: {
+            label: () => t.broadcast(),
+            icon: IconSpeakerPhone,
+            run: leaveThen(() => {
+                const mode = $broadcastModeStore;
+                if (mode !== undefined) openGlobalMessage(mode);
+            }),
+        },
+    };
+
+    function activate(entry: MenuEntry): void {
         if (entry.kind === "status") {
             // The row that was chosen shows its mark at once; the menu stays so the change can be seen.
             chooseStatus(entry.choice);
             return;
         }
-        switch (entry.id) {
-            case "shareLink":
-                shareLink().catch((error: unknown) => console.error(error));
-                return;
-            case "cameraMicrophone":
-                // The screen upstream's profile menu opens for "Edit cam / mic", with the preview and the save button.
-                leave();
-                openCameraScene();
-                return;
-            case "settings":
-                openPreferences(undefined, leave());
-                return;
-            case "editName":
-                leave();
-                openNameEditor();
-                return;
-            case "avatar":
-                leave();
-                openWokaEditor();
-                return;
-            case "companion":
-                leave();
-                openCompanionEditor();
-                return;
-            case "mapEditor":
-                leave();
-                toggleMapEditor();
-                return;
-            case "explore":
-                leave();
-                toggleMapExplorer();
-                return;
-            case "broadcast": {
-                leave();
-                const mode = $broadcastModeStore;
-                if (mode !== undefined) openGlobalMessage(mode);
-                return;
-            }
-            default: {
-                const unreachable: never = entry.id;
-                throw new Error(`Unhandled menu row: ${String(unreachable)}`);
-            }
-        }
+        actionRows[entry.id].run();
     }
 
     function onkeydown(event: KeyboardEvent): void {
@@ -237,7 +224,7 @@
                                 tabindex={index === active ? 0 : -1}
                                 data-testid="office-menu-status-{entry.choice}"
                                 onfocus={() => (active = index)}
-                                onclick={(event) => activate(entry, event)}
+                                onclick={() => activate(entry)}
                             >
                                 <span class="lead" aria-hidden="true">
                                     <i class="dot" style="background-color: {dotColorOf(entry.choice)}"></i>
@@ -248,9 +235,10 @@
                                 {/if}
                             </button>
                         {:else}
-                            {@const Icon = icons[entry.id]}
-                            {@const toggle = entry.id === "mapEditor" || entry.id === "explore"}
-                            {@const on = entry.id === "mapEditor" ? $mapEditorOnStore : $mapExplorerOnStore}
+                            {@const row = actionRows[entry.id]}
+                            {@const Icon = row.icon}
+                            {@const toggle = row.on !== undefined}
+                            {@const on = row.on?.() ?? false}
                             <button
                                 type="button"
                                 class="row"
@@ -259,10 +247,10 @@
                                 tabindex={index === active ? 0 : -1}
                                 data-testid="office-menu-{entry.id}"
                                 onfocus={() => (active = index)}
-                                onclick={(event) => activate(entry, event)}
+                                onclick={() => activate(entry)}
                             >
                                 <span class="lead" aria-hidden="true"><Icon font-size="18" /></span>
-                                <span class="label">{actionLabels[entry.id]}</span>
+                                <span class="label">{row.label()}</span>
                                 {#if toggle && on}
                                     <IconCheck class="mark" font-size="16" aria-hidden="true" />
                                 {/if}
