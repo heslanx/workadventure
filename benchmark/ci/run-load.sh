@@ -23,7 +23,8 @@
 # not, the file says so and the CPU of the servers comes from the metrics scrape in merged.json.
 #
 # Exit code: 0 when every level produced a measurement, whatever it measured (a saturated level is a result, not a
-# failure); 1 when an image did not build, a stack did not start or the generator of a level failed.
+# failure); 1 when an image did not build, or when a level has no measurement because its stack did not start in two
+# tries or its generator failed. The other levels still run.
 #
 # LOAD_SKIP_BUILD=1 with LOAD_IMAGE_PREFIX and LOAD_IMAGE_TAG runs against images that already exist.
 
@@ -165,13 +166,15 @@ stack_up() {
     exit 1
     ;;
   esac
-  stack_down
-  if ! compose up --detach --wait --wait-timeout 300 >"$2/stack-up.log" 2>&1; then
-    note "$1: the stack did not start, last lines of stack-up.log and of the logs:"
-    tail -20 "$2/stack-up.log" >&2
-    compose logs --no-color --tail 60 >&2 || true
-    exit 1
-  fi
+  # A busy host can make a start miss its health checks: one more try before the level is given up.
+  local try
+  for try in 1 2; do
+    stack_down
+    compose up --detach --wait --wait-timeout 420 >"$2/stack-up.log" 2>&1 && break
+    compose logs --no-color --tail 80 >"$2/stack-up-failed-$try.log" 2>&1 || true
+    note "$1: the stack did not start (try $try), see stack-up-failed-$try.log: $(tail -1 "$2/stack-up.log")"
+    [ "$try" = 2 ] && return 1
+  done
   # A socket per bot: the limit that counts is the hard one (Node and Go raise the soft limit to it at start).
   {
     echo "open files, hard limit: play $(compose exec -T play sh -c 'ulimit -Hn'), reverse-proxy $(compose exec -T reverse-proxy sh -c 'ulimit -Hn')"
@@ -198,7 +201,13 @@ run_level() {
   rm -rf "$dir" "$work"
   mkdir -p "$dir" "$work"
 
-  stack_up "$scenario" "$dir"
+  if ! stack_up "$scenario" "$dir"; then
+    stack_down
+    rm -rf "$work"
+    note "$scenario rep$repeat n$level: no measurement, the stack did not start"
+    failed_levels=$((failed_levels + 1))
+    return 0
+  fi
   host_load "$dir/host-load.txt" start
   local throttled_before stalled_before started=$SECONDS
   throttled_before=$(throttled_ms)
@@ -355,7 +364,7 @@ fi
 
 host_load "$OUT/run.txt" "after the last level"
 if [ "$failed_levels" -gt 0 ]; then
-  note "done, but the generator failed on $failed_levels level(s): no measurement there"
+  note "done, but $failed_levels level(s) have no measurement"
   exit 1
 fi
 note "done"

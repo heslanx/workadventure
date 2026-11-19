@@ -26,6 +26,13 @@ services:
     play:
         image: ${LOAD_IMAGE_PREFIX:?}/play:${LOAD_IMAGE_TAG:?}
         pull_policy: never
+        # The check of the image, with time to start on a busy host: map-storage builds its front at start, and the
+        # image gives it 55 s in all.
+        healthcheck:
+            start_period: 240s
+            start_interval: 3s
+            interval: 5s
+            retries: 12
         environment:
             SECRET_KEY: ${SECRET_KEY:?}
             API_URL: back:50051
@@ -59,6 +66,11 @@ services:
     back:
         image: ${LOAD_IMAGE_PREFIX:?}/back:${LOAD_IMAGE_TAG:?}
         pull_policy: never
+        healthcheck:
+            start_period: 240s
+            start_interval: 3s
+            interval: 5s
+            retries: 12
         environment:
             PLAY_URL: http://konclui-load.localhost:8094
             SECRET_KEY: ${SECRET_KEY:?}
@@ -78,6 +90,11 @@ services:
     map-storage:
         image: ${LOAD_IMAGE_PREFIX:?}/map-storage:${LOAD_IMAGE_TAG:?}
         pull_policy: never
+        healthcheck:
+            start_period: 240s
+            start_interval: 3s
+            interval: 5s
+            retries: 12
         environment:
             API_URL: back:50051
             SECRET_KEY: ${SECRET_KEY:?}
