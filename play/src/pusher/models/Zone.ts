@@ -186,11 +186,24 @@ export class GroupDescriptor {
         return new GroupDescriptor(message.groupId, message.groupSize, position, message.locked, message.userIds);
     }
 
-    public update(groupDescriptor: GroupDescriptor): void {
+    /**
+     * Takes the size, position, lock and members of `groupDescriptor`. Returns whether the size, the lock or the
+     * members differ from the ones this descriptor held, i.e. whether more than the position changed.
+     */
+    public update(groupDescriptor: GroupDescriptor): boolean {
+        const membersChanged = !sameIds(this._userIds, groupDescriptor._userIds);
+        const changed =
+            membersChanged || this.groupSize !== groupDescriptor.groupSize || this.locked !== groupDescriptor.locked;
         this.groupSize = groupDescriptor.groupSize;
         this.position = groupDescriptor.position;
         this.locked = groupDescriptor.locked;
+        if (membersChanged) {
+            // Kept, or every later move would compare against the old members and be sent as a change.
+            this._userIds = groupDescriptor._userIds;
+            this.groupUsersUpdateSubMessage = undefined;
+        }
         this.groupUpdateSubMessage = undefined;
+        return changed;
     }
 
     public updateUsers(userIds: number[]): void {
@@ -256,6 +269,10 @@ export const groupDeleteSubMessage = rememberLast((groupId: number) =>
     encodeOnce({ message: { $case: "groupDeleteMessage", groupDeleteMessage: { groupId } } }),
 );
 
+function sameIds(first: readonly number[], second: readonly number[]): boolean {
+    return first.length === second.length && first.every((id, index) => id === second[index]);
+}
+
 interface ZoneDescriptor {
     x: number;
     y: number;
@@ -289,8 +306,12 @@ export class Zone {
         const groupId = message.groupId;
         const oldGroupDescriptor = this.groups.get(groupId);
         if (oldGroupDescriptor !== undefined) {
-            oldGroupDescriptor.update(groupDescriptor);
-            this.notifyGroupMove(groupDescriptor);
+            // The back sends one of these each time a user of the group takes a step, only to say where the group is
+            // now. A client draws a bubble around its users, so it has no use for that; the position is kept, for a
+            // socket that starts watching the zone later, and the sockets are told only what they can show.
+            if (oldGroupDescriptor.update(groupDescriptor)) {
+                this.notifyGroupMove(groupDescriptor);
+            }
         } else {
             this.groups.set(groupId, groupDescriptor);
             const fromZone = message.fromZone;

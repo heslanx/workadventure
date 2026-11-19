@@ -8,6 +8,11 @@ class GaugeManager {
     private nbGroupsPerRoomCounter: Counter<string>;
     private nbSpacesGauge: Gauge<string>;
     private nbDroppedMovesCounter: Counter<string>;
+    private nbMovingSocketsGauge: Gauge<string>;
+
+    // What the pusher sent in batches, by sub-message type. Plain integers, because every socket adds to them about ten
+    // times a second for each type it is sent: the two sub-message counters copy them when Prometheus scrapes.
+    private subMessageTotals: Map<string, { messages: number; bytes: number }> = new Map();
 
     // Internal counters to track values per room
     private clientsPerRoom: Map<string, number> = new Map();
@@ -46,6 +51,36 @@ class GaugeManager {
             name: "workadventure_counter_dropped_moves",
             help: "Counter of moves not forwarded to the back because a socket sent more than the allowed rate",
             labelNames: [],
+        });
+
+        this.nbMovingSocketsGauge = new Gauge({
+            name: "workadventure_pusher_moving_sockets",
+            help: "Number of sockets whose last move had moving=true",
+            labelNames: [],
+        });
+
+        const totals = this.subMessageTotals;
+        new Counter({
+            name: "workadventure_pusher_sub_messages_total",
+            help: "Counter of sub-messages sent to the clients in batches, by type",
+            labelNames: ["type"] as const,
+            collect() {
+                this.reset();
+                for (const [type, total] of totals) {
+                    this.inc({ type }, total.messages);
+                }
+            },
+        });
+        new Counter({
+            name: "workadventure_pusher_sub_messages_bytes_total",
+            help: "Counter of the bytes of the sub-messages sent to the clients in batches, by type, with the tag and length of each entry",
+            labelNames: ["type"] as const,
+            collect() {
+                this.reset();
+                for (const [type, total] of totals) {
+                    this.inc({ type }, total.bytes);
+                }
+            },
         });
     }
 
@@ -109,6 +144,25 @@ class GaugeManager {
 
     incNbDroppedMoves(): void {
         this.nbDroppedMovesCounter.inc();
+    }
+
+    incNbMovingSockets(): void {
+        this.nbMovingSocketsGauge.inc();
+    }
+
+    decNbMovingSockets(): void {
+        this.nbMovingSocketsGauge.dec();
+    }
+
+    /** Counts one sub-message of `bytes` bytes (its entry in the batch, tag and length included) sent in a batch. */
+    addSubMessage(type: string, bytes: number): void {
+        let total = this.subMessageTotals.get(type);
+        if (total === undefined) {
+            total = { messages: 0, bytes: 0 };
+            this.subMessageTotals.set(type, total);
+        }
+        total.messages += 1;
+        total.bytes += bytes;
     }
 }
 

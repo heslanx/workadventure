@@ -125,6 +125,8 @@ export class SocketManager implements ZoneEventListener {
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
     // Keyed by socket so that a limiter goes away with its socket.
     private moveRateLimiters = new WeakMap<PusherWebSocket, MoveRateLimiter>();
+    // The sockets whose last move had moving=true; the moving sockets gauge counts them.
+    private movingSockets = new WeakSet<PusherWebSocket>();
 
     constructor(private _spaceConnection: SpaceConnectionInterface = new SpaceConnection()) {
         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
@@ -670,6 +672,8 @@ export class SocketManager implements ZoneEventListener {
 
         const socketData = client.getUserData();
 
+        this.trackMoving(client, false);
+
         try {
             this.leaveRoom(client);
         } catch (e) {
@@ -725,6 +729,8 @@ export class SocketManager implements ZoneEventListener {
             throw new Error("Client has no back connection");
         }
 
+        this.trackMoving(client, userMovesMessage.position?.moving === true);
+
         if (this.isMoveAllowed(client, userMovesMessage)) {
             socketData.backConnection.write({
                 message: {
@@ -744,6 +750,20 @@ export class SocketManager implements ZoneEventListener {
         }
 
         this.handleViewport(client, viewport);
+    }
+
+    /** Keeps the moving sockets gauge in step with the last move of a socket; a socket that is cleaned up has none. */
+    private trackMoving(client: PusherWebSocket, moving: boolean): void {
+        if (moving === this.movingSockets.has(client)) {
+            return;
+        }
+        if (moving) {
+            this.movingSockets.add(client);
+            gaugeManager.incNbMovingSockets();
+        } else {
+            this.movingSockets.delete(client);
+            gaugeManager.decNbMovingSockets();
+        }
     }
 
     /**

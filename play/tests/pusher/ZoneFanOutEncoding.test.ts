@@ -84,12 +84,12 @@ function userMoves(userId: number, x: number, y: number, direction: PositionMess
     return UserMovedMessage.fromPartial({ userId, position: { x, y, direction, moving } });
 }
 
-function group(groupId: number, x: number, userIds: number[]): GroupUpdateZoneMessage {
+function group(groupId: number, x: number, userIds: number[], locked = false): GroupUpdateZoneMessage {
     return GroupUpdateZoneMessage.fromPartial({
         groupId,
         position: { x, y: 100 },
         groupSize: userIds.length,
-        locked: false,
+        locked,
         userIds,
     });
 }
@@ -147,9 +147,10 @@ function replayZoneEvents() {
     zone.handleUserMoved(userMoves(MOVER_ID, 65, 20, PositionMessage_Direction.DOWN, false));
     flush(first, second);
 
-    // Frame 3: a group that is moved twice in one batch (conflated), then given users, then updated again.
+    // Frame 3: a group that is updated twice in one batch (conflated), then given users, then updated again. The
+    // second update also locks the group: a move alone is not sent at all (ZoneGroupUpdate.test.ts).
     zone.handleGroupUpdateZone(group(3, 100, [7, 8]));
-    zone.handleGroupUpdateZone(group(3, 110, [7, 8]));
+    zone.handleGroupUpdateZone(group(3, 110, [7, 8], true));
     zone.handleGroupUsersUpdate({ groupId: 3, userIds: [7, 8, 9] });
     zone.handleGroupUpdateZone(group(3, 120, [7, 8, 9]));
     zone.handleGroupUpdateZone(group(4, 400, [20, 21]));
@@ -189,7 +190,7 @@ const FRAMES_OF_THE_FIRST_TWO_WATCHERS: string[] = [
         "3a0808071204f09f918d120c0a0a08071206084110141802",
     ].join(""),
     [
-        "080312520a501214121208031204086e10641a02080222002a020708120ac20107080312030708091215121308031204",
+        "080312540a521216121408031204086e10641a020802220208012a020708120ac20107080312030708091215121308031204",
         "087810641a02080322002a03070809121512130804120508900310641a02080222002a021415",
     ].join(""),
     "0804120e0a0c12042a02080712041a020803",
