@@ -205,6 +205,49 @@ files (a dead process or a leftover file), or requested bots that do not add up 
 `staircase.json` also counts a level as failed when its `merged.json` requested another number of bots than the level.
 Run the merge by hand without the two flags and those checks are skipped.
 
+## Staircase on the CI pool
+
+`ci/run-load.sh <out dir>` does the whole run on one Docker daemon: it builds the back, map-storage and play images
+from the checkout, and for every level it starts a fresh stack (`ci/compose.yaml`: Traefik, play, back, map-storage,
+redis, the office map of `ci/fixtures/`), runs `scripts/load-staircase.sh` for that one level and removes the stack.
+The generator runs in the play image, on the stack's network: that image holds the generated protocol code and the
+protocol version the pusher accepts. Nothing is published on the host.
+
+`ci/load-run.env` holds what runs, and a value in the environment wins over it:
+
+| Step                      | What it is                                                                                                                                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `calibration`             | The procedure of the workstation baseline (every bot walks, one generator process, 60 s, statistics over the whole run), to tell the host from the workstation.                         |
+| `budget-off`, `budget-on` | The staircase with the defaults of the code and with `PUSHER_VIEWER_BUDGET_ENABLED=true`. The two scenarios of a level run side by side, and the one that goes first alternates.        |
+| `profile`                 | One more level with a CPU profile of the pusher inside the steady window (`scripts/inspector-profile.mjs`, summarized by `scripts/profile-summary.mjs`). Its numbers carry the profiler. |
+
+Read the result with three cautions:
+
+1. Under the viewer budget a socket hears its 150 nearest peers at full rate, the next ones once a second and none
+   beyond 400, while the move probe expects every move. Delivery of `budget-on` is lower by design, so its staircase
+   runs with `--min-delivery=0` and its knee rests on validity and server CPU. Compare the two scenarios on server CPU,
+   event-loop lag and kbit/s per session.
+2. The CI host is shared. Every verdict line in `run.txt` ends with how long the cgroup of the run was throttled and
+   with the CPU pressure of the host during the level; `host-load.txt` of each level holds the counters. A level that
+   was throttled measured the limit of the pool, not the servers.
+3. `docker-stats.txt` holds per-container CPU only where the daemon keeps a cgroup per container. The pool's rootless
+   daemon does not, and the file then says so: the CPU of the servers is `serverCpu` in `merged.json`.
+
+The script exits 0 when every level produced a measurement, saturated or not, and 1 when an image did not build, a
+stack did not start or the generator of a level failed.
+
+`.github/workflows/konclui-load.yml` runs it on the self-hosted pool (`runs-on: [self-hosted, ci-host]`) for a push to a
+branch named `konclui/load/<anything>`, and measures the commit that branch points at. A branch named
+`konclui/load/smoke<anything>` runs every step once with 100 bots and short levels. The job uses nothing GitHub bills:
+the results are printed in the job log between two marker lines, and `ci/fetch-results.sh <run id> <dir>` reads them
+back into a folder (the whole server logs stay on the runner; their last lines travel).
+
+```bash
+git push <remote> <commit>:refs/heads/konclui/load/<name>
+gh run list --workflow konclui-load.yml --limit 1
+benchmark/ci/fetch-results.sh <run id> ./load-out/<name>
+```
+
 ## Checks
 
 ```bash
