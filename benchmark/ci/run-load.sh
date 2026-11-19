@@ -108,21 +108,22 @@ host_load() {
   } >>"$1"
 }
 
-# cgroup_cpu: the CPU limit and counters of the cgroup this run lives in and of every cgroup above it. A shared pool
-# caps its jobs as a whole: a level that the cap throttled measured the cap, not the servers.
+# cgroup_cpu: the CPU limit, the throttling counters and the pressure of the cgroup this run lives in and of every
+# cgroup above it, below the root (the root is the machine, already printed). A shared pool caps its jobs as a whole: a
+# level that the cap throttled measured the cap, not the servers.
 cgroup_cpu() {
   local path name file found=0
   path="/sys/fs/cgroup$(sed -n 's/^0:://p' /proc/self/cgroup 2>/dev/null || true)"
   path=${path%/}
-  while :; do
+  while [ "$path" != /sys/fs/cgroup ]; do
     name=${path#/sys/fs/cgroup}
     for file in cpu.max cpu.stat cpu.pressure; do
       if [ -r "$path/$file" ]; then
         found=1
-        sed "s|^|cgroup ${name:-/} $file |" "$path/$file"
+        awk -v prefix="cgroup $name $file " \
+          '/^(max|[0-9]|nr_periods|nr_throttled|throttled_usec|some)/ { print prefix $0 }' "$path/$file"
       fi
     done
-    [ "$path" = /sys/fs/cgroup ] && break
     path=${path%/*}
   done
   [ "$found" = 1 ] || echo "cgroup CPU counters not readable here"
@@ -230,21 +231,35 @@ run_level() {
     >"$dir/generator.log" 2>&1 || code=$?
 
   if [ -n "$profiler_pid" ]; then
-    if wait "$profiler_pid" && compose cp play:/tmp/pusher-profile.json "$dir/pusher-profile.json" >/dev/null 2>&1; then
+    # The profile leaves the container through exec, the way the profiler went in: docker cp fails on the pool's
+    # rootless daemon.
+    if ! wait "$profiler_pid"; then
+      note "$scenario n$level: the profiler failed, see profiler.txt"
+    elif ! compose exec -T play cat /tmp/pusher-profile.json >"$dir/pusher-profile.json" 2>>"$dir/profiler.txt"; then
+      rm -f "$dir/pusher-profile.json"
+      note "$scenario n$level: the profile could not be read out of the container, see profiler.txt"
+    else
       in_play_image none "$dir" node scripts/profile-summary.mjs /out/pusher-profile.json \
         flushBatch send encodeBatchFrame handleUserMoved reconcileZones >"$dir/profile-summary.txt" 2>&1 ||
         note "$scenario n$level: the profile summary failed, see profile-summary.txt"
-    else
-      note "$scenario n$level: no CPU profile, see profiler.txt"
     fi
   fi
 
   local shared
   shared=$(contention "$throttled_before" "$stalled_before" $((SECONDS - started)))
   stop_sampler
+  # A daemon that keeps no cgroup per container reports nothing, or the same figure for every container: the figure of
+  # the cgroup they all share. Then the file keeps one line per sample and says what the line is.
   if ! awk '$3 != "0.00%" { found = 1 } END { exit !found }' "$dir/docker-stats.txt"; then
-    echo "no CPU per container from this daemon (it keeps no cgroup per container): see serverCpu in merged.json" \
-      >"$dir/docker-stats.txt"
+    echo "no CPU per container from this daemon: see serverCpu in merged.json" >"$dir/docker-stats.txt"
+  elif awk '{ figure = $3 " " $4; if ($1 == time && figure != last) differ = 1; time = $1; last = figure }
+    END { exit differ }' "$dir/docker-stats.txt"; then
+    {
+      echo "this daemon keeps no cgroup per container: each line is every container of the daemon together"
+      echo "(the stack and the generator); the CPU of each server is serverCpu in merged.json"
+      awk '$1 != time { print $1, "all containers", $3, $4; time = $1 }' "$dir/docker-stats.txt"
+    } >"$dir/docker-stats.tmp"
+    mv "$dir/docker-stats.tmp" "$dir/docker-stats.txt"
   fi
   host_load "$dir/host-load.txt" end
   compose logs --no-color play >"$dir/play.log" 2>&1 || true
