@@ -1,6 +1,5 @@
 <script lang="ts">
 </script>
 
-<div class="w-full z-10 flex items-center">
-    <div class="bg-white/10 w-full h-[1px]"></div>
-</div>
+<!-- The parent stacks its children without a gap: the rule brings its own 6 px either side. -->
+<hr class="k-divider" />

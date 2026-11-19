@@ -48,44 +48,48 @@
         ></video>
     {:else}
         <div class="w-full h-full flex items-center justify-center text-white/50">
-            <IconCamera font-size="32" aria-hidden="true" />
+            <IconCamera width="18" height="18" aria-hidden="true" />
         </div>
     {/if}
 </div>
 
 <SectionDivider />
 {#if !$backgroundProcessingSupportedStore}
-    <p class="text-xs text-white/70 px-1 py-2" data-testid="background-effects-unsupported">
+    <p class="m-0 px-3 py-1.5 text-xs text-white/70" data-testid="background-effects-unsupported">
         {$LL.warning.backgroundProcessing.notSupportedOnThisBrowser()}
     </p>
 {:else}
-    <div class="scrollable-content overflow-y-auto flex flex-col gap-2 flex-1 min-h-0">
-        <!-- No Effect Button -->
-        <button
-            class="relative z-10 flex flex-col gap-1 group text-left"
-            aria-current={isNoEffectSelected ? "true" : undefined}
-            onclick={() => setBackgroundMode("none")}
-        >
-            <div
-                class="relative w-1/3 h-full aspect-square rounded-lg bg-white/10 flex flex-col items-center justify-center transition-all gap-1 hover:brightness-50 border-2 {isNoEffectSelected
-                    ? 'border-white border-solid'
-                    : 'border-transparent hover:border-white/30'}"
+    <!-- The bottom padding keeps the last row of tiles off the rim once the list is scrolled to its end. -->
+    <div class="k-scroll-y flex min-h-0 flex-1 flex-col gap-1.5 pb-1.5">
+        <!-- No Effect Button: one cell of the tile grid below, so its hit area is the tile and its edges line up. -->
+        <div class="grid grid-cols-3 gap-1.5">
+            <button
+                type="button"
+                class="relative z-10 flex flex-col gap-1 group text-left"
+                aria-current={isNoEffectSelected ? "true" : undefined}
+                onclick={() => setBackgroundMode("none")}
             >
-                {#if isNoEffectSelected}
-                    <IconCheck font-size="16" aria-hidden="true" />
-                {:else}
-                    <IconCancel font-size="16" aria-hidden="true" />
-                {/if}
-                <span class="text-xs group-hover:text-white transition-colors"
-                    >{$LL.actionbar.background.noEffect()}</span
+                <div
+                    class="relative w-full aspect-square rounded-lg bg-white/10 flex flex-col items-center justify-center transition-all gap-1 hover:brightness-50 border-2 {isNoEffectSelected
+                        ? 'border-white border-solid'
+                        : 'border-transparent hover:border-white/30'}"
                 >
-            </div>
-        </button>
+                    {#if isNoEffectSelected}
+                        <IconCheck width="18" height="18" aria-hidden="true" />
+                    {:else}
+                        <IconCancel width="18" height="18" aria-hidden="true" />
+                    {/if}
+                    <span class="text-xs group-hover:text-white transition-colors"
+                        >{$LL.actionbar.background.noEffect()}</span
+                    >
+                </div>
+            </button>
+        </div>
 
         <!-- Blur Section -->
-        <div class="relative z-10 flex flex-col gap-2 px-1">
+        <div role="group" aria-label={$LL.actionbar.background.blur()} class="relative z-10 flex flex-col gap-1.5">
             <SectionTitle title={$LL.actionbar.background.blur()} />
-            <div class="grid grid-cols-3 gap-1">
+            <div class="grid grid-cols-3 gap-1.5">
                 {#each blurOptions as option (option.amount)}
                     {@const isSelected =
                         $backgroundConfigStore.mode === "blur" && $backgroundConfigStore.blurAmount === option.amount}
@@ -123,9 +127,13 @@
 
         <!-- Images Section -->
         {#if $availableBackgroundImagesStore.length > 0}
-            <div class="relative z-10 flex flex-col gap-2">
+            <div
+                role="group"
+                aria-label={$LL.actionbar.background.images()}
+                class="relative z-10 flex flex-col gap-1.5"
+            >
                 <SectionTitle title={$LL.actionbar.background.images()} />
-                <div class="grid grid-cols-3 gap-1 px-1">
+                <div class="grid grid-cols-3 gap-1.5">
                     {#each $availableBackgroundImagesStore as image, index (index)}
                         <BackgroundPresetButton
                             thumbnail={image.thumbnailUrl}

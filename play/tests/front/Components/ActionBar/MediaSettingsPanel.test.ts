@@ -85,6 +85,69 @@ describe("MediaSettingsPanel", () => {
         return target.textContent ?? "";
     }
 
+    // The office menu's standard (docs/konclui-migration/ui-contracts.md, "Menus and controls over the map"): the
+    // classes of libs/tailwind/style/konclui.css carry the measured values, and the browser measures the result.
+    describe("on the menu standard", () => {
+        function renderedPanel(): HTMLElement {
+            renderedText();
+            const scroller = target.firstElementChild;
+            if (!(scroller instanceof HTMLElement)) throw new Error("The panel rendered no scroller");
+            return scroller;
+        }
+
+        it("scrolls in the standard scroller, with room below the last row and no gap around the dividers", () => {
+            const scroller = renderedPanel();
+
+            expect(scroller.classList).toContain("k-scroll-y");
+            expect(scroller.classList).toContain("min-h-0");
+            expect(scroller.classList).toContain("pb-1.5");
+            expect(scroller.classList).not.toContain("scrollable-content");
+            expect(scroller.className).not.toMatch(/\bgap-/);
+        });
+
+        it("names each section as a group under its title, and separates them with the standard divider", () => {
+            const scroller = renderedPanel();
+            const groups = [...scroller.querySelectorAll(':scope > [role="group"]')];
+
+            expect(groups.map((group) => group.getAttribute("aria-label"))).toEqual(
+                expect.arrayContaining(["Camera", "Microphone"]),
+            );
+            for (const group of groups) {
+                const title = group.querySelector(".k-menu-title");
+                expect(title?.textContent?.trim()).toBe(group.getAttribute("aria-label"));
+                expect(title?.getAttribute("aria-hidden")).toBe("true");
+            }
+            expect(groups[0].nextElementSibling?.matches("hr.k-divider")).toBe(true);
+            expect(scroller.querySelector(".uppercase, .text-xxs, .bg-white\\/10")).toBeNull();
+        });
+
+        it("says why the camera shows nothing in a left-aligned note, and offers to turn it on without the danger colour", () => {
+            requestedCameraState.disableWebcam();
+            const scroller = renderedPanel();
+            const message = scroller.querySelector('[role="group"][aria-label="Camera"] p');
+            const turnOn = [...scroller.querySelectorAll("button")].find(
+                (button) => button.textContent?.trim() === "Turn on your camera",
+            );
+
+            expect(message?.parentElement?.classList).toContain("text-start");
+            expect(message?.parentElement?.classList).toContain("px-3");
+            expect(scroller.querySelector(".italic, .text-center")).toBeNull();
+            expect(turnOn?.classList).toContain("btn-secondary");
+            expect(scroller.querySelector(".btn-danger")).toBeNull();
+        });
+
+        it("draws the microphone settings action as a dock-sized control whose glyph the control sizes", () => {
+            const scroller = renderedPanel();
+            const gear = scroller.querySelector('[data-testid="microphone-settings-button"]');
+
+            expect(gear?.classList).toContain("k-control");
+            expect(gear?.getAttribute("aria-label")).toBe(gear?.getAttribute("title"));
+            expect(gear?.firstElementChild?.tagName.toLowerCase()).toBe("svg");
+            expect(gear?.firstElementChild?.getAttribute("font-size")).toBeNull();
+            expect(gear?.className).not.toContain("text-white/50");
+        });
+    });
+
     it("says that another application holds the camera when the camera was turned off for that reason", () => {
         requestedCameraState.disableWebcam();
         cameraAccessIssueStore.set("device_in_use");

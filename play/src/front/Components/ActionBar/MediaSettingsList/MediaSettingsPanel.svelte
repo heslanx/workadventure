@@ -102,21 +102,24 @@
             $rawLocalStreamStore.stream.getAudioTracks().length > 0) ||
             ($requestedMicrophoneState && $usedMicrophoneDeviceIdStore !== undefined),
     );
+
+    // A device's state (blocked, in use, none, off) starts on the 12 px inset of the rows and section titles.
+    const note = "flex flex-col gap-0.5 px-3 py-1.5 text-start";
+    const noteTitle = "m-0 text-sm text-(--k-fg-2)";
+    const noteDetail = "m-0 text-xs text-(--k-fg-muted)";
+    const noteAction = "px-3 pb-1.5";
 </script>
 
-<div class="scrollable-content overflow-y-auto flex flex-col gap-2 flex-1 min-h-0">
+<!-- The bottom padding keeps the last row off the rim once the list is scrolled to its end. -->
+<div class="k-scroll-y flex min-h-0 flex-1 flex-col pb-1.5">
     <!-- Camera Section -->
-    <div class="flex flex-col gap-1">
-        <SectionTitle>
-            <div class="flex items-center gap-1">
-                <IconCamera font-size="14" aria-hidden="true" />
-                {$LL.actionbar.subtitle.camera()}
-            </div>
-        </SectionTitle>
+    <div role="group" aria-label={$LL.actionbar.subtitle.camera()} class="flex flex-col gap-0.5">
+        <SectionTitle title={$LL.actionbar.subtitle.camera()} />
         {#if $silentStore == false && cameraLoaded && $cameraListStore && $cameraListStore.length > 0}
             {#each $cameraListStore as camera, index (index)}
                 <DeviceListItem
                     label={camera.label}
+                    icon={IconCamera}
                     isSelected={$usedCameraDeviceIdStore === camera.deviceId}
                     onclick={() => {
                         analyticsClient.trackAdminEvent("settings.camera.selected");
@@ -125,37 +128,35 @@
                 />
             {/each}
         {:else}
-            <div class="group flex items-center relative z-10 px-2 font-sm justify-center">
-                <div class="text-sm italic text-center">
-                    {#if $cameraAccessDeniedStore}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.permissionDeniedTitle()}</p>
-                    {:else if $cameraAccessIssueStore === "device_in_use"}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.deviceInUseTitle()}</p>
-                        <span class="text-xs text-white/60">{$LL.camera.help.tooltip.deviceInUseDesc()}</span>
-                    {:else if $cameraAccessIssueStore === "no_device" || (!$devicesNotLoaded && $cameraListStore !== undefined && $cameraListStore.length === 0)}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.tooltip.noDeviceTitle()}</p>
-                        <span class="text-xs text-white/60">{$LL.camera.help.tooltip.noDeviceDesc()}</span>
-                    {:else if $cameraPermissionStateStore === "prompt" && !$requestedCameraState}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.title()}</p>
-                        <span class="text-xs text-white/60">{$LL.camera.help.content()}</span>
-                    {:else if $mediaStreamConstraintsStore.video === false || !$requestedCameraState}
-                        <p class="text-sm p-0 m-0">{$LL.actionbar.camera.disabled()}</p>
-                    {:else if $rawLocalStreamStore.type === "error"}
-                        <p class="text-sm p-0 m-0">{$LL.camera.startError.camera()}</p>
-                    {:else}
-                        <p class="text-sm p-0 m-0">{$LL.chat.loading()}...</p>
-                    {/if}
-                </div>
+            <div class={note}>
+                {#if $cameraAccessDeniedStore}
+                    <p class={noteTitle}>{$LL.camera.help.tooltip.permissionDeniedTitle()}</p>
+                {:else if $cameraAccessIssueStore === "device_in_use"}
+                    <p class={noteTitle}>{$LL.camera.help.tooltip.deviceInUseTitle()}</p>
+                    <p class={noteDetail}>{$LL.camera.help.tooltip.deviceInUseDesc()}</p>
+                {:else if $cameraAccessIssueStore === "no_device" || (!$devicesNotLoaded && $cameraListStore !== undefined && $cameraListStore.length === 0)}
+                    <p class={noteTitle}>{$LL.camera.help.tooltip.noDeviceTitle()}</p>
+                    <p class={noteDetail}>{$LL.camera.help.tooltip.noDeviceDesc()}</p>
+                {:else if $cameraPermissionStateStore === "prompt" && !$requestedCameraState}
+                    <p class={noteTitle}>{$LL.camera.help.title()}</p>
+                    <p class={noteDetail}>{$LL.camera.help.content()}</p>
+                {:else if $mediaStreamConstraintsStore.video === false || !$requestedCameraState}
+                    <p class={noteTitle}>{$LL.actionbar.camera.disabled()}</p>
+                {:else if $rawLocalStreamStore.type === "error"}
+                    <p class={noteTitle}>{$LL.camera.startError.camera()}</p>
+                {:else}
+                    <p class={noteTitle}>{$LL.chat.loading()}...</p>
+                {/if}
             </div>
             {#if $silentStore == false}
-                <div class="group flex items-center relative z-10 py-1 px-2 overflow-hidden">
+                <div class={noteAction}>
                     {#if $cameraAccessDeniedStore}
-                        <Button variant="danger" size="sm" class="w-full" onclick={showHelpCameraSettings}>
+                        <Button variant="secondary" size="sm" class="w-full" onclick={showHelpCameraSettings}>
                             {$LL.actionbar.microphone.openSettings()}
                         </Button>
                     {:else}
                         <Button
-                            variant="danger"
+                            variant="secondary"
                             size="sm"
                             class="w-full"
                             onclick={() => {
@@ -174,22 +175,18 @@
     <SectionDivider />
 
     <!-- Microphone Section -->
-    <div class="flex flex-col gap-1">
-        <SectionTitle>
-            <div class="flex items-center gap-1">
-                <IconMicrophoneOn font-size="14" aria-hidden="true" />
-                {$LL.actionbar.subtitle.microphone()}
-            </div>
+    <div role="group" aria-label={$LL.actionbar.subtitle.microphone()} class="flex flex-col gap-0.5">
+        <SectionTitle title={$LL.actionbar.subtitle.microphone()}>
             {#snippet actions()}
                 <button
                     type="button"
                     data-testid="microphone-settings-button"
-                    class="flex h-7 w-7 items-center justify-center rounded text-white/50 hover:bg-white/10 hover:text-white"
+                    class="k-control"
                     aria-label={$LL.actionbar.microphone.openSettings()}
                     title={$LL.actionbar.microphone.openSettings()}
                     onclick={openMicrophoneSettings}
                 >
-                    <IconSettings font-size="14" aria-hidden="true" />
+                    <IconSettings aria-hidden="true" />
                 </button>
             {/snippet}
         </SectionTitle>
@@ -197,6 +194,7 @@
             {#each $microphoneListStore as microphone, index (index)}
                 <DeviceListItem
                     label={microphone.label}
+                    icon={IconMicrophoneOn}
                     isSelected={$usedMicrophoneDeviceIdStore === microphone.deviceId}
                     onclick={() => {
                         analyticsClient.trackAdminEvent("settings.microphone.selected");
@@ -204,7 +202,7 @@
                     }}
                 />
             {/each}
-            <div class="group flex flex-col relative z-10 py-1 px-2 overflow-hidden">
+            <div class="group flex flex-col relative z-10 px-3 py-1.5 overflow-hidden">
                 {#snippet noiseSuppressionActive()}
                     <span data-testid="noise-suppression-active" class="text-success">
                         {$LL.actionbar.microphone.noiseSuppressionActive()}
@@ -240,37 +238,35 @@
                 {/if}
             </div>
         {:else}
-            <div class="group flex items-center relative z-10 py-1 px-2 font-sm justify-center">
-                <div class="text-sm italic text-center">
-                    {#if $microphoneAccessDeniedStore}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.permissionDeniedTitle()}</p>
-                    {:else if $microphoneAccessIssueStore === "device_in_use"}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.deviceInUseTitle()}</p>
-                        <span class="text-xs text-white/60">{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</span>
-                    {:else if $microphoneAccessIssueStore === "no_device" || (!$devicesNotLoaded && $microphoneListStore !== undefined && $microphoneListStore.length === 0)}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.microphoneTooltip.noDeviceTitle()}</p>
-                        <span class="text-xs text-white/60">{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</span>
-                    {:else if $microphonePermissionStateStore === "prompt" && !$requestedMicrophoneState}
-                        <p class="text-sm p-0 m-0">{$LL.camera.help.title()}</p>
-                        <span class="text-xs text-white/60">{$LL.camera.help.content()}</span>
-                    {:else if $mediaStreamConstraintsStore.audio === false || !$requestedMicrophoneState}
-                        <p class="text-sm p-0 m-0">{$LL.actionbar.microphone.disabled()}</p>
-                    {:else if $rawLocalStreamStore.type === "error"}
-                        <p class="text-sm p-0 m-0">{$LL.camera.startError.microphone()}</p>
-                    {:else}
-                        <p class="text-sm p-0 m-0">{$LL.chat.loading()}...</p>
-                    {/if}
-                </div>
+            <div class={note}>
+                {#if $microphoneAccessDeniedStore}
+                    <p class={noteTitle}>{$LL.camera.help.microphoneTooltip.permissionDeniedTitle()}</p>
+                {:else if $microphoneAccessIssueStore === "device_in_use"}
+                    <p class={noteTitle}>{$LL.camera.help.microphoneTooltip.deviceInUseTitle()}</p>
+                    <p class={noteDetail}>{$LL.camera.help.microphoneTooltip.deviceInUseDesc()}</p>
+                {:else if $microphoneAccessIssueStore === "no_device" || (!$devicesNotLoaded && $microphoneListStore !== undefined && $microphoneListStore.length === 0)}
+                    <p class={noteTitle}>{$LL.camera.help.microphoneTooltip.noDeviceTitle()}</p>
+                    <p class={noteDetail}>{$LL.camera.help.microphoneTooltip.noDeviceDesc()}</p>
+                {:else if $microphonePermissionStateStore === "prompt" && !$requestedMicrophoneState}
+                    <p class={noteTitle}>{$LL.camera.help.title()}</p>
+                    <p class={noteDetail}>{$LL.camera.help.content()}</p>
+                {:else if $mediaStreamConstraintsStore.audio === false || !$requestedMicrophoneState}
+                    <p class={noteTitle}>{$LL.actionbar.microphone.disabled()}</p>
+                {:else if $rawLocalStreamStore.type === "error"}
+                    <p class={noteTitle}>{$LL.camera.startError.microphone()}</p>
+                {:else}
+                    <p class={noteTitle}>{$LL.chat.loading()}...</p>
+                {/if}
             </div>
             {#if $silentStore == false}
-                <div class="group flex items-center relative z-10 py-1 px-2 overflow-hidden">
+                <div class={noteAction}>
                     {#if $microphoneAccessDeniedStore}
-                        <Button variant="danger" size="sm" class="w-full" onclick={showHelpCameraSettings}>
+                        <Button variant="secondary" size="sm" class="w-full" onclick={showHelpCameraSettings}>
                             {$LL.actionbar.microphone.openSettings()}
                         </Button>
                     {:else}
                         <Button
-                            variant="danger"
+                            variant="secondary"
                             size="sm"
                             class="w-full"
                             onclick={() => {
@@ -291,23 +287,19 @@
         <SectionDivider />
 
         <!-- Speaker Section -->
-        <div class="flex flex-col gap-1">
-            <SectionTitle>
-                <div class="flex items-center gap-1">
-                    <IconHeadphones font-size="14" aria-hidden="true" />
-                    {$LL.actionbar.subtitle.speaker()}
-                </div>
+        <div role="group" aria-label={$LL.actionbar.subtitle.speaker()} class="flex flex-col gap-0.5">
+            <SectionTitle title={$LL.actionbar.subtitle.speaker()}>
                 {#snippet actions()}
                     {#if $speakerSelectedStore != undefined && $speakerListStore && $speakerListStore.length > 0}
                         <button
                             type="button"
                             data-testid="speaker-test-button"
-                            class="flex h-7 w-7 items-center justify-center rounded text-white/50 hover:bg-white/10 hover:text-white"
+                            class="k-control"
                             aria-label={$LL.actionbar.speaker.test()}
                             title={$LL.actionbar.speaker.test()}
                             onclick={() => playSpeakerTestSound().catch((e) => console.error(e))}
                         >
-                            <IconUnMute font-size="14" aria-hidden="true" />
+                            <IconUnMute aria-hidden="true" />
                         </button>
                     {/if}
                 {/snippet}
@@ -316,6 +308,7 @@
                 {#each $speakerListStore as speaker, index (index)}
                     <DeviceListItem
                         label={speaker.label}
+                        icon={IconHeadphones}
                         isSelected={$speakerSelectedStore === speaker.deviceId}
                         onclick={() => {
                             analyticsClient.trackAdminEvent("settings.speaker.selected");
@@ -324,15 +317,13 @@
                     />
                 {/each}
             {:else if $speakerListStore !== undefined}
-                <div class="cursor-pointer group flex items-center relative z-10 py-1 px-2 font-sm justify-center">
-                    <div class="text-sm italic text-center">
-                        {#if $speakerListStore.length === 0}
-                            <p class="text-sm p-0 m-0">{$LL.actionbar.speaker.noDevices()}</p>
-                            <span class="text-xs text-white/60">{$LL.actionbar.speaker.noDevicesDesc()}</span>
-                        {:else}
-                            {$LL.actionbar.speaker.disabled()}
-                        {/if}
-                    </div>
+                <div class={note}>
+                    {#if $speakerListStore.length === 0}
+                        <p class={noteTitle}>{$LL.actionbar.speaker.noDevices()}</p>
+                        <p class={noteDetail}>{$LL.actionbar.speaker.noDevicesDesc()}</p>
+                    {:else}
+                        <p class={noteTitle}>{$LL.actionbar.speaker.disabled()}</p>
+                    {/if}
                 </div>
             {/if}
         </div>

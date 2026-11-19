@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { Component } from "svelte";
     import { StringUtils } from "../../../Utils/StringUtils";
     import { IconCheck } from "@wa-icons";
 
@@ -6,15 +7,16 @@
         label: string;
         isSelected: boolean;
         onclick: () => void;
+        // The kind of device, in the lead slot. Without it the slot stays, empty, so the labels still align.
+        icon?: Component;
     }
 
-    let { label, isSelected, onclick }: Props = $props();
+    let { label, isSelected, onclick, icon: Icon }: Props = $props();
 </script>
 
 <button
-    class="group flex items-center relative z-10 p-1 pl-2 min-h-7 overflow-hidden rounded {isSelected
-        ? 'bg-secondary'
-        : 'hover:bg-white/10'}"
+    type="button"
+    class="k-menu-row"
     onclick={(event) => {
         event.stopPropagation();
         event.preventDefault();
@@ -22,16 +24,13 @@
     }}
     aria-current={isSelected ? "true" : undefined}
 >
-    <div
-        class="grow text-left text-sm text-ellipsis overflow-hidden whitespace-nowrap {isSelected
-            ? 'opacity-100'
-            : 'opacity-80 group-hover:opacity-100'}"
-        title={StringUtils.normalizeDeviceName(label)}
-    >
+    <span class="k-menu-lead" aria-hidden="true">
+        {#if Icon}<Icon />{/if}
+    </span>
+    <span class="k-menu-label" title={StringUtils.normalizeDeviceName(label)}>
         {StringUtils.normalizeDeviceName(label)}
-    </div>
-
+    </span>
     {#if isSelected}
-        <IconCheck font-size="20" aria-hidden="true" />
+        <IconCheck class="k-menu-mark" aria-hidden="true" />
     {/if}
 </button>

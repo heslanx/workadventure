@@ -330,9 +330,18 @@
         height: 36px;
         padding: 0;
     }
+    /*
+     * The camera and microphone popover opens above the dock, as wide as the office menu, and above the camera tiles
+     * of the layout (z 20). It never grows past the space above the dock: the dock stack's height covers the dock and
+     * its 14 px inset, and 84 px more covers the 10 px offset, the 6 px frame gap and the frame's top row (62 px at
+     * most) with 6 px to spare, so its own tabs stay reachable. 560 px keeps it below the camera strip on a tall screen.
+     */
     .dock :global([data-testid="media-settings-panel"]) {
         top: auto;
         bottom: calc(100% + 10px);
+        z-index: 50;
+        width: min(264px, calc(100vw - 16px));
+        max-height: min(560px, calc(100dvh - var(--konclui-dock-stack-height, 76px) - 84px));
     }
     /* The dock sits on the bottom edge: the reason a button gives for doing nothing opens above it, not below. */
     .dock-controls :global([data-testid$="-blocked-reason"]) {
