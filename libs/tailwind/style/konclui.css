@@ -556,6 +556,29 @@ html [data-theme="default"] {
     }
   }
 
+  /* A surface that opens over the map arrives from where it came: a fade and a short glide, in the theme's timing.
+     `--k-enter-x` and `--k-enter-y` set where it comes from (6 px below by default), `--k-enter-dur` and
+     `--k-enter-ease` the timing. Only opacity and transform move, so the map is not re-fitted frame by frame; a
+     grid column that animated blanked the canvas mid-slide (docs/konclui-migration/ui-contracts.md, Motion).
+     Entrance only: a surface that closes leaves at once. Under reduced motion it arrives in place. */
+  .k-enter {
+    animation: k-enter var(--k-enter-dur, var(--k-dur-fast))
+      var(--k-enter-ease, var(--k-ease-out-expo)) backwards;
+  }
+
+  @keyframes k-enter {
+    from {
+      opacity: 0;
+      transform: translate(var(--k-enter-x, 0px), var(--k-enter-y, 6px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .k-enter {
+      animation: none;
+    }
+  }
+
   /* A phone keeps the 36 px box and widens what a finger can hit to 42x44, as the dock does. In a column
      (`.k-control-column`) the wide side turns, so the areas of two controls 6 px apart never overlap. */
   @media (max-width: 767px) {

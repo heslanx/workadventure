@@ -204,7 +204,7 @@
 <svelte:window {onkeydown} {onpointerdown} />
 
 {#if $officeMenuOpenStore}
-    <div class="office-menu k-chrome block-user-action" bind:this={panel} data-testid="office-menu">
+    <div class="office-menu k-chrome k-enter block-user-action" bind:this={panel} data-testid="office-menu">
         <!-- The list scrolls, not the panel: the scroller's edge fade would fade the panel's rim and shadow. -->
         <div class="list k-scroll-y" role="menu" aria-label={$LL.konclui.officeMenu()}>
             {#each $menuGroupsStore as group, groupIndex (group.id)}
@@ -282,13 +282,9 @@
         border-radius: var(--k-radius-surface);
         color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
-        animation: k-office-menu-in var(--k-dur-fast) var(--k-ease-out-expo) backwards;
-    }
-    @keyframes k-office-menu-in {
-        from {
-            opacity: 0;
-            transform: translateX(-6px);
-        }
+        /* It comes from the rail, on its left. */
+        --k-enter-x: -6px;
+        --k-enter-y: 0px;
     }
     .list {
         flex: 1 1 auto;
@@ -320,11 +316,6 @@
             left: 8px;
             /* The top moved down by 50px: the box keeps 12px above the bottom edge, or its last row is off the screen. */
             max-height: calc(100dvh - 64px - 12px);
-        }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .office-menu {
-            animation: none;
         }
     }
 </style>

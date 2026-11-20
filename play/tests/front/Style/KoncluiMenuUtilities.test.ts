@@ -163,6 +163,30 @@ describe("menus and controls over the map", () => {
         expect(rule).not.toContain("#928ebb");
     });
 
+    it("gives a surface that opens over the map one entrance, in the theme's timing", () => {
+        const keyframes = `${utilities} @keyframes k-enter`;
+
+        expect(declared(utilities, ".k-enter", "animation")).toBe(
+            "k-enter var(--k-enter-dur, var(--k-dur-fast)) var(--k-enter-ease, var(--k-ease-out-expo)) backwards",
+        );
+        expect(declared(keyframes, "from", "opacity")).toBe("0");
+        expect(declared(keyframes, "from", "transform")).toBe(
+            "translate(var(--k-enter-x, 0px), var(--k-enter-y, 6px))",
+        );
+    });
+
+    it("moves only opacity and transform in the entrance, so the map is not re-fitted frame by frame", () => {
+        const from = rules.find(
+            (rule) => rule.context === `${utilities} @keyframes k-enter` && rule.selector === "from",
+        );
+
+        expect([...(from?.declarations.keys() ?? [])].sort()).toEqual(["opacity", "transform"]);
+    });
+
+    it("lets a viewer who reduces motion have the surface in place", () => {
+        expect(declared(`${utilities} @media (prefers-reduced-motion: reduce)`, ".k-enter", "animation")).toBe("none");
+    });
+
     it("exports the outline headphones glyph", () => {
         expect(icons).toContain('export { default as IconHeadphones } from "~icons/tabler/headphones";');
     });
