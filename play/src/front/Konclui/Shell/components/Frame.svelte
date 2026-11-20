@@ -196,7 +196,7 @@
         <aside
             id="konclui-side-panel"
             bind:this={panel}
-            class="side-panel"
+            class="side-panel k-enter"
             data-konclui-panel
             class:closed={view === "closed"}
             aria-label={conversationShown ? $LL.konclui.chat() : $LL.konclui.peoplePanel()}
@@ -313,7 +313,13 @@
     .rail .settings {
         margin-top: auto;
     }
+    /* It slides in from the rail. The grid switches at once and only this card moves (opacity and transform): a column
+       that animated re-fitted the map's canvas every frame and blanked it mid-slide, measured 2026-11-20. */
     .side-panel {
+        --k-enter-x: -24px;
+        --k-enter-y: 0px;
+        --k-enter-dur: var(--k-dur-settle);
+        --k-enter-ease: var(--k-ease-sheet);
         position: relative;
         margin-right: var(--frame-gap);
         min-width: 0;
@@ -402,7 +408,10 @@
         .logo-slot {
             display: block;
         }
+        /* On a phone it is a card over the map: it rises instead. */
         .side-panel {
+            --k-enter-x: 0px;
+            --k-enter-y: 16px;
             position: absolute;
             inset: 58px 8px 82px;
             margin-right: 0;

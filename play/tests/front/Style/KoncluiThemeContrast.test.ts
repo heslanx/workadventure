@@ -457,7 +457,7 @@ describe("Konclui theme contrast", () => {
                 expect(selector).toContain(":where(:not([data-konclui-panel] *, .bg-contrast\\/95 *))");
             }
             expect(read("Konclui/Shell/components/Frame.svelte")).toMatch(
-                /<aside[^>]*class="side-panel"[^>]*data-konclui-panel/,
+                /<aside[^>]*class="side-panel(?: k-enter)?"[^>]*data-konclui-panel/,
             );
         });
 

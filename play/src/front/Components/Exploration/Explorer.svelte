@@ -285,7 +285,9 @@
     }
 </script>
 
-<div class="mapexplorer flex flex-col overflow-auto">
+<div
+    class="mapexplorer k-enter flex flex-col overflow-auto [--k-enter-x:16px] [--k-enter-y:0px] [--k-enter-dur:var(--k-dur-normal)]"
+>
     <div class="header-container">
         <h3 class="text-l text-left">{$LL.mapEditor.explorer.title()}</h3>
     </div>

@@ -163,7 +163,7 @@
      rim. The list keeps 28px free: the 8px offset from the avatar, the surface's 12px of padding and 8px at the top
      edge. Without the dock (upstream's action bar), 68px gives upstream's former 100vh - 96px. -->
 <div
-    class="k-chrome rounded-lg p-1.5 w-66 max-w-[calc(100vw_-_16px)] text-white select-none"
+    class="k-chrome rounded-lg p-1.5 w-66 max-w-[calc(100vw_-_16px)] text-white select-none k-enter"
     data-testid="profile-menu"
 >
     <div

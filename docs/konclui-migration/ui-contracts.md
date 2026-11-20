@@ -159,3 +159,40 @@ Every menu, popover, and control that floats over the map follows the bottom doc
 `.scrollable-content` in `play/src/front/style/style.css` takes the same scrollbar values for its two media popover users.
 
 `--k-radius-control` (10 px) exists under UI-02: the dock's controls and the rail repeated a 10 px literal. No radius token expressed it, because it lies between `--k-radius-inner` (8 px) and `--k-radius-menu` (12 px), and every control sized like the dock needs the same value.
+
+## Motion of surfaces over the map
+
+Owner: `.k-enter` in `libs/tailwind/style/konclui.css`. Benefit named (MOT-01): orientation. A panel or menu that
+appears in one frame gives no hint of where it came from; a short move from its origin does.
+
+- **One entrance, one owner (MOT-02).** A surface that opens over the map carries `k-enter`. It animates only
+  `opacity` and `transform` (`from` keyframe), so it stays on the compositor. Per surface it sets `--k-enter-x`,
+  `--k-enter-y`, `--k-enter-dur` and `--k-enter-ease`; the defaults are 0 px, 6 px, `--k-dur-fast` and
+  `--k-ease-out-expo`. No other keyframes for entrances: the office menu's own were removed.
+- **Reduced motion (MOT-04).** `prefers-reduced-motion: reduce` sets `animation: none`, so the surface is in place at
+  its final state from the first frame. Nothing waits for `animationend`.
+- **Where each one comes from.**
+
+  | Surface | From | Duration, curve |
+  | --- | --- | --- |
+  | People/chat panel, wide | 24 px left, from the rail | `--k-dur-settle` (280 ms), `--k-ease-sheet` |
+  | People/chat panel, phone (≤767 px) | 16 px below, a card over the map | same |
+  | Office menu | 6 px left, from the logo | `--k-dur-fast`, `--k-ease-out-expo` |
+  | Profile menu (dock avatar) | 6 px below | same |
+  | Map explorer | 16 px right | `--k-dur-normal` (200 ms) |
+
+- **The grid column never animates.** `.konclui` switches its columns at once when the panel opens or closes; only the
+  card inside moves. Measured 2026-11-20 on the QA stack: animating `grid-template-columns` re-fitted the canvas 13
+  times per open and the map was black mid-transition. With the entrance on the card the canvas re-fits once (1 resize
+  recorded in a 2 s slow-motion open) and the map stays drawn. `KoncluiEntrance.test.ts` guards that no rule
+  transitions or animates the grid columns.
+- **Known gaps (recorded, not started).**
+  - Exits are still instant for every surface. The side panel's content is unmounted by the upstream `ChatSidebar`
+    while `$chatVisibilityStore` is false, so an exit needs either a lifecycle change there or a clone of the card;
+    a blank card sliding away would read worse than closing at once.
+  - The map still re-fits in one step when the column changes width.
+  - "Link copiado" in the office menu still appears without a transition.
+- **Verification (MOT-06).** Browser probes in the ledger evidence
+  (`evidence/ui-feedback-2026-11-19/motion/verify-motion.mjs`): slow-motion frames, reduced motion, 9 and 6 rapid
+  toggles, keyboard open with focus kept on the rail button, phone 375 and 768 px. Run against
+  `candidate-7be83ab59ade`: 16 of 16 passed. A frame-rate trace was not taken.
