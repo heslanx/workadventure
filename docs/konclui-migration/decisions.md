@@ -253,6 +253,16 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 
 **Reverse.** Item 1: build the knock message in a slice of its own, with the proto change recorded under C5. Item 2: removing a domain means deleting its `domainEdges` entry and its folder, which `architecture.test.ts` checks.
 
+## CONTROLS. A shared Controls domain for menu rows and controls (2026-11-20)
+
+**Decision.** The owner approved a separate folder for the shared components of the menus and controls over the map, "to have less noise", and agreed to the name `Controls` (PascalCase, as the other 167 folders of `play/src/front` against 48 lowercase ones, and as every Konclui domain). `Controls` is a leaf of the domain graph in `architecture.test.ts` (`domainEdges`): it has `components/` only, imports no other domain, and `OfficeMenu` imports it. The first slice is `MenuRow` and `MenuGroup`, which the office menu now consumes instead of 90 lines of scoped CSS. Upstream files cannot import Konclui, so they take the same look from the `.k-*` utilities in `libs/tailwind/style/konclui.css`.
+
+**Not decided.** `bits-ui` is not adopted: it is a new dependency, and what is missing today is CSS utilities and trivial components. ReUI (`/Users/erickheslan/Developments/study/reui`) is React: its designs are a reference, none of its code is copied.
+
+**Evidence.** The office menu's tests select by role and `data-testid`, and pass unchanged on the shared components. The browser check of the office menu after the change is recorded in the commit.
+
+**Reverse.** Delete the `Controls` entry of `domainEdges`, the `OfficeMenu` edge and the folder, and restore the scoped rules of `OfficeMenu.svelte` from the parent of the commit that introduced `Controls`.
+
 ## Landed slices and deviations (2026-11-19)
 
 Five commits landed after `a0fc2bf18`. Each carries unit-harness numbers (`docs/PERFORMANCE.md` Optimization Ledger) and none has a load run or a browser frame-time run. The three flags are off by default, Konclui included. This section records where the landed code differs from the text of C1, C2, C3 and C5 above, and why. The text above is kept as decided.

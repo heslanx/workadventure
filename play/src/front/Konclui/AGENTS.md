@@ -14,9 +14,12 @@ WorkAdventure. It reads upstream stores and classes as they are, and upstream ne
 
 ## Domains and layers
 
-Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Focus`, `OfficeMenu`, `Ambience`, `Preferences`) with up
+Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Focus`, `OfficeMenu`, `Ambience`, `Preferences`, `Controls`) with up
 to four layers. Files are named by feature, tests sit beside their source, and there are no barrel `index.ts` files.
-`Focus` and `OfficeMenu` joined the graph on 2026-11-18 (`docs/konclui-migration/decisions.md`, entry DOCK). A domain
+`Focus` and `OfficeMenu` joined the graph on 2026-11-18 (`docs/konclui-migration/decisions.md`, entry DOCK).
+`Controls` joined on 2026-11-20 (entry CONTROLS): the shared rows and controls of the menus over the map, PascalCase like every
+domain. It has `components/` only, imports no other domain, and only Konclui domains import it: upstream files take the
+same look from the `.k-*` utilities in `libs/tailwind/style/konclui.css`. A domain
 has an entry in `domainEdges` only while its folder exists: `architecture.test.ts` fails when the list, the folders and
 this sentence disagree. A planned domain is added with its first folder.
 

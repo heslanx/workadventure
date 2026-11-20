@@ -18,7 +18,8 @@ const selfPath = fileURLToPath(import.meta.url);
 
 /**
  * Direct imports each domain may make; every path through these edges is allowed too. `Shell` composes the other
- * domains, so nothing imports it, and `Preferences` is the leaf every domain may read.
+ * domains, so nothing imports it, `Preferences` is the leaf every domain may read, and `Controls` is the leaf of the
+ * shared menu rows and controls: it imports no other domain, and upstream does not import it.
  */
 const domainEdges: Readonly<Record<string, readonly string[]>> = {
     Shell: ["Presence", "Ambience", "OfficeMenu", "Focus"],
@@ -26,7 +27,8 @@ const domainEdges: Readonly<Record<string, readonly string[]>> = {
     Workplace: ["Preferences"],
     Focus: ["Workplace", "Preferences"],
     Ambience: ["Preferences"],
-    OfficeMenu: ["Preferences"],
+    OfficeMenu: ["Preferences", "Controls"],
+    Controls: [],
     Preferences: [],
 };
 

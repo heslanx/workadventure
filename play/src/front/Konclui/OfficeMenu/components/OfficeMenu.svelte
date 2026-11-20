@@ -1,6 +1,8 @@
 <script lang="ts">
     import type { Component } from "svelte";
     import { LL } from "../../../../i18n/i18n-svelte";
+    import MenuGroup from "../../Controls/components/MenuGroup.svelte";
+    import MenuRow from "../../Controls/components/MenuRow.svelte";
     import { openCompanionEditor, openNameEditor, openWokaEditor } from "../../Preferences/stores/gameCommands";
     import { openPreferences } from "../../Preferences/stores/preferencesStore";
     import {
@@ -20,7 +22,6 @@
     import { closeOfficeMenu, isOfficeMenuOpener, officeMenuOpenStore } from "../stores/officeMenuStore";
     import {
         IconCamera,
-        IconCheck,
         IconLink,
         IconMapEditor,
         IconMapSearch,
@@ -206,18 +207,18 @@
     <div class="office-menu k-chrome block-user-action" bind:this={panel} data-testid="office-menu">
         <!-- The list scrolls, not the panel: the scroller's edge fade would fade the panel's rim and shadow. -->
         <div class="list k-scroll-y" role="menu" aria-label={$LL.konclui.officeMenu()}>
-            {#each $menuGroupsStore as group (group.id)}
-                <div class="group" role="group" aria-label={groupTitles[group.id]}>
-                    <span class="group-title" aria-hidden="true">{groupTitles[group.id]}</span>
+            {#each $menuGroupsStore as group, groupIndex (group.id)}
+                {#if groupIndex > 0}
+                    <hr class="k-divider" />
+                {/if}
+                <MenuGroup title={groupTitles[group.id]}>
                     {#if group.id === "status" && locked}
                         <span class="reason" id="{id}-locked">{t.statusLocked()}</span>
                     {/if}
                     {#each group.entries as entry (entryKey(entry))}
                         {@const index = keys.indexOf(entryKey(entry))}
                         {#if entry.kind === "status"}
-                            <button
-                                type="button"
-                                class="row"
+                            <MenuRow
                                 role="menuitemradio"
                                 aria-checked={$statusStateStore.choice === entry.choice}
                                 aria-disabled={locked}
@@ -226,39 +227,38 @@
                                 data-testid="office-menu-status-{entry.choice}"
                                 onfocus={() => (active = index)}
                                 onclick={() => activate(entry)}
+                                label={statusLabels[entry.choice]}
+                                marked={$statusStateStore.choice === entry.choice}
                             >
-                                <span class="lead" aria-hidden="true">
-                                    <i class="dot" style="background-color: {dotColorOf(entry.choice)}"></i>
-                                </span>
-                                <span class="label">{statusLabels[entry.choice]}</span>
-                                {#if $statusStateStore.choice === entry.choice}
-                                    <IconCheck class="mark" width="18" height="18" aria-hidden="true" />
-                                {/if}
-                            </button>
+                                {#snippet lead()}
+                                    <i
+                                        class="block size-2.5 rounded-full"
+                                        style="background-color: {dotColorOf(entry.choice)}"
+                                    ></i>
+                                {/snippet}
+                            </MenuRow>
                         {:else}
                             {@const row = actionRows[entry.id]}
                             {@const Icon = row.icon}
                             {@const toggle = row.on !== undefined}
                             {@const on = row.on?.() ?? false}
-                            <button
-                                type="button"
-                                class="row"
+                            <MenuRow
                                 role={toggle ? "menuitemcheckbox" : "menuitem"}
                                 aria-checked={toggle ? on : undefined}
                                 tabindex={index === active ? 0 : -1}
                                 data-testid="office-menu-{entry.id}"
                                 onfocus={() => (active = index)}
                                 onclick={() => activate(entry)}
+                                label={row.label()}
+                                marked={toggle && on}
                             >
-                                <span class="lead" aria-hidden="true"><Icon width="18" height="18" /></span>
-                                <span class="label">{row.label()}</span>
-                                {#if toggle && on}
-                                    <IconCheck class="mark" width="18" height="18" aria-hidden="true" />
-                                {/if}
-                            </button>
+                                {#snippet lead()}
+                                    <Icon width="18" height="18" />
+                                {/snippet}
+                            </MenuRow>
                         {/if}
                     {/each}
-                </div>
+                </MenuGroup>
             {/each}
         </div>
         <p class="feedback" class:failed={feedback === "failed"} role="status">{feedbackText}</p>
@@ -294,89 +294,11 @@
         flex: 1 1 auto;
         min-height: 0;
     }
-    .group + .group {
-        margin-top: 6px;
-        padding-top: 6px;
-        border-top: 1px solid var(--k-border-subtle);
-    }
-    .group {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    .group-title {
-        padding: 6px 12px 2px;
-        color: var(--k-fg-muted);
-        font-size: 12px;
-        font-weight: 600;
-        line-height: 1.5;
-    }
     .reason {
         padding: 0 12px 4px;
         color: var(--k-fg-2);
         font-size: 12px;
         line-height: 1.5;
-    }
-    .row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        min-height: 44px;
-        margin: 0;
-        padding: 0 12px;
-        border: 0;
-        border-radius: var(--k-radius-inner);
-        background: transparent;
-        color: var(--k-fg-2);
-        font: inherit;
-        font-size: 14px;
-        font-weight: 600;
-        text-align: start;
-        cursor: pointer;
-    }
-    .row:hover {
-        background: var(--k-hover);
-        color: var(--k-fg);
-    }
-    /* Inside the box, so the list's scroll does not clip the ring. */
-    .row:focus-visible {
-        outline: 2px solid var(--k-accent);
-        outline-offset: -2px;
-    }
-    .row[aria-checked="true"],
-    .row[aria-checked="true"]:hover {
-        color: var(--k-accent);
-    }
-    /* A status the place decides stays in the list and keeps its focus; the reason is above it. */
-    .row[aria-disabled="true"] {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-    .row[aria-disabled="true"]:hover {
-        background: transparent;
-        color: var(--k-fg-2);
-    }
-    .lead {
-        display: flex;
-        flex: none;
-        align-items: center;
-        justify-content: center;
-        width: 18px;
-        height: 18px;
-    }
-    .dot {
-        display: block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-    }
-    .label {
-        flex: 1;
-        min-width: 0;
-    }
-    .row :global(.mark) {
-        flex: none;
     }
     .feedback {
         margin: 0;
