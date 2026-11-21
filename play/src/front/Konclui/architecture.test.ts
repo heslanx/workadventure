@@ -29,6 +29,8 @@ const domainEdges: Readonly<Record<string, readonly string[]>> = {
     Ambience: ["Preferences"],
     OfficeMenu: ["Preferences", "Controls"],
     Controls: [],
+    MapTools: [],
+    Reactions: [],
     Preferences: [],
 };
 

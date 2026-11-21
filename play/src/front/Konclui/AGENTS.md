@@ -14,7 +14,7 @@ WorkAdventure. It reads upstream stores and classes as they are, and upstream ne
 
 ## Domains and layers
 
-Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Focus`, `OfficeMenu`, `Ambience`, `Preferences`, `Controls`) with up
+Each domain is a folder (`Shell`, `Presence`, `Workplace`, `Focus`, `OfficeMenu`, `Ambience`, `Preferences`, `Controls`, `MapTools`, `Reactions`) with up
 to four layers. Files are named by feature, tests sit beside their source, and there are no barrel `index.ts` files.
 `Focus` and `OfficeMenu` joined the graph on 2026-11-18 (`docs/konclui-migration/decisions.md`, entry DOCK).
 `Controls` joined on 2026-11-20 (entry CONTROLS): the shared rows and controls of the menus over the map, PascalCase like every
