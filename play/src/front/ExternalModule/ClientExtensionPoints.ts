@@ -6,6 +6,7 @@ import type { MessageUserJoined } from "../Connection/ConnexionModels";
 import type { RemotePlayer } from "../Phaser/Entity/RemotePlayer";
 import type { GameScene } from "../Phaser/Game/GameScene";
 import type { Player } from "../Phaser/Player/Player";
+import type { SpaceInterface, SpaceUserExtended } from "../Space/SpaceInterface";
 import type { ViewportBounds } from "../Stores/CoWebsiteLayout";
 
 /**
@@ -47,6 +48,45 @@ export function registerAppFrame(frame: AppFrameComponent): void {
 /** The registered frame, or `undefined` when the app is not framed. */
 export function getAppFrame(): AppFrameComponent | undefined {
     return appFrame;
+}
+
+/** What an extension gives the scene in place of the two things it reads from the world space itself. */
+export interface WorldSpaceReading {
+    /**
+     * How many people the world holds, which the scene publishes as its world count instead of the count it makes from
+     * the roster. 0 means "not known yet".
+     */
+    readonly count: Readable<number>;
+    /**
+     * The people of the world, for the chat, which lists them in its member avatars, its mention search and the subtitle
+     * of a conversation. The space's own store watches every person of the world as soon as it has a subscriber, at any
+     * headcount; this one asks for them only when the extension's own rule allows it, and is empty otherwise.
+     */
+    readonly users: Readable<ReadonlyMap<string, SpaceUserExtended>>;
+}
+
+/** What an extension does with the world space: the space every client joins to see who is in the world. */
+export interface WorldSpaceExtension {
+    /**
+     * Called when the scene has joined the world space. It returns what the scene reads of the world instead of the count
+     * and the people it makes from the roster: those watch every person of the world from the start, and the extension
+     * watches only while something reads them.
+     *
+     * `signal` aborts when the scene is gone: free what the call holds then.
+     */
+    joined(space: SpaceInterface, signal: AbortSignal): WorldSpaceReading;
+}
+
+let worldSpaceExtension: WorldSpaceExtension | undefined;
+
+/** Registers what the extension does with the world space. A later registration replaces the earlier one. */
+export function registerWorldSpaceExtension(extension: WorldSpaceExtension): void {
+    worldSpaceExtension = extension;
+}
+
+/** The registered extension, or `undefined`: the scene then counts the world from the roster, as upstream does. */
+export function getWorldSpaceExtension(): WorldSpaceExtension | undefined {
+    return worldSpaceExtension;
 }
 
 /** A component that takes the place of the default action bar while `active` is true. */
@@ -114,6 +154,47 @@ export const embeddedChatHost: Readable<boolean> = derived<typeof registeredEmbe
     false,
 );
 
+/** A component that fills the map tools slot: the controls that stand above the map's zoom controls. */
+export interface MapToolsOverride {
+    /**
+     * Renders the tools as the children of the zoom column, with no wrapper of its own: each control it draws is one
+     * more row of that column, and a component that draws nothing leaves no gap.
+     */
+    readonly component: Component;
+    /** Whether the tools are shown right now. */
+    readonly active: Readable<boolean>;
+}
+
+const registeredMapTools = writable<MapToolsOverride | undefined>(undefined);
+
+/** Registers the tools of the map tools slot. A later registration replaces the earlier one. */
+export function registerMapTools(override: MapToolsOverride): void {
+    registeredMapTools.set(override);
+}
+
+/**
+ * The component that fills the map tools slot right now: the registered one while its `active` store is true,
+ * `undefined` otherwise, including when nothing is registered.
+ *
+ * While it is a component, the tools own the control that brings the view back to the avatar, so the zoom column keeps
+ * its "explore the room" control where upstream swaps it for "show my location" after a drag. It is flattened here
+ * for the same reason as `activeActionBar`.
+ */
+export const activeMapTools: Readable<Component | undefined> = derived<
+    typeof registeredMapTools,
+    Component | undefined
+>(
+    registeredMapTools,
+    (override, set) => {
+        if (override === undefined) {
+            set(undefined);
+            return;
+        }
+        return override.active.subscribe((active) => set(active ? override.component : undefined));
+    },
+    undefined,
+);
+
 /** What the scene shows an extension on each frame. */
 export interface SceneFrameContext {
     readonly scene: GameScene;
@@ -130,6 +211,15 @@ export interface SceneFrameContext {
     readonly remotePlayers: ReadonlyMap<number, MessageUserJoined>;
     /** A variable of the current player, `undefined` when it is not set. */
     getPlayerVariable(key: string): unknown;
+    /**
+     * A variable shared by the whole room (the map declares it, any script or player may set it), `undefined` when
+     * the room has none of that name. The value is replaced, never changed in place, so two reads that return the
+     * same object mean nothing changed.
+     *
+     * The scene always provides it. It is optional so that the frames other extensions already build for their own
+     * tests stay valid: an extension that reads it calls it with `?.`.
+     */
+    getRoomVariable?(key: string): unknown;
 }
 
 /** Code that follows the game scene: it is called on each frame and told when the scene shuts down. */

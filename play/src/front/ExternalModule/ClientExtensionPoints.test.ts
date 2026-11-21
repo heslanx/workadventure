@@ -80,6 +80,32 @@ describe("app frame", () => {
     });
 });
 
+describe("world space extension", () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    const reading = (count: number) => ({ count: readable(count), users: readable(new Map()) });
+    const extension = { joined: () => reading(7) };
+
+    it("is absent until an extension registers one, so that the scene counts the world from the roster", async () => {
+        const { getWorldSpaceExtension } = await import("./ClientExtensionPoints");
+
+        expect(getWorldSpaceExtension()).toBeUndefined();
+    });
+
+    it("hands the registered extension to the scene, and keeps the last one registered", async () => {
+        const { getWorldSpaceExtension, registerWorldSpaceExtension } = await import("./ClientExtensionPoints");
+        const later = { joined: () => reading(9) };
+
+        registerWorldSpaceExtension(extension);
+        expect(getWorldSpaceExtension()).toBe(extension);
+        registerWorldSpaceExtension(later);
+
+        expect(getWorldSpaceExtension()).toBe(later);
+    });
+});
+
 describe("activeActionBar", () => {
     beforeEach(() => {
         vi.resetModules();
@@ -166,6 +192,99 @@ describe("activeActionBar", () => {
         registerActionBar({ component: dock, active });
 
         const unsubscribe = activeActionBar.subscribe(() => undefined);
+        expect(listeners).toBe(1);
+        unsubscribe();
+
+        expect(listeners).toBe(0);
+    });
+});
+
+describe("activeMapTools", () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    const tools: Component = () => ({});
+    const otherTools: Component = () => ({});
+
+    async function loadPort() {
+        return await import("./ClientExtensionPoints");
+    }
+
+    it("is undefined when no extension registers tools, so that the zoom column is upstream's own", async () => {
+        const { activeMapTools } = await loadPort();
+
+        expect(get(activeMapTools)).toBeUndefined();
+    });
+
+    it("stays undefined while the registered tools are not active", async () => {
+        const { activeMapTools, registerMapTools } = await loadPort();
+
+        registerMapTools({ component: tools, active: readable(false) });
+
+        expect(get(activeMapTools)).toBeUndefined();
+    });
+
+    it("is the tools component while the tools are active", async () => {
+        const { activeMapTools, registerMapTools } = await loadPort();
+
+        registerMapTools({ component: tools, active: readable(true) });
+
+        expect(get(activeMapTools)).toBe(tools);
+    });
+
+    it("follows the active store of the tools and tells its subscribers each time it changes", async () => {
+        const { activeMapTools, registerMapTools } = await loadPort();
+        const active = writable(false);
+        registerMapTools({ component: tools, active });
+        const seen: Array<Component | undefined> = [];
+        const unsubscribe = activeMapTools.subscribe((component) => seen.push(component));
+
+        active.set(true);
+        active.set(false);
+        unsubscribe();
+
+        expect(seen).toEqual([undefined, tools, undefined]);
+    });
+
+    it("picks up tools registered after a consumer subscribed", async () => {
+        const { activeMapTools, registerMapTools } = await loadPort();
+        const seen: Array<Component | undefined> = [];
+        const unsubscribe = activeMapTools.subscribe((component) => seen.push(component));
+
+        registerMapTools({ component: tools, active: readable(true) });
+        unsubscribe();
+
+        expect(seen).toEqual([undefined, tools]);
+    });
+
+    it("switches to the tools registered last and ignores the active store of the ones it replaced", async () => {
+        const { activeMapTools, registerMapTools } = await loadPort();
+        const firstActive = writable(true);
+        registerMapTools({ component: tools, active: firstActive });
+        const seen: Array<Component | undefined> = [];
+        const unsubscribe = activeMapTools.subscribe((component) => seen.push(component));
+
+        registerMapTools({ component: otherTools, active: readable(false) });
+        firstActive.set(false);
+        firstActive.set(true);
+        unsubscribe();
+
+        expect(seen).toEqual([tools, undefined]);
+    });
+
+    it("stops listening to the active store of the tools once nothing reads the slot", async () => {
+        const { activeMapTools, registerMapTools } = await loadPort();
+        let listeners = 0;
+        const active = readable(true, () => {
+            listeners += 1;
+            return () => {
+                listeners -= 1;
+            };
+        });
+        registerMapTools({ component: tools, active });
+
+        const unsubscribe = activeMapTools.subscribe(() => undefined);
         expect(listeners).toBe(1);
         unsubscribe();
 
