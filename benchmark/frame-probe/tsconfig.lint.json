@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "skipLibCheck": true,
+        "noEmit": true,
+        "target": "es2022",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "types": ["node"]
+    },
+    "include": ["./**/*.ts", "../tests/frameprobe-*.test.ts", "../tests/support/frameProbeFixtures.ts"]
+}

@@ -267,6 +267,159 @@ npm run typecheck
 The tests drive the harness against an in-process fake pusher over real sockets; they do not need a running
 WorkAdventure.
 
+## Frame probe (a real browser)
+
+`frame-probe/` is the browser half of a load run. The generator above measures the servers and renders nothing; the probe
+enters the room as one guest in a real Chromium and times the client's own frames with the recorder the client already
+carries (`e2eHooks.startFrameRecording()` and `stopFrameRecording()`, `play/src/front/Utils/E2EHooks.ts`). It is the gate
+for the client frame budgets of `docs/PERFORMANCE.md`: frame work p95 at most 16.7 ms with 200 visible avatars and at
+most 33.3 ms with 1000 (`docs/TESTING.md` N-04, plan actions 5, 11 and 17, decision C2 slice 0).
+
+It starts no bots and no server. Start the bots first (the staircase above, on the same room) and keep them up for as long
+as `--dry-run` says. It needs a GPU: on macOS `npx playwright install chromium` once, then the default is the Metal
+backend of the full Chromium. A run whose WebGL renderer is a software rasteriser (SwiftShader, llvmpipe) is invalid
+unless you pass `--allow-software-renderer`, because those frame times say nothing about a user's machine.
+
+```bash
+cd benchmark
+npx tsx frame-probe/run.ts frames <room url> --dry-run     # the plan and how long it takes, no browser
+npx tsx frame-probe/run.ts frames <room url> [options]
+```
+
+**What a run is.** A session is one fresh browser context per condition: the scene effects (`konclui.fx.off`) on or off and
+the avatar detail budget (`localStorage avatarDetailBudget`, commit `47865006b`) off or on, applied before the page loads
+and read back after it. Inside a session: enter as a guest, settle 5 s, record 25 s at the default zoom, then send two wheel
+events over the canvas, record the zoom step (from the first wheel event to 2 s after the last one), wait until the scale
+stops changing, wait 2 s more, and record 25 s at the whole-map zoom. After each of the two long recordings the WebSocket
+bytes are counted through CDP in a window of their own (5 s): CDP copies every frame's payload on the page's main thread,
+so it is never switched on inside a recording. The DOM name tags are counted last (`.username-display`: in the DOM, and
+laid out), so the count is the crowd at the end of the phase. The whole matrix runs `--runs` rounds (3), each round
+starting one condition later than the last, and the figure of a condition is the median of its runs, with the lowest and
+highest beside it. The first failed session stops the run.
+
+| Phase (`@view`) | What it covers |
+|---|---|
+| `default` | The recording at the default zoom |
+| `zoom` | From the first wheel event to the end of `--zoom-window-seconds`: the avatar rebuilds the zoom causes are its frames, and its long tasks are the "2 s after the zoom" |
+| `wholeMap` | The recording at the whole-map zoom, after the scale settled |
+
+Each phase reports `work`, `step` and `render` p50 and p95 (the recorder's definitions; `work` is the series a budget is
+judged on), `interval` p95, frames, long tasks (count, longest, total, from a page observer, in that phase's window), name
+tags, and received and sent KiB/s (p50 and p95 of whole seconds). `gpu.*` (avg, p50, p95, p99, max) is the recorder's GPU
+timer query, quoted only when at least 90% of the rendered frames have a sample (`GPU_MIN_COVERAGE`, `E2EHooks.ts`). A
+browser without the timer, or with too few samples, gives `n/a` and the page's reason (for example `extension-missing`)
+under the verdict: that is a normal state, not a failed run, but a budget on a `gpu.*` metric then makes the run invalid
+(exit 2), never a pass. `work.avg` is `n/a` against a client whose recorder has no averages.
+
+**Budgets and the exit code.** Nothing is judged unless a budget is given. A budget is
+`METRIC=LIMIT[@VIEW][:fx=on|off][:detail=on|off]` on the median of the runs. Without conditions it binds every condition
+measured, the baseline ones included: with the detail budget off at 300 bots the whole-map view is the thing being
+fixed, so a budget meant for the shipped configuration names its conditions after the `:`.
+
+```bash
+--budget=work.p95=16.7@default                 # every condition: at most 16.7 ms
+--budget=work.p95=33.3@wholeMap                # at most 33.3 ms
+--budget=longTasks.count=0@zoom:detail=on      # only the rows with the detail budget on: no long task (50 ms or more)
+                                               # in the 2 s after the wheel
+--require-reduction=work.p50=50@wholeMap       # detail budget on at least 50% below off, per effects setting
+--expect-at-least=nameTags.present=300@wholeMap  # the crowd the bots should make (see below)
+```
+
+A budget whose conditions nothing measured (`:detail=on` with `--detail-budget=off`) cannot be read, and that is never a
+pass. `--expect-at-least=METRIC=MIN[@VIEW]` is the opposite bound, for what the run assumes about its load: the **lowest
+run** of every condition must reach `MIN`, or the run is invalid, not failed, because the numbers then describe another
+crowd. Budgets are upper bounds, so without it a staircase that expired, never started or joined another room lowers
+every number toward a pass. `nameTags.present` counts the `.username-display` tags in the DOM: one per avatar the client
+holds, hidden or not (the detail budget hides a tag with `display: none`, `UsernameDisplay.setHidden`, and keeps its
+element), and the probe's own. The pusher sends the users near the client's viewport, so at the default zoom the count
+is the neighbourhood, not the crowd; at the whole-map zoom the viewport is the map, so `nameTags.present` there is the
+bots plus one. Put the minimum on `@wholeMap` (the bots, so one of slack) or, with `--views=default`, on a count you saw
+in a run.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Every budget held, or none was given |
+| 1 | A budget was exceeded |
+| 2 | The measurement cannot be trusted, or the arguments are wrong: a session failed, the run stopped early, a recording outgrew its buffer or has no frame, the wheel did not zoom out, the renderer is software, an expected crowd is not there, or a budget names something nobody measured. Never read as a pass |
+
+`--out-dir` (default: a new folder under the system temp directory) receives `frame-probe.json` (schema version 1: the
+runs, the summaries and the verdict) and `frame-probe.md` (the summary, also printed). `--screenshots` adds a PNG at the end
+of every phase of every run, to put the detail budget off and on side by side.
+
+**0, 100 and 300 bots.** Put the room URL and the servers in the shell once; with 0 bots there is no staircase.
+
+```bash
+ROOM=http://127.0.0.1:3010/~/konclui-office/office.wam     # the room the bots join
+PUSHER=http://127.0.0.1:3010 WS=http://127.0.0.1:3001      # as in the staircase example above
+cd benchmark
+OUT=../.local/konclui/qa/frame-runs                        # ignored by git
+```
+
+```bash
+# 0 bots: the full matrix, 12 sessions, about 20 minutes
+npx tsx frame-probe/run.ts frames "$ROOM" --budget=work.p95=16.7@default --out-dir=$OUT/bots-0
+
+# 100 and 300 bots: terminal A starts the bots (one process, 5 moves a second, every bot walks the baseline ellipse)...
+scripts/load-staircase.sh --levels=100 --processes=1 --ramp-seconds=30 --duration-seconds=1500 \
+  -- --pusher-url=$PUSHER --ws-url=$WS --room-urls="$ROOM" --move-hz=5
+# ...terminal B starts the probe once the ramp is over (about 45 s later); --levels=300 for the second run
+npx tsx frame-probe/run.ts frames "$ROOM" --screenshots --budget=work.p95=16.7@default \
+  --expect-at-least=nameTags.present=100@wholeMap --out-dir=$OUT/bots-100
+npx tsx frame-probe/run.ts frames "$ROOM" --expect-at-least=nameTags.present=300@wholeMap \
+  --budget=work.p95=16.7@default:detail=on \
+  --budget=longTasks.count=0@zoom:detail=on --budget=longTasks.count=0@wholeMap:detail=on \
+  --require-reduction=work.p50=50@wholeMap --out-dir=$OUT/bots-300
+```
+
+The 300 command is the acceptance of decision C2 and plan action 17: with the detail budget on, no long task in the zoom
+step or at the whole-map zoom and the frame cost at least half below the detail budget off, for the crowd the bots
+should make. The rows with the detail budget off are the baseline, which the first budget leaves out and the long tasks of
+which would otherwise fail it; read them in `frame-probe.md`. Exit 0 is a pass, 1 a failed criterion, and 2 a run to
+repeat: a missing crowd, a failed session, a software renderer.
+
+**How long the bots must stay up.** `--duration-seconds` of the staircase counts from the start of the bots, ramp included,
+and the probe starts about 45 s after them. So it is the length of the sessions plus 45 s plus a margin, not the length
+of the sessions plus the ramp: `frames --dry-run` prints the figure to use (1329 s for the matrix above, which the 1500 s
+of the example covers; 411 s for the shipping run). A crowd that leaves before the last recording ends makes that
+session read low, and `--expect-at-least` turns it into an invalid run.
+
+`--fx=on --detail-budget=off` measures only the shipping configuration (3 sessions, about 5 minutes: give the bots the
+`--duration-seconds` that `--dry-run` prints for those flags).
+The generator and the browser share the machine, so read `generator.cpuPercentOfOneCore` of the staircase's `gen-0.json`
+next to the report: a saturated generator or a loaded machine makes the numbers indicative only.
+
+**Screenshot passes.** The same entry flow drives the two QA walkthroughs, reproducible from git:
+
+```bash
+npx tsx frame-probe/run.ts compare "$ROOM" --reference-url=<reference url> --viewports=1451x855,375x812 --out-dir=$OUT/compare
+npx tsx frame-probe/run.ts panel "$ROOM" --out-dir=$OUT/panel
+```
+
+`compare` walks the entry, the office and every tab of the settings, saves one PNG per step
+(`<side>-<width>-<step>.png`) and, with a reference, `side-by-side-<width>-<step>.png` with the native build on the left;
+steps only one side has are reported. `panel` checks the side panel: it opens by itself once per room from 768 px, Escape
+closes it, focus returns to the control that opened it, and the people and chat buttons toggle it. The entry flow is read
+by its Portuguese labels (`frame-probe/entry.ts`), so the locale is `pt-BR`.
+
+```bash
+npm test -- tests/frameprobe-signals.test.ts   # percentiles, CDP bytes, long-task windows, zoom scale, settling, recording shape
+npm test -- tests/frameprobe-verdict.test.ts   # budget grammar, medians against limits, reductions, valid or not
+npm test -- tests/frameprobe-report.test.ts    # schedule, estimate, median of runs, report shape and Markdown
+npm test -- tests/frameprobe-cli.test.ts       # the command line, and the gate end to end with a canned browser
+```
+
+The tests run without a browser: the page is stood in for by canned sessions, so nothing here proves a selector or a wheel
+event works. That is checked by running the probe.
+
+`benchmark/` has no lint script and CI does not lint it. The probe and its tests are checked with the repository rules
+(`libs/eslint-config`) through the config next to them, by hand, from `benchmark/`:
+
+```bash
+npx eslint -c frame-probe/eslint.config.mjs frame-probe tests/frameprobe-*.test.ts tests/support/frameProbeFixtures.ts
+```
+
+It is the shared config with one change: `no-await-in-loop` is off, because the sessions run one at a time on purpose.
+
 ## What to watch on the server
 
 - CPU of the play and back Node processes.
