@@ -21,6 +21,7 @@
     import HelpTooltip from "../Tooltip/HelpTooltip.svelte";
     import { connectionManager } from "../../Connection/ConnectionManager";
     import { popupStore } from "../../Stores/PopupStore";
+    import { reactionsMenuExtension } from "../../ExternalModule/ReactionsMenuPort";
     import SayPopUp from "../PopUp/SayPopUp.svelte";
     import Button from "../UI/Button.svelte";
     import { gameManager } from "../../Phaser/Game/GameManager";
@@ -177,6 +178,10 @@
             <div class="py-1 flex">
                 {#each [...$emoteDataStore.keys()] as key, index (index)}
                     {@const editSelected = $emoteMenuStore && $emoteMenuSubCurrentEmojiSelectedStore === key}
+                    {@const emojiName = $emoteDataStore.get(key)?.name}
+                    <!-- Undefined, so no attribute, unless an extension names the reaction. -->
+                    {@const reactionLabel =
+                        emojiName === undefined ? undefined : $reactionsMenuExtension?.describeReaction(emojiName, key)}
                     <div class="transition-all bottom-action-button divide-x">
                         <button
                             onclick={(event) => {
@@ -185,6 +190,8 @@
                                 clickEmoji(key);
                             }}
                             id={`button-${$emoteDataStore.get(key)?.name}`}
+                            title={reactionLabel}
+                            aria-label={reactionLabel}
                             class="group emoji py-2 px-2 m-0 flex items-center transition-all rounded {editSelected
                                 ? 'bg-secondary'
                                 : 'hover:bg-white/20'}"
@@ -271,6 +278,11 @@
             </div>
             -->
         </div>
+        {#if $reactionsMenuExtension}
+            {@const Section = $reactionsMenuExtension.section}
+            <div class="w-full h-[1px] bg-white/10"></div>
+            <Section />
+        {/if}
         <!-- Divider -->
         {#if isSayBubbleEnabled}
             <div class="w-full h-[1px] bg-white/10"></div>

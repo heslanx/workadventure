@@ -26,6 +26,8 @@ import { lazyLoadPlayerCharacterTextures } from "./PlayerTexturesLoadingManager"
 import { SpeechBubble } from "./SpeechBubble";
 import { SpeechDomElement } from "./SpeechDomElement";
 import { ThinkingCloud } from "./ThinkingCloud";
+import type { CustomEmote } from "./CustomEmotes";
+import { findCustomEmote, loadCustomEmoteElement } from "./CustomEmotes";
 
 import Container = Phaser.GameObjects.Container;
 import RenderTexture = Phaser.GameObjects.RenderTexture;
@@ -75,6 +77,9 @@ export abstract class Character extends Container implements OutlineableInterfac
     public companion?: Companion;
     private emote: DOMElement | null = null;
     private emoteTween: Tween | null = null;
+    // Stands for the custom emote whose art is loading. It is replaced or cleared when another emote is played or the
+    // character goes, so a load that finishes late finds it is not the one asked for any more and draws nothing.
+    private pendingCustomEmote: object | undefined;
     private texts: Map<string, DOMElement> = new Map();
     private textsToBuild = new Map();
     scene: GameScene;
@@ -673,6 +678,10 @@ export abstract class Character extends Container implements OutlineableInterfac
     }
 
     destroy(): void {
+        // A character that goes while an emote is on screen or loading must not leave a tween running on a destroyed
+        // object, nor draw the emote when its art arrives.
+        this.pendingCustomEmote = undefined;
+        this.emoteTween?.remove();
         this.usernameDisplay?.destroy();
         if (this.scene) {
             this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncDisplayPositionWithPhysics);
@@ -689,14 +698,64 @@ export abstract class Character extends Container implements OutlineableInterfac
 
     playEmote(emote: string) {
         this.cancelPreviousEmote();
-        const emoteY = -45;
+        // The renderer skips a character that is not drawn: an emote built for it, with its element, its tweens and its
+        // art, would be built for nobody. The emote is skipped, not delayed: it does not come back when the character does.
+        if (!this.isDrawn()) return;
+        const custom = findCustomEmote(emote);
+        if (custom === undefined) {
+            this.showEmote(this.createEmoteText(emote));
+            return;
+        }
+        this.playCustomEmote(emote, custom);
+    }
+
+    private createEmoteText(emote: string): HTMLElement {
         const span = document.createElement("span");
         // The emote comes from another player: it is plain text (an emoji) and must never be interpreted as HTML.
         span.textContent = emote;
-        this.emote = new DOMElement(this.scene, -1, 0, span, "z-index:10;");
+        return span;
+    }
+
+    /**
+     * Whether the renderer draws this character, which is what its container's visibility says. A remote player that is
+     * out of the camera view or drawn as a dot is hidden (see RemotePlayerCulling and RemotePlayer.setDetail()).
+     */
+    protected isDrawn(): boolean {
+        return this.visible;
+    }
+
+    private showEmote(content: HTMLElement) {
+        // The art of a custom emote can arrive after the character left the camera view.
+        if (!this.isDrawn()) return;
+        const emoteY = -45;
+        this.emote = new DOMElement(this.scene, -1, 0, content, "z-index:10;");
         this.emote.setAlpha(0);
         this.add(this.emote);
         this.createStartTransition(emoteY);
+    }
+
+    /**
+     * Draws a custom emote when its art is a texture, which is at once from the second play on. Until then the
+     * character shows nothing, and a later emote or the end of the character cancels this one. When the art cannot
+     * be loaded the message is drawn as the emoji text it carries, which is what a client without the art shows.
+     */
+    private playCustomEmote(emote: string, custom: CustomEmote) {
+        const pending = {};
+        this.pendingCustomEmote = pending;
+        loadCustomEmoteElement(this.scene.textures, custom, this.playerName).then(
+            (element) => {
+                if (this.pendingCustomEmote !== pending) return;
+                this.pendingCustomEmote = undefined;
+                this.showEmote(element);
+            },
+            (error: unknown) => {
+                console.error(`The custom emote "${custom.id}" could not be loaded`, error);
+                Sentry.captureException(error);
+                if (this.pendingCustomEmote !== pending) return;
+                this.pendingCustomEmote = undefined;
+                this.showEmote(this.createEmoteText(emote));
+            },
+        );
     }
 
     playText(
@@ -803,6 +862,8 @@ export abstract class Character extends Container implements OutlineableInterfac
     }
 
     private cancelPreviousEmote() {
+        // An emote that is still loading its art must not come up after the one that replaces it.
+        this.pendingCustomEmote = undefined;
         if (!this.emote) return;
 
         this.emoteTween?.remove();
