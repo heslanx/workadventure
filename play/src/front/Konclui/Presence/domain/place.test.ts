@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSamePlace, placeAt, type AreaLike } from "./place";
+import { isSamePlace, placeAt, placeName, type AreaLike } from "./place";
 
 // Areas as the reference office's map has them: a workstation wing with a booth inside it, a room, the unnamed arrival
 // area (the one with a `start` property), an unnamed area in the corridor and one the map editor left behind.
@@ -84,5 +84,19 @@ describe("isSamePlace", () => {
         [undefined, { kind: "entrance" }, false],
     ] as const)("compares %j with %j as %s", (a, b, same) => {
         expect(isSamePlace(a, b)).toBe(same);
+    });
+});
+
+describe("placeName", () => {
+    const names = { entrance: "Entrada", hall: "Hall", outside: "Área externa" };
+
+    it("is the name the map gave an area", () => {
+        expect(placeName({ kind: "area", name: "Sala 01" }, names)).toBe("Sala 01");
+    });
+
+    it("is the interface's own word for the places the map does not name", () => {
+        expect(placeName({ kind: "entrance" }, names)).toBe("Entrada");
+        expect(placeName({ kind: "hall" }, names)).toBe("Hall");
+        expect(placeName({ kind: "outside" }, names)).toBe("Área externa");
     });
 });

@@ -94,3 +94,28 @@ export function isSamePlace(a: Place | undefined, b: Place | undefined): boolean
     if (a.kind !== b.kind) return false;
     return a.kind === "area" && b.kind === "area" ? a.name === b.name : true;
 }
+
+/** The names the interface gives to the places the map does not name. */
+export interface PlaceNames {
+    readonly entrance: string;
+    readonly hall: string;
+    readonly outside: string;
+}
+
+/** What a place is called: the name the map gave an area, and the interface's own word for the other places. */
+export function placeName(place: Place, names: PlaceNames): string {
+    switch (place.kind) {
+        case "area":
+            return place.name;
+        case "entrance":
+            return names.entrance;
+        case "hall":
+            return names.hall;
+        case "outside":
+            return names.outside;
+        default: {
+            const unreachable: never = place;
+            throw new Error(`Unhandled place: ${JSON.stringify(unreachable)}`);
+        }
+    }
+}

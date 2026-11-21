@@ -1,7 +1,7 @@
 import type { Readable, Writable } from "svelte/store";
 import { derived, writable } from "svelte/store";
 import type { PartialAdminUser } from "../Connection/ChatConnection";
-import type { SpaceInterface } from "../../Space/SpaceInterface";
+import type { SpaceUserExtended } from "../../Space/SpaceInterface";
 import type { UserProviderInterface } from "./UserProviderInterface";
 import { mapExtendedSpaceUserToChatUser } from "./ChatUserMapper";
 
@@ -10,9 +10,13 @@ export class WorldUserProvider implements UserProviderInterface {
     public readonly userCount: Readable<number>;
     private filter: Writable<string> = writable("");
 
-    constructor(allUsersInWorldSpace: SpaceInterface) {
+    /**
+     * `world` is the world space, or anything that holds its users in a `usersStore`: an extension that decides when the
+     * world is watched hands the chat its own store of them, so that the chat does not subscribe the space's.
+     */
+    constructor(world: { readonly usersStore: Readable<ReadonlyMap<string, SpaceUserExtended>> }) {
         this.users = derived(
-            [allUsersInWorldSpace.usersStore, this.filter],
+            [world.usersStore, this.filter],
             ([users, filter]) => {
                 return Array.from(users.values())
                     .filter((user) => user.name.toLowerCase().includes(filter.toLowerCase()))

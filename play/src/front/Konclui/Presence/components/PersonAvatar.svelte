@@ -3,10 +3,11 @@
 
     // Initials on a tone of the name, drawn as the text the name is: names come from other people's browsers, so they
     // never go through `{@html}`. It carries no name of its own: whoever stacks it says in words who the people are.
-    let { name }: { name: string } = $props();
+    // `size` is its width in pixels, and `--avatar-ring` the colour of the surface it stands on, which its ring takes.
+    let { name, size = 30 }: { name: string; size?: number } = $props();
 </script>
 
-<span class="person-avatar" data-tone={toneOf(name)}>{initialsOf(name)}</span>
+<span class="person-avatar" data-tone={toneOf(name)} style:--avatar-size="{size}px">{initialsOf(name)}</span>
 
 <style>
     .person-avatar {
@@ -14,11 +15,11 @@
         place-items: center;
         flex: none;
         box-sizing: border-box;
-        width: 30px;
-        height: 30px;
+        width: var(--avatar-size, 30px);
+        height: var(--avatar-size, 30px);
         border-radius: 50%;
         /* The ring is the colour of the surface under the stack, so each avatar reads as cut out of the next. */
-        border: 2px solid var(--k-chrome);
+        border: 2px solid var(--avatar-ring, var(--k-chrome));
         color: #fff;
         font-size: 12px;
         font-weight: 700;

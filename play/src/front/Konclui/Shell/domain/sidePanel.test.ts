@@ -11,32 +11,27 @@ import {
 } from "./sidePanel";
 
 describe("sidePanelView", () => {
-    it("is closed while the chat is hidden and no notice is open", () => {
-        expect(sidePanelView({ chatVisible: false, chatShowsUserList: false, rosterNoticeOpen: false })).toBe("closed");
+    const closed = { chatVisible: false, peopleOpen: false, rosterNoticeOpen: false };
+
+    it("is closed while the chat is hidden and neither the people panel nor the notice is open", () => {
+        expect(sidePanelView(closed)).toBe("closed");
     });
 
-    it("shows people while the chat is on its user list", () => {
-        expect(sidePanelView({ chatVisible: true, chatShowsUserList: true, rosterNoticeOpen: false })).toBe("people");
+    it("shows people while the people panel is open, whatever the chat was left on", () => {
+        expect(sidePanelView({ ...closed, peopleOpen: true })).toBe("people");
     });
 
-    it("shows the conversation while the chat is on any other tab", () => {
-        expect(sidePanelView({ chatVisible: true, chatShowsUserList: false, rosterNoticeOpen: false })).toBe(
-            "conversation",
-        );
+    it("shows the conversation while the chat is visible", () => {
+        expect(sidePanelView({ ...closed, chatVisible: true })).toBe("conversation");
     });
 
     it("shows people while the notice that the room has no people list is open", () => {
-        expect(sidePanelView({ chatVisible: false, chatShowsUserList: false, rosterNoticeOpen: true })).toBe("people");
+        expect(sidePanelView({ ...closed, rosterNoticeOpen: true })).toBe("people");
     });
 
-    it("stays closed when the chat was left on its user list and then hidden", () => {
-        expect(sidePanelView({ chatVisible: false, chatShowsUserList: true, rosterNoticeOpen: false })).toBe("closed");
-    });
-
-    it("lets the visible chat win over a notice left open", () => {
-        expect(sidePanelView({ chatVisible: true, chatShowsUserList: false, rosterNoticeOpen: true })).toBe(
-            "conversation",
-        );
+    it("lets the visible chat win over a people panel or a notice left open", () => {
+        expect(sidePanelView({ chatVisible: true, peopleOpen: true, rosterNoticeOpen: false })).toBe("conversation");
+        expect(sidePanelView({ chatVisible: true, peopleOpen: false, rosterNoticeOpen: true })).toBe("conversation");
     });
 });
 
@@ -48,17 +43,10 @@ describe("isWideScreen", () => {
 });
 
 describe("isRosterAvailable", () => {
-    it.each([
-        { onlineListEnabled: true, disconnectedListEnabled: true, available: true },
-        { onlineListEnabled: true, disconnectedListEnabled: false, available: true },
-        { onlineListEnabled: false, disconnectedListEnabled: true, available: true },
-        { onlineListEnabled: false, disconnectedListEnabled: false, available: false },
-    ])(
-        "is $available with online $onlineListEnabled and disconnected $disconnectedListEnabled",
-        ({ available, ...lists }) => {
-            expect(isRosterAvailable(lists)).toBe(available);
-        },
-    );
+    it("follows the room's online list: the panel lists who is online", () => {
+        expect(isRosterAvailable({ onlineListEnabled: true })).toBe(true);
+        expect(isRosterAvailable({ onlineListEnabled: false })).toBe(false);
+    });
 });
 
 describe("peopleOpening", () => {

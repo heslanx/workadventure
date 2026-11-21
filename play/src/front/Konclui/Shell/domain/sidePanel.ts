@@ -2,18 +2,20 @@
 export type SidePanelView = "people" | "conversation" | "closed";
 
 /**
- * `chatVisible` and `chatShowsUserList` come from the chat, which owns the people list as one of its tabs.
- * `rosterNoticeOpen` is the shell's own state: the room has no people list and the panel says so.
+ * `chatVisible` comes from the chat, which the panel shows as the conversation. `peopleOpen` and `rosterNoticeOpen`
+ * are the shell's own: the people panel is drawn by the shell and borrows nothing from the chat, so opening it does not
+ * make the chat visible, and a message that arrives meanwhile is signalled as one that nobody is reading.
  */
 export interface SidePanelState {
     readonly chatVisible: boolean;
-    readonly chatShowsUserList: boolean;
+    readonly peopleOpen: boolean;
+    /** The room has no people list and the panel says so. */
     readonly rosterNoticeOpen: boolean;
 }
 
 export function sidePanelView(state: SidePanelState): SidePanelView {
-    if (state.chatVisible) return state.chatShowsUserList ? "people" : "conversation";
-    return state.rosterNoticeOpen ? "people" : "closed";
+    if (state.chatVisible) return "conversation";
+    return state.peopleOpen || state.rosterNoticeOpen ? "people" : "closed";
 }
 
 /** From this window width up the shell draws the rail beside the game; below it the panel is a sheet over it. */
@@ -21,18 +23,17 @@ export function isWideScreen(windowWidth: number): boolean {
     return windowWidth >= 768;
 }
 
-/** The two lists of the chat's user list, as the room configures them. */
+/** What a room configures of its people list. */
 export interface RosterLists {
     readonly onlineListEnabled: boolean;
-    readonly disconnectedListEnabled: boolean;
 }
 
 /**
- * The people view is the chat's user list, which exists when the room turns on at least one of its lists. It is
- * read from the room and not from the tab the chat is on: the tab can still be the user list of the previous room.
+ * The people panel lists who is online, which a room can turn off. The disconnected members the chat's user list also
+ * held are not people who are here, and the panel does not list them.
  */
 export function isRosterAvailable(lists: RosterLists): boolean {
-    return lists.onlineListEnabled || lists.disconnectedListEnabled;
+    return lists.onlineListEnabled;
 }
 
 /** What opening the people view does: the list, the notice that the room has none, or nothing. */
@@ -50,9 +51,9 @@ export function peopleOpening(rosterAvailable: boolean, requestedByUser: boolean
 /**
  * Whether a chat that just became visible moves to the conversation.
  *
- * The people view borrows the chat's user-list tab and leaves the chat on it when the panel closes. Upstream opens
- * the chat for a message without choosing a tab, so a user list that nobody chose since the chat was last hidden is
- * a leftover, and showing it would hide the conversation that was just opened.
+ * Upstream opens the chat for a message without choosing a tab, so a user list that nobody chose since the chat was
+ * last hidden is a leftover (the user opened it, then closed the chat), and showing it would hide the conversation that
+ * was just opened. A user list that was chosen is asked for the people instead: the shell shows its own panel.
  */
 export function opensOnLeftoverUserList(chat: {
     readonly chatShowsUserList: boolean;

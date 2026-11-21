@@ -25,6 +25,13 @@ describe("the presence texts", () => {
             );
         });
 
+        it("points a search among the people nearby to the entry that searches everyone, by that entry's own name", () => {
+            expect(konclui.peopleList.nobodyNearbyMatches()).toBe(
+                "Nobody near you has that name. Choose Everyone to search the whole office.",
+            );
+            expect(konclui.peopleList.nobodyNearbyMatches()).toContain(konclui.peopleList.showEveryone());
+        });
+
         it("counts the people online and nearby", () => {
             expect(konclui.pill.online({ count: 12 })).toBe("12 online");
             expect(konclui.nearby({ count: 3 })).toBe("3 nearby");
@@ -37,6 +44,13 @@ describe("the presence texts", () => {
         it("says pessoa for one and pessoas for more", () => {
             expect(konclui.call.conversation({ count: 1 })).toBe("Conversa com 1 pessoa");
             expect(konclui.call.conversation({ count: 4 })).toBe("Conversa com 4 pessoas");
+        });
+
+        it("points a search among the people nearby to the entry that searches everyone, by that entry's own name", () => {
+            expect(konclui.peopleList.nobodyNearbyMatches()).toBe(
+                "Ninguém por perto com esse nome. Escolha Todos para procurar em todo o escritório.",
+            );
+            expect(konclui.peopleList.nobodyNearbyMatches()).toContain(konclui.peopleList.showEveryone());
         });
 
         it("has the reference's words for the place and the people nearby", () => {

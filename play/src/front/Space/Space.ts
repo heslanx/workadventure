@@ -87,6 +87,8 @@ export class Space implements SpaceInterface {
     private _updateUserSubject: Subject<UpdateSpaceUserEvent> = new Subject<UpdateSpaceUserEvent>();
     private _metadataSubject: Subject<Map<string, unknown>> = new Subject<Map<string, unknown>>();
     private _registerRefCount = 0;
+    /** The last watcher left since the pusher last sent the list: the users held no longer follow the space. */
+    private usersMayBeStale = false;
     private isDestroyed = false;
     public readonly usersStore: Readable<Map<string, Readonly<SpaceUserExtended>>>;
     private _setHasRemoteSpeaker: ((value: boolean) => void) | undefined;
@@ -663,6 +665,12 @@ export class Space implements SpaceInterface {
         }
     }
     initUsers(users: SpaceUser[]): void {
+        if (this.usersMayBeStale) {
+            // This list is the whole space as it is now. What was held from before the last watcher left is out of date:
+            // someone who left is still in it, and a status that changed is still the old one.
+            this.usersMayBeStale = false;
+            this._users = new Map<string, SpaceUserExtended>();
+        }
         for (const user of users) {
             const extendSpaceUser = this.extendSpaceUser(user);
             if (!this._users.has(user.spaceUserId)) {
@@ -946,6 +954,10 @@ export class Space implements SpaceInterface {
                 this.initPromise.reject();
                 this.initPromise = undefined;
             }
+            // Nobody watches the users any more, so the ones held stop following the space: people who leave and
+            // statuses that change are no longer heard of. The next list the pusher sends replaces them (`initUsers`).
+            // A video space keeps its users: its video boxes hang on them.
+            this.usersMayBeStale = !this.isVideoSpace();
         }
     }
 

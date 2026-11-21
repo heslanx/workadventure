@@ -6,6 +6,7 @@
         closeRosterNotice as endRosterNotice,
         closeSidePanel,
         followShell,
+        showPeople,
         sidePanelStore,
         toggleChat,
         togglePeople,
@@ -21,13 +22,18 @@
         type SidePanelView,
     } from "../domain/sidePanel";
     import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
-    import { openPreferences } from "../../Preferences/stores/preferencesStore";
+    import { openPreferences, preferencesStore } from "../../Preferences/stores/preferencesStore";
     import OfficeMenu from "../../OfficeMenu/components/OfficeMenu.svelte";
     import { officeMenuOpenStore, toggleOfficeMenu } from "../../OfficeMenu/stores/officeMenuStore";
     import ChatSidebar from "../../../Chat/ChatSidebar.svelte";
+    import PeoplePanel from "../../Presence/components/PeoplePanel.svelte";
     import PeoplePill from "../../Presence/components/PeoplePill.svelte";
     import PlaceChip from "../../Presence/components/PlaceChip.svelte";
-    import { IconUsersGroup, IconSettings, IconMessageCircle2, IconChevronLeft } from "@wa-icons";
+    import { isSearchShortcut } from "../../Presence/domain/peopleSearch";
+    import { requestSearchFocus } from "../../Presence/stores/peopleSearchStore";
+    import { combinationKeys } from "../../Preferences/domain/shortcutKeys";
+    import { isMac } from "../../../WebRtc/DeviceUtils";
+    import { IconUsersGroup, IconSettings, IconMessageCircle2, IconChevronLeft, IconSearch } from "@wa-icons";
 
     let { children }: { children: Snippet } = $props();
     let viewport: HTMLDivElement | undefined = $state();
@@ -39,7 +45,16 @@
     let view = $derived($sidePanelStore.view);
     let rosterNoticeOpen = $derived($sidePanelStore.rosterNoticeOpen);
     let peopleShown = $derived(view === "people");
+    // The people panel, or the notice that the room has no people list: both are the people view.
+    let peopleListShown = $derived(peopleShown && !rosterNoticeOpen);
     let conversationShown = $derived(view === "conversation");
+
+    // The key of the search shortcut as it reads on this keyboard: ⌘K on a Mac, Ctrl K elsewhere.
+    const searchKeys = combinationKeys(
+        { label: "K", mod: true, alt: false, shift: false },
+        { mac: isMac(), shift: "" },
+    );
+    const searchShortcutLabel = searchKeys.join(searchKeys[0] === "⌘" ? "" : " ");
 
     onMount(() => followShell(() => isWideScreen(window.innerWidth)));
 
@@ -106,6 +121,21 @@
         focusPeopleButton();
     }
 
+    // Opens the people panel and puts the caret in its search field: the rail's search button and the shortcut both do it.
+    // A room without a people list gets its notice instead, and has no field to focus.
+    function searchPeople() {
+        if (showPeople()) requestSearchFocus();
+    }
+
+    // Ctrl+K or ⌘K, from anywhere in the shell: the canvas, the chat's composer, the field itself (where it selects the
+    // text). It is taken in the capture phase, before anything below can use the key, and the browser does not get it.
+    // Behind the preferences dialog, which is modal, it leaves the key alone.
+    function onkeydowncapture(event: KeyboardEvent) {
+        if (!$shellActiveStore || !isSearchShortcut(event) || $preferencesStore.open) return;
+        event.preventDefault();
+        searchPeople();
+    }
+
     function onkeydown(event: KeyboardEvent) {
         if (!$shellActiveStore || event.key !== "Escape" || event.defaultPrevented) return;
         if (!(event.target instanceof Node) || !panel?.contains(event.target)) return;
@@ -116,7 +146,7 @@
     }
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window {onkeydown} {onkeydowncapture} />
 
 <!-- The Konclui logo opens the office menu (status, profile, settings, tools); the gear opens the preferences. It is in
      the rail, and on a phone, where the rail is hidden, at the start of the top row. -->
@@ -153,6 +183,14 @@
     {#if $shellActiveStore}
         <nav class="rail" aria-label={$LL.konclui.office()}>
             {@render logoButton(false)}
+            <button
+                type="button"
+                aria-label={$LL.konclui.peopleList.searchLabel()}
+                title={$LL.konclui.peopleList.searchShortcut({ keys: searchShortcutLabel })}
+                onclick={searchPeople}
+            >
+                <IconSearch font-size="20" />
+            </button>
             <button
                 type="button"
                 aria-label={$LL.konclui.people()}
@@ -205,6 +243,8 @@
                 {#key $forceRefreshChatStore}
                     <ChatSidebar embedded />
                 {/key}
+            {:else if peopleListShown}
+                <PeoplePanel onCollapse={togglePeople} />
             {:else if rosterNoticeOpen}
                 <header>
                     <strong>{$LL.konclui.people()}</strong><button

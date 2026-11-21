@@ -65,6 +65,7 @@ interface GameSceneInternals {
     hasJoinedRoom: boolean;
     CurrentPlayer: unknown;
     playerVariablesManager: unknown;
+    sharedVariablesManager: unknown;
     userInputManager: unknown;
     activatablesManager: unknown;
     gameMapFrontWrapper: unknown;
@@ -502,6 +503,20 @@ describe("GameScene extensions, once per frame (update)", () => {
         expect([...context.remotePlayers.keys()]).toEqual([7]);
         expect(context.getPlayerVariable("officeSeat")).toEqual({ v: 1, direction: "down" });
         expect(context.getPlayerVariable("missing")).toBeUndefined();
+    });
+
+    it("tells the extension the variables the whole room shares, and nothing before the scene has them", () => {
+        const { scene, internals } = createScene();
+        const contexts: SceneFrameContext[] = [];
+        unregisterAll.push(registerSceneExtension({ id: "test", onFrame: (context) => contexts.push(context) }));
+        scene.update(1_000, 16);
+        const beforeTheRoomHasThem = contexts[0].getRoomVariable?.("mesas");
+        internals.sharedVariablesManager = { variables: new Map([["mesas", '{"chair-4":{"uuid":"uuid-ana"}}']]) };
+        scene.update(1_016, 16);
+
+        expect(beforeTheRoomHasThem).toBeUndefined();
+        expect(contexts[1].getRoomVariable?.("mesas")).toBe('{"chair-4":{"uuid":"uuid-ana"}}');
+        expect(contexts[1].getRoomVariable?.("missing")).toBeUndefined();
     });
 
     it("hands the extension the current player once the scene has one", () => {

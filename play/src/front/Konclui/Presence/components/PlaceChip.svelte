@@ -1,6 +1,6 @@
 <script lang="ts">
     import { LL } from "../../../../i18n/i18n-svelte";
-    import type { Place } from "../domain/place";
+    import { placeName } from "../domain/place";
     import { callChipStore } from "../stores/conversationStore";
     import { placeStore } from "../stores/placeStore";
     import { presenceStore } from "../stores/presenceStore";
@@ -10,24 +10,15 @@
     // store behind it changes at most every two seconds: the near count changes as people walk by, and read out each
     // time it would be a storm.
 
-    function nameOf(place: Place): string {
-        switch (place.kind) {
-            case "area":
-                return place.name;
-            case "entrance":
-                return $LL.konclui.place.entrance();
-            case "hall":
-                return $LL.konclui.place.hall();
-            case "outside":
-                return $LL.konclui.place.outside();
-            default: {
-                const unreachable: never = place;
-                throw new Error(`Unhandled place: ${JSON.stringify(unreachable)}`);
-            }
-        }
-    }
-
-    let name = $derived($placeStore === undefined ? undefined : nameOf($placeStore));
+    let name = $derived(
+        $placeStore === undefined
+            ? undefined
+            : placeName($placeStore, {
+                  entrance: $LL.konclui.place.entrance(),
+                  hall: $LL.konclui.place.hall(),
+                  outside: $LL.konclui.place.outside(),
+              }),
+    );
     let nearCount = $derived($presenceStore?.nearCount ?? 0);
     // In a conversation the call chip says where it is, and the camera strip takes the top of the screen.
     let inConversation = $derived($callChipStore !== undefined);

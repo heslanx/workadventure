@@ -43,6 +43,7 @@ import {
     closeRosterNotice,
     closeSidePanel,
     followShell,
+    showPeople,
     sidePanelStore,
     toggleChat,
     togglePeople,
@@ -97,6 +98,8 @@ beforeEach(() => {
     mapDeletedPromptStore.set(false);
     chatVisibilityStore.set(false);
     navChat.switchToChat();
+    // The people panel and the notice are the module's own state: close what an earlier test left open.
+    closeSidePanel();
     closeRosterNotice();
 });
 
@@ -106,27 +109,34 @@ afterEach(() => {
 });
 
 describe("togglePeople", () => {
-    it("opens the user list in a room with a people list, and closes it when it is shown", () => {
+    it("opens the people panel in a room with a people list, and closes it when it is shown", () => {
         enterRoom(room("office", true));
 
         togglePeople();
-        expect(get(navChat).key).toBe("users");
-        expect(get(chatVisibilityStore)).toBe(true);
         expect(view()).toBe("people");
 
         togglePeople();
-        expect(get(chatVisibilityStore)).toBe(false);
         expect(view()).toBe("closed");
     });
 
-    it("moves from the conversation to the user list", () => {
+    it("opens the people panel without making the chat visible or choosing its tab", () => {
+        enterRoom(room("office", true));
+
+        togglePeople();
+
+        expect(get(chatVisibilityStore)).toBe(false);
+        expect(get(navChat).key).toBe("chat");
+    });
+
+    it("moves from the conversation to the people panel, and hides the chat", () => {
         enterRoom(room("office", true));
         toggleChat();
         expect(view()).toBe("conversation");
 
         togglePeople();
+
         expect(view()).toBe("people");
-        expect(get(navChat).key).toBe("users");
+        expect(get(chatVisibilityStore)).toBe(false);
     });
 
     it("shows the notice in a room without a people list, and closes it when it is shown", () => {
@@ -152,6 +162,40 @@ describe("togglePeople", () => {
     });
 });
 
+describe("showPeople", () => {
+    it("opens the people panel and says the list is on screen", () => {
+        enterRoom(room("office", true));
+
+        expect(showPeople()).toBe(true);
+        expect(view()).toBe("people");
+    });
+
+    it("keeps the panel open when it already is, where togglePeople would close it", () => {
+        enterRoom(room("office", true));
+        togglePeople();
+
+        expect(showPeople()).toBe(true);
+        expect(view()).toBe("people");
+    });
+
+    it("replaces the conversation with the panel", () => {
+        enterRoom(room("office", true));
+        toggleChat();
+
+        expect(showPeople()).toBe(true);
+        expect(view()).toBe("people");
+        expect(get(chatVisibilityStore)).toBe(false);
+    });
+
+    it("says there is no list in a room without one, which shows its notice instead", () => {
+        enterRoom(room("lobby", false));
+
+        expect(showPeople()).toBe(false);
+        expect(noticeOpen()).toBe(true);
+        expect(showPeople()).toBe(false);
+    });
+});
+
 describe("the chat taking the panel", () => {
     it("ends the notice, and closing the chat later does not bring it back", () => {
         follow();
@@ -167,16 +211,31 @@ describe("the chat taking the panel", () => {
         expect(noticeOpen()).toBe(false);
         expect(view()).toBe("closed");
     });
-});
 
-describe("a chat that upstream opens without choosing a tab", () => {
-    beforeEach(() => {
-        // A narrow screen, so that entering the room leaves the panel closed and the test drives the tab.
+    it("ends the people panel, and closing the chat later does not bring it back", () => {
         wideScreen = false;
         follow();
         enterRoom(room("office", true));
         togglePeople();
-        togglePeople();
+        expect(view()).toBe("people");
+
+        chatVisibilityStore.set(true);
+        expect(view()).toBe("conversation");
+
+        chatVisibilityStore.set(false);
+        expect(view()).toBe("closed");
+    });
+});
+
+describe("a chat that upstream opens without choosing a tab", () => {
+    beforeEach(() => {
+        // The user list was left on screen by something that ran while the shell was covered, so nobody chose it since.
+        wideScreen = false;
+        follow();
+        const office = room("office", true);
+        managed.room = office;
+        navChat.switchToUserList();
+        enterRoom(office);
         expect(view()).toBe("closed");
         expect(get(navChat).key).toBe("users");
     });
@@ -188,30 +247,66 @@ describe("a chat that upstream opens without choosing a tab", () => {
         expect(view()).toBe("conversation");
     });
 
-    it("keeps a tab that was chosen since the chat was hidden", () => {
-        navChat.switchToUserList();
-        chatVisibilityStore.set(true);
-
-        expect(get(navChat).key).toBe("users");
-        expect(view()).toBe("people");
-    });
-
     it("is left alone while the shell is inactive", () => {
         loaderVisibleStore.set(true);
         chatVisibilityStore.set(true);
 
         expect(get(navChat).key).toBe("users");
+        expect(get(chatVisibilityStore)).toBe(true);
+    });
+});
+
+describe("a request for the chat's user list", () => {
+    beforeEach(() => {
+        wideScreen = false;
+        follow();
+        enterRoom(room("office", true));
+    });
+
+    it("opens the people panel instead of the user list of the chat, when it is chosen before the chat is shown", () => {
+        navChat.switchToUserList();
+        chatVisibilityStore.set(true);
+
+        expect(view()).toBe("people");
+        expect(get(chatVisibilityStore)).toBe(false);
+    });
+
+    it("opens the people panel when the chat is already shown and its own button asks for the list", () => {
+        toggleChat();
+        expect(view()).toBe("conversation");
+
+        navChat.switchToUserList();
+
+        expect(view()).toBe("people");
+        expect(get(chatVisibilityStore)).toBe(false);
+    });
+
+    it("is not a request while the chat is hidden: choosing the tab alone opens nothing", () => {
+        navChat.switchToUserList();
+
+        expect(view()).toBe("closed");
+        expect(get(chatVisibilityStore)).toBe(false);
+    });
+
+    it("stays on the conversation in a room without a people list, whose chat refuses the user list", () => {
+        enterRoom(room("lobby", false));
+        navChat.switchToUserList();
+        chatVisibilityStore.set(true);
+
+        // The chat refuses the tab in a room without lists: it stays on the conversation.
+        expect(get(navChat).key).toBe("chat");
+        expect(view()).toBe("conversation");
     });
 });
 
 describe("entering a room", () => {
-    it("opens the people of the room on a wide screen", () => {
+    it("opens the people panel of the room on a wide screen, without the chat", () => {
         follow();
         enterRoom(room("office", true));
 
-        expect(get(navChat).key).toBe("users");
-        expect(get(chatVisibilityStore)).toBe(true);
         expect(view()).toBe("people");
+        expect(get(chatVisibilityStore)).toBe(false);
+        expect(get(navChat).key).toBe("chat");
     });
 
     it("opens nothing on a narrow screen", () => {
@@ -273,14 +368,13 @@ describe("entering a room", () => {
 });
 
 describe("followShell on a shell that is already drawn", () => {
-    it("opens the people of the room at once on a wide screen", () => {
+    it("opens the people panel of the room at once on a wide screen", () => {
         enterRoom(room("office", true));
 
         follow();
 
-        expect(get(navChat).key).toBe("users");
-        expect(get(chatVisibilityStore)).toBe(true);
         expect(view()).toBe("people");
+        expect(get(chatVisibilityStore)).toBe(false);
     });
 
     it("opens nothing at once on a narrow screen", () => {
@@ -307,6 +401,18 @@ describe("a new run of followShell", () => {
         follow();
 
         expect(noticeOpen()).toBe(false);
+    });
+
+    it("starts with the people panel closed", () => {
+        const stopEarlierRun = follow();
+        enterRoom(room("office", true));
+        expect(view()).toBe("people");
+        stopEarlierRun();
+        loaderVisibleStore.set(true);
+
+        follow();
+
+        expect(view()).toBe("closed");
     });
 });
 
@@ -344,9 +450,34 @@ describe("toggleChat", () => {
         expect(noticeOpen()).toBe(false);
         expect(view()).toBe("conversation");
     });
+
+    it("ends the people panel", () => {
+        enterRoom(room("office", true));
+        togglePeople();
+
+        toggleChat();
+
+        expect(view()).toBe("conversation");
+        togglePeople();
+        expect(view()).toBe("people");
+    });
 });
 
 describe("closeSidePanel", () => {
+    it("closes the chat first, then the people panel, and reports which", () => {
+        enterRoom(room("office", true));
+        togglePeople();
+        // Without the reactions of followShell the panel stays open under a chat that opens.
+        chatVisibilityStore.set(true);
+
+        expect(closeSidePanel()).toBe("chat");
+        expect(get(chatVisibilityStore)).toBe(false);
+        expect(view()).toBe("people");
+
+        expect(closeSidePanel()).toBe("people");
+        expect(view()).toBe("closed");
+    });
+
     it("closes the chat first, then the notice, and reports which", () => {
         enterRoom(room("lobby", false));
         togglePeople();
@@ -383,14 +514,28 @@ describe("the function followShell returns", () => {
 
     it("stops the move away from the leftover user list", () => {
         wideScreen = false;
-        enterRoom(room("office", true));
+        const office = room("office", true);
+        managed.room = office;
+        navChat.switchToUserList();
+        enterRoom(office);
         const stop = follow();
-        togglePeople();
-        togglePeople();
         stop();
 
         chatVisibilityStore.set(true);
         expect(get(navChat).key).toBe("users");
+    });
+
+    it("stops the request for the people from the chat's user list", () => {
+        wideScreen = false;
+        enterRoom(room("office", true));
+        const stop = follow();
+        stop();
+
+        navChat.switchToUserList();
+        chatVisibilityStore.set(true);
+
+        expect(view()).toBe("conversation");
+        expect(get(chatVisibilityStore)).toBe(true);
     });
 
     it("stops the opening on entering a room", () => {

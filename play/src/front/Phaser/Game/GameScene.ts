@@ -192,7 +192,7 @@ import { calendarEventsStore, isActivatedStore as isCalendarActiveStore } from "
 import { isActivatedStore as isTodoListActiveStore, todoListsStore } from "../../Stores/TodoListStore";
 import { externalSvelteComponentService } from "../../Stores/Utils/externalSvelteComponentService";
 import type { ExtensionModule } from "../../ExternalModule/ExtensionModule";
-import { notifySceneShutdown, runSceneFrame } from "../../ExternalModule/ClientExtensionPoints";
+import { getWorldSpaceExtension, notifySceneShutdown, runSceneFrame } from "../../ExternalModule/ClientExtensionPoints";
 import type { SpaceInterface } from "../../Space/SpaceInterface";
 import type { UserProviderInterface } from "../../Chat/UserProvider/UserProviderInterface";
 import { registerAdditionalMenuItem, unregisterAdditionalMenuItem } from "../../Stores/AdditionalItemsMenuStore";
@@ -1462,6 +1462,7 @@ export class GameScene extends DirtyScene {
                 remoteCharacters: this.MapPlayersByKey,
                 remotePlayers: this.remotePlayersRepository.getPlayers(),
                 getPlayerVariable: (key) => this.playerVariablesManager?.variables.get(key),
+                getRoomVariable: (key) => this.sharedVariablesManager?.variables.get(key),
             });
         }
 
@@ -2707,8 +2708,12 @@ export class GameScene extends DirtyScene {
             )
             .then((space) => {
                 this.allUserSpace = space;
-                worldUserProvider = new WorldUserProvider(space);
-                this._worldUserCounter.forward(worldUserProvider.userCount);
+                // The count and the people made from the roster watch every person of the world from the first
+                // subscriber, at any headcount. An extension that reads the world otherwise (the headcount the back sends,
+                // the people only while something shows them) takes their place, for the counter and for the chat.
+                const reading = getWorldSpaceExtension()?.joined(space, this.abortController.signal);
+                worldUserProvider = new WorldUserProvider(reading ? { usersStore: reading.users } : space);
+                this._worldUserCounter.forward(reading?.count ?? worldUserProvider.userCount);
                 return gameManager.getChatConnection();
             })
             .then((chatConnection) => {

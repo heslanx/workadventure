@@ -4,8 +4,9 @@ import type { RemotePlayer } from "../../../Phaser/Entity/RemotePlayer";
 import type { GameScene } from "../../../Phaser/Game/GameScene";
 import type { Player } from "../../../Phaser/Player/Player";
 import type { AreaLike } from "../domain/place";
+import type { CrowdReading } from "../domain/crowd";
 import type { PresenceReading } from "../domain/presence";
-import { createPresenceExtension } from "./presenceExtension";
+import { createPresenceExtension, type CrowdOutput } from "./presenceExtension";
 
 const room: AreaLike = { name: "Sala 01", x: 1600, y: 900, width: 100, height: 100 };
 const wing: AreaLike = { name: "Ala oeste", x: 600, y: 900, width: 512, height: 352 };
@@ -15,6 +16,9 @@ interface Stranger {
     playerName: string;
     x: number;
     y: number;
+    /** What the scene last heard of their status. */
+    status?: number;
+    userUuid?: string;
 }
 
 interface FrameOptions {
@@ -28,18 +32,24 @@ interface FrameOptions {
 
 function frame({ time = 0, player = { x: 700, y: 1000 }, strangers = [], areas = [room, wing] }: FrameOptions = {}) {
     const areaMap = areas === null ? undefined : new Map(areas.map((area, index) => [`area-${index}`, area]));
-    const scene = { getGameMapFrontWrapper: () => ({ getAreas: () => areaMap }) } as unknown as GameScene;
+    const scene = {
+        roomUrl: "http://localhost:8090/~/escritorio-sede/office.wam",
+        connection: { getSpaceUserId: () => "http://localhost:8090/~/escritorio-sede/office.wam_1" },
+        getGameMapFrontWrapper: () => ({ getAreas: () => areaMap }),
+    } as unknown as GameScene;
     const context: SceneFrameContext = {
         scene,
         time,
         delta: 16,
         baseUrl: "http://localhost:8090/~/escritorio-sede/office.wam",
-        currentPlayer: (player ?? undefined) as unknown as Player | undefined,
+        currentPlayer: (player === null ? undefined : { ...player, playerName: "Eu" }) as unknown as Player | undefined,
         remoteCharacters: new Map(strangers.map((stranger) => [stranger.userId, stranger])) as unknown as ReadonlyMap<
             number,
             RemotePlayer
         >,
-        remotePlayers: new Map(),
+        remotePlayers: new Map(
+            strangers.map((stranger) => [stranger.userId, { availabilityStatus: stranger.status }]),
+        ) as unknown as SceneFrameContext["remotePlayers"],
         getPlayerVariable: () => undefined,
     };
     return context;
@@ -133,5 +143,96 @@ describe("the presence extension", () => {
 
     it("is one extension, named for error reports", () => {
         expect(setup().extension.id).toBe("konclui.presence");
+    });
+});
+
+describe("the presence extension's crowd output", () => {
+    const ROOM_KEY = "http://localhost:8090/~/escritorio-sede/office.wam";
+
+    function withCrowd(wanted: boolean) {
+        const presence = vi.fn<(reading: PresenceReading | undefined) => void>();
+        const output = { wanted: vi.fn(() => wanted), publish: vi.fn<(reading: CrowdReading | undefined) => void>() };
+        const extension = createPresenceExtension(presence, output satisfies CrowdOutput);
+        return { extension, presence, output };
+    }
+
+    const crowd: Stranger[] = [
+        { userId: 12, playerName: "Ana Ribeiro", x: 760, y: 1000, status: 1, userUuid: "ana" },
+        { userId: 13, playerName: "Far Away", x: 1650, y: 950, userUuid: "far" },
+    ];
+
+    it("hands the panel the player, and the people around them with the session they are, place and status", () => {
+        const { extension, output } = withCrowd(true);
+
+        extension.onFrame?.(frame({ strangers: crowd }));
+
+        expect(output.publish).toHaveBeenCalledWith({
+            roomKey: ROOM_KEY,
+            me: { spaceUserId: `${ROOM_KEY}_1`, name: "Eu", place: { kind: "area", name: "Ala oeste" } },
+            people: [
+                {
+                    spaceUserId: `${ROOM_KEY}_12`,
+                    uuid: "ana",
+                    name: "Ana Ribeiro",
+                    status: 1,
+                    place: { kind: "area", name: "Ala oeste" },
+                },
+                {
+                    spaceUserId: `${ROOM_KEY}_13`,
+                    uuid: "far",
+                    name: "Far Away",
+                    status: undefined,
+                    place: { kind: "area", name: "Sala 01" },
+                },
+            ],
+        });
+    });
+
+    it("keeps 60 people for the panel while it is open and the four of the pill while it is closed", () => {
+        const many: Stranger[] = Array.from({ length: 100 }, (_, index) => ({
+            userId: 100 + index,
+            playerName: `Pessoa ${index}`,
+            x: 700 + index,
+            y: 1000,
+        }));
+        const open = withCrowd(true);
+        const closed = withCrowd(false);
+
+        open.extension.onFrame?.(frame({ strangers: many }));
+        closed.extension.onFrame?.(frame({ strangers: many }));
+
+        expect(open.output.publish.mock.lastCall?.[0]?.people).toHaveLength(60);
+        expect(open.presence.mock.lastCall?.[0]?.nearest).toHaveLength(4);
+        expect(closed.presence.mock.lastCall?.[0]?.nearest).toHaveLength(4);
+        expect(closed.output.publish).not.toHaveBeenCalled();
+    });
+
+    it("computes nothing for the panel while it is closed", () => {
+        const { extension, output } = withCrowd(false);
+
+        extension.onFrame?.(frame({ strangers: crowd }));
+
+        expect(output.publish).not.toHaveBeenCalled();
+    });
+
+    it("drops what the panel last read once, when it closes", () => {
+        const output = { wanted: vi.fn(() => true), publish: vi.fn<(reading: CrowdReading | undefined) => void>() };
+        const extension = createPresenceExtension(vi.fn(), output);
+        extension.onFrame?.(frame({ time: 0, strangers: crowd }));
+
+        output.wanted.mockReturnValue(false);
+        extension.onFrame?.(frame({ time: 300, strangers: crowd }));
+        extension.onFrame?.(frame({ time: 600, strangers: crowd }));
+
+        expect(output.publish.mock.calls.map(([reading]) => reading === undefined)).toEqual([false, true]);
+    });
+
+    it("clears the crowd when the scene shuts down", () => {
+        const { extension, output } = withCrowd(true);
+        extension.onFrame?.(frame({ strangers: crowd }));
+
+        extension.onShutdown?.({} as GameScene);
+
+        expect(output.publish).toHaveBeenLastCalledWith(undefined);
     });
 });
