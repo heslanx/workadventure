@@ -7,7 +7,7 @@
     import { EditorToolName } from "../../Phaser/Game/MapEditor/MapEditorModeManager";
     import { BUTTON_ZOOM_FACTOR_PER_SECOND, BUTTON_ZOOM_STEP_FACTOR } from "../../Phaser/Game/CameraZoomUtils";
     import LL from "../../../i18n/i18n-svelte";
-    import { gameViewportBounds } from "../../ExternalModule/ClientExtensionPoints";
+    import { activeMapTools, gameViewportBounds } from "../../ExternalModule/ClientExtensionPoints";
     import { IconFocusCentered, IconMapSearch, IconMinus, IconPlus } from "@wa-icons";
 
     interface Props {
@@ -178,6 +178,12 @@
     data-testid="actions-explorer"
 >
     <div class="k-control-column flex flex-col justify-center gap-1.5">
+        {#if $activeMapTools}
+            <!-- An extension's tools stand above the zoom controls as more rows of this column. They own the control
+                 that brings the view back to the avatar, so the third slot below keeps "explore the room". -->
+            {@const MapTools = $activeMapTools}
+            <MapTools />
+        {/if}
         <div class="flex flex-col justify-center gap-1.5">
             <button
                 type="button"
@@ -218,7 +224,7 @@
                 </div>
             </button>
         </div>
-        {#if !$mapEditorModeStore && !$cameraDetachedStore}
+        {#if !$mapEditorModeStore && (!$cameraDetachedStore || $activeMapTools !== undefined)}
             <button
                 type="button"
                 aria-label={$LL.mapEditor.explorer.title()}
