@@ -1,6 +1,6 @@
 # Performance
 
-Measured performance state of Koncluí (a WorkAdventure fork) for the goal of 1000 live participants in one world without stalls in movement, audio or video. Phase 1 of the architecture-optimization journey (performance net and ledger). Written 2026-11-18 at HEAD `700362b82` with an uncommitted working tree. Refreshed 2026-11-19 at `a0fc2bf18`, where that tree is committed: the rows that were pending now carry their commit. Refreshed again 2026-11-19 at `47865006b`: four engine commits after `a0fc2bf18` (C5 slice c, C1 slice 3, C3 slice 1b back half, C2 slice 1) have ledger rows. All four are unit-harness numbers: none has a load run or a browser frame-time run, and the three flags (`PUSHER_VIEWER_BUDGET_ENABLED`, `WORLD_HEADCOUNT_ENABLED`, the `avatarDetailBudget` override) were off by default then (`avatarDetailBudget` has been on by default since `863e8d384`, 2026-11-22; the other two are still off). Refreshed a third time 2026-11-19 at `75db31b6d`: the section "Budgets as tests" and one ledger row (`75db31b6d`) were added; no new measurement was made. Refreshed a fourth time 2026-11-19 with the first staircase on the CI pool (run 44533226788 at `13fc89a45`, see Load Reality, "CI-pool staircase, 2026-11-19"). Every level of it is INVALID by the generator's own guard, so its latencies are not pusher numbers; its server CPU, sessions, delivery, traffic and profile shares are readable with that caveat. Refreshed a fifth time 2026-11-22 at `ae2d88ad9`: the section "HQ acceptance at 1,000 moving collaborators" carries the first browser and GPU measurements of the client (Gate 1, one Apple M1 Max, Google Chrome) and the in-process Gate 2 counts; the three avatar flags are on by default since `863e8d384` (opt-out `"0"`); the rest of the file is unchanged unless a row says it was updated on that date.
+Measured performance state of Koncluí (a WorkAdventure fork) for the goal of 1000 live participants in one world without stalls in movement, audio or video. Phase 1 of the architecture-optimization journey (performance net and ledger). Written 2026-11-18 at HEAD `700362b82` with an uncommitted working tree. Refreshed 2026-11-19 at `a0fc2bf18`, where that tree is committed: the rows that were pending now carry their commit. Refreshed again 2026-11-19 at `47865006b`: four engine commits after `a0fc2bf18` (C5 slice c, C1 slice 3, C3 slice 1b back half, C2 slice 1) have ledger rows. All four are unit-harness numbers: none has a load run or a browser frame-time run, and the three flags (`PUSHER_VIEWER_BUDGET_ENABLED`, `WORLD_HEADCOUNT_ENABLED`, the `avatarDetailBudget` override) were off by default then (`avatarDetailBudget` has been on by default since `863e8d384`, 2026-11-22; the other two are still off). Refreshed a third time 2026-11-19 at `75db31b6d`: the section "Budgets as tests" and one ledger row (`75db31b6d`) were added; no new measurement was made. Refreshed a fourth time 2026-11-19 with the first staircase on the CI pool (run 44533226788 at `13fc89a45`, see Load Reality, "CI-pool staircase, 2026-11-19"). Every level of it is INVALID by the generator's own guard, so its latencies are not pusher numbers; its server CPU, sessions, delivery, traffic and profile shares are readable with that caveat. Refreshed a fifth time 2026-11-22 at `ae2d88ad9`: the section "HQ acceptance at 1,000 moving collaborators" carries the first browser and GPU measurements of the client (Gate 1, one Apple M1 Max, Google Chrome) and the in-process Gate 2 counts; the three avatar flags are on by default since `863e8d384` (opt-out `"0"`); the rest of the file is unchanged unless a row says it was updated on that date. Refreshed a sixth time 2026-11-22 for the web performance audit: the section "Web performance audit" (before and after tables for the page a visitor downloads and sees, measured in Google Chrome 157 on one Apple M1 Max under load, with its open items).
 
 Claim labels: MEASURED is a number from a log, report or test. DERIVED is arithmetic over measured numbers. HYPOTHESIS has no measurement yet and names the check that would settle it. Budgets are DECIDED by the coordinator. "Proposed here" marks a budget that no plan or decision file states and that this document supplied, so the coordinator may overrule it.
 
@@ -240,6 +240,109 @@ A holdout with back/pusher windows of 10/25 ms exercised the revised gate. Budge
 
 The fan-out harness changes of this wave are covered by `FanOutBench.test.ts`, which includes a regression test that finishing a cleanup in an old scene preserves the synthetic crowd in the new scene. An isolated V8 inspector run exercised 42 of the 48 named functions in the transformed fan-out harness (87.5%; the raw report is `selection-loop/instrument-coverage.json`). Project line coverage is unavailable because the Vitest coverage provider is missing.
 
+## Web performance audit · 2026-11-22
+
+A lab audit of what a visitor downloads and sees, run before and after the four fixes below. Labels as above. **Every number is one lab run per configuration and build, taken with Google Chrome 157.0.8103.79 (headless, ANGLE Metal) on one Apple M1 Max that was under load, against the production-like Docker build served at `http://konclui-qa.localhost:8094/~/konclui-office/office.wam`, on 2026-11-22.** There was no Lighthouse run, no field data and no repeat of any run, so a difference of a few percent between two runs is not a result. "KB" is 1,024 bytes (the script's `encodedDataLength` divided by 1,024). Percentages are DERIVED from the byte counts in the JSON.
+
+The script is `.local/konclui/qa/frame-probe/webperf.mjs` (Playwright and CDP; gitignored, so a fresh checkout cannot rerun it). The evidence is outside git, in `/Users/erickheslan/.claude/orchestrate/konclui-native/evidence/perf/`: `webperf-2026-11-22` (before), `webperf-2026-11-22-after` and `webperf-2026-11-22-after2`, each with `webperf.json`, `requests-entry.json`, `requests-office.json`, `requests-warm.json`, `a11y-entry.json`, `a11y-office.json` and three PNGs. Where this section and the message that asked for it differ, the JSON files were used.
+
+Three configurations. **Desktop cold**: 1440 × 900, no throttling, empty cache, on localhost: the entry screen until the name field is visible, then name, avatar and "enter the office" until `#game` has the class `game-scene-loaded`, then 6 s more. **Desktop warm**: a reload with the HTTP cache warm. **Phone throttled**: 412 × 823 at scale 1.75, mobile and touch, the entry screen only, with Lighthouse's mobile values set through CDP: CPU 4×, 150 ms latency, 1.6 Mbit/s down, 750 kbit/s up.
+
+| Run | Build | Taken (UTC) |
+|---|---|---|
+| Before, `webperf-2026-11-22` | `ae2d88ad9` | 10:44 |
+| After, `webperf-2026-11-22-after` | `9344f122d` and `3f9e55d6c` (compression), and the first-visit part of the frame shift fix | 11:30 |
+| After 2, `webperf-2026-11-22-after2` | the same, and the reload part of the frame shift fix (`da6db31cf`) and the boot splash (`7ed6e8fa2`) | 12:09 |
+
+What was fixed, all on `konclui/main`:
+
+| Commit | What |
+|---|---|
+| `9344f122d` | play: the build writes a `.br` and a `.gz` sibling of every compressible file that shrinks, and the static handlers serve the sibling the request accepts, with the original's type and cache headers, `Vary: Accept-Encoding` and an ETag per coding. A Range request, a file without a sibling and the dev server are served as before. The page is compressed on the way out, except a page that embeds a token |
+| `3f9e55d6c` | map-storage: JSON, TMJ, WAM and other text files are streamed as Brotli or gzip by the request's `Accept-Encoding`, for the disk and the S3 back ends, with `Vary` and conditional requests kept. The default cache header was `public, s-max-age=10`, a directive that does not exist; it is now `public, s-maxage=10` |
+| `da6db31cf` | the office frame no longer shifts the game when it appears: the frame's viewport is held out of sight while it moves and shown at its final place, and the loading screen stays fixed to the window meanwhile. The game area is the page's main landmark, and a region while an upstream screen draws its own main |
+| `7ed6e8fa2` | `index.html` carries the brand logo, preloaded and placed where the loading screen draws it, and the app removes it when its first screen is up. A world with a logo of its own, or an admin, gets no splash |
+
+### Before and after
+
+Transfer, in KB (bytes in the JSON). Before no response had a `content-encoding`; after, every encoded response is Brotli.
+
+| Measure | Before | After | After 2 |
+|---|---:|---:|---:|
+| Entry screen, total, 43 requests | 6,683 | 1,443 | 1,445 |
+| of which JavaScript, 24 files | 6,064 | 1,318 | 1,319 |
+| of which CSS, 3 files | 558 | 82 | 82 |
+| of which the document | 9.9 | 3.1 | 4.7 |
+| Entry screen, decoded bytes | 6,839,485 B | 6,840,168 B | 6,846,359 B |
+| Entering the office, total, 600 requests | 11,974 | 3,069 | 3,071 |
+| of which map files (Fetch, 18 requests) | 3,547 | 551 | 551 |
+| of which XHR, 246 requests | 1,056 | 716 | 716 |
+| Warm reload, total, 575 requests (324 from the cache) | 788 | 156 | 156 |
+| Responses with a `content-encoding`: entry, office, warm | 0 of 43, 0 of 600, 0 of 575 | 27 of 43, 64 of 600, 64 of 575 | 27 of 43, 64 of 600, 64 of 575 |
+
+The entry screen is 78.4% smaller on the wire (JavaScript 78.3%, CSS 85.3%), entering the office 74.4% smaller and the warm reload 80.1% smaller (DERIVED). The decoded bytes did not change (within 0.1%), so the saving is compression and nothing else. The warm reload still downloads two files in full in all three runs: `seats.json` (640 KB before, 119 KB after 2) and `office.wam` (134 KB before, 29 KB after 2), together 147.9 KB of the 156.4 KB of after 2 (DERIVED).
+
+Phone, throttled, entry screen only, in seconds unless stated:
+
+| Measure | Before | After | After 2 |
+|---|---:|---:|---:|
+| First contentful paint (FCP) | 33.7 | 8.0 | 2.66 |
+| Largest contentful paint (LCP) | 35.8 | 10.1 | 2.66 |
+| Name field visible | 35.9 | 10.2 | 10.1 |
+| DOMContentLoaded | 32.5 | 7.8 | 7.7 |
+| Total blocking time after FCP, ms | 0 | 0 | 554 |
+| Longest long task, ms | 699 | 716 | 604 |
+| Layout shift (CLS) | 0 | 0 | 0 |
+| Transfer, KB | 6,683 | 1,443 | 1,445 |
+
+The LCP element is the logo image in all three runs. In the third it is the splash logo that `index.html` paints (no class, an area of 16,348 against 5,760 before), as the commit states. The splash is a paint of the logo before the JavaScript arrives: it does not make the name field usable sooner, and that moved only from 10.2 s to 10.1 s. By the thresholds in use below, the phone LCP went from poor (35.8 s and 10.1 s, over 4 s) to needs improvement (2.66 s, between 2.5 s and 4 s), and the phone FCP stays above the good limit of 1.8 s in every run.
+
+Desktop, cold, unthrottled, on localhost, in milliseconds unless stated:
+
+| Measure | Before | After | After 2 |
+|---|---:|---:|---:|
+| Time to first byte (TTFB) | 32.2 | 63.1 | 31.1 |
+| FCP | 796 | 944 | 784 |
+| LCP | 2,428 | 2,580 | 784 |
+| DOMContentLoaded | 738 | 900 | 780 |
+| Name field visible | 2,609 | 2,766 | 2,675 |
+| Document transfer, bytes | 10,227 | 3,251 | 4,870 |
+| Inline script and style in the document, bytes | 4,334 and 173 | 4,334 and 173 | 6,706 and 1,595 |
+| Entry screen long tasks: count, total, longest | 2, 597, 537 | 2, 600, 537 | 2, 644, 582 |
+| Entering the office: name field to `game-scene-loaded` | 1,544 | 1,749 | 3,015 |
+| Long tasks until 6 s after the office loaded: count, total, longest | 10, 1,513, 537 | 9, 1,584, 537 | 11, 3,254, 677 |
+| Total blocking time after FCP, same span | 516 | 634 | 2,160 |
+| CLS, entry screen | 0 | 0 | 0 |
+| CLS, the office appears on a first visit | 0.247 | 0 | 0 |
+| CLS, on a reload | 0.247 | 0.247 | 0 |
+
+Desktop, warm reload, in milliseconds: FCP 292, 300 and 136; LCP 2,644, 2,016 and 136; ready (`game-scene-loaded`) 2,644, 2,665 and 2,560; total blocking time 302, 278 and 256, for before, after and after 2.
+
+The layout shift of 0.247 was one shift of `#game` from the box `[0, 0, 1440, 900]` to `[356, 6, 1078, 888]` (x, y, width, height in px) when the office frame appeared: at 7.6 s on the cold run and at 2.6 s on the reload. After 2 has no shift on either path. The only shift left in the after and after 2 cold runs has the value 0.000006 and is an 8 px move of a paragraph (`[896, 715, 38, 33]` to `[888, 715, 29, 25]` in after).
+
+### Reading
+
+1. **Compression is the large gain.** It cuts what is downloaded by about four fifths and cuts the phone's first paint from 33.7 s to 8.0 s and its name field from 35.9 s to 10.2 s. It does not change the decoded bytes or the work the browser does with them.
+2. **On localhost compression saves no time.** Desktop FCP was 796 ms before and 944 ms after, with TTFB at 32 ms and 63 ms; the third run is back at 784 ms and 31 ms. One run each, on a loaded machine: no claim of a regression is made, and none of a gain. The third run's FCP and LCP of 784 ms are the splash painted by the HTML.
+3. **The splash changes what is painted, not when the app works.** Phone FCP and LCP fall from 8.0 s and 10.1 s to 2.66 s. The name field is visible at 10.1 s in the third run, as in the second.
+4. **The layout shift is gone** on a first visit (after) and on a reload (after 2): 0.247 to 0 in both.
+5. **Total blocking time after the first paint rose because the first paint moved, not because the work grew.** Two more runs of the last build (`webperf-2026-11-22-after3` and `-after4`, same script, same day) give, for before, after, after 2, after 3 and after 4: long tasks until 6 s after the office loaded 1,513, 1,584, 3,254, 1,597 and 1,660 ms in total, with a longest task of 537, 537, 677, 490 and 493 ms; entering the office took 1,544, 1,749, 3,015, 1,659 and 1,636 ms; TBT after FCP 516, 634, 2,160, 1,147 and 1,210 ms. The third run (after 2) is the outlier, taken while the machine was heavily loaded (not recorded in the report). In the two repeats the total main-thread work is what it was before, and TBT after FCP is about 600 ms higher because FCP is now at 84 to 112 ms (the logo painted by the HTML), ahead of the boot task of about 490 ms that used to run before the first paint and so was not counted. The blocking work itself was not reduced.
+6. **Thresholds** (web.dev): LCP good under 2.5 s and poor over 4 s; FCP good under 1.8 s; CLS good under 0.1; TBT good under 200 ms. Desktop FCP is good in every run and LCP is good except the second run (2.58 s). TBT is above 200 ms in every desktop run, and the third phone run's 554 ms is above it too (total blocking time counts only the long tasks that start after FCP, which is why the phone's was 0 while its first paint came after its long task).
+
+### Not fixed or not measured
+
+1. **The phone still needs about 10 s before the name field works.** The entry screen loads the whole game: 1,318 KB of compressed JavaScript, of which the `main`, `GameManager` and `phaser.esm` chunks are 1,064 KB (410,016, 394,854 and 284,993 B). The JavaScript coverage at the entry screen finds 72.8% of the bytes unused (4,520,629 of 6,207,520 B in after 2; the same 72.8% in the three runs; `GameManager` 14.3% used, `main` 25.4%, `phaser.esm` 33.2%). Splitting the entry from the engine was not attempted: the entry screens are Phaser scenes.
+2. **Total blocking time after the first paint is above the good limit and was not improved.** The main-thread work is unchanged (about 1.5 to 1.7 s of long tasks until 6 s after the office loaded, with a boot task of about 490 to 540 ms); TBT after FCP reads 516 and 634 ms before the boot splash and 1,147 and 1,210 ms in the two repeats after it, because the first paint now comes before the boot task (reading 5).
+3. **The splash does not show** for a world with its own logo, or when `ADMIN_URL` is set.
+4. **Correction.** An earlier note of this session attributed the 395 KB chunk `AnalyticsClient` (404,169 B decoded, 17,914 B used at the entry screen) to PostHog. That is wrong: it is the protobuf message codec in a shared chunk, and PostHog loads from an external script only when it is configured. Nothing was changed there. This correction is as the coordinator gave it; the JSON files hold only the chunk's name and size.
+5. **One pusher JSON response of 70 KB is still uncompressed.** In `requests-office.json` it is `/woka/list?roomUrl=…` (72,186 B on the wire, 71,992 B decoded). The map details call to the pusher (`/map?playUri=…`) answers 1,189 B decoded, 1,380 B on the wire, also uncompressed. The message that asked for this section called the 70 KB response the map details call; the JSON says it is the woka list.
+6. **The viewport meta forbids pinch zoom** (`user-scalable=no`, `maximum-scale=1.0`, from upstream). It is kept because the game uses the pinch for the map. `a11y-entry.json` also records no heading on either screen and no landmark on the entry screen; those were not changed.
+7. **No Lighthouse run and no field data.** One lab run per configuration and build, on a loaded machine, on localhost and with emulated throttling.
+8. **The nginx `front` image** (`play/nginx-front.conf`) has `gzip` on but not `gzip_static`, so it does not use the `.br` and `.gz` siblings.
+9. **The settling state hides the game area even when no loading screen is up.** A reviewer flagged this as a possible blank frame. It was not seen in the screenshots of the three runs, but those are taken 3 s after the entry screen is ready and 6 s after the office loaded, so they could not show a one-frame blank.
+10. **Console errors, unchanged in all three runs:** one 404 for `/map-storage/assets/entities/entities.json` and the line "Error while loading entity collection" for the same file. Not investigated.
+11. **Cache header.** `s-maxage` applies to shared caches; a browser's own cache ignores it. On the warm reload `seats.json` and `office.wam` were downloaded in full in all three runs; the header fix was not shown to change that.
+
 ## Phase 1 gate
 
 **Verdict: PARTIAL.** A measurement net exists for four of the five hot flows, but no valid 1000-person run has ever completed.
@@ -439,6 +542,10 @@ Verdict key. `keep` means tests pin the behavior and the gain was measured in a 
 | `89dd5ecdf`, `beb6df3ef`, `560239d63`, `ae2d88ad9` Measurement: `e2eHooks` bench hooks (a 300-frame window with GPU time from `EXT_disjoint_timer_query_webgl2`, frame time, texture uploads, avatar counts), a synthetic crowd, a WebGL2 mode, and the frame probe with Gate 1 as a repository command | No client GPU frame time (timer query) had ever been measured | Gate 1 on one Apple M1 Max in Google Chrome, 2026-11-22: section "HQ acceptance". Tests: `GpuFrameTimer.test.ts` 17, `E2EHooksFrameRecorder.test.ts` 33, `benchmark/tests/frameprobe-*.test.ts` 189 | keep. Instrumentation, no gain claimed | 2026-11-22 |
 | `d9d1e79f2` Port of upstream `7d24e4965`: mouse pathfinding counts a layer hidden in Tiled as the keyboard colliders do | A click could walk through an invisible wall | The grid counts a hidden layer (`HiddenLayerCollisionGrid.test.ts`). A layer hidden by a script stays out | keep. A correctness fix, no performance claim | 2026-11-22 |
 | `4620e59cf`, `4d2a84570`, `881b7bc67`, `531129d2c`, `2a86b2565`, `e5b00f07f`, `61ea29016`, `cc40ca7a5` The people panel with a count-first roster (C3 front), the map tools column (U06, E05, E06), pixel emotes (U15, E08), their wiring and the fixes of a real-browser pass | The roster watch of `allWorldUser` and the emote and tile-click paths of upstream | No performance number. The panel watches the roster only while it is open and the world is at or below T = 200 (180 / 220 hysteresis); without `WORLD_HEADCOUNT_ENABLED` on the back (off by default) the count and the roster behave as before, so the roster saving needs that flag and is not measured. A character that is not drawn (culled or a dot) builds no emote | keep. Not a performance change | 2026-11-21 |
+| `9344f122d` The built front is served precompressed with Brotli or gzip (a `.br` and a `.gz` sibling of every compressible file that shrinks, chosen by `Accept-Encoding`); the page is compressed on the way out unless it embeds a token. Web audit, Chrome 157 on one Apple M1 Max under load, one run per build, 2026-11-22 | No response had a `content-encoding`. Entry screen 6,683 KB (JavaScript 6,064, CSS 558); warm reload 788 KB; phone, throttled: FCP 33.7 s, LCP 35.8 s, name field visible at 35.9 s | Entry screen 1,443 KB (JavaScript 1,318, CSS 82); warm reload 156 KB; phone FCP 8.0 s, LCP 10.1 s, name field 10.2 s. Desktop on localhost: no time saved (FCP 796 to 944 ms). Tests: `ContentEncoding`, `PrecompressedStatic`, `PrecompressBuild`, `FrontAssetsCompression`, `FrontControllerCompression` (`docs/TESTING.md`) | keep. The nginx `front` image does not use the siblings, and the 70 KB `/woka/list` is still uncompressed (section "Web performance audit") | 2026-11-22 |
+| `3f9e55d6c` Map files (JSON, TMJ, WAM, other text) are streamed as Brotli or gzip by `Accept-Encoding`, for the disk and the S3 back ends; the default cache header `public, s-max-age=10` (not a directive) is now `public, s-maxage=10`. Same audit | Entering the office 11,974 KB, of which map files 3,547 KB; `seats.json` 640 KB and `office.wam` 134 KB on a warm reload | Entering the office 3,069 KB, of which map files 551 KB; `seats.json` 119 KB and `office.wam` 29 KB on a warm reload. Test: `map-storage/src/FileFetcher/tests/Compression.test.ts`, 44 tests | keep. A browser's own cache ignores `s-maxage`: the two files were still downloaded in full on the warm reload | 2026-11-22 |
+| `da6db31cf` The office frame no longer shifts the game when it appears: the frame's viewport is held out of sight while it moves and shown at its final place, the loading screen stays fixed to the window meanwhile, and the game area is the page's main landmark. Same audit | Layout shift 0.247 on a first visit and on a reload (`#game` moved from the whole window into the frame) | 0 on a first visit and 0 on a reload (desktop 1440 × 900, one run each). Tests: `FrameBounds.test.ts` and the shell tests (`docs/TESTING.md`) | keep. The settling state hides the game area even when no loading screen is up: a possible blank frame, not seen in the screenshots, which are taken seconds apart | 2026-11-22 |
+| `7ed6e8fa2` `index.html` paints the brand logo before the JavaScript arrives, preloaded and placed where the loading screen draws it; the app removes it when its first screen is up. No splash for a world with a logo of its own or an admin. Same audit | Phone, throttled: FCP 8.0 s and LCP 10.1 s after compression (33.7 s and 35.8 s before it) | FCP and LCP 2.66 s, a paint of the splash logo; the name field is visible at 10.1 s, as before. Desktop FCP and LCP 784 ms. Tests: `BootSplash`, `BootSplashScreens`, `BootSplashTemplate` (`docs/TESTING.md`) | keep. It changes what is painted, not when the app works; in the third run total blocking time and entering the office are higher than before and the cause is not known (section "Web performance audit", reading 5) | 2026-11-22 |
 
 ## Decisions and next actions
 
@@ -477,6 +584,10 @@ Next actions. Owner "code workflow" is the session that edits `back/`, `play/src
 | [ ] | Browser frame-time run for the C2 detail budget (300 avatars at whole-map zoom, flag off and on, work p50 and long tasks). Partly done 2026-11-22: Gate 1 ran the three avatar flags off and on with 999 walkers at default zoom (GPU time, frame interval); the flag was turned on by default in `863e8d384`. The DEC C2 criterion (300 avatars, whole-map zoom, work p50 at least 50% below flag off, no long task over 50 ms) is still not read | code workflow | P2 |
 | [ ] | Gate 1 follow-ups: a run with the normal-map texture loaded (`normalMapLoaded` was `false` in all 30 windows of 2026-11-22), at whole-map zoom, on a second GPU, and with `konclui.fx.rim` the same in both arms; an inspection of the day, dusk and night screenshots | code workflow | P2 |
 | [ ] | A load run with real sockets, and a 2 vCPU Linux host for the 35% CPU target, with `PUSHER_VIEWER_BUDGET_ENABLED` off and on at the 2026-11-22 code (`bda3a26c6`) | owner (needs a host) | P1 |
+| [ ] | Split the entry screens from the engine, so that the name field works before 1,318 KB of JavaScript has run (phone, throttled: name field visible at 10.1 s; 72.8% of the entry JavaScript unused). Not attempted: the entry screens are Phaser scenes | code workflow | P2 |
+| [ ] | Reduce the boot task (about 490 ms on this Mac, unthrottled) and the 1.5 to 1.7 s of long tasks on the way into the office: profile the start in Chrome, and split what the entry screen does not need. The 2,160 ms of the third web audit run was not reproduced: two repeats gave 1,147 and 1,210 ms (`webperf-2026-11-22-after3`, `-after4`). |
+| [ ] | Use the precompressed siblings in `play/nginx-front.conf` (`gzip_static` or Brotli), compress `/woka/list` (72,186 B), and check the 404 for `/map-storage/assets/entities/entities.json` | code workflow | P3 |
+| [ ] | A Lighthouse run and field data (the existing PostHog Web Vitals) for the entry screen and the office; repeat the web audit three times per configuration | code workflow | P3 |
 
 ## Budgets as tests
 
