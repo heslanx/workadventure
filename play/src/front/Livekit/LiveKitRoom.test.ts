@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { Subject } from "rxjs";
 import { writable } from "svelte/store";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConnectionState, DisconnectReason, Track } from "livekit-client";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { ConnectionState, DisconnectReason, Room, Track } from "livekit-client";
 import type * as LivekitClient from "livekit-client";
 import type { Readable } from "svelte/store";
 import type { LocalStreamStoreValue } from "../Stores/MediaStore";
@@ -13,8 +13,13 @@ import type { StreamableSubjects } from "../Space/SpacePeerManager/SpacePeerMana
 import { demotedCodecStore } from "../WebRtc/CodecPerformance";
 import { selectVideoPreset } from "../WebRtc/VideoPresets";
 import { analyticsClient } from "../Administration/AnalyticsClient";
-import { LiveKitRoom } from "./LiveKitRoom";
+import { LiveKitRoom, LiveKitRoomClosedBeforeConnectError } from "./LiveKitRoom";
 import { SCRIPTING_AUDIO_TRACK_NAME } from "./LivekitConstants";
+import { LivekitClientLoadError, loadLivekitClient } from "./LivekitClientLoader";
+import type * as LivekitClientLoaderModule from "./LivekitClientLoader";
+import type { LivekitClientModule } from "./LivekitClientLoader";
+import { reportLivekitClientLoadFailure } from "./LivekitClientLoadFailure";
+import { LIVEKIT_LOAD_RETRY_DELAYS_MS, livekitClientLoadRetryPolicy } from "./LivekitClientLoadRetryPolicy";
 
 const audioPlaybackStoreMock = vi.hoisted(() => {
     const subscribers = new Set<(value: ReadonlySet<unknown>) => void>();
@@ -82,6 +87,13 @@ vi.mock("../Stores/StreamableCollectionStore", async () => {
 
 vi.mock("../Space/SpacePeerManager/SpacePeerManager", () => ({}));
 
+// The loading tests decide when, and whether, livekit-client arrives
+vi.mock("./LivekitClientLoader", async (importOriginal) => {
+    const actual = await importOriginal<typeof LivekitClientLoaderModule>();
+    return { ...actual, loadLivekitClient: vi.fn(actual.loadLivekitClient) };
+});
+vi.mock("./LivekitClientLoadFailure", () => ({ reportLivekitClientLoadFailure: vi.fn() }));
+
 // The real LocalVideoTrack / LocalAudioTrack need a browser MediaStreamTrack. Keep the surface LiveKitRoom uses.
 vi.mock("livekit-client", async (importOriginal) => {
     const actual = await importOriginal<typeof LivekitClient>();
@@ -95,8 +107,19 @@ vi.mock("livekit-client", async (importOriginal) => {
         public simulcastCodecs = new Map();
         constructor(public mediaStreamTrack: MediaStreamTrack) {}
     }
+    // The real Room opens network connections in prepareConnection()
+    class FakeRoom {
+        public static instances: FakeRoom[] = [];
+        public localParticipant = { identity: "me" };
+        public setMaxListeners = vi.fn();
+        public prepareConnection = vi.fn().mockResolvedValue(undefined);
+        constructor(public options: unknown) {
+            FakeRoom.instances.push(this);
+        }
+    }
     return {
         ...actual,
+        Room: FakeRoom,
         LocalVideoTrack: FakeLocalTrack,
         LocalAudioTrack: FakeLocalTrack,
         // Codec support is probed through RTCRtpSender, which jsdom does not have
@@ -110,6 +133,11 @@ vi.mock("livekit-client", async (importOriginal) => {
 });
 
 describe("LiveKitRoom", () => {
+    // The room methods under test run once prepareConnection() has loaded livekit-client
+    beforeAll(async () => {
+        await loadLivekitClient();
+    });
+
     beforeEach(() => {
         // The encoder analytics hook checks the admin capabilities after a publication
         window.capabilities = {};
@@ -645,6 +673,232 @@ describe("LiveKitRoom", () => {
 
         expect(removed.map((streamable) => streamable.spaceUserId)).toEqual([spaceUser.spaceUserId]);
         expect(participant.off).toHaveBeenCalled();
+    });
+});
+
+describe("loading livekit-client", () => {
+    beforeAll(async () => {
+        await loadLivekitClient();
+    });
+
+    beforeEach(() => {
+        window.capabilities = {};
+        vi.clearAllMocks();
+        fakeRooms().length = 0;
+        livekitClientLoadRetryPolicy.recordSuccess();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    function fakeRooms(): unknown[] {
+        return (Room as unknown as { instances: unknown[] }).instances;
+    }
+
+    function holdTheLoad(): { arrive: () => Promise<void>; fail: (error: unknown) => void } {
+        let resolveLoad: (module: LivekitClientModule) => void = () => {};
+        let rejectLoad: (error: unknown) => void = () => {};
+        vi.mocked(loadLivekitClient).mockImplementationOnce(
+            () =>
+                new Promise<LivekitClientModule>((resolve, reject) => {
+                    resolveLoad = resolve;
+                    rejectLoad = reject;
+                }),
+        );
+        return {
+            arrive: async () => {
+                resolveLoad(await vi.importActual<LivekitClientModule>("livekit-client"));
+            },
+            fail: (error) => rejectLoad(error),
+        };
+    }
+
+    function createRoom(emitBackEvent = vi.fn(), abortSignal = new AbortController().signal) {
+        return new LiveKitRoom(
+            "wss://livekit.example.com",
+            "token",
+            createSpace(writable(false), emitBackEvent),
+            createStreamableSubjects(),
+            writable(new Set<string>()),
+            abortSignal,
+            writable(undefined),
+            writable(undefined),
+            { increment: vi.fn(), decrement: vi.fn() },
+            writable({ type: "success", stream: undefined }),
+        );
+    }
+
+    it("creates no room before livekit-client has arrived, and one once it has", async () => {
+        const load = holdTheLoad();
+        const room = createRoom();
+
+        const preparing = room.prepareConnection();
+        await Promise.resolve();
+        expect(fakeRooms()).toHaveLength(0);
+        expect(room["room"]).toBeUndefined();
+
+        await load.arrive();
+        await preparing;
+
+        expect(fakeRooms()).toHaveLength(1);
+        expect(room["room"]).toBe(fakeRooms()[0]);
+    });
+
+    it("reports a failed load, closes the room and asks the back for a new invitation a few seconds later", async () => {
+        vi.useFakeTimers();
+        const emitBackEvent = vi.fn();
+        const counter = { increment: vi.fn(), decrement: vi.fn() };
+        const room = new LiveKitRoom(
+            "wss://livekit.example.com",
+            "token",
+            createSpace(writable(false), emitBackEvent),
+            createStreamableSubjects(),
+            writable(new Set<string>()),
+            new AbortController().signal,
+            writable(undefined),
+            writable(undefined),
+            counter,
+            writable({ type: "success", stream: undefined }),
+        );
+        const loadError = new LivekitClientLoadError(new TypeError("Failed to fetch dynamically imported module"));
+        vi.mocked(loadLivekitClient).mockRejectedValueOnce(loadError);
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await expect(room.prepareConnection()).rejects.toBe(loadError);
+
+        expect(reportLivekitClientLoadFailure).toHaveBeenCalledExactlyOnceWith(loadError, {
+            attempt: 1,
+            retryAfterMs: LIVEKIT_LOAD_RETRY_DELAYS_MS[0],
+        });
+        expect(fakeRooms()).toHaveLength(0);
+        expect(counter.decrement).toHaveBeenCalledOnce();
+        // Closing a room that never existed is not a second error
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(emitBackEvent).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(LIVEKIT_LOAD_RETRY_DELAYS_MS[0]);
+
+        expect(emitBackEvent).toHaveBeenCalledExactlyOnceWith({
+            event: { $case: "meetingConnectionRestartMessage", meetingConnectionRestartMessage: {} },
+        });
+    });
+
+    it("does not ask for a new invitation after a failed load when the space was left meanwhile", async () => {
+        vi.useFakeTimers();
+        const emitBackEvent = vi.fn();
+        const abort = new AbortController();
+        const room = createRoom(emitBackEvent, abort.signal);
+        vi.mocked(loadLivekitClient).mockRejectedValueOnce(new LivekitClientLoadError(new Error("offline")));
+        vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await expect(room.prepareConnection()).rejects.toBeInstanceOf(LivekitClientLoadError);
+        abort.abort();
+        await vi.advanceTimersByTimeAsync(LIVEKIT_LOAD_RETRY_DELAYS_MS[0]);
+
+        expect(emitBackEvent).not.toHaveBeenCalled();
+    });
+
+    it("tells the user nothing about a load that failed after the space was left", async () => {
+        const load = holdTheLoad();
+        const abort = new AbortController();
+        const room = createRoom(vi.fn(), abort.signal);
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const error = new LivekitClientLoadError(new Error("offline"));
+
+        const preparing = room.prepareConnection();
+        abort.abort();
+        load.fail(error);
+
+        await expect(preparing).rejects.toBe(error);
+        expect(reportLivekitClientLoadFailure).not.toHaveBeenCalled();
+        // The streak is not counted either: nobody was waiting for this room
+        expect(livekitClientLoadRetryPolicy.recordFailure().attempt).toBe(1);
+    });
+
+    it("creates no room when it is destroyed while livekit-client is loading, without any error report", async () => {
+        const load = holdTheLoad();
+        const room = createRoom();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        const preparing = room.prepareConnection();
+        room.destroy();
+        await load.arrive();
+
+        await expect(preparing).rejects.toBeInstanceOf(LiveKitRoomClosedBeforeConnectError);
+        expect(fakeRooms()).toHaveLength(0);
+        expect(consoleError).not.toHaveBeenCalled();
+    });
+
+    it("keeps the scripting audio it receives while livekit-client is loading, to publish it once connected", async () => {
+        const load = holdTheLoad();
+        const room = createRoom();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        const stream = { getAudioTracks: () => [{ id: "scripting" }] } as unknown as MediaStream;
+
+        const preparing = room.prepareConnection();
+        await room.dispatchStream(stream);
+
+        expect(room["pendingScriptingStream"]).toBe(stream);
+        expect(consoleError).not.toHaveBeenCalled();
+
+        await load.arrive();
+        await preparing;
+    });
+
+    it("stops asking for new invitations once the retries are used up, however long the library keeps failing", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const emitBackEvent = vi.fn();
+
+        // Each invitation the back sends builds a new room, which loads the library again and fails again
+        // The invitations are sequential: each follows the previous failure
+        /* eslint-disable no-await-in-loop */
+        for (let invitation = 0; invitation < 10; invitation++) {
+            vi.mocked(loadLivekitClient).mockRejectedValueOnce(new LivekitClientLoadError(new Error("404")));
+            await expect(createRoom(emitBackEvent).prepareConnection()).rejects.toBeInstanceOf(LivekitClientLoadError);
+            await vi.advanceTimersByTimeAsync(Math.max(...LIVEKIT_LOAD_RETRY_DELAYS_MS));
+        }
+        /* eslint-enable no-await-in-loop */
+
+        expect(emitBackEvent).toHaveBeenCalledTimes(LIVEKIT_LOAD_RETRY_DELAYS_MS.length);
+        const decisions = vi.mocked(reportLivekitClientLoadFailure).mock.calls.map(([, decision]) => decision);
+        expect(decisions).toHaveLength(10);
+        expect(decisions[LIVEKIT_LOAD_RETRY_DELAYS_MS.length]).toEqual({
+            attempt: LIVEKIT_LOAD_RETRY_DELAYS_MS.length + 1,
+            retryAfterMs: undefined,
+        });
+    });
+
+    it("starts counting again from the first retry once the library has arrived", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(loadLivekitClient).mockRejectedValueOnce(new LivekitClientLoadError(new Error("offline")));
+        await expect(createRoom().prepareConnection()).rejects.toBeInstanceOf(LivekitClientLoadError);
+
+        await createRoom().prepareConnection();
+        vi.mocked(loadLivekitClient).mockRejectedValueOnce(new LivekitClientLoadError(new Error("offline")));
+        await expect(createRoom().prepareConnection()).rejects.toBeInstanceOf(LivekitClientLoadError);
+
+        const attempts = vi.mocked(reportLivekitClientLoadFailure).mock.calls.map(([, decision]) => decision.attempt);
+        expect(attempts).toEqual([1, 1]);
+    });
+
+    it("keeps the scripting audio it receives after a failed load, without reporting a missing participant", async () => {
+        vi.useFakeTimers();
+        const room = createRoom();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(loadLivekitClient).mockRejectedValueOnce(new LivekitClientLoadError(new Error("offline")));
+        const stream = { getAudioTracks: () => [{ id: "scripting" }] } as unknown as MediaStream;
+
+        await expect(room.prepareConnection()).rejects.toBeInstanceOf(LivekitClientLoadError);
+        // The room is closed, the replacement is not there yet: LivekitConnection still holds this one
+        consoleError.mockClear();
+        await room.dispatchStream(stream);
+
+        expect(room["pendingScriptingStream"]).toBe(stream);
+        expect(consoleError).not.toHaveBeenCalled();
     });
 });
 

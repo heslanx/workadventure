@@ -1,5 +1,4 @@
 import Debug from "debug";
-import { ConnectionError, ConnectionErrorReason } from "livekit-client";
 import type { Subscription } from "rxjs";
 import * as Sentry from "@sentry/svelte";
 import type { Readable } from "svelte/store";
@@ -8,7 +7,8 @@ import type { StreamableSubjects } from "../Space/SpacePeerManager/SpacePeerMana
 import { CommunicationMessageType } from "../Space/SpacePeerManager/CommunicationMessageType";
 import { streamingMegaphoneStore, type LocalStreamStoreValue } from "../Stores/MediaStore";
 import type { LiveKitRoomInterface } from "./LiveKitRoomInterface";
-import { LiveKitRoom } from "./LiveKitRoom";
+import { LiveKitRoom, LiveKitRoomClosedBeforeConnectError } from "./LiveKitRoom";
+import { LivekitClientLoadError, isLivekitClientLoaded, livekitClient } from "./LivekitClientLoader";
 
 const debug = Debug("LivekitConnection");
 
@@ -77,7 +77,23 @@ export class LivekitConnection {
                         await this.dispatchStream(this.lastDispatchedStream);
                     }
                 })().catch((err) => {
-                    if (err instanceof ConnectionError && err.message === "Client initiated disconnect") {
+                    if (err instanceof LiveKitRoomClosedBeforeConnectError) {
+                        // The user left the space while livekit-client was loading
+                        debug("Livekit room closed before it was created");
+                        return;
+                    }
+                    if (err instanceof LivekitClientLoadError) {
+                        // Already reported to the user and to Sentry by LiveKitRoom, which asks for a new invitation
+                        return;
+                    }
+                    // A ConnectionError can only come from a loaded livekit-client
+                    const lk = isLivekitClientLoaded() ? livekitClient() : undefined;
+                    const ConnectionError = lk?.ConnectionError;
+                    if (
+                        ConnectionError &&
+                        err instanceof ConnectionError &&
+                        err.message === "Client initiated disconnect"
+                    ) {
                         // This error is triggered when the "destroy" method is called before Livekit connection completes.
                         // It can happen when the user leaves the space just after joining it.
                         // In this case, we don't want to log an error.
@@ -85,9 +101,11 @@ export class LivekitConnection {
                         return;
                     }
                     if (
+                        lk &&
+                        ConnectionError &&
                         err instanceof ConnectionError &&
-                        (err.reason === ConnectionErrorReason.ServerUnreachable ||
-                            err.reason === ConnectionErrorReason.Timeout)
+                        (err.reason === lk.ConnectionErrorReason.ServerUnreachable ||
+                            err.reason === lk.ConnectionErrorReason.Timeout)
                     ) {
                         // The LiveKit server cannot be reached (network outage on the user's side, typically).
                         // LiveKitRoom.handleDisconnected already asked the back for a new invitation: not a bug.

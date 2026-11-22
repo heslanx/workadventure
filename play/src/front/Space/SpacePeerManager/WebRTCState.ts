@@ -1,4 +1,4 @@
-import type { Readable } from "svelte/store";
+import type { Readable, Unsubscriber } from "svelte/store";
 import { SimplePeer } from "../../WebRtc/SimplePeer";
 import type { SpaceInterface } from "../SpaceInterface";
 import type { LocalStreamStoreValue } from "../../Stores/MediaStore";
@@ -8,6 +8,7 @@ import type {
     ICommunicationState,
     StreamableSubjects,
 } from "./SpacePeerManager";
+import { watchSpaceSizeForLivekitPreload } from "./LivekitPreload";
 
 export const defaultPeerFactory: PeerFactoryInterface = {
     create: (
@@ -23,6 +24,7 @@ export const defaultPeerFactory: PeerFactoryInterface = {
 
 export class WebRTCState implements ICommunicationState {
     private readonly _peer: SimplePeerConnectionInterface;
+    private readonly _stopLivekitPreload: Unsubscriber;
 
     constructor(
         private _space: SpaceInterface,
@@ -37,9 +39,12 @@ export class WebRTCState implements ICommunicationState {
             _blockedUsersStore,
             _screenSharingLocalStreamStore,
         );
+        // A bubble that grows past what peer-to-peer carries moves to LiveKit: have the library by then
+        this._stopLivekitPreload = watchSpaceSizeForLivekitPreload(this._space.usersStore);
     }
 
     destroy() {
+        this._stopLivekitPreload();
         this._peer.destroy();
     }
 

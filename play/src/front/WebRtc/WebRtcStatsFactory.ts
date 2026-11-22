@@ -1,4 +1,4 @@
-import { Track, type LocalVideoTrack, type RemoteTrack } from "livekit-client";
+import type { LocalVideoTrack, RemoteTrack } from "livekit-client";
 import { derived, readable, type Readable } from "svelte/store";
 import type {
     VideoPlaybackCounters,
@@ -6,6 +6,7 @@ import type {
     WebRtcSenderStats,
     WebRtcStats,
 } from "../Components/Video/WebRtcStats";
+import { livekitClient } from "../Livekit/LivekitClientLoader";
 import type { RemotePeer } from "./RemotePeer";
 import { FpsVariabilityTracker } from "./FpsVariabilityTracker";
 import { getSelectedIceRoute } from "./SelectedIceRoute";
@@ -81,7 +82,9 @@ export function createLivekitWebRtcStats(
         includeRelayDetails: false,
         // The SFU pauses the track when we do not display it (adaptiveStream), and a muted camera keeps its track but
         // sends nothing: both are deliberate. Otherwise the target frame rate is unknown.
-        getExpectedFps: () => (track?.streamState === Track.StreamState.Paused || track?.isMuted ? 0 : undefined),
+        // A track exists only once livekit-client is loaded, which is when the enum is read
+        getExpectedFps: () =>
+            track && (track.streamState === livekitClient().Track.StreamState.Paused || track.isMuted) ? 0 : undefined,
         measureFpsVariability: videoType === "video",
     });
 }

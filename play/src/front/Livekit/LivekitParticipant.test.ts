@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { Subject } from "rxjs";
 import { get, writable } from "svelte/store";
 import { Track, type RemoteParticipant, type RemoteTrack, type RemoteTrackPublication } from "livekit-client";
@@ -8,13 +8,30 @@ import type { StreamableSubjects } from "../Space/SpacePeerManager/SpacePeerMana
 import type { LivekitStreamable, Streamable } from "../Space/Streamable";
 import { SCRIPTING_AUDIO_TRACK_NAME } from "./LivekitConstants";
 import { LiveKitParticipant } from "./LivekitParticipant";
+import { loadLivekitClient } from "./LivekitClientLoader";
 
 type MockRemoteTrackPublication = RemoteTrackPublication & {
     setSubscribed: ReturnType<typeof vi.fn<(subscribed: boolean) => void>>;
     setVideoQuality: ReturnType<typeof vi.fn>;
 };
 
+type PublicationSpies = {
+    setSubscribed: ReturnType<typeof vi.fn<(subscribed: boolean) => void>>;
+    setVideoQuality: ReturnType<typeof vi.fn>;
+};
+
+// The spies of a publication, read as properties: `expect(publication.setSubscribed)` is an unbound method reference
+// for the type checker, since the publication is typed as the library's class.
+function spies(publication: RemoteTrackPublication): PublicationSpies {
+    return publication as unknown as PublicationSpies;
+}
+
 describe("LiveKitParticipant", () => {
+    // A participant belongs to a room, which loaded livekit-client before creating it
+    beforeAll(async () => {
+        await loadLivekitClient();
+    });
+
     beforeEach(() => {
         vi.spyOn(console, "warn").mockImplementation(() => {});
         // Provide an empty capabilities object so hasCapability() does not crash
@@ -35,22 +52,22 @@ describe("LiveKitParticipant", () => {
         publication.setSubscribed.mockClear();
 
         const releaseFirst = media.acquireVideoSubscription();
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
-        expect(publication.setSubscribed).toHaveBeenLastCalledWith(true);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenLastCalledWith(true);
 
         const releaseSecond = media.acquireVideoSubscription();
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
 
         releaseFirst();
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
 
         releaseSecond();
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
 
         vi.advanceTimersByTime(75);
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(2);
-        expect(publication.setSubscribed).toHaveBeenLastCalledWith(false);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(2);
+        expect(spies(publication).setSubscribed).toHaveBeenLastCalledWith(false);
     });
 
     it("should ignore duplicate lease releases", () => {
@@ -65,13 +82,13 @@ describe("LiveKitParticipant", () => {
         release();
         release();
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
 
         vi.advanceTimersByTime(75);
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(2);
-        expect(publication.setSubscribed).toHaveBeenNthCalledWith(1, true);
-        expect(publication.setSubscribed).toHaveBeenNthCalledWith(2, false);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(2);
+        expect(spies(publication).setSubscribed).toHaveBeenNthCalledWith(1, true);
+        expect(spies(publication).setSubscribed).toHaveBeenNthCalledWith(2, false);
     });
 
     it("should subscribe a newly published camera track when a lease is already active", () => {
@@ -84,16 +101,16 @@ describe("LiveKitParticipant", () => {
 
         participant["handleTrackPublished"](publication);
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
-        expect(publication.setSubscribed).toHaveBeenCalledWith(true);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledWith(true);
 
         release();
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
 
         vi.advanceTimersByTime(75);
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(2);
-        expect(publication.setSubscribed).toHaveBeenLastCalledWith(false);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(2);
+        expect(spies(publication).setSubscribed).toHaveBeenLastCalledWith(false);
     });
 
     it("should cancel a pending unsubscribe when the same video is reacquired quickly", () => {
@@ -110,17 +127,17 @@ describe("LiveKitParticipant", () => {
         vi.advanceTimersByTime(50);
         const releaseSecond = media.acquireVideoSubscription();
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
-        expect(publication.setSubscribed).toHaveBeenLastCalledWith(true);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenLastCalledWith(true);
 
         vi.advanceTimersByTime(100);
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(1);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(1);
 
         releaseSecond();
         vi.advanceTimersByTime(75);
 
-        expect(publication.setSubscribed).toHaveBeenCalledTimes(2);
-        expect(publication.setSubscribed).toHaveBeenLastCalledWith(false);
+        expect(spies(publication).setSubscribed).toHaveBeenCalledTimes(2);
+        expect(spies(publication).setSubscribed).toHaveBeenLastCalledWith(false);
     });
 
     it("should merge microphone and scripting audio publications into the audio stream store", () => {
@@ -138,8 +155,8 @@ describe("LiveKitParticipant", () => {
 
         const audioStream = get(media.streamStore);
 
-        expect(microphonePublication.setSubscribed).toHaveBeenCalledWith(true);
-        expect(scriptingPublication.setSubscribed).toHaveBeenCalledWith(true);
+        expect(spies(microphonePublication).setSubscribed).toHaveBeenCalledWith(true);
+        expect(spies(scriptingPublication).setSubscribed).toHaveBeenCalledWith(true);
         expect(audioStream).not.toBe(microphoneStream);
         expect(audioStream).not.toBe(scriptingStream);
         expect(audioStream?.getAudioTracks()).toEqual([
@@ -158,7 +175,7 @@ describe("LiveKitParticipant", () => {
         participant["handleTrackPublished"](scriptingPublication);
         participant["handleTrackSubscribed"](createRemoteAudioTrack(scriptingStream), scriptingPublication);
 
-        expect(scriptingPublication.setSubscribed).toHaveBeenCalledWith(true);
+        expect(spies(scriptingPublication).setSubscribed).toHaveBeenCalledWith(true);
         expect(get(media.streamStore)).toBe(scriptingStream);
         expect(get(participant.getStreamable().hasAudio)).toBe(true);
 
@@ -192,7 +209,7 @@ describe("LiveKitParticipant", () => {
 
         const audioStream = get(media.streamStore);
 
-        expect(firstScriptingPublication.setSubscribed).toHaveBeenLastCalledWith(false);
+        expect(spies(firstScriptingPublication).setSubscribed).toHaveBeenLastCalledWith(false);
         expect(audioStream?.getAudioTracks()).toEqual([
             microphoneStream.getAudioTracks()[0],
             secondScriptingStream.getAudioTracks()[0],

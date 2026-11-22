@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/svelte";
 import type { Readable } from "svelte/store";
 import { LivekitConnection } from "../../Livekit/LivekitConnection";
+import { preloadLivekitClient } from "../../Livekit/LivekitClientLoader";
 import type { SpaceInterface } from "../SpaceInterface";
 import type { LocalStreamStoreValue } from "../../Stores/MediaStore";
 import type { SimplePeerConnectionInterface, ICommunicationState, StreamableSubjects } from "./SpacePeerManager";
@@ -13,6 +14,8 @@ export class LivekitState implements ICommunicationState {
         private _blockedUsersStore: Readable<Set<string>>,
         private _screenSharingLocalStreamStore: Readable<LocalStreamStoreValue | undefined>,
     ) {
+        // The invitation, which makes the connection await the library, follows this switch by a round trip to the back
+        preloadLivekitClient();
         this.livekitConnection = new LivekitConnection(
             this._space,
             this._streamableSubjects,
