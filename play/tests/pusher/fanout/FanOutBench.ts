@@ -13,7 +13,12 @@ import { PositionDispatcher } from "../../../src/pusher/models/PositionDispatche
 import type { PusherRoom } from "../../../src/pusher/models/PusherRoom";
 import { ViewerBudget, type ViewerBudgetLimits } from "../../../src/pusher/models/ViewerBudget";
 import { clientEventsEmitter } from "../../../src/pusher/services/ClientEventsEmitter";
-import { PusherWebSocket, type BatchTiming, type RawSocket } from "../../../src/pusher/services/PusherWebSocket";
+import {
+    PusherWebSocket,
+    type BatchTiming,
+    type RawSocket,
+    type ResumeStoreOptions,
+} from "../../../src/pusher/services/PusherWebSocket";
 import { SocketManager } from "../../../src/pusher/services/SocketManager";
 
 /* eslint-disable no-await-in-loop -- a bench measures one scenario at a time: runs must not overlap. */
@@ -104,6 +109,44 @@ export interface FanOutScenario {
      * the budget off).
      */
     nearestRanks?: number;
+    /**
+     * Sockets whose client does not read: the uWS send answers "buffered" (0) every time and no drain ever comes, so
+     * after the first frame every one waits in the resume store. The last sockets that are not observers. 0 by default.
+     */
+    slowReaders?: number;
+    /**
+     * Samples what each socket keeps for a resume once every simulated second, and reports the peak in
+     * `FanOutResult.retention`. Counts and bytes, never time. Off by default: the sampling visits every socket.
+     */
+    measureRetention?: boolean;
+    /** How long a socket keeps a frame for a resume (CLIENT_DISCONNECTION_RETENTION_MS, 30000 in production). */
+    resumeRetentionMs?: number;
+    /** What a socket may keep (PUSHER_RESUME_STORE_MAX_MESSAGES and _MAX_BYTES); 0, no limit, in production by default. */
+    resumeMaxMessages?: number;
+    resumeMaxBytes?: number;
+}
+
+/**
+ * What the sockets kept for a resume, at the sample where the total of bytes was highest. MEASURED counts: the store of
+ * each socket is read, nothing is estimated. The frames of a socket are kept whether the client read them or not, so a
+ * healthy socket and a slow reader keep the same until a limit is set.
+ */
+export interface RetentionPeak {
+    /** Sockets whose stores were read. */
+    sockets: number;
+    /** All sockets together: frames and bytes kept. */
+    totalMessages: number;
+    totalBytes: number;
+    /** The socket that kept the most. */
+    maxMessagesOfOneSocket: number;
+    maxBytesOfOneSocket: number;
+    /** Mean of a socket that reads (healthy) and of a slow reader; NaN when there are none of that kind. */
+    healthyMeanBytes: number;
+    healthyMeanMessages: number;
+    slowMeanBytes: number;
+    slowMeanMessages: number;
+    /** Sockets the pusher ended (transport closed) because they fell behind a limit. */
+    sessionsEnded: number;
 }
 
 /** What the pusher did in the window, counted call by call: they do not depend on the speed of the host. */
@@ -208,6 +251,8 @@ export interface FanOutResult {
     admissionPerSocket: { joins: number; leaves: number };
     /** The top self-time functions of the window, when the scenario asked for a profile. */
     profileTop?: string[];
+    /** Only with `measureRetention`: what the sockets kept for a resume at the highest sample. */
+    retention: RetentionPeak | undefined;
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -459,6 +504,9 @@ interface Sink {
     socket: PusherWebSocket;
     frames: number;
     bytes: number;
+    slow: boolean;
+    /** Times the pusher ended the transport of this socket. */
+    ended: number;
     /** For observers: when the frame was written, the frame and where it stood in its herd, decoded after the run. */
     kept: { time: number; frame: Uint8Array; group: number; position: number }[] | undefined;
 }
@@ -469,6 +517,8 @@ function makeSink(
     clock: VirtualClock,
     keep: boolean,
     timing: BatchTiming,
+    resumeStore: ResumeStoreOptions,
+    slow: boolean,
 ): Sink {
     const userData = {
         userId,
@@ -478,11 +528,15 @@ function makeSink(
         listenedZones: new Set<string>(),
         viewport: { left: home.x - 480, right: home.x + 480, top: home.y - 270, bottom: home.y + 270 },
     };
-    const sink = { userId, frames: 0, bytes: 0, kept: keep ? [] : undefined } as Sink;
+    const sink = { userId, frames: 0, bytes: 0, slow, ended: 0, kept: keep ? [] : undefined } as Sink;
     const raw = {
         send: (payload: Uint8Array) => {
             sink.frames += 1;
             sink.bytes += payload.length;
+            if (slow) {
+                // Buffered by uWS, which never drains: the pusher stops sending and keeps the rest for a resume.
+                return 0;
+            }
             const place = clock.noteFrame();
             sink.kept?.push({
                 time: clock.now,
@@ -493,11 +547,13 @@ function makeSink(
             return 1;
         },
         ping: () => 1,
-        end: () => undefined,
+        end: () => {
+            sink.ended += 1;
+        },
         getBufferedAmount: () => 0,
         getUserData: () => userData,
     };
-    sink.socket = new PusherWebSocket(raw as unknown as RawSocket, timing);
+    sink.socket = new PusherWebSocket(raw as unknown as RawSocket, timing, resumeStore);
     return sink;
 }
 
@@ -686,6 +742,11 @@ export async function runFanOut(scenario: FanOutScenario): Promise<FanOutResult>
         wanderPx: scenario.wanderPx ?? 0,
         wanderPeriodSeconds: scenario.wanderPeriodSeconds ?? 8,
         nearestRanks: scenario.nearestRanks ?? scenario.budget?.fullRatePeers ?? scenario.sockets,
+        slowReaders: Math.min(scenario.slowReaders ?? 0, scenario.sockets),
+        measureRetention: scenario.measureRetention ?? false,
+        resumeRetentionMs: scenario.resumeRetentionMs ?? 30_000,
+        resumeMaxMessages: scenario.resumeMaxMessages ?? 0,
+        resumeMaxBytes: scenario.resumeMaxBytes ?? 0,
     };
     const clock = new VirtualClock();
     return withVirtualClock(clock, async () => {
@@ -714,13 +775,29 @@ export async function runFanOut(scenario: FanOutScenario): Promise<FanOutResult>
             observerIndexes.push(candidates[Math.floor((i * candidates.length) / config.observers)]);
         }
         const observerSet = new Set(observerIndexes);
+        // The slow readers are the last sockets that are not observers, whether they walk or not.
+        const slowSet = new Set<number>();
+        for (let index = config.sockets - 1; index >= 0 && slowSet.size < config.slowReaders; index--) {
+            if (!observerSet.has(index)) {
+                slowSet.add(index);
+            }
+        }
 
         const messagesAtStart = await counted("workadventure_pusher_sub_messages_total");
         const sinks = layout.homes.map((home, index) =>
-            makeSink(index + 1, home, clock, observerSet.has(index), {
-                intervalMs: config.batchIntervalMs,
-                earlyFlushMs: config.earlyFlushMs,
-            }),
+            makeSink(
+                index + 1,
+                home,
+                clock,
+                observerSet.has(index),
+                { intervalMs: config.batchIntervalMs, earlyFlushMs: config.earlyFlushMs },
+                {
+                    retentionMs: config.resumeRetentionMs,
+                    maxMessages: config.resumeMaxMessages,
+                    maxBytes: config.resumeMaxBytes,
+                },
+                slowSet.has(index),
+            ),
         );
         for (const sink of sinks) {
             dispatcher.setViewport(sink.socket, sink.socket.getUserData().viewport);
@@ -791,12 +868,58 @@ export async function runFanOut(scenario: FanOutScenario): Promise<FanOutResult>
             return { x: home.x + dx, y: home.y + dy };
         };
 
+        // What the stores hold, sampled once per simulated second (warm-up included: it fills them too).
+        const peakOfRetention: { peak: RetentionPeak | undefined } = { peak: undefined };
+        const burstsPerSecond = Math.max(1, Math.round(1000 / config.backBatchMs));
+        const sampleRetention = (): void => {
+            const peak: RetentionPeak = {
+                sockets: sinks.length,
+                totalMessages: 0,
+                totalBytes: 0,
+                maxMessagesOfOneSocket: 0,
+                maxBytesOfOneSocket: 0,
+                healthyMeanBytes: 0,
+                healthyMeanMessages: 0,
+                slowMeanBytes: 0,
+                slowMeanMessages: 0,
+                sessionsEnded: 0,
+            };
+            let healthy = 0;
+            let slow = 0;
+            for (const sink of sinks) {
+                const { messages, bytes } = sink.socket.retainedForResume();
+                peak.totalMessages += messages;
+                peak.totalBytes += bytes;
+                peak.maxMessagesOfOneSocket = Math.max(peak.maxMessagesOfOneSocket, messages);
+                peak.maxBytesOfOneSocket = Math.max(peak.maxBytesOfOneSocket, bytes);
+                if (sink.slow) {
+                    slow += 1;
+                    peak.slowMeanBytes += bytes;
+                    peak.slowMeanMessages += messages;
+                } else {
+                    healthy += 1;
+                    peak.healthyMeanBytes += bytes;
+                    peak.healthyMeanMessages += messages;
+                }
+            }
+            peak.healthyMeanBytes = healthy === 0 ? Number.NaN : peak.healthyMeanBytes / healthy;
+            peak.healthyMeanMessages = healthy === 0 ? Number.NaN : peak.healthyMeanMessages / healthy;
+            peak.slowMeanBytes = slow === 0 ? Number.NaN : peak.slowMeanBytes / slow;
+            peak.slowMeanMessages = slow === 0 ? Number.NaN : peak.slowMeanMessages / slow;
+            if (peakOfRetention.peak === undefined || peak.totalBytes >= peakOfRetention.peak.totalBytes) {
+                peakOfRetention.peak = peak;
+            }
+        };
+
         const run = (fromBurst: number, toBurst: number): void => {
             for (let burst = fromBurst; burst <= toBurst; burst++) {
                 const burstTime = startMs + burst * config.backBatchMs;
                 clock.advanceTo(burstTime);
                 for (const message of bursts[burst]) {
                     dispatcher.handleZoneMessage(message);
+                }
+                if (config.measureRetention && burst % burstsPerSecond === burstsPerSecond - 1) {
+                    sampleRetention();
                 }
             }
         };
@@ -944,6 +1067,14 @@ export async function runFanOut(scenario: FanOutScenario): Promise<FanOutResult>
             }
         }
 
+        if (config.measureRetention) {
+            // The tail of the window: the last sample is not on a whole second.
+            sampleRetention();
+            if (peakOfRetention.peak !== undefined) {
+                // Over the whole run, not at the sample of the peak: a socket ended after it still counts.
+                peakOfRetention.peak.sessionsEnded = sinks.reduce((sum, sink) => sum + sink.ended, 0);
+            }
+        }
         const frames = sinks.reduce((sum, sink) => sum + sink.frames, 0);
         const bytes = sinks.reduce((sum, sink) => sum + sink.bytes, 0);
         for (const sink of sinks) {
@@ -991,6 +1122,7 @@ export async function runFanOut(scenario: FanOutScenario): Promise<FanOutResult>
             syntheticJoinLeavePerSecond: (joins + leaves) / windowSeconds,
             admissionPerSocket,
             profileTop: profile === undefined ? undefined : summarizeProfile(profile),
+            retention: peakOfRetention.peak,
         };
     });
 }
@@ -1143,5 +1275,19 @@ export function formatResult(result: FanOutResult, spread?: number[]): string {
         `send-to-write+service p95/max=${fixed(result.sendToWriteWithServiceMs.p95, 0)}/${fixed(result.sendToWriteWithServiceMs.max, 0)} ms (DERIVED)`,
         `join+leave=${fixed(result.syntheticJoinLeavePerSecond, 1)}/s`,
         `admission/socket=${fixed(result.admissionPerSocket.joins, 0)}j+${fixed(result.admissionPerSocket.leaves, 0)}l`,
+        ...(result.retention === undefined ? [] : [formatRetention(result.retention)]),
     ].join("  ");
+}
+
+/** The resume stores at their peak, as counts and bytes. */
+export function formatRetention(peak: RetentionPeak): string {
+    const mib = (bytes: number) => (Number.isFinite(bytes) ? (bytes / 1024 / 1024).toFixed(2) : "n/a");
+    const count = (value: number) => (Number.isFinite(value) ? value.toFixed(0) : "n/a");
+    return (
+        `resume-store peak=${mib(peak.totalBytes)} MiB in ${peak.totalMessages} frames over ${peak.sockets} sockets, ` +
+        `one socket at most ${mib(peak.maxBytesOfOneSocket)} MiB in ${peak.maxMessagesOfOneSocket} frames, ` +
+        `healthy mean ${mib(peak.healthyMeanBytes)} MiB in ${count(peak.healthyMeanMessages)} frames, ` +
+        `slow mean ${mib(peak.slowMeanBytes)} MiB in ${count(peak.slowMeanMessages)} frames, ` +
+        `${peak.sessionsEnded} sessions ended`
+    );
 }

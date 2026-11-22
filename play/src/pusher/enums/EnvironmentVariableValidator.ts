@@ -142,6 +142,16 @@ export const EnvironmentVariables = z.object({
         .describe(
             "Maximum uWebSockets backpressure bytes accepted on admin websocket connections. Defaults to 1048576.",
         ),
+    PUSHER_RESUME_STORE_MAX_BYTES: PositiveIntAsString.optional()
+        .transform((val) => toNumber(val, 0))
+        .describe(
+            "The most bytes the pusher keeps, for each client, of what it sent the client in the last CLIENT_DISCONNECTION_RETENTION_MS, to replay it if the client reconnects. Past it the pusher forgets all of it: a client that reconnects then starts again from scratch instead of resuming, and a client that is not reading its socket is disconnected. 0 means no limit. Suggested when set: 8388608 (8 MiB: about 3 times the 2.7 MB a client is sent in 30 seconds when every user is walking, a derived figure; a run measured 0.53 MiB per client with 20% of the users walking, the per-viewer budget off). Defaults to 0.",
+        ),
+    PUSHER_RESUME_STORE_MAX_MESSAGES: PositiveIntAsString.optional()
+        .transform((val) => toNumber(val, 0))
+        .describe(
+            "The most frames the pusher keeps for each client to replay it after a reconnection, as PUSHER_RESUME_STORE_MAX_BYTES does for bytes. 0 means no limit. Suggested when set: 2000 (a client is sent about 300 frames in 30 seconds at the default PUSHER_BATCH_INTERVAL_MS). Defaults to 0.",
+        ),
     PUSHER_VIEWER_BUDGET_ENABLED: BoolAsString.optional()
         .transform((val) => toBool(val, false))
         .describe(

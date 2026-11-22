@@ -7,8 +7,13 @@ import {
     type SubMessage,
 } from "@workadventure/messages";
 import * as Sentry from "@sentry/node";
-import { CLIENT_DISCONNECTION_RETENTION_MS } from "../enums/EnvironmentVariable";
+import {
+    CLIENT_DISCONNECTION_RETENTION_MS,
+    PUSHER_RESUME_STORE_MAX_BYTES,
+    PUSHER_RESUME_STORE_MAX_MESSAGES,
+} from "../enums/EnvironmentVariable";
 import { NoncedMessageStore } from "../../common/NoncedMessageStore";
+import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../common/WebSocketCloseCodes";
 import type { SocketData } from "../models/Websocket/SocketData";
 import type { ViewerBudget } from "../models/ViewerBudget";
 import { encodeBatchFrame } from "./BatchFrame";
@@ -31,6 +36,26 @@ export interface BatchTiming {
 }
 
 export const DEFAULT_BATCH_TIMING: BatchTiming = { intervalMs: 100, earlyFlushMs: 0 };
+
+/**
+ * What one socket keeps of what it was sent, for a resume onto a new transport. Every frame is kept for `retentionMs`,
+ * whether or not the client got it, so a socket holds about 30 s of its own traffic. A limit of 0 is no limit, which is
+ * how a pusher runs until PUSHER_RESUME_STORE_MAX_BYTES or PUSHER_RESUME_STORE_MAX_MESSAGES is set.
+ */
+export interface ResumeStoreOptions {
+    readonly retentionMs: number;
+    readonly maxMessages: number;
+    readonly maxBytes: number;
+}
+
+/** Read when a socket is made, not when this module loads, so a test that mocks the variables is read as it mocks them. */
+export function resumeStoreOptionsFromEnvironment(): ResumeStoreOptions {
+    return {
+        retentionMs: CLIENT_DISCONNECTION_RETENTION_MS,
+        maxMessages: PUSHER_RESUME_STORE_MAX_MESSAGES,
+        maxBytes: PUSHER_RESUME_STORE_MAX_BYTES,
+    };
+}
 
 export class PusherWebSocket {
     private static readonly KEEP_ALIVE_INTERVAL_MS = 25_000;
@@ -63,13 +88,19 @@ export class PusherWebSocket {
     private waitingForDrain = false;
     private lastReceivedNonce = 0;
     private transportAvailable = true;
-    private readonly outgoingMessagesStore = new NoncedMessageStore<Uint8Array<ArrayBuffer>>(
-        CLIENT_DISCONNECTION_RETENTION_MS,
-    );
+    private readonly outgoingMessagesStore: NoncedMessageStore<Uint8Array<ArrayBuffer>>;
 
     private readonly timing: BatchTiming;
 
-    public constructor(socket: RawSocket, timing: BatchTiming = DEFAULT_BATCH_TIMING) {
+    public constructor(
+        socket: RawSocket,
+        timing: BatchTiming = DEFAULT_BATCH_TIMING,
+        resumeStore: ResumeStoreOptions = resumeStoreOptionsFromEnvironment(),
+    ) {
+        this.outgoingMessagesStore = new NoncedMessageStore<Uint8Array<ArrayBuffer>>(resumeStore.retentionMs, {
+            maxMessages: resumeStore.maxMessages,
+            maxBytes: resumeStore.maxBytes,
+        });
         // An early flush later than the interval would only add latency to the first batch of a quiet socket.
         this.timing = timing.earlyFlushMs > timing.intervalMs ? { ...timing, earlyFlushMs: timing.intervalMs } : timing;
         this.socket = socket;
@@ -78,6 +109,11 @@ export class PusherWebSocket {
 
     public getUserData(): SocketData {
         return this.socket.getUserData();
+    }
+
+    /** What this socket keeps for a resume right now: frames and their bytes. A counter for the bench and the metrics. */
+    public retainedForResume(): { messages: number; bytes: number } {
+        return { messages: this.outgoingMessagesStore.size, bytes: this.outgoingMessagesStore.byteSize };
     }
 
     private cachedUserId: number | undefined;
@@ -416,13 +452,39 @@ export class PusherWebSocket {
         const nonce = this.nextOutgoingNonce;
         const payloadWithNonce = encode(nonce);
         this.nextOutgoingNonce += 1;
-        this.outgoingMessagesStore.add(nonce, payloadWithNonce);
+        // Over a limit, the store drops everything it holds. A frame already handed to uWS then only loses its replay,
+        // and the resume is refused, but a frame still waiting for a drain is lost for good: this session cannot go on.
+        const stored = this.outgoingMessagesStore.add(nonce, payloadWithNonce);
 
         if (!this.transportAvailable || this.waitingForDrain || nonce > this.lastSentNonce + 1) {
+            if (!stored) {
+                this.closeAfterLostMessages();
+            }
             return 0;
         }
 
-        return this.sendStoredPayload(nonce, payloadWithNonce);
+        const sendStatus = this.sendStoredPayload(nonce, payloadWithNonce);
+        if (!stored && sendStatus === 2) {
+            // uWS dropped it and the store no longer has it to send again.
+            this.closeAfterLostMessages();
+        }
+        return sendStatus;
+    }
+
+    private closeAfterLostMessages(): void {
+        if (!this.transportAvailable) {
+            // Nothing to close: hasEveryNonceAfter() refuses the resume, and the retention timeout ends the session.
+            return;
+        }
+        const { userUuid, tabId } = this.socket.getUserData();
+        console.warn(`Closing the WebSocket of user ${userUuid} on tab ${tabId}: too many messages waiting for it`);
+        Sentry.captureMessage("Closing a WebSocket that fell too far behind to be resumed", {
+            tags: { userUuid, tabId },
+        });
+        // Not this.end(): it flags the socket as disconnecting, and SocketManager.cleanupSocket() skips flagged sockets,
+        // which would leave the user in the room. Ending the transport runs the close handler, which destroys the
+        // session like any 4000 close; the client then joins from scratch instead of resuming.
+        this.socket.end(WS_CLOSE_CODE_SESSION_DESTROYED, "Too many messages waiting for this client");
     }
 
     private sendStoredPayload(nonce: number, payload: Uint8Array<ArrayBuffer>): ReturnType<RawSocket["send"]> {

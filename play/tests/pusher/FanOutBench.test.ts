@@ -11,6 +11,7 @@ vi.mock("../../src/pusher/enums/EnvironmentVariable", () => import("./mocks/push
 import * as BatchFrame from "../../src/pusher/services/BatchFrame";
 import {
     formatResult,
+    formatRetention,
     judgeRun,
     runFanOut,
     runInterleaved,
@@ -32,6 +33,8 @@ import {
  * PUSHER_FANOUT_WINDOW=4 (simulated seconds)  PUSHER_FANOUT_PROFILE=1 (adds a CPU profile at the largest level)
  * PUSHER_FANOUT_OUT=path.json (writes every result as JSON)  PUSHER_FANOUT_BASELINE=path.json (a file written by an
  * earlier PUSHER_FANOUT_OUT run, on the same host, to print this run against).
+ * The resume store block (what each socket keeps to replay after a reconnection, counts and bytes, no time): PUSHER_FANOUT_RESUME_SOCKETS=1000
+ * PUSHER_FANOUT_SLOW_READERS=5 PUSHER_FANOUT_RESUME_RETENTION_MS=30000 PUSHER_FANOUT_RESUME_ARM=0..3 (one arm only) PUSHER_FANOUT_OUT=path.json.
  *
  * Reading the output. Budget off and budget on run in INTERLEAVED repeats, so a pair saw the same host load: the figure
  * to quote is "on / off" from the `[fan-out ratio]` line, the median of the ratios of the pairs. The CPU of a row is
@@ -221,6 +224,67 @@ describe("fan-out bench harness", () => {
         await runFanOut({ sockets: 5, movingFraction: 0.5, movesPerSecond: 5, warmUpSeconds: 1, windowSeconds: 1 });
         expect(globalThis.setTimeout).toBe(realSetTimeout);
         expect(Date.now).toBe(realNow);
+    });
+
+    describe("the resume store (what each socket keeps to replay after a reconnection)", () => {
+        const room = {
+            sockets: 40,
+            movingFraction: 0.25,
+            movesPerSecond: 5,
+            warmUpSeconds: 1,
+            windowSeconds: 4,
+            measureRetention: true,
+        };
+
+        it("counts what the sockets keep: every frame they were sent in the retention time, and none before it", async () => {
+            const long = await runFanOut(room);
+            const short = await runFanOut({ ...room, resumeRetentionMs: 1_000 });
+
+            const kept = long.retention;
+            const recent = short.retention;
+            expect(kept).toBeDefined();
+            expect(recent).toBeDefined();
+            if (kept === undefined || recent === undefined) return;
+            // 30 s keeps all of the 5 s of the run: 10 frames a second a socket (100 ms batches), counted by the stores.
+            expect(kept.healthyMeanMessages).toBeGreaterThan(40);
+            expect(kept.healthyMeanBytes).toBeGreaterThan(0);
+            expect(kept.totalBytes).toBeGreaterThanOrEqual(long.bytesPerSecond * 4);
+            expect(kept.sockets).toBe(room.sockets);
+            // 1 s keeps the frames of the last second: 10 a second, one more at the edge.
+            expect(recent.maxMessagesOfOneSocket).toBeLessThanOrEqual(11);
+            expect(recent.totalMessages).toBeLessThan(kept.totalMessages / 3);
+            expect(recent.totalBytes).toBeLessThan(kept.totalBytes);
+            // Nothing is counted unless asked: the sampling visits every socket.
+            expect((await runFanOut({ ...room, measureRetention: false })).retention).toBeUndefined();
+        });
+
+        it("keeps for a slow reader what it keeps for one that reads, and sends it nothing after the first frame", async () => {
+            const result = await runFanOut({ ...room, slowReaders: 4 });
+
+            const peak = result.retention;
+            expect(peak).toBeDefined();
+            if (peak === undefined) return;
+            // The store keeps a frame whether or not the client read it: the same frames, the same bytes (a frame or two of
+            // difference where the batch timers of two sockets fall on either side of a sample).
+            expect(peak.slowMeanMessages).toBeGreaterThan(40);
+            expect(Math.abs(peak.slowMeanMessages - peak.healthyMeanMessages)).toBeLessThanOrEqual(2);
+            expect(Math.abs(peak.slowMeanBytes / peak.healthyMeanBytes - 1)).toBeLessThan(0.1);
+            // And with no limit, nothing ends it.
+            expect(peak.sessionsEnded).toBe(0);
+        });
+
+        it("ends the sessions of the slow readers over a limit, and only theirs: a socket that reads loses its replay and stays", async () => {
+            const limit = { resumeMaxMessages: 20 };
+            const slow = await runFanOut({ ...room, ...limit, slowReaders: 4 });
+            const reading = await runFanOut({ ...room, ...limit });
+
+            expect(slow.retention?.sessionsEnded).toBeGreaterThanOrEqual(4);
+            expect(reading.retention?.sessionsEnded).toBe(0);
+            // Nobody keeps more than the limit, slow or not.
+            expect(slow.retention?.maxMessagesOfOneSocket).toBeLessThanOrEqual(20);
+            expect(reading.retention?.maxMessagesOfOneSocket).toBeLessThanOrEqual(20);
+            expect(formatRetention(slow.retention as NonNullable<typeof slow.retention>)).toContain("sessions ended");
+        }, 60_000);
     });
 
     it("summarizes a CPU profile by self time", () => {
@@ -522,16 +586,14 @@ function deliveryFailures(enabled: FanOutResult[], disabled: FanOutResult[]): st
     for (const [index, run] of enabled.entries()) {
         const latency = run.nearestSendToWriteMs;
         const offBytes = disabled[index].bytesPerSecond;
-        if (
-            !(
-                latency.count > 0 &&
-                latency.p95 !== null &&
-                latency.p95 < 50 &&
-                run.nearestDeliveredShare >= 0.95 &&
-                run.syntheticJoinLeavePerSecond === 0 &&
-                run.bytesPerSecond < offBytes
-            )
-        ) {
+        if (!(
+            latency.count > 0 &&
+            latency.p95 !== null &&
+            latency.p95 < 50 &&
+            run.nearestDeliveredShare >= 0.95 &&
+            run.syntheticJoinLeavePerSecond === 0 &&
+            run.bytesPerSecond < offBytes
+        )) {
             failures.push(
                 `repeat ${index + 1}: nearest p95=${latency.p95} ms, observations=${latency.count}, delivered=${run.nearestDeliveredShare}, churn=${run.syntheticJoinLeavePerSecond}/s, bytes/s=${run.bytesPerSecond} (off=${offBytes})`,
             );
@@ -773,4 +835,53 @@ describe.skipIf(!enabled)("what a per-socket batch timer costs (PUSHER_FANOUT=1)
         expect(frames.fired).toBe(rounds * sockets);
         expect(ticked).toBe(rounds * sockets);
     }, 120_000);
+});
+
+describe.skipIf(!enabled)("the resume store at the size of a room (PUSHER_FANOUT=1)", () => {
+    it("prints what the sockets keep for a resume at their peak, with a slow reader case, with no limit and with the limits proposed", async () => {
+        const sockets = Number(nodeProcess.env.PUSHER_FANOUT_RESUME_SOCKETS ?? 1000);
+        const walk = Number(nodeProcess.env.PUSHER_FANOUT_WALK ?? 0.2);
+        const hz = Number(nodeProcess.env.PUSHER_FANOUT_HZ ?? 5);
+        const stops = Number(nodeProcess.env.PUSHER_FANOUT_STOPS ?? 2);
+        const slowReaders = Number(nodeProcess.env.PUSHER_FANOUT_SLOW_READERS ?? 5);
+        // Whole retention time (30 s in production) and a little over it, so that the stores are at their plateau.
+        const retentionMs = Number(nodeProcess.env.PUSHER_FANOUT_RESUME_RETENTION_MS ?? 30_000);
+        const windowSeconds = Math.ceil(retentionMs / 1000) + 3;
+        const base = {
+            sockets,
+            movingFraction: walk,
+            movesPerSecond: hz,
+            stopsPerWalkerPerSecond: stops,
+            warmUpSeconds: 3,
+            windowSeconds,
+            resumeRetentionMs: retentionMs,
+            measureRetention: true,
+            observers: 2,
+        };
+        const arms: [string, Partial<FanOutScenario>][] = [
+            ["no limit, all read", {}],
+            ["no limit, slow readers", { slowReaders }],
+            [
+                "8 MiB / 2000 frames, slow readers",
+                { slowReaders, resumeMaxBytes: 8 * 1024 * 1024, resumeMaxMessages: 2000 },
+            ],
+            ["budget on, no limit, slow readers", { slowReaders, budget: BUDGET }],
+        ];
+        // PUSHER_FANOUT_RESUME_ARM=2 runs the third arm only, so that the arms can run in separate processes.
+        const only = nodeProcess.env.PUSHER_FANOUT_RESUME_ARM;
+        const rows: { name: string; line: string; retention: FanOutResult["retention"] }[] = [];
+        for (const [index, [name, extra]] of arms.entries()) {
+            if (only !== undefined && Number(only) !== index) {
+                continue;
+            }
+            const result = await runFanOut({ ...base, ...extra });
+            const line = result.retention === undefined ? "n/a" : formatRetention(result.retention);
+            console.info(`[resume] ${name}: ${line}`);
+            rows.push({ name, line, retention: result.retention });
+            expect(result.retention).toBeDefined();
+        }
+        if (nodeProcess.env.PUSHER_FANOUT_OUT) {
+            writeFileSync(nodeProcess.env.PUSHER_FANOUT_OUT, JSON.stringify(rows, null, 2));
+        }
+    }, 3_600_000);
 });
