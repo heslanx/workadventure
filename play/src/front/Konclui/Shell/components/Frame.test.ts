@@ -50,12 +50,47 @@ describe("Frame: the map zoom column and the dock", () => {
         );
     });
 
-    it("lifts the column 8 px above the dock stack on a phone, panel open or not", () => {
+    it("lifts the column 8 px above the dock stack on a phone", () => {
         expect(bottomOf("(max-width: 767px)", `.konclui ${column}`)).toBe(
             "calc(var(--konclui-dock-stack-height, 76px) + 8px)",
         );
-        expect(bottomOf("(max-width: 767px)", `.konclui.panel-open ${column}`)).toBe(
-            "calc(var(--konclui-dock-stack-height, 76px) + 8px)",
+    });
+
+    it("does not draw the column on a phone while the sheet covers the map, and draws it again when the sheet closes", () => {
+        const hidden = columnRules().find(
+            (rule) =>
+                rule.media === "(max-width: 767px)" &&
+                rule.selector.split(",").some((part) => part.trim() === `.konclui.panel-open ${column}`),
         );
+
+        // display: none takes it out of the tab order as well as out of sight; the rule is on `.panel-open`, which the
+        // frame drops as the sheet closes, and it is inside the phone query so a wide screen keeps the column.
+        expect(hidden?.body).toMatch(/(?:^|[;\s])display:\s*none;/);
+        expect(hidden?.body).not.toMatch(/bottom:/);
+        expect(
+            columnRules()
+                .filter((rule) => /display:\s*none/.test(rule.body))
+                .map((rule) => rule.media),
+        ).toEqual(["(max-width: 767px)"]);
+    });
+});
+
+describe("Frame: the people sheet on a phone", () => {
+    const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "Frame.svelte"), "utf8");
+    const style = source.slice(source.indexOf("<style>")).replace(/\/\*[\s\S]*?\*\//g, "");
+    const phone = style.slice(style.indexOf("@media (max-width: 767px)"));
+
+    it("stops above the whole dock stack, by the height the dock publishes, not above one row of it", () => {
+        const rule = /\.side-panel\s*\{([^}]*)\}/.exec(phone)?.[1] ?? "";
+
+        expect(/inset:\s*([^;]+);/.exec(rule)?.[1].trim()).toBe(
+            "58px 8px calc(var(--konclui-dock-stack-height, 76px) + 6px)",
+        );
+    });
+
+    it("keeps a floor under its height, for a short window with the chips and a wrapped dock", () => {
+        const rule = /\.side-panel\s*\{([^}]*)\}/.exec(phone)?.[1] ?? "";
+
+        expect(/min-height:\s*([^;]+);/.exec(rule)?.[1].trim()).toBe("144px");
     });
 });

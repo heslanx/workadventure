@@ -29,6 +29,7 @@
     import PeoplePanel from "../../Presence/components/PeoplePanel.svelte";
     import PeoplePill from "../../Presence/components/PeoplePill.svelte";
     import PlaceChip from "../../Presence/components/PlaceChip.svelte";
+    import WalkNotice from "../../Presence/components/WalkNotice.svelte";
     import { isSearchShortcut } from "../../Presence/domain/peopleSearch";
     import { requestSearchFocus } from "../../Presence/stores/peopleSearchStore";
     import { combinationKeys } from "../../Preferences/domain/shortcutKeys";
@@ -114,6 +115,13 @@
 
     function focusPeopleButton() {
         elementOf(panelButtonFor("people", isWideScreen(window.innerWidth)))?.focus();
+    }
+
+    // "Ir até" on a phone: the sheet covers the map, and the walk it just started cannot be seen under it. It closes as the
+    // walk starts. The focus, if it was on the row that was pressed, goes to the pill that reopens the panel (the close
+    // effect above); the words about the walk are announced by the live region below, which the closing does not remove.
+    function leaveSheetForWalk() {
+        if (!isWideScreen(window.innerWidth)) closeSidePanel();
     }
 
     function closeRosterNotice() {
@@ -244,7 +252,7 @@
                     <ChatSidebar embedded />
                 {/key}
             {:else if peopleListShown}
-                <PeoplePanel onCollapse={togglePeople} />
+                <PeoplePanel onCollapse={togglePeople} onWalk={leaveSheetForWalk} />
             {:else if rosterNoticeOpen}
                 <header>
                     <strong>{$LL.konclui.people()}</strong><button
@@ -256,6 +264,7 @@
                 <p class="notice" role="status">{$LL.konclui.rosterUnavailable()}</p>
             {/if}
         </aside>
+        <WalkNotice live />
         <OfficeMenu />
     {/if}
     <div class="viewport" bind:this={viewport}>
@@ -448,20 +457,29 @@
         .logo-slot {
             display: block;
         }
-        /* On a phone it is a card over the map: it rises instead. */
+        /* On a phone it is a card over the map: it rises instead. It stops 6 px above the whole dock stack, whose height
+           Dock.svelte publishes: the dock wraps into rows while a conversation is on, and a bottom fixed at one row
+           covered the first of them (the 76 px fallback is one row, so the card is where it was while none is measured).
+           A short window with the chips and a wrapped dock would leave it no height at all: it keeps a floor, and past
+           the floor it gives way at the bottom (it reaches into the dock) rather than vanish. */
         .side-panel {
             --k-enter-x: 0px;
             --k-enter-y: 16px;
             position: absolute;
-            inset: 58px 8px 82px;
+            inset: 58px 8px calc(var(--konclui-dock-stack-height, 76px) + 6px);
+            min-height: 144px;
             margin-right: 0;
             z-index: 35;
             box-shadow: 0 8px 32px #0008;
         }
         /* The map reaches the window's edge and the dock wraps under the column: it stands above the dock stack. */
-        .konclui :global([data-testid="actions-explorer"]),
-        .konclui.panel-open :global([data-testid="actions-explorer"]) {
+        .konclui :global([data-testid="actions-explorer"]) {
             bottom: calc(var(--konclui-dock-stack-height, 76px) + 8px);
+        }
+        /* While the card covers the map the column has nothing to zoom: it is not drawn, so no stub of it shows
+           under the card's corner and none of its buttons can take the focus unseen. It is back when the card closes. */
+        .konclui.panel-open :global([data-testid="actions-explorer"]) {
+            display: none;
         }
     }
 </style>

@@ -1,4 +1,7 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { flushSync, mount, unmount } from "svelte";
 import { get, type Writable } from "svelte/store";
@@ -27,7 +30,12 @@ vi.mock("../stores/worldRoster", async () => {
 
 import { chatInputFocusStore } from "../../../Stores/ChatStore";
 import { peoplePanelStore } from "../stores/peopleListStore";
-import { clearWalkNotice, installPresenceCommands, type PresenceCommands } from "../stores/presenceCommands";
+import {
+    clearWalkNotice,
+    goToPerson,
+    installPresenceCommands,
+    type PresenceCommands,
+} from "../stores/presenceCommands";
 import {
     clearSearchFocusRequest,
     peopleQueryStore,
@@ -203,8 +211,53 @@ describe("PeoplePanel", () => {
 
             expect(walkTo).toHaveBeenCalledTimes(1);
             expect(walkTo).toHaveBeenCalledWith(expect.objectContaining({ uuid: "account-2", playUri: ROOM }));
-            const notice = target.querySelector('[role="status"][aria-live="polite"]');
+            // The words are on the panel for the eye; the live region that announces them is the shell's, not the panel's.
+            const notice = target.querySelector("[data-walk-notice]");
             expect(notice?.textContent).toBe('konclui.peopleList.going{"name":"Ana"}');
+            expect(notice?.getAttribute("aria-hidden")).toBe("true");
+            expect(target.querySelector('[role="status"][aria-live]')).toBeNull();
+        });
+
+        it("does not show again, on the panel, a notice raised before it opened, and shows one raised while it is open", () => {
+            // A phone closes the sheet as the walk starts, and the notice outlives the sheet for a few seconds.
+            goToPerson({ uuid: "account-2", playUri: ROOM, name: "Ana" });
+            show({ rows: [person(3, "Bia")] });
+
+            expect(target.querySelector("[data-walk-notice]")?.textContent).toBe("");
+
+            rows()[0].click();
+            flushSync();
+
+            expect(target.querySelector("[data-walk-notice]")?.textContent).toBe(
+                'konclui.peopleList.going{"name":"Bia"}',
+            );
+        });
+
+        it("tells the shell a walk started, once per press, so that a phone can close the sheet over the map", () => {
+            const onWalk = vi.fn<() => void>();
+            panelStore.set({ ...baseState, rows: [person(2, "Ana")] });
+            document.body.append(target);
+            panel = mount(PeoplePanel, { target, props: { onCollapse: collapse, onWalk } });
+            flushSync();
+
+            rows()[0].click();
+            flushSync();
+
+            expect(onWalk).toHaveBeenCalledTimes(1);
+            expect(walkTo).toHaveBeenCalledTimes(1);
+        });
+
+        it("does not tell the shell of a walk when the person is in another room and nothing starts", () => {
+            const onWalk = vi.fn<() => void>();
+            panelStore.set({ ...baseState, rows: [person(2, "Bia", { elsewhere: true })] });
+            document.body.append(target);
+            panel = mount(PeoplePanel, { target, props: { onCollapse: collapse, onWalk } });
+            flushSync();
+
+            rows()[0].click();
+            flushSync();
+
+            expect(onWalk).not.toHaveBeenCalled();
         });
 
         it("keeps a person of another room focusable, says why it cannot act, and does nothing when pressed", () => {
@@ -234,6 +287,28 @@ describe("PeoplePanel", () => {
 
             expect(buttons).toEqual(["konclui.collapsePanel", "section", "person", "everyone"]);
             expect(text()).not.toMatch(/map/i);
+        });
+    });
+
+    describe("the search field's focus ring", () => {
+        // jsdom applies no stylesheet, so the rule is read from the component's source. The global field style rings a
+        // focused input with a box-shadow (blue, off-palette); the label's mint border is the one ring the field has.
+        const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "PeoplePanel.svelte"), "utf8");
+        const style = source.slice(source.indexOf("<style>")).replace(/\/\*[\s\S]*?\*\//g, "");
+        const bodyOf = (selector: string) => {
+            const start = style.indexOf(`${selector} {`);
+            return start < 0 ? undefined : style.slice(start, style.indexOf("}", start));
+        };
+
+        it("takes no ring of its own from the input: no outline and no box-shadow", () => {
+            const input = bodyOf(".search input");
+
+            expect(input).toMatch(/outline:\s*none;/);
+            expect(input).toMatch(/box-shadow:\s*none;/);
+        });
+
+        it("leaves the one ring to the label's border, in the accent", () => {
+            expect(bodyOf(".search:focus-within")).toMatch(/border-color:\s*var\(--k-accent\);/);
         });
     });
 

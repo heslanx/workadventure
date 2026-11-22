@@ -9,7 +9,7 @@
     import { EVERYONE_ROWS } from "../domain/rosterWatch";
     import { placeName } from "../domain/place";
     import { peoplePanelStore } from "../stores/peopleListStore";
-    import { clearWalkNotice, goToPerson, walkNoticeStore } from "../stores/presenceCommands";
+    import { goToPerson } from "../stores/presenceCommands";
     import {
         clearSearchFocusRequest,
         peopleQueryStore,
@@ -18,16 +18,17 @@
     } from "../stores/peopleSearchStore";
     import { chooseEveryone, rosterListOpenStore } from "../stores/worldRoster";
     import PersonRow from "./PersonRow.svelte";
+    import WalkNotice from "./WalkNotice.svelte";
     import { IconChevronDown, IconChevronLeft, IconMapPin, IconSearch } from "@wa-icons";
 
     // The people of the office: who is online, near you or everyone, with a search and a way to walk to each one. The
     // shell draws it in its side panel while the people view is open. It lives only as long as it is on screen, and that
     // is what asks the world roster to be watched: closed, nothing is subscribed.
-    let { onCollapse }: { onCollapse: () => void } = $props();
+    // `onWalk` is told after a row started a walk: on a phone the shell closes the sheet then, so the walk can be seen.
+    let { onCollapse, onWalk }: { onCollapse: () => void; onWalk?: () => void } = $props();
 
     let panel = $derived($peoplePanelStore);
     let query = $derived($peopleQueryStore);
-    let notice = $derived($walkNoticeStore);
     let input: HTMLInputElement | undefined = $state();
     let list: HTMLElement | undefined = $state();
     let sectionOpen = $state(true);
@@ -39,10 +40,11 @@
         rosterListOpenStore.set(true);
         return () => {
             rosterListOpenStore.set(false);
-            // What was typed and said belongs to this opening of the panel, and typing stops the game's keys until blur.
+            // What was typed belongs to this opening of the panel, and typing stops the game's keys until blur. What was
+            // said of a walk does not: the sheet closes on a phone as the walk starts, and the shell's live region goes
+            // on announcing it. The notice fades on its own.
             setPeopleQuery("");
             clearSearchFocusRequest();
-            clearWalkNotice();
             chatInputFocusStore.set(false);
         };
     });
@@ -95,13 +97,6 @@
                   ? $LL.konclui.peopleList.nobodyElse()
                   : undefined,
     );
-    let noticeText = $derived(
-        notice === undefined
-            ? ""
-            : notice.kind === "going"
-              ? $LL.konclui.peopleList.going({ name: notice.name })
-              : $LL.konclui.peopleList.goFailed({ name: notice.name }),
-    );
 
     // Asking for everyone removes the entry that was pressed, and the focus it held would fall to the page: the keys of the
     // panel (the arrows, Escape to close it) would stop reaching it. The list is what changes next, to its loading
@@ -109,6 +104,11 @@
     function onChooseEveryone() {
         chooseEveryone();
         list?.focus({ preventScroll: true });
+    }
+
+    function go(person: Parameters<typeof goToPerson>[0]) {
+        goToPerson(person);
+        onWalk?.();
     }
 
     function onSearchKeydown(event: KeyboardEvent) {
@@ -209,11 +209,7 @@
         {:else}
             <div class="rows">
                 {#each panel.rows as row (row.key)}
-                    <PersonRow
-                        {row}
-                        liveStatus={panel.users.get(row.key)?.reactiveUser.availabilityStatus}
-                        onGo={goToPerson}
-                    />
+                    <PersonRow {row} liveStatus={panel.users.get(row.key)?.reactiveUser.availabilityStatus} onGo={go} />
                 {/each}
             </div>
             {#if emptyText !== undefined}
@@ -231,7 +227,7 @@
         {/if}
     </div>
 
-    <p class="notice walk" role="status" aria-live="polite" aria-atomic="true">{noticeText}</p>
+    <WalkNotice />
 </section>
 
 <style>
@@ -314,6 +310,9 @@
         font: inherit;
         font-size: 14px;
         outline: none;
+        /* The label draws the one ring (its mint border, below). The global field style rings a focused input with a
+           box-shadow of its own, a second and off-palette one. */
+        box-shadow: none;
     }
     .search input::placeholder {
         color: var(--k-fg-muted);
@@ -392,10 +391,6 @@
     }
     .cut {
         font-size: 12px;
-    }
-    .walk {
-        min-height: 1.5em;
-        margin: 0 18px 12px;
     }
     .everyone {
         display: block;
