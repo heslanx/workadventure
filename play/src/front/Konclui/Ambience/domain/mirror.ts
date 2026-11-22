@@ -18,13 +18,26 @@ export type FrameName = string | number;
  * sheet stays as it is.
  */
 export function mirrorFrame(frame: FrameName): { frame: FrameName; flip: boolean } {
+    return { frame: mirroredFrameName(frame), flip: mirrorFlips(frame) };
+}
+
+/** The frame `mirrorFrame` shows for `frame`, without making an object (it runs for each layer of each frame). */
+export function mirroredFrameName(frame: FrameName): FrameName {
     const n = Number(frame);
-    if (!Number.isInteger(n) || n < 0 || n > 11) return { frame, flip: false };
+    if (!Number.isInteger(n) || n < 0 || n > 11) return frame;
     const row = Math.floor(n / 3);
     const col = n % 3;
-    if (row === 0) return { frame: 9 + col, flip: true };
-    if (row === 3) return { frame: col, flip: true };
-    return { frame: n, flip: false };
+    if (row === 0) return 9 + col;
+    if (row === 3) return col;
+    return n;
+}
+
+/** Whether `mirrorFrame` turns `frame` over (down and up do), without making an object. */
+export function mirrorFlips(frame: FrameName): boolean {
+    const n = Number(frame);
+    if (!Number.isInteger(n) || n < 0 || n > 11) return false;
+    const row = Math.floor(n / 3);
+    return row === 0 || row === 3;
 }
 
 /** The glass face whose foot line a point stands in front of, within reach (the nearest), or null. */
@@ -33,9 +46,11 @@ export function mirrorFace(
     foot: number,
     faces: readonly GlassFace[],
     reach = MIRROR_REACH,
+    count = faces.length,
 ): GlassFace | null {
     let best: GlassFace | null = null;
-    for (const face of faces) {
+    for (let i = 0; i < count; i++) {
+        const face = faces[i];
         const d = foot - face[2];
         if (x >= face[0] && x < face[1] && d > 0 && d <= reach && (!best || d < foot - best[2])) best = face;
     }
@@ -81,5 +96,8 @@ export interface MirrorPrefab {
 export function mirrorsPiece(prefab: MirrorPrefab = {}): boolean {
     const name = prefab.name || "";
     if (NOT_STANDING.test(name)) return false;
-    return (prefab.tags || []).some((t) => MIRROR_TAGS.test(t));
+    const tags = prefab.tags;
+    if (!tags) return false;
+    for (let i = 0; i < tags.length; i++) if (MIRROR_TAGS.test(tags[i])) return true;
+    return false;
 }

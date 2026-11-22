@@ -2,14 +2,26 @@ import type { FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 
 export const TIME_ZONE = "America/Sao_Paulo";
 
+// Building a formatter is the costly part (it loads the zone's rules), and the effects ask for the hour every second.
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function hourFormatter(timeZone: string): Intl.DateTimeFormat {
+    let formatter = formatters.get(timeZone);
+    if (!formatter) {
+        formatter = new Intl.DateTimeFormat("en-GB", {
+            timeZone,
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+        });
+        formatters.set(timeZone, formatter);
+    }
+    return formatter;
+}
+
 /** Decimal hour in the office's time zone (Brasília). */
 export function localHour(date = new Date(), timeZone = TIME_ZONE): number {
-    const parts = new Intl.DateTimeFormat("en-GB", {
-        timeZone,
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-    }).formatToParts(date);
+    const parts = hourFormatter(timeZone).formatToParts(date);
     const get = (type: Intl.DateTimeFormatPartTypes): number =>
         Number(parts.find((part) => part.type === type)?.value || 0);
     return get("hour") + get("minute") / 60;

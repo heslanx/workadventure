@@ -6,10 +6,11 @@ const POST_NODE = "KfxPost";
 /** A uniform value as Phaser's program manager takes it. */
 export type UniformValue = number | number[] | readonly number[] | Float32Array;
 
-/** What the camera pass reads on each draw: its uniforms and the masks texture. */
+/** What the camera pass reads on each draw: its uniforms, the masks texture, and optional 2.5D normals texture. */
 export interface PostSource {
     postUniforms(): Record<string, UniformValue>;
     masksTexture(): Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper | null;
+    normalsTexture?(): Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper | null;
 }
 
 // Phaser builds a filter's render node itself from the controller's node name; the node finds what to draw here.
@@ -27,8 +28,11 @@ function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer): void {
             controller: Phaser.Filters.Controller,
             textures: Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper[],
         ): void {
-            const masks = sources.get(controller)?.masksTexture();
+            const source = sources.get(controller);
+            const masks = source?.masksTexture();
             if (masks) textures[1] = masks;
+            const normals = source?.normalsTexture?.() ?? masks;
+            if (normals) textures[2] = normals;
         }
 
         override setupUniforms(controller: Phaser.Filters.Controller): void {
@@ -36,7 +40,10 @@ function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer): void {
             if (!source) return;
             const programs = this.programManager;
             programs.setUniform("uMasks", 1);
-            for (const [name, value] of Object.entries(source.postUniforms())) programs.setUniform(name, value);
+            programs.setUniform("uNormals", 2);
+            // for...in, not Object.entries: this runs on every draw and the pairs are garbage
+            const uniforms = source.postUniforms();
+            for (const name in uniforms) programs.setUniform(name, uniforms[name]);
         }
     }
     nodes.addNodeConstructor(POST_NODE, PostNode);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { glassPanes, maskAt, measureFootprint, packMasks, paintBackOf, starSlots } from "./pixelMaps";
+import { glassPanes, maskAt, measureFootprint, spriteNormals, packMasks, paintBackOf, starSlots } from "./pixelMaps";
 
 /** A width x height RGBA picture painted by `paint(x, y)`. */
 function picture(
@@ -74,5 +74,17 @@ describe("pixel maps", () => {
             }
         }
         expect([...starSlots(picture(300, 300, () => [0, 40, 1, 0]))].every((v) => v === 0)).toBe(true);
+    });
+
+    it("bevels an opaque silhouette, preserving a flat centre and excluding translucent edges", () => {
+        const pixels = picture(11, 11, (x, y) => [80, 80, 80, x > 0 && y > 0 && x < 10 && y < 10 ? 255 : 128]);
+        const normals = spriteNormals(pixels);
+        const pixel = (x: number, y: number) => normals.slice(4 * (y * 11 + x), 4 * (y * 11 + x + 1));
+        expect([...pixel(0, 5)]).toEqual([128, 128, 255, 0]);
+        expect([...pixel(5, 5)]).toEqual([128, 128, 255, 255]);
+        expect(pixel(1, 5)[0]).toBeLessThan(128);
+        expect(pixel(9, 5)[0]).toBeGreaterThan(128);
+        expect(pixel(5, 1)[1]).toBeGreaterThan(128);
+        expect(pixel(5, 9)[1]).toBeLessThan(128);
     });
 });

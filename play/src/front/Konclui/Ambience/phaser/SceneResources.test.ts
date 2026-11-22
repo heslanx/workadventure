@@ -86,4 +86,21 @@ describe("scene resources", () => {
 
         expect(slide.destroyed).toBe(1);
     });
+
+    it("removes a dropped texture at once and does not look for it again at the release", () => {
+        const textures = new TestTextures();
+        textures.keys.add("kfx-1-mirror-7").add("kfx-1-occ");
+        const remove = vi.spyOn(textures, "remove");
+        const resources = new SceneResources(textures);
+        resources.texture("kfx-1-mirror-7");
+        resources.texture("kfx-1-occ");
+
+        resources.dropTexture("kfx-1-mirror-7");
+        expect([...textures.keys]).toEqual(["kfx-1-occ"]);
+        resources.release();
+
+        expect(remove).toHaveBeenCalledTimes(2); // once for the dropped one, once for the other at the release
+        expect(remove).toHaveBeenNthCalledWith(1, "kfx-1-mirror-7");
+        expect(textures.keys.size).toBe(0);
+    });
 });

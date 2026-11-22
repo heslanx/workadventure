@@ -251,6 +251,7 @@ export const POST = `#pragma phaserTemplate(shaderName)
 precision highp float;
 uniform sampler2D uMainSampler;
 uniform sampler2D uMasks;
+uniform sampler2D uNormals;                               // @night-lit
 uniform vec3 uWarm;
 uniform vec4 uWorld;
 uniform vec2 uMap;
@@ -265,6 +266,8 @@ uniform float uToe;
 uniform float uDarks;
 uniform float uSat;
 uniform float uNight;
+uniform float uNormalsOn;                                 // @night-lit
+uniform float uRimOn;                                     // @night-lit
 uniform vec4 uL[32];
 uniform vec4 uLC[32];
 uniform vec4 uLClip[32];
@@ -279,6 +282,8 @@ uniform int uLockN;
 uniform vec3 uFrost;
 uniform vec4 uAv[8];
 uniform int uAvN;
+uniform vec4 uPeople[8];                                  // @night-lit: feet of the people drawn in full (x, y)
+uniform int uPeopleN;                                     // @night-lit
 uniform vec4 uSteps[32];
 uniform int uStepN;
 uniform vec3 uLime;
@@ -394,6 +399,24 @@ void main() {
   vec3 illum = amb;
   if (uLN > 0) {
     vec3 tint = vec3(0.0), haloC = vec3(0.0); float total = 0.0, point = 0.0;
+    // @night-lit-begin
+    // Night-lit: the people's rim light and the props' bevel. Everything here is behind nightLit, which is false while
+    // uNight <= 0.02 (the day, and a switched-off preview), so those frames take exactly the code that is not marked.
+    bool nightLit = uNight > 0.02 && uRimOn > 0.5;
+    bool onPerson = false;
+    vec2 personAt = vec2(0.0), lightDir = vec2(0.0);
+    vec4 nm = vec4(0.5, 0.5, 1.0, 0.0);
+    if (nightLit) {
+      for (int i = 0; i < 8; i++) {
+        if (i >= uPeopleN) break;
+        vec2 p = uPeople[i].xy;
+        if (abs(w.x - p.x) < 10.0 && w.y >= p.y - 26.0 && w.y < p.y) { onPerson = true; personAt = p; break; }
+      }
+      if (uNormalsOn > 0.5) nm = texture2D(uNormals, mapUV(w, 1.0));
+    }
+    bool hasNormal = nm.a > 0.5;
+    vec3 nProp = hasNormal ? normalize(nm.rgb * 2.0 - 1.0) : vec3(0.0, 0.0, 1.0);
+    // @night-lit-end
     for (int i = 0; i < 32; i++) {
       if (i >= uLN) break;
       vec4 l = uL[i]; vec4 clip = uLClip[i];
@@ -410,6 +433,17 @@ void main() {
         float d = length(vec2(w.x - l.x, (w.y - l.y) / l.w)) / abs(l.z);
         if (d < 1.0) {
           f = pow(1.0 - d, 1.4); point += f * abs(uLC[i].a);
+          // @night-lit-begin
+          if (nightLit && hasNormal && !onPerson) {
+            // The normal map is OpenGL (+Y up), the map +Y down; the lamp hangs 42 px up. Against a flat pixel: 1.0.
+            // It holds the placed props' normals, not a character's: a pixel of a person in uPeople (the box above) is
+            // not lit by the sofa or the plant it stands in front of.
+            vec3 toLamp = normalize(vec3(l.x - w.x, w.y - l.y, 42.0));
+            float rel = dot(nProp, toLamp) / toLamp.z;
+            f *= rel > 1.12 ? 1.24 : (rel > 0.88 ? 1.0 : 0.78);
+          }
+          if (nightLit && onPerson) lightDir += normalize(vec2(l.x - w.x, l.y - w.y) + vec2(0.0001)) * f * abs(uLC[i].a);
+          // @night-lit-end
           if (l.z < 0.0) haloC += uLC[i].rgb * pow(1.0 - d, 2.0) * abs(uLC[i].a);   // a lamp's own glow (negative reach)
         }
       }
@@ -423,6 +457,18 @@ void main() {
       vec3 t = tint / total;
       vec3 hot = t.r > t.b ? mix(t * 1.18, vec3(1.12, 1.0, 0.5), band * band * 0.6 * point / total) : t * 1.3;   // a lamp's core goes yellow
       illum = mix(amb, hot, band * 0.88);
+      // @night-lit-begin
+      if (nightLit && onPerson && dot(lightDir, lightDir) > 0.0001) {
+        // a stepped rim on the side of a person that faces the lamps: where the pixel differs from the one toward them
+        vec2 lDir = normalize(lightDir);
+        vec2 avN = vec2((w.x - personAt.x) / 10.0, (w.y - (personAt.y - 13.0)) / 13.0);
+        float facing = floor(clamp(dot(avN, lDir), 0.0, 1.0) * 2.0 + 0.5) / 2.0;      // 0, 1/2 or 1
+        facing *= 1.0 - step(1.0, dot(avN, avN));                                      // the box's corners hold floor, not body
+        vec2 toward = floor(lDir * 1.5 + 0.5);                                         // one pixel, in eight directions
+        float edge = step(0.1, length(c.rgb - texture2D(uMainSampler, toScreen(w + toward)).rgb));
+        illum += hot * (facing * edge * 0.2 * uNight * min(total, 1.0));
+      }
+      // @night-lit-end
     }
     float hq = floor(min(max(haloC.r, max(haloC.g, haloC.b)), 1.0) * 6.0 + 0.5) / 6.0;
     vec3 haloQ = max(haloC.r, max(haloC.g, haloC.b)) > 0.0 ? haloC / max(haloC.r, max(haloC.g, haloC.b)) * hq : vec3(0.0);

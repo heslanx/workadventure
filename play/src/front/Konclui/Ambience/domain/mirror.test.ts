@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { GlassFace } from "./mirror";
-import { mirrorAlpha, mirrorFace, mirrorFoot, mirrorFrame, mirrorsPiece } from "./mirror";
+import {
+    mirrorAlpha,
+    mirrorFace,
+    mirrorFlips,
+    mirrorFoot,
+    mirrorFrame,
+    mirroredFrameName,
+    mirrorsPiece,
+} from "./mirror";
 
 describe("the glass mirror", () => {
     it("shows a figure from its other side: down and up swap and turn over, left and right stay", () => {
@@ -23,6 +31,8 @@ describe("the glass mirror", () => {
         expect(mirrorFace(50, 560, faces), "on the foot line: not in front").toBeNull();
         expect(mirrorFace(50, 710, faces), "beyond reach").toBeNull();
         expect(mirrorFace(150, 600, faces), "beside the faces").toBeNull();
+        expect(mirrorFace(50, 640, faces, undefined, 1), "only the first `count` faces are looked at").toBe(faces[0]);
+        expect(mirrorFace(50, 640, faces, undefined, 0), "none of them").toBeNull();
         expect(mirrorFoot(580, 560)).toBe(540); // 20 px in front: 20 px up the glass (faceFoot - 20)
         expect(mirrorFoot(600, 560)).toBe(520); // 40 px in front: 40 px up the glass (faceFoot - 40)
         expect(mirrorFoot(620, 560)).toBe(500); // 60 px in front: 60 px up the glass (faceFoot - 60)
@@ -45,6 +55,8 @@ describe("the glass mirror", () => {
 
     it("reflects what stands on the floor, not what sits on a desk, lies flat or hangs on a wall", () => {
         expect(mirrorsPiece({ name: "Figueira-lira", tags: ["Plantas"] })).toBe(true);
+        expect(mirrorsPiece({ name: "Figueira-lira" }), "a piece with no tags").toBe(false);
+        expect(mirrorsPiece({ name: "Mesa", tags: ["Mesas", "Plantas"] }), "any one tag").toBe(true);
         expect(mirrorsPiece({ name: "Roseira", tags: ["Exterior e jardim"] })).toBe(true);
         expect(mirrorsPiece({ name: "Totem com o K", tags: ["Peças da marca"] })).toBe(true);
         expect(mirrorsPiece({ name: "Babosa (aloe vera) (sobre móvel)", tags: ["Plantas"] })).toBe(false);
@@ -90,4 +102,16 @@ describe("the glass mirror", () => {
             true,
         );
     });
+});
+
+describe("the mirrored frame, read without making an object", () => {
+    it.each([...Array.from({ length: 14 }, (_, i) => i), "5", "idle-0", 2.5, -1, "", "x"])(
+        "gives for %s what mirrorFrame gives",
+        (frame) => {
+            const { frame: shown, flip } = mirrorFrame(frame);
+
+            expect(mirroredFrameName(frame)).toBe(shown);
+            expect(mirrorFlips(frame)).toBe(flip);
+        },
+    );
 });

@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import * as Phaser from "phaser";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameScene } from "../../../Phaser/Game/GameScene";
 import { FEATURES_KEY, type FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import { applyEffectsPreset, setEffect } from "../../Preferences/stores/effectSwitchesStore";
-import { createBrowserEffectsPort } from "./browserEffectsPort";
+import { browserEnvironment, createBrowserEffectsPort } from "./browserEffectsPort";
 import type { EffectsEnvironment } from "./SceneEffects";
 
 // The scene effects need a WebGL renderer and the map's pictures. The port is only asked what it hands them.
@@ -95,6 +95,55 @@ describe("browserEffectsPort", () => {
 
         it("never darkens the edges when nobody says the user is in focus", () => {
             expect(environmentOf(createBrowserEffectsPort()).focused()).toBe(false);
+        });
+    });
+
+    describe("the QA settings in localStorage", () => {
+        beforeEach(() => {
+            vi.stubGlobal("matchMedia", () => ({ matches: false }));
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it("answers the fixed hour as it is in the storage at each ask, and none once it is removed or is not a number", () => {
+            const environment = browserEnvironment(() => false);
+            expect(environment.fixedHour()).toBeUndefined();
+
+            localStorage.setItem("konclui.fx.hour", "21.5");
+            expect(environment.fixedHour()).toBe(21.5);
+
+            localStorage.setItem("konclui.fx.hour", "9");
+            expect(environment.fixedHour()).toBe(9);
+
+            localStorage.setItem("konclui.fx.hour", "night");
+            expect(environment.fixedHour()).toBeUndefined();
+
+            localStorage.removeItem("konclui.fx.hour");
+            expect(environment.fixedHour()).toBeUndefined();
+        });
+
+        it("answers the night-lit preview only for the value 1, at each ask", () => {
+            const environment = browserEnvironment(() => false);
+            expect(environment.nightLit()).toBe(false);
+
+            localStorage.setItem("konclui.fx.rim", "1");
+            expect(environment.nightLit()).toBe(true);
+
+            localStorage.setItem("konclui.fx.rim", "0");
+            expect(environment.nightLit()).toBe(false);
+        });
+
+        it("reports a storage that cannot be read, and answers the defaults", () => {
+            const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+            vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+                throw new Error("blocked");
+            });
+            const environment = browserEnvironment(() => false);
+
+            expect([environment.fixedHour(), environment.nightLit()]).toEqual([undefined, false]);
+            expect(warn).toHaveBeenCalledTimes(2);
         });
     });
 

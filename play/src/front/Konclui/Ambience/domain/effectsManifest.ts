@@ -63,6 +63,12 @@ export const effectsManifestSchema = z.object({
     glassFaces: z.array(z.tuple([z.number(), z.number(), z.number()])).optional(),
     /** The night's darkest colour, 0..255. */
     ink: rgb,
+    /**
+     * True when fx/ holds `normal.png`: the map-space normal texture of the placed sprites (RGB = (n + 1) / 2, +Y up,
+     * alpha 255 under a sprite pixel), the size of `map`. The file is asked for only when this says so, so a room
+     * without it makes no request that fails.
+     */
+    normal: z.boolean().optional(),
 });
 
 export type EffectsManifest = z.infer<typeof effectsManifestSchema>;

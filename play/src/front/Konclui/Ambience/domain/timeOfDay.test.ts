@@ -7,6 +7,24 @@ describe("timeOfDay", () => {
         expect(localHour(new Date("2026-10-20T15:00:00Z"))).toBe(12);
     });
 
+    it("builds the clock's formatter once per zone, not on each read of the hour", () => {
+        const original = Intl.DateTimeFormat;
+        let built = 0;
+        Intl.DateTimeFormat = new Proxy(original, {
+            construct(target, args: ConstructorParameters<typeof Intl.DateTimeFormat>) {
+                built += 1;
+                return Reflect.construct(target, args);
+            },
+        });
+        try {
+            for (let i = 0; i < 5; i++) localHour(new Date("2026-10-20T15:00:00Z"), "Asia/Tokyo");
+        } finally {
+            Intl.DateTimeFormat = original;
+        }
+
+        expect(built).toBe(1);
+    });
+
     it("gives a plain day at noon, a lit office in a navy garden at night, warmth at golden hour", () => {
         const noon = daylight(12);
         expect(isPlainDay(noon)).toBe(true);

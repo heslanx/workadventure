@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { Rect } from "./geometry";
 import type { LightReach, SpriteSpec } from "./lights";
-import { emissiveRect, lightsFrom, spritePoint, staticLights, visibleLights, visibleRects } from "./lights";
+import {
+    emissiveRect,
+    lightsFrom,
+    spritePoint,
+    staticLights,
+    touchesView,
+    ViewCache,
+    visibleLights,
+    visibleRects,
+} from "./lights";
 
 describe("lights", () => {
     it("finds a lamp's shade, a totem's foot, the point below a screen and the middle of a glyph", () => {
@@ -84,5 +93,74 @@ describe("lights", () => {
         expect(near[0].x).toBe(250);
         const rects = visibleRects([{ rect: [10, 10, 5, 5] }, { rect: [900, 900, 5, 5] }], [0, 0, 500, 400]);
         expect(rects).toHaveLength(1);
+    });
+});
+
+describe("the lights kept for the camera's cell", () => {
+    const l = (x: number, y: number, reach = 20): LightReach => ({ x, y, reach, power: 1, squash: 1 });
+    const lights = [l(50, 50), l(300, 50), l(1000, 1000)];
+    const cache = (): ViewCache<LightReach> => new ViewCache(16, (area) => visibleLights(lights, area, 32));
+
+    it("answer the same view again without working it out, a footstep's draw", () => {
+        const kept = cache();
+
+        const first = kept.get([0, 0, 200, 100], 1);
+        const again = kept.get([0, 0, 200, 100], 1);
+
+        expect(again).toBe(first);
+        expect(kept.runs).toBe(1);
+    });
+
+    it("answer a camera that moved inside its cell without working it out, and the next cell with one run", () => {
+        const kept = cache();
+        kept.get([0, 0, 200, 100], 1);
+
+        kept.get([15.9, 15.9, 200, 100], 1);
+        expect(kept.runs).toBe(1);
+        kept.get([16, 0, 200, 100], 1);
+        expect(kept.runs).toBe(2);
+    });
+
+    it("work it out again when the fixtures change (the version), when the view's size changes, and not before", () => {
+        const kept = cache();
+        kept.get([0, 0, 200, 100], 1);
+
+        kept.get([0, 0, 200, 100], 2);
+        kept.get([0, 0, 220, 100], 2);
+
+        expect(kept.runs).toBe(3);
+    });
+
+    it("never miss a light the exact view reaches, wherever in its cell the camera is", () => {
+        // a light whose reach just touches the view at its right edge when the camera stands at 15.9 of its cell
+        const edge = [l(215.8 + 20, 50)]; // its left reach edge is x = 215.8, just inside the exact view's right edge, 15.9 + 200
+        const kept = new ViewCache<LightReach>(16, (area) => visibleLights(edge, area, 32));
+
+        expect(visibleLights(edge, [15.9, 0, 200, 100]), "the exact view reaches it").toHaveLength(1);
+        expect(kept.get([15.9, 0, 200, 100], 1)).toHaveLength(1);
+        expect(kept.get([0, 0, 200, 100], 1), "the cell's other end: kept too, it is a superset").toHaveLength(1);
+    });
+
+    it("hand the computation an area that covers every view of the cell", () => {
+        const areas: number[][] = [];
+        const kept = new ViewCache<number>(16, (area) => {
+            areas.push([...area]);
+            return [];
+        });
+
+        kept.get([35, 20, 300, 200], 1);
+
+        const [x, y, w, h] = areas[0];
+        expect([x, y], "the cell's corner").toEqual([32, 16]);
+        expect(x + w, "reaches the right edge of the widest view of the cell").toBeGreaterThanOrEqual(47.99 + 300);
+        expect(y + h).toBeGreaterThanOrEqual(31.99 + 200);
+    });
+});
+
+describe("touchesView", () => {
+    it("is true for a rectangle that overlaps the view and false for one that only shares an edge", () => {
+        expect(touchesView([10, 10, 5, 5], [0, 0, 100, 100])).toBe(true);
+        expect(touchesView([100, 0, 5, 5], [0, 0, 100, 100])).toBe(false);
+        expect(touchesView([-5, 0, 5, 5], [0, 0, 100, 100])).toBe(false);
     });
 });

@@ -11,6 +11,23 @@
 //           pressed grass behind walkers, cloud shadows, daylight and lamps by Brasília's hour, the focus vignette and
 //           the arrival iris
 //   tv      a meeting room's TV shows the K slide (and lights the room at night) while two or more people are in it
+// A draw makes no array and under 64 bytes of heap (asserted, SceneEffects.performance.test.ts), except where a locked
+// room is in view with name tags on the page: hideLabels then reads each tag's place from the page (a DOMRect each, at
+// most every LABEL_MEASURE_MS, and only when a camera, a crowd or a tag moved), a cost in a browser nobody has measured.
+// The uniforms are written into scratch arrays made once, the mirror's pictures are pooled records, what a footstep
+// would recompute (the lights that reach the view, the share of the view outdoors) is cached by the camera's cell, and
+// the shading, mirroring and trail read only the characters the scene draws in full (domain/drawnPeople), not the
+// culled ones and the dots of a crowd. Nothing is uploaded to the GPU while people walk: their reflections are the
+// images of the mirror's container, drawn by the GPU. The effects' canvas textures, and when each is uploaded (each
+// whole: Phaser 4.2.1 has no sub-rectangle upload), are in the "every texture upload" tests of the performance test:
+//   occ       the occlusion field (occluders size, 4 B a pixel): at the build, once, painted before it is a texture; again
+//             when a piece's footprint changes (a door swaps its sprite, a piece is moved), found at the next refresh
+//   mirror    the atlas of still pieces at the glass (map width x 128 per row of glass): at the build, once, with the
+//             pieces already there; again when a piece in front of the glass changes, or the reflections are switched
+//   -back-N   one small canvas texture for each brand piece in the atlas (the piece's size, 4 B a pixel): made when the
+//             atlas is painted, dropped and made again at the next paint of it
+// and the pictures added at the build (water, water-data, glass, masks, tv-slide, occluders, and the optional normal
+// map), once each. A walking crowd, a meeting, the night falling and a TV turning on upload nothing.
 // Redraws: the engine draws only a dirty scene. Timed effects step with the tile animation clock and only while seen;
 // state changes (hour, lock, meeting, focus) mark the scene dirty once; the camera already redraws whatever depends on
 // it. Movement stops with "Disable map animations" and reduced motion; the water then shows the still floor it covers.
@@ -21,13 +38,16 @@ import type { GameMapFrontWrapper } from "../../../Phaser/Game/GameMap/GameMapFr
 import type { EffectTexture, EffectsManifest } from "../domain/effectsManifest";
 import { EFFECT_TEXTURES } from "../domain/effectsManifest";
 import type { FeatureSwitches } from "../../Preferences/domain/effectSwitches";
-import { coverage, inside, occupancy, type Box, type Rect } from "../domain/geometry";
+import { DRAWN_REBUILD_MS, DrawnPeople } from "../domain/drawnPeople";
+import { CellValue, countInRooms, coverage, inside, type Box, type Rect } from "../domain/geometry";
 import { footprints } from "../domain/groundShadow";
 import {
     EMISSIVE_TINTS,
     lightsFrom,
     specKey,
     staticLights,
+    touchesView,
+    ViewCache,
     visibleLights,
     visibleRects,
     type EmissiveRect,
@@ -38,8 +58,9 @@ import {
     MIRROR_REACH,
     mirrorAlpha,
     mirrorFace,
+    mirrorFlips,
     mirrorFoot,
-    mirrorFrame,
+    mirroredFrameName,
     mirrorsPiece,
     type FrameName,
     type GlassFace,
@@ -48,7 +69,7 @@ import { CloudClock, motionAllowed, progress } from "../domain/motion";
 import {
     glassPanes,
     glassRowTop,
-    maskAt,
+    maskByteAt,
     measureFootprint,
     packMasks,
     paintBackOf,
@@ -58,7 +79,8 @@ import {
 } from "../domain/pixelMaps";
 import { GLASS, GROUND, WATER } from "../domain/shaders";
 import { isPlainDay, localHour, lookAt, type Look, type Rgb } from "../domain/timeOfDay";
-import { Trail } from "../domain/trail";
+import { PlacedSnapshot } from "../domain/placedSnapshot";
+import { Trail, type WalkerId } from "../domain/trail";
 import { addPostFilter, type UniformValue } from "./postFilter";
 import { SceneResources } from "./SceneResources";
 
@@ -72,6 +94,8 @@ export interface EffectsEnvironment {
     fixedHour(): number | undefined;
     /** Whether the user's desk is in focus (the vignette). */
     focused(): boolean;
+    /** QA preview: rim light on the people and bevels on the props at night (domain/shaders, `@night-lit`). Off by default. */
+    nightLit(): boolean;
 }
 
 /**
@@ -93,6 +117,7 @@ export interface EffectsHost {
     readonly cameras: { readonly main: Phaser.Cameras.Scene2D.Camera };
     readonly game: { readonly canvas: HTMLCanvasElement };
     readonly MapPlayersByKey: ReadonlyMap<number, RemotePlayer>;
+    readonly fullDetailPlayers?: ReadonlySet<RemotePlayer>;
     /** The scene creates the current player after the map: undefined until then. */
     readonly CurrentPlayer: Player | undefined;
     markDirty(): void;
@@ -107,6 +132,8 @@ export interface SceneEffectsOptions {
     readonly renderer: Phaser.Renderer.WebGL.WebGLRenderer;
     readonly manifest: EffectsManifest;
     readonly images: Readonly<Record<EffectTexture, HTMLImageElement>>;
+    /** Optional 2.5D silhouette-aware normal map (`fx/normal.png`). */
+    readonly normal?: HTMLImageElement;
     /** Makes the texture keys of this attach unique. */
     readonly generation: number;
     readonly features: FeatureSwitches;
@@ -121,30 +148,45 @@ type RenderableLayer = GameMapFrontWrapper["phaserLayers"][number];
 
 type Layered = Phaser.GameObjects.GameObject & { depth: number; setDepth(value: number): unknown };
 
+/** Whoever is drawn: the player or a remote character, at their feet. Records are pooled and rewritten each frame. */
 interface Person {
-    readonly id: string;
-    readonly x: number;
-    readonly y: number;
-    readonly me: boolean;
+    id: WalkerId;
+    x: number;
+    y: number;
+    me: boolean;
+    // the masks under the feet, read again only when they moved
+    maskX: number;
+    maskY: number;
+    /** Bit 4 of the masks: the lawn, where walkers press the grass. */
+    onLawn: boolean;
+    polished: boolean;
 }
 
-/** A picture in the mirror. */
-interface MirrorPicture {
-    readonly key: string;
-    readonly frame: FrameName | undefined;
+/** What the effects read of a character: its feet, whether it is drawn, and its sprites. */
+interface Body {
     readonly x: number;
     readonly y: number;
-    readonly originX: number;
-    readonly originY: number;
-    readonly flip: boolean;
-    readonly alpha: number;
-    readonly scaleX: number;
-    readonly scaleY: number;
-    readonly face: GlassFace;
+    readonly visible: boolean;
+    readonly list: readonly unknown[];
+}
+
+/** A picture in the mirror. The records of the people's pictures are pooled, so the fields are written in place. */
+interface MirrorPicture {
+    key: string;
+    frame: FrameName | undefined;
+    x: number;
+    y: number;
+    originX: number;
+    originY: number;
+    flip: boolean;
+    alpha: number;
+    scaleX: number;
+    scaleY: number;
+    face: GlassFace;
     /** A brand piece, shown from its back. */
-    readonly back: boolean;
+    back: boolean;
     /** From the glass, so the nearer covers the farther. */
-    readonly distance: number;
+    distance: number;
 }
 
 interface MirrorPiece {
@@ -152,33 +194,72 @@ interface MirrorPiece {
     readonly picture: MirrorPicture;
 }
 
-interface PlacedMirrorPicture {
-    readonly key: string;
-    readonly frame: FrameName | undefined;
-    readonly left: number;
-    readonly top: number;
-    readonly w: number;
-    readonly h: number;
-    readonly alpha: number;
-    readonly scaleX: number;
-    readonly scaleY: number;
-    readonly face: GlassFace;
-    readonly distance: number;
-    /** A piece drawn here only on the live panes; the atlas draws it elsewhere. */
-    readonly only?: ReadonlySet<GlassPane>;
+/** A pooled piece, written in place. */
+interface MirrorPieceSlot {
+    face: GlassFace;
+    picture: MirrorPicture;
 }
 
-interface FrameState {
-    readonly view: Rect;
-    readonly look: Look;
-    readonly locks: Rect[];
-    readonly mirrored: Person[];
-    readonly reveal: number;
-    readonly clouds: number;
-    readonly me: Person | undefined;
-    readonly lit: Light[];
-    readonly glow: EmissiveRect[];
+type MapEntity =
+    ReturnType<ReturnType<GameMapFrontWrapper["getEntitiesManager"]>["getEntities"]> extends Map<string, infer E>
+        ? E
+        : never;
+
+/** A picture put on the glass: pooled, written in place by `place`. */
+interface PlacedMirrorPicture {
+    flip: boolean;
+    key: string;
+    frame: FrameName | undefined;
+    left: number;
+    top: number;
+    w: number;
+    h: number;
+    alpha: number;
+    scaleX: number;
+    scaleY: number;
+    face: GlassFace;
+    distance: number;
+    /** A piece drawn here only on the live panes; the atlas draws it elsewhere. */
+    onlyLive: boolean;
 }
+
+/** What the camera pass reads on a draw, written by `frame` and kept (one object, rewritten each frame). */
+interface FrameState {
+    ready: boolean;
+    view: Rect;
+    look: Look;
+    lockCount: number;
+    mirroredCount: number;
+    reveal: number;
+    clouds: number;
+    me: Person | undefined;
+    lit: readonly Light[];
+    glowCount: number;
+}
+
+/** The most the shader takes of each: people mirrored on the floor and shaded on the ground, locked rooms, glow rects. */
+const MAX_MIRRORED = 8;
+/** The people ranked for the shader's eight: one already in them stays until it is past this many by distance. */
+const PEOPLE_KEPT = 10;
+const MAX_LOCKS = 6;
+const MAX_GLOW = 24;
+/** Panes the mirror draws whole while someone crosses them. */
+const MAX_LIVE_PANES = 8;
+/** Candidates the glow cache keeps: the exact view then cuts them to `MAX_GLOW`. */
+const GLOW_CANDIDATES = 64;
+/** The grid, in px, the camera's place is cut to for what depends on the view alone (the cache, the outdoor share). */
+const VIEW_CELL = 16;
+const SHARE_CELL = 8;
+const NO_FACE: GlassFace = [0, 0, 0];
+const NO_PANES: readonly GlassPane[] = [];
+const NO_LIGHTS: readonly Light[] = [];
+const NO_UNIFORMS: Record<string, UniformValue> = {};
+const NO_MEETING = (): boolean => false;
+
+/** A map piece in the scene's children: an Image (what the entity manager places), not a layer or an effect's own. */
+const isPlacedImage = (child: unknown): child is Phaser.GameObjects.Image =>
+    child instanceof Phaser.GameObjects.Image && child.type === "Image";
+const ZERO_TINT = [0, 0, 0, 0];
 
 interface KoiSchool {
     readonly school: { snapshot(): { fish: readonly { x: number; y: number; depth: number }[] } };
@@ -196,6 +277,9 @@ const WATER_GRADE = ["#6ee6d1", "#3ad0c0", "#14b8b0", "#08a5a2", "#05888a", "#04
 const WATER_HALF = ["#7ee6d2", "#54dbc8", "#27c4b8", "#0eaea9", "#069696", "#047b7e", "#036066", "#024952"].map(hex);
 const CAUSTIC = { core: hex("#a8f8e6"), halo: hex("#4fd8c6"), white: hex("#e9fff7") };
 const KOI_RING = [hex("#14c8cc"), hex("#5fe0e4")];
+const WATER_GRADE_FLAT = WATER_GRADE.flat();
+const WATER_HALF_FLAT = WATER_HALF.flat();
+const KOI_RING_FLAT = KOI_RING.flat();
 const TRAIL_COLOURS = { lime: hex("#96d664"), cream: hex("#f0f091") };
 // A reflection is cooled a little toward the glass's blue.
 const MIRROR_TINT = 0xeef4f8;
@@ -217,6 +301,14 @@ const KOI_ROOM: readonly (readonly [number, number])[] = [
 ];
 const KOI_FRAMES = 'iframe[src*="/koi/"]';
 const REFRESH_MS = 1000;
+/**
+ * The QA settings (the fixed hour, the night-lit preview) are read again this often, so that a change made from the
+ * console, in this tab, shows in under a second and not at the refresh a second away: the page gives no event for a
+ * change of its own localStorage. A read of two keys, four times a second.
+ */
+export const QA_POLL_MS = 250;
+/** The name tags are measured again, for a camera or a crowd that moved, at most this often (ms). */
+export const LABEL_MEASURE_MS = 100;
 
 function context2d(canvas: HTMLCanvasElement, willReadFrequently = false): CanvasRenderingContext2D {
     const ctx = canvas.getContext("2d", { willReadFrequently });
@@ -275,15 +367,36 @@ export class SceneEffects {
     private readonly occWalls: HTMLImageElement;
     private readonly occDraw: HTMLCanvasElement;
     private readonly occCanvas: HTMLCanvasElement;
-    private readonly occTexture: Phaser.Textures.CanvasTexture;
+    // undefined while the build paints the field into its canvas, before it is a texture (see the constructor)
+    private occTexture: Phaser.Textures.CanvasTexture | undefined;
     private occRaw: HTMLCanvasElement | undefined;
     private occSignature = "";
+    private readonly placedSnapshot = new PlacedSnapshot();
+    // the pieces were read at the build, before the first refresh: its lights and screens are still to be worked out
+    private piecesUnseen = false;
+    // the placed images that give a light, as of the last change to the placed images
+    private litPieces: Phaser.GameObjects.Image[] = [];
+    // the meetings the lights, and the screens of the TVs, were last worked out for
+    private lightsMeetingMask = 0;
+    private tvsMeetingMask = 0;
     private readonly stars: Float32Array;
     private readonly statics: Light[];
     private pools: Light[];
     private emissive: EmissiveRect[] = [];
     private rings: { x: number; y: number; tick: number; seed: number }[] = [];
-    private hiddenLabels = new Set<HTMLElement>();
+    // The name tags hidden behind the frost, and the ones to hide this frame: two arrays swapped, with the count of each.
+    // (A Set would be cleared and filled on each frame, and a cleared Set makes a new table.)
+    private hiddenTags: (HTMLElement | undefined)[] = [];
+    private hiddenCount = 0;
+    // what the name tags were last measured for: the locked rooms in view, how many tags, the crowd's feet, the camera
+    private labelsAt = Number.NEGATIVE_INFINITY;
+    private labelLocks = -1;
+    private labelTags = -1;
+    private labelCrowd = 0;
+    private readonly labelView: [number, number, number, number] = [Number.NaN, 0, 0, 0];
+    private shownTags: (HTMLElement | undefined)[] = [];
+    // every name tag of the page: live, so each frame reads it by index and makes no list of them
+    private readonly nameTags = document.getElementsByClassName("username-display");
     // 32 steps 9 px apart: the trail's old length (48 x 6 px) in two thirds of the shader's vectors (plans/decor/001).
     private readonly trail = new Trail({ spacing: 9, max: 32 });
     private readonly clouds = new CloudClock();
@@ -294,11 +407,18 @@ export class SceneEffects {
     private lightSignature = "";
     private look: Look;
     private lookKey: string;
+    // `isPlainDay(look)`, worked out when the look changes, not on each frame
+    private plainDay: boolean;
     private features: FeatureSwitches;
     private measured: Record<string, Box | null> = {};
-    private frameState: FrameState | undefined;
+    private readonly state: FrameState;
+    // `motion()` as of the last frame, for the uniforms of the draw that follows it
+    private motionNow = false;
     private now: number;
     private lastRefresh: number;
+    private lastQaPoll: number;
+    // the fixed hour as the environment last gave it (undefined: Brasília's clock), for the poll of the QA settings
+    private fixedHourSeen: number | undefined;
     private lastTick: number;
     private readonly tickDelay: number | undefined;
     private animateUntil = 0;
@@ -309,18 +429,82 @@ export class SceneEffects {
     private readonly glass: Phaser.GameObjects.Shader;
     private readonly post: Phaser.Filters.Controller;
 
+    // who is drawn: the player and the remote characters the scene draws in full, read each frame
+    private readonly drawn: DrawnPeople<number, RemotePlayer>;
+    private readonly crowd: Person[] = [];
+    private crowdCount = 0;
+    private readonly viewRect: [x: number, y: number, w: number, h: number] = [0, 0, 0, 0];
+    private readonly mirroredList: Person[] = [];
+    private readonly lockList: Rect[] = [];
+    private readonly glowList: EmissiveRect[] = [];
+    private readonly roomCounts: Int32Array;
+    private meetingMask = 0;
+
+    // what a footstep must not recompute: the lights that reach the view, the share of the view outdoors
+    private lightsRev = 0;
+    private nightOn = false;
+    private readonly litCache: ViewCache<Light>;
+    private readonly glowCache: ViewCache<EmissiveRect>;
+    private readonly outdoors = new CellValue(SHARE_CELL, (view) => this.share(view, 1));
+    private readonly wetness = new CellValue(SHARE_CELL, (view) => this.share(view, 8));
+
+    // the camera pass's uniforms, written in place on each draw (Phaser applies them before the next draw)
+    private readonly postRecord: Record<string, UniformValue>;
+    private readonly normalsOn: number;
+    private readonly emissiveData = new Float32Array(MAX_GLOW * 4);
+    private readonly lightData = new Float32Array(128);
+    private readonly lightColorData = new Float32Array(128);
+    private readonly lightClipData = new Float32Array(128);
+    private readonly lockData = new Float32Array(MAX_LOCKS * 4);
+    private readonly stepData: Float32Array;
+    private readonly avatarData = new Float32Array(MAX_MIRRORED * 4);
+    private readonly peopleData = new Float32Array(MAX_MIRRORED * 4);
+    // the ten drawn people nearest the view's centre: their places in `crowd` and their squared distances from it
+    private readonly peopleTop = new Int32Array(PEOPLE_KEPT);
+    private readonly peopleRank = new Float64Array(PEOPLE_KEPT);
+    // who is in `peopleData` (two arrays swapped, so that a frame knows the last frame's eight and makes nothing)
+    private peopleIds: WalkerId[] = [];
+    private peopleIdsNext: WalkerId[] = [];
+    private peopleCount = 0;
+    // a hash of where the drawn people stand, written by `gather`: it changes when one of them moves
+    private crowdHash = 0;
+    private rimOn = 0;
+    private readonly resolution = [0, 0];
+    private readonly shafts = [0, 58, 24, 0.84];
+    private readonly cloud = [0, 236, 0, 0];
+    private readonly cloudOffset = [0, 0];
+    private readonly vignetteUniform = [0, 0.62];
+    private readonly revealUniform = [0, 0, 0, 0];
+    private readonly inkUniform: number[];
+    private readonly mapSize: number[];
+    private readonly glassCam = [0, 0];
+    private readonly glassRows: number[] = [];
+    private readonly glassSize: number[] = [0, 0];
+    private readonly waterRings = new Float32Array(64);
+
     // the mirror
     private readonly mirror: Phaser.GameObjects.Container;
     private readonly mirrorPanes = new Map<GlassFace, GlassPane[]>();
     private readonly mirrorPool: Phaser.GameObjects.Image[] = [];
     private mirrorPieces: MirrorPiece[] = [];
-    private mirrorSignature: string | undefined;
-    private readonly mirrorFlips = new Map<string, string | null>();
+    // the pieces found in front of the glass at the last refresh, pooled: compared with `mirrorPieces`
+    private readonly candidates: MirrorPieceSlot[] = [];
+    private candidateCount = 0;
+    // Only static brand pieces need a separate texture for their painted back.
+    private readonly pieceBacks = new Map<MirrorPicture, string>();
+    // each frame's pictures and where they land on the glass, pooled
+    private readonly viewFaces: GlassFace[] = [];
+    private readonly pictures: MirrorPicture[] = [];
+    private pictureCount = 0;
+    private readonly placed: PlacedMirrorPicture[] = [];
+    private readonly livePanes: GlassPane[] = [];
+    private liveCount = 0;
     // the panes drawn by the container (drawMirror)
     private readonly mirrorLive = new Float32Array(32);
     private mirrorLiveN = 0;
     private readonly mirrorRows: number[];
     private readonly mirrorAtlas: HTMLCanvasElement;
+    private mirrorKey = "";
     private readonly mirrorTexture: Phaser.Textures.CanvasTexture;
     private mirrorTmp: HTMLCanvasElement | undefined;
     private mirrorStatic = false;
@@ -329,7 +513,7 @@ export class SceneEffects {
     private readonly onPreRender = (): void => this.frame();
 
     constructor(options: SceneEffectsOptions) {
-        const { scene, manifest, images, generation } = options;
+        const { scene, manifest, images, normal, generation } = options;
         this.scene = scene;
         this.renderer = options.renderer;
         this.manifest = manifest;
@@ -337,14 +521,57 @@ export class SceneEffects {
         this.features = options.features;
         this.now = options.time;
         this.lastRefresh = options.time;
+        this.lastQaPoll = options.time;
         this.lastTick = options.time;
         this.resources = new SceneResources(scene.textures);
+        this.drawn = new DrawnPeople(
+            scene.MapPlayersByKey,
+            (id) => this.trail.release(id),
+            DRAWN_REBUILD_MS,
+            (visit) => {
+                const detailed = scene.fullDetailPlayers;
+                if (detailed) {
+                    // forEach, not for...of: a for...of over the set makes a result object for each of its 80 members
+                    detailed.forEach((body) => visit(body, body.userId));
+                } else {
+                    scene.MapPlayersByKey.forEach(visit);
+                }
+            },
+        );
+        this.roomCounts = new Int32Array(manifest.rooms.length);
+        this.stepData = new Float32Array(this.trail.max * 4);
+        this.inkUniform = manifest.ink.map((c) => c / 255);
+        this.mapSize = [manifest.map[0], manifest.map[1]];
+        this.litCache = new ViewCache(VIEW_CELL, (area) =>
+            visibleLights(
+                this.pools.filter((l) => !l.night || this.nightOn),
+                area,
+                32,
+            ),
+        );
+        this.glowCache = new ViewCache(VIEW_CELL, (area) => visibleRects(this.emissive, area, GLOW_CANDIDATES));
         const wrapper = scene.getGameMapFrontWrapper();
         for (const layer of wrapper.phaserLayers) this.layers.set(layer.layer.name, layer);
         this.tickDelay = wrapper.getTileAnimationRefreshDelay();
         [this.mapW, this.mapH] = manifest.map;
         this.look = lookAt(this.hour(), this.features);
         this.lookKey = JSON.stringify(this.look);
+        this.plainDay = isPlainDay(this.look);
+        this.state = {
+            ready: false,
+            view: this.viewRect,
+            look: this.look,
+            lockCount: 0,
+            mirroredCount: 0,
+            reveal: -1,
+            clouds: 0,
+            me: undefined,
+            lit: NO_LIGHTS,
+            glowCount: 0,
+        };
+        this.normalsOn = normal ? 1 : 0;
+        this.rimOn = this.environment.nightLit() ? 1 : 0;
+        this.postRecord = this.postUniformRecord();
         // Registered first, so that a failure while building still gives back what was made so far.
         this.resources.onRelease(() => this.scene.events.off(Phaser.Scenes.Events.PRE_RENDER, this.onPreRender));
         this.resources.onRelease(() => this.restorePage());
@@ -356,6 +583,13 @@ export class SceneEffects {
                 this.addKey(name, key);
                 texture.setFilter(Phaser.Textures.FilterMode.NEAREST); // whole art pixels
             }
+            if (normal) {
+                const normalKey = `kfx-${generation}-normal`;
+                const normalTex = scene.textures.addImage(normalKey, normal);
+                if (!normalTex) throw new Error(`[konclui] effects: the texture ${normalKey} already exists`);
+                this.addKey("normal", normalKey);
+                normalTex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+            }
             this.masks = packMasks(readPixels(images.masks));
             // The occlusion field: the walls (occluders.png, half the map's size, at half weight) and every standing
             // object's footprint, blurred in green (red keeps them sharp), drawn on a canvas whenever something moves
@@ -363,24 +597,39 @@ export class SceneEffects {
             this.occWalls = images.occluders;
             this.occDraw = makeCanvas(images.occluders.width, images.occluders.height);
             this.occCanvas = makeCanvas(images.occluders.width, images.occluders.height);
-            this.occTexture = this.addCanvasTexture("occ", `kfx-${generation}-occ`, this.occCanvas);
-            this.occTexture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+            // The pieces already on the map are read and their footprints drawn into the canvas before it is made a
+            // texture: the first upload is the finished field, not a blank one and then this (the second upload of the
+            // same canvas was 4,931,584 B at the office's size). The first refresh then has lights and screens to make.
+            this.readPieces();
+            this.piecesUnseen = true;
+            const occTexture = this.addCanvasTexture("occ", `kfx-${generation}-occ`, this.occCanvas);
+            occTexture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+            this.occTexture = occTexture;
             this.stars = starSlots(readPixels(images["water-data"]));
             this.statics = staticLights(manifest.staticLights);
             this.pools = this.statics;
             this.water = this.buildWater();
             this.ground = this.buildGround();
-            const mirror = this.buildMirror(images.glass, generation);
+            const mirror = this.buildMirror(images.glass);
             this.mirror = mirror.container;
             this.mirrorRows = mirror.rows;
+            for (let i = 0; i < 4; i++) this.glassRows.push(this.mirrorRows[i] ?? -1);
             this.mirrorAtlas = mirror.atlas;
-            this.mirrorTexture = mirror.texture;
-            this.paintMirror([]);
+            this.glassSize[0] = mirror.atlas.width;
+            this.glassSize[1] = mirror.atlas.height;
+            this.mirrorKey = `kfx-${generation}-mirror`;
+            // The pieces standing at the glass now are painted into the atlas before it is made a texture, as the
+            // occlusion field is: one upload of the finished atlas, not a black one and then this.
+            this.mirrorPieces = this.snapshotCandidates(this.features.reflections ? this.findMirrorPieces() : 0);
+            if (this.mirrorPieces.length > 0) this.paintAtlas(this.mirrorPieces);
+            this.mirrorTexture = this.addCanvasTexture("mirror", this.mirrorKey, mirror.atlas);
+            this.mirrorTexture.setFilter(Phaser.Textures.FilterMode.NEAREST);
             this.glass = this.buildGlass();
             this.placeAbove(this.mirror, this.glass);
             this.post = addPostFilter(this.renderer, scene.cameras.main, {
                 postUniforms: () => this.postUniforms(),
                 masksTexture: () => this.texture("masks"),
+                normalsTexture: () => (this.normalsOn > 0 ? this.texture("normal") : null),
             });
             const post = this.post;
             this.resources.onRelease(() => this.scene.cameras.main.filters.internal.remove(post, true));
@@ -401,17 +650,35 @@ export class SceneEffects {
         if (time - this.lastRefresh >= REFRESH_MS) {
             this.lastRefresh += REFRESH_MS;
             if (time - this.lastRefresh > REFRESH_MS * 4) this.lastRefresh = time;
+            this.lastQaPoll = time;
             this.refresh(false);
+        } else if (time - this.lastQaPoll >= QA_POLL_MS) {
+            this.lastQaPoll = time;
+            if (this.qaSettingsChanged()) this.refresh(false);
         }
         if (this.tickDelay !== undefined && time - this.lastTick >= this.tickDelay) {
             this.lastTick += this.tickDelay;
             if (time - this.lastTick > this.tickDelay * 4) this.lastTick = time;
-            if (!this.environment.animationsOff() && this.tick(this.tickDelay)) this.scene.markDirty();
+            if (!this.stillness.animationsOff && this.tick(this.tickDelay)) this.scene.markDirty();
         }
         if (this.animating) {
             this.scene.markDirty();
             if (time >= this.animateUntil) this.animating = false;
         }
+    }
+
+    /**
+     * Whether a setting the page can change under the effects is not what the last refresh used: the fixed hour, the
+     * night-lit preview, "Disable map animations", reduced motion. These are the only reads of the page that are not once
+     * a second: four a second at most, and none on a frame.
+     */
+    private qaSettingsChanged(): boolean {
+        return (
+            this.environment.fixedHour() !== this.fixedHourSeen ||
+            (this.environment.nightLit() ? 1 : 0) !== this.rimOn ||
+            this.environment.reducedMotion() !== this.stillness.reducedMotion ||
+            this.environment.animationsOff() !== this.stillness.animationsOff
+        );
     }
 
     /** The effect switches changed: applied at once. */
@@ -468,6 +735,10 @@ export class SceneEffects {
         const { rect, glint, waterline } = this.manifest.water;
         const [x, y, w, h] = rect;
         const flat = (colours: readonly Rgb[]): number[] => colours.flat().map((v) => v / 255);
+        // fixed for the room: made once, not on each draw
+        const waterRect = [x, y, w, h];
+        const glintUniform = flat(glint);
+        const lineUniform = flat([waterline]);
         const water = this.scene.add.shader(
             {
                 name: "kfxWater",
@@ -475,20 +746,29 @@ export class SceneEffects {
                 setupUniforms: (set: (name: string, value: UniformValue) => void) => {
                     set("uWater", 0);
                     set("uData", 1);
-                    set("uRect", [x, y, w, h]);
+                    set("uRect", waterRect);
                     set("uTick", this.waterTick);
                     set("uSun", Math.max(this.look.sun, this.look.clouds));
-                    set("uPal[0]", WATER_GRADE.flat());
-                    set("uHalf[0]", WATER_HALF.flat());
-                    set("uRing[0]", KOI_RING.flat());
+                    set("uPal[0]", WATER_GRADE_FLAT);
+                    set("uHalf[0]", WATER_HALF_FLAT);
+                    set("uRing[0]", KOI_RING_FLAT);
                     set("uStars[0]", this.stars);
-                    set("uGlint[0]", flat(glint));
-                    set("uLine", flat([waterline]));
+                    set("uGlint[0]", glintUniform);
+                    set("uLine", lineUniform);
                     set("uCore", CAUSTIC.core);
                     set("uHalo", CAUSTIC.halo);
                     set("uWhite", CAUSTIC.white);
-                    const rings = new Float32Array(64);
-                    this.rings.slice(-16).forEach((r, i) => rings.set([r.x - x, r.y - y, r.tick, r.seed], i * 4));
+                    const rings = this.waterRings;
+                    rings.fill(0);
+                    const first = Math.max(0, this.rings.length - 16);
+                    for (let i = first; i < this.rings.length; i++) {
+                        const r = this.rings[i];
+                        const o = (i - first) * 4;
+                        rings[o] = r.x - x;
+                        rings[o + 1] = r.y - y;
+                        rings[o + 2] = r.tick;
+                        rings[o + 3] = r.seed;
+                    }
                     set("uRings[0]", rings);
                     set("uRingN", Math.min(16, this.rings.length));
                 },
@@ -510,11 +790,10 @@ export class SceneEffects {
                 setupUniforms: (set: (name: string, value: UniformValue) => void) => {
                     set("uOcc", 0);
                     set("uMasks", 1);
-                    set("uMap", [this.mapW, this.mapH]);
+                    set("uMap", this.mapSize);
                     set("uShadow", this.look.shadow);
-                    const [people, n] = this.peopleUniform();
-                    set("uPeople[0]", people);
-                    set("uPeopleN", n);
+                    set("uPeople[0]", this.peopleData);
+                    set("uPeopleN", this.peopleCount);
                 },
             },
             this.mapW / 2,
@@ -526,15 +805,63 @@ export class SceneEffects {
         return this.placeAbove(ground, this.water);
     }
 
-    /** Feet of whoever is in or near the view: [Float32Array(32) of x, y, 0, 0; count]. */
-    private peopleUniform(): [Float32Array, number] {
-        const view = this.view();
-        const near = this.people().filter((p) =>
-            inside(p.x, p.y, [view[0] - 16, view[1] - 16, view[2] + 32, view[3] + 32]),
-        );
-        const data = new Float32Array(32);
-        near.slice(0, 8).forEach((p, i) => data.set([Math.round(p.x), Math.round(p.y) + 1, 0, 0], i * 4));
-        return [data, Math.min(8, near.length)];
+    /**
+     * Feet of whoever is drawn in or near the view, for the ground's shade and the night's rim light: at most eight (the
+     * shader takes eight), into `peopleData`. The eight nearest the view's centre, with a margin: someone already in the
+     * eight keeps the place until they are past the tenth by distance, so a person near the cut does not flicker in and
+     * out as the camera or the crowd moves by a pixel. The ten nearest are kept in place in `peopleTop` (squared
+     * distances in `peopleRank`) and nothing is made.
+     */
+    private placePeopleUniform(view: Rect): void {
+        const data = this.peopleData;
+        const rank = this.peopleRank;
+        const top = this.peopleTop;
+        data.fill(0);
+        const cx = view[0] + view[2] / 2;
+        const cy = view[1] + view[3] / 2;
+        let found = 0;
+        for (let i = 0; i < this.crowdCount; i++) {
+            const p = this.crowd[i];
+            if (!nearView(p.x, p.y, view)) continue;
+            const dx = p.x - cx;
+            const dy = p.y - cy;
+            const d = dx * dx + dy * dy;
+            if (found === PEOPLE_KEPT && d >= rank[PEOPLE_KEPT - 1]) continue;
+            let at = found < PEOPLE_KEPT ? found : PEOPLE_KEPT - 1;
+            while (at > 0 && rank[at - 1] > d) {
+                rank[at] = rank[at - 1];
+                top[at] = top[at - 1];
+                at -= 1;
+            }
+            rank[at] = d;
+            top[at] = i;
+            if (found < PEOPLE_KEPT) found += 1;
+        }
+        // those of the last frame's eight that are still among the ten first, then the nearest of the others
+        const before = this.peopleIds;
+        const beforeCount = this.peopleCount;
+        const after = this.peopleIdsNext;
+        let n = 0;
+        for (let pass = 0; pass < 2; pass++) {
+            for (let t = 0; t < found && n < MAX_MIRRORED; t++) {
+                const p = this.crowd[top[t]];
+                let was = false;
+                for (let k = 0; k < beforeCount; k++) {
+                    if (before[k] === p.id) {
+                        was = true;
+                        break;
+                    }
+                }
+                if (was !== (pass === 0)) continue;
+                data[n * 4] = Math.round(p.x);
+                data[n * 4 + 1] = Math.round(p.y) + 1;
+                after[n] = p.id;
+                n += 1;
+            }
+        }
+        this.peopleIds = after;
+        this.peopleIdsNext = before;
+        this.peopleCount = n;
     }
 
     private buildGlass(): Phaser.GameObjects.Shader {
@@ -545,18 +872,17 @@ export class SceneEffects {
                 setupUniforms: (set: (name: string, value: UniformValue) => void) => {
                     const cam = this.scene.cameras.main;
                     const sheen = this.features.glass ? this.look.sheen : 0;
+                    this.glassCam[0] = Math.round(cam.scrollX);
+                    this.glassCam[1] = Math.round(cam.scrollY);
                     set("uGlass", 0);
-                    set("uMap", [this.mapW, this.mapH]);
-                    set("uCam", [Math.round(cam.scrollX), Math.round(cam.scrollY)]);
+                    set("uMap", this.mapSize);
+                    set("uCam", this.glassCam);
                     set("uStrength", sheen);
                     // the quad may show for the mirror alone
-                    set("uTint", sheen > 0 ? this.look.glass : [0, 0, 0, 0]);
+                    set("uTint", sheen > 0 ? this.look.glass : ZERO_TINT);
                     set("uMirror", 1);
-                    set(
-                        "uMirrorRows",
-                        [0, 1, 2, 3].map((i) => this.mirrorRows[i] ?? -1),
-                    );
-                    set("uMirrorSize", [this.mirrorAtlas.width, this.mirrorAtlas.height]);
+                    set("uMirrorRows", this.glassRows);
+                    set("uMirrorSize", this.glassSize);
                     set("uMirrorTint", MIRROR_TINT_RGB);
                     set("uMirrorOn", this.features.reflections && this.mirrorStatic ? 1 : 0);
                     set("uMirrorLive[0]", this.mirrorLive);
@@ -578,14 +904,10 @@ export class SceneEffects {
      * mullion or a door never carries a reflection. Crops instead of a mask filter: a filter drew the container
      * off-screen and back, 4 to 6 draw calls a frame against perf.py's budget of 30 (20/10/2026); crops add one.
      */
-    private buildMirror(
-        glassImage: HTMLImageElement,
-        generation: number,
-    ): {
+    private buildMirror(glassImage: HTMLImageElement): {
         container: Phaser.GameObjects.Container;
         rows: number[];
         atlas: HTMLCanvasElement;
-        texture: Phaser.Textures.CanvasTexture;
     } {
         const { width, height } = glassImage;
         const ctx = context2d(makeCanvas(width, height), true);
@@ -603,9 +925,11 @@ export class SceneEffects {
         // so how the browser hands a canvas's alpha to WebGL never matters.
         const rows = [...new Set(faces.map(glassRowTop))].slice(0, 4);
         const atlas = makeCanvas(this.mapW, Math.max(1, rows.length) * 128);
-        const texture = this.addCanvasTexture("mirror", `kfx-${generation}-mirror`, atlas);
-        texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-        return { container, rows, atlas, texture };
+        // black before it is made a texture: the first upload is the opaque one, not a blank one and then this
+        const blank = context2d(atlas);
+        blank.fillStyle = "#000";
+        blank.fillRect(0, 0, atlas.width, atlas.height);
+        return { container, rows, atlas };
     }
 
     /**
@@ -614,6 +938,19 @@ export class SceneEffects {
      * covers it). Done when the pieces change, not per frame.
      */
     private paintMirror(pieces: readonly MirrorPiece[]): void {
+        this.paintAtlas(pieces);
+        this.mirrorTexture.refresh();
+    }
+
+    /** `paintMirror` without the upload: the atlas canvas and the brand pieces' back textures. */
+    private paintAtlas(pieces: readonly MirrorPiece[]): void {
+        for (const key of this.pieceBacks.values()) {
+            for (const image of this.mirrorPool) {
+                if (image.texture.key === key) image.setVisible(false).setTexture(this.key("tv-slide"));
+            }
+            this.resources.dropTexture(key);
+        }
+        this.pieceBacks.clear();
         const ctx = context2d(this.mirrorAtlas);
         const half = this.mirrorAtlas.height / 2;
         ctx.imageSmoothingEnabled = false;
@@ -645,7 +982,17 @@ export class SceneEffects {
             }
             t.drawImage(image, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, w, h);
             t.restore();
-            if (back) backOf(t, w, h);
+            if (back) {
+                backOf(t, w, h);
+                const canvas = makeCanvas(w, h);
+                context2d(canvas).drawImage(tmp, 0, 0);
+                const key = `${this.mirrorKey}-back-${this.pieceBacks.size}`;
+                const texture = this.scene.textures.addCanvas(key, canvas);
+                if (!texture) throw new Error(`[konclui] effects: duplicate piece texture ${key}`);
+                this.resources.texture(key);
+                texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+                this.pieceBacks.set(picture, key);
+            }
             const panes = this.mirrorPanes.get(face) || [];
             ctx.save();
             ctx.beginPath();
@@ -664,153 +1011,213 @@ export class SceneEffects {
             ctx.drawImage(tmp, left, top + half);
             ctx.restore();
         }
-        this.mirrorTexture.refresh();
         this.mirrorStatic = pieces.length > 0;
-    }
-
-    /**
-     * A frame drawn mirrored (and, for a brand piece, from its back: backOf) as a texture of its own, made once:
-     * Phaser 4 crops a flipped image from the wrong side (20/10/2026, a reflection split by a mullion showed two outer
-     * halves), so a mirrored picture is never flipped.
-     */
-    private mirroredFrame(key: string, frame: FrameName | undefined, flip: boolean, back: boolean): string | null {
-        const id = `${key}|${frame}|${flip ? "f" : ""}${back ? "b" : ""}`;
-        const known = this.mirrorFlips.get(id);
-        if (known !== undefined) return known;
-        const f = this.scene.textures.getFrame(key, frame);
-        const image = f?.source?.image;
-        let made: string | null = null;
-        if (
-            (image instanceof HTMLImageElement || image instanceof HTMLCanvasElement) &&
-            f.cutWidth > 0 &&
-            f.cutHeight > 0
-        ) {
-            const canvas = makeCanvas(f.cutWidth, f.cutHeight);
-            const ctx = context2d(canvas, back);
-            if (flip) {
-                ctx.translate(f.cutWidth, 0);
-                ctx.scale(-1, 1);
-            }
-            ctx.drawImage(image, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, f.cutWidth, f.cutHeight);
-            if (back) backOf(ctx, f.cutWidth, f.cutHeight);
-            const n = this.mirrorFlips.size;
-            const texture = this.addCanvasTexture(`mirror-${n}`, `${this.key("mirror")}-${n}`, canvas);
-            texture.setFilter(Phaser.Textures.FilterMode.NEAREST); // whole art pixels
-            made = texture.key;
-        }
-        this.mirrorFlips.set(id, made);
-        return made;
     }
 
     // ------------------------------------------------------------------------------------------------ state
 
+    // What asks for stillness, as of the last refresh or QA poll. `motion()` runs on every frame, and the user's
+    // "Disable map animations" is a localStorage read: it is read at the refresh and the poll, never on a frame.
+    private readonly stillness = { reducedMotion: false, animationsOff: false };
+
+    private readStillness(): void {
+        this.stillness.reducedMotion = this.environment.reducedMotion();
+        this.stillness.animationsOff = this.environment.animationsOff();
+    }
+
     private motion(): boolean {
-        return motionAllowed({
-            reducedMotion: this.environment.reducedMotion(),
-            animationsOff: this.environment.animationsOff(),
-        });
+        return motionAllowed(this.stillness);
     }
 
     private hour(): number {
-        return this.environment.fixedHour() ?? localHour();
+        const fixed = this.environment.fixedHour();
+        this.fixedHourSeen = fixed;
+        return fixed ?? localHour();
     }
 
-    private people(): Person[] {
-        const out: Person[] = [];
-        const add = (id: string, p: { x: number; y: number } | undefined): void => {
-            if (p && Number.isFinite(p.x) && Number.isFinite(p.y))
-                out.push({ id, x: p.x, y: p.y + 15, me: id === "me" });
-        };
-        add("me", this.currentPlayer());
-        for (const [id, p] of this.scene.MapPlayersByKey) add(String(id), p);
-        return out;
+    /**
+     * The player and the remote characters the scene draws in full, at their feet, into the pooled `crowd`. A culled
+     * character and a dot have nothing to shade or mirror and are not read: see DrawnPeople.
+     */
+    private gather(): void {
+        let n = 0;
+        this.crowdHash = 0;
+        const me = this.currentPlayer();
+        if (me) n = this.putPerson(n, "me", me, true);
+        const bodies = this.drawn.bodies(this.now);
+        const keys = this.drawn.keys;
+        for (let i = 0; i < bodies.length; i++) {
+            const body = bodies[i];
+            if (body.visible) n = this.putPerson(n, keys[i], body, false);
+        }
+        this.crowdCount = n;
     }
+
+    private putPerson(n: number, id: WalkerId, body: Body, me: boolean): number {
+        const x = body.x;
+        const y = body.y;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return n;
+        const person =
+            this.crowd[n] ??
+            (this.crowd[n] = {
+                id,
+                x: 0,
+                y: 0,
+                me,
+                maskX: Number.NaN,
+                maskY: Number.NaN,
+                onLawn: false,
+                polished: false,
+            });
+        person.id = id;
+        person.x = x;
+        person.y = y + 15;
+        person.me = me;
+        this.crowdHash = Math.imul(Math.imul(this.crowdHash ^ Math.round(x), 16777619) ^ Math.round(y), 16777619);
+        return n + 1;
+    }
+
+    /** Whether the masks under a person's feet say water and polished floor: read again only in another 2 x 2 px cell. */
+    private readMasks(p: Person): void {
+        const cellX = Math.floor(p.x / 2);
+        const cellY = Math.floor(p.y / 2);
+        if (p.maskX === cellX && p.maskY === cellY) return;
+        p.maskX = cellX;
+        p.maskY = cellY;
+        const b = maskByteAt(this.masks, p.x, p.y);
+        p.onLawn = (b & 4) !== 0;
+        p.polished = (b & (2 | 32)) !== 0;
+    }
+
+    /** Counts everyone, drawn or not, in each room, into `roomCounts`, and the rooms with a meeting into a bitmask. */
+    private countRooms(): void {
+        const counts = this.roomCounts;
+        counts.fill(0);
+        const rooms = this.manifest.rooms;
+        const count = (body: Body): void => {
+            if (Number.isFinite(body.x) && Number.isFinite(body.y)) countInRooms(counts, rooms, body.x, body.y + 15);
+        };
+        const me = this.currentPlayer();
+        if (me) count(me);
+        this.scene.MapPlayersByKey.forEach(count);
+        let mask = 0;
+        for (let i = 0; i < counts.length; i++) if (counts[i] >= 2) mask |= 1 << i;
+        if (mask !== this.meetingMask) {
+            this.meetingMask = mask;
+            this.lightsRev += 1;
+        }
+    }
+
+    /** Whether the room a point stands in holds a meeting: from the room counts of the last refresh. */
+    private readonly meetingAt = (x: number, y: number): boolean => {
+        const rooms = this.manifest.rooms;
+        for (let i = 0; i < rooms.length; i++) {
+            const r = rooms[i];
+            // a TV hangs on the wall face above its room's floor: the room counts from two tiles above the floor
+            if (this.roomCounts[i] >= 2 && inside(x, y, [r.floor[0], r.floor[1] - 64, r.floor[2], r.floor[3] + 64]))
+                return true;
+        }
+        return false;
+    };
 
     private currentPlayer(): Player | undefined {
         return this.scene.CurrentPlayer;
     }
 
-    private mask(x: number, y: number): [number, number, number] {
-        return maskAt(this.masks, x, y);
-    }
-
-    /** Share of the camera's view where a mask test holds, from a grid of points about 24 px apart. */
-    private share(view: Rect, test: (m: [number, number, number]) => boolean): number {
+    /** Share of the camera's view where a mask bit holds, from a grid of points about 24 px apart. */
+    private share(view: Rect, bit: number): number {
         const cols = Math.max(4, Math.round(view[2] / 24));
         const rows = Math.max(4, Math.round(view[3] / 24));
         let hits = 0;
         for (let gy = 0; gy < rows; gy++) {
             for (let gx = 0; gx < cols; gx++) {
-                const m = this.mask(view[0] + ((gx + 0.5) * view[2]) / cols, view[1] + ((gy + 0.5) * view[3]) / rows);
-                if (test(m)) hits += 1;
+                const b = maskByteAt(
+                    this.masks,
+                    view[0] + ((gx + 0.5) * view[2]) / cols,
+                    view[1] + ((gy + 0.5) * view[3]) / rows,
+                );
+                if ((b & bit) !== 0) hits += 1;
             }
         }
         return hits / (cols * rows);
     }
 
+    /** Share of the view outdoors: kept while the view stays in one `SHARE_CELL` px cell (and size), as the masks are fixed. */
     private outsideShare(view: Rect): number {
-        return this.share(view, (m) => m[0] > 127);
+        return this.outdoors.get(view);
     }
 
     /** Open water in view (masks B = 128), not just the pool's bounding box touching an edge of it. */
     private waterShare(view: Rect): number {
-        return this.share(view, (m) => m[2] > 100 && m[2] < 160);
+        return this.wetness.get(view);
     }
 
+    /** The camera's view, written into one array: the same one every call. */
     private view(): Rect {
         const v = this.scene.cameras.main.worldView;
-        return [v.x, v.y, v.width, v.height];
+        const view = this.viewRect;
+        view[0] = v.x;
+        view[1] = v.y;
+        view[2] = v.width;
+        view[3] = v.height;
+        return view;
     }
 
     /** Every second and on a settings change: the hour, locks, meetings and lights; marks the scene dirty on change. */
     private refresh(force: boolean): void {
+        this.readStillness();
         const look = lookAt(this.hour(), this.features);
-        const people = this.people();
-        const counts = occupancy(this.manifest.rooms, people);
-        // a TV hangs on the wall face above its room's floor: the room counts from two tiles above the floor
-        const meetingAt = (x: number, y: number): boolean =>
-            this.manifest.rooms.some(
-                (r) => counts[r.key] >= 2 && inside(x, y, [r.floor[0], r.floor[1] - 64, r.floor[2], r.floor[3] + 64]),
-            );
-        const placed = this.scene.children.list.filter(
-            (o): o is Phaser.GameObjects.Image => o instanceof Phaser.GameObjects.Image && o.type === "Image",
-        );
-        const lit = placed.filter((o) => this.lightSpec(o) !== undefined);
-        const feet = footprints(
-            placed.map((o) => ({ key: o.texture.key, x: o.x, y: o.y })),
-            this.shadowSpecs(placed),
-        );
-        const occSignature = feet.map((r) => r.join(",")).join(";");
-        if (occSignature !== this.occSignature) {
-            this.drawOcclusion(feet);
-            this.occSignature = occSignature;
-            force = true;
-        }
-        const { pools, emissive } = lightsFrom(
-            lit.map((o) => ({ key: o.texture.key, x: o.x, y: o.y })),
-            this.manifest.lights,
-            this.manifest.spaces,
-            meetingAt,
-        );
-        const signature = pools.map((l) => `${l.kind}${Math.round(l.x)},${Math.round(l.y)}`).join(";");
-        const focus = this.features.vignette && this.environment.focused();
-        const lookKey = JSON.stringify(look);
+        // everyone counts for a room, the culled and the dots too: a TV lights for two people in its room whether or
+        // not they are drawn (once a second, not on each frame)
+        this.countRooms();
+        const meetingAt = this.meetingAt;
+        this.trail.forgetUnless(this.isKnownWalker);
+        // What the map's pieces give (footprints, lights, screens) is worked out again only when a piece was added,
+        // removed, moved or retextured, or a meeting started or ended: not every second to find out nothing changed.
+        const snapshotChanged = !this.placedSnapshot.matches(this.scene.children.list, isPlacedImage);
+        const piecesChanged = snapshotChanged || this.piecesUnseen;
+        this.piecesUnseen = false;
+        if (snapshotChanged && this.readPieces()) force = true;
+        const lit = this.litPieces;
         let changed = force;
-        if (signature !== this.lightSignature) {
-            this.pools = [...pools, ...this.statics];
-            this.emissive = emissive;
-            this.lightSignature = signature;
+        if (piecesChanged || this.meetingMask !== this.lightsMeetingMask) {
+            this.lightsMeetingMask = this.meetingMask;
+            const { pools, emissive } = lightsFrom(
+                lit.map((o) => ({ key: o.texture.key, x: o.x, y: o.y })),
+                this.manifest.lights,
+                this.manifest.spaces,
+                meetingAt,
+            );
+            const signature = pools.map((l) => `${l.kind}${Math.round(l.x)},${Math.round(l.y)}`).join(";");
+            if (signature !== this.lightSignature) {
+                this.pools = [...pools, ...this.statics];
+                this.emissive = emissive;
+                this.lightSignature = signature;
+                this.lightsRev += 1;
+                changed = true;
+            }
+        }
+        const rim = this.environment.nightLit() ? 1 : 0;
+        if (rim !== this.rimOn) {
+            this.rimOn = rim;
             changed = true;
         }
+        const focus = this.features.vignette && this.environment.focused();
+        const lookKey = JSON.stringify(look);
         if (lookKey !== this.lookKey) {
             this.look = look;
             this.lookKey = lookKey;
+            this.plainDay = isPlainDay(look);
             changed = true;
         }
-        this.updateTvs(lit, this.features.tv ? meetingAt : () => false);
+        // `force` covers the TV switch: only `setFeatures` changes the switches, and it refreshes with `force`
+        if (force || piecesChanged || this.meetingMask !== this.tvsMeetingMask) {
+            this.tvsMeetingMask = this.meetingMask;
+            this.updateTvs(lit, this.features.tv ? meetingAt : NO_MEETING);
+        }
         if (focus !== this.vignette.to > 0) {
             Object.assign(this.vignette, { from: this.vignette.value, to: focus ? 0.24 : 0, at: this.now });
-            this.animate(this.environment.reducedMotion() ? 0 : 500);
+            this.animate(this.stillness.reducedMotion ? 0 : 500);
             changed = true;
         }
         this.dimOverlays(look);
@@ -828,16 +1235,38 @@ export class SceneEffects {
             this.ground.setVisible(this.features.shadows);
             changed = true;
         }
-        const pieces = this.features.reflections ? this.findMirrorPieces() : [];
-        const mirrorSignature = pieces.map((p) => pictureSignature(p.picture)).join(";");
-        if (mirrorSignature !== this.mirrorSignature) {
+        // The mirror is painted again only when a piece in front of the glass differs from the one painted.
+        const found = this.features.reflections ? this.findMirrorPieces() : 0;
+        if (!this.candidatesAreMirrored(found)) {
+            const pieces = this.snapshotCandidates(found);
             this.mirrorPieces = pieces;
-            this.mirrorSignature = mirrorSignature;
             this.paintMirror(pieces);
             changed = true;
         }
         if (changed) this.scene.markDirty();
     }
+
+    /**
+     * Reads the placed images again: which give a light, and where the floor is blocked. True when the blocked floor
+     * changed and the occlusion was drawn again.
+     */
+    private readPieces(): boolean {
+        const placed = this.scene.children.list.filter(isPlacedImage);
+        this.placedSnapshot.capture(placed);
+        this.litPieces = placed.filter((o) => this.lightSpec(o) !== undefined);
+        const feet = footprints(
+            placed.map((o) => ({ key: o.texture.key, x: o.x, y: o.y })),
+            this.shadowSpecs(placed),
+        );
+        const occSignature = feet.map((r) => r.join(",")).join(";");
+        if (occSignature === this.occSignature) return false;
+        this.drawOcclusion(feet);
+        this.occSignature = occSignature;
+        return true;
+    }
+
+    private readonly isKnownWalker = (id: WalkerId): boolean =>
+        id === "me" || (typeof id === "number" && this.scene.MapPlayersByKey.has(id));
 
     private lightSpec(image: Phaser.GameObjects.Image): SpriteSpec | undefined {
         const key = specKey(image.texture.key);
@@ -897,7 +1326,7 @@ export class SceneEffects {
         raw.fillRect(0, 0, this.occRaw.width, this.occRaw.height);
         out.drawImage(this.occRaw, 0, 0);
         out.globalCompositeOperation = "source-over";
-        this.occTexture.refresh();
+        this.occTexture?.refresh();
     }
 
     /** The koi swim in a page above the canvas, out of the camera pass's reach: dim them with the pool at night. */
@@ -954,7 +1383,7 @@ export class SceneEffects {
         // Clouds drift for whoever is out on the lawn; from inside (a room's glass shows the lawn) they hold still, so
         // a still room keeps its redraw budget.
         const me = this.currentPlayer();
-        const out = me !== undefined && this.mask(me.x, me.y + 15)[0] > 127;
+        const out = me !== undefined && (maskByteAt(this.masks, me.x, me.y + 15) & 1) !== 0;
         if (
             this.features.clouds &&
             this.look.clouds > 0 &&
@@ -999,40 +1428,60 @@ export class SceneEffects {
     }
 
     private startReveal(): void {
-        if (this.environment.reducedMotion() || this.environment.animationsOff() || !this.features.iris) return;
+        if (this.stillness.reducedMotion || this.stillness.animationsOff || !this.features.iris) return;
         this.revealState = { at: this.now, running: true };
         this.animate(1100);
     }
 
     // ------------------------------------------------------------------------------------------------ per frame
 
-    /** Before each draw: the camera pass's state, the mirror's pictures and what shows. */
+    /** Before each draw: the camera pass's state, the mirror's pictures and what shows. Allocates nothing. */
     private frame(): void {
         const now = this.now;
         const view = this.view();
-        const people = this.people();
+        this.gather();
+        const crowd = this.crowd;
+        const crowdCount = this.crowdCount;
         const motion = this.motion();
+        this.motionNow = motion;
         const features = this.features;
         if (motion && features.trail) {
-            for (const p of people) this.trail.step(p.id, p.x, p.y, now, this.mask(p.x, p.y)[2] > 200);
-            this.trail.forget(new Set(people.map((p) => p.id)));
+            for (let i = 0; i < crowdCount; i++) {
+                const p = crowd[i];
+                this.readMasks(p);
+                this.trail.step(p.id, p.x, p.y, now, p.onLawn);
+            }
         }
         const v = this.vignette;
-        v.value = v.from + (v.to - v.from) * progress(now, v.at, this.environment.reducedMotion() ? 0 : 500);
+        v.value = v.from + (v.to - v.from) * progress(now, v.at, this.stillness.reducedMotion ? 0 : 500);
         const look = this.look;
-        const locks: Rect[] = [];
-        const me = people.find((p) => p.me);
-        for (const room of this.manifest.rooms) {
+        // Counted, not `length = 0`: that frees the array's storage, and the next push allocates it again.
+        const locks = this.lockList;
+        let lockN = 0;
+        let lockMask = 0;
+        const me = crowdCount > 0 && crowd[0].me ? crowd[0] : undefined;
+        const rooms = this.manifest.rooms;
+        for (let i = 0; i < rooms.length; i++) {
+            const room = rooms[i];
             const layer = this.layers.get(room.layer);
             if (!layer?.visible) continue;
             if (me && inside(me.x, me.y, room.floor)) continue; // inside, you see your own room clearly
-            if (coverage(room.rect, view) > 0) locks.push(room.rect);
+            if (coverage(room.rect, view) > 0) {
+                locks[lockN++] = room.rect;
+                lockMask |= 1 << i;
+            }
         }
-        const near = (p: Person): boolean => inside(p.x, p.y, [view[0] - 16, view[1] - 16, view[2] + 32, view[3] + 32]);
-        const mirrored = !features.reflections
-            ? []
-            : people.filter((p) => this.mask(p.x, p.y)[1] > 127 && near(p)).slice(0, 8);
-        this.drawMirror(features.reflections ? this.mirrorPictures(view) : []);
+        const mirrored = this.mirroredList;
+        let mirroredN = 0;
+        if (features.reflections) {
+            for (let i = 0; i < crowdCount && mirroredN < MAX_MIRRORED; i++) {
+                const p = crowd[i];
+                this.readMasks(p);
+                if (p.polished && nearView(p.x, p.y, view)) mirrored[mirroredN++] = p;
+            }
+        }
+        this.placePeopleUniform(view);
+        this.drawMirror(features.reflections ? this.collectMirrorPictures(view) : 0);
         let reveal = -1;
         if (this.revealState.running) {
             const t = progress(now, this.revealState.at, 1000);
@@ -1041,147 +1490,342 @@ export class SceneEffects {
         }
         const outside = this.outsideShare(view) > 0;
         const clouds = outside && features.clouds ? look.clouds : 0;
-        // a lamp gives light by the hour; a screen, a TV or a sign by its own (but not against daylight)
-        const lit =
-            look.lamps > 0
-                ? visibleLights(
-                      this.pools.filter((l) => !l.night || look.lamps >= 0.9),
-                      view,
-                      32,
-                  )
-                : [];
-        const glow = look.lamps > 0 ? visibleRects(this.emissive, view, 24) : [];
+        // a lamp gives light by the hour; a screen, a TV or a sign by its own (but not against daylight). What reaches
+        // the view is kept for the camera's cell: a footstep does not filter, score and sort the lights again.
+        const night = look.lamps >= 0.9;
+        if (night !== this.nightOn) {
+            this.nightOn = night;
+            this.lightsRev += 1;
+        }
+        const lit = look.lamps > 0 ? this.litCache.get(view, this.lightsRev) : NO_LIGHTS;
+        let glowCount = 0;
+        if (look.lamps > 0) {
+            const candidates = this.glowCache.get(view, this.lightsRev);
+            for (let i = 0; i < candidates.length && glowCount < MAX_GLOW; i++) {
+                if (touchesView(candidates[i].rect, view)) this.glowList[glowCount++] = candidates[i];
+            }
+        }
         // who is in a locked room stays private with the frost switched off too: only the frost is an effect
-        const frosted = features.frost ? locks : [];
-        this.frameState = { view, look, locks: frosted, mirrored, reveal, clouds, me, lit, glow };
+        const lockCount = features.frost ? lockN : 0;
+        const state = this.state;
+        state.ready = true;
+        state.look = look;
+        state.lockCount = lockCount;
+        state.mirroredCount = mirroredN;
+        state.reveal = reveal;
+        state.clouds = clouds;
+        state.me = me;
+        state.lit = lit;
+        state.glowCount = glowCount;
         this.post.active =
-            !isPlainDay(look) ||
-            frosted.length > 0 ||
-            mirrored.length > 0 ||
+            !this.plainDay ||
+            lockCount > 0 ||
+            mirroredN > 0 ||
             (outside && (clouds > 0 || look.sat !== 1)) ||
             v.value > 0.001 ||
             reveal >= 0 ||
             (motion && features.trail && this.trail.steps.length > 0);
-        this.hideLabels(locks);
+        this.hideLabels(locks, lockN, lockMask);
         this.glass.setVisible((features.glass && look.sheen > 0) || (features.reflections && this.mirrorStatic));
     }
 
-    /** Who is inside a locked room stays private from outside: their name tags hide too. */
-    private hideLabels(locks: readonly Rect[]): void {
-        const shown = new Set<HTMLElement>();
-        if (locks.length) {
+    /**
+     * Who is inside a locked room stays private from outside: their name tags hide too. A tag's place is read from the
+     * page (a layout read for each tag), so it is read when something that moves a tag changed, not on each frame: at
+     * once when a locked room comes into view or leaves it or when tags are added or dropped, and at most every
+     * `LABEL_MEASURE_MS` for a camera or a crowd that moved (a tag that walks into a locked room shows for up to that
+     * long, six frames at 60 Hz). While nothing moves, a frame reads nothing.
+     */
+    private hideLabels(locks: readonly Rect[], lockN: number, lockMask: number): void {
+        if (lockN === 0 && this.hiddenCount === 0) {
+            this.labelLocks = -1; // the next locked room in view is measured at once
+            return; // nothing to hide, nothing to give back
+        }
+        const tags = this.nameTags;
+        // with no locked room in view or no tag, what was measured is gone: the next tags in a room are measured at once
+        if (lockN === 0 || tags.length === 0) this.labelLocks = -1;
+        else if (!this.labelsDue(lockMask, tags.length)) return;
+        const shown = this.shownTags;
+        let shownCount = 0;
+        if (lockN > 0 && tags.length > 0) {
             const canvas = this.scene.game.canvas.getBoundingClientRect();
             const cam = this.scene.cameras.main;
             const v = cam.worldView;
             const scale = canvas.width / cam.width;
-            for (const label of document.querySelectorAll<HTMLElement>(".username-display")) {
+            for (let t = 0; t < tags.length; t++) {
+                const label = tags[t] as HTMLElement;
                 const r = label.getBoundingClientRect();
                 const x = v.x + (r.left + r.width / 2 - canvas.left) / scale / cam.zoom;
                 const y = v.y + (r.bottom + 12 - canvas.top) / scale / cam.zoom;
-                if (locks.some((rect) => inside(x, y, rect))) shown.add(label);
+                for (let i = 0; i < lockN; i++) {
+                    if (inside(x, y, locks[i])) {
+                        shown[shownCount++] = label;
+                        break;
+                    }
+                }
             }
         }
-        for (const label of this.hiddenLabels) if (!shown.has(label)) label.style.visibility = "";
-        for (const label of shown) label.style.visibility = "hidden";
-        this.hiddenLabels = shown;
+        const hidden = this.hiddenTags;
+        for (let i = 0; i < this.hiddenCount; i++) {
+            const label = hidden[i];
+            if (label && !shown.includes(label)) label.style.visibility = "";
+            hidden[i] = undefined; // the array is the next frame's to fill: it keeps no tag the page has dropped
+        }
+        for (let i = 0; i < shownCount; i++) {
+            const label = shown[i];
+            if (label) label.style.visibility = "hidden";
+        }
+        this.shownTags = hidden;
+        this.hiddenTags = shown;
+        this.hiddenCount = shownCount;
+    }
+
+    /** Whether the name tags are to be measured now (see `hideLabels`); when they are, notes what they are measured for. */
+    private labelsDue(lockMask: number, tagCount: number): boolean {
+        const view = this.viewRect;
+        const known = this.labelView;
+        const forced = lockMask !== this.labelLocks || tagCount !== this.labelTags;
+        if (!forced) {
+            const moved =
+                this.crowdHash !== this.labelCrowd ||
+                view[0] !== known[0] ||
+                view[1] !== known[1] ||
+                view[2] !== known[2] ||
+                view[3] !== known[3];
+            if (!moved) return false;
+            const since = this.now - this.labelsAt;
+            if (since >= 0 && since < LABEL_MEASURE_MS) return false;
+        }
+        this.labelLocks = lockMask;
+        this.labelTags = tagCount;
+        this.labelCrowd = this.crowdHash;
+        this.labelsAt = this.now;
+        known[0] = view[0];
+        known[1] = view[1];
+        known[2] = view[2];
+        known[3] = view[3];
+        return true;
     }
 
     /** Gives the page back what the effects changed in it: the koi pages' dimming and the hidden name tags. */
     private restorePage(): void {
         for (const frame of document.querySelectorAll<HTMLIFrameElement>(KOI_FRAMES)) frame.style.filter = "";
-        for (const label of this.hiddenLabels) label.style.visibility = "";
-        this.hiddenLabels = new Set();
+        for (let i = 0; i < this.hiddenCount; i++) {
+            const label = this.hiddenTags[i];
+            if (label) label.style.visibility = "";
+            this.hiddenTags[i] = undefined;
+        }
+        this.hiddenCount = 0;
     }
 
     // ------------------------------------------------------------------------------------------------ the mirror
 
-    /** The pieces standing in front of a glass face (mirrorsPiece), each with its picture in the mirror. */
-    private findMirrorPieces(): MirrorPiece[] {
-        const faces = this.manifest.glassFaces || [];
-        const out: MirrorPiece[] = [];
-        if (!faces.length) return out;
-        const entities = this.scene.getGameMapFrontWrapper().getEntitiesManager().getEntities();
-        for (const [, e] of entities) {
-            if (!e.visible || !e.active) continue;
-            const w = e.displayWidth;
-            const h = e.displayHeight;
-            const cx = e.x - e.originX * w + w / 2;
-            const foot = e.y - e.originY * h + h;
-            const face = mirrorFace(cx, foot, faces);
-            const prefab = e.getPrefab();
-            if (!face || !mirrorsPiece(prefab)) continue;
-            const d = foot - face[2];
-            const alpha = mirrorAlpha(d);
-            if (alpha <= 0) continue;
-            out.push({
-                face,
-                picture: {
-                    key: e.texture.key,
-                    frame: e.frame.name,
-                    x: cx,
-                    y: mirrorFoot(foot, face[2]),
-                    originX: 0.5,
-                    originY: 1,
-                    flip: e.flipX,
-                    alpha,
-                    scaleX: e.scaleX,
-                    scaleY: e.scaleY,
-                    face,
-                    back: prefab.tags.includes("Peças da marca"), // the editor's tag for brand pieces
-                    distance: d,
-                },
-            });
+    /**
+     * Finds the pieces standing in front of a glass face (mirrorsPiece), each with its picture in the mirror, into the
+     * pooled `candidates`; how many. Walks the entities with `forEach`, which makes no entry or iterator for each of the
+     * map's several hundred.
+     */
+    private findMirrorPieces(): number {
+        this.candidateCount = 0;
+        const faces = this.manifest.glassFaces;
+        if (!faces?.length) return 0;
+        this.scene.getGameMapFrontWrapper().getEntitiesManager().getEntities().forEach(this.scanPiece);
+        return this.candidateCount;
+    }
+
+    private readonly scanPiece = (e: MapEntity): void => {
+        if (!e.visible || !e.active) return;
+        const faces = this.manifest.glassFaces;
+        if (!faces) return;
+        const w = e.displayWidth;
+        const h = e.displayHeight;
+        const cx = e.x - e.originX * w + w / 2;
+        const foot = e.y - e.originY * h + h;
+        const face = mirrorFace(cx, foot, faces);
+        if (!face) return;
+        const prefab = e.getPrefab();
+        if (!mirrorsPiece(prefab)) return;
+        const d = foot - face[2];
+        const alpha = mirrorAlpha(d);
+        if (alpha <= 0) return;
+        const slot = this.candidates[this.candidateCount] ?? (this.candidates[this.candidateCount] = newPiece());
+        this.candidateCount += 1;
+        const picture = slot.picture;
+        slot.face = face;
+        picture.key = e.texture.key;
+        picture.frame = e.frame.name;
+        picture.x = cx;
+        picture.y = mirrorFoot(foot, face[2]);
+        picture.originX = 0.5;
+        picture.originY = 1;
+        picture.flip = e.flipX;
+        picture.alpha = alpha;
+        picture.scaleX = e.scaleX;
+        picture.scaleY = e.scaleY;
+        picture.face = face;
+        picture.back = prefab.tags.includes("Peças da marca"); // the editor's tag for brand pieces
+        picture.distance = d;
+    };
+
+    /** The first `count` candidates, copied: what the atlas is painted with, and later compared to. */
+    private snapshotCandidates(count: number): MirrorPiece[] {
+        const pieces: MirrorPiece[] = [];
+        for (let i = 0; i < count; i++) {
+            const { face, picture } = this.candidates[i];
+            pieces.push({ face, picture: { ...picture } });
         }
-        return out;
+        return pieces;
+    }
+
+    /** Whether the first `count` candidates are the pieces the mirror was last painted with, picture for picture. */
+    private candidatesAreMirrored(count: number): boolean {
+        const painted = this.mirrorPieces;
+        if (painted.length !== count) return false;
+        for (let i = 0; i < count; i++) {
+            const a = painted[i].picture;
+            const b = this.candidates[i].picture;
+            if (
+                a.key !== b.key ||
+                a.frame !== b.frame ||
+                a.x !== b.x ||
+                a.y !== b.y ||
+                a.flip !== b.flip ||
+                a.alpha !== b.alpha ||
+                a.scaleX !== b.scaleX ||
+                a.scaleY !== b.scaleY ||
+                a.face !== b.face ||
+                a.back !== b.back ||
+                a.distance !== b.distance
+            )
+                return false;
+        }
+        return true;
     }
 
     /**
-     * The mirror's pictures this frame: everyone standing in front of a glass face in view, upright, moving up the
-     * glass with distance (mirrorFoot), turned to their other side (a Woka's layers by mirrorFrame). The pieces are the
-     * atlas's.
+     * The mirror's pictures this frame: everyone drawn standing in front of a glass face in view, upright, moving up
+     * the glass with distance (mirrorFoot), turned to their other side (a Woka's layers by mirrorFrame). The pieces are
+     * the atlas's. Written into the pooled `pictures`; the count of them.
      */
-    private mirrorPictures(view: Rect): MirrorPicture[] {
-        const faces = (this.manifest.glassFaces || []).filter(
-            ([x0, x1, foot]) =>
-                x1 > view[0] &&
-                x0 < view[0] + view[2] &&
-                foot + MIRROR_REACH > view[1] &&
-                foot - 64 < view[1] + view[3],
-        );
-        if (!faces.length) return [];
-        const out: MirrorPicture[] = [];
-        const characters = [this.currentPlayer(), ...this.scene.MapPlayersByKey.values()];
-        for (const ch of characters) {
-            if (!ch?.visible) continue;
-            const foot = ch.y + 16;
-            const face = mirrorFace(ch.x, foot, faces);
-            if (!face) continue;
-            const d = foot - face[2];
-            const alpha = mirrorAlpha(d);
-            if (alpha <= 0) continue;
-            const mirrorFeet = mirrorFoot(foot, face[2]);
-            for (const layer of ch.list) {
-                if (!(layer instanceof Phaser.GameObjects.Sprite) || !layer.visible) continue;
-                const { frame, flip } = mirrorFrame(layer.frame.name);
-                const below = (1 - layer.originY) * layer.displayHeight; // from the picture's origin to its feet
-                out.push({
-                    key: layer.texture.key,
-                    frame,
-                    x: ch.x + layer.x,
-                    y: mirrorFeet - below + layer.y,
-                    originX: layer.originX,
-                    originY: layer.originY,
-                    flip: flip !== layer.flipX,
-                    alpha,
-                    scaleX: layer.scaleX || 1,
-                    scaleY: layer.scaleY || 1,
-                    face,
-                    back: false,
-                    distance: d,
-                });
+    private collectMirrorPictures(view: Rect): number {
+        const faces = this.manifest.glassFaces;
+        const near = this.viewFaces;
+        let nearN = 0;
+        if (faces) {
+            for (let i = 0; i < faces.length; i++) {
+                const face = faces[i];
+                if (
+                    face[1] > view[0] &&
+                    face[0] < view[0] + view[2] &&
+                    face[2] + MIRROR_REACH > view[1] &&
+                    face[2] - 64 < view[1] + view[3]
+                )
+                    near[nearN++] = face;
             }
         }
-        return out;
+        this.pictureCount = 0;
+        if (nearN === 0) return 0;
+        this.addPictures(this.currentPlayer(), near, nearN);
+        const bodies = this.drawn.bodies(this.now);
+        for (let i = 0; i < bodies.length; i++) this.addPictures(bodies[i], near, nearN);
+        return this.pictureCount;
+    }
+
+    private addPictures(
+        ch: Pick<Player, "x" | "y" | "visible" | "list"> | undefined,
+        faces: readonly GlassFace[],
+        faceCount: number,
+    ): void {
+        if (!ch?.visible) return;
+        const foot = ch.y + 16;
+        const face = mirrorFace(ch.x, foot, faces, undefined, faceCount);
+        if (!face) return;
+        const d = foot - face[2];
+        const alpha = mirrorAlpha(d);
+        if (alpha <= 0) return;
+        const mirrorFeet = mirrorFoot(foot, face[2]);
+        const layers = ch.list;
+        for (let i = 0; i < layers.length; i++) {
+            const layer = layers[i];
+            if (!(layer instanceof Phaser.GameObjects.Sprite) || !layer.visible) continue;
+            const name = layer.frame.name;
+            const below = (1 - layer.originY) * layer.displayHeight; // from the picture's origin to its feet
+            const picture = this.pictures[this.pictureCount] ?? (this.pictures[this.pictureCount] = newPicture());
+            picture.key = layer.texture.key;
+            picture.frame = mirroredFrameName(name);
+            picture.x = ch.x + layer.x;
+            picture.y = mirrorFeet - below + layer.y;
+            picture.originX = layer.originX;
+            picture.originY = layer.originY;
+            picture.flip = mirrorFlips(name) !== layer.flipX;
+            picture.alpha = alpha;
+            picture.scaleX = layer.scaleX || 1;
+            picture.scaleY = layer.scaleY || 1;
+            picture.face = face;
+            picture.back = false;
+            picture.distance = d;
+            this.pictureCount += 1;
+        }
+    }
+
+    /**
+     * Puts a picture on the glass into `out`: where its image lands, whole. False when its image is not there.
+     */
+    private place(pic: MirrorPicture, out: PlacedMirrorPicture, onlyLive: boolean): boolean {
+        const back = pic.back ? this.pieceBacks.get(pic) : undefined;
+        const key = back ?? pic.key;
+        const frame = back ? undefined : pic.frame;
+        const size = this.scene.textures.getFrame(key, frame);
+        if (!size || size.width <= 0 || size.height <= 0) return false;
+        const scaleX = back ? 1 : pic.scaleX;
+        const scaleY = back ? 1 : pic.scaleY;
+        const w = size.width * scaleX;
+        const h = size.height * scaleY;
+        out.flip = !back && pic.flip;
+        out.key = key;
+        out.frame = frame;
+        out.left = Math.round(pic.x - pic.originX * w);
+        out.top = Math.round(pic.y - pic.originY * h);
+        out.w = w;
+        out.h = h;
+        out.alpha = pic.alpha;
+        out.scaleX = scaleX;
+        out.scaleY = scaleY;
+        out.face = pic.face;
+        out.distance = pic.distance;
+        out.onlyLive = onlyLive;
+        return true;
+    }
+
+    private placedAt(index: number): PlacedMirrorPicture {
+        return (
+            this.placed[index] ??
+            (this.placed[index] = {
+                flip: false,
+                key: "",
+                frame: undefined,
+                left: 0,
+                top: 0,
+                w: 0,
+                h: 0,
+                alpha: 0,
+                scaleX: 1,
+                scaleY: 1,
+                face: NO_FACE,
+                distance: 0,
+                onlyLive: false,
+            })
+        );
+    }
+
+    private isLive(pane: GlassPane): boolean {
+        for (let i = 0; i < this.liveCount; i++) if (this.livePanes[i] === pane) return true;
+        return false;
+    }
+
+    private crossesLive(p: PlacedMirrorPicture, panes: readonly GlassPane[]): boolean {
+        for (let i = 0; i < panes.length; i++) if (this.isLive(panes[i]) && crosses(p, panes[i])) return true;
+        return false;
     }
 
     /**
@@ -1190,79 +1834,87 @@ export class SceneEffects {
      * (21/10/2026: a cat behind its owner showed in front of them), so every picture goes by its distance from the
      * glass, the farthest first. The panes a person crosses are drawn here whole: the atlas leaves them (uMirrorLive,
      * up to 8; past that a pane keeps its atlas) and the pieces crossing them join the people, in that same order.
+     * `count` pictures of people are in `pictures`; the pieces are the atlas's.
      */
-    private drawMirror(people: readonly MirrorPicture[]): void {
-        const place = (pic: MirrorPicture): PlacedMirrorPicture | null => {
-            const turned = pic.flip || pic.back;
-            const key = turned ? this.mirroredFrame(pic.key, pic.frame, pic.flip, pic.back) : pic.key;
-            const frame = turned ? undefined : pic.frame;
-            const size = key === null ? null : this.scene.textures.getFrame(key, frame);
-            if (!key || !size) return null;
-            const w = size.width * pic.scaleX;
-            const h = size.height * pic.scaleY;
-            return {
-                key,
-                frame,
-                left: Math.round(pic.x - pic.originX * w),
-                top: Math.round(pic.y - pic.originY * h),
-                w,
-                h,
-                alpha: pic.alpha,
-                scaleX: pic.scaleX,
-                scaleY: pic.scaleY,
-                face: pic.face,
-                distance: pic.distance,
-            };
-        };
-        const crosses = (p: PlacedMirrorPicture, [a, b, pt, pb]: GlassPane): boolean =>
-            Math.min(b, p.left + p.w) > Math.max(a, p.left) && Math.min(pb, p.top + p.h) > Math.max(pt, p.top);
-        const shown = people.map(place).filter((p): p is PlacedMirrorPicture => p !== null);
-        const live = new Set<GlassPane>();
-        for (const p of shown) {
-            for (const pane of this.mirrorPanes.get(p.face) || [])
-                if (live.size < 8 && crosses(p, pane)) live.add(pane);
+    private drawMirror(count: number): void {
+        const placed = this.placed;
+        let shown = 0;
+        for (let i = 0; i < count; i++) {
+            if (this.place(this.pictures[i], this.placedAt(shown), false)) shown += 1;
         }
-        if (live.size) {
-            for (const { face, picture } of this.mirrorPieces) {
-                const panes = this.mirrorPanes.get(face) || [];
-                if (!panes.some((pane) => live.has(pane))) continue;
-                const p = place(picture);
-                if (p && panes.some((pane) => live.has(pane) && crosses(p, pane))) shown.push({ ...p, only: live });
+        this.liveCount = 0;
+        for (let i = 0; i < shown; i++) {
+            const p = placed[i];
+            const panes = this.mirrorPanes.get(p.face) ?? NO_PANES;
+            for (let k = 0; k < panes.length; k++) {
+                const pane = panes[k];
+                if (this.liveCount < MAX_LIVE_PANES && crosses(p, pane) && !this.isLive(pane)) {
+                    this.livePanes[this.liveCount] = pane;
+                    this.liveCount += 1;
+                }
             }
         }
-        shown.sort((a, b) => b.distance - a.distance); // stable: a Woka's layers keep their order
+        if (this.liveCount > 0) {
+            for (let i = 0; i < this.mirrorPieces.length; i++) {
+                const { face, picture } = this.mirrorPieces[i];
+                const panes = this.mirrorPanes.get(face) ?? NO_PANES;
+                if (!this.anyLive(panes)) continue;
+                if (this.place(picture, this.placedAt(shown), true) && this.crossesLive(placed[shown], panes))
+                    shown += 1;
+            }
+        }
+        // the farthest from the glass first; stable, so a Woka's layers keep their order
+        for (let i = 1; i < shown; i++) {
+            const current = placed[i];
+            let j = i - 1;
+            while (j >= 0 && placed[j].distance < current.distance) {
+                placed[j + 1] = placed[j];
+                j -= 1;
+            }
+            placed[j + 1] = current;
+        }
         this.mirrorLive.fill(0);
-        [...live].forEach(([a, b, pt, pb], i) => this.mirrorLive.set([a, b, pt, pb], i * 4));
-        this.mirrorLiveN = live.size;
+        for (let i = 0; i < this.liveCount; i++) {
+            const pane = this.livePanes[i];
+            this.mirrorLive[i * 4] = pane[0];
+            this.mirrorLive[i * 4 + 1] = pane[1];
+            this.mirrorLive[i * 4 + 2] = pane[2];
+            this.mirrorLive[i * 4 + 3] = pane[3];
+        }
+        this.mirrorLiveN = this.liveCount;
         const pool = this.mirrorPool;
         let n = 0;
-        for (const p of shown) {
+        for (let i = 0; i < shown; i++) {
+            const p = placed[i];
             const { key, frame, left, top, w, h, alpha, scaleX, scaleY } = p;
-            for (const pane of this.mirrorPanes.get(p.face) || []) {
-                if (p.only && !p.only.has(pane)) continue; // a piece outside the live panes stays the atlas's
-                const [a, b, pt, pb] = pane;
-                const x0 = Math.max(a, left);
-                const x1 = Math.min(b, left + w);
-                const y0 = Math.max(pt, top);
-                const y1 = Math.min(pb, top + h);
+            const panes = this.mirrorPanes.get(p.face) ?? NO_PANES;
+            for (let k = 0; k < panes.length; k++) {
+                const pane = panes[k];
+                if (p.onlyLive && !this.isLive(pane)) continue; // a piece outside the live panes stays the atlas's
+                const x0 = Math.max(pane[0], left);
+                const x1 = Math.min(pane[1], left + w);
+                const y0 = Math.max(pane[2], top);
+                const y1 = Math.min(pane[3], top + h);
                 if (x1 <= x0 || y1 <= y0) continue;
                 let img = pool[n];
                 if (!img) {
                     img = this.scene.add.image(0, 0, key, frame);
                     this.mirror.add(img);
                     pool.push(img);
-                } else if (
-                    img.texture.key !== key ||
-                    (frame !== undefined && String(img.frame.name) !== String(frame))
-                ) {
+                } else if (img.texture.key !== key || (frame !== undefined && !sameFrame(img.frame.name, frame))) {
                     img.setTexture(key, frame);
                 }
                 img.setOrigin(0, 0)
-                    .setPosition(left, top)
-                    .setScale(scaleX, scaleY)
+                    .setPosition(p.flip ? left + w : left, top)
+                    .setScale(p.flip ? -scaleX : scaleX, scaleY)
                     .setAlpha(alpha)
                     .setTint(MIRROR_TINT)
-                    .setCrop((x0 - left) / scaleX, (y0 - top) / scaleY, (x1 - x0) / scaleX, (y1 - y0) / scaleY)
+                    .setCrop(
+                        (p.flip ? left + w - x1 : x0 - left) / scaleX,
+                        (y0 - top) / scaleY,
+                        (x1 - x0) / scaleX,
+                        (y1 - y0) / scaleY,
+                    )
                     .setVisible(true);
                 n += 1;
             }
@@ -1272,80 +1924,192 @@ export class SceneEffects {
         this.mirrorShown = n;
     }
 
-    private postUniforms(): Record<string, UniformValue> {
-        const state = this.frameState;
-        if (!state) return {};
-        const { view, look, locks, mirrored, reveal, clouds, me, lit, glow } = state;
-        // the tint index rides in the width's fraction (whole pixels)
-        const em = new Float32Array(96);
-        glow.forEach((g, i) => {
-            const [x, y, w, h] = g.rect;
-            em.set([x, y, w + g.tint / 8, h], i * 4);
-        });
-        const L = new Float32Array(128);
-        const LC = new Float32Array(128);
-        const LClip = new Float32Array(128);
-        lit.forEach((l, i) => {
-            L.set([l.x, l.y, l.halo ? -l.reach : l.reach, l.squash], i * 4); // a negative reach: the lamp also glows
-            LC.set([...l.color, l.power * (l.self ? Math.max(look.lamps, 0.75) : look.lamps)], i * 4);
-            if (l.clip) LClip.set(l.clip, i * 4);
-        });
-        const lock = new Float32Array(24);
-        locks.slice(0, 6).forEach((r, i) => lock.set([r[0], r[1], r[2] + 2, r[3]], i * 4)); // up to the wall's stroke
-        const [steps, stepN] =
-            this.motion() && this.features.trail ? this.trail.uniforms(this.now) : [new Float32Array(128), 0];
-        const av = new Float32Array(32);
-        mirrored.forEach((p, i) => av.set([Math.round(p.x), Math.round(p.y), 10, 26], i * 4));
-        const cam = this.scene.cameras.main;
-        const [ox, oy] = this.clouds.offset();
+    private anyLive(panes: readonly GlassPane[]): boolean {
+        for (let i = 0; i < panes.length; i++) if (this.isLive(panes[i])) return true;
+        return false;
+    }
+
+    /** The camera pass's uniforms, all of them, with the arrays `postUniforms` rewrites on each draw. */
+    private postUniformRecord(): Record<string, UniformValue> {
         return {
-            uWorld: view,
-            uMap: [this.mapW, this.mapH],
-            uRes: [cam.width, cam.height],
-            uInside: look.inside,
-            uOutside: look.outside,
-            uLawn: look.lawn,
-            uWall: look.wall,
-            uVivid: look.vivid,
-            uFacade: look.facade,
-            uWarm: look.warm,
-            uToe: look.toe,
-            uDarks: look.darks,
-            uSat: look.sat,
-            uNight: look.lamps,
-            "uL[0]": L,
-            "uLC[0]": LC,
-            "uLClip[0]": LClip,
-            uLN: lit.length,
-            "uEm[0]": em,
+            uWorld: this.viewRect,
+            uMap: this.mapSize,
+            uRes: this.resolution,
+            uInside: this.look.inside,
+            uOutside: this.look.outside,
+            uLawn: this.look.lawn,
+            uWall: this.look.wall,
+            uVivid: this.look.vivid,
+            uFacade: this.look.facade,
+            uWarm: this.look.warm,
+            uToe: this.look.toe,
+            uDarks: this.look.darks,
+            uSat: this.look.sat,
+            uNight: this.look.lamps,
+            "uL[0]": this.lightData,
+            "uLC[0]": this.lightColorData,
+            "uLClip[0]": this.lightClipData,
+            uLN: 0,
+            "uEm[0]": this.emissiveData,
             "uEmT[0]": EMISSIVE_TINT_TABLE,
-            uEmN: glow.length,
-            uShafts: [look.shafts, 58, 24, 0.84],
-            uCloud: [clouds, 236, ox, oy],
-            "uLock[0]": lock,
-            uLockN: Math.min(locks.length, 6),
-            uFrost: [0.59, 0.8, 0.76],
-            "uSteps[0]": steps,
-            uStepN: stepN,
+            uEmN: 0,
+            uShafts: this.shafts,
+            uCloud: this.cloud,
+            "uLock[0]": this.lockData,
+            uLockN: 0,
+            uFrost: FROST,
+            "uSteps[0]": this.stepData,
+            uStepN: 0,
             uLime: TRAIL_COLOURS.lime,
             uCream: TRAIL_COLOURS.cream,
-            "uAv[0]": av,
-            uAvN: mirrored.length,
-            uVignette: [this.vignette.value, 0.62],
-            uReveal: [
-                me ? Math.round(me.x) : view[0] + view[2] / 2,
-                me ? Math.round(me.y) - 12 : view[1] + view[3] / 2,
-                reveal,
-                0,
-            ],
-            uInk: this.manifest.ink.map((c) => c / 255),
+            "uAv[0]": this.avatarData,
+            uAvN: 0,
+            "uPeople[0]": this.peopleData,
+            uPeopleN: 0,
+            uNormalsOn: this.normalsOn,
+            uRimOn: this.rimOn,
+            uVignette: this.vignetteUniform,
+            uReveal: this.revealUniform,
+            uInk: this.inkUniform,
         };
+    }
+
+    /**
+     * What the camera pass is given on a draw. One record and its arrays are rewritten in place (the pass applies them
+     * before the next draw), so a draw allocates nothing here.
+     */
+    private postUniforms(): Record<string, UniformValue> {
+        const state = this.state;
+        if (!state.ready) return NO_UNIFORMS;
+        const { view, look, reveal, clouds, me, lit } = state;
+        const u = this.postRecord;
+        // the tint index rides in the width's fraction (whole pixels)
+        const em = this.emissiveData;
+        em.fill(0);
+        for (let i = 0; i < state.glowCount; i++) {
+            const g = this.glowList[i];
+            em[i * 4] = g.rect[0];
+            em[i * 4 + 1] = g.rect[1];
+            em[i * 4 + 2] = g.rect[2] + g.tint / 8;
+            em[i * 4 + 3] = g.rect[3];
+        }
+        const L = this.lightData;
+        const LC = this.lightColorData;
+        const LClip = this.lightClipData;
+        L.fill(0);
+        LC.fill(0);
+        LClip.fill(0);
+        for (let i = 0; i < lit.length; i++) {
+            const l = lit[i];
+            const o = i * 4;
+            L[o] = l.x; // a negative reach: the lamp also glows
+            L[o + 1] = l.y;
+            L[o + 2] = l.halo ? -l.reach : l.reach;
+            L[o + 3] = l.squash;
+            LC[o] = l.color[0];
+            LC[o + 1] = l.color[1];
+            LC[o + 2] = l.color[2];
+            LC[o + 3] = l.power * (l.self ? Math.max(look.lamps, 0.75) : look.lamps);
+            if (l.clip) {
+                LClip[o] = l.clip[0];
+                LClip[o + 1] = l.clip[1];
+                LClip[o + 2] = l.clip[2];
+                LClip[o + 3] = l.clip[3];
+            }
+        }
+        const lock = this.lockData;
+        lock.fill(0);
+        const lockCount = Math.min(state.lockCount, MAX_LOCKS);
+        for (let i = 0; i < lockCount; i++) {
+            const r = this.lockList[i]; // up to the wall's stroke
+            lock[i * 4] = r[0];
+            lock[i * 4 + 1] = r[1];
+            lock[i * 4 + 2] = r[2] + 2;
+            lock[i * 4 + 3] = r[3];
+        }
+        const trailOn = this.motionNow && this.features.trail;
+        const stepN = trailOn ? this.trail.uniformsInto(this.stepData, this.now) : 0;
+        if (!trailOn) this.stepData.fill(0);
+        const av = this.avatarData;
+        av.fill(0);
+        for (let i = 0; i < state.mirroredCount; i++) {
+            const p = this.mirroredList[i];
+            av[i * 4] = Math.round(p.x);
+            av[i * 4 + 1] = Math.round(p.y);
+            av[i * 4 + 2] = 10;
+            av[i * 4 + 3] = 26;
+        }
+        const cam = this.scene.cameras.main;
+        this.resolution[0] = cam.width;
+        this.resolution[1] = cam.height;
+        this.clouds.offsetInto(this.cloudOffset);
+        this.shafts[0] = look.shafts;
+        this.cloud[0] = clouds;
+        this.cloud[2] = this.cloudOffset[0];
+        this.cloud[3] = this.cloudOffset[1];
+        this.vignetteUniform[0] = this.vignette.value;
+        this.revealUniform[0] = me ? Math.round(me.x) : view[0] + view[2] / 2;
+        this.revealUniform[1] = me ? Math.round(me.y) - 12 : view[1] + view[3] / 2;
+        this.revealUniform[2] = reveal;
+        u.uInside = look.inside;
+        u.uOutside = look.outside;
+        u.uLawn = look.lawn;
+        u.uWall = look.wall;
+        u.uVivid = look.vivid;
+        u.uFacade = look.facade;
+        u.uWarm = look.warm;
+        u.uToe = look.toe;
+        u.uDarks = look.darks;
+        u.uSat = look.sat;
+        u.uNight = look.lamps;
+        u.uLN = lit.length;
+        u.uEmN = state.glowCount;
+        u.uLockN = lockCount;
+        u.uStepN = stepN;
+        u.uAvN = state.mirroredCount;
+        u.uPeopleN = this.peopleCount;
+        u.uRimOn = this.rimOn;
+        return u;
     }
 }
 
-function pictureSignature(p: MirrorPicture): string {
-    return [p.key, p.frame, p.x, p.y, p.flip, p.alpha, p.scaleX, p.scaleY, p.face.join(","), p.back, p.distance].join(
-        ",",
+const FROST = [0.59, 0.8, 0.76];
+
+function nearView(x: number, y: number, view: Rect): boolean {
+    return x >= view[0] - 16 && y >= view[1] - 16 && x < view[0] + view[2] + 16 && y < view[1] + view[3] + 16;
+}
+
+function newPiece(): MirrorPieceSlot {
+    return { face: NO_FACE, picture: newPicture() };
+}
+
+function newPicture(): MirrorPicture {
+    return {
+        key: "",
+        frame: undefined,
+        x: 0,
+        y: 0,
+        originX: 0,
+        originY: 0,
+        flip: false,
+        alpha: 0,
+        scaleX: 1,
+        scaleY: 1,
+        face: NO_FACE,
+        back: false,
+        distance: 0,
+    };
+}
+
+/** Whether two frame names are the same frame; a number and its string are (the string is made only then). */
+function sameFrame(a: FrameName | undefined, b: FrameName): boolean {
+    return a === b || String(a) === String(b);
+}
+
+function crosses(p: PlacedMirrorPicture, pane: GlassPane): boolean {
+    return (
+        Math.min(pane[1], p.left + p.w) > Math.max(pane[0], p.left) &&
+        Math.min(pane[3], p.top + p.h) > Math.max(pane[2], p.top)
     );
 }
 

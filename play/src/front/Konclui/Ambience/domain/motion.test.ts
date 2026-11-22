@@ -20,4 +20,17 @@ describe("motion", () => {
     it("finishes a transition of no length at the very moment it starts, not as NaN", () => {
         expect(progress(7, 7, 0)).toBe(1);
     });
+
+    it("writes the drawn offset into an array, as offset() gives it, and still reports a moved pixel", () => {
+        const c = new CloudClock([3, 1]);
+        const out = [-1, -1];
+
+        expect(c.advance(0.4)).toBe(true); // 1.2 px
+        c.offsetInto(out);
+
+        expect(out).toEqual(c.offset());
+        expect(out).toEqual([1, 0]);
+        expect(c.advance(0.1), "0.3 px more: the same pixel").toBe(false);
+        expect(c.advance(1)).toBe(true);
+    });
 });

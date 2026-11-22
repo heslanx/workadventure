@@ -43,6 +43,12 @@ export class SceneResources {
         return key;
     }
 
+    /** Removes a texture from the scene now and forgets it: for one made on the fly and evicted before the release. */
+    dropTexture(key: string): void {
+        this.textureKeys.delete(key);
+        if (this.textures.exists(key)) this.textures.remove(key);
+    }
+
     /** Runs `cleanup` at the release, before the objects and textures go, in the order they were added. */
     onRelease(cleanup: () => void): void {
         this.cleanups.push(cleanup);

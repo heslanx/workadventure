@@ -8,9 +8,15 @@ import { SceneEffects, type EffectsEnvironment } from "./SceneEffects";
 import type { SceneEffectsPort } from "./sceneEffectsExtension";
 import { shadersCompile } from "./shaderCheck";
 
-// Kept in localStorage, for QA: every effect off ("1") or a fixed hour. The switches are the Preferences store's.
+// Kept in localStorage, for QA: every effect off ("1"), a fixed hour, the night-lit preview ("1"). The switches are the
+// Preferences store's. The effects poll the hour and the preview (and the animation settings) every QA_POLL_MS, so a
+// change shows within a second, with no reload: a bench goes from day to night 0.85 in one session by setting
+// konclui.fx.hour. The preview is different in one way: the normal map is fetched once, when the map loads, and only
+// when the preview is on then. So konclui.fx.rim=1 must be set BEFORE the page loads for a run that looks at the night-lit
+// look; switched on later in the same session it lights the people with flat normals and no bevel on the props.
 const EFFECTS_OFF_KEY = "konclui.fx.off";
 const FIXED_HOUR_KEY = "konclui.fx.hour";
+const NIGHT_LIT_KEY = "konclui.fx.rim";
 
 function readSetting(key: string): string | null {
     try {
@@ -21,7 +27,8 @@ function readSetting(key: string): string | null {
     }
 }
 
-function browserEnvironment(focused: () => boolean): EffectsEnvironment {
+/** The page as the effects read it: the hour and the preview from localStorage on each ask, never cached here. */
+export function browserEnvironment(focused: () => boolean): EffectsEnvironment {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     return {
         reducedMotion: () => reduced.matches,
@@ -31,6 +38,7 @@ function browserEnvironment(focused: () => boolean): EffectsEnvironment {
             return Number.isFinite(fixed) ? fixed : undefined;
         },
         focused,
+        nightLit: () => readSetting(NIGHT_LIT_KEY) === "1",
     };
 }
 
@@ -50,8 +58,8 @@ export function createBrowserEffectsPort({ focused = () => false }: BrowserEffec
             scene.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer &&
             Boolean(scene.mapUrlFile) &&
             shadersCompile(),
-        load: (scene) => loadEffectsData(scene.mapUrlFile),
-        create(scene, { manifest, images }, start) {
+        load: (scene) => loadEffectsData(scene.mapUrlFile, { normal: readSetting(NIGHT_LIT_KEY) === "1" }),
+        create(scene, { manifest, images, normal }, start) {
             const renderer = scene.renderer;
             if (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)) {
                 throw new Error("[konclui] effects need the WebGL renderer");
@@ -61,6 +69,7 @@ export function createBrowserEffectsPort({ focused = () => false }: BrowserEffec
                 renderer,
                 manifest,
                 images,
+                normal,
                 environment: browserEnvironment(focused),
                 ...start,
             });

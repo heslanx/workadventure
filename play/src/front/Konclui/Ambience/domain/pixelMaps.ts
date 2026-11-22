@@ -75,12 +75,18 @@ export function packMasks({ width, height, data }: Pixels): MaskBits {
     return { width: w, height: h, bits };
 }
 
-/** The masks at a world point as [R, G, B]: outside or wall, polished floor or facade, lawn or water. */
-export function maskAt({ width, height, bits }: MaskBits, x: number, y: number): [r: number, g: number, b: number] {
+/** Raw packed mask byte at a world point (bits: 1 outside, 2 polished, 4 lawn, 8 water, 16 wall, 32 facade). */
+export function maskByteAt({ width, height, bits }: MaskBits, x: number, y: number): number {
     const mx = Math.floor(x / 2);
     const my = Math.floor(y / 2);
-    if (mx < 0 || my < 0 || mx >= width || my >= height) return [0, 0, 0];
-    const b = bits[my * width + mx];
+    if (mx < 0 || my < 0 || mx >= width || my >= height) return 0;
+    return bits[my * width + mx];
+}
+
+/** The masks at a world point as [R, G, B]: outside or wall, polished floor or facade, lawn or water. */
+export function maskAt(masks: MaskBits, x: number, y: number): [r: number, g: number, b: number] {
+    const b = maskByteAt(masks, x, y);
+    if (b === 0) return [0, 0, 0];
     return [b & 1 ? 255 : b & 16 ? 96 : 0, b & 2 ? 255 : b & 32 ? 128 : 0, b & 4 ? 255 : b & 8 ? 128 : 0];
 }
 
@@ -196,4 +202,55 @@ export function glassPanes(
         }
     }
     return panes;
+}
+
+/** Builds a sprite normal field from its opaque silhouette and Sobel luminance gradients. */
+export function spriteNormals({ width, height, data }: Pixels, strength = 1): Uint8ClampedArray {
+    const stride = width + 2;
+    const bevel = new Uint8Array(stride * (height + 2));
+    const luminance = new Float32Array(bevel.length);
+    const out = new Uint8ClampedArray(width * height * 4);
+    // Capped Manhattan distance to the silhouette. The zero border includes sheet edges.
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            const k = (y + 1) * stride + x + 1;
+            if (data[i + 3] !== 255) continue;
+            bevel[k] = Math.min(3, 1 + Math.min(bevel[k - 1], bevel[k - stride]));
+            luminance[k] = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
+        }
+    }
+    for (let y = height; y > 0; y--) {
+        for (let x = width; x > 0; x--) {
+            const k = y * stride + x;
+            bevel[k] = Math.min(bevel[k], 1 + Math.min(bevel[k + 1], bevel[k + stride]));
+        }
+    }
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            const k = (y + 1) * stride + x + 1;
+            out[i] = out[i + 1] = 128;
+            out[i + 2] = 255;
+            if (!bevel[k]) continue;
+            let nx = 0;
+            let ny = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const j = k + dy * stride + dx;
+                    const h = bevel[j] + (bevel[j] ? luminance[j] : luminance[k]);
+                    nx -= dx * (dy === 0 ? 2 : 1) * h;
+                    ny += dy * (dx === 0 ? 2 : 1) * h;
+                }
+            }
+            nx *= strength / 8;
+            ny *= strength / 8;
+            const scale = 127.5 / Math.hypot(nx, ny, 1);
+            out[i] = Math.round(127.5 + nx * scale);
+            out[i + 1] = Math.round(127.5 + ny * scale);
+            out[i + 2] = Math.round(127.5 + scale);
+            out[i + 3] = 255;
+        }
+    }
+    return out;
 }

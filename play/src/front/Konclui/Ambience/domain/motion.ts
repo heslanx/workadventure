@@ -38,8 +38,14 @@ export class CloudClock {
 
     /** Advance dt seconds; true when the drawn offset changed. */
     advance(dt: number): boolean {
-        const before = this.offset().join();
+        const [x, y] = [Math.floor(this.seconds * this.wind[0]), Math.floor(this.seconds * this.wind[1])];
         this.seconds += dt;
-        return this.offset().join() !== before;
+        return Math.floor(this.seconds * this.wind[0]) !== x || Math.floor(this.seconds * this.wind[1]) !== y;
+    }
+
+    /** The drawn offset written into `out`, which allocates nothing. */
+    offsetInto(out: number[]): void {
+        out[0] = Math.floor(this.seconds * this.wind[0]);
+        out[1] = Math.floor(this.seconds * this.wind[1]);
     }
 }

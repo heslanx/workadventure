@@ -341,12 +341,76 @@ export function visibleLights<T extends LightReach>(lights: readonly T[], view: 
         .map((e) => e.l);
 }
 
+/** Whether a rectangle touches the view. */
+export function touchesView(rect: Rect, view: Rect): boolean {
+    return (
+        rect[0] + rect[2] > view[0] &&
+        rect[0] < view[0] + view[2] &&
+        rect[1] + rect[3] > view[1] &&
+        rect[1] < view[1] + view[3]
+    );
+}
+
 /** Emissive rectangles in view, at most `max`. */
 export function visibleRects<T extends { readonly rect: Rect }>(items: readonly T[], view: Rect, max = 24): T[] {
-    return items
-        .filter(
-            ({ rect: [x, y, w, h] }) =>
-                x + w > view[0] && x < view[0] + view[2] && y + h > view[1] && y < view[1] + view[3],
-        )
-        .slice(0, max);
+    return items.filter(({ rect }) => touchesView(rect, view)).slice(0, max);
+}
+
+/** A view as the cache hands it to its computation: reused, so read it and do not keep it. */
+type ViewRect = [x: number, y: number, w: number, h: number];
+
+/**
+ * What a computation over the camera's view gave, kept while the view stays in one cell of a grid of `cell` px (its
+ * size rounded to whole px) and `version` is the same: a footstep, which draws the scene again with the camera where
+ * it was, finds the answer ready, and a camera that walks recomputes once per cell instead of once per frame.
+ *
+ * The computation is given the whole area every view of that cell could cover (the cell's corner, the view's size and
+ * one cell of slack), so what it keeps is a superset of what the exact view would: a light or a rectangle that touches
+ * the exact view is never missing, one that lies within a cell outside it may be there. Fixtures are static in world
+ * space, so `version` changes only when the fixtures do (the caller counts that) and the answer for a cell stays right.
+ */
+export class ViewCache<T> {
+    /** How many times the computation ran: a measure for tests. */
+    public runs = 0;
+    private result: readonly T[] = [];
+    private cellX = Number.NaN;
+    private cellY = Number.NaN;
+    private width = Number.NaN;
+    private height = Number.NaN;
+    private version = Number.NaN;
+    private readonly area: ViewRect = [0, 0, 0, 0];
+
+    constructor(
+        private readonly cell: number,
+        private readonly compute: (area: Rect) => readonly T[],
+    ) {}
+
+    get(view: Rect, version: number): readonly T[] {
+        const cellX = Math.floor(view[0] / this.cell);
+        const cellY = Math.floor(view[1] / this.cell);
+        const width = Math.round(view[2]);
+        const height = Math.round(view[3]);
+        if (
+            cellX === this.cellX &&
+            cellY === this.cellY &&
+            width === this.width &&
+            height === this.height &&
+            version === this.version
+        ) {
+            return this.result;
+        }
+        this.cellX = cellX;
+        this.cellY = cellY;
+        this.width = width;
+        this.height = height;
+        this.version = version;
+        // the exact view starts less than a cell past the corner and is at most half a px wider than its rounding
+        this.area[0] = cellX * this.cell;
+        this.area[1] = cellY * this.cell;
+        this.area[2] = width + this.cell + 1;
+        this.area[3] = height + this.cell + 1;
+        this.runs += 1;
+        this.result = this.compute(this.area);
+        return this.result;
+    }
 }

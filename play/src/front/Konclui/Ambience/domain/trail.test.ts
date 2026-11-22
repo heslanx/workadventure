@@ -24,3 +24,63 @@ describe("Trail", () => {
         expect(t.step("a", 100, 0, 3000, true), "a forgotten walker starts again").toBe(false);
     });
 });
+
+describe("Trail, as a frame uses it", () => {
+    /** A walker who has stepped `n` times along the lawn: x = 6 per step, 20 ms apart. */
+    function walked(n: number, options = { spacing: 5, life: 1000, max: 4 }): Trail {
+        const t = new Trail(options);
+        for (let i = 0; i <= n; i++) t.step("a", i * 6, 0, i * 20, true);
+        return t;
+    }
+
+    it("writes the uniforms into the array it is given, the same as it makes them", () => {
+        const t = walked(6);
+        const [made, count] = t.uniforms(500);
+        const out = new Float32Array(16).fill(7); // dirty: the slots past the steps must be cleared
+
+        const written = t.uniformsInto(out, 500);
+
+        expect(written).toBe(count);
+        expect([...out]).toEqual([...made]);
+    });
+
+    it("drops the steps that outlived their life without making a new list", () => {
+        const t = walked(3);
+        const list = t.steps;
+
+        expect(t.alive(20 + 1000)).toBe(true); // the steps at 0 and 20... only the one at 60 and later remain
+        expect(t.steps.map((s) => s.at)).toEqual([40, 60]);
+        expect(t.steps, "the same array, edited").toBe(list);
+        expect(t.alive(5000)).toBe(false);
+    });
+
+    it("forgets the walkers a predicate does not know, without a set made for it", () => {
+        const t = new Trail({ spacing: 5 });
+        t.step("a", 0, 0, 0, true);
+        t.step("b", 0, 0, 0, true);
+
+        t.forgetUnless((id) => id === "a");
+
+        expect(t.step("a", 10, 0, 10, true), "a kept walker steps on").toBe(true);
+        expect(t.step("b", 10, 0, 10, true), "a forgotten one starts again").toBe(false);
+    });
+
+    it("lets a walker who left the view start again on return, not leave a step across the map", () => {
+        const t = new Trail({ spacing: 5 });
+        t.step(7, 0, 0, 0, true);
+
+        t.release(7);
+
+        expect(t.step(7, 900, 0, 10, true)).toBe(false);
+        expect(t.steps).toHaveLength(0);
+    });
+
+    it("keeps the walking direction of a step when the walker's record is rewritten in place", () => {
+        const t = new Trail({ spacing: 5 });
+        t.step("a", 0, 0, 0, true);
+        t.step("a", 0, 6, 10, true); // south
+        t.step("a", 6, 6, 20, true); // east
+
+        expect(t.steps.map((s) => s.angle)).toEqual([Math.PI / 2, 0]);
+    });
+});
