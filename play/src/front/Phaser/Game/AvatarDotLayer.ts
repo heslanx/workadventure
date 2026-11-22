@@ -12,7 +12,7 @@ export const AVATAR_DOT_TEXTURE = "avatar-detail-dot";
 // A dot is half an avatar wide, centred where the avatar stands.
 const DOT_SIZE = 16;
 const DOT_RADIUS = DOT_SIZE / 2;
-const DOT_COLOR = 0xffffff;
+const DOT_COLORS = [0xfff4db, 0xffbaa4, 0xf7d76d, 0xadce93, 0x83d6ce, 0x91bde7, 0xc1ace9, 0xf0abcd];
 const DOT_OUTLINE_COLOR = 0x1b2a41;
 /** How close the pointer must be to a dot, in screen pixels, to draw that avatar in full. */
 export const AVATAR_DOT_HOVER_RADIUS = 12;
@@ -30,13 +30,21 @@ export interface DotBob {
 
 /** A Phaser Blitter: one game object, one draw, for every dot. */
 export interface DotBlitter {
-    create(x: number, y: number): DotBob;
+    create(x: number, y: number, frame?: number): DotBob;
     destroy(): void;
 }
 
 export interface DetailAvatar {
     readonly x: number;
     readonly y: number;
+    /** Picks the colour of its dot, among DOT_COLORS. */
+    readonly userId?: number;
+    /**
+     * The sprites it draws itself with. An avatar whose sprites were dropped (see RemotePlayer.setDetail()) builds them
+     * again some frames after it is asked to be full: its dot stays until it has some. Left out, the avatar is drawn the
+     * moment it is asked to be full.
+     */
+    readonly sprites?: { readonly size: number };
     /** Draws the avatar in full, or hides it (sprites, name, companion) for its dot. See RemotePlayer.setDetail(). */
     setDetail(detail: AvatarDetailLevel): void;
 }
@@ -66,10 +74,17 @@ export interface AvatarDetailSource<T> {
  * leaves the hovered one (pointerMoved()), and every DETAIL_RECOMPUTE_INTERVAL_MS. The avatar under the pointer, read
  * again at each recompute, is always drawn in full. Between recomputes, an update moves the visible dots with
  * their avatars and hides the dots of culled avatars.
+ *
+ * An avatar that becomes full while its sprites are dropped (RemotePlayer, with the zero-work flag) gets them back some
+ * frames later, in a turn of the build queue: its dot stays, and keeps following it, until then, so that something is
+ * drawn at every frame.
  */
 export class AvatarDotLayer<T extends DetailAvatar> {
     private readonly dots = new Map<T, DotBob>();
+    // The avatars that were asked to be full while they wear a dot, until their sprites are back.
+    private readonly promoting = new Set<T>();
     private full = new Set<T>();
+    private computed = false;
     private hovered: T | undefined;
     private lastTime = 0;
     private nextRecomputeAt = -Infinity;
@@ -81,6 +96,15 @@ export class AvatarDotLayer<T extends DetailAvatar> {
         private readonly blitter: DotBlitter,
         private readonly budget: number = AVATAR_DETAIL_BUDGET,
     ) {}
+
+    /**
+     * The avatars the budget keeps full, or undefined until the first recompute has run (before it, every avatar is
+     * drawn in full and none is in the set). It is not the list of what is drawn: it holds the full avatars that are
+     * culled, and those whose sprites are not back yet. A reader keeps to the avatars it draws.
+     */
+    public get fullDetailPlayers(): ReadonlySet<T> | undefined {
+        return this.computed ? this.full : undefined;
+    }
 
     public get dotCount(): number {
         return this.dots.size;
@@ -145,6 +169,7 @@ export class AvatarDotLayer<T extends DetailAvatar> {
     public forget(avatar: T): void {
         this.dots.get(avatar)?.destroy();
         this.dots.delete(avatar);
+        this.promoting.delete(avatar);
         this.full.delete(avatar);
         if (this.hovered === avatar) {
             this.hovered = undefined;
@@ -171,7 +196,9 @@ export class AvatarDotLayer<T extends DetailAvatar> {
 
     public destroy(): void {
         this.dots.clear();
+        this.promoting.clear();
         this.full.clear();
+        this.computed = false;
         this.hovered = undefined;
         this.blitter.destroy();
     }
@@ -200,58 +227,106 @@ export class AvatarDotLayer<T extends DetailAvatar> {
         let changed = false;
         for (const { key: avatar, inView } of candidates) {
             const dot = this.dots.get(avatar);
-            if (full.has(avatar) && dot !== undefined) {
-                dot.destroy();
-                this.dots.delete(avatar);
-                avatar.setDetail("full");
-                changed ||= inView;
-            } else if (!full.has(avatar) && dot === undefined) {
+            if (full.has(avatar)) {
+                if (dot !== undefined && !this.promoting.has(avatar)) {
+                    avatar.setDetail("full");
+                    if (hasSprites(avatar)) {
+                        dot.destroy();
+                        this.dots.delete(avatar);
+                    } else {
+                        // Its sprites come back in a turn of the build queue: until then the dot is all that is drawn.
+                        this.promoting.add(avatar);
+                    }
+                    changed ||= inView;
+                }
+            } else if (dot === undefined) {
                 // Shown by syncDots(), which also knows whether the avatar is culled.
-                const created = this.blitter.create(avatar.x - DOT_RADIUS, avatar.y - DOT_RADIUS);
+                const created = this.blitter.create(
+                    Math.round(avatar.x) - DOT_RADIUS,
+                    Math.round(avatar.y) - DOT_RADIUS,
+                    (avatar.userId ?? 0) & 7,
+                );
                 created.setVisible(false);
                 this.dots.set(avatar, created);
+                avatar.setDetail("dot");
+                changed ||= inView;
+            } else if (this.promoting.delete(avatar)) {
+                // Asked to be a dot again before its sprites came back: the dot never left.
                 avatar.setDetail("dot");
                 changed ||= inView;
             }
         }
         this.full = full;
+        this.computed = true;
         return changed;
     }
 
-    private syncDots(): boolean {
-        let changed = false;
-        for (const [avatar, dot] of this.dots) {
-            const shown = !this.source.isCulled(avatar);
-            if (dot.visible !== shown) {
-                dot.setVisible(shown);
-                changed = true;
-            }
-            if (!shown) {
-                continue;
-            }
-            const x = avatar.x - DOT_RADIUS;
-            const y = avatar.y - DOT_RADIUS;
-            if (dot.x !== x || dot.y !== y) {
-                dot.x = x;
-                dot.y = y;
-                changed = true;
-            }
+    private dotsChanged = false;
+    private readonly syncDot = (dot: DotBob, avatar: T): void => {
+        const shown = !this.source.isCulled(avatar);
+        if (dot.visible !== shown) {
+            dot.setVisible(shown);
+            this.dotsChanged = true;
         }
-        return changed;
+        if (!shown) return;
+        const x = Math.round(avatar.x) - DOT_RADIUS;
+        const y = Math.round(avatar.y) - DOT_RADIUS;
+        if (dot.x !== x) {
+            dot.x = x;
+            this.dotsChanged = true;
+        }
+        if (dot.y !== y) {
+            dot.y = y;
+            this.dotsChanged = true;
+        }
+    };
+
+    private readonly finishPromotion = (avatar: T): void => {
+        if (!hasSprites(avatar)) {
+            return;
+        }
+        this.promoting.delete(avatar);
+        const dot = this.dots.get(avatar);
+        if (dot !== undefined) {
+            this.dotsChanged ||= dot.visible;
+            dot.destroy();
+            this.dots.delete(avatar);
+        }
+    };
+
+    private syncDots(): boolean {
+        this.dotsChanged = false;
+        this.promoting.forEach(this.finishPromotion);
+        this.dots.forEach(this.syncDot);
+        return this.dotsChanged;
     }
+}
+
+function hasSprites(avatar: DetailAvatar): boolean {
+    return avatar.sprites === undefined || avatar.sprites.size > 0;
 }
 
 /** The Blitter that draws the dots of a scene, with its texture made once per game. */
 export function createAvatarDotBlitter(scene: Phaser.Scene): Phaser.GameObjects.Blitter {
     if (!scene.textures.exists(AVATAR_DOT_TEXTURE)) {
-        const graphics = scene.make.graphics({}, false);
-        graphics
-            .fillStyle(DOT_COLOR, 1)
-            .fillCircle(DOT_RADIUS, DOT_RADIUS, DOT_RADIUS)
-            .lineStyle(2, DOT_OUTLINE_COLOR, 1)
-            .strokeCircle(DOT_RADIUS, DOT_RADIUS, DOT_RADIUS - 1);
-        graphics.generateTexture(AVATAR_DOT_TEXTURE, DOT_SIZE, DOT_SIZE);
-        graphics.destroy();
+        const atlas = scene.textures.createCanvas(AVATAR_DOT_TEXTURE, DOT_SIZE * DOT_COLORS.length, DOT_SIZE);
+        if (!atlas) throw new Error("Could not create avatar dot atlas");
+        const context = atlas.getContext();
+        for (let frame = 0; frame < DOT_COLORS.length; frame++) {
+            const offset = frame * DOT_SIZE;
+            const fill = "#" + DOT_COLORS[frame].toString(16).padStart(6, "0");
+            const outline = "#" + DOT_OUTLINE_COLOR.toString(16).padStart(6, "0");
+            for (let y = 0; y < DOT_SIZE; y++) {
+                for (let x = 0; x < DOT_SIZE; x++) {
+                    const radiusSq = (x + 0.5 - DOT_RADIUS) ** 2 + (y + 0.5 - DOT_RADIUS) ** 2;
+                    if (radiusSq > DOT_RADIUS ** 2) continue;
+                    context.fillStyle = radiusSq <= (DOT_RADIUS - 2) ** 2 ? fill : outline;
+                    context.fillRect(offset + x, y, 1, 1);
+                }
+            }
+            atlas.add(frame, 0, offset, 0, DOT_SIZE, DOT_SIZE);
+        }
+        atlas.refresh();
     }
     return scene.add.blitter(0, 0, AVATAR_DOT_TEXTURE).setDepth(DEPTH_AVATAR_DOTS);
 }

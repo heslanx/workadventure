@@ -246,3 +246,102 @@ describe("name tags while the camera zooms", () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 });
+
+describe("a name tag that is hidden, moved and destroyed", () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    const renderListeners = (scene: GameScene) => scene.events.listenerCount(Phaser.Scenes.Events.RENDER);
+
+    it("leaves the DOM when it is hidden, without a style write, and comes back at the end of the layer", () => {
+        const { tags, layerElement } = setup(3);
+        const counter = countStyleWrites();
+        try {
+            tags[0].setHidden(true);
+
+            expect(counter.count()).toBe(0);
+        } finally {
+            counter.stop();
+        }
+        expect(layerElement.querySelectorAll(".username-display")).toHaveLength(2);
+
+        tags[0].setHidden(false);
+
+        const shown = layerElement.querySelectorAll<HTMLElement>(".username-display");
+        expect(shown).toHaveLength(3);
+        expect(shown[2].style.display).toBe("");
+    });
+
+    it("places a tag once per frame, however many times its avatar moved in that frame", () => {
+        const { scene, tags, render } = setup(1);
+        render();
+        const counter = countStyleWrites();
+        try {
+            tags[0].setPosition(100, 100);
+            tags[0].setPosition(110, 100);
+            tags[0].setPosition(120, 100);
+            expect(renderListeners(scene)).toBe(1);
+
+            render();
+
+            expect(renderListeners(scene)).toBe(0);
+            // One transform write, whatever the moves.
+            expect(counter.count()).toBe(1);
+        } finally {
+            counter.stop();
+        }
+    });
+
+    it("places a tag that moved again in the next frame", () => {
+        const { scene, tags, render } = setup(1);
+        render();
+
+        tags[0].setPosition(100, 100);
+        render();
+        tags[0].setPosition(200, 100);
+
+        expect(renderListeners(scene)).toBe(1);
+    });
+
+    it("writes nothing for the moves of a hidden tag, and places it where the avatar is when it is shown", () => {
+        const { scene, tags, render } = setup(1);
+        render();
+        tags[0].setHidden(true);
+
+        tags[0].setPosition(100, 100);
+        tags[0].setPosition(300, 50);
+
+        expect(renderListeners(scene)).toBe(0);
+        tags[0].setHidden(false);
+        render();
+        expect(renderListeners(scene)).toBe(0);
+    });
+
+    it("leaves no RENDER listener behind when it is destroyed while waiting to be placed", () => {
+        const { scene, tags, render } = setup(1);
+        render();
+        tags[0].setPosition(100, 100);
+        expect(renderListeners(scene)).toBe(1);
+
+        tags[0].destroy();
+
+        expect(renderListeners(scene)).toBe(0);
+        render();
+    });
+
+    it("is not put back in the DOM when it is shown after it was destroyed", () => {
+        const { tags, layerElement } = setup(1);
+        tags[0].setHidden(true);
+        tags[0].destroy();
+
+        tags[0].setHidden(false);
+
+        expect(layerElement.querySelectorAll(".username-display")).toHaveLength(0);
+    });
+});

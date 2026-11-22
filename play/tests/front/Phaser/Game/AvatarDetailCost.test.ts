@@ -102,7 +102,7 @@ async function flushPromises(): Promise<void> {
     }
 }
 
-/** A Blitter bob that counts the writes to its position. */
+/** A Blitter bob that notes that it was moved: the cost of a dot is its move, not how many axes it was written on. */
 class CountingBob {
     public visible = true;
     public destroyed = false;
@@ -110,7 +110,7 @@ class CountingBob {
     constructor(
         x: number,
         y: number,
-        private readonly writes: { count: number },
+        private readonly moved: Set<CountingBob>,
     ) {
         this.position = { x, y };
     }
@@ -118,14 +118,14 @@ class CountingBob {
         return this.position.x;
     }
     set x(value: number) {
-        this.writes.count++;
+        this.moved.add(this);
         this.position.x = value;
     }
     get y() {
         return this.position.y;
     }
     set y(value: number) {
-        this.writes.count++;
+        this.moved.add(this);
         this.position.y = value;
     }
     setVisible(visible: boolean) {
@@ -155,8 +155,8 @@ interface FrameWork {
     nameTagWrites: number;
     /** Containers and sprites the renderer walks: each full avatar and its sprites. */
     objectsRendered: number;
-    /** Writes to the position of a dot. */
-    dotWrites: number;
+    /** Dots whose position changed. */
+    dotsMoved: number;
     /** Animations the avatars' sprites are told to play. */
     animationPlays: number;
 }
@@ -198,10 +198,10 @@ function createCrowd(options: { budget: boolean; withCompanions?: boolean }) {
         destroy: () => {},
     };
     const bobs: CountingBob[] = [];
-    const dotWrites = { count: 0 };
+    const dotsMoved = new Set<CountingBob>();
     const blitter = {
         create: (x: number, y: number) => {
-            const bob = new CountingBob(x, y, dotWrites);
+            const bob = new CountingBob(x, y, dotsMoved);
             bobs.push(bob);
             return bob;
         },
@@ -245,7 +245,7 @@ function createCrowd(options: { budget: boolean; withCompanions?: boolean }) {
     let framesWalked = 0;
     let walking_ = false;
 
-    async function frame(): Promise<{ nameTagWrites: number; dotWrites: number; animationPlays: number }> {
+    async function frame(): Promise<{ nameTagWrites: number; dotsMoved: number; animationPlays: number }> {
         animationPlays.count = 0;
         if (walking_ && framesWalked % FRAMES_PER_MOVE === 0) {
             for (let userId = 1; userId <= AVATARS; userId++) {
@@ -255,7 +255,7 @@ function createCrowd(options: { budget: boolean; withCompanions?: boolean }) {
         if (walking_) framesWalked++;
         time += FRAME_MS;
         observer.takeRecords();
-        dotWrites.count = 0;
+        dotsMoved.clear();
         scene.update(time, FRAME_MS);
         scene.events.emit(Phaser.Scenes.Events.POST_UPDATE);
         scene.events.emit(Phaser.Scenes.Events.RENDER);
@@ -264,7 +264,7 @@ function createCrowd(options: { budget: boolean; withCompanions?: boolean }) {
             .filter((record) => (record.target as Element).className === "username-display");
         const work = {
             nameTagWrites: records.length,
-            dotWrites: dotWrites.count,
+            dotsMoved: dotsMoved.size,
             animationPlays: animationPlays.count,
         };
         await flushPromises();
@@ -326,7 +326,7 @@ function createCrowd(options: { budget: boolean; withCompanions?: boolean }) {
             return {
                 nameTagWrites: Math.max(...frames.map((work) => work.nameTagWrites)),
                 objectsRendered: Math.max(...frames.map((work) => work.objectsRendered)),
-                dotWrites: Math.max(...frames.map((work) => work.dotWrites)),
+                dotsMoved: Math.max(...frames.map((work) => work.dotsMoved)),
                 animationPlays: Math.max(...frames.map((work) => work.animationPlays)),
             };
         },
@@ -355,12 +355,12 @@ describe("1000 remote players at whole-map zoom", () => {
             const work = await crowd.walkAndMeasure();
 
             expect(drawn).toEqual({ fullAvatars: 1000, activeSprites: 2000, nameTagsShown: 1000, dots: 0 });
-            expect(work).toEqual({ nameTagWrites: 1000, objectsRendered: 3000, dotWrites: 0, animationPlays: 2000 });
+            expect(work).toEqual({ nameTagWrites: 1000, objectsRendered: 3000, dotsMoved: 0, animationPlays: 2000 });
         },
     );
 
     it(
-        "budget on: 80 full avatars, 160 active sprites, 0 name tags, 920 dots; walking, 84 tag writes in a hidden layer, 240 objects, 1840 dot writes and 164 animation plays per frame",
+        "budget on: 80 full avatars, 160 active sprites, 0 name tags, 920 dots; walking, 80 tag writes in a hidden layer, 240 objects, 920 dots moved and 164 animation plays per frame",
         { timeout: 120_000 },
         async () => {
             const crowd = createCrowd({ budget: true });
@@ -375,13 +375,31 @@ describe("1000 remote players at whole-map zoom", () => {
                 nameTagsShown: 0,
                 dots: AVATARS - AVATAR_DETAIL_BUDGET,
             });
-            // The tags of the full avatars still follow their moves, and an avatar that changes detail shows or hides
-            // its tag; all of it inside the hidden layer, which the browser neither lays out nor paints.
+            // The tags of the full avatars still follow their moves: one transform write each, 80 in the busiest frame.
+            // An avatar that changes detail takes its tag out of the layer or puts it back, which is not a style write,
+            // and a tag out of the layer is not placed, so a swap moves the write from one tag to the other.
+            // All of it inside the hidden layer, which the browser neither lays out nor paints.
             // Only the full avatars' sprites play their walk (2 x 80), plus the replay of an avatar drawn in full again:
             // a dot remembers its pose and plays nothing.
-            expect(work).toEqual({ nameTagWrites: 84, objectsRendered: 240, dotWrites: 1840, animationPlays: 164 });
+            // Every dot moves, as everyone walks: the count is of dots moved, not of coordinate writes (a walk along one
+            // axis writes one per dot, a diagonal one two), and no browser run has measured what a write costs.
+            expect(work).toEqual({ nameTagWrites: 80, objectsRendered: 240, dotsMoved: 920, animationPlays: 164 });
         },
     );
+
+    it("tells the scene effects which avatars are full, only with the budget on and once it has chosen", async () => {
+        const off = createCrowd({ budget: false });
+        await off.joinAtWholeMap();
+        const crowd = createCrowd({ budget: true });
+        const beforeTheFirstFrame = crowd.scene.fullDetailPlayers;
+        await crowd.joinAtWholeMap();
+
+        expect(off.scene.fullDetailPlayers).toBeUndefined();
+        expect(beforeTheFirstFrame).toBeUndefined();
+        const full = crowd.players().filter((player) => player.visible);
+        expect(full).toHaveLength(AVATAR_DETAIL_BUDGET);
+        expect(new Set(crowd.scene.fullDetailPlayers)).toEqual(new Set(full));
+    });
 
     it("keeps the full avatars nearest the player", { timeout: 120_000 }, async () => {
         const crowd = createCrowd({ budget: true });

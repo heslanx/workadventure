@@ -1,10 +1,21 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import * as Phaser from "phaser";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AvatarDetailLevel } from "../../../../src/front/Phaser/Game/AvatarDetail";
 import { DETAIL_RECOMPUTE_INTERVAL_MS, DETAIL_ZOOM_SETTLE_MS } from "../../../../src/front/Phaser/Game/AvatarDetail";
-import { AvatarDotLayer, type DotBob } from "../../../../src/front/Phaser/Game/AvatarDotLayer";
+import {
+    AVATAR_DOT_TEXTURE,
+    AvatarDotLayer,
+    createAvatarDotBlitter,
+    type DotBob,
+} from "../../../../src/front/Phaser/Game/AvatarDotLayer";
 
 class FakeAvatar {
     public detail: AvatarDetailLevel = "full";
+    public userId?: number;
+    /** Left out, the avatar is drawn the moment it is asked to be full; given, it is drawn when it has sprites. */
+    public sprites?: { size: number };
+    public readonly asked: AvatarDetailLevel[] = [];
     constructor(
         public readonly id: number,
         public x: number,
@@ -12,16 +23,36 @@ class FakeAvatar {
     ) {}
     public setDetail(detail: AvatarDetailLevel): void {
         this.detail = detail;
+        this.asked.push(detail);
     }
 }
 
 class FakeBob implements DotBob {
     public visible = true;
     public destroyed = false;
+    public writes = 0;
+    private position: { x: number; y: number };
     constructor(
-        public x: number,
-        public y: number,
-    ) {}
+        x: number,
+        y: number,
+        public readonly frame?: number,
+    ) {
+        this.position = { x, y };
+    }
+    get x() {
+        return this.position.x;
+    }
+    set x(value: number) {
+        this.writes++;
+        this.position.x = value;
+    }
+    get y() {
+        return this.position.y;
+    }
+    set y(value: number) {
+        this.writes++;
+        this.position.y = value;
+    }
     public setVisible(visible: boolean): void {
         this.visible = visible;
     }
@@ -38,6 +69,8 @@ function createLayer(count: number) {
     const culled = new Set<FakeAvatar>();
     const pinned: FakeAvatar[] = [];
     const player = { x: 0, y: 0 };
+    // Whether the local player exists yet.
+    const present = { value: true };
     // Where the pointer is in the world, as the scene reads it; undefined while it is not over the game.
     const pointer: { at: { x: number; y: number; radius: number } | undefined } = { at: undefined };
     const bobs: FakeBob[] = [];
@@ -46,12 +79,12 @@ function createLayer(count: number) {
             avatars: () => avatars,
             isCulled: (avatar) => culled.has(avatar),
             pinned: () => pinned,
-            origin: () => player,
+            origin: () => (present.value ? player : undefined),
             pointer: () => pointer.at,
         },
         {
-            create: (x, y) => {
-                const bob = new FakeBob(x, y);
+            create: (x, y, frame) => {
+                const bob = new FakeBob(x, y, frame);
                 bobs.push(bob);
                 return bob;
             },
@@ -66,7 +99,7 @@ function createLayer(count: number) {
         pointer.at = x === undefined || y === undefined ? undefined : { x, y, radius: 12 };
         layer.pointerMoved();
     };
-    return { layer, avatars, culled, pinned, player, pointer, movePointer, bobs, liveBobs, details };
+    return { layer, avatars, culled, pinned, player, present, pointer, movePointer, bobs, liveBobs, details };
 }
 
 describe("AvatarDotLayer", () => {
@@ -249,5 +282,243 @@ describe("AvatarDotLayer", () => {
 
         expect(missed).toEqual(["full", "full", "full", "dot", "dot"]);
         expect(details()).toEqual(["full", "full", "full", "dot", "dot"]);
+    });
+
+    it("gives a dot the colour of its user, among the eight of the atlas", () => {
+        const { layer, avatars, liveBobs } = createLayer(5);
+        avatars[3].userId = 3;
+        avatars[4].userId = -1;
+
+        layer.update(0);
+
+        expect(liveBobs().map((bob) => bob.frame)).toEqual([3, 7]);
+        const { layer: other, avatars: others, liveBobs: otherBobs } = createLayer(5);
+        others[3].userId = 2 ** 32 + 5;
+        others[4].userId = undefined;
+        other.update(0);
+        expect(otherBobs().map((bob) => bob.frame)).toEqual([5, 0]);
+    });
+
+    it("puts a dot on the pixel of its avatar, and writes nothing for a move under a pixel", () => {
+        const { layer, avatars, liveBobs } = createLayer(5);
+        avatars[3].x = 400.4;
+        avatars[3].y = 10.6;
+        layer.update(0);
+        const [dot] = liveBobs();
+        const created = [dot.x, dot.y];
+        dot.writes = 0;
+
+        // The avatar moves within the same pixel.
+        avatars[3].x = 400.2;
+        avatars[3].y = 10.9;
+        const sameFrame = layer.update(16);
+        const writesWithinPixel = dot.writes;
+        avatars[3].x = 400.6;
+        const next = layer.update(32);
+
+        expect(created).toEqual([392, 3]);
+        expect([sameFrame, writesWithinPixel]).toEqual([false, 0]);
+        expect([next, dot.writes, dot.x, dot.y]).toEqual([true, 1, 393, 3]);
+    });
+
+    it("moves only the axis that changed", () => {
+        const { layer, avatars, liveBobs } = createLayer(5);
+        layer.update(0);
+        const [dot] = liveBobs();
+        dot.writes = 0;
+
+        avatars[3].x += 5;
+        layer.update(16);
+        const horizontal = dot.writes;
+        avatars[3].x += 5;
+        avatars[3].y += 5;
+        layer.update(32);
+
+        expect([horizontal, dot.writes - horizontal]).toEqual([1, 2]);
+    });
+
+    it("exposes the full avatars only once a recompute has run, and the set the budget chose after it", () => {
+        const { layer, avatars, present, details } = createLayer(5);
+        // The player does not exist yet: nothing is chosen, and every avatar is drawn in full.
+        present.value = false;
+        layer.update(0);
+        expect(layer.fullDetailPlayers).toBeUndefined();
+        expect(details()).toEqual(["full", "full", "full", "full", "full"]);
+        present.value = true;
+        layer.requestRecompute();
+
+        layer.update(16);
+
+        expect([...(layer.fullDetailPlayers ?? [])]).toEqual(avatars.slice(0, BUDGET));
+        layer.destroy();
+        expect(layer.fullDetailPlayers).toBeUndefined();
+    });
+
+    it("keeps the dot of an avatar made full until its sprites are back, and drops it the frame they are", () => {
+        const { layer, avatars, player, liveBobs } = createLayer(5);
+        avatars[3].sprites = { size: 0 };
+        layer.update(0);
+        expect(liveBobs()).toHaveLength(2);
+
+        // The avatar is promoted, but its sprites are rebuilt some frames later, in a turn of the build queue.
+        player.x = 500;
+        layer.update(DETAIL_RECOMPUTE_INTERVAL_MS);
+        const waiting = liveBobs().map((bob) => bob.visible);
+        const asked = [...avatars[3].asked];
+        avatars[3].x = 420;
+        layer.update(DETAIL_RECOMPUTE_INTERVAL_MS + 16);
+        const followed = liveBobs().find((bob) => bob.x === 412)?.visible;
+        avatars[3].sprites.size = 2;
+        const back = layer.update(DETAIL_RECOMPUTE_INTERVAL_MS + 32);
+
+        expect(asked).toEqual(["dot", "full"]);
+        expect(waiting).toEqual([true, true, true]);
+        expect(followed).toBe(true);
+        expect(back).toBe(true);
+        // The dots of the two avatars it took the place of remain.
+        expect(liveBobs()).toHaveLength(2);
+        expect(layer.dotCount).toBe(2);
+    });
+
+    it("draws a promoted avatar as a dot or with sprites at every frame, however the sprites come back", () => {
+        const { layer, avatars, player, liveBobs } = createLayer(8);
+        for (const avatar of avatars) avatar.sprites = { size: 0 };
+        layer.update(0);
+        // Every avatar was built as a dot, then the dots of the first ones are promoted all at once.
+        for (const avatar of avatars.slice(0, BUDGET)) avatar.sprites = { size: 2 };
+        player.x = 800;
+        layer.update(DETAIL_RECOMPUTE_INTERVAL_MS);
+        const promoted = avatars.slice(-BUDGET);
+        const undrawn: string[] = [];
+
+        for (let frame = 1; frame <= promoted.length + 1; frame++) {
+            // The queue gives the sprites back one avatar a frame.
+            if (frame <= promoted.length) promoted[frame - 1].sprites = { size: 2 };
+            layer.update(DETAIL_RECOMPUTE_INTERVAL_MS + 16 * frame);
+            for (const avatar of promoted) {
+                const hasDot = liveBobs().some((bob) => bob.x === Math.round(avatar.x) - 8 && bob.visible);
+                if (!hasDot && avatar.sprites?.size === 0) undrawn.push(`${avatar.id}@${frame}`);
+            }
+        }
+
+        expect(undrawn).toEqual([]);
+        expect(promoted.every((avatar) => avatar.detail === "full")).toBe(true);
+        expect(liveBobs().filter((bob) => bob.visible).length).toBe(8 - BUDGET);
+    });
+
+    it("keeps the dot of an avatar made full and then a dot again before its sprites came back", () => {
+        const { layer, avatars, player, liveBobs } = createLayer(5);
+        avatars[3].sprites = { size: 0 };
+        layer.update(0);
+        player.x = 500;
+        layer.update(DETAIL_RECOMPUTE_INTERVAL_MS);
+        player.x = 0;
+
+        layer.update(2 * DETAIL_RECOMPUTE_INTERVAL_MS);
+        avatars[3].sprites.size = 2;
+        layer.update(2 * DETAIL_RECOMPUTE_INTERVAL_MS + 16);
+
+        expect(avatars[3].asked).toEqual(["dot", "full", "dot"]);
+        expect(liveBobs()).toHaveLength(2);
+        expect(layer.dotCount).toBe(2);
+    });
+
+    it("forgets the dot of an avatar that leaves while it waits for its sprites", () => {
+        const { layer, avatars, player, bobs, liveBobs } = createLayer(5);
+        avatars[3].sprites = { size: 0 };
+        layer.update(0);
+        player.x = 500;
+        layer.update(DETAIL_RECOMPUTE_INTERVAL_MS);
+
+        const [waitingBob] = bobs;
+        layer.forget(avatars[3]);
+        avatars[3].sprites.size = 2;
+        layer.update(DETAIL_RECOMPUTE_INTERVAL_MS + 16);
+
+        expect(waitingBob.destroyed).toBe(true);
+        expect(liveBobs()).toHaveLength(2);
+        expect(layer.dotCount).toBe(2);
+    });
+});
+
+describe("createAvatarDotBlitter", () => {
+    const fills = new Map<string, string>();
+    const atlasSize = { width: 0, height: 0 };
+
+    beforeEach(() => {
+        fills.clear();
+        // The canvas of a headless test has no 2D context: this one remembers the colour of each pixel it is given.
+        vi.spyOn(Phaser.Display.Canvas.CanvasPool, "create").mockImplementation(((
+            _parent: unknown,
+            width = 1,
+            height = 1,
+        ) => {
+            atlasSize.width = width;
+            atlasSize.height = height;
+            const context = {
+                fillStyle: "",
+                getImageData: () => ({ data: new Uint8ClampedArray(0) }),
+                fillRect(x: number, y: number, w: number, h: number) {
+                    expect([w, h]).toEqual([1, 1]);
+                    fills.set(`${x},${y}`, this.fillStyle);
+                },
+            };
+            return { width, height, getContext: () => context };
+        }) as unknown as typeof Phaser.Display.Canvas.CanvasPool.create);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    function createScene() {
+        const game = { events: new Phaser.Events.EventEmitter(), config: {}, renderer: { gl: undefined } };
+        const textures = new Phaser.Textures.TextureManager(game as unknown as Phaser.Game);
+        const blitter = { setDepth: vi.fn(() => blitter) };
+        const add = vi.fn((_x: number, _y: number, _texture: string) => blitter);
+        return { scene: { textures, add: { blitter: add } } as unknown as Phaser.Scene, textures, add };
+    }
+
+    it("makes a texture of eight dots, one frame each, and a blitter that draws it", () => {
+        const { scene, textures, add } = createScene();
+
+        createAvatarDotBlitter(scene);
+
+        const texture = textures.get(AVATAR_DOT_TEXTURE);
+        expect([atlasSize.width, atlasSize.height]).toEqual([8 * 16, 16]);
+        for (let frame = 0; frame < 8; frame++) {
+            const cut = texture.get(frame);
+            expect([cut.name, cut.cutX, cut.cutY, cut.width, cut.height]).toEqual([frame, frame * 16, 0, 16, 16]);
+        }
+        expect(texture.has("8")).toBe(false);
+        expect(add).toHaveBeenCalledWith(0, 0, AVATAR_DOT_TEXTURE);
+    });
+
+    it("draws each dot in its colour with an outline, on pixels of binary alpha, and keeps the corners clear", () => {
+        const { scene } = createScene();
+
+        createAvatarDotBlitter(scene);
+
+        const colours = ["#fff4db", "#ffbaa4", "#f7d76d", "#adce93", "#83d6ce", "#91bde7", "#c1ace9", "#f0abcd"];
+        colours.forEach((colour, frame) => {
+            const left = frame * 16;
+            expect(fills.get(`${left + 8},8`)).toBe(colour);
+            expect(fills.get(`${left + 8},0`)).toBe("#1b2a41");
+            expect(fills.get(`${left},0`)).toBeUndefined();
+            expect(fills.get(`${left + 15},15`)).toBeUndefined();
+        });
+        // Only opaque pixels were drawn: a 1x1 fillRect of a flat colour, with no anti-aliased edge.
+        expect([...fills.values()].every((colour) => /^#[0-9a-f]{6}$/.test(colour))).toBe(true);
+    });
+
+    it("makes the texture once for the game, whatever the number of scenes", () => {
+        const { scene, textures } = createScene();
+
+        createAvatarDotBlitter(scene);
+        const first = textures.get(AVATAR_DOT_TEXTURE);
+        createAvatarDotBlitter(scene);
+
+        expect(textures.get(AVATAR_DOT_TEXTURE)).toBe(first);
+        expect(textures.getTextureKeys().filter((key) => key === AVATAR_DOT_TEXTURE)).toHaveLength(1);
     });
 });

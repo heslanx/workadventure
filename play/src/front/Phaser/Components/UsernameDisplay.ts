@@ -54,8 +54,12 @@ export class UsernameDisplay {
 
     private toForeFront: boolean = false;
     private depth: number = 0;
-    // A hidden tag keeps where it is and its depth, but writes nothing until it is shown again (see setHidden()).
+    // A hidden tag is out of the DOM. It keeps where it is and its depth, but writes nothing until it is shown again
+    // (see setHidden()).
     private hidden = false;
+    private destroyed = false;
+    // Whether a RENDER listener waits to place the tag (see updateDomPosition()).
+    private positionPending = false;
 
     constructor(
         private scene: GameScene,
@@ -151,23 +155,29 @@ export class UsernameDisplay {
     /**
      * Hides the tag, or shows it again, for the avatar it belongs to going out of the camera view and coming back.
      *
-     * Hiding it takes one write, and a hidden tag follows no move and no depth change: the avatar can walk about
-     * unseen at no cost. Showing it again puts it where the avatar is by then.
+     * Hiding it takes the tag out of the DOM, and a hidden tag follows no move and no depth change: the avatar can walk
+     * about unseen at no cost. Showing it again puts the tag back, at the end of its layer, where the avatar is by then.
      */
     public setHidden(hidden: boolean): void {
-        if (this.hidden === hidden) {
+        if (this.hidden === hidden || this.destroyed) {
             return;
         }
         this.hidden = hidden;
-        // An inline `display` wins over the one of the class, so removing it gives the tag its display back.
-        this.element.style.display = hidden ? "none" : "";
-        if (!hidden) {
+        if (hidden) {
+            this.element.remove();
+        } else {
+            this.gameScene.usernameDomLayer.addUsername(this.element);
             this.updatePlayerDepth();
             this.updateDomPosition();
         }
     }
 
     public destroy(): void {
+        this.destroyed = true;
+        if (this.positionPending) {
+            this.positionPending = false;
+            this.scene.events.off(Phaser.Scenes.Events.RENDER, this.flushPosition);
+        }
         this.element.remove();
         this.statusDisplay.destroy();
         this.megaphoneDisplay.destroy();
@@ -179,13 +189,15 @@ export class UsernameDisplay {
         return this.scene;
     }
 
+    private readonly flushPosition = (): void => {
+        this.positionPending = false;
+        if (!this.hidden) this.applyTransform();
+    };
+
     private updateDomPosition(): void {
-        this.scene.events.once(Phaser.Scenes.Events.RENDER, () => {
-            // The tag was hidden since the move: it is placed when it is shown again.
-            if (!this.hidden) {
-                this.applyTransform();
-            }
-        });
+        if (this.positionPending) return;
+        this.positionPending = true;
+        this.scene.events.once(Phaser.Scenes.Events.RENDER, this.flushPosition);
     }
 
     private createPlayerNameElement(): HTMLParagraphElement {

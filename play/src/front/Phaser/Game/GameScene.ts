@@ -389,6 +389,14 @@ export class GameScene extends DirtyScene {
     private remotePlayersCulling = new RemotePlayerCulling<RemotePlayer>();
     // Draws the remote players over the detail budget as dots. Undefined while the budget is off.
     private avatarDotLayer: AvatarDotLayer<RemotePlayer> | undefined;
+
+    /**
+     * The remote players the detail budget keeps full, for the scene effects to visit instead of every remote player.
+     * Undefined while the budget is off, and before its first recompute (see AvatarDotLayer.fullDetailPlayers).
+     */
+    public get fullDetailPlayers(): ReadonlySet<RemotePlayer> | undefined {
+        return this.avatarDotLayer?.fullDetailPlayers;
+    }
     // The remote players that are in the scene but whose sprites, name and companion are not built yet.
     private avatarBuildQueue = new AvatarBuildQueue();
     private originalMapUrl: string | undefined;
@@ -1535,7 +1543,6 @@ export class GameScene extends DirtyScene {
     /**
      * Starts the detail budget (see AvatarDotLayer): it follows the zoom once it settles, and the player under the
      * pointer is drawn in full.
-     * Known gap: the scene effects still process the hidden avatars of the dots, and should skip them.
      */
     private createAvatarDotLayer(): void {
         this.avatarDotLayer = new AvatarDotLayer<RemotePlayer>(
