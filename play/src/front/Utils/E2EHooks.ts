@@ -2,7 +2,26 @@ import * as Phaser from "phaser";
 import { get } from "svelte/store";
 import type { ForceFirstPeerUnilateralDestroyResult } from "../Space/SpacePeerManager/SpacePeerManager";
 import { gameManager } from "../Phaser/Game/GameManager";
+import { POSITION_DELAY } from "../Enum/EnvironmentVariable";
+import { getAvatarBakeStats } from "../Phaser/Entity/AvatarBakeCache";
 import { backgroundProcessedLocalVideoTrackStore, rawLocalVideoTrackStore } from "../Stores/MediaStore";
+import {
+    createGpuFrameTimer,
+    type GpuTimerContext,
+    type GpuTimerMethod,
+    type GpuTimerUnavailableReason,
+} from "./GpuFrameTimer";
+import { percentileOfSorted, summarizeFrameTimes, type E2EFrameStats } from "./FrameStats";
+import { FRAME_BENCH_WINDOW, startFrameBench, type E2EFrameBench, type FrameBench } from "./FrameBench";
+import { createBenchNight, type BenchNightResult } from "./BenchNight";
+import { createCameraPanner } from "./CameraPan";
+import {
+    buildRecipes,
+    createSyntheticCrowd,
+    crowdMapFromManifest,
+    type CrowdMap,
+    type SyntheticCrowdReport,
+} from "./SyntheticCrowd";
 
 import Camera = Phaser.Cameras.Scene2D.Camera;
 
@@ -430,36 +449,20 @@ async function compareLocalVideoFrames(): Promise<{ processedMeanGray: number; m
     };
 }
 
-/**
- * Nearest-rank percentile of values sorted ascending: the smallest value that at least `percent` percent of them do
- * not exceed. Zero for an empty series.
- */
-export function percentileOfSorted(sorted: ArrayLike<number>, percent: number): number {
-    if (sorted.length === 0) {
-        return 0;
+export { percentileOfSorted, summarizeFrameTimes };
+export type { E2EFrameStats };
+
+export const FRAME_AVG_BUDGET_MS = 11;
+export const FRAME_MAX_BUDGET_MS = 16.7;
+
+function countSamplesOver(samples: ArrayLike<number>, thresholdMs: number): number {
+    let over = 0;
+    for (let i = 0; i < samples.length; i++) {
+        if (samples[i] > thresholdMs) {
+            over++;
+        }
     }
-    // `percent` is a whole number, so the product is exact where 0.95 * 20 is not
-    const rank = Math.ceil((percent * sorted.length) / 100);
-    return sorted[Math.min(Math.max(rank, 1), sorted.length) - 1];
-}
-
-/** How a series of durations in milliseconds is distributed. */
-export interface E2EFrameStats {
-    p50: number;
-    p95: number;
-    p99: number;
-    max: number;
-}
-
-/** The distribution of a series of durations, in the order they are given and left untouched. */
-export function summarizeFrameTimes(samples: ArrayLike<number>): E2EFrameStats {
-    const sorted = Float64Array.from(samples).sort();
-    return {
-        p50: percentileOfSorted(sorted, 50),
-        p95: percentileOfSorted(sorted, 95),
-        p99: percentileOfSorted(sorted, 99),
-        max: percentileOfSorted(sorted, 100),
-    };
+    return over;
 }
 
 /** The part of Phaser's event emitter the frame recorder uses. */
@@ -467,6 +470,8 @@ export interface E2EFrameEvents {
     on(event: string, listener: (...args: unknown[]) => void): unknown;
     off(event: string, listener: (...args: unknown[]) => void): unknown;
 }
+
+export type E2EWebGLTimerContext = GpuTimerContext;
 
 /** The part of PerformanceObserver the frame recorder uses, so that a test can stand in for the browser. */
 export interface E2ELongTaskObserver {
@@ -478,6 +483,59 @@ export interface E2ELongTaskObserver {
 export interface E2ELongTaskObserverClass {
     new (callback: (list: { getEntries(): readonly { duration: number }[] }) => void): E2ELongTaskObserver;
     readonly supportedEntryTypes?: readonly string[];
+}
+
+// Share of the rendered frames that must have a GPU sample before the GPU budget can be judged. Below it the
+// missing frames are the ones where the GPU fell behind or was disturbed, so a pass would rest on the good ones.
+export const GPU_MIN_COVERAGE = 0.9;
+
+const GPU_SCOPE =
+    "GL commands from PRE_RENDER to POST_RENDER of rendered frames; excludes texture uploads during the step and " +
+    "compositor work for the DOM over the canvas; browsers may coarsen timer queries";
+
+/** Why there is no GPU figure: no timer could be made, or the timer produced no sample. */
+export type E2EGpuUnavailableReason = GpuTimerUnavailableReason | "no-samples";
+
+export interface E2EGpuStats extends E2EFrameStats {
+    supported: true;
+    ext: GpuTimerMethod;
+    timedFrames: number;
+    disjointFrames: number;
+    samples: number;
+    /** Rendered frames with no usable sample. A high count means the figure understates the worst frames. */
+    dropped: number;
+    /** dropped / (samples + dropped). */
+    droppedRatio: number;
+    /** samples / rendered frames. */
+    coverage: number;
+    method: GpuTimerMethod;
+    scope: string;
+}
+
+/**
+ * The frame budget the owner set for the GPU: at most 11.0 ms on average and no frame above 16.7 ms. The same two
+ * numbers are applied to main-thread work as a stand-in when no GPU timer exists; that is not the gate of
+ * docs/PERFORMANCE.md N-04 (p95 at 200 visible avatars and at 1000), which is a different rule. A flag is null when
+ * the recording cannot support a verdict: no samples, truncated, or (GPU) too few of the rendered frames measured.
+ */
+export interface E2EFrameBudgetReport {
+    source: "gpu" | "work";
+    avgBudgetMs: number;
+    maxBudgetMs: number;
+    avg: number;
+    p99: number;
+    max: number;
+    avgPass: boolean | null;
+    maxPass: boolean | null;
+    pass: boolean | null;
+    avgLimitMs: number;
+    maxLimitMs: number;
+    workOver16_7Ms: number;
+    workOver11Ms: number;
+    gpuOver16_7Ms: number | null;
+    gpuOver11Ms: number | null;
+    workPassed: boolean | null;
+    gpuPassed: boolean | null;
 }
 
 export interface E2EFrameRecording {
@@ -495,10 +553,23 @@ export interface E2EFrameRecording {
      * below by the display refresh period (16.7 ms at 60 Hz, 8.3 ms at 120 Hz) whatever the frame costs.
      */
     intervalMs: E2EFrameStats;
+    frameMs: E2EFrameStats;
     /** Scene update only, from the game's PRE_STEP to its POST_STEP. */
     stepMs: E2EFrameStats;
     /** From POST_STEP to POST_RENDER, over the frames that rendered. */
     renderMs: E2EFrameStats;
+    /**
+     * GPU execution time of rendered frames, or null when it could not be measured (see gpuUnavailableReason): never
+     * zeros standing in for a measurement. Quote it only together with `dropped`, `coverage` and `method`.
+     */
+    gpuMs: E2EGpuStats | null;
+    /** The extension that measured, or null when none did. Present even when no sample came out. */
+    gpuMethod: GpuTimerMethod | null;
+    gpuUnavailableReason: E2EGpuUnavailableReason | null;
+    /** Rendered frames with no GPU sample, also when gpuMs is null. */
+    gpuDropped: number;
+    /** Evaluation against the <= 11 ms average and <= 16.7 ms max frame budget. */
+    budget: E2EFrameBudgetReport;
     /** Frames that reached POST_STEP but not POST_RENDER: nothing was dirty (see Game.isDirty), or the render threw. */
     skippedRenders: number;
     /** Long tasks (50 ms or more of main thread) while recording. Not every browser reports them. */
@@ -562,6 +633,7 @@ function observeLongTasks(
 function beginFrameRecording(
     environment: E2EFrameRecorderEnvironment,
     events: E2EFrameEvents,
+    gl?: E2EWebGLTimerContext | null,
 ): { stop(): E2EFrameRecording } {
     const capacity = environment.capacity ?? MAX_RECORDED_FRAMES;
     const workMs = new SampleBuffer(capacity);
@@ -570,6 +642,8 @@ function beginFrameRecording(
     const renderMs = new SampleBuffer(capacity);
     const series = [workMs, intervalMs, stepMs, renderMs];
     const longTasks = { count: 0, totalMs: 0 };
+    const gpuCreation = createGpuFrameTimer(gl, capacity);
+    const gpuTimer = gpuCreation.timer;
     let frames = 0;
     let previousTimestamp: number | undefined;
     let frameStart: number | undefined;
@@ -589,6 +663,8 @@ function beginFrameRecording(
     // frame sees the end of it without the start, which the two guards drop.
     const onPreStep = (time?: unknown) => {
         closeFrame();
+        stepEnd = undefined;
+        gpuTimer?.poll();
         frameStart = environment.now();
         // Phaser passes the requestAnimationFrame timestamp, which is vsync-aligned and excludes the callbacks and
         // PRE_STEP listeners that ran before this one
@@ -607,10 +683,14 @@ function beginFrameRecording(
         stepMs.push(stepEnd - frameStart);
         frameEnd = stepEnd;
     };
+    const onPreRender = () => {
+        if (stepEnd !== undefined) gpuTimer?.begin();
+    };
     const onPostRender = () => {
         if (stepEnd === undefined) {
             return;
         }
+        gpuTimer?.end();
         const end = environment.now();
         renderMs.push(end - stepEnd);
         frameEnd = end;
@@ -618,6 +698,7 @@ function beginFrameRecording(
     const listeners: [string, (...args: unknown[]) => void][] = [
         [Phaser.Core.Events.PRE_STEP, onPreStep],
         [Phaser.Core.Events.POST_STEP, onPostStep],
+        [Phaser.Core.Events.PRE_RENDER, onPreRender],
         [Phaser.Core.Events.POST_RENDER, onPostRender],
     ];
     const addLongTasks = (entries: readonly { duration: number }[]) => {
@@ -640,21 +721,89 @@ function beginFrameRecording(
                 events.off(event, listener);
             }
             closeFrame();
+            const gpuResult = gpuTimer
+                ? gpuTimer.finish()
+                : { samples: new Float64Array(0), dropped: 0, disjointFrames: 0 };
             if (observer) {
                 // Entries the browser has queued but not yet delivered would be lost by disconnect()
                 addLongTasks(observer.takeRecords());
                 observer.disconnect();
             }
+            const workKept = workMs.kept();
+            const gpuKept = gpuResult.samples;
+            const workSummary = summarizeFrameTimes(workKept);
+            const truncated = series.some((samples) => samples.truncated);
+            const workOver16_7Ms = countSamplesOver(workKept, FRAME_MAX_BUDGET_MS);
+            const workOver11Ms = countSamplesOver(workKept, FRAME_AVG_BUDGET_MS);
+            const renderedFrames = renderMs.count;
+            const coverage = renderedFrames === 0 ? 0 : gpuKept.length / renderedFrames;
+            const gpuUnavailableReason: E2EGpuUnavailableReason | null =
+                gpuCreation.unavailable ?? (gpuKept.length === 0 ? "no-samples" : null);
+            let gpuMs: E2EGpuStats | null = null;
+            let gpuPassed: boolean | null = null;
+            let gpuOver16_7Ms: number | null = null;
+            let gpuOver11Ms: number | null = null;
+            if (gpuTimer && gpuKept.length > 0) {
+                const gpuSummary = summarizeFrameTimes(gpuKept);
+                gpuOver16_7Ms = countSamplesOver(gpuKept, FRAME_MAX_BUDGET_MS);
+                gpuOver11Ms = countSamplesOver(gpuKept, FRAME_AVG_BUDGET_MS);
+                gpuMs = {
+                    ...gpuSummary,
+                    supported: true,
+                    ext: gpuTimer.method,
+                    timedFrames: gpuKept.length,
+                    disjointFrames: gpuResult.disjointFrames,
+                    samples: gpuKept.length,
+                    dropped: gpuResult.dropped,
+                    droppedRatio: gpuResult.dropped / (gpuKept.length + gpuResult.dropped),
+                    coverage,
+                    method: gpuTimer.method,
+                    scope: GPU_SCOPE,
+                };
+                if (!truncated && coverage >= GPU_MIN_COVERAGE) {
+                    gpuPassed = gpuSummary.avg <= FRAME_AVG_BUDGET_MS && gpuOver16_7Ms === 0;
+                }
+            }
+            const frameMs = summarizeFrameTimes(intervalMs.kept());
+            const selected = gpuMs ?? workSummary;
+            const valid = !truncated && (gpuTimer ? gpuPassed !== null : workKept.length > 0);
             return {
                 frames,
                 durationMs: stoppedAt - startedAt,
-                workMs: summarizeFrameTimes(workMs.kept()),
-                intervalMs: summarizeFrameTimes(intervalMs.kept()),
+                workMs: workSummary,
+                intervalMs: frameMs,
+                frameMs,
                 stepMs: summarizeFrameTimes(stepMs.kept()),
                 renderMs: summarizeFrameTimes(renderMs.kept()),
+                gpuMs,
+                gpuMethod: gpuTimer?.method ?? null,
+                gpuUnavailableReason,
+                gpuDropped: gpuResult.dropped,
+                budget: {
+                    source: gpuMs ? "gpu" : "work",
+                    avgBudgetMs: FRAME_AVG_BUDGET_MS,
+                    maxBudgetMs: FRAME_MAX_BUDGET_MS,
+                    avg: selected.avg,
+                    p99: selected.p99,
+                    max: selected.max,
+                    avgPass: valid ? selected.avg <= FRAME_AVG_BUDGET_MS : null,
+                    maxPass: valid ? selected.max <= FRAME_MAX_BUDGET_MS : null,
+                    pass: valid ? selected.avg <= FRAME_AVG_BUDGET_MS && selected.max <= FRAME_MAX_BUDGET_MS : null,
+                    avgLimitMs: FRAME_AVG_BUDGET_MS,
+                    maxLimitMs: FRAME_MAX_BUDGET_MS,
+                    workOver16_7Ms,
+                    workOver11Ms,
+                    gpuOver16_7Ms,
+                    gpuOver11Ms,
+                    workPassed:
+                        truncated || workKept.length === 0
+                            ? null
+                            : workSummary.avg <= FRAME_AVG_BUDGET_MS && workOver16_7Ms === 0,
+                    gpuPassed,
+                },
                 skippedRenders: stepMs.count - renderMs.count,
                 longTasks: { supported: observer !== undefined, ...longTasks },
-                truncated: series.some((samples) => samples.truncated),
+                truncated,
             };
         },
     };
@@ -668,11 +817,14 @@ export function createFrameRecorder(environment: E2EFrameRecorderEnvironment) {
     let running: { stop(): E2EFrameRecording } | undefined;
 
     return {
-        start(events: E2EFrameEvents): void {
+        start(events: E2EFrameEvents, gl?: E2EWebGLTimerContext): void {
             if (running) {
                 throw new Error("A frame recording is already running: call stopFrameRecording() first.");
             }
-            running = beginFrameRecording(environment, events);
+            running = beginFrameRecording(environment, events, gl);
+        },
+        isRunning(): boolean {
+            return running !== undefined;
         },
         stop(): E2EFrameRecording {
             if (!running) {
@@ -690,12 +842,312 @@ const frameRecorder = createFrameRecorder({
     observerClass: typeof PerformanceObserver === "undefined" ? undefined : PerformanceObserver,
 });
 
+function currentWebGLContext(game: Phaser.Game): E2EWebGLTimerContext | undefined {
+    const renderer = game.renderer as { gl?: unknown } | undefined;
+    if (renderer && typeof renderer.gl === "object" && renderer.gl !== null) {
+        return renderer.gl as E2EWebGLTimerContext;
+    }
+    return undefined;
+}
+
+export interface E2ERenderingCounts {
+    remotePlayers: number;
+    activeFullAvatars: number;
+    activeDotAvatars: number;
+    culledAvatars: number;
+    bakedAvatarTextures: number;
+}
+
+function getRenderingCounts(): E2ERenderingCounts {
+    const scene = gameManager.getCurrentGameScene();
+    let remotePlayers = 0;
+    let activeFullAvatars = 0;
+    let activeDotAvatars = 0;
+    let culledAvatars = 0;
+    for (const player of scene.MapPlayersByKey.values()) {
+        remotePlayers += 1;
+        if (player.isCulled()) {
+            culledAvatars += 1;
+        } else if (player.getDetail() === "dot") {
+            activeDotAvatars += 1;
+        } else {
+            activeFullAvatars += 1;
+        }
+    }
+    const bakeStats = getAvatarBakeStats(scene.textures);
+    return {
+        remotePlayers,
+        activeFullAvatars,
+        activeDotAvatars,
+        culledAvatars,
+        bakedAvatarTextures: bakeStats.cached,
+    };
+}
+
 function startFrameRecording(): void {
-    frameRecorder.start(gameManager.getCurrentGameScene().game.events);
+    if (frameBench) {
+        throw new Error("A frame bench is running: both read the GPU timer, which cannot be shared. Stop it first.");
+    }
+    const game = gameManager.getCurrentGameScene().game;
+    frameRecorder.start(game.events, currentWebGLContext(game));
 }
 
 function stopFrameRecording(): E2EFrameRecording {
     return frameRecorder.stop();
+}
+
+let frameBench: FrameBench | undefined;
+let capturingWindow = false;
+
+/**
+ * The render node name of the Koncluí post pass (POST_NODE in Konclui/Ambience/phaser/postFilter.ts: an upstream file
+ * must not import Konclui, FrameProbeContract.test.ts reads that file to keep the two equal).
+ */
+export const POST_FILTER_NODE = "KfxPost";
+
+/** The longest a fixed capture waits for its 301 game steps: a hidden or throttled tab never runs them. */
+export const FRAME_CAPTURE_TIMEOUT_MS = 60_000;
+
+/**
+ * Starts the rolling frame bench (the last 300 frames): GPU time from a disjoint timer query, frame intervals, and the
+ * bytes uploaded to the GPU. It wraps texImage2D and texSubImage2D of the game's context until stopFrameBench().
+ * Read it with getFrameBench() while it runs.
+ */
+function startFrameBenchHook(): void {
+    assertBenchSession();
+    if (frameBench) {
+        throw new Error("A frame bench is already running: call stopFrameBench() first.");
+    }
+    if (frameRecorder.isRunning()) {
+        throw new Error(
+            "A frame recording is running: both read the GPU timer, which cannot be shared. Stop it first.",
+        );
+    }
+    const scene = gameManager.getCurrentGameScene();
+    const game = scene.game;
+    frameBench = startFrameBench({
+        events: game.events,
+        eventNames: {
+            preStep: Phaser.Core.Events.PRE_STEP,
+            postStep: Phaser.Core.Events.POST_STEP,
+            preRender: Phaser.Core.Events.PRE_RENDER,
+            postRender: Phaser.Core.Events.POST_RENDER,
+        },
+        gl: currentWebGLContext(game),
+        now: () => performance.now(),
+        mapSize: { width: scene.Map.widthInPixels, height: scene.Map.heightInPixels },
+        counts: () => {
+            const { activeFullAvatars, activeDotAvatars, culledAvatars, bakedAvatarTextures } = getRenderingCounts();
+            return { activeFullAvatars, activeDotAvatars, culledAvatars, bakedAvatarTextures };
+        },
+        // Called at each rendered frame: a plain loop over the camera's filter list, no allocation
+        postFilterActive: () => {
+            const list = scene.cameras?.main?.filters?.internal?.list;
+            if (!list) return false;
+            for (let i = 0; i < list.length; i++) {
+                if (list[i].active && list[i].renderNode === POST_FILTER_NODE) return true;
+            }
+            return false;
+        },
+    });
+}
+
+/**
+ * Capture exactly 300 consecutive game intervals and drain their queries after the last interval. Rejects, with the
+ * bench stopped and the game's hooks put back, when the game is destroyed or runs fewer than 301 steps in
+ * FRAME_CAPTURE_TIMEOUT_MS (a hidden tab), so that a caller waiting on it is never left hanging.
+ */
+async function captureFrameBench(): Promise<E2EFrameBench> {
+    startFrameBenchHook();
+    const bench = frameBench;
+    if (!bench) throw new Error("Frame benchmark failed to start");
+    const events = gameManager.getCurrentGameScene().game.events;
+    let steps = 0;
+    capturingWindow = true;
+    try {
+        return await new Promise<E2EFrameBench>((resolve, reject) => {
+            const finish = () => {
+                events.off(Phaser.Core.Events.PRE_STEP, onStep);
+                events.off(Phaser.Core.Events.DESTROY, onDestroy);
+                window.clearTimeout(timeout);
+            };
+            const onDestroy = () => {
+                finish();
+                bench.stop();
+                reject(new Error("Game destroyed during frame capture"));
+            };
+            const onTimeout = () => {
+                finish();
+                bench.stop();
+                reject(
+                    new Error(
+                        `The game ran ${Math.max(steps - 1, 0)} of the 300 steps of a frame capture in ` +
+                            `${FRAME_CAPTURE_TIMEOUT_MS / 1000} s: is the tab visible?`,
+                    ),
+                );
+            };
+            const onStep = () => {
+                if (++steps <= FRAME_BENCH_WINDOW) return;
+                finish();
+                resolve(bench.stopAfterGpu());
+            };
+            const timeout = window.setTimeout(onTimeout, FRAME_CAPTURE_TIMEOUT_MS);
+            events.on(Phaser.Core.Events.PRE_STEP, onStep);
+            events.on(Phaser.Core.Events.DESTROY, onDestroy);
+        });
+    } finally {
+        capturingWindow = false;
+        if (frameBench === bench) frameBench = undefined;
+    }
+}
+function getFrameBench(): E2EFrameBench {
+    if (!frameBench) {
+        throw new Error("No frame bench is running: call startFrameBench() first.");
+    }
+    return frameBench.snapshot();
+}
+
+/** Stops the bench, puts the context's methods back and returns the last reading. */
+function stopFrameBenchHook(): E2EFrameBench {
+    if (capturingWindow) throw new Error("A fixed frame capture is in progress");
+    if (!frameBench) {
+        throw new Error("No frame bench is running: call startFrameBench() first.");
+    }
+    const bench = frameBench;
+    frameBench = undefined;
+    return bench.stop();
+}
+
+/**
+ * The key that opens a page to the bench-only hooks (the synthetic crowd, the night level, the camera pan, the frame
+ * bench). window.e2eHooks is installed on every page of this client (svelte.ts, as upstream does), so its presence says
+ * nothing: a session opts in by setting this key before it calls them, which the frame probe does. It is an opt-in, not
+ * a security boundary: anyone can set it from the console, and what it opens is local (the crowd goes through the local
+ * repository and sends nothing to the server).
+ */
+export const E2E_BENCH_KEY = "konclui.e2e.bench";
+
+function assertBenchSession(): void {
+    if (typeof localStorage === "undefined" || localStorage.getItem(E2E_BENCH_KEY) !== "1") {
+        throw new Error(`This hook runs only in a bench session: localStorage "${E2E_BENCH_KEY}" must be "1".`);
+    }
+}
+
+/** The map's fx manifest beside the map file, which says where the glass, the lights and the room borders are. */
+async function loadCrowdMap(mapUrl: string, size: { width: number; height: number }): Promise<CrowdMap> {
+    const response = await fetch(new URL("fx/manifest.json", mapUrl), { cache: "no-cache" });
+    if (response.status === 404) {
+        return crowdMapFromManifest(undefined, size);
+    }
+    if (!response.ok) {
+        throw new Error(`Could not read the effects manifest of the map: HTTP ${response.status}`);
+    }
+    return crowdMapFromManifest(await response.json(), size);
+}
+
+// One crowd at a time. It is kept with the scene it joined, so that clearing it removes it from that scene.
+let activeCrowd: ReturnType<typeof createSyntheticCrowd> | undefined;
+let activeCrowdScene: unknown;
+
+// Enough recipes for a varied crowd, few enough that the avatar bake cache (128 textures) keeps them all
+const SYNTHETIC_RECIPES = 48;
+
+/** Rejects when the scene runs no update within the time: a paused or hidden tab never will. */
+function nextSceneUpdate(scene: ReturnType<typeof gameManager.getCurrentGameScene>): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+            scene.events.off(Phaser.Scenes.Events.POST_UPDATE, onUpdate);
+            reject(new Error("The scene ran no update within 10 s: is the tab visible?"));
+        }, 10_000);
+        const onUpdate = () => {
+            window.clearTimeout(timeout);
+            resolve();
+        };
+        scene.events.once(Phaser.Scenes.Events.POST_UPDATE, onUpdate);
+    });
+}
+
+/**
+ * Joins `count` remote players through the repository a real join uses, each with a recipe of 4 to 6 layers from the
+ * page's woka list, in four groups (near glass, under lights, across room borders, spread over the map), and walks
+ * them 5 moves a second on paths fixed by their index. Resolves once the scene has taken them. Only in a session that
+ * opted in (E2E_BENCH_KEY).
+ */
+async function spawnSyntheticCrowd(count: number): Promise<SyntheticCrowdReport> {
+    assertBenchSession();
+    const scene = gameManager.getCurrentGameScene();
+    const [wokaList, map] = await Promise.all([
+        gameManager.loadWokaData(),
+        loadCrowdMap(scene.mapUrlFile, { width: scene.Map.widthInPixels, height: scene.Map.heightInPixels }),
+    ]);
+    const recipes = buildRecipes(wokaList, Math.min(count, SYNTHETIC_RECIPES));
+    // A crowd that is empty, or that belongs to another scene (the player changed room, or a spawn threw), is bound to
+    // that scene's repository and frames: a run must not take it for this scene's.
+    if (activeCrowd && (activeCrowd.size === 0 || activeCrowdScene !== scene)) {
+        activeCrowd = undefined;
+    }
+    activeCrowdScene = scene;
+    activeCrowd ??= createSyntheticCrowd(
+        {
+            repository: scene.getRemotePlayersRepository(),
+            events: scene.events,
+            updateEvent: Phaser.Scenes.Events.UPDATE,
+            hasPlayer: (userId) => scene.MapPlayersByKey.has(userId),
+            nextFrame: () => nextSceneUpdate(scene),
+        },
+        POSITION_DELAY,
+    );
+    return activeCrowd.spawn(count, map, recipes);
+}
+
+/** Removes every synthetic player and the listener that walked them. */
+async function clearSyntheticCrowd(): Promise<{ removed: number; remaining: number }> {
+    const crowd = activeCrowd;
+    if (!crowd) {
+        return { removed: 0, remaining: 0 };
+    }
+    const result = await crowd.clear();
+    if (activeCrowd === crowd && crowd.size === 0 && result.remaining === 0) {
+        activeCrowd = undefined;
+    }
+    return result;
+}
+
+const benchNight = createBenchNight({
+    getItem: (key) => localStorage.getItem(key),
+    setItem: (key, value) => localStorage.setItem(key, value),
+    removeItem: (key) => localStorage.removeItem(key),
+});
+
+/**
+ * Night for a measurement, 0 (day) to 1, through the effects' QA key; `null` gives the clock back. The effects take the
+ * change within a second: wait that long before measuring.
+ */
+function setBenchNight(level: number | null): BenchNightResult {
+    assertBenchSession();
+    return benchNight(level);
+}
+
+function cameraPanner() {
+    const scene = gameManager.getCurrentGameScene();
+    return createCameraPanner(scene.getCameraManager(), scene.events, Phaser.Scenes.Events.UPDATE);
+}
+
+let panner: ReturnType<typeof createCameraPanner> | undefined;
+
+/**
+ * Moves the view by (dx, dy) screen pixels over `ms`, as a drag would, and resolves true when done. The view stays off
+ * the player until releaseCameraPan().
+ */
+function panCamera(dx: number, dy: number, ms: number): Promise<boolean> {
+    assertBenchSession();
+    panner ??= cameraPanner();
+    return panner.pan(dx, dy, ms);
+}
+
+function releaseCameraPan(): void {
+    panner?.release();
+    panner = undefined;
 }
 
 /**
@@ -741,4 +1193,42 @@ export const e2eHooks = {
      */
     startFrameRecording,
     stopFrameRecording,
+    getRenderingCounts,
+    async sizeBenchToViewport() {
+        assertBenchSession();
+        const { waScaleManager } = await import("../Phaser/Services/WaScaleManager");
+        // Use the full-resolution camera path at the current gameplay zoom.
+        waScaleManager.applyNewSize(gameManager.getCurrentGameScene().getCameraManager().getCamera(), true);
+    },
+    getRendererInfo() {
+        const scene = gameManager.getCurrentGameScene();
+        const renderer = scene.game.renderer as { gl?: WebGLRenderingContext };
+        const context = renderer.gl;
+        const info = context?.getExtension("WEBGL_debug_renderer_info");
+        return {
+            renderer: context && info ? String(context.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unknown",
+            activeFilters: (scene.cameras.main.filters?.internal?.list ?? [])
+                .filter((filter) => filter.active)
+                .map((filter) => filter.renderNode),
+            normalMapLoaded: scene.textures.getTextureKeys().some((key) => /^kfx-.+-normal$/.test(key)),
+            width: context?.drawingBufferWidth,
+            height: context?.drawingBufferHeight,
+            version: context ? String(context.getParameter(context.VERSION)) : null,
+        };
+    },
+    /**
+     * The rolling frame bench for the 1,000-user gate: the last 300 frames' GPU time, frame intervals and upload
+     * bytes. startFrameBench() before, stopFrameBench() after.
+     */
+    startFrameBench: startFrameBenchHook,
+    getFrameBench,
+    captureFrameBench,
+    stopFrameBench: stopFrameBenchHook,
+    /** Synthetic remote players for a load measurement. Only in a session that set localStorage E2E_BENCH_KEY. */
+    spawnSyntheticCrowd,
+    clearSyntheticCrowd,
+    /** Night level 0..1 for a measurement, through the effects' QA key. */
+    setBenchNight,
+    panCamera,
+    releaseCameraPan,
 };

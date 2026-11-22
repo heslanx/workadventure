@@ -35,6 +35,7 @@
     import { urlManager } from "../Url/UrlManager";
     import { FileListener } from "../Phaser/FileUpload/FileListener";
     import { isStructuredCloneSupported } from "../Utils/BrowserCompatibility";
+    import { createWebgl2Canvas } from "../Utils/Webgl2Canvas";
     import { gameSceneIsLoadedStore } from "../Stores/GameSceneStore";
     import { getAppFrame } from "../ExternalModule/ClientExtensionPoints";
     import GameOverlay from "./GameOverlay.svelte";
@@ -153,6 +154,7 @@
             case "canvas":
                 mode = Phaser.CANVAS;
                 break;
+            case "webgl2":
             case "webgl":
                 mode = Phaser.WEBGL;
                 break;
@@ -160,7 +162,9 @@
                 mode = Phaser.HEADLESS;
                 break;
             default:
-                throw new Error('phaserMode parameter must be one of "auto", "canvas", "webgl" or "headless"');
+                throw new Error(
+                    'phaserMode parameter must be one of "auto", "canvas", "webgl", "webgl2" or "headless"',
+                );
         }
 
         const hdpiManager = new HdpiManager(640 * 480, 196 * 196);
@@ -232,6 +236,14 @@
             // --contrast / --k-card in libs/tailwind/style/konclui.css: the canvas shows wherever a scene draws nothing.
             backgroundColor: "#0e2236",
         };
+        if (phaserMode === "webgl2") {
+            // Phaser otherwise creates a WebGL1 context. An explicit WebGL2 run fails if the context is unavailable,
+            // and asks for the attributes Phaser would ask for (Utils/Webgl2Canvas.ts), so its timing is comparable.
+            const { canvas, context } = createWebgl2Canvas(document, new Phaser.Core.Config(config));
+            config.canvas = canvas;
+            // @ts-expect-error Phaser's WebGLRenderer accepts an existing GL context; GameConfig declares only Canvas2D.
+            config.context = context;
+        }
 
         game = new Game(config);
         stopPerformanceMonitoring = startPerformanceMonitoring(() => game?.loop.actualFps ?? 0);
