@@ -170,12 +170,17 @@ class GaugeManager {
 
     /** Counts one sub-message of `bytes` bytes (its entry in the batch, tag and length included) sent in a batch. */
     addSubMessage(type: string, bytes: number): void {
+        this.addSubMessages(type, 1, bytes);
+    }
+
+    /** Counts `messages` sub-messages of one type, `bytes` bytes in all, sent in a batch. */
+    addSubMessages(type: string, messages: number, bytes: number): void {
         let total = this.subMessageTotals.get(type);
         if (total === undefined) {
             total = { messages: 0, bytes: 0 };
             this.subMessageTotals.set(type, total);
         }
-        total.messages += 1;
+        total.messages += messages;
         total.bytes += bytes;
     }
 }

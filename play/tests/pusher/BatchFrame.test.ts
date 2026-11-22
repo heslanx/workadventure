@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BatchMessage, PusherToFrontWebSocketMessage, SubMessage } from "@workadventure/messages";
-import { encodeBatchFrame, encodeOnce } from "../../src/pusher/services/BatchFrame";
+import { encodeBatchFrame, encodeOnce, entrySizes } from "../../src/pusher/services/BatchFrame";
 
 /** What the generated codec writes for a whole batch frame: the bytes encodeBatchFrame has to equal. */
 function generatedFrame(nonce: number, payload: SubMessage[]): Uint8Array {
@@ -141,5 +141,47 @@ describe("encodeBatchFrame", () => {
         encodeBatchFrame(2, [subMessage]);
 
         expectSameBytes(first, copy);
+    });
+
+    describe("the entry sizes it reports", () => {
+        /** A batch of sub-messages of every size class (empty, short, above 127 bytes), shared or not, from a seed. */
+        function mixedBatch(seed: number): SubMessage[] {
+            let state = seed;
+            const random = () => {
+                state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+                return state / 4294967296;
+            };
+            return Array.from({ length: 1 + Math.floor(random() * 12) }, () => {
+                const kind = Math.floor(random() * 3);
+                const subMessage =
+                    kind === 0
+                        ? { message: undefined }
+                        : kind === 1
+                          ? userLeft(Math.floor(random() * 100_000))
+                          : error("x".repeat(100 + Math.floor(random() * 200)));
+                return random() < 0.5 ? encodeOnce(subMessage) : subMessage;
+            });
+        }
+
+        it("equal what is read off the frame, for batches that mix shared and not shared entries of every length", () => {
+            for (let seed = 1; seed <= 300; seed += 1) {
+                const batch = mixedBatch(seed);
+                const entryBytes: number[] = [];
+
+                const frame = encodeBatchFrame(seed, batch, entryBytes);
+
+                expect(entryBytes, `seed ${seed}`).toEqual(entrySizes(frame));
+                expect(entryBytes).toHaveLength(batch.length);
+            }
+        });
+
+        it("are cleared for each frame, not added to those of the one before", () => {
+            const entryBytes: number[] = [];
+            encodeBatchFrame(1, [encodeOnce(userLeft(1)), userLeft(2)], entryBytes);
+
+            encodeBatchFrame(2, [userLeft(3)], entryBytes);
+
+            expect(entryBytes).toHaveLength(1);
+        });
     });
 });

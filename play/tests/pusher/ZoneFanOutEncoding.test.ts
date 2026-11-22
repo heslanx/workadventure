@@ -463,3 +463,106 @@ describe("zone events on the wire", () => {
         expect(replacement.sent.map((frame) => PusherToFrontWebSocketMessage.decode(frame).nonce)).toEqual([2, 3, 4]);
     });
 });
+
+/**
+ * Root cause 1 of DL-06 (owner's mandate, 2026-11-21): a user's join was rebuilt from its Woka details and encoded again
+ * for each viewer that took the user into its scene after the user moved, because every move threw the cached join
+ * away. Now the descriptor keeps one encoded join and a version check re-encodes it at most once per move, however many
+ * viewers are admitted after it. The count that matters is the encodes: each is a protobuf pass over the Woka layers,
+ * the name, the variables and the position.
+ *
+ * Seen failing, by two mutations of `toUserJoinedSubMessage` (run once, put back): with the cache removed, so that every
+ * admission encodes, the count for the 100 late viewers is `expected 100 to be 1`; with the cache kept but not checked
+ * against the move version (a join that a move never invalidates), the second batch of viewers is told the old position
+ * (`expected 1 to be 2` encodes, and the position of the first move in the second batch's joins).
+ */
+describe("the join of a user that moved, handed to the viewers admitted after the move", () => {
+    const VIEWERS = 100;
+
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    /** The encodes of a join so far: the sub-messages encoded whose case is a user joining. */
+    function joinEncodes(encode: { mock: { calls: unknown[][] } }): number {
+        return encode.mock.calls.filter(([message]) => (message as SubMessage).message?.$case === "userJoinedMessage")
+            .length;
+    }
+
+    /** The position a viewer is told in its join of the mover. */
+    function joinedPosition(late: Watcher): { x: number; y: number; moving: boolean | undefined } {
+        late.socket.flushBatch();
+        const joins = subMessagesOf(late.sent[0]).flatMap(({ message }) =>
+            message?.$case === "userJoinedMessage" ? [message.userJoinedMessage] : [],
+        );
+        expect(joins).toHaveLength(1);
+        const position = joins[0].position;
+        return { x: position?.x ?? Number.NaN, y: position?.y ?? Number.NaN, moving: position?.moving };
+    }
+
+    /** `VIEWERS` sockets start watching the zone one after the other: one admission each. */
+    function admitViewers(zone: Zone, firstId: number): Watcher[] {
+        const viewers = Array.from({ length: VIEWERS }, (_, index) => watcher(firstId + index));
+        for (const viewer of viewers) {
+            zone.startListening(viewer.socket);
+        }
+        return viewers;
+    }
+
+    for (const [name, limits] of [
+        ["without a budget", undefined],
+        ["with a budget that admits at once", { fullRatePeers: 150, maxPeers: 400 }],
+    ] as const) {
+        it(`encodes the join once for ${VIEWERS} admissions after one move, and once more after the next move (${name})`, () => {
+            const zone = new Zone(new SocketManager(undefined, limits), 0, 0);
+            zone.handleUserJoinedZone(userJoins(MOVER_ID, 10, 20));
+            const encode = vi.spyOn(SubMessage, "encode");
+
+            // Nobody is admitted while the user walks 50 steps: nothing is encoded for a join that nobody asks for.
+            for (let step = 1; step <= 50; step++) {
+                zone.handleUserMoved(userMoves(MOVER_ID, 10 + step, 20, PositionMessage_Direction.RIGHT, true));
+            }
+            expect(encode).toHaveBeenCalledTimes(0);
+
+            const afterFirstMove = admitViewers(zone, 100);
+            expect(joinEncodes(encode)).toBe(1);
+
+            // The 100 viewers of the zone are sent this move as well: that is one encode of a moved message, not of a join.
+            zone.handleUserMoved(userMoves(MOVER_ID, 500, 90, PositionMessage_Direction.LEFT, true));
+            const afterSecondMove = admitViewers(zone, 1000);
+            expect(joinEncodes(encode)).toBe(2);
+
+            // And what each was told is the position the user had when it was admitted, not the one of the cache before.
+            for (const viewer of afterFirstMove) {
+                expect(joinedPosition(viewer)).toEqual({ x: 60, y: 20, moving: true });
+            }
+            for (const viewer of afterSecondMove) {
+                expect(joinedPosition(viewer)).toEqual({ x: 500, y: 90, moving: true });
+            }
+        });
+    }
+
+    it("encodes the join again when the details of the user change, and tells the position of that moment", () => {
+        const zone = new Zone(new SocketManager(), 0, 0);
+        zone.handleUserJoinedZone(userJoins(MOVER_ID, 10, 20));
+        zone.handleUserMoved(userMoves(MOVER_ID, 30, 20, PositionMessage_Direction.RIGHT, true));
+        const encode = vi.spyOn(SubMessage, "encode");
+        admitViewers(zone, 100);
+        expect(joinEncodes(encode)).toBe(1);
+
+        zone.handlePlayerDetailsUpdated(detailsUpdate(MOVER_ID));
+        const late = admitViewers(zone, 1000);
+
+        expect(joinEncodes(encode)).toBe(2);
+        const told = subMessagesOf((late[0].socket.flushBatch(), late[0].sent[0]));
+        const joined = told.find(({ message }) => message?.$case === "userJoinedMessage")?.message;
+        expect(joined?.$case === "userJoinedMessage" && joined.userJoinedMessage.availabilityStatus).toBe(
+            AvailabilityStatus.BUSY,
+        );
+    });
+});

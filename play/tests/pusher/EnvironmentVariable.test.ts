@@ -122,6 +122,21 @@ describe("Per-viewer budget", () => {
     });
 });
 
+describe("Batch windows of the pusher", () => {
+    it("write a client every 100 ms at most, with no early flush, unless they are set", () => {
+        const { shape } = EnvironmentVariables;
+
+        expect(shape.PUSHER_BATCH_INTERVAL_MS.parse(undefined)).toBe(100);
+        expect(shape.PUSHER_BATCH_INTERVAL_MS.parse("40")).toBe(40);
+        // 0 would be a timer that never waits: the interval is at least 1 ms.
+        expect(shape.PUSHER_BATCH_INTERVAL_MS.parse("0")).toBe(1);
+        expect(() => shape.PUSHER_BATCH_INTERVAL_MS.parse("fast")).toThrow();
+        expect(shape.PUSHER_BATCH_EARLY_FLUSH_MS.parse(undefined)).toBe(0);
+        expect(shape.PUSHER_BATCH_EARLY_FLUSH_MS.parse("5")).toBe(5);
+        expect(() => shape.PUSHER_BATCH_EARLY_FLUSH_MS.parse("-1")).toThrow();
+    });
+});
+
 describe("LOCAL_ADMIN_ROOM_METADATA", () => {
     beforeEach(() => {
         vi.resetModules();

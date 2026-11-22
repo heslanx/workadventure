@@ -34,7 +34,7 @@ const VIEWER = 20 * ROWS + 13; // column 20, row 12: the middle of the crowd
 const BATCH_MS = 100;
 const WARM_UP_STEPS = 20; // 2 s for the scene to settle before the window opens
 const WINDOW_STEPS = 100; // 10 s counted
-const BUDGET: ViewerBudgetLimits = { fullRatePeers: 150, maxPeers: 400 };
+const BUDGET: ViewerBudgetLimits = { fullRatePeers: 150, maxPeers: 400, admitByDistance: true };
 
 interface Window {
     movesPerSecond: number;
@@ -225,8 +225,8 @@ describe("one viewer among 1000 dense movers", () => {
         expect(off.misplaced).toBe(0);
     });
 
-    it("budget on (150 / 400): 1000 moves (18.0 kB) a second reach the viewer, 400 users in its scene, no churn", () => {
-        expect(on.window).toEqual({ movesPerSecond: 1000, moveBytesPerSecond: 18_005.5, joinsAndLeavesPerSecond: 0 });
+    it("budget on (150 / 400): 1000 moves (18.1 kB) a second reach the viewer, 400 users in its scene, no churn", () => {
+        expect(on.window).toEqual({ movesPerSecond: 1000, moveBytesPerSecond: 18_071.5, joinsAndLeavesPerSecond: 0 });
         expect(on.window.movesPerSecond).toBeLessThanOrEqual(
             BUDGET.fullRatePeers * 5 + (BUDGET.maxPeers - BUDGET.fullRatePeers),
         );

@@ -7,7 +7,11 @@ import {
 import type { ZodObject, ZodRawShape, ZodTypeAny } from "zod";
 import * as Sentry from "@sentry/node";
 import { asError } from "catch-unknown";
-import { CLIENT_DISCONNECTION_RETENTION_MS } from "../enums/EnvironmentVariable";
+import {
+    CLIENT_DISCONNECTION_RETENTION_MS,
+    PUSHER_BATCH_EARLY_FLUSH_MS,
+    PUSHER_BATCH_INTERVAL_MS,
+} from "../enums/EnvironmentVariable";
 import type { ConnectingSocketData } from "../models/Websocket/SocketData";
 import type { UpgradeFailedData } from "../controllers/IoSocketController";
 import { WS_CLOSE_CODE_SESSION_DESTROYED } from "../../common/WebSocketCloseCodes";
@@ -79,7 +83,10 @@ export class PusherRoomSocketController {
         if (existingWrapper) {
             return existingWrapper;
         }
-        const wrapper = new PusherWebSocket(rawSocket);
+        const wrapper = new PusherWebSocket(rawSocket, {
+            intervalMs: PUSHER_BATCH_INTERVAL_MS,
+            earlyFlushMs: PUSHER_BATCH_EARLY_FLUSH_MS,
+        });
         this.wrappersBySocket.set(rawSocket, wrapper);
         return wrapper;
     }

@@ -81,12 +81,13 @@ describe("selectViewerBudget", () => {
     });
 
     /*
-     * The selection runs once a second per viewer over every user it watches, so its cost is paid 1000 times a second at
-     * 1000 viewers. Measured with performance.now() over 1000 calls on this crowd (1000 users, 400 seated), Node 24,
-     * Apple M1 Max, best of 3: a full sort with Math.hypot took 184 ms, this selection 31 ms. That is 0.18 against
-     * 0.03 core for 1000 viewers watching 1000 users each.
+     * The selection runs every RERANK_INTERVAL_MS (500 ms) per viewer over every user it watches, so its cost is paid
+     * 2000 times a second at 1000 viewers. MEASURED once, 2026-11-20, performance.now() over 1000 calls on this crowd (1000
+     * users, 400 seated), Node 24, Apple M1 Max, best of 3, host load not recorded: a full sort with Math.hypot took 184 ms,
+     * this selection 31 ms per 1000 calls. DERIVED at one rank per viewer per 500 ms: 0.37 against 0.06 core for 1000
+     * viewers. The test asserts the users, not the time: the timing depends on the host.
      */
-    it("picks the same users as a full ranking of 1000, in 31 ms instead of 184 ms per 1000 viewers (M1 Max)", () => {
+    it("picks the same users as a full ranking of 1000", () => {
         const crowd = Array.from({ length: 1000 }, (_, index) =>
             peer(index + 1, 4 + Math.floor(index / 25) * 8, 4 + (index % 25) * 8),
         );
@@ -215,7 +216,9 @@ describe("the per-viewer budget between a zone and a socket", () => {
         vi.useRealTimers();
     });
 
-    const tight = { fullRatePeers: 2, maxPeers: 3 };
+    const tight = { fullRatePeers: 2, maxPeers: 3, staggerTicks: false };
+    // The same scene without the deadband and the cooldown: what a selection does when it is allowed to act at once.
+    const plain = { ...tight, exitRatio: 1, cooldownMs: 0 };
 
     it("tells a viewer of no more users than the ceiling", () => {
         const { viewer } = scene(tight);
@@ -258,6 +261,8 @@ describe("the per-viewer budget between a zone and a socket", () => {
     });
 
     it("swaps a user that came closer into the scene: a leave for the farthest, a join with the current position", () => {
+        // With the default ratio, cooldown and seat margin: user 5 is the nearest, so it takes the seat of user 3, which is
+        // beyond the enter rank. A member leaves only after its cooldown: the swap is at the first flush after it.
         const { zone, viewer } = scene(tight);
         viewer.received();
 
@@ -266,19 +271,28 @@ describe("the per-viewer budget between a zone and a socket", () => {
         expect(viewer.received()).toEqual([]);
 
         vi.advanceTimersByTime(CONFLATED_INTERVAL_MS);
-        expect(viewer.received()).toEqual([
+        expect(viewer.received().filter(({ type }) => type !== "move")).toEqual([]);
+
+        vi.advanceTimersByTime(CONFLATED_INTERVAL_MS);
+        expect(viewer.received().filter(({ type }) => type !== "move")).toEqual([
             { type: "leave", userId: 3 },
             { type: "join", userId: 5, x: 50 },
         ]);
 
-        // User 2 is now the third nearest, so it moves once a second; user 5, the nearest, at once.
+        // User 5 then walks to the viewer and becomes the nearest by more than the width of the deadband: it takes the full
+        // rate of user 2, which is now the third nearest and moves once a second.
+        zone.handleUserMoved(moveTo(5, 10));
+        vi.advanceTimersByTime(CONFLATED_INTERVAL_MS);
+        viewer.received();
         zone.handleUserMoved(moveTo(2, 210));
         zone.handleUserMoved(moveTo(5, 40));
         expect(viewer.received()).toEqual([{ type: "move", userId: 5, x: 40, moving: true }]);
     });
 
     it("lets the client draw a user that joins at 1 Hz without a stop from its first move on (800 ms still before)", () => {
-        const { zone, viewer } = scene(tight);
+        // The positions are set for a seat margin of 32 px: user 5 at 250 is 50 px nearer than the farthest of the three
+        // seated users, so it comes in at a margin of 32 and would not at the default of 64.
+        const { zone, viewer } = scene({ ...plain, seatMarginPx: 32 });
         viewer.received();
         const intervals = new RemoteSampleIntervals();
         // As GameScene does: a join only places the user; each move is a sample, drawn over the interval observed.
@@ -326,7 +340,7 @@ describe("the per-viewer budget between a zone and a socket", () => {
     });
 
     it("ranks users from where the viewer stands once it moved, and from its viewport centre before", () => {
-        const manager = new SocketManager(undefined, tight);
+        const manager = new SocketManager(undefined, plain);
         const zone = new Zone(manager, 0, 0);
         for (let userId = 1; userId <= 5; userId++) {
             zone.handleUserJoinedZone(joinAt(userId, userId * 100));

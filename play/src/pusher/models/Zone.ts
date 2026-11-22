@@ -27,6 +27,12 @@ export interface ZoneEventListener {
     onUserEnters(user: UserDescriptor, listener: PusherWebSocket): void;
     onUserMoves(user: UserDescriptor, listener: PusherWebSocket): void;
     onUserLeaves(userId: number, listener: PusherWebSocket): void;
+    /**
+     * Optional: takes a move of a user (a step, or the stop that ends the walk) for all the sockets of the zone at once,
+     * instead of one onUserMoves call per socket. A listener that implements it must give each socket the same as
+     * onUserMoves would, and must not send the user its own move.
+     */
+    readonly onUserMovesBulk?: (user: UserDescriptor, listeners: ReadonlySet<PusherWebSocket>) => void;
     onGroupEnters(group: GroupDescriptor, listener: PusherWebSocket): void;
     onGroupMoves(group: GroupDescriptor, listener: PusherWebSocket): void;
     onGroupLeaves(groupId: number, listener: PusherWebSocket): void;
@@ -42,14 +48,36 @@ export interface ZoneEventListener {
  */
 export class UserDescriptor {
     private userJoinedSubMessage: SubMessage | undefined;
+    private joinedAtMoveVersion = -1;
     private userMovedSubMessage: SubMessage | undefined;
+    /** Counts the moves this descriptor took, so that a socket can tell whether it has sent the latest. */
+    public moveVersion = 0;
+    /**
+     * The sockets that are sent every move of this user as it comes, when the pusher gives each socket a budget
+     * (ViewerBudget keeps this set). The zone then reaches these sockets directly and does not visit the others.
+     */
+    public fullRateWatchers: Set<PusherWebSocket> | undefined;
+    /**
+     * The sockets whose budget has this user in its scene, at any rate (ViewerBudget keeps this set; the full-rate
+     * watchers are a subset). A stop is sent to every socket that knows of the user, so the zone reaches these directly
+     * and does not visit the others, which a stop means nothing to.
+     */
+    public sceneWatchers: Set<PusherWebSocket> | undefined;
+    /**
+     * The `moveVersion` of the last stop that was sent straight to the `sceneWatchers`, -1 before one. A socket that was
+     * in the scene then has that position, so the flush of its budget has nothing more to send for that version.
+     */
+    public directStopVersion = -1;
+
+    private readonly joinedMessage: UserJoinedMessage;
+    private readonly movedMessage: UserMovedMessage;
 
     private constructor(
         public readonly userId: number,
         private userUuid: string,
         private name: string,
         private characterTextures: CharacterTextureMessage[],
-        private position: PositionMessage,
+        private readonly position: PositionMessage,
         private availabilityStatus: AvailabilityStatus,
         private visitCardUrl: string | null,
         private variables: { [key: string]: string },
@@ -61,6 +89,26 @@ export class UserDescriptor {
         if (!Number.isInteger(this.userId)) {
             throw new Error("UserDescriptor.userId is not an integer: " + this.userId);
         }
+        this.position = { ...position };
+        this.joinedMessage = {
+            userId: this.userId,
+            name: this.name,
+            characterTextures: this.characterTextures,
+            position: this.position,
+            availabilityStatus: this.availabilityStatus,
+            visitCardUrl: this.visitCardUrl ?? "",
+            companionTexture: this.companionTexture,
+            userUuid: this.userUuid,
+            outlineColor: this.outlineColor ?? 0,
+            hasOutline: this.outlineColor !== undefined,
+            variables: this.variables,
+            chatID: this.chatID,
+            sayMessage: this.sayMessage,
+        };
+        this.movedMessage = {
+            userId: this.userId,
+            position: this.position,
+        };
     }
 
     public static createFromUserJoinedZoneMessage(message: UserJoinedZoneMessage): UserDescriptor {
@@ -89,8 +137,11 @@ export class UserDescriptor {
         if (position === undefined) {
             throw new Error("Missing position");
         }
-        this.position = position;
-        this.userJoinedSubMessage = undefined;
+        this.position.x = position.x;
+        this.position.y = position.y;
+        this.position.direction = position.direction;
+        this.position.moving = position.moving;
+        this.moveVersion++;
         this.userMovedSubMessage = undefined;
     }
 
@@ -122,26 +173,16 @@ export class UserDescriptor {
         if (playerDetails.chatID !== undefined) {
             this.chatID = playerDetails.chatID;
         }
+        this.joinedMessage.availabilityStatus = this.availabilityStatus;
+        this.joinedMessage.outlineColor = this.outlineColor ?? 0;
+        this.joinedMessage.hasOutline = this.outlineColor !== undefined;
+        this.joinedMessage.sayMessage = this.sayMessage;
+        this.joinedMessage.chatID = this.chatID;
         this.userJoinedSubMessage = undefined;
     }
 
     public toUserJoinedMessage(): UserJoinedMessage {
-        const userJoinedMessage: UserJoinedMessage = {
-            userId: this.userId,
-            name: this.name,
-            characterTextures: this.characterTextures,
-            position: this.position,
-            availabilityStatus: this.availabilityStatus,
-            visitCardUrl: this.visitCardUrl ?? "", // FIXME: improve the typing
-            companionTexture: this.companionTexture,
-            userUuid: this.userUuid,
-            outlineColor: this.outlineColor ?? 0, // FIXME: improve the typing
-            hasOutline: this.outlineColor !== undefined,
-            variables: this.variables,
-            chatID: this.chatID,
-            sayMessage: this.sayMessage,
-        };
-        return userJoinedMessage;
+        return this.joinedMessage;
     }
 
     public getPosition(): PositionMessage {
@@ -149,16 +190,18 @@ export class UserDescriptor {
     }
 
     public toUserMovedMessage(): UserMovedMessage {
-        return {
-            userId: this.userId,
-            position: this.position,
-        };
+        return this.movedMessage;
     }
 
     public toUserJoinedSubMessage(): SubMessage {
-        this.userJoinedSubMessage ??= encodeOnce({
-            message: { $case: "userJoinedMessage", userJoinedMessage: this.toUserJoinedMessage() },
-        });
+        // One immutable wire snapshot for all viewers promoted at this position.
+        // A queued batch can still hold the previous snapshot until its flush.
+        if (!this.userJoinedSubMessage || this.joinedAtMoveVersion !== this.moveVersion) {
+            this.userJoinedSubMessage = encodeOnce({
+                message: { $case: "userJoinedMessage", userJoinedMessage: this.joinedMessage },
+            });
+            this.joinedAtMoveVersion = this.moveVersion;
+        }
         return this.userJoinedSubMessage;
     }
 
@@ -275,6 +318,11 @@ export const groupDeleteSubMessage = rememberLast((groupId: number) =>
 
 function sameIds(first: readonly number[], second: readonly number[]): boolean {
     return first.length === second.length && first.every((id, index) => id === second[index]);
+}
+
+/** The user id of a socket: cached by a PusherWebSocket, read from its data for any other object a zone is given. */
+function userIdOf(listener: PusherWebSocket): number | undefined {
+    return listener.userId ?? listener.getUserData().userId;
 }
 
 interface ZoneDescriptor {
@@ -398,7 +446,7 @@ export class Zone {
      */
     private notifyUserEnter(user: UserDescriptor, oldZone: ZoneDescriptor | undefined): void {
         for (const listener of this.listeners) {
-            if (listener.getUserData().userId === user.userId) {
+            if (userIdOf(listener) === user.userId) {
                 continue;
             }
             if (oldZone === undefined || !this.isListeningZone(listener, oldZone.x, oldZone.y)) {
@@ -427,7 +475,7 @@ export class Zone {
      */
     private notifyUserLeft(userId: number, newZone: ZoneDescriptor | undefined): void {
         for (const listener of this.listeners) {
-            if (listener.getUserData().userId === userId) {
+            if (userIdOf(listener) === userId) {
                 continue;
             }
             if (newZone === undefined || !this.isListeningZone(listener, newZone.x, newZone.y)) {
@@ -440,7 +488,7 @@ export class Zone {
 
     private notifyEmote(emoteMessage: EmoteEventMessage): void {
         for (const listener of this.listeners) {
-            if (listener.getUserData().userId === emoteMessage.actorUserId) {
+            if (userIdOf(listener) === emoteMessage.actorUserId) {
                 continue;
             }
             this.socketListener.onEmote(emoteMessage, listener);
@@ -455,7 +503,7 @@ export class Zone {
 
     private notifyPlayerDetailsUpdated(playerDetailsUpdatedMessage: PlayerDetailsUpdatedMessage): void {
         for (const listener of this.listeners) {
-            if (listener.getUserData().userId === playerDetailsUpdatedMessage.userId) {
+            if (userIdOf(listener) === playerDetailsUpdatedMessage.userId) {
                 continue;
             }
             this.socketListener.onPlayerDetailsUpdated(playerDetailsUpdatedMessage, listener);
@@ -493,8 +541,12 @@ export class Zone {
     }
 
     private notifyUserMove(userDescriptor: UserDescriptor): void {
+        if (this.socketListener.onUserMovesBulk !== undefined) {
+            this.socketListener.onUserMovesBulk(userDescriptor, this.listeners);
+            return;
+        }
         for (const listener of this.listeners) {
-            if (listener.getUserData().userId === userDescriptor.userId) {
+            if (userIdOf(listener) === userDescriptor.userId) {
                 continue;
             }
             this.socketListener.onUserMoves(userDescriptor, listener);

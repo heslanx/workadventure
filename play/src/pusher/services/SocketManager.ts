@@ -81,7 +81,7 @@ import {
     PUSHER_VIEWER_MAX_PEERS,
     SECRET_KEY,
 } from "../enums/EnvironmentVariable";
-import { ViewerBudget, type ViewerBudgetLimits } from "../models/ViewerBudget";
+import { ViewerBudget, type AttentiveBudgets, type ViewerBudgetLimits } from "../models/ViewerBudget";
 import type { SpaceInterface } from "../models/Space";
 import { Space } from "../models/Space";
 import type { SpaceConnectionInterface } from "../models/SpaceConnection";
@@ -123,8 +123,17 @@ const VIEWER_BUDGET_LIMITS: ViewerBudgetLimits | undefined = PUSHER_VIEWER_BUDGE
     ? {
           fullRatePeers: Math.min(PUSHER_VIEWER_FULL_RATE_PEERS, PUSHER_VIEWER_MAX_PEERS),
           maxPeers: PUSHER_VIEWER_MAX_PEERS,
+          admitByDistance: true,
       }
     : undefined;
+
+/**
+ * The budget a socket holds, if it holds one. Checked by type because the sockets of some tests are mocks that answer
+ * every property with a function.
+ */
+function budgetOf(client: PusherWebSocket): ViewerBudget | undefined {
+    return client.viewerBudget instanceof ViewerBudget ? client.viewerBudget : undefined;
+}
 
 // Written by a socket's back-stream data handler, read by its end handler.
 type BackConnectionClose = { reason: string | undefined };
@@ -149,14 +158,17 @@ export class SocketManager implements ZoneEventListener {
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
     // Keyed by socket so that the state goes away with its socket.
     private moveStates = new WeakMap<PusherWebSocket, SocketMoveState>();
-    // Keyed by socket so that a budget goes away with its socket. Empty while viewerBudgetLimits is undefined.
-    private viewerBudgets = new WeakMap<PusherWebSocket, ViewerBudget>();
+    // The budgets that must hear every move (see AttentiveBudgets). Empty while viewerBudgetLimits is undefined.
+    private readonly attentiveBudgets: AttentiveBudgets = new Set();
 
     constructor(
         private _spaceConnection: SpaceConnectionInterface = new SpaceConnection(),
         // Undefined (PUSHER_VIEWER_BUDGET_ENABLED off): every zone event reaches the socket as it comes.
         private readonly viewerBudgetLimits: ViewerBudgetLimits | undefined = VIEWER_BUDGET_LIMITS,
     ) {
+        if (viewerBudgetLimits !== undefined) {
+            this.onUserMovesBulk = (user, listeners) => this.sendMove(user, listeners);
+        }
         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
             gaugeManager.incNbClientPerRoomGauge(roomId);
         });
@@ -701,7 +713,7 @@ export class SocketManager implements ZoneEventListener {
         const socketData = client.getUserData();
 
         this.trackMoving(client, false);
-        this.viewerBudgets.get(client)?.stop();
+        budgetOf(client)?.stop();
 
         try {
             this.leaveRoom(client);
@@ -760,7 +772,7 @@ export class SocketManager implements ZoneEventListener {
 
         this.trackMoving(client, userMovesMessage.position?.moving === true);
         if (userMovesMessage.position !== undefined) {
-            this.viewerBudgets.get(client)?.setOrigin(userMovesMessage.position.x, userMovesMessage.position.y);
+            budgetOf(client)?.setOrigin(userMovesMessage.position.x, userMovesMessage.position.y);
         }
 
         if (this.isMoveAllowed(client, userMovesMessage)) {
@@ -1189,6 +1201,39 @@ export class SocketManager implements ZoneEventListener {
         listener.emitInBatch(user.toUserMovedSubMessage());
     }
 
+    /**
+     * Set in the constructor when the pusher runs a per-viewer budget: the zone then gives each move of a user to this
+     * callback once, and it reaches the sockets that must hear it (see ViewerBudget): for a step, those at full rate for
+     * the user, about 150 of 1000; for a stop, those that have the user in their scene, about 400 of 1000.
+     */
+    public onUserMovesBulk?: (user: UserDescriptor, listeners: ReadonlySet<PusherWebSocket>) => void;
+
+    private sendMove(user: UserDescriptor, listeners: ReadonlySet<PusherWebSocket>): void {
+        const walking = user.getPosition().moving !== false;
+        const watchers = walking ? user.fullRateWatchers : user.sceneWatchers;
+        if (watchers !== undefined && watchers.size > 0) {
+            const subMessage = user.toUserMovedSubMessage();
+            for (const viewer of watchers) {
+                viewer.emitInBatch(subMessage);
+            }
+        }
+        if (!walking) {
+            // Every socket that knows of the user was just sent this position: its flush has nothing to add for it.
+            user.directStopVersion = user.moveVersion;
+        }
+        // A socket with room in its scene and users outside it takes a user in from the first move that user makes.
+        for (const budget of this.attentiveBudgets) {
+            const viewer = budget.viewer;
+            if (
+                listeners.has(viewer) &&
+                watchers?.has(viewer) !== true &&
+                (viewer.userId ?? viewer.getUserData().userId) !== user.userId
+            ) {
+                budget.move(user);
+            }
+        }
+    }
+
     public onUserLeaves(userId: number, listener: PusherWebSocket): void {
         const budget = this.viewerBudget(listener);
         if (budget !== undefined) {
@@ -1203,12 +1248,8 @@ export class SocketManager implements ZoneEventListener {
         if (this.viewerBudgetLimits === undefined) {
             return undefined;
         }
-        let budget = this.viewerBudgets.get(listener);
-        if (budget === undefined) {
-            budget = new ViewerBudget(listener, this.viewerBudgetLimits);
-            this.viewerBudgets.set(listener, budget);
-        }
-        return budget;
+        listener.viewerBudget ??= new ViewerBudget(listener, this.viewerBudgetLimits, this.attentiveBudgets);
+        return listener.viewerBudget;
     }
 
     public onGroupEnters(group: GroupDescriptor, listener: PusherWebSocket): void {

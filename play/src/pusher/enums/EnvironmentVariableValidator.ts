@@ -157,6 +157,16 @@ export const EnvironmentVariables = z.object({
         .describe(
             "With PUSHER_VIEWER_BUDGET_ENABLED, the most users a client is told about at once, whatever its zoom. Defaults to 400.",
         ),
+    PUSHER_BATCH_INTERVAL_MS: PositiveIntAsString.optional()
+        .transform((val) => Math.max(1, toNumber(val, 100)))
+        .describe(
+            "How long, in milliseconds, the pusher gathers what it has to tell a client before it writes one frame to it. A move waits up to this long, and each client is written at most 1000 / this many times a second: halving it halves the wait and doubles the writes. Defaults to 100.",
+        ),
+    PUSHER_BATCH_EARLY_FLUSH_MS: PositiveIntAsString.optional()
+        .transform((val) => toNumber(val, 0))
+        .describe(
+            "When above 0, the pusher writes sooner than PUSHER_BATCH_INTERVAL_MS to a client whose batch is a stop or a leave, or that has had nothing to write for a whole interval: after this many milliseconds. Two frames of a client are never closer than half an interval, so a client that is written to all the time gets at most twice the frames it gets without this (20 a second at the default interval, against 10), however many stops and leaves it is sent. 0 turns it off. Defaults to 0.",
+        ),
     // Use "*" to allow any domain
     ALLOWED_CORS_ORIGIN: z
         .string()

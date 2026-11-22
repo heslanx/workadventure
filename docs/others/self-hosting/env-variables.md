@@ -37,6 +37,8 @@ Environment variables for the Play service (frontend and pusher).
 | `PUSHER_VIEWER_BUDGET_ENABLED` | No | Bounds what each client hears about the users around it: the PUSHER_VIEWER_FULL_RATE_PEERS nearest at the rate they move, the others in view once a second, and no more than PUSHER_VIEWER_MAX_PEERS at all. Stops, joins and leaves are never dropped. Defaults to false. |
 | `PUSHER_VIEWER_FULL_RATE_PEERS` | No | With PUSHER_VIEWER_BUDGET_ENABLED, how many of the nearest users a client receives every move of. Defaults to 150. |
 | `PUSHER_VIEWER_MAX_PEERS` | No | With PUSHER_VIEWER_BUDGET_ENABLED, the most users a client is told about at once, whatever its zoom. Defaults to 400. |
+| `PUSHER_BATCH_INTERVAL_MS` | No | How long, in milliseconds, the pusher gathers what it has to tell a client before it writes one frame to it. A move waits up to this long, and each client is written at most 1000 / this many times a second: halving it halves the wait and doubles the writes. Defaults to 100. |
+| `PUSHER_BATCH_EARLY_FLUSH_MS` | No | When above 0, the pusher writes sooner than PUSHER_BATCH_INTERVAL_MS to a client whose batch is a stop or a leave, or that has had nothing to write for a whole interval: after this many milliseconds. Two frames of a client are never closer than half an interval, so a client that is written to all the time gets at most twice the frames it gets without this (20 a second at the default interval, against 10), however many stops and leaves it is sent. 0 turns it off. Defaults to 0. |
 | `ALLOWED_CORS_ORIGIN` | No | Allowed CORS origin for API requests. Use '*' to allow any domain |
 | `PUSHER_URL` | No | Public URL of the pusher service |
 | `FRONT_URL` | No | Public URL of the frontend application |
@@ -169,6 +171,7 @@ Environment variables for the Back service (backend API).
 | `POSTHOG_URL` | No | PostHog ingestion URL for the project's region, e.g. https://eu.i.posthog.com. No region is assumed. |
 | `PLAY_URL` | Yes | Public URL of the play/frontend service |
 | `MINIMUM_DISTANCE` | No | Minimum distance (in pixels) before users are considered to be in proximity. Defaults to 64 |
+| `ZONE_MESSAGES_BATCH_INTERVAL_MS` | No | How long, in milliseconds, the back gathers the zone messages (moves, joins, leaves) for a pusher before it writes them to that pusher in one go. A move waits up to this long here, then up to the pusher's PUSHER_BATCH_INTERVAL_MS before a client is written, so the two add up in the worst case. Shortening it is cheap, since it is one write per pusher stream and not per user: 10 is 100 writes a second to each pusher. From 1 to 1000. Defaults to 50. |
 | `GROUP_RADIUS` | No | Radius (in pixels) of a group/bubble. Defaults to 48 |
 | `ADMIN_API_URL` | No | URL of the admin API for centralized configuration |
 | `ADMIN_API_TOKEN` | No | Authentication token for the admin API |
