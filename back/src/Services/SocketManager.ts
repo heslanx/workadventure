@@ -73,7 +73,7 @@ import type { UserSocket } from "../Model/User";
 import { User } from "../Model/User";
 import { ProtobufUtils } from "../Model/Websocket/ProtobufUtils";
 import { Group } from "../Model/Group";
-import { GROUP_RADIUS, MINIMUM_DISTANCE } from "../Enum/EnvironmentVariable";
+import { GROUP_RADIUS, MINIMUM_DISTANCE, ZONE_MESSAGES_BATCH_INTERVAL_MS } from "../Enum/EnvironmentVariable";
 import type { PositionInterface } from "../Model/PositionInterface";
 import type { EventSocket, RoomSocket, VariableSocket } from "../RoomManager";
 import type { Zone, ZonePosition } from "../Model/Zone";
@@ -97,8 +97,17 @@ const debug = Debug("socketmanager");
  * How long the zone messages for a pusher are gathered before they are written to it. Every write to the stream is a
  * serialization, a gRPC frame and a syscall, so one write per message costs thousands of them per second in a busy
  * room. One write per interval is at most 1000 / 50 = 20 per second and per pusher, whatever the number of messages.
+ *
+ * A move waits up to this long here, then up to the pusher's own batch interval (PUSHER_BATCH_INTERVAL_MS, 100 ms by
+ * default) before a client is written: the two add up to 150 ms in the worst case, and the pusher's move delivery
+ * budget is 50 ms at the 95th percentile. Both are settings. This one is cheap to shorten, since it is per pusher
+ * stream and not per user: 10 ms is 100 writes a second to each pusher. The setting is ZONE_MESSAGES_BATCH_INTERVAL_MS, validated
+ * at startup (back/src/Enum/EnvironmentVariableValidator.ts: an integer from 1 to 1000, default 50) and documented in
+ * docs/others/self-hosting/env-variables.md.
  */
-const ZONE_MESSAGES_BATCH_INTERVAL_MS = 50;
+export function zoneMessagesBatchIntervalMs(): number {
+    return ZONE_MESSAGES_BATCH_INTERVAL_MS;
+}
 
 interface PendingZoneMessages {
     payload: SubToPusherRoomMessage[];
@@ -136,7 +145,7 @@ function emitZoneMessage(subMessage: SubToPusherRoomMessage, socket: RoomSocket)
     }
     pendingZoneMessages.set(socket, {
         payload: [subMessage],
-        timeout: setTimeout(() => flushZoneMessages(socket), ZONE_MESSAGES_BATCH_INTERVAL_MS),
+        timeout: setTimeout(() => flushZoneMessages(socket), zoneMessagesBatchIntervalMs()),
     });
 }
 

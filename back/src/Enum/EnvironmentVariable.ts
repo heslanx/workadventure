@@ -30,6 +30,7 @@ const env: EnvironmentVariables = envChecking.data;
 export const PLAY_URL = env.PLAY_URL;
 export const MINIMUM_DISTANCE = env.MINIMUM_DISTANCE;
 export const GROUP_RADIUS = env.GROUP_RADIUS;
+export const ZONE_MESSAGES_BATCH_INTERVAL_MS = env.ZONE_MESSAGES_BATCH_INTERVAL_MS;
 export const ADMIN_API_URL = env.ADMIN_API_URL;
 export const ADMIN_API_RETRY_DELAY = parseInt(process.env.ADMIN_API_RETRY_DELAY || "500");
 export const ADMIN_API_TOKEN = env.ADMIN_API_TOKEN;

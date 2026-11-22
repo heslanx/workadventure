@@ -19,6 +19,12 @@ export const EnvironmentVariables = z.object({
     MINIMUM_DISTANCE: PositiveIntAsString.optional()
         .transform((val) => toNumber(val, 64))
         .describe("Minimum distance (in pixels) before users are considered to be in proximity. Defaults to 64"),
+    ZONE_MESSAGES_BATCH_INTERVAL_MS: PositiveIntAsString.optional()
+        .transform((val) => toNumber(val, 50))
+        .refine((val) => val >= 1 && val <= 1000, { message: "Must be an integer from 1 to 1000" })
+        .describe(
+            "How long, in milliseconds, the back gathers the zone messages (moves, joins, leaves) for a pusher before it writes them to that pusher in one go. A move waits up to this long here, then up to the pusher's PUSHER_BATCH_INTERVAL_MS before a client is written, so the two add up in the worst case. Shortening it is cheap, since it is one write per pusher stream and not per user: 10 is 100 writes a second to each pusher. From 1 to 1000. Defaults to 50.",
+        ),
     GROUP_RADIUS: PositiveIntAsString.optional()
         .transform((val) => toNumber(val, 48))
         .describe("Radius (in pixels) of a group/bubble. Defaults to 48"),

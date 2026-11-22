@@ -7,7 +7,21 @@ import type { GameRoom } from "../src/Model/GameRoom";
 import { Point } from "../src/Model/Websocket/MessageUserPosition";
 import type { UserSocket } from "../src/Model/User";
 import type { RoomSocket } from "../src/RoomManager";
-import { socketManager } from "../src/Services/SocketManager";
+import type * as EnvironmentVariableModule from "../src/Enum/EnvironmentVariable";
+import { EnvironmentVariables } from "../src/Enum/EnvironmentVariableValidator";
+import { socketManager, zoneMessagesBatchIntervalMs } from "../src/Services/SocketManager";
+
+// The window of the back is read from the validated environment: the test sets it here instead of in process.env.
+const zoneWindow = vi.hoisted(() => ({ ms: 50 }));
+vi.mock("../src/Enum/EnvironmentVariable", async (importOriginal) => {
+    const original = await importOriginal<typeof EnvironmentVariableModule>();
+    return {
+        ...original,
+        get ZONE_MESSAGES_BATCH_INTERVAL_MS() {
+            return zoneWindow.ms;
+        },
+    };
+});
 
 const ZONE_SIZE = 320;
 const BATCH_INTERVAL_MS = 50;
@@ -173,6 +187,8 @@ describe("Zone events written to a pusher's room stream", () => {
             room.destroy();
         }
         vi.useRealTimers();
+        vi.unstubAllEnvs();
+        zoneWindow.ms = 50;
         vi.restoreAllMocks();
     });
 
@@ -266,6 +282,53 @@ describe("Zone events written to a pusher's room stream", () => {
         vi.advanceTimersByTime(BATCH_INTERVAL_MS);
 
         expect(vi.getTimerCount()).toBe(timersBeforeMove);
+    });
+
+    it("reads ZONE_MESSAGES_BATCH_INTERVAL_MS as an integer from 1 to 1000, 50 when it is not set, and refuses anything else at startup", () => {
+        const parse = (value: string | undefined) =>
+            EnvironmentVariables.safeParse({
+                PLAY_URL: "http://play.workadventure.localhost",
+                ...(value === undefined ? {} : { ZONE_MESSAGES_BATCH_INTERVAL_MS: value }),
+            });
+        const interval = (value: string | undefined) => {
+            const parsed = parse(value);
+            return parsed.success ? parsed.data.ZONE_MESSAGES_BATCH_INTERVAL_MS : undefined;
+        };
+
+        expect(zoneMessagesBatchIntervalMs()).toBe(BATCH_INTERVAL_MS);
+        expect(interval(undefined)).toBe(50);
+        expect(interval("")).toBe(50);
+        expect(interval("10")).toBe(10);
+        expect(interval("1000")).toBe(1000);
+        // A typo is not turned into the default: the process does not start with it.
+        for (const wrong of ["0", "1001", "-5", "1.5", "ten", "10ms"]) {
+            expect(parse(wrong).success, wrong).toBe(false);
+        }
+    });
+
+    it("writes after the configured window, and writes 5 times as often at 10 ms as at 50 ms", async () => {
+        zoneWindow.ms = 10;
+        const { room, roomUrl } = await createRoom();
+        const walker = await room.join(createMockUserSocket(), createJoinRoomMessage("walker", 10, 10));
+        const fake = createFakeRoomSocket();
+        await listenToZones(fake, roomUrl, [{ x: 0, y: 0 }]);
+        fake.writes.splice(0);
+
+        // 100 positions, one every 7 ms: 700 ms of walking.
+        for (let step = 0; step < 100; step++) {
+            room.updatePosition(walker, new Point(20 + step, 10, "right", true));
+            vi.advanceTimersByTime(7);
+        }
+        vi.advanceTimersByTime(10);
+
+        const events = fake.writes.flatMap(toZoneEvents);
+        expect(events.map((event) => event.x)).toEqual(Array.from({ length: 100 }, (_, step) => 20 + step));
+        // A window opens at the first move and closes 10 ms later, so it holds 2 moves (7 ms apart): 50 writes.
+        // At the default 50 ms it would hold 8 moves: 13 writes.
+        expect(fake.writes).toHaveLength(50);
+        expect(fake.writes.every((write, index) => index === 0 || write.at - fake.writes[index - 1].at >= 10)).toBe(
+            true,
+        );
     });
 
     /**
