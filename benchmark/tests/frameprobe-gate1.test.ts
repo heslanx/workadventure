@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { main, type CliDependencies } from "../frame-probe/cli";
-import { parseArgs, UsageError } from "../frame-probe/args";
+import { parseArgs, parseStorageFlags, UsageError } from "../frame-probe/args";
 import {
     GATE1,
     GATE1_MODES,
     Gate1InvalidRun,
+    GATE1_DEFAULT_SETUP,
+    GATE1_FLAG_DEFAULTS,
+    flagNotes,
     judgeGate1,
     measureGate1,
     NIGHT_SETTLE_MS,
@@ -14,14 +17,17 @@ import {
     parseNightResult,
     parseRendererInfo,
     phaserModeProblem,
+    rendererProblems,
     renderGate1Markdown,
     runGate1Report,
+    webglMajor,
     type Gate1Capture,
     type Gate1Measurement,
     type Gate1Mode,
     type Gate1Session,
+    type Gate1Setup,
 } from "../frame-probe/gate1";
-import { avatarFlagProblems, GATE1_STORAGE, gate1Storage, missingBuffer } from "../frame-probe/gate1Browser";
+import { avatarFlagProblems, GATE1_STORAGE, gate1Storage, gate1Url, missingBuffer } from "../frame-probe/gate1Browser";
 import { pageBench, pageCrowd, pageNight, pageRenderer, SWIFTSHADER } from "./support/frameProbeFixtures";
 
 function capture(
@@ -45,6 +51,7 @@ function measurementOf(
     extra: Partial<Gate1Measurement> = {},
 ): Gate1Measurement {
     return {
+        setup: GATE1_DEFAULT_SETUP,
         renderer: parseRendererInfo(pageRenderer()),
         crowd: parseCrowdReport(pageCrowd(), 999),
         captures: GATE1_MODES.map((mode) => capture(mode, windows[mode])),
@@ -696,7 +703,9 @@ describe("the report", () => {
         expect(markdown).toContain("| night | p99GpuMs | <= 15.5 | 16.00 | FAIL |");
         expect(markdown).toContain("| day | avgGpuMs | <= 11 | 6.20 | pass |");
         expect(markdown).toContain("| night | largeUploads | <= 0 | 0.00 | pass |");
-        expect(markdown).toContain("| night | 1 | 19.3 | on | 100% (300 frames) | webgl2 | 300 | 300 | 0 |");
+        expect(markdown).toContain(
+            "| night | 1 | 19.3 | on | 100% (300 frames) | WebGL 2.0 (OpenGL ES 3.0 Chromium) | webgl2 | 300 | 300 | 0 |",
+        );
         // The dusk window is the mandate's 0.85 and says its night-only lights are off
         expect(markdown).toContain("| dusk | 0.85 | 17.85 | off | 100% (300 frames) |");
         expect(markdown).toContain("Crowd: 999 of 999 in the scene (glass 250, lights 250, borders 250, spread 249;");
@@ -858,5 +867,431 @@ describe("the avatar flags the page reports", () => {
         expect(avatarFlagProblems({ avatarDetailBudget: true, avatarZeroWork: true }, false)).toEqual([
             "avatarBake is undefined in the page, and a normal run needs it on",
         ]);
+    });
+});
+
+interface Gate1Measurementlike {
+    measurement: { captures: { mode: string; bench: { drawCalls: unknown } }[] };
+}
+
+describe("draw calls in a window", () => {
+    it("reads the average and the maximum, ignoring the other statistics of the page", () => {
+        const bench = parseFrameBench(JSON.parse(JSON.stringify(pageBench())));
+
+        expect(bench.drawCalls).toEqual({ avg: 40, max: 50 });
+    });
+
+    it("keeps a window the bench could not count as null, not as 0 draw calls", () => {
+        expect(parseFrameBench(pageBench({ drawCalls: null })).drawCalls).toBeNull();
+    });
+
+    it("names the field that changed shape: a missing report, a string, a statistic that is not a number", () => {
+        const without = pageBench();
+        delete without.drawCalls;
+
+        expect(() => parseFrameBench(without, "day.bench")).toThrow("day.bench.drawCalls is neither null nor");
+        expect(() => parseFrameBench(pageBench({ drawCalls: "40" }))).toThrow("bench.drawCalls is neither null nor");
+        expect(() => parseFrameBench(pageBench({ drawCalls: { avg: 40 } }))).toThrow(
+            "bench.drawCalls.max is not a finite number",
+        );
+        expect(() => parseFrameBench(pageBench({ drawCalls: { avg: Number.NaN, max: 3 } }))).toThrow(
+            "bench.drawCalls.avg",
+        );
+    });
+
+    it("prints the average and the maximum of every window, and n/a where there is no count", () => {
+        const value = measurementOf({ day: { drawCalls: { avg: 41.25, max: 73 } }, night: { drawCalls: null } });
+        const markdown = renderGate1Markdown(value, judgeGate1(value));
+
+        expect(markdown).toContain("| Draw calls avg | Draw calls max |");
+        expect(markdown).toContain("| 41.3 | 73 |");
+        expect(markdown).toMatch(/\| night \| [^|]+ \| [^|]+ \| [^|]+ \| n\/a \| n\/a \|/);
+    });
+
+    it("does not judge them: a window of 5000 draw calls passes when the GPU limits hold", () => {
+        expect(judgeGate1(measurementOf({ day: { drawCalls: { avg: 5000, max: 9000 } } })).exitCode).toBe(0);
+    });
+
+    it("puts them in gate1.json with the measurement", async () => {
+        const files = new Map<string, string>();
+        await runGate1Report(
+            () => Promise.resolve(measurement({ drawCalls: { avg: 12.5, max: 30 } })),
+            (name, content) => {
+                files.set(name, content);
+            },
+            () => undefined,
+        );
+
+        const json = JSON.parse(files.get("gate1.json") ?? "{}") as Gate1Measurementlike;
+        expect(json.measurement.captures.map((c) => [c.mode, c.bench.drawCalls])).toEqual([
+            ["day", { avg: 12.5, max: 30 }],
+            ["dusk", { avg: 40, max: 50 }],
+            ["night", { avg: 40, max: 50 }],
+        ]);
+    });
+});
+
+describe("the default context (what a visitor gets), against the forced WebGL 2 one", () => {
+    const WEBGL1 = "WebGL 1.0 (OpenGL ES 2.0 Chromium)";
+    const DEFAULT_SETUP: Gate1Setup = { context: "default", flags: {} };
+
+    /** A run on the default context: a WebGL 1 renderer in the report and in every window, the WebGL1 timer extension. */
+    function defaultRun(
+        windows: Partial<Record<Gate1Mode, Record<string, unknown>>> = {},
+        renderer: Record<string, unknown> = {},
+        extra: Partial<Gate1Measurement> = {},
+    ): Gate1Measurement {
+        const page = { version: WEBGL1, ...renderer };
+        return {
+            setup: DEFAULT_SETUP,
+            renderer: parseRendererInfo(pageRenderer(page)),
+            crowd: parseCrowdReport(pageCrowd(), 999),
+            captures: GATE1_MODES.map((mode) => capture(mode, { gpuTimer: "webgl1-ext", ...windows[mode] }, page)),
+            ...extra,
+        };
+    }
+
+    it("reads the major version out of the VERSION string, and nothing out of anything else", () => {
+        expect(webglMajor(WEBGL1)).toBe(1);
+        expect(webglMajor("WebGL 2.0 (OpenGL ES 3.0 Chromium)")).toBe(2);
+        expect(webglMajor("WebGL 3.0")).toBeNull();
+        expect(webglMajor("OpenGL ES 3.0")).toBeNull();
+        expect(webglMajor(null)).toBeNull();
+    });
+
+    it("accepts a WebGL 1 renderer (and a WebGL 2 one, whatever the client chose), where a forced run needs WebGL 2", () => {
+        const webgl1 = parseRendererInfo(pageRenderer({ version: WEBGL1 }));
+        const webgl2 = parseRendererInfo(pageRenderer());
+        const none = parseRendererInfo(pageRenderer({ version: null }));
+
+        expect(rendererProblems(webgl1, "default")).toEqual([]);
+        expect(rendererProblems(webgl2, "default")).toEqual([]);
+        expect(rendererProblems(none, "default")).toEqual([expect.stringContaining("no WebGL context version")]);
+        // The forced context is unchanged, and it is what a call without a context means
+        expect(rendererProblems(webgl1, "webgl2")).toEqual([expect.stringContaining("WebGL 2 context is required")]);
+        expect(rendererProblems(webgl1)).toEqual(rendererProblems(webgl1, "webgl2"));
+    });
+
+    it("still refuses a software renderer and a drawing buffer under 1080p on the default context", () => {
+        const software = defaultRun({}, { renderer: SWIFTSHADER });
+        const small = defaultRun({}, { width: 1451, height: 855 });
+
+        expect(judgeGate1(software).invalid.join(" | ")).toContain("software rasteriser");
+        expect(judgeGate1(small).invalid.join(" | ")).toContain("1451x855");
+    });
+
+    it("judges it by the same limits and labels the verdict: a pass and a fail both say default", () => {
+        const pass = judgeGate1(defaultRun());
+        const fail = judgeGate1(defaultRun({ dusk: { p99GpuMs: 15.51 } }));
+
+        // Seen failing without the context on the verdict: a default run read as a WebGL 2 one
+        expect(pass).toMatchObject({ context: "default", status: "pass", exitCode: 0 });
+        expect(fail).toMatchObject({ context: "default", status: "fail", exitCode: 1 });
+        expect(fail.criteria.filter((c) => !c.pass)).toEqual([
+            expect.objectContaining({ mode: "dusk", name: "p99GpuMs", limit: 15.5, actual: 15.51 }),
+        ]);
+        expect(judgeGate1(measurement()).context).toBe("webgl2");
+    });
+
+    it("is invalid, not passed, when the WebGL 1 context has no timer, and says which extension is missing", () => {
+        const noTimer = {
+            gpuTimer: "none",
+            avgGpuMs: null,
+            p95GpuMs: null,
+            p99GpuMs: null,
+            maxGpuMs: null,
+            gpuSamples: 0,
+        };
+        const verdict = judgeGate1(defaultRun({ day: noTimer, dusk: noTimer, night: noTimer }));
+
+        expect(verdict).toMatchObject({ context: "default", status: "invalid", exitCode: 2 });
+        expect(verdict.invalid[0]).toContain("no GPU timer query on this default WebGL 1.0");
+        expect(verdict.invalid[0]).toContain("EXT_disjoint_timer_query is missing");
+        expect(verdict.invalid[0]).not.toContain("webgl2");
+        expect(
+            verdict.criteria.filter((c) => c.name.endsWith("GpuMs")).every((c) => !c.pass && c.actual === null),
+        ).toBe(true);
+    });
+
+    it("names the WebGL 2 extension where a WebGL 2 context has no timer", () => {
+        const none = {
+            gpuTimer: "none",
+            avgGpuMs: null,
+            p95GpuMs: null,
+            p99GpuMs: null,
+            maxGpuMs: null,
+            gpuSamples: 0,
+        };
+
+        expect(judgeGate1(measurement(none)).invalid[0]).toContain("EXT_disjoint_timer_query_webgl2 is missing");
+    });
+
+    it("is invalid when the context changed between the start and a window (lost and recreated)", () => {
+        const swapped = defaultRun();
+        const recreated = {
+            ...swapped,
+            captures: [
+                swapped.captures[0],
+                capture("dusk", {}, { version: "WebGL 2.0 (OpenGL ES 3.0 Chromium)" }),
+                swapped.captures[2],
+            ],
+        };
+        const reason = judgeGate1(recreated).invalid.join(" | ");
+
+        expect(reason).toContain("dusk: the context was WebGL 1.0");
+        expect(reason).toContain("is WebGL 2.0");
+        expect(judgeGate1(recreated).exitCode).toBe(2);
+    });
+
+    it("prints the context of the run and of each window, and the timer that measured it", () => {
+        const value = defaultRun();
+        const markdown = renderGate1Markdown(value, judgeGate1(value));
+
+        expect(markdown).toContain("**PASS** (exit 0) on the DEFAULT context");
+        expect(markdown).toContain("DEFAULT context (nothing forced: what a visitor gets), judged by the same limits");
+        expect(markdown).toContain(
+            "| night | 1 | 19.3 | on | 100% (300 frames) | WebGL 1.0 (OpenGL ES 2.0 Chromium) | webgl1-ext |",
+        );
+        expect(markdown).toContain("Renderer: ");
+        const forced = renderGate1Markdown(measurement(), judgeGate1(measurement()));
+        expect(forced).toContain("**PASS** (exit 0) on the WebGL 2 context");
+        expect(forced).not.toContain("DEFAULT");
+    });
+
+    it("runs the sequence on a WebGL 1 session, keeps the setup in the measurement and logs the context and timer", async () => {
+        const log: string[] = [];
+        const { session } = fakeSession({
+            renderer: { version: WEBGL1 },
+            bench: () => ({ gpuTimer: "webgl1-ext" }),
+        });
+
+        const result = await measureGate1(session, { ...options(log), setup: DEFAULT_SETUP });
+
+        expect(result.setup).toEqual(DEFAULT_SETUP);
+        expect(judgeGate1(result)).toMatchObject({ context: "default", exitCode: 0 });
+        expect(log[0]).toContain(`${WEBGL1}`);
+        expect(log[0]).toContain("context default");
+        expect(log.find((line) => line.startsWith("day:"))).toContain("(webgl1-ext on WebGL 1.0");
+    });
+
+    it("stops a forced WebGL 2 run on a WebGL 1 session before it spawns anything, as it always did", async () => {
+        const { session, calls } = fakeSession({ renderer: { version: WEBGL1 } });
+
+        await expect(measureGate1(session, options())).rejects.toThrow("WebGL 2 context is required");
+        expect(calls).toEqual(["renderer"]);
+    });
+
+    it("labels the report of a run that never completed with the context it was asked for", async () => {
+        const files = new Map<string, string>();
+        const code = await runGate1Report(
+            () => Promise.reject(new Gate1InvalidRun("the page crashed")),
+            (name, content) => {
+                files.set(name, content);
+            },
+            () => undefined,
+            () => ({}),
+            { context: "default", flags: { gameStepCap: "1" } },
+        );
+        const json = JSON.parse(files.get("gate1.json") ?? "{}") as Record<string, unknown>;
+
+        expect(code).toBe(2);
+        expect(json).toMatchObject({
+            schemaVersion: 3,
+            setup: { context: "default", flags: { gameStepCap: "1" } },
+            verdict: { context: "default", status: "invalid" },
+        });
+        expect(files.get("gate1.md")).toContain("**INVALID** (exit 2) on the DEFAULT context");
+    });
+});
+
+describe("notes on extra flags", () => {
+    const note = (setup: Gate1Setup) => flagNotes(setup).join("\n");
+
+    it("says a flag at its default measures nothing new, and names the value that changes the run", () => {
+        expect(note({ context: "webgl2", flags: { gameStepCap: "1" } })).toContain(
+            "gameStepCap=1 is that flag's default, so it measures nothing new; the change is gameStepCap=0",
+        );
+        expect(note({ context: "webgl2", flags: { gameRenderSkipCovered: "0" } })).toContain(
+            "the change is gameRenderSkipCovered=1",
+        );
+    });
+
+    it("says nothing for a flag that differs from its default or that the probe does not know", () => {
+        expect(flagNotes({ context: "webgl2", flags: { gameStepCap: "0", gameNoStencil: "1", other: "1" } })).toEqual(
+            [],
+        );
+    });
+
+    it("says gameNoStencil keeps the depth buffer on the default context, and says nothing on the forced one", () => {
+        expect(note({ context: "default", flags: { gameNoStencil: "1" } })).toContain("not the depth buffer");
+        expect(flagNotes({ context: "webgl2", flags: { gameNoStencil: "1" } })).toEqual([]);
+    });
+
+    it("says one avatar flag cannot be isolated", () => {
+        expect(note({ context: "webgl2", flags: { avatarBake: "0" } })).toContain("cannot be isolated");
+    });
+
+    it("pins the defaults table to the client's constants", () => {
+        expect(GATE1_FLAG_DEFAULTS).toMatchObject({ gameStepCap: "1", gameRenderSkipCovered: "0", gameNoStencil: "0" });
+    });
+
+    it("reach the log and the Markdown report", async () => {
+        const log: string[] = [];
+        const { session } = fakeSession();
+        await measureGate1(session, { ...options(log), setup: { context: "webgl2", flags: { gameStepCap: "1" } } });
+        expect(log.join("\n")).toContain("note: gameStepCap=1 is that flag's default");
+    });
+});
+
+describe("extra localStorage flags", () => {
+    const MAC = { platform: "darwin" };
+    const ROOM = "http://127.0.0.1:3010/~/konclui-office/office.wam";
+
+    it("are read from a repeatable --flag=KEY=VALUE, in the order given, and are empty by default", () => {
+        expect(parseArgs(["gate1", ROOM], MAC)).toMatchObject({ flags: {}, context: "webgl2" });
+        const config = parseArgs(
+            ["gate1", ROOM, "--flag=gameStepCap=1", "--flag=konclui.fx.external=1", "--flag=gameNoStencil=0"],
+            MAC,
+        );
+
+        expect(config).toMatchObject({
+            flags: { gameStepCap: "1", "konclui.fx.external": "1", gameNoStencil: "0" },
+        });
+        expect(Object.keys((config as { flags: object }).flags)).toEqual([
+            "gameStepCap",
+            "konclui.fx.external",
+            "gameNoStencil",
+        ]);
+    });
+
+    it("keep an equals sign inside the value", () => {
+        expect(parseStorageFlags(["key=a=b"])).toEqual({ key: "a=b" });
+    });
+
+    it.each(["gameStepCap", "gameStepCap=", "=1", "game StepCap=1", ""])(
+        "refuse %j: a typo must not become a run of the default configuration",
+        (flag) => {
+            expect(() => parseArgs(["gate1", ROOM, `--flag=${flag}`], MAC)).toThrow(UsageError);
+        },
+    );
+
+    it("refuse one key given two values, and accept the same value twice", () => {
+        expect(() => parseStorageFlags(["a=1", "a=0"])).toThrow("given two values (1 and 0)");
+        expect(parseStorageFlags(["a=1", "a=1"])).toEqual({ a: "1" });
+    });
+
+    it("are only for gate1", () => {
+        expect(() => parseArgs(["frames", ROOM, "--flag=a=1"], MAC)).toThrow(UsageError);
+    });
+
+    it("go into the storage the page starts with, after the gate's own keys and the baseline's", () => {
+        expect(gate1Storage(undefined, { gameStepCap: "1" })).toEqual({ ...GATE1_STORAGE, gameStepCap: "1" });
+        expect(gate1Storage("1", { gameStepCap: "1" })).toEqual({
+            ...GATE1_STORAGE,
+            avatarDetailBudget: "0",
+            avatarZeroWork: "0",
+            avatarBake: "0",
+            gameStepCap: "1",
+        });
+    });
+
+    it.each(["konclui.e2e.bench", "konclui.fx.rim", "konclui.fx.off"])(
+        "cannot take over %s, which the gate sets or clears itself",
+        (key) => {
+            expect(() => gate1Storage(undefined, { [key]: "0" })).toThrow(`--flag cannot set ${key}`);
+        },
+    );
+
+    it("are recorded in the report: the line under the verdict, and the setup of gate1.json", async () => {
+        const setup: Gate1Setup = { context: "webgl2", flags: { gameStepCap: "1", "konclui.fx.external": "1" } };
+        const value = measurementOf({}, { setup });
+        const markdown = renderGate1Markdown(value, judgeGate1(value));
+        const files = new Map<string, string>();
+        await runGate1Report(
+            () => Promise.resolve(value),
+            (name, content) => {
+                files.set(name, content);
+            },
+            () => undefined,
+            () => ({}),
+            setup,
+        );
+
+        expect(markdown).toContain("Extra localStorage flags: gameStepCap=1, konclui.fx.external=1.");
+        expect(markdown).toContain("Note: gameStepCap=1 is that flag's default, so it measures nothing new");
+        expect(renderGate1Markdown(measurement(), judgeGate1(measurement()))).not.toContain("Extra localStorage flags");
+        expect(JSON.parse(files.get("gate1.json") ?? "{}")).toMatchObject({
+            setup,
+            measurement: { setup },
+        });
+    });
+
+    it("are logged by the run that uses them", async () => {
+        const log: string[] = [];
+        const { session } = fakeSession();
+
+        await measureGate1(session, { ...options(log), setup: { context: "webgl2", flags: { gameStepCap: "1" } } });
+
+        expect(log[0]).toContain("flags gameStepCap=1");
+    });
+});
+
+describe("the context option of the gate1 command", () => {
+    const MAC = { platform: "darwin" };
+    const ROOM = "http://127.0.0.1:3010/~/konclui-office/office.wam";
+
+    it("is webgl2 unless --context=default is given, and refuses anything else", () => {
+        expect(parseArgs(["gate1", ROOM], MAC)).toMatchObject({ context: "webgl2" });
+        expect(parseArgs(["gate1", ROOM, "--context=webgl2"], MAC)).toMatchObject({ context: "webgl2" });
+        expect(parseArgs(["gate1", ROOM, "--context=default"], MAC)).toMatchObject({ context: "default" });
+        expect(() => parseArgs(["gate1", ROOM, "--context=webgl1"], MAC)).toThrow(UsageError);
+        expect(() => parseArgs(["gate1", ROOM, "--context"], MAC)).toThrow("needs a value");
+        expect(() => parseArgs(["frames", ROOM, "--context=default"], MAC)).toThrow(UsageError);
+    });
+
+    it("forces ?phaserMode=webgl2 for the gate's own context, and nothing for the default one", () => {
+        expect(gate1Url(ROOM, "webgl2").searchParams.get("phaserMode")).toBe("webgl2");
+        expect(gate1Url(`${ROOM}?phaserMode=auto`, "webgl2").searchParams.get("phaserMode")).toBe("webgl2");
+        expect(gate1Url(ROOM, "default").href).toBe(ROOM);
+        expect(gate1Url(`${ROOM}?x=1`, "default").href).toBe(`${ROOM}?x=1`);
+    });
+
+    it("refuses a URL that forces a renderer on the default context: the run would not be the default one", () => {
+        expect(() => gate1Url(`${ROOM}?phaserMode=webgl2`, "default")).toThrow("must not force a renderer");
+    });
+
+    it.each(["#phaserMode=webgl2", "#phaserMode=canvas", "?x=1#a=b&phaserMode=webgl2"])(
+        "refuses a phaserMode in the hash too (%s), which App.svelte reads when the query has none",
+        (suffix) => {
+            expect(() => gate1Url(`${ROOM}${suffix}`, "default")).toThrow("must not force a renderer");
+        },
+    );
+
+    it("accepts a hash that has no phaserMode on the default context", () => {
+        expect(gate1Url(`${ROOM}#spot=1`, "default").href).toBe(`${ROOM}#spot=1`);
+    });
+
+    it("reaches the run through main", async () => {
+        const seen: { context?: string; flags?: object } = {};
+        const deps = {
+            environment: { platform: "darwin", nodeVersion: "v24.18.0" },
+            now: () => new Date(0),
+            temporaryDirectory: () => "/tmp",
+            makeDirectory: () => undefined,
+            writeFile: () => undefined,
+            log: () => undefined,
+            error: () => undefined,
+            createMeasurer: () => Promise.reject(new Error("not used")),
+            runCompare: () => Promise.resolve(0),
+            runPanel: () => Promise.resolve(0),
+            runGate1: (config, _outDir) => {
+                seen.context = config.context;
+                seen.flags = config.flags;
+                return Promise.resolve(0);
+            },
+        } satisfies CliDependencies;
+
+        expect(await main(["gate1", ROOM, "--context=default", "--flag=gameStepCap=1"], deps)).toBe(0);
+        expect(seen).toEqual({ context: "default", flags: { gameStepCap: "1" } });
     });
 });

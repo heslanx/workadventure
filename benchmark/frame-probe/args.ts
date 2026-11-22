@@ -68,6 +68,15 @@ Options for panel
 Options for gate1
   --settle-seconds=10      Wait after the crowd entered, for the avatar builds and bakes, before the first window
   --name=Probe             Guest name
+  --context=webgl2|default webgl2 (default) forces a WebGL 2 context (?phaserMode=webgl2), the gate's own definition.
+                           default forces nothing: the page gets what a visitor gets (Phaser's WebGL 1) and the GPU time
+                           comes from EXT_disjoint_timer_query. Same limits; the report is labelled DEFAULT, and the run
+                           is invalid, never a pass, when that context has no timer. The URL must not carry phaserMode.
+  --flag=KEY=VALUE         Set a localStorage key before the page loads, to measure a flag without editing the probe
+                           (e.g. --flag=gameStepCap=0 --flag=konclui.fx.external=1). Repeat for more; recorded in the
+                           report. The gate's own keys (konclui.e2e.bench, konclui.fx.rim, konclui.fx.off) cannot be set.
+                           A flag set to its default measures nothing new (gameStepCap is on by default: its change is =0;
+                           gameRenderSkipCovered, gameNoStencil and konclui.fx.external are off by default: theirs is =1).
   The viewport is fixed at 1920x1080, the size the gate is defined at; it needs a real GPU and a browser that offers a
   GPU timer query. Open the room at a URL whose client has window.e2eHooks (any Koncluí build).
 
@@ -141,6 +150,10 @@ export interface Gate1Config {
     readonly outDir: string | undefined;
     readonly settleSeconds: number;
     readonly name: string;
+    /** The WebGL context of the run: forced to WebGL 2 (the gate's definition) or left to the client's default. */
+    readonly context: "webgl2" | "default";
+    /** localStorage keys to set before the page loads (`--flag=KEY=VALUE`), in the order given. */
+    readonly flags: Readonly<Record<string, string>>;
 }
 
 export type ProbeConfig = FramesConfig | CompareConfig | PanelConfig | Gate1Config;
@@ -176,7 +189,7 @@ const ALLOWED_FLAGS: Record<ProbeConfig["command"], readonly string[]> = {
     ],
     compare: [...COMMON_FLAGS, "reference-url", "viewports"],
     panel: [...COMMON_FLAGS, "viewports"],
-    gate1: [...COMMON_FLAGS, "settle-seconds", "name"],
+    gate1: [...COMMON_FLAGS, "settle-seconds", "name", "context", "flag"],
 };
 const BOOLEAN_FLAGS = ["allow-software-renderer", "screenshots", "dry-run"];
 
@@ -276,6 +289,39 @@ function roomUrl(text: string | undefined, what: string): string {
     return text;
 }
 
+/**
+ * `--flag=KEY=VALUE` as a record, in the order given. A flag with no "=", an empty key or an empty value is a typo that
+ * would otherwise measure the default configuration under the name of a flag, so it stops the run; so does one key
+ * given two different values.
+ */
+export function parseStorageFlags(values: readonly string[]): Record<string, string> {
+    const flags = new Map<string, string>();
+    for (const text of values) {
+        const equals = text.indexOf("=");
+        const key = equals === -1 ? text : text.slice(0, equals);
+        const value = equals === -1 ? "" : text.slice(equals + 1);
+        if (key === "" || /\s/.test(key) || value === "") {
+            throw new UsageError(
+                `--flag takes KEY=VALUE with no space in the key and a value, e.g. --flag=gameStepCap=0 (got "${text}")`,
+            );
+        }
+        const earlier = flags.get(key);
+        if (earlier !== undefined && earlier !== value) {
+            throw new UsageError(`--flag ${key} is given two values (${earlier} and ${value})`);
+        }
+        flags.set(key, value);
+    }
+    return Object.fromEntries(flags);
+}
+
+function gate1Context(raw: RawArguments): "webgl2" | "default" {
+    const context = last(raw, "context") ?? "webgl2";
+    if (context !== "webgl2" && context !== "default") {
+        throw new UsageError(`--context takes webgl2 or default (got "${context}")`);
+    }
+    return context;
+}
+
 /** Reads the command line. Throws UsageError for anything it does not understand: a typo must not become a default. */
 export function parseArgs(argv: readonly string[], environment: ParseEnvironment): ProbeConfig {
     const [command, ...rest] = argv;
@@ -309,6 +355,8 @@ export function parseArgs(argv: readonly string[], environment: ParseEnvironment
             outDir,
             settleSeconds: number(raw, "settle-seconds", 10, 0),
             name: last(raw, "name") ?? "Probe",
+            context: gate1Context(raw),
+            flags: parseStorageFlags(raw.flags.get("flag") ?? []),
         };
     }
     if (command === "panel") {

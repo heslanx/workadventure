@@ -404,7 +404,8 @@ npx tsx frame-probe/run.ts gate1 "http://127.0.0.1:3010/~/konclui-office/office.
 
 On a host without Playwright's Chromium, `FRAME_PROBE_BROWSER_CHANNEL=chrome` runs the installed Google Chrome instead.
 
-It opens Chromium on the GPU (Metal on macOS) at 1920x1080, with WebGL 2 forced (`?phaserMode=webgl2`), and sets two keys
+It opens Chromium on the GPU (Metal on macOS) at 1920x1080, with WebGL 2 forced (`?phaserMode=webgl2`; see `--context=default`
+below for the context a visitor gets), and sets two keys
 in localStorage before the page loads: `konclui.e2e.bench` (opens the page to the crowd) and `konclui.fx.rim`. It sets no
 avatar flag: `avatarDetailBudget`, `avatarZeroWork` and `avatarBake` are on by default in the client since the 2026-11-22
 run, so the gate measures what ships. Then: enter as a guest, spawn 999, settle
@@ -422,6 +423,63 @@ named, when the page's flags are not all on (a normal run) or all off (a baselin
 changed would otherwise measure the layered avatars under the storage of a correct run. On 2026-11-22 (Chrome, Apple M1 Max, 999 players) the two
 gave the same GPU time (at most 8.43 ms with the flags on, 8.07 ms off); the flags off had two windows of six with a frame
 of 33.3 to 33.5 ms, the flags on had none above 16.8 ms: the flags remove dropped frames, they do not lower GPU time.
+
+**The context a visitor gets (`--context=default`).** Every Gate 1 number before 2026-11-22 was taken on a WebGL 2 context,
+which the probe forces; a visitor gets Phaser's own choice (WebGL 1 in Phaser 4.2, with `ANGLE_instanced_arrays` and
+`OES_vertex_array_object` bound onto it). The comparison is one command more, on the same room, the same crowd and the same
+limits:
+
+```bash
+npx tsx frame-probe/run.ts gate1 "$ROOM" --out-dir=../.local/konclui/qa/gate1-webgl2
+npx tsx frame-probe/run.ts gate1 "$ROOM" --context=default --out-dir=../.local/konclui/qa/gate1-default
+```
+
+`--context=default` forces nothing (no `?phaserMode`; a URL that already carries one, in the query or in the `#` hash, is refused, because the run would not
+be the default one). The GPU time then comes from the extension the context has: `EXT_disjoint_timer_query` on WebGL 1 (the
+fallback of `GpuFrameTimer`, reported as `gpuTimer: webgl1-ext`), `EXT_disjoint_timer_query_webgl2` on WebGL 2 (`webgl2`).
+The two timers are not the same instrument: the report says, for each window, the context version the page had when the
+window was captured and the timer that measured it, and the verdict, the headline and `gate1.json` (`setup.context`,
+`verdict.context`) say `default`. The limits are the same ones; a verdict on the default context is a verdict on that
+context, not on WebGL 2. The run is **invalid, never a pass**, when the context has no timer (`gpuTimer none`: the message
+names the extension that is missing), when the page reports no WebGL version, or when the context changed between the start
+and a window (lost and recreated). Whether Chrome exposes `EXT_disjoint_timer_query` on a WebGL 1 context of the test
+machine is a fact about that browser and has not been confirmed: the first run says.
+
+**Draw calls.** Each window reports the draw calls per frame, average and maximum (`drawArrays`, `drawElements` and the two
+instanced forms, counted by a wrapper on the context that the frame bench installs and removes: `FrameBench.ts`). They are
+in `gate1.json` (`bench.drawCalls`, null when the bench could not count) and in the third table of `gate1.md`; they are not
+judged. The wrapper costs main-thread time, so the frame interval includes it; the GPU time does not.
+
+**Extra flags (`--flag=KEY=VALUE`, repeatable).** Sets localStorage keys before the page loads, after the gate's own and the
+baseline's, to measure the flags of a change without editing the probe:
+
+```bash
+# the change of each flag, against a plain run of the same room: cap off, the three off-by-default flags on
+npx tsx frame-probe/run.ts gate1 "$ROOM" --flag=gameStepCap=0 --flag=gameRenderSkipCovered=1 --flag=gameNoStencil=1 --flag=konclui.fx.external=1
+```
+
+Each flag has a default, and **a flag set to its default measures nothing new**: the run is the plain one.
+
+| Flag                    | Default                   | The value that changes the run |
+| ----------------------- | ------------------------- | ------------------------------ |
+| `gameStepCap`           | `1` (on since 2026-11-22) | `0`                            |
+| `gameRenderSkipCovered` | `0`                       | `1`                            |
+| `gameNoStencil`         | `0`                       | `1`                            |
+| `konclui.fx.external`   | `0`                       | `1`                            |
+
+So `--flag=gameStepCap=1` compares two identical runs; "with and without the cap" is a plain run against `--flag=gameStepCap=0`.
+The probe prints a note, and writes it under the verdict, for a known flag set to its default
+(`GATE1_FLAG_DEFAULTS` in `gate1.ts`). `gameNoStencil` drops the stencil buffer on every context, but the depth buffer only on
+the forced WebGL 2 context (`createWebgl2Canvas`, App.svelte), so on `--context=default` it measures the smaller change; the
+note says so. One avatar flag cannot be isolated: `avatarDetailBudget`, `avatarZeroWork` and `avatarBake` must be all on (a
+normal run) or all off (`FRAME_PROBE_GATE1_BASELINE=1`), so `--flag=avatarBake=0` alone makes the run invalid.
+
+The value is written as given (the client's flags read `"1"` on and `"0"` off). A flag without `=`, with an empty key or an
+empty value, or one key given two values, stops the run before the browser opens. `konclui.e2e.bench`, `konclui.fx.rim` and
+`konclui.fx.off` cannot be set: the gate sets or clears them itself. The flags are listed under the verdict in `gate1.md` and
+recorded in `gate1.json` (`setup.flags`, and the whole storage in `engine.storage`). The probe cannot tell whether the client
+read a flag it does not know (a misspelt key is stored and ignored), except for the three avatar flags, whose state the page
+reports and which make a run invalid when they contradict it: check the key against the client's flag file.
 
 **Requires the `?phaserMode=webgl2` case of `play/src/front/Components/App.svelte`** (in the client since `89dd5ecdf`). A
 client built before it throws "phaserMode parameter must be one of ..." at start and never shows the room: the probe names
@@ -453,7 +511,7 @@ second and the full, dot and culled avatar counts are in the report and do not d
 
 An exit 2 is, in order of likelihood on a first run: no GPU timer (`gpuTimer none`: headless Chromium may not expose
 `EXT_disjoint_timer_query_webgl2`, which is a fact about the browser and not a defect of the code); a software renderer or an
-unnamed GPU; no WebGL 2 context; a drawing buffer below 1920x1080 in either dimension; fewer than 90% of the frames with a
+unnamed GPU; no WebGL 2 context (a forced run; the default context accepts any version); a drawing buffer below 1920x1080 in either dimension; fewer than 90% of the frames with a
 GPU sample; a window of other than 300 frames; fewer than 999 players in the scene; **a crowd group that fell back to
 spread placement** (the map's `fx/manifest.json` is missing, or has no glass face, light or room) or an avatar of fewer than
 two layers; **the post pass `KfxPost` active in fewer than 95% of a window's rendered frames** (it switches itself off in a
@@ -461,10 +519,10 @@ plain day with nobody mirrored and no room locked, and a frame without it is lig
 share is in the report); the night-only lights in the wrong state for a window; a pan, a capture of 301 game steps that did not
 complete in 60 s (a hidden tab), or any page error.
 
-`--out-dir` receives `gate1.json` (the gate, the verdict, every criterion, every window, the crowd's groups, the flags the page
+`--out-dir` receives `gate1.json` (schema 3: the gate, the setup, the verdict, every criterion, every window, the crowd's groups, the flags the page
 ran with and the URL it ended on), `gate1.md` (the same, as tables, also printed), and `day.png`, `dusk.png` and `night.png`
-taken after each window. A number from a run is a GPU number only if `gpuTimer` says `webgl2` and the renderer is the GPU
-named in the report; the GPU window trails the frame window by at most the query pool (8 frames), and the browser may
+taken after each window. A number from a run is a GPU number only if `gpuTimer` says `webgl2` or `webgl1-ext` (and the report's
+context says which) and the renderer is the GPU named in the report; the GPU window trails the frame window by at most the query pool (8 frames), and the browser may
 coarsen timer queries.
 
 ```bash

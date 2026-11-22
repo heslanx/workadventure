@@ -9,7 +9,16 @@ import type { Page } from "@playwright/test";
 import type { Gate1Config } from "./args";
 import { launchBrowser, loadPlaywright } from "./browser";
 import { enterRoomAsGuest } from "./entry";
-import { Gate1InvalidRun, GATE1, measureGate1, phaserModeProblem, runGate1Report, type Gate1Session } from "./gate1";
+import {
+    Gate1InvalidRun,
+    GATE1,
+    measureGate1,
+    phaserModeProblem,
+    runGate1Report,
+    type Gate1Context,
+    type Gate1Session,
+    type Gate1Setup,
+} from "./gate1";
 
 /**
  * The keys a gate run sets. The three avatar flags (avatarDetailBudget, avatarZeroWork, avatarBake) are on by default in
@@ -30,19 +39,52 @@ export const GATE1_BASELINE_STORAGE: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Keys a `--flag` may not set: the two the gate sets itself, and the one it removes (the effects' kill switch, which
+ * would turn the scene the gate names off).
+ */
+export const GATE1_RESERVED_KEYS: readonly string[] = [...Object.keys(GATE1_STORAGE), "konclui.fx.off"];
+
+/**
+ * The URL the page is opened at. WebGL 2 is forced with `?phaserMode=webgl2` (App.svelte; a client without that case
+ * throws at start, which phaserModeProblem names). The default context forces nothing, and refuses a URL that does:
+ * a `phaserMode` there would make the run a WebGL 2 or canvas run labelled as the default one.
+ */
+export function gate1Url(roomUrl: string, context: Gate1Context): URL {
+    const url = new URL(roomUrl);
+    if (context === "webgl2") {
+        url.searchParams.set("phaserMode", "webgl2");
+        return url;
+    }
+    // App.svelte reads the query first and the hash (`#phaserMode=canvas`) when the query has none: both force a renderer
+    const forced = url.searchParams.get("phaserMode") ?? new URLSearchParams(url.hash.slice(1)).get("phaserMode");
+    if (forced !== null) {
+        throw new Error(
+            `--context=default must not force a renderer, and the URL carries phaserMode=${forced}: remove it from the URL`,
+        );
+    }
+    return url;
+}
+
+/**
  * The storage a run starts with. FRAME_PROBE_GATE1_BASELINE=1 adds the three avatar flags forced off ("0") to the keys of
  * a normal run, so the same command measures the layered avatars with no budget, no zero-work states and no bake: the
- * "before" of a comparison, with the same scene and lights. The report records which keys the page ran with.
+ * "before" of a comparison, with the same scene and lights. `flags` (`--flag=KEY=VALUE`) go on top, to measure the flags
+ * of a change without editing the probe. The report records which keys the page ran with.
  */
 export function gate1Storage(
     baseline: string | undefined = process.env.FRAME_PROBE_GATE1_BASELINE,
+    flags: Readonly<Record<string, string>> = {},
 ): Record<string, string> {
+    const reserved = Object.keys(flags).filter((key) => GATE1_RESERVED_KEYS.includes(key));
+    if (reserved.length > 0) {
+        throw new Error(`--flag cannot set ${reserved.join(", ")}: the gate sets or clears that key itself`);
+    }
     if (baseline !== undefined && baseline !== "" && baseline !== "0" && baseline !== "1") {
         // "true" or "yes" must not quietly give a normal run, which would be taken for the "before" of a comparison
         throw new Error(`FRAME_PROBE_GATE1_BASELINE is "${baseline}": use 1 for the baseline, or leave it empty or 0`);
     }
-    if (baseline === "1") return { ...GATE1_STORAGE, ...GATE1_BASELINE_STORAGE };
-    return { ...GATE1_STORAGE };
+    if (baseline === "1") return { ...GATE1_STORAGE, ...GATE1_BASELINE_STORAGE, ...flags };
+    return { ...GATE1_STORAGE, ...flags };
 }
 
 const AVATAR_FLAGS = ["avatarDetailBudget", "avatarZeroWork", "avatarBake"] as const;
@@ -161,12 +203,12 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
     mkdirSync(outDir, { recursive: true });
     const playwright = await loadPlaywright(config.browser.playwrightDir);
     // Phaser's default context is WebGL 1 and the gate is defined on WebGL 2, which phaserMode=webgl2 asks for
-    // explicitly (App.svelte) and refuses to run without
-    const url = new URL(config.url);
-    url.searchParams.set("phaserMode", "webgl2");
-    // Before the browser: a FRAME_PROBE_GATE1_BASELINE that means nothing stops the run here
-    const storage = gate1Storage();
-    const baseline = storage.avatarBake === GATE1_BASELINE_STORAGE.avatarBake;
+    // explicitly (App.svelte) and refuses to run without; --context=default leaves the choice to the client
+    const url = gate1Url(config.url, config.context);
+    // Before the browser: a FRAME_PROBE_GATE1_BASELINE or a --flag that means nothing stops the run here
+    const storage = gate1Storage(undefined, config.flags);
+    const baseline = process.env.FRAME_PROBE_GATE1_BASELINE === "1";
+    const setup: Gate1Setup = { context: config.context, flags: config.flags };
     const browser = await launchBrowser(playwright, config.browser);
     try {
         const context = await browser.newContext({
@@ -202,7 +244,7 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
                 );
                 const problems = avatarFlagProblems(avatarFlags, baseline);
                 if (problems.length > 0) throw new Gate1InvalidRun(problems.join("; "));
-                return measureGate1(sessionOn(page, outDir), { settleMs: config.settleSeconds * 1000, log });
+                return measureGate1(sessionOn(page, outDir), { settleMs: config.settleSeconds * 1000, log, setup });
             },
             (fileName, content) => writeFileSync(join(outDir, fileName), content),
             log,
@@ -212,6 +254,7 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
             () => ({
                 engine: { storage, avatarFlags, requestedUrl: url.href, finalUrl: page.url(), window: windowSize },
             }),
+            setup,
         );
     } finally {
         await browser.close();

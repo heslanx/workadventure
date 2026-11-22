@@ -52,6 +52,29 @@ export const GATE1_MODES: readonly Gate1Mode[] = ["day", "dusk", "night"];
 
 export type GpuTimerName = "webgl2" | "webgl1-ext" | "none";
 
+/**
+ * Which WebGL context the gate runs on. `webgl2` forces it (`?phaserMode=webgl2`): the gate's own definition and every
+ * number of it so far. `default` forces nothing, so the page gets what a visitor gets (Phaser's own choice, WebGL 1 in
+ * Phaser 4.2), and the GPU time then comes from the WebGL1 timer extension. Both are judged by the same limits.
+ */
+export type Gate1Context = "webgl2" | "default";
+export const GATE1_CONTEXTS: readonly Gate1Context[] = ["webgl2", "default"];
+
+/** What a run was asked to measure besides the gate's own scene: the context, and extra localStorage flags. */
+export interface Gate1Setup {
+    readonly context: Gate1Context;
+    /** localStorage keys the command line added (`--flag key=value`), in the order given. */
+    readonly flags: Readonly<Record<string, string>>;
+}
+
+export const GATE1_DEFAULT_SETUP: Gate1Setup = { context: "webgl2", flags: {} };
+
+/** The draw calls of a window: drawArrays, drawElements and their instanced forms, per frame. */
+export interface DrawCallsReading {
+    readonly avg: number;
+    readonly max: number;
+}
+
 /** What the probe reads of `e2eHooks.getFrameBench()` (play/src/front/Utils/FrameBench.ts). */
 export interface FrameBenchReading {
     readonly frames: number;
@@ -78,6 +101,8 @@ export interface FrameBenchReading {
     readonly activeDotAvatars: number;
     readonly culledAvatars: number;
     readonly bakedAvatarTextures: number;
+    /** Draw calls per frame over the window: reported, not judged. Null when the bench could not count them. */
+    readonly drawCalls: DrawCallsReading | null;
     /** GPU samples in the window, and rendered frames since the start that produced none. */
     readonly gpuSamples: number;
     readonly gpuDroppedFrames: number;
@@ -112,6 +137,18 @@ function finiteOrNull(source: Record<string, unknown>, name: string, path: strin
     return source[name] === null ? null : finite(source, name, path);
 }
 
+function drawCallsOf(bench: Record<string, unknown>, path: string): DrawCallsReading | null {
+    const value = bench.drawCalls;
+    if (value === null) {
+        return null;
+    }
+    if (typeof value !== "object" || value === undefined) {
+        throw new Error(`gate 1: ${path}.drawCalls is neither null nor an object with avg and max`);
+    }
+    const stats = value as Record<string, unknown>;
+    return { avg: finite(stats, "avg", `${path}.drawCalls`), max: finite(stats, "max", `${path}.drawCalls`) };
+}
+
 /** Checks the object the page returned for one 300-frame window. A bench that changed shape fails here, by name. */
 export function parseFrameBench(value: unknown, path = "bench"): FrameBenchReading {
     const bench = asRecord(value, path);
@@ -140,6 +177,7 @@ export function parseFrameBench(value: unknown, path = "bench"): FrameBenchReadi
         activeDotAvatars: finite(bench, "activeDotAvatars", path),
         culledAvatars: finite(bench, "culledAvatars", path),
         bakedAvatarTextures: finite(bench, "bakedAvatarTextures", path),
+        drawCalls: drawCallsOf(bench, path),
         gpuSamples: finite(bench, "gpuSamples", path),
         gpuDroppedFrames: finite(bench, "gpuDroppedFrames", path),
     };
@@ -236,8 +274,14 @@ export function phaserModeProblem(pageErrors: readonly string[]): string | undef
         : undefined;
 }
 
+/** "WebGL 1" or "WebGL 2" from a VERSION string such as "WebGL 1.0 (OpenGL ES 2.0 Chromium)"; null when it is neither. */
+export function webglMajor(version: string | null): 1 | 2 | null {
+    const match = version === null ? null : /^WebGL (\d)/.exec(version);
+    return match?.[1] === "1" ? 1 : match?.[1] === "2" ? 2 : null;
+}
+
 /** Why a renderer cannot be judged, known before the crowd is spawned. Empty when it can. */
-export function rendererProblems(renderer: RendererReading): string[] {
+export function rendererProblems(renderer: RendererReading, context: Gate1Context = "webgl2"): string[] {
     const problems: string[] = [];
     if (renderer.renderer === "unknown" || renderer.renderer === "") {
         problems.push(
@@ -248,8 +292,13 @@ export function rendererProblems(renderer: RendererReading): string[] {
             `the renderer is a software rasteriser (${renderer.renderer}): its frame times say nothing about a GPU`,
         );
     }
-    if (renderer.version === null || !renderer.version.startsWith("WebGL 2")) {
-        problems.push(`a WebGL 2 context is required (the page has ${renderer.version ?? "none"})`);
+    if (context === "webgl2") {
+        if (renderer.version === null || !renderer.version.startsWith("WebGL 2")) {
+            problems.push(`a WebGL 2 context is required (the page has ${renderer.version ?? "none"})`);
+        }
+    } else if (webglMajor(renderer.version) === null) {
+        // The default context is whatever the client creates: any WebGL version is a valid run, none is not
+        problems.push(`the page reports no WebGL context version (it has ${renderer.version ?? "none"})`);
     }
     if (renderer.width < GATE1.viewport.width || renderer.height < GATE1.viewport.height) {
         problems.push(
@@ -271,6 +320,8 @@ export interface Gate1Capture {
 }
 
 export interface Gate1Measurement {
+    /** The context and the extra flags this run was asked for: every number below belongs to them. */
+    readonly setup: Gate1Setup;
     readonly renderer: RendererReading;
     readonly crowd: CrowdReading;
     readonly captures: readonly Gate1Capture[];
@@ -287,6 +338,8 @@ export interface Gate1Criterion {
 }
 
 export interface Gate1Verdict {
+    /** The context this verdict was reached on: a verdict on the default context is not one on WebGL 2. */
+    readonly context: Gate1Context;
     readonly status: Gate1Status;
     readonly exitCode: 0 | 1 | 2;
     /** Why the run cannot be judged; empty unless status is invalid. */
@@ -306,14 +359,37 @@ function criteriaOf(capture: Gate1Capture): Gate1Criterion[] {
     });
 }
 
-function captureProblems(capture: Gate1Capture, crowd: number): string[] {
+/** The timer extension a context version should offer, for the message of a run that has none. */
+function expectedTimerExtension(version: string | null): string {
+    const major = webglMajor(version);
+    if (major === 1) return "EXT_disjoint_timer_query";
+    if (major === 2) return "EXT_disjoint_timer_query_webgl2";
+    return "EXT_disjoint_timer_query or EXT_disjoint_timer_query_webgl2";
+}
+
+function captureProblems(
+    capture: Gate1Capture,
+    crowd: number,
+    context: Gate1Context,
+    startVersion: string | null,
+): string[] {
     const { bench, mode } = capture;
     const problems: string[] = [];
+    if (capture.renderer.version !== startVersion) {
+        problems.push(
+            `${mode}: the context was ${startVersion ?? "none"} when the run began and is ${capture.renderer.version ?? "none"} ` +
+                `when the window was captured (lost and recreated?): the windows are not on one context`,
+        );
+    }
     if (bench.frames !== GATE1.frames) {
         problems.push(`${mode}: the window has ${bench.frames} frames, ${GATE1.frames} are needed`);
     }
     if (bench.gpuTimer === "none") {
-        problems.push(`${mode}: the browser offers no GPU timer query (gpuTimer none), so no GPU time was measured`);
+        problems.push(
+            `${mode}: the browser offers no GPU timer query on this ${context === "default" ? "default " : ""}` +
+                `${capture.renderer.version ?? "unknown"} context (gpuTimer none: ${expectedTimerExtension(capture.renderer.version)} ` +
+                `is missing), so no GPU time was measured`,
+        );
     } else if (bench.gpuSamples === 0 || bench.avgGpuMs === null) {
         problems.push(`${mode}: the GPU timer produced no sample`);
     } else if (bench.frames > 0 && bench.gpuSamples / bench.frames < GPU_MIN_COVERAGE) {
@@ -350,7 +426,8 @@ function captureProblems(capture: Gate1Capture, crowd: number): string[] {
 
 /** Decides the gate from the readings. Pure: the same measurement always gives the same verdict. */
 export function judgeGate1(measurement: Gate1Measurement): Gate1Verdict {
-    const invalid: string[] = [...rendererProblems(measurement.renderer)];
+    const { context } = measurement.setup;
+    const invalid: string[] = [...rendererProblems(measurement.renderer, context)];
     if (measurement.crowd.inScene < measurement.crowd.requested || measurement.crowd.requested < GATE1.crowd) {
         invalid.push(
             `only ${measurement.crowd.inScene} of the ${GATE1.crowd} synthetic players entered the scene (${measurement.crowd.requested} requested)`,
@@ -375,15 +452,15 @@ export function judgeGate1(measurement: Gate1Measurement): Gate1Verdict {
     }
     const criteria: Gate1Criterion[] = [];
     for (const capture of measurement.captures) {
-        invalid.push(...captureProblems(capture, GATE1.crowd));
+        invalid.push(...captureProblems(capture, GATE1.crowd, context, measurement.renderer.version));
         criteria.push(...criteriaOf(capture));
     }
     if (invalid.length > 0) {
-        return { status: "invalid", exitCode: 2, invalid, criteria };
+        return { context, status: "invalid", exitCode: 2, invalid, criteria };
     }
     return criteria.every((criterion) => criterion.pass)
-        ? { status: "pass", exitCode: 0, invalid, criteria }
-        : { status: "fail", exitCode: 1, invalid, criteria };
+        ? { context, status: "pass", exitCode: 0, invalid, criteria }
+        : { context, status: "fail", exitCode: 1, invalid, criteria };
 }
 
 /** What the browser side lets the measurement do. `gate1Browser.ts` implements it on Playwright; tests on canned data. */
@@ -407,6 +484,8 @@ export interface Gate1Session {
 }
 
 export interface Gate1Options {
+    /** What the run is measuring (default: WebGL 2, no extra flags); it goes into the measurement as given. */
+    readonly setup?: Gate1Setup;
     /** Wait after the crowd entered, for the avatar builds and bakes to settle before the first window. */
     readonly settleMs: number;
     readonly log: (line: string) => void;
@@ -463,12 +542,18 @@ async function captureWhilePanning(session: Gate1Session): Promise<unknown> {
  */
 export async function measureGate1(session: Gate1Session, options: Gate1Options): Promise<Gate1Measurement> {
     const { log } = options;
+    const setup = options.setup ?? GATE1_DEFAULT_SETUP;
     const renderer = parseRendererInfo(await session.rendererInfo());
-    const problems = rendererProblems(renderer);
+    const problems = rendererProblems(renderer, setup.context);
     if (problems.length > 0) {
         throw new Gate1InvalidRun(problems.join("; "));
     }
-    log(`renderer: ${renderer.renderer}, ${renderer.version}, ${renderer.width}x${renderer.height}`);
+    log(
+        `renderer: ${renderer.renderer}, ${renderer.version}, ${renderer.width}x${renderer.height}; ` +
+            `context ${setup.context}` +
+            `${Object.keys(setup.flags).length > 0 ? `; flags ${formatFlags(setup.flags)}` : ""}`,
+    );
+    for (const note of flagNotes(setup)) log(`note: ${note}`);
     try {
         const crowd = parseCrowdReport(await session.spawnCrowd(GATE1.crowd), GATE1.crowd);
         if (crowd.inScene < crowd.requested) {
@@ -493,7 +578,8 @@ export async function measureGate1(session: Gate1Session, options: Gate1Options)
             const screenshot = await session.screenshot(mode);
             log(
                 `${mode}: gpu avg ${bench.avgGpuMs ?? "n/a"} ms, p99 ${bench.p99GpuMs ?? "n/a"} ms, max ${bench.maxGpuMs ?? "n/a"} ms ` +
-                    `(${bench.gpuTimer}), full-map uploads ${bench.fullMapUploads}, large uploads ${bench.largeUploads}, ` +
+                    `(${bench.gpuTimer} on ${atCapture.version ?? "no version"}), draw calls avg ${figure(bench.drawCalls?.avg ?? null, 1)} ` +
+                    `max ${figure(bench.drawCalls?.max ?? null, 0)}, full-map uploads ${bench.fullMapUploads}, large uploads ${bench.largeUploads}, ` +
                     `post pass ${bench.postFilterShare === null ? "n/a" : `${Math.round(bench.postFilterShare * 100)}%`}`,
             );
             captures.push({
@@ -505,7 +591,7 @@ export async function measureGate1(session: Gate1Session, options: Gate1Options)
                 ...(screenshot ? { screenshot } : {}),
             });
         }
-        return { renderer, crowd, captures };
+        return { setup, renderer, crowd, captures };
     } finally {
         // The crowd and the fixed hour belong to this run: leave neither in the page, and keep the first error
         await session.setNight(null).catch((error: unknown) => log(`could not give the clock back: ${String(error)}`));
@@ -517,13 +603,77 @@ function figure(value: number | null, digits = 2): string {
     return value === null ? "n/a" : value.toFixed(digits);
 }
 
+/**
+ * What each flag the wave measures reads when the page has no key for it: a flag set to its default measures nothing new,
+ * so `--flag=gameStepCap=1` (the cap is on by default since 2026-11-22) is a second run of the plain configuration. The
+ * values are the client's own constants (GameLoopFlags.ts, postFilter.ts, AvatarZeroWork.ts), copied because the probe
+ * does not import the client; a test pins the table to the flags the README names.
+ */
+export const GATE1_FLAG_DEFAULTS: Readonly<Record<string, string>> = {
+    gameStepCap: "1",
+    gameRenderSkipCovered: "0",
+    gameNoStencil: "0",
+    "konclui.fx.external": "0",
+    avatarDetailBudget: "1",
+    avatarZeroWork: "1",
+    avatarBake: "1",
+};
+
+const AVATAR_FLAG_KEYS: readonly string[] = ["avatarDetailBudget", "avatarZeroWork", "avatarBake"];
+
+/**
+ * Lines of caution for the flags a run was given, printed with the flags and written under the verdict. They never stop
+ * the run: a flag at its default is a legitimate control run, and the reader must only know that it is one.
+ */
+export function flagNotes(setup: Gate1Setup): string[] {
+    const notes: string[] = [];
+    for (const [key, value] of Object.entries(setup.flags)) {
+        const fallback = GATE1_FLAG_DEFAULTS[key];
+        if (fallback !== undefined && value === fallback) {
+            notes.push(
+                `${key}=${value} is that flag's default, so it measures nothing new; the change is ${key}=${fallback === "1" ? "0" : "1"}`,
+            );
+        }
+        if (AVATAR_FLAG_KEYS.includes(key) && value !== fallback) {
+            notes.push(
+                `${key}=${value}: one avatar flag cannot be isolated, the run is invalid unless all three avatar flags are on (a normal run) or all off (FRAME_PROBE_GATE1_BASELINE=1)`,
+            );
+        }
+    }
+    if (setup.context === "default" && setup.flags.gameNoStencil === "1") {
+        notes.push(
+            "gameNoStencil drops the stencil buffer on this context but not the depth buffer, which is dropped only on the forced WebGL 2 context (App.svelte): this run measures the smaller change",
+        );
+    }
+    return notes;
+}
+
+/** `key=value, key=value`, in the order the flags were given. */
+export function formatFlags(flags: Readonly<Record<string, string>>): string {
+    return Object.entries(flags)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(", ");
+}
+
+const CONTEXT_LABEL: Record<Gate1Context, string> = {
+    webgl2: "WebGL 2 forced (?phaserMode=webgl2): the gate's own definition",
+    default: "DEFAULT context (nothing forced: what a visitor gets), judged by the same limits",
+};
+
 /** The report in Markdown: the verdict first, the reasons if invalid, then the limits and the windows. */
 export function renderGate1Markdown(measurement: Gate1Measurement | undefined, verdict: Gate1Verdict): string {
     const lines = [
         `# Gate 1: client frame pacing with ${GATE1.crowd} moving players`,
         "",
-        `**${verdict.status.toUpperCase()}** (exit ${verdict.exitCode})`,
+        `**${verdict.status.toUpperCase()}** (exit ${verdict.exitCode}) on the ${verdict.context === "default" ? "DEFAULT" : "WebGL 2"} context`,
         "",
+        `Context: ${CONTEXT_LABEL[verdict.context]}.${
+            measurement && Object.keys(measurement.setup.flags).length > 0
+                ? ` Extra localStorage flags: ${formatFlags(measurement.setup.flags)}.`
+                : ""
+        }`,
+        "",
+        ...(measurement ? flagNotes(measurement.setup).flatMap((note) => [`Note: ${note}.`, ""]) : []),
     ];
     if (verdict.invalid.length > 0) {
         lines.push("The run cannot be judged:", "", ...verdict.invalid.map((reason) => `- ${reason}`), "");
@@ -545,25 +695,29 @@ export function renderGate1Markdown(measurement: Gate1Measurement | undefined, v
             (c) => `| ${c.mode} | ${c.name} | <= ${c.limit} | ${figure(c.actual)} | ${c.pass ? "pass" : "FAIL"} |`,
         ),
         "",
-        "| Mode | Level | Hour | Night-only lights | Post pass share | Timer | Frames | GPU samples | Dropped | GPU p95 ms |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| Mode | Level | Hour | Night-only lights | Post pass share | Context | Timer | Frames | GPU samples | Dropped | GPU p95 ms |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
         ...measurement.captures.map(
-            ({ mode, nightLevel, night, bench: b }) =>
+            ({ mode, nightLevel, night, renderer, bench: b }) =>
                 `| ${mode} | ${nightLevel} | ${night.hour ?? "n/a"} | ${night.nightOn ? "on" : "off"} | ` +
                 `${b.postFilterShare === null ? "n/a" : `${Math.round(b.postFilterShare * 100)}%`} (${b.renderedFrames} frames) | ` +
+                `${renderer.version ?? "no version"} | ` +
                 `${b.gpuTimer} | ${b.frames} | ${b.gpuSamples} | ${b.gpuDroppedFrames} | ${figure(b.p95GpuMs)} |`,
         ),
         "",
-        "| Mode | Frame avg ms | Frame p99 ms | Frame max ms | Upload B/s | Largest upload B | Allocations | Full / dot / culled | Baked |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| Mode | Frame avg ms | Frame p99 ms | Frame max ms | Draw calls avg | Draw calls max | Upload B/s | Largest upload B | Allocations | Full / dot / culled | Baked |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
         ...measurement.captures.map(
             ({ mode, bench: b }) =>
                 `| ${mode} | ${figure(b.avgFrameMs)} | ${figure(b.p99FrameMs)} | ${figure(b.maxFrameMs)} | ` +
+                `${figure(b.drawCalls?.avg ?? null, 1)} | ${figure(b.drawCalls?.max ?? null, 0)} | ` +
                 `${figure(b.mirrorUploadBytesPerSec, 0)} | ${b.largestUploadBytes} | ${b.allocations} | ` +
                 `${b.activeFullAvatars} / ${b.activeDotAvatars} / ${b.culledAvatars} | ${b.bakedAvatarTextures} |`,
         ),
         "",
-        "Frame intervals are shown for reference and do not decide the gate: they cannot fall below the display period.",
+        "Frame intervals are shown for reference and do not decide the gate: they cannot fall below the display period. " +
+            "Draw calls are drawArrays, drawElements and their instanced forms counted per frame while the bench ran " +
+            "(a wrapper on the context, which is also in the frame interval); they are reported, not judged.",
         "The dusk window is the mandate's literal night 0.85, a dusk look whose night-only lights are off; the night " +
             "window (level 1) has them on. Allocations (render targets, texImage2D with no data) move no CPU data and " +
             "are shown, not judged.",
@@ -576,12 +730,15 @@ export function renderGate1Markdown(measurement: Gate1Measurement | undefined, v
  * that cannot be judged. A measurement that throws (the page crashed, a pan failed, the capture timed out) is a run
  * that cannot be judged too: its report says so, with the error, and the exit code is 2 after the session's cleanup.
  * `context` is read once the run is over and goes into gate1.json: the flags the page ran with, the URL it ended on.
+ * `setup` is what the run was asked to measure (the WebGL context, the extra flags): it labels a report whose
+ * measurement never completed too, so that an invalid run on the default context is not mistaken for one on WebGL 2.
  */
 export async function runGate1Report(
     measure: () => Promise<Gate1Measurement>,
     write: (fileName: string, content: string) => void,
     log: (line: string) => void,
     context: () => Record<string, unknown> = () => ({}),
+    setup: Gate1Setup = GATE1_DEFAULT_SETUP,
 ): Promise<number> {
     let measurement: Gate1Measurement | undefined;
     let verdict: Gate1Verdict;
@@ -593,12 +750,12 @@ export async function runGate1Report(
             error instanceof Gate1InvalidRun
                 ? error.message
                 : `the run failed before it could be judged: ${error instanceof Error ? error.message : String(error)}`;
-        verdict = { status: "invalid", exitCode: 2, invalid: [reason], criteria: [] };
+        verdict = { context: setup.context, status: "invalid", exitCode: 2, invalid: [reason], criteria: [] };
     }
     const markdown = renderGate1Markdown(measurement, verdict);
     write(
         "gate1.json",
-        `${JSON.stringify({ schemaVersion: 2, gate: GATE1, ...context(), verdict, measurement }, null, 2)}\n`,
+        `${JSON.stringify({ schemaVersion: 3, gate: GATE1, setup, ...context(), verdict, measurement }, null, 2)}\n`,
     );
     write("gate1.md", markdown);
     log(markdown);

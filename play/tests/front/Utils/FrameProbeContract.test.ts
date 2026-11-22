@@ -21,6 +21,7 @@ import { GPU_MIN_COVERAGE as PAGE_MIN_COVERAGE } from "../../../src/front/Utils/
 import { startFrameBench } from "../../../src/front/Utils/FrameBench";
 import {
     GATE1,
+    GATE1_DEFAULT_SETUP,
     GATE1_MODES,
     judgeGate1,
     parseCrowdReport,
@@ -28,6 +29,7 @@ import {
     parseNightResult,
     parseRendererInfo,
     type Gate1Mode,
+    type Gate1Setup,
 } from "../../../../benchmark/frame-probe/gate1";
 import { createBenchNight } from "../../../src/front/Utils/BenchNight";
 import {
@@ -194,7 +196,12 @@ describe("Gate 1 reads the real rolling bench", () => {
     function realBench(
         flavor: "webgl2" | "webgl1" | "none",
         gpuMs: number,
-        options: { postActive?: (frame: number) => boolean; upload?: { width: number; height: number } } = {},
+        options: {
+            postActive?: (frame: number) => boolean;
+            upload?: { width: number; height: number };
+            /** Draw calls the game issues in each rendered frame: one drawArrays and the rest drawElements. */
+            draws?: number;
+        } = {},
     ) {
         const listeners = new Map<string, Set<Listener>>();
         const events = {
@@ -215,6 +222,8 @@ describe("Gate 1 reads the real rolling bench", () => {
         const gl = Object.assign(fake.gl, {
             texImage2D: (..._args: unknown[]) => undefined,
             texSubImage2D: () => undefined,
+            drawArrays: () => undefined,
+            drawElements: () => undefined,
         });
         let clock = 0;
         let frame = 0;
@@ -243,6 +252,10 @@ describe("Gate 1 reads the real rolling bench", () => {
             }
             emit(POST_STEP);
             emit(PRE_RENDER);
+            for (let draw = 0; draw < (options.draws ?? 2); draw++) {
+                if (draw === 0) gl.drawArrays();
+                else gl.drawElements();
+            }
             emit(POST_RENDER);
         }
         return JSON.parse(JSON.stringify(bench.stop())) as unknown;
@@ -300,18 +313,22 @@ describe("Gate 1 reads the real rolling bench", () => {
             },
             999,
         ),
+        setup: Gate1Setup = GATE1_DEFAULT_SETUP,
+        renderer: ReturnType<typeof parseRendererInfo> = lit,
     ) =>
         judgeGate1({
-            renderer: lit,
+            setup,
+            renderer,
             crowd: crowd as ReturnType<typeof parseCrowdReport>,
             captures: GATE1_MODES.map((mode) => ({
                 mode,
                 nightLevel: GATE1.nightLevels[mode],
                 night: night(mode),
-                renderer: lit,
+                renderer,
                 bench: parseFrameBench(windows[mode]),
             })),
         });
+    const judgeGate1AsIs = (bench: unknown) => gate(all(bench));
     const all = (bench: unknown): Record<Gate1Mode, unknown> => ({ day: bench, dusk: bench, night: bench });
 
     it("judges the windows of a WebGL 2 bench against the limits, with the figures the bench measured", () => {
@@ -327,6 +344,47 @@ describe("Gate 1 reads the real rolling bench", () => {
             { mode: "night", name: "avgGpuMs", limit: 11, actual: 12, pass: false },
         ]);
         expect(verdict.criteria.find((c) => c.mode === "day" && c.name === "maxGpuMs")?.actual).toBe(6);
+    });
+
+    it("reads the draw calls of the real bench: the average and the maximum of a window, per frame", () => {
+        const bench = parseFrameBench(realBench("webgl2", 6, { draws: 5 }));
+
+        expect(bench.drawCalls).toEqual({ avg: 5, max: 5 });
+        expect(judgeGate1AsIs(realBench("webgl2", 6, { draws: 5 })).status).toBe("pass");
+    });
+
+    it("judges a real WebGL1 bench on the default context: the WebGL1 timer extension, the same limits, labelled default", () => {
+        const webgl1 = parseRendererInfo({
+            ...JSON.parse(JSON.stringify(lit)),
+            version: "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        });
+        const bench = realBench("webgl1", 6);
+        expect(bench).toMatchObject({ gpuTimer: "webgl1-ext", avgGpuMs: 6 });
+        const defaultSetup: Gate1Setup = { context: "default", flags: {} };
+
+        const verdict = gate(all(bench), undefined, defaultSetup, webgl1);
+
+        expect(verdict).toMatchObject({ context: "default", status: "pass", exitCode: 0 });
+        // The same bench on a run that forced WebGL 2 is not a valid run: the page has WebGL 1
+        expect(gate(all(bench), undefined, GATE1_DEFAULT_SETUP, webgl1).status).toBe("invalid");
+        // Over the limit on the default context fails exactly as on WebGL 2
+        expect(gate(all(realBench("webgl1", 12)), undefined, defaultSetup, webgl1)).toMatchObject({
+            context: "default",
+            status: "fail",
+        });
+    });
+
+    it("is invalid on the default context when the real WebGL1 bench had no timer extension", () => {
+        const webgl1 = parseRendererInfo({
+            ...JSON.parse(JSON.stringify(lit)),
+            version: "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        });
+        const none = realBench("none", 0);
+
+        const verdict = gate(all(none), undefined, { context: "default", flags: {} }, webgl1);
+
+        expect(verdict).toMatchObject({ context: "default", status: "invalid", exitCode: 2 });
+        expect(verdict.invalid.join(" ")).toContain("EXT_disjoint_timer_query is missing");
     });
 
     it("sees a bench with no timer as an invalid run: its null figures survive the round trip as null", () => {

@@ -395,3 +395,186 @@ describe("rolling frame bench", () => {
         });
     });
 });
+
+describe("draw call counter", () => {
+    const TRIANGLES = 4;
+
+    /**
+     * A WebGL1-shaped context as Phaser 4 leaves it: drawArrays and drawElements live on the prototype (as they do on
+     * a real context), the instanced draws are own properties bound to ANGLE_instanced_arrays (WebGLRenderer.js binds
+     * them onto the context), and the timer is EXT_disjoint_timer_query.
+     */
+    function webgl1Context(gpuMs: number[] = []) {
+        const timer = createFakeTimerGl({ flavor: "webgl1", elapsedNs: gpuMs.map((ms) => ms * MS) });
+        const angle = {
+            drawArraysInstancedANGLE: () => undefined,
+            drawElementsInstancedANGLE: () => undefined,
+        };
+        const prototype = { drawArrays: () => undefined, drawElements: () => undefined };
+        const gl = Object.assign(Object.create(prototype) as object, timer.gl, {
+            drawArraysInstanced: angle.drawArraysInstancedANGLE.bind(angle),
+            drawElementsInstanced: angle.drawElementsInstancedANGLE.bind(angle),
+            texImage2D: () => undefined,
+            texSubImage2D: () => undefined,
+        }) as unknown as GL;
+        return { gl, prototype, timer, bound: gl.drawArraysInstanced };
+    }
+    type GL = ReturnType<typeof createFakeTimerGl>["gl"] & {
+        drawArrays: (mode: number, first: number, count: number) => void;
+        drawElements: (mode: number, count: number, type: number, offset: number) => unknown;
+        drawArraysInstanced: (mode: number, first: number, count: number, instances: number) => void;
+        drawElementsInstanced: (mode: number, count: number, type: number, offset: number, instances: number) => void;
+        texImage2D: () => void;
+        texSubImage2D: () => void;
+    };
+
+    function benchOn(gl: object) {
+        const emitter = new Emitter();
+        const bench = startFrameBench({
+            events: emitter,
+            eventNames: { preStep: PRE_STEP, preRender: "prerender", postStep: POST_STEP, postRender: POST_RENDER },
+            gl: gl as never,
+            now: () => 0,
+            mapSize: MAP,
+            counts: () => COUNTS,
+        });
+        /** One frame at timestamp `at` that issues `draws` calls of each of the four draw methods, in the render step. */
+        const frame = (at: number, draws: number) => {
+            emitter.emit(PRE_STEP, at);
+            emitter.emit(POST_STEP);
+            emitter.emit("prerender");
+            const context = gl as GL;
+            for (let i = 0; i < draws; i++) {
+                context.drawArrays(TRIANGLES, 0, 3);
+                context.drawElements(TRIANGLES, 6, 0, 0);
+                context.drawArraysInstanced(TRIANGLES, 0, 3, 2);
+                context.drawElementsInstanced(TRIANGLES, 6, 0, 0, 2);
+            }
+            emitter.emit(POST_RENDER);
+        };
+        return { bench, frame, emitter };
+    }
+
+    it("counts drawArrays, drawElements and both instanced forms of a WebGL1 context, per frame", () => {
+        const { gl } = webgl1Context();
+        const { bench, frame } = benchOn(gl);
+
+        // Frames of 1, 2 and 3 groups of four calls: 4, 8 and 12 calls. The last frame is still open at the reading
+        frame(0, 1);
+        frame(16, 2);
+        frame(32, 3);
+        frame(48, 0);
+        const reading = bench.snapshot();
+
+        expect(reading.frames).toBe(3);
+        expect(reading.drawCalls).toMatchObject({ avg: 8, max: 12 });
+    });
+
+    it("reports a window's average and maximum from the frames in it, not from every frame since the start", () => {
+        const { gl } = webgl1Context();
+        const { bench, frame } = benchOn(gl);
+
+        // One heavy frame of 400 calls, then 300 plain ones of 4: the heavy one has left the window of 300
+        frame(0, 100);
+        for (let i = 1; i <= 301; i++) frame(i * 16, 1);
+        const reading = bench.snapshot();
+
+        expect(reading.frames).toBe(FRAME_BENCH_WINDOW);
+        expect(reading.drawCalls).toMatchObject({ avg: 4, max: 4 });
+    });
+
+    it("counts nothing before the first frame and nothing after it stops", () => {
+        const { gl } = webgl1Context();
+        gl.drawArrays(TRIANGLES, 0, 3);
+        const { bench, frame } = benchOn(gl);
+        // Calls before the first step belong to no frame of the window
+        gl.drawArrays(TRIANGLES, 0, 3);
+        frame(0, 1);
+        frame(16, 1);
+        const stopped = bench.stop();
+        // Seen failing when the wrapper was left on the context: these calls would have counted
+        gl.drawArrays(TRIANGLES, 0, 3);
+        gl.drawElements(TRIANGLES, 6, 0, 0);
+        frame(32, 5);
+
+        expect(stopped.drawCalls).toMatchObject({ avg: 4, max: 4 });
+        expect(bench.snapshot().drawCalls).toEqual(stopped.drawCalls);
+    });
+
+    it("puts the context back: the prototype's methods are used again, the bound instanced ones are the same functions", () => {
+        const { gl, prototype, bound } = webgl1Context();
+        const boundElements = gl.drawElementsInstanced;
+        const { bench } = benchOn(gl);
+
+        expect(Object.hasOwn(gl, "drawArrays")).toBe(true);
+        expect(gl.drawArraysInstanced).not.toBe(bound);
+        bench.stop();
+
+        // A wrapper left as an own property would shadow the prototype for the rest of the page's life
+        expect(Object.hasOwn(gl, "drawArrays")).toBe(false);
+        expect(Object.hasOwn(gl, "drawElements")).toBe(false);
+        expect(gl.drawArrays).toBe(prototype.drawArrays);
+        expect(gl.drawElements).toBe(prototype.drawElements);
+        expect(gl.drawArraysInstanced).toBe(bound);
+        expect(gl.drawElementsInstanced).toBe(boundElements);
+    });
+
+    it("passes every argument and the return value through, and keeps `this`", () => {
+        const calls: { self: unknown; args: unknown[] }[] = [];
+        const gl = Object.assign(createFakeTimerGl({ flavor: "webgl1" }).gl, {
+            texImage2D: () => undefined,
+            texSubImage2D: () => undefined,
+            drawElements(this: unknown, ...args: unknown[]) {
+                calls.push({ self: this, args });
+                return "result";
+            },
+        });
+        benchOn(gl);
+
+        const result = (gl as unknown as GL).drawElements(TRIANGLES, 6, 5123, 12);
+
+        expect(result).toBe("result");
+        expect(calls).toEqual([{ self: gl, args: [TRIANGLES, 6, 5123, 12] }]);
+    });
+
+    it("has no draw figures, rather than zeros, on a context without draw methods", () => {
+        const { bench, frame } = setup();
+        for (let i = 0; i < 4; i++) frame(i * 16);
+
+        expect(bench.snapshot().drawCalls).toBeNull();
+    });
+
+    it("keeps the WebGL1 timer on the same context: the extension that is named, the samples that are read", () => {
+        const { gl, timer } = webgl1Context([5, 5, 5, 5, 5]);
+        const { bench, frame } = benchOn(gl);
+        for (let i = 0; i < 5; i++) frame(i * 16, 2);
+        const reading = bench.snapshot();
+
+        // The WebGL2 extension is looked up first and absent on this context: the fallback is the one that measures
+        expect(timer.gl.getExtension("EXT_disjoint_timer_query_webgl2")).toBeNull();
+        expect(reading.gpuTimer).toBe("webgl1-ext");
+        expect(reading.gpuSamples).toBeGreaterThan(0);
+        expect(reading.avgGpuMs).toBe(5);
+        expect(reading.drawCalls).toMatchObject({ avg: 8, max: 8 });
+        bench.stop();
+        expect(timer.liveQueries()).toBe(0);
+    });
+
+    it("reports gpuTimer none on a WebGL1 context without EXT_disjoint_timer_query, and still counts the draws", () => {
+        const timer = createFakeTimerGl({ flavor: "none" });
+        const gl = Object.assign(Object.create({ drawArrays: () => undefined }) as object, timer.gl, {
+            texImage2D: () => undefined,
+            texSubImage2D: () => undefined,
+            drawElements: () => undefined,
+            drawArraysInstanced: () => undefined,
+            drawElementsInstanced: () => undefined,
+        });
+        const { bench, frame } = benchOn(gl);
+        for (let i = 0; i < 3; i++) frame(i * 16, 1);
+        const reading = bench.snapshot();
+
+        expect(reading.gpuTimer).toBe("none");
+        expect(reading.avgGpuMs).toBeNull();
+        expect(reading.drawCalls).toMatchObject({ avg: 4, max: 4 });
+    });
+});

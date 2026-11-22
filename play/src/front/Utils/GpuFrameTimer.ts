@@ -171,8 +171,7 @@ export interface GpuFrameTimer {
 }
 
 export type GpuFrameTimerCreation =
-    | { timer: GpuFrameTimer; unavailable?: undefined }
-    | { timer?: undefined; unavailable: GpuTimerUnavailableReason };
+    { timer: GpuFrameTimer; unavailable?: undefined } | { timer?: undefined; unavailable: GpuTimerUnavailableReason };
 
 // Queries in flight at once, which also caps the live query objects. The GPU runs a few frames behind the CPU.
 const QUERY_POOL_SIZE = 8;
