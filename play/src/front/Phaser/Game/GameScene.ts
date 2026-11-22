@@ -221,6 +221,7 @@ import { ApplicationManager } from "../../Chat/Applications/ApplicationManager";
 import { audioPlaybackStore, handleSuspendedAudioContext } from "../../Stores/AudioPlaybackStore";
 import { requestedScreenSharingState } from "../../Stores/ScreenSharingStore";
 import { EnterLeaveScriptingService } from "../Helpers/EnterLeaveScriptingService";
+import { mapPrefetch } from "./MapPrefetch";
 import { GameMapFrontWrapper } from "./GameMap/GameMapFrontWrapper";
 import { gameManager } from "./GameManager";
 import { EmoteManager } from "./EmoteManager";
@@ -640,10 +641,15 @@ export class GameScene extends DirtyScene {
         if (this.wamUrlFile) {
             const absoluteWamFileUrl = new URL(this.wamUrlFile, window.location.href).toString();
 
+            // Usually already in flight or downloaded (see MapPrefetch). Without a fresh prefetch, or after a failed
+            // one, this is the request the scene always made.
+            const wamResponse = mapPrefetch.takeWam(absoluteWamFileUrl, () =>
+                axiosWithRetry.get<unknown>(absoluteWamFileUrl).then((response) => response.data),
+            );
             this.superLoad.loadPromise(
-                axiosWithRetry.get(absoluteWamFileUrl).then((response) => {
+                wamResponse.then((wamData) => {
                     try {
-                        this.wamFile = wamFileMigration.migrate(response.data);
+                        this.wamFile = wamFileMigration.migrate(wamData);
                         this.mapUrlFile = new URL(this.wamFile.mapUrl, absoluteWamFileUrl).toString();
                         this.doLoadTMJFile(this.mapUrlFile);
                         this.loadEntityCollections();
@@ -1058,6 +1064,8 @@ export class GameScene extends DirtyScene {
                                 this.hide(false);
                                 gameSceneIsLoadedStore.set(true);
                                 this.sceneReadyToStartDeferred.resolve();
+                                // The map plays: the chat connection may now start when the browser is idle.
+                                gameManager.startChatConnectionWhenIdle();
                                 this.initializeAreaManager();
                                 // #moveTo walks the player along a path: it needs the player (created when the pusher
                                 // answered) and the areas the user cannot enter in the collision grid, which only
@@ -1088,8 +1096,12 @@ export class GameScene extends DirtyScene {
                 errorScreenStore.setException(e);
             });
 
+        // The chat connection is not opened here: it starts when the scene is playable and the browser is idle (see
+        // GameManager.startChatConnectionWhenIdle), or at once if the user opens the chat first. This only waits for it.
+        // A scene waits for its own start: the one the scene before it left (a void connection) does not count.
+        gameManager.beginChatStartWait();
         gameManager
-            .getChatConnection()
+            .awaitChatConnection()
             .then(async () => {
                 const connection = this.connection;
                 const chatId = localUserStore.getChatId();
@@ -2077,6 +2089,30 @@ export class GameScene extends DirtyScene {
     }
 
     private doLoadTMJFile(mapUrlFile: string): void {
+        // A map already in the Phaser cache (another GameScene loaded it) is read from there, as below. Otherwise a
+        // fresh prefetch hands over the file: it goes into the same cache and through the same onMapLoad, so
+        // everything after it (tilesets, layers) takes the path it always took.
+        const prefetched = this.cache.tilemap.exists(mapUrlFile) ? undefined : mapPrefetch.takeTmj(mapUrlFile);
+        if (prefetched) {
+            this.superLoad.loadPromise(
+                prefetched.then(async (data) => {
+                    if (data === undefined) {
+                        // The prefetch failed or its body is not a map: Phaser's loader makes the request it always
+                        // made, with its error screen and the local http retry of FILE_LOAD_ERROR.
+                        this.loadTMJFileWithPhaser(mapUrlFile);
+                        return;
+                    }
+                    this.cache.tilemap.add(mapUrlFile, { format: Phaser.Tilemaps.Formats.TILED_JSON, data });
+                    await this.onMapLoad(data);
+                }),
+            );
+            return;
+        }
+
+        this.loadTMJFileWithPhaser(mapUrlFile);
+    }
+
+    private loadTMJFileWithPhaser(mapUrlFile: string): void {
         this.load.on("filecomplete-tilemapJSON-" + mapUrlFile, (key: string, type: string, data: unknown) => {
             this.onMapLoad(data).catch((e) => console.error(e));
         });
@@ -2721,7 +2757,7 @@ export class GameScene extends DirtyScene {
                 const reading = getWorldSpaceExtension()?.joined(space, this.abortController.signal);
                 worldUserProvider = new WorldUserProvider(reading ? { usersStore: reading.users } : space);
                 this._worldUserCounter.forward(reading?.count ?? worldUserProvider.userCount);
-                return gameManager.getChatConnection();
+                return gameManager.awaitChatConnection();
             })
             .then((chatConnection) => {
                 this._chatConnection = chatConnection;

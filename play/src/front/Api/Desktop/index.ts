@@ -329,8 +329,9 @@ class DesktopApi {
         // synchronous subscribe would miss the connection entirely and the badge would stay 0.
         if (window.WAD.setUnreadCount) {
             const setUnreadCount = window.WAD.setUnreadCount;
+            // awaitChatConnection() leaves the start of the chat to the scene (idle, or when the user opens it).
             gameManager
-                .getChatConnection()
+                .awaitChatConnection()
                 .then((connection) => {
                     //eslint-disable-next-line svelte/no-ignored-unsubscribe
                     createTotalUnreadStore(connection).subscribe((total) => {

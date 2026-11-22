@@ -32,8 +32,9 @@ import { hasCapability } from "../../Connection/Capabilities";
 import type { ChatConnectionInterface } from "../../Chat/Connection/ChatConnection";
 import { MATRIX_PUBLIC_URI } from "../../Enum/EnvironmentVariable";
 import { VoidChatConnection } from "../../Chat/Connection/VoidChatConnection";
-import { loginTokenErrorStore, isMatrixChatEnabledStore } from "../../Stores/ChatStore";
+import { chatVisibilityStore, loginTokenErrorStore, isMatrixChatEnabledStore } from "../../Stores/ChatStore";
 import { initializeChatVisibilitySubscription } from "../../Chat/Stores/ChatStore";
+import { ChatStartCoordinator, isChatDeferredStartEnabled, runWhenIdle } from "../../Chat/Connection/ChatStart";
 import {
     chatConnectionFailureStore,
     type ChatConnectionAttemptStatus,
@@ -75,8 +76,20 @@ export class GameManager {
         this._chatConnectionStore,
     );
     private chatVisibilitySubscription: Unsubscriber | undefined;
+    // Opening the chat or the people list asks for the connection at once (see ChatStartCoordinator).
+    private chatDemandSubscription: Unsubscriber | undefined;
+    private readonly chatStart = new ChatStartCoordinator({
+        enabled: () => isChatDeferredStartEnabled(),
+        matrixWouldLoad: () => this.matrixChatWouldLoad(),
+        hasConnection: () =>
+            this.chatConnectionPromise !== undefined || this.pendingChatConnectionPromise !== undefined,
+        start: () => this.startChatConnection(),
+        runWhenIdle,
+    });
     private chatConnectionStatusSubscription: Unsubscriber | undefined;
-    private readonly _chatConnectionAttemptStore = writable<ChatConnectionAttemptStatus>("connecting");
+    // "idle": nothing asked for the connection yet (the deferred start, see ChatStart.ts). The chat buttons accept a
+    // click in this state, which is the demand that starts it.
+    private readonly _chatConnectionAttemptStore = writable<ChatConnectionAttemptStatus>("idle");
     /**
      * Whether opening the chat connection is under way, failed, or being retried. Until a connection object exists,
      * this is the only thing the chat panel and the action bar can show.
@@ -90,11 +103,20 @@ export class GameManager {
         this.characterTextureIds = localUserStore.getCharacterTextures();
         this.companionTextureId = localUserStore.getCompanionTextureId();
         this.chatVisibilitySubscription = initializeChatVisibilitySubscription();
+        this.subscribeToChatDemand();
+    }
+
+    /** Opening the chat panel (the chat, the people list, the shortcut) asks for the connection at once. */
+    private subscribeToChatDemand(): void {
+        this.chatDemandSubscription ??= chatVisibilityStore.subscribe((isOpen) => {
+            if (isOpen) this.chatStart.demand();
+        });
     }
 
     public async init(scenePlugin: ScenePlugin): Promise<string> {
         this.scenePlugin = scenePlugin;
-        const result = await connectionManager.initGameConnexion();
+        // Awaits the connection App.svelte may have started already: it is requested once.
+        const result = await connectionManager.startGameConnexion();
         if (result instanceof URL) {
             window.location.assign(result.toString());
             // window.location.assign is not immediate and Javascript keeps running after.
@@ -450,6 +472,8 @@ export class GameManager {
      * settle the question for the rest of the session.
      */
     public getChatConnection(): Promise<ChatConnectionInterface> {
+        // Whoever asks, the idle start is no longer needed and the scene may build what waits for the connection.
+        this.chatStart.noteStarted();
         const alreadyRequested = this.chatConnectionPromise ?? this.pendingChatConnectionPromise;
         if (alreadyRequested) {
             return alreadyRequested;
@@ -490,6 +514,60 @@ export class GameManager {
             });
 
         return this.pendingChatConnectionPromise;
+    }
+
+    /**
+     * The scene is playable: opens the chat connection when the browser is idle (at once when it would download
+     * nothing: no Matrix server, a visitor, or a room with the chat off). Does nothing once a connection is open or
+     * opening. The scene calls this after its first playable frame, never while it is being created.
+     */
+    public startChatConnectionWhenIdle(): void {
+        // A logout removed the subscription: the next scene puts it back.
+        this.subscribeToChatDemand();
+        this.chatStart.schedule();
+    }
+
+    /**
+     * A GameScene begins (its create()): what it builds on the connection waits for the start of this scene, not for
+     * one that happened in the scene before it.
+     */
+    public beginChatStartWait(): void {
+        this.chatStart.beginScene();
+    }
+
+    /**
+     * Something needs the chat soon (the player stepped into a chat room area): starts the connection now instead of
+     * when the browser is idle. Does nothing for a room or a visitor that has no Matrix chat, and once it is started.
+     */
+    public requestChatConnection(): void {
+        this.chatStart.demand();
+    }
+
+    /**
+     * Like getChatConnection(), for the code that builds on the connection while the scene starts: it waits until the
+     * connection is asked for (idle start, or somebody opening the chat) and never starts it itself.
+     */
+    public async awaitChatConnection(): Promise<ChatConnectionInterface> {
+        await this.chatStart.whenStartRequested();
+        return this.chatConnectionPromise ?? this.pendingChatConnectionPromise ?? this.getChatConnection();
+    }
+
+    private startChatConnection(): void {
+        this.getChatConnection().catch((e: unknown) => {
+            const error = asError(e);
+            console.error("Opening the chat connection failed", error);
+            Sentry.captureException(error);
+        });
+    }
+
+    /** Whether opening the chat now downloads Matrix: what the void connection never does. */
+    private matrixChatWouldLoad(): boolean {
+        const room = get(gameSceneStore)?.room ?? this.startRoom;
+        return (
+            Boolean(this.getMatrixServerUrl() ?? MATRIX_PUBLIC_URI) &&
+            get(userIsConnected) &&
+            room?.isChatEnabled !== false
+        );
     }
 
     /** Runs the same connection path again, for the Retry button of the chat panel. */
@@ -614,14 +692,14 @@ export class GameManager {
      * Currently, this logs out from the Matrix client.
      */
     public async logout(): Promise<void> {
+        // The chat connection may not exist yet (the deferred start): the cleanup below still has to run, and nothing
+        // may open it afterwards.
+        this.chatStart.reset();
         const chatConnection = get(this._chatConnectionStore);
-        if (!chatConnection) {
-            return;
-        }
 
         try {
-            chatConnection.clearListener();
-            await chatConnection.destroy();
+            chatConnection?.clearListener();
+            await chatConnection?.destroy();
         } catch (e) {
             // destroy() ends up calling POST /logout, which fails with a 401 when the Matrix session is
             // already dead - exactly when the local cleanup below matters most. It must therefore run in
@@ -634,10 +712,12 @@ export class GameManager {
             if (this.chatVisibilitySubscription) {
                 this.chatVisibilitySubscription();
             }
+            this.chatDemandSubscription?.();
+            this.chatDemandSubscription = undefined;
             this.chatConnectionStatusSubscription?.();
             this.chatConnectionStatusSubscription = undefined;
             chatConnectionFailureStore.dismiss();
-            this._chatConnectionAttemptStore.set("connecting");
+            this._chatConnectionAttemptStore.set("idle");
             this.clearChatDataFromLocalStorage();
             this._chatConnectionStore.set(undefined);
             this.chatConnectionPromise = undefined;

@@ -1,10 +1,11 @@
 import { writable } from "svelte/store";
 
 /**
- * Where the first attempt to open the chat connection stands. "ready" only means a connection object exists: a
- * Matrix connection that opened but cannot sync reports that through its own connectionStatus ("ON_ERROR").
+ * Where the first attempt to open the chat connection stands. "idle": nothing asked for it yet (it starts once the
+ * scene is playable and the browser is idle, or when the user opens the chat). "ready" only means a connection object
+ * exists: a Matrix connection that opened but cannot sync reports that through its own connectionStatus ("ON_ERROR").
  */
-export type ChatConnectionAttemptStatus = "connecting" | "retrying" | "failed" | "ready";
+export type ChatConnectionAttemptStatus = "idle" | "connecting" | "retrying" | "failed" | "ready";
 
 export interface ChatConnectionFailure {
     failedAt: Date;

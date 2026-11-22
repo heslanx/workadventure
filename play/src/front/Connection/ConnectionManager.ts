@@ -28,6 +28,7 @@ import defaultLogo from "../Components/images/konclui-logo.svg";
 import WebsocketReconnectingToast from "../Components/Toasts/WebsocketReconnectingToast.svelte";
 import { errorScreenStore } from "../Stores/ErrorScreenStore";
 import { toastStore } from "../Stores/ToastStoreSingleton";
+import { mapPrefetch } from "../Phaser/Game/MapPrefetch";
 import { axiosToPusher, axiosWithRetry } from "./AxiosUtils";
 import { Room } from "./Room";
 import { LocalUser } from "./LocalUser";
@@ -50,6 +51,7 @@ class ConnectionManager {
     private _unloading = false;
     private authToken: string | null = null;
     private _currentRoom: Room | null = null;
+    private gameConnexionPromise: ReturnType<ConnectionManager["initGameConnexion"]> | undefined;
 
     private serviceWorker?: _ServiceWorker;
 
@@ -140,6 +142,36 @@ class ConnectionManager {
                 Sentry.captureException(e);
             })
             .finally(() => window.location.assign(redirectUrl));
+    }
+
+    /**
+     * The room is known: starts the map downloads now, in parallel with the authentication calls and the scenes that
+     * come before the GameScene. Not for a visitor who is about to be redirected to the login page.
+     */
+    private prefetchMapOf(room: Room): void {
+        if (room.authenticationMandatory && !this.authToken && room.defaultWokaName === undefined) {
+            return;
+        }
+        mapPrefetch.start({ mapUrl: room.mapUrl, wamUrl: room.wamUrl });
+    }
+
+    /**
+     * Starts resolving the room and authenticating, and hands the same promise to everyone who asks, so that a
+     * caller that starts it earlier (App.svelte, once it is hooked) and `GameManager.init()` share one request. A
+     * failure is not kept: the next caller tries again.
+     */
+    public startGameConnexion(): ReturnType<ConnectionManager["initGameConnexion"]> {
+        if (!this.gameConnexionPromise) {
+            const connexion = this.initGameConnexion();
+            this.gameConnexionPromise = connexion;
+            connexion.catch(() => {
+                // The caller that awaits it reports the failure; this only lets the next call start again.
+                if (this.gameConnexionPromise === connexion) {
+                    this.gameConnexionPromise = undefined;
+                }
+            });
+        }
+        return this.gameConnexionPromise;
     }
 
     /**
@@ -237,6 +269,7 @@ class ConnectionManager {
             //get detail map for anonymous login and set texture in local storage
             //before set token of user we must load room and all information. For example the mandatory authentication could be require on current room
             this._currentRoom = await Room.createRoom(roomPathUrl);
+            this.prefetchMapOf(this._currentRoom);
 
             //Set last room visited! (connected or not, must be saved in localstorage and cache API)
             //use href to keep # value

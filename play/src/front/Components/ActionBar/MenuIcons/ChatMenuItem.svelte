@@ -34,10 +34,17 @@
 
     const shortcut = ["c"];
 
-    // The game scene opens the chat connection. A failed attempt still opens the panel, which explains the
-    // failure and offers Retry; only a pending attempt keeps the button disabled.
+    // The chat connection starts once the scene is playable and the browser is idle, or when the panel is opened. An
+    // attempt that has not started ("idle") accepts the click: opening the panel is what starts it, and the panel
+    // shows a loader until it is up. A failed attempt opens the panel too, which explains the failure and offers
+    // Retry. The button stays usable while the panel is open, so the player can close it whatever the attempt does.
     const chatConnectionAttemptStore = gameManager.chatConnectionAttemptStore;
-    let chatAvailable = $derived($chatConnectionAttemptStore === "ready" || $chatConnectionAttemptStore === "failed");
+    let chatAvailable = $derived(
+        $chatConnectionAttemptStore === "ready" ||
+            $chatConnectionAttemptStore === "failed" ||
+            $chatConnectionAttemptStore === "idle" ||
+            $chatVisibilityStore,
+    );
 
     // Calculate total unread count and format it (max 99+)
     let totalUnreadCount = $derived($matrixUnreadMessagesCountStore + $unreadMessagesCount);

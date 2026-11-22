@@ -1140,6 +1140,9 @@ export class AreasPropertiesListener {
         if (this.scene.connection && matrixRoomId && isConnected) {
             const entry = Symbol(matrixRoomId);
             this.enteredMatrixRoomIds.set(matrixRoomId, entry);
+            // The chat connection starts when the browser is idle: the player who steps into a chat room needs it now.
+            // It also releases chatIdSentDeferred below, which waits for the connection.
+            gameManager.requestChatConnection();
             // The map does not wait for the chat connection, so the player can be inside the area (they can even
             // spawn there) before the server knows their Matrix id, which it needs to invite them into the room.
             this.scene.chatIdSentDeferred.promise
