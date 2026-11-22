@@ -12,6 +12,7 @@ import tailwindcss from "@tailwindcss/vite";
 import Icons from "unplugin-icons/vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { apiVersionHash } from "../libs/messages/src/JsonMessages/ApiVersion";
+import { precompressPlugin } from "./vite/precompress";
 
 // Matrix is only for logged-in users (GameManager loads it with import()): keep the SDK out of the chunks every
 // visitor downloads. A single value import of it anywhere on the startup path would silently bring it all back.
@@ -236,5 +237,7 @@ export default defineConfig(({ mode }) => {
             }) as Plugin,
         );
     }
+    // Last, so that the Sentry and PostHog plugins have read the source maps and the output is complete.
+    config.plugins.push(precompressPlugin());
     return config;
 });

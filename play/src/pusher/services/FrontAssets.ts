@@ -1,12 +1,13 @@
 import fs from "fs";
+import path from "path";
 import type { Application } from "express";
-import express from "express";
 import Mustache from "mustache";
 import * as Sentry from "@sentry/node";
 import { asError } from "catch-unknown";
 import { apiVersionHash } from "@workadventure/messages";
 import { ASSETS_INTERNAL_URL, ASSETS_URL } from "../enums/EnvironmentVariable";
 import { assetsProxy } from "../middlewares/AssetsProxy";
+import { precompressedStatic } from "./PrecompressedStatic";
 
 const REFRESH_INTERVAL_MS = 30_000;
 // Until the first template is loaded, the pusher is not ready: retry quickly.
@@ -46,14 +47,16 @@ export class LocalFrontAssets implements FrontAssets {
     private readonly html: string;
     private readonly publicPath: string;
 
-    constructor() {
+    /** @param baseDirectory The folder that holds "dist/public" (a production image) or "index.html" and "public" (dev). */
+    constructor(baseDirectory = ".") {
+        const inBase = (...segments: string[]): string => path.join(baseDirectory, ...segments);
         let indexPath: string;
-        if (fs.existsSync("dist/public/index.html")) {
+        if (fs.existsSync(inBase("dist/public/index.html"))) {
             // In prod mode
-            indexPath = "dist/public/index.html";
-        } else if (fs.existsSync("index.html")) {
+            indexPath = inBase("dist/public/index.html");
+        } else if (fs.existsSync(inBase("index.html"))) {
             // In dev mode
-            indexPath = "index.html";
+            indexPath = inBase("index.html");
         } else {
             throw new Error("Could not find index.html file");
         }
@@ -61,12 +64,12 @@ export class LocalFrontAssets implements FrontAssets {
         // Pre-parse the index file for speed (and validation)
         Mustache.parse(this.html);
 
-        if (fs.existsSync("dist/public")) {
+        if (fs.existsSync(inBase("dist/public"))) {
             // In prod mode
-            this.publicPath = "dist/public";
-        } else if (fs.existsSync("public")) {
+            this.publicPath = inBase("dist/public");
+        } else if (fs.existsSync(inBase("public"))) {
             // In dev mode
-            this.publicPath = "public";
+            this.publicPath = inBase("public");
         } else {
             throw new Error("Could not find public folder");
         }
@@ -77,6 +80,8 @@ export class LocalFrontAssets implements FrontAssets {
     }
 
     public registerStaticRoutes(app: Application): void {
+        // The build writes a .br and a .gz next to each compressible file (play/vite/precompress.ts); the middleware
+        // answers with the one the client accepts and leaves everything else to express.static.
         const staticOptions = {
             extensions: [
                 ".css",
@@ -100,7 +105,7 @@ export class LocalFrontAssets implements FrontAssets {
 
         app.use(
             "/assets",
-            express.static(this.publicPath + "/assets", {
+            precompressedStatic(this.publicPath + "/assets", {
                 ...staticOptions,
                 // Vite content-hashes everything under /assets, so the CDN edge may keep it forever.
                 maxAge: "1y",
@@ -110,7 +115,7 @@ export class LocalFrontAssets implements FrontAssets {
 
         app.use(
             "/resources",
-            express.static(this.publicPath + "/resources", {
+            precompressedStatic(this.publicPath + "/resources", {
                 ...staticOptions,
                 maxAge: "1d",
             }),
@@ -118,7 +123,7 @@ export class LocalFrontAssets implements FrontAssets {
 
         app.use(
             "/static",
-            express.static(this.publicPath + "/static", {
+            precompressedStatic(this.publicPath + "/static", {
                 ...staticOptions,
                 maxAge: "1d",
             }),
@@ -126,14 +131,14 @@ export class LocalFrontAssets implements FrontAssets {
 
         app.use(
             "/collections",
-            express.static(this.publicPath + "/collections", {
+            precompressedStatic(this.publicPath + "/collections", {
                 ...staticOptions,
                 maxAge: "1d",
             }),
         );
 
         app.use(
-            express.static(this.publicPath, {
+            precompressedStatic(this.publicPath, {
                 ...staticOptions,
                 maxAge: "1h",
             }),

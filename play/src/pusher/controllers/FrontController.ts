@@ -19,6 +19,7 @@ import {
 } from "../enums/EnvironmentVariable";
 import { validateQuery } from "../services/QueryValidator";
 import type { FrontAssets } from "../services/FrontAssets";
+import { sendDocument } from "../services/ContentEncoding";
 import { BaseHttpController } from "./BaseHttpController";
 
 const debug = Debug("pusher:requests");
@@ -290,7 +291,10 @@ export class FrontController extends BaseHttpController {
             console.info(`Cannot render metatags on "%"`, url, e);
         }
 
-        res.set("Cache-Control", "no-cache").type("html").send(html);
+        // A page that carries the auth token is not compressed: its length would leak the token (BREACH), since
+        // the page also reflects the requested URL.
+        res.set("Cache-Control", "no-cache").type("html");
+        await sendDocument(req, res, html, { compress: !authToken });
         return;
     }
 
