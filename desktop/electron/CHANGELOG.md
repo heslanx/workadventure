@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.0.0-beta.9](https://github.com/workadventure/workadventure/compare/desktop-v2.0.0-beta.8...desktop-v2.0.0-beta.9) (2026-11-20)
+
+
+### Bug Fixes
+
+* **desktop:** remove the temporary auto-update test comment ([#7070](https://github.com/workadventure/workadventure/issues/7070)) ([7d16633](https://github.com/workadventure/workadventure/commit/7d16633e60af09157beb120917b6451049059f3b))
+
+## [2.0.0-beta.8](https://github.com/workadventure/workadventure/compare/desktop-v2.0.0-beta.7...desktop-v2.0.0-beta.8) (2026-11-20)
+
+
+### Bug Fixes
+
+* **desktop:** relaunch the app after "Install and Restart" ([#7068](https://github.com/workadventure/workadventure/issues/7068)) ([0fcb97e](https://github.com/workadventure/workadventure/commit/0fcb97eee2f2505a582f335fc46a583845c1fbdd))
+
+## [2.0.0-beta.7](https://github.com/workadventure/workadventure/compare/desktop-v2.0.0-beta.6...desktop-v2.0.0-beta.7) (2026-11-20)
+
+
+### Bug Fixes
+
+* **desktop:** sign in and out of worlds whose pusher is on another host ([6b25dc6](https://github.com/workadventure/workadventure/commit/6b25dc66bf5e5c601e6f34b39f57ae792d974f68))
+* **desktop:** stop the update prompt from freezing the app on macOS ([e2dd7df](https://github.com/workadventure/workadventure/commit/e2dd7dfe04d71772481df7cc79d340db586874da))
+
+## [2.0.0-beta.6](https://github.com/workadventure/workadventure/compare/desktop-v2.0.0-beta.5...desktop-v2.0.0-beta.6) (2026-11-19)
+
+
+### Features
+
+* **desktop:** keep running in the tray when the window is closed ([4fcc6f9](https://github.com/workadventure/workadventure/commit/4fcc6f9ac576738b023269b66c462f782d11e9db))
+* **desktop:** sign and notarize the macOS app with the Developer ID certificate ([980806f](https://github.com/workadventure/workadventure/commit/980806f3821fddb4e2919b044de4564fb2e320ec))
+* **desktop:** start in the tray when the computer starts the app ([#7049](https://github.com/workadventure/workadventure/issues/7049)) ([a004173](https://github.com/workadventure/workadventure/commit/a0041738f7bbb33425087ff8a7ef4733e2046357))
+
+
+### Bug Fixes
+
+* **desktop:** show the release name, not raw HTML, in the Windows update dialog ([eb60bc3](https://github.com/workadventure/workadventure/commit/eb60bc305ba22695a507ebb9ae3eead29e819c2c))
+
 ## [2.0.0-beta.5](https://github.com/workadventure/workadventure/compare/desktop-v2.0.0-beta.4...desktop-v2.0.0-beta.5) (2026-11-17)
 
 
