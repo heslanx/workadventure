@@ -2,7 +2,7 @@
 
 On 2026-11-18 the owner delegated these decisions: "decide yourselves, validate every hypothesis, never wait on me". Each section gives the decision, the evidence, the open hypotheses and how each is checked, the first slice, and how to reverse it. Every slice is a separate, reversible commit made through the integrator session ([integration loop](../integration/LOOP.md)).
 
-Status at the time of writing: decided. No implementation slice below was committed. The C5 rule in `messages/AGENTS.md` landed with this file. Refreshed 2026-11-19 at `a0fc2bf18`: C4 slices 1 and 1b landed in `850605bee`, C5 slices (a) and (b) in `8c6034a42`, and the COPY catalog in `8b843ea1b`. This file does not track the other slices. Refreshed again 2026-11-19 at `47865006b`: C5 slice (c), C1 slice 3, C2 slice 1 and the back half of C3 slice 1b landed, all with unit-harness numbers only and the three flags off. Their shas are marked in the sections below, and the deviations from the text of this file are listed in the last section, "Landed slices and deviations (2026-11-19)". Line numbers above that section stay stable on purpose: other documents cite them.
+Status at the time of writing: decided. No implementation slice below was committed. The C5 rule in `messages/AGENTS.md` landed with this file. Refreshed 2026-11-19 at `a0fc2bf18`: C4 slices 1 and 1b landed in `850605bee`, C5 slices (a) and (b) in `8c6034a42`, and the COPY catalog in `8b843ea1b`. This file does not track the other slices. Refreshed again 2026-11-19 at `47865006b`: C5 slice (c), C1 slice 3, C2 slice 1 and the back half of C3 slice 1b landed, all with unit-harness numbers only and the three flags off. Their shas are marked in the sections below, and the deviations from the text of this file are listed in the section "Landed slices and deviations (2026-11-19)". Refreshed 2026-11-22 at `ae2d88ad9`: the C2 detail budget is on by default (`863e8d384`), the C3 front half is built (`4d2a84570`), C1 slice 3 was reworked (`bda3a26c6`), and two domains joined the graph; the last two sections of this file ("MAPTOOLS-REACTIONS" and "Landed slices and deviations (2026-11-21 and 2026-11-22)") record them, and lines marked "Update 2026-11-22" below point there. Line numbers above that section stay stable on purpose: other documents cite them.
 
 | ID | Subject | First slice |
 |---|---|---|
@@ -120,7 +120,7 @@ Later: a flat plan view with a low-frequency overview feed, and a 1 Hz per-viewe
 **First slice.**
 
 - 1a (size S, the instrument): world-space support in the generator (`benchmark/src/protocol.ts`, `session.ts`, `config.ts`, `runner.ts`, `stats.ts`, `benchmark/tests/harness.test.ts`). `--world-space=<watchFraction>` (default 0): a bot sends `joinSpaceQuery` for `allWorldUser` (ALL_USERS, `availabilityStatus`, `chatID`) then `addSpaceFilter` for the watching fraction; the report gives records and bytes by type per second and per client; add a mass-rejoin step. BEFORE: N = 50, 200, 300, 500 with fraction 1, 60 s ramp, 60 s steady, one mass rejoin, production build, 3 interleaved runs, median. 1000 only on the Linux host. This is the same generator slice as C1 slice 1.
-- 1b (size M, one flag, default on in Konclui): `headcount` (non-negative int, default 0) in `libs/shared-utils/src/SpaceState/SpaceState.ts`; the back keeps a `Map<uuid, refcount>` for the world space only (identified by the `allWorldUser` name) with a trailing 1000 ms debounce, then `updateState`; `GameScene.ts` reads `space.state.observe('headcount')` and falls back to the user count for an older back; a lazy gate around the world provider with pure mode rules in a new `play/src/front/Konclui/Presence/domain`; clear stale rows when the filter is registered again (`Space.ts:665-706,927-948`). Back half landed 2026-11-19 in `aab3487b1` (flag `WORLD_HEADCOUNT_ENABLED`, off) and the client keeps the field since `c973c394a`; the front half (`GameScene` reading the number, lazy gate, panel, stale-row clearing) is not built. Deviations: last section.
+- 1b (size M, one flag, default on in Konclui): `headcount` (non-negative int, default 0) in `libs/shared-utils/src/SpaceState/SpaceState.ts`; the back keeps a `Map<uuid, refcount>` for the world space only (identified by the `allWorldUser` name) with a trailing 1000 ms debounce, then `updateState`; `GameScene.ts` reads `space.state.observe('headcount')` and falls back to the user count for an older back; a lazy gate around the world provider with pure mode rules in a new `play/src/front/Konclui/Presence/domain`; clear stale rows when the filter is registered again (`Space.ts:665-706,927-948`). Back half landed 2026-11-19 in `aab3487b1` (flag `WORLD_HEADCOUNT_ENABLED`, off) and the client keeps the field since `c973c394a`; the front half (`GameScene` reading the number, lazy gate, panel, stale-row clearing) was not built then. Update 2026-11-22: built in `4d2a84570` (the people panel). Deviations: the section "Landed slices and deviations (2026-11-19)" and the last section.
 - Tests that fail on revert: back unit (two sessions of one uuid count 1; leave decrements; 10 joins in 1 s give 1 patch); pusher (a state patch reaches a member that never sent `addSpaceFilter`); front (the count store never subscribes `usersStore`; no `addSpaceFilter` while the panel is closed or above T; no stale user after re-watch; no flicker inside 180-220).
 
 Later: Presence directory store with windowed rows; pusher-served name search; pulled positions for "Ver no mapa" (new low-frequency contract, then retire `office-presence`); `encodeOnce` for space add/remove, kept only if CPU per 1000 joins improves by more than 10%; set T from data.
@@ -265,9 +265,9 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 
 ## Landed slices and deviations (2026-11-19)
 
-Five commits landed after `a0fc2bf18`. Each carries unit-harness numbers (`docs/PERFORMANCE.md` Optimization Ledger) and none has a load run or a browser frame-time run. The three flags are off by default, Konclui included. This section records where the landed code differs from the text of C1, C2, C3 and C5 above, and why. The text above is kept as decided.
+Five commits landed after `a0fc2bf18`. Each carries unit-harness numbers (`docs/PERFORMANCE.md` Optimization Ledger) and none has a load run or a browser frame-time run. The three flags are off by default, Konclui included. Update 2026-11-22: `avatarDetailBudget` is on by default since `863e8d384`, and a browser GPU run exists (Gate 1); see the last section. This section records where the landed code differs from the text of C1, C2, C3 and C5 above, and why. The text above is kept as decided.
 
-### C1 slice 3: per-viewer budget, `7a37a5178` (flag off)
+### C1 slice 3: per-viewer budget, `7a37a5178` (flag off; reworked in `bda3a26c6`)
 
 Landed: `ViewerBudget.ts` (pure `selectViewerBudget`), `PUSHER_VIEWER_FULL_RATE_PEERS` (default 150), `PUSHER_VIEWER_MAX_PEERS` (default 400), a 1 Hz tier for the rest of the view, stops, joins and leaves never held back, a 32 px seat margin so users at the edge do not churn. MEASURED in a harness (`play/tests/pusher/ViewerBudgetTraffic.test.ts:222,228`): one viewer among 1000 dense movers receives 4,995 moves a second and 89,137 bytes a second without it, 1,000 and 18,005 with it. No protocol change.
 
@@ -278,15 +278,15 @@ Deviations:
 - The hook is in the zone callbacks of the pusher `SocketManager.ts` (`onUserEnters`, `onUserMoves`, `onUserLeaves`), with one budget per socket in a `WeakMap`, not in `Zone.notifyUserMove` as written above. `Zone.ts` gained one getter, `UserDescriptor.getPosition`. Reason: the budget is state of one viewer, and the socket manager already owns the socket. The structural `ZoneListener` (ARCHITECTURE V2) did not precede it, and `ViewerBudget.ts` takes a `PusherWebSocket`.
 - 150 and 400 are the suggested values, not values set from a slice 1 table (none exists), and the go/no-go read of C1 was not taken. Both are ASSUMED until a valid N=1000 run exists.
 
-### C2 slice 1: detail budget, `47865006b` (flag off)
+### C2 slice 1: detail budget, `47865006b` (flag off when it landed; on by default since `863e8d384`)
 
-Landed: `AvatarDetail.ts` (`chooseFullDetail`, B = 80), `AvatarDotLayer.ts` (dots on one Blitter), `RemotePlayer.applyDetail`, name tags hidden as one layer below zoom modifier 0.65, recompute on join or leave, 150 ms after the zoom settles, when the pointer reaches a dot, and every 250 ms. The flag is `localStorage` `avatarDetailBudget` = "1" and is off by default. COUNTED in a harness (`play/tests/front/Phaser/Game/AvatarDetailCost.test.ts:347,362`): 1000 avatars at whole-map zoom go from 1,000 full avatars to 80, and from 3,000 objects rendered per frame to 240. These are operation counts.
+Landed: `AvatarDetail.ts` (`chooseFullDetail`, B = 80), `AvatarDotLayer.ts` (dots on one Blitter), `RemotePlayer.applyDetail`, name tags hidden as one layer below zoom modifier 0.65, recompute on join or leave, 150 ms after the zoom settles, when the pointer reaches a dot, and every 250 ms. The flag is `localStorage` `avatarDetailBudget`; when it landed it was "1" and off by default (since `863e8d384` it is on, and "0" turns it off). COUNTED in a harness (`play/tests/front/Phaser/Game/AvatarDetailCost.test.ts:347,362`): 1000 avatars at whole-map zoom go from 1,000 full avatars to 80, and from 3,000 objects rendered per frame to 240. These are operation counts.
 
 Deviations:
 
 - Hysteresis is a distance ratio of 1.25 (`DETAIL_HYSTERESIS_RATIO`, `AvatarDetail.ts:19`: an avatar that was full ranks as if it were 1.25 times closer), not a plus or minus 15% band. The text of C2 above gives no number; the ratio is what the code does.
-- The acceptance gate is NOT verified: 300 avatars at whole-map zoom, work p50 at least 50% below flag off, no long task over 50 ms. No browser frame time exists for this slice, so the flag stays off.
-- Scene effects still process the hidden avatars of the dots. C2 asked for dots "skipped by `SceneEffects`"; this is a known gap of the commit.
+- The acceptance gate is NOT verified: 300 avatars at whole-map zoom, work p50 at least 50% below flag off, no long task over 50 ms. No browser frame time exists for this slice, so the flag stays off. Update 2026-11-22: Gate 1 read GPU time with 999 walkers at default zoom and the flag was turned on; this acceptance gate (work p50 at whole-map zoom) is still not run.
+- Scene effects still process the hidden avatars of the dots. C2 asked for dots "skipped by `SceneEffects`"; this is a known gap of the commit. Update 2026-11-22: closed by `6191e6a28`, where the effects read only the drawn people.
 
 ### C3 slice 1b, back half: world headcount, `aab3487b1` (flag off), and `c973c394a`
 
@@ -296,8 +296,8 @@ Deviations:
 
 - The field is optional (`z.number().int().min(0).optional()` in `SpaceState.ts`), not `default(0)`. Reason: a default would hide an older back behind a 0, and would break a literal `SpaceState` on the client.
 - The timer is armed on the first change and publishes the count it holds when it fires, instead of a trailing 1000 ms debounce. Reason: a debounce that resets on every change publishes nothing while joins keep arriving.
-- A back flag `WORLD_HEADCOUNT_ENABLED` exists and is off by default everywhere, Konclui included, where C3 said "default on in Konclui". Reason: no client reads the number until the front half lands, so turning it on would add patches for no reader.
-- The front half is not built: `GameScene` reading `headcount` with a fallback to the user count, the lazy roster gate with T = 200, the panel, and the stale-row clearing. Every client still watches `allWorldUser`, so the roster cost C3 targets is unchanged. The front tests C3 lists are not written.
+- A back flag `WORLD_HEADCOUNT_ENABLED` exists and is off by default everywhere, Konclui included, where C3 said "default on in Konclui". Reason: no client reads the number until the front half lands, so turning it on would add patches for no reader. Update 2026-11-22: the front half landed in `4d2a84570`; the flag stays off.
+- The front half is not built (update 2026-11-22: built in `4d2a84570`): `GameScene` reading `headcount` with a fallback to the user count, the lazy roster gate with T = 200, the panel, and the stale-row clearing. Every client still watches `allWorldUser`, so the roster cost C3 targets is unchanged. The front tests C3 lists are not written.
 - A user without a uuid is counted by its space user id (`headcountKey`, `back/src/Model/Space.ts`). C3 does not say how to count an anonymous user.
 
 ### C5 slice (c): interval-aware receiver, `0ff4a395d`
@@ -311,3 +311,58 @@ Deviations:
 - The interval is not a plain EWMA. A longer gap is taken at once and a shorter one is smoothed with alpha 0.3, a stop or a gap over 3 s resets it, and a jump that no walk can make in the gap (1.5 times the fastest walk, which is the sped-up diagonal since `75db31b6d`; before it, a straight sped-up line, so a diagonal walk that arrived 80 ms early was placed) is placed at once. Reason: a draw shorter than the real interval leaves the avatar still, while one that is too long only slows it.
 - The test runs 10, 5 and 1 Hz and the two rate changes. The 2.5, 1.5 and 0.5 Hz cases that C5 asks for are not run.
 - The constants are imports, not parameters as ARCHITECTURE V9 asked: `POSITION_DELAY` from `Enum/EnvironmentVariable`, and the fastest walk from `Phaser/Player/WalkSpeed.ts`, the one source of the walk speeds since `75db31b6d` (TECH-DEBT DS-31, done; it restated the speed-up factor of `Player.ts` before).
+
+## MAPTOOLS-REACTIONS. MapTools and Reactions join the domain graph (2026-11-21)
+
+**Decision.** `MapTools` and `Reactions` are Konclui domains, and leaves of the graph: `domainEdges` in `play/src/front/Konclui/architecture.test.ts` has an entry for each with no edge, and no other entry lists them. They joined with their first folders in `2a86b2565`, and `play/src/front/Konclui/AGENTS.md` names them in its domain sentence. `MapTools` is the column beside the zoom controls (Go to my desk, Center on me, Cancel walk), the desk model and the walk commands (`881b7bc67`: U06, E05, E06). `Reactions` adds 26 pixel emotes to the reactions menu through its own port, `ExternalModule/ReactionsMenuPort.ts`, and rides the emote message the game already sends, so the wire is unchanged and an upstream client shows a plain reaction (`531129d2c`: U15, E08). The room variable that the desk tool reads came through `ExternalModule/ClientExtensionPoints.ts` (`4620e59cf`); an empty port keeps the upstream behaviour (commit message). The people panel (C3 front, `4d2a84570`) stays in `Presence`.
+
+**Evidence.** The two entries are in `domainEdges`, and the test that keeps the list equal to the folders on disk and to the `AGENTS.md` sentence passes with them (the architecture file has 11 tests, rerun 2026-11-22). The code of each domain is in its own folder with its tests beside it (`MapTools/**`, `Reactions/**`). A real-browser pass over the people panel, map tools and emotes found 9 defects, 8 fixed (the fix commits of the pass are `e5b00f07f`, `61ea29016` and `cc40ca7a5`) and 1 left on purpose (the upstream pt-BR label "Picture in picture"). A second browser pass on 2026-11-22 found the 8 fixed and nothing regressed. Not testable with 3 users: Everyone mode above 200 people, a person in another room, Go to my desk with a desk assigned.
+
+**Where the code is.** The tile click is `play/src/front/Phaser/Game/TileInteractionController.ts` (in the upstream folder tree, with its test) and `MapTools/phaser/tileInteractionExtension.ts`; the custom emote texture is `play/src/front/Phaser/Entity/CustomEmotes.ts` with changes in `Character.ts`. The matrix rows U06, E05, E06, U15 and E08 say built, not verified.
+
+**Reverse.** Delete the entry of the domain in `domainEdges`, its folder, its line in the `AGENTS.md` sentence and its registration in `integration.ts`; `architecture.test.ts` fails while any of the four disagrees. The emotes are removed by dropping the `Reactions` registration: the menu then shows the upstream reactions only.
+
+## Landed slices and deviations (2026-11-21 and 2026-11-22)
+
+Commits `560239d63` to `ae2d88ad9`. The measurements are in `docs/PERFORMANCE.md` ("HQ acceptance at 1,000 moving collaborators"), and each browser or GPU number there carries its machine and date (Google Chrome headless, one Apple M1 Max, 2026-11-22).
+
+### C2 slice 1 follow-up: the three avatar flags are on by default, `e44764aa9`, `b90a4d962`, `863e8d384`
+
+Landed: baked single-sheet avatars (`avatarBake`), zero-work culled and dot avatars (`avatarZeroWork`) and a promoted dot that stays drawn until its sprites are back; `avatarDetailBudget`, `avatarZeroWork` and `avatarBake` are on by default, each with its own constant and its own opt-out (`localStorage` set to `"0"`; a storage that cannot be read leaves them on), and `e2eHooks.getAvatarFlags` reports what the page runs with. Gate 1 (999 synthetic walkers, default zoom, 1920 × 1080, three runs per arm): GPU time at most 8.43 ms in any window with the flags on or off; the average at dusk and night is at least 0.5 ms higher with them on and the p99 and maximum are lower; no frame interval above 16.80 ms in 18 of 18 windows with them on, against 3 of 12 windows with a 33 ms interval with them off, all three in an earlier pair taken at a higher machine load.
+
+Deviations:
+
+- The C2 text says the flag is off by default until a browser run measures it. The run measured GPU time and the frame interval, not the acceptance gate of C2 (300 avatars at whole-map zoom, work p50 at least 50% below flag off, no long task over 50 ms). That gate is still not run.
+- `avatarZeroWork` and `avatarBake` are not in the C2 text. They are two further flags of the same client tier, added so a culled avatar or a dot does no animation, body or listener work and a full avatar of several layers is one sprite. The benchmark bots send one layer, so only the in-page synthetic crowd exercises the bake.
+- Hidden name tags are not zero-work: with the budget on the busiest walking frame at whole-map zoom still makes 80 style writes in the name layer that is hidden there (`AvatarDetailCost.test.ts`).
+- The claim that the flags remove dropped frames is confounded by machine load (the flags-off windows with a 33 ms interval are in the earlier pair, taken at a load average of 7 to 8, and that pair also ran without `konclui.fx.rim`).
+
+### C1 slice 3 rework: `bda3a26c6` (flag still off) and `658080e8e`
+
+Landed: a user's encoded join is kept across moves and re-encoded at most once per move for all viewers; a linear selection replaces the per-viewer sort; a deadband (exit at 1.2 times the enter rank, so 150 to 180 and 400 to 480), a 1,750 ms cooldown, a re-rank every 500 ms on its own timer, and seats for the nearer; each user keeps the set of sockets it is at full rate for, so a move reaches those alone; an early flush that keeps half an interval between two frames of a socket. `ZONE_MESSAGES_BATCH_INTERVAL_MS` makes the back's 50 ms window a validated variable (1 to 1000 ms). In process, 1,000 walkers: 3.07M calls a second against 10.00M with the budget off and 18.1 against 89.8 MB/s, 0 joins and leaves a second for a steady crowd, 8.3 a second at the edge of the budget against 108,328 for the bare selection (asserted). No `.proto` change: `git diff --stat fe612bedc..HEAD -- messages` is empty.
+
+Deviations and what is not met:
+
+- The 50 ms p95 of move delivery is not met at the default windows (144 ms with or without the budget). It is met only for the nearest 120 users at 10 ms at the back and 40 ms at the pusher, which nothing sets. Whether "p95 under 50 ms" covers the far users, who are heard once a second by design, is an open question for the owner.
+- JS time with the budget on is 205 to 340 ms per simulated second at N = 1,000 against the mandate's 150, and about 1.5 times the CPU of no budget in a sparse room. The 35% of 2 vCPU target is not measured: no run used real sockets or a 2 vCPU host.
+- The mandate gives the deadband as 80 and 96. In the pusher the seats are 150 and 400, with exit ranks 180 and 480 (`RETAIN_EXIT_RATIO` 1.2, `RETAIN_COOLDOWN_MS` 1,750, `RERANK_INTERVAL_MS` 500); `ViewerBudgetRetention.test.ts` checks the 1.2 ratio at 80 and 96 as well.
+- The flag stays off. TECH-DEBT DL-06 stays open for the p95, the CPU target and a real-socket run.
+
+### C3 front half: the people panel, `4d2a84570` (and `4620e59cf`, `2a86b2565`, `61ea29016`)
+
+Landed: the panel shows Online (N) from the headcount the back sends. It watches the roster only while it is open and the world is at or below T = 200 (hysteresis 180 and 220), or after the user chooses Everyone; above T it lists the people near the user. Search folds accents, Ctrl or Cmd + K opens it, arrows move along rows, and Go to walks to a person. The people view has its own state in the side panel and no longer borrows the chat visibility, so an unseen message still counts and sounds. A space that lost its last watcher replaces its held users on the next list instead of merging into stale rows. Without `WORLD_HEADCOUNT_ENABLED` on the back, the count and the roster behave as before, so the roster saving needs that flag and is not measured.
+
+Deviations:
+
+- The front tests that C3 lists exist under other names (`rosterWatch.test.ts`, `worldRoster.test.ts`, `SpaceUnwatchedUsers.test.ts`, `PeoplePanel.test.ts`); this entry did not check them one by one against C3's list.
+- The phone sheet ends above the measured dock, and Go to closes the sheet so the walk can be seen (`61ea29016`, from the browser pass).
+
+### Scene effects and the glass mirror: `6191e6a28`, `a76c2dbd9`
+
+Landed: the effects read only the drawn people (median 80 of 1,000 players visited a frame), allocate nothing per draw, and cache the lights in view by camera cell; a steady frame uploads 0 bytes and the build uploads each of the two canvases once. After a baked sheet is evicted and baked again, the mirror follows the new texture. Rim and normal lighting of people at night is behind `konclui.fx.rim`, off by default, because it can light floor pixels inside a person's ellipse. The two whole-canvas textures can still upload once a second while pieces change: Phaser 4.2.1 has no `texSubImage2D` path, so the mandate's sub-rectangle upload was not built.
+
+Deviations:
+
+- Gate 1 ran with `konclui.fx.rim` on in all but two runs, and with no normal-map texture in the scene (`normalMapLoaded: false` in every window), so the cost of the props' bevel is not measured.
+- The mandate's premise (a full-map mirror canvas uploaded on every frame) was not found in this tree at `ae2d88ad9`; no browser run exists of an earlier tree, so no browser before and after of the stall exists.
+
