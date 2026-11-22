@@ -20,6 +20,7 @@ import {
     type BackgroundMode,
     type BackgroundTransformer,
     createBackgroundTransformer,
+    getCameraSizeHint,
 } from "../WebRtc/BackgroundProcessor/createBackgroundTransformer";
 import { LL } from "../../i18n/i18n-svelte";
 import { currentRoomStore } from "./CurrentRoomStore";
@@ -1323,6 +1324,8 @@ async function runLocalVideoTrackUpdate(
                 backgroundConfigStore.reset();
             },
             (sample) => analyticsClient.trackAdminEvent("media.background_effect.sample", sample),
+            // The camera's size picks the segmenter that is built first, so a landscape webcam does not build two.
+            getCameraSizeHint(videoTrackValue.track),
         );
         backgroundTransformer = transformer;
     }

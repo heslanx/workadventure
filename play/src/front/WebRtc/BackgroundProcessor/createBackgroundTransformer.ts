@@ -1,5 +1,8 @@
 import { MediaPipeTasksVisionWorkerTransformer } from "./MediaPipeTasksVisionWorkerTransformer";
 import { FallbackBackgroundTransformer } from "./FallbackBackgroundTransformer";
+import type { CameraSizeHint } from "./MediaPipeTasksVisionWorkerProtocol";
+
+export type { CameraSizeHint };
 
 export const BACKGROUND_MODES = ["none", "blur", "image"] as const;
 export type BackgroundMode = (typeof BACKGROUND_MODES)[number];
@@ -76,16 +79,32 @@ export class BackgroundProcessingUnsupportedError extends Error {
 }
 
 /**
+ * The size the camera track reports, or undefined when it does not say. It is a hint, not a promise
+ * (getSettings() can be absent, ideal rather than actual, or not yet rotated on a phone), so the segmenter
+ * still corrects itself from the real frames.
+ */
+export function getCameraSizeHint(track: MediaStreamTrack | undefined): CameraSizeHint | undefined {
+    try {
+        const { width, height } = track?.getSettings() ?? {};
+        return width && height && width > 0 && height > 0 ? { width, height } : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/**
  * Create a MediaPipe Tasks Vision background transformer, or a pass-through fallback
- * when the transformer cannot be constructed.
+ * when the transformer cannot be constructed. `cameraSize` lets the worker build the segmentation model
+ * that fits the camera first (see getCameraSizeHint).
  */
 export function createBackgroundTransformer(
     config: BackgroundConfig,
     onTerminalFailure?: BackgroundTransformerFailureHandler,
     onSample?: BackgroundEffectSampleHandler,
+    cameraSize?: CameraSizeHint,
 ): BackgroundTransformer {
     try {
-        return new MediaPipeTasksVisionWorkerTransformer(config, onTerminalFailure, onSample);
+        return new MediaPipeTasksVisionWorkerTransformer(config, onTerminalFailure, onSample, cameraSize);
     } catch (error) {
         console.error("[BackgroundTransformer] Failed to create Tasks Vision transformer, using fallback:", error);
         return new FallbackBackgroundTransformer();

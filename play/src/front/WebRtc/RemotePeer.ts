@@ -877,6 +877,122 @@ export class RemotePeer extends Peer implements Streamable {
         this.analyticsRemoteStreamUnsubscribe = undefined;
     }
 
+    // ---------------------------------------------------------------------------------------------------------------
+    // DESTROYED-PEER GUARD, in two parts with two different removal conditions.
+    //
+    // simple-peer 12.3.0 throws once a peer is destroyed: its deferred offer (negotiate() schedules _createOffer()
+    // with setTimeout) and answer dereference the nulled _pc, and signal(), send(), negotiate(), addTrack() and
+    // friends throw ERR_DESTROYED. A timer or a late message that reaches a peer in that window is an uncaught
+    // error (seen in the field on Safari).
+    //
+    // Part 1, "_createOffer" and "_createAnswer": removable. Upstream pull request
+    // https://github.com/workadventure/simple-peer/pull/25 makes both return when the peer is destroyed (it is
+    // open and unreleased as of 2026-11-22; it touches only those two methods). Once the lockfile resolves a
+    // simple-peer release that contains it, delete part 1 and the two matching assertions of
+    // RemotePeer.destroyedPeerGuard.test.ts.
+    //
+    // Part 2, "negotiate", "signal", "send", the track and stream methods and "getStats": NOT replaced by that pull
+    // request. simple-peer throws ERR_DESTROYED from them by design (dist/lite, signal/send/negotiate; index,
+    // addStream/addTrack). Releasing the pull request does not remove the need: a reviewer must decide then
+    // whether to keep part 2. It also treats the peer as gone as soon as destroy() started (simple-peer ignores
+    // most calls in that window already, but not _createOffer, _createAnswer and getStats).
+    // The stats poll behind webrtcStats was already safe (WebRtcStatsFactory and the audio poll read _pc directly
+    // and stop on destroyed); only a direct getStats(cb) call is guarded here.
+    // ---------------------------------------------------------------------------------------------------------------
+
+    /**
+     * True when the peer is destroyed or on its way (simple-peer sets _destroying first, nulls _pc and sets
+     * destroyed one timer later). Reads simple-peer fields only: it may run before RemotePeer's own are set.
+     */
+    private get isGoneForGuard(): boolean {
+        return this.destroyed || this._destroying || !this._pc;
+    }
+
+    // ---- Part 1: replaced by simple-peer pull request 25 (delete from here ...) ----
+    override _createOffer(): void {
+        if (this.isGoneForGuard) {
+            debug("Dropped the deferred offer of a destroyed peer");
+            return;
+        }
+        super._createOffer();
+    }
+
+    override _createAnswer(): void {
+        if (this.isGoneForGuard) {
+            debug("Dropped the deferred answer of a destroyed peer");
+            return;
+        }
+        super._createAnswer();
+    }
+    // ---- ... to here) ----
+
+    // ---- Part 2: defensive, not tied to an upstream fix ----
+    override negotiate(): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.negotiate();
+    }
+
+    override signal(data: Parameters<Peer["signal"]>[0]): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.signal(data);
+    }
+
+    override send(chunk: Parameters<Peer["send"]>[0]): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.send(chunk);
+    }
+
+    override addTrack(...args: Parameters<Peer["addTrack"]>): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.addTrack(...args);
+    }
+
+    override addStream(...args: Parameters<Peer["addStream"]>): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.addStream(...args);
+    }
+
+    override replaceTrack(...args: Parameters<Peer["replaceTrack"]>): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.replaceTrack(...args);
+    }
+
+    override removeTrack(...args: Parameters<Peer["removeTrack"]>): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.removeTrack(...args);
+    }
+
+    override removeStream(...args: Parameters<Peer["removeStream"]>): void {
+        if (this.isGoneForGuard) {
+            return;
+        }
+        super.removeStream(...args);
+    }
+
+    override getStats(cb: Parameters<Peer["getStats"]>[0]): void {
+        if (this.isGoneForGuard) {
+            cb(new Error("Cannot read the stats of a destroyed peer"));
+            return;
+        }
+        super.getStats(cb);
+    }
+
+    // ----------------------------------------------------- end of the destroyed-peer guard -----------------------
+
     /**
      * This is triggered twice. Once by the server, and once by a remote client disconnecting
      */

@@ -1,8 +1,15 @@
 import type { BackgroundConfig } from "./createBackgroundTransformer";
 import type { SegmenterModel, TasksVisionAssetUrls } from "./tasksVisionAssets";
 
+/** The camera's size in pixels, when the main thread knows it before the first frame. */
+export type CameraSizeHint = { width: number; height: number };
+
 export type TasksVisionWorkerRequest =
-    | { type: "initialize"; config: BackgroundConfig; assets: TasksVisionAssetUrls }
+    /**
+     * `cameraSize` is only a hint for which model to build first: the first real frame still decides, and
+     * the worker switches models when the hint was wrong.
+     */
+    | { type: "initialize"; config: BackgroundConfig; assets: TasksVisionAssetUrls; cameraSize?: CameraSizeHint }
     | { type: "update-config"; requestId: number; config: Partial<BackgroundConfig> }
     /** Image-bitmap transport: one frame at a time, the main thread waits for the "frame" answer. */
     | { type: "process-frame"; frameId: number; frame: ImageBitmap; timestampMs: number }

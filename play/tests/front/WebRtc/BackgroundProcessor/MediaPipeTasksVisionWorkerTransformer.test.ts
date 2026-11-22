@@ -26,7 +26,10 @@ vi.mock("../../../../src/front/WebRtc/BackgroundProcessor/MediaPipeTasksVisionWo
 }));
 
 import { MediaPipeTasksVisionWorkerTransformer } from "../../../../src/front/WebRtc/BackgroundProcessor/MediaPipeTasksVisionWorkerTransformer";
-import { BackgroundProcessingUnsupportedError } from "../../../../src/front/WebRtc/BackgroundProcessor/createBackgroundTransformer";
+import {
+    BackgroundProcessingUnsupportedError,
+    getCameraSizeHint,
+} from "../../../../src/front/WebRtc/BackgroundProcessor/createBackgroundTransformer";
 
 class FakeWorker {
     public onmessage: ((event: MessageEvent) => void) | null = null;
@@ -128,6 +131,35 @@ describe("MediaPipeTasksVisionWorkerTransformer", () => {
 
         expect(workerMocks.instances).toHaveLength(1);
         expect(transformer.getPerformanceStats()).toMatchObject({ transport: "image-bitmap", workerDelegate: "GPU" });
+    });
+
+    it("sends the camera size hint to the worker with the initialize message", async () => {
+        transformer = new MediaPipeTasksVisionWorkerTransformer({ mode: "blur" }, undefined, undefined, {
+            width: 1280,
+            height: 720,
+        });
+        await transformer.waitForInitialization();
+
+        expect(workerMocks.instances[0].messages[0]).toMatchObject({
+            type: "initialize",
+            cameraSize: { width: 1280, height: 720 },
+        });
+    });
+
+    it("reads the camera size hint from the track settings, and tolerates tracks that do not report one", () => {
+        const trackWith = (settings: () => MediaTrackSettings) => ({ getSettings: settings }) as MediaStreamTrack;
+
+        expect(getCameraSizeHint(trackWith(() => ({ width: 640, height: 480 })))).toEqual({ width: 640, height: 480 });
+        expect(getCameraSizeHint(trackWith(() => ({})))).toBeUndefined();
+        expect(getCameraSizeHint(trackWith(() => ({ width: 640 })))).toBeUndefined();
+        expect(
+            getCameraSizeHint(
+                trackWith(() => {
+                    throw new Error("settings unavailable");
+                }),
+            ),
+        ).toBeUndefined();
+        expect(getCameraSizeHint(undefined)).toBeUndefined();
     });
 
     it("transfers insertable streams to the worker and returns the generator track", async () => {

@@ -9,6 +9,7 @@ import {
 } from "./tasksVisionAssets";
 import {
     serializeError,
+    type CameraSizeHint,
     type TasksVisionWorkerDelegate,
     type TasksVisionWorkerRequest,
     type TasksVisionWorkerResponse,
@@ -87,7 +88,7 @@ export class MediaPipeTasksVisionWorkerRuntime {
         this.messageQueue = this.messageQueue
             .then(async () => {
                 if (message.type === "initialize") {
-                    await this.initialize(message.config, message.assets);
+                    await this.initialize(message.config, message.assets, message.cameraSize);
                 } else if (message.type === "update-config") {
                     await this.updateConfig(message.requestId, message.config);
                 } else {
@@ -99,9 +100,17 @@ export class MediaPipeTasksVisionWorkerRuntime {
             });
     }
 
-    private async initialize(config: BackgroundConfig, assets: TasksVisionAssetUrls): Promise<void> {
+    private async initialize(
+        config: BackgroundConfig,
+        assets: TasksVisionAssetUrls,
+        cameraSize?: CameraSizeHint,
+    ): Promise<void> {
         this.config = { ...config };
         this.assets = assets;
+        // A hint only picks the model built first; render() corrects it from the real frame size.
+        if (cameraSize && cameraSize.width > 0 && cameraSize.height > 0) {
+            this.model = selectSegmenterModel(cameraSize.width, cameraSize.height);
+        }
         try {
             const delegate = await this.initializeMediaPipe();
             await this.updateBackgroundImage();
@@ -250,8 +259,20 @@ export class MediaPipeTasksVisionWorkerRuntime {
         const abortController = new AbortController();
         this.activeStream = { streamId, abortController };
 
+        // Frame timestamps count from boot (microseconds), and MediaPipe takes at most 2^31 - 1 ms (about 24.9 days):
+        // past that every frame would get the same capped timestamp and the graph would reject all of them. The
+        // pipe's own clock starts at its first frame, so only the pipe's age counts, and it carries on from the
+        // last timestamp the segmenter has seen so a restarted pipe stays strictly increasing without a crawl.
+        let originUs: number | undefined;
+        let offsetMs = 0;
         const transformer = new TransformStream<VideoFrame, VideoFrame>({
-            transform: (frame, controller) => this.transformVideoFrame(frame, controller),
+            transform: (frame, controller) => {
+                if (originUs === undefined) {
+                    originUs = frame.timestamp;
+                    offsetMs = Math.max(this.lastTimestampMs + 1, 0);
+                }
+                this.transformVideoFrame(frame, controller, offsetMs + (frame.timestamp - originUs) / 1000);
+            },
         });
         readable
             .pipeThrough(transformer)
@@ -279,11 +300,15 @@ export class MediaPipeTasksVisionWorkerRuntime {
         this.activeStream = null;
     }
 
-    private transformVideoFrame(frame: VideoFrame, controller: TransformStreamDefaultController<VideoFrame>): void {
+    /** `segmentationTimestampMs` is the pipe's rebased clock; the output frame keeps the capture timestamp. */
+    private transformVideoFrame(
+        frame: VideoFrame,
+        controller: TransformStreamDefaultController<VideoFrame>,
+        segmentationTimestampMs: number,
+    ): void {
         let output: VideoFrame = frame;
         try {
-            // VideoFrame timestamps are microseconds; MediaPipe wants milliseconds.
-            if (this.render(frame, frame.displayWidth, frame.displayHeight, frame.timestamp / 1000)) {
+            if (this.render(frame, frame.displayWidth, frame.displayHeight, segmentationTimestampMs)) {
                 output = new VideoFrame(this.glCanvas!, { timestamp: frame.timestamp, alpha: "discard" });
             }
         } catch (error) {

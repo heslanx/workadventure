@@ -5,6 +5,7 @@ import tasksVisionWorkerUrl from "./MediaPipeTasksVisionWorker?worker&url";
 import { TASKS_VISION_ASSET_URLS } from "./tasksVisionAssetUrls";
 import {
     deserializeError,
+    type CameraSizeHint,
     type TasksVisionWorkerDelegate,
     type TasksVisionWorkerRequest,
     type TasksVisionWorkerResponse,
@@ -86,6 +87,7 @@ export class MediaPipeTasksVisionWorkerTransformer implements BackgroundTransfor
         config: BackgroundConfig,
         private readonly onTerminalFailure?: BackgroundTransformerFailureHandler,
         private readonly onSample?: BackgroundEffectSampleHandler,
+        private readonly cameraSize?: CameraSizeHint,
     ) {
         this.config = { ...config };
         this.transport = selectBackgroundTransport();
@@ -131,6 +133,7 @@ export class MediaPipeTasksVisionWorkerTransformer implements BackgroundTransfor
             type: "initialize",
             config: { ...this.config, backgroundImage: this.resolveDocumentUrl(this.config.backgroundImage) },
             assets: TASKS_VISION_ASSET_URLS,
+            cameraSize: this.cameraSize,
         });
         await initializationPromise;
     }

@@ -296,6 +296,55 @@ describe("MediaPipeTasksVisionWorkerRuntime", () => {
         expect(mediaPipeMocks.createFromOptions).toHaveBeenCalledTimes(2);
     });
 
+    describe("camera size hint", () => {
+        const modelsBuilt = () =>
+            mediaPipeMocks.createFromOptions.mock.calls.map(
+                (call) => (call[1] as { baseOptions: { modelAssetPath: string } }).baseOptions.modelAssetPath,
+            );
+
+        it("builds the landscape model once for a landscape camera, and no second segmenter follows", async () => {
+            send({ type: "initialize", assets, config: { mode: "blur" }, cameraSize: { width: 1280, height: 720 } });
+            await waitForPosted(1);
+            for (let frameId = 1; frameId <= 4; frameId++) {
+                send({ type: "process-frame", frameId, frame: createBitmap(16, 9), timestampMs: frameId * 10 });
+            }
+            await waitForPosted(5);
+
+            expect(modelsBuilt()).toEqual(["/assets/landscape.tflite"]);
+        });
+
+        it("builds the general model once for a portrait camera, and no second segmenter follows", async () => {
+            send({ type: "initialize", assets, config: { mode: "blur" }, cameraSize: { width: 720, height: 1280 } });
+            await waitForPosted(1);
+            for (let frameId = 1; frameId <= 4; frameId++) {
+                send({ type: "process-frame", frameId, frame: createBitmap(9, 16), timestampMs: frameId * 10 });
+            }
+            await waitForPosted(5);
+
+            expect(modelsBuilt()).toEqual(["/assets/general.tflite"]);
+        });
+
+        it("still corrects a wrong hint from the real frame size", async () => {
+            send({ type: "initialize", assets, config: { mode: "blur" }, cameraSize: { width: 720, height: 1280 } });
+            await waitForPosted(1);
+            const portraitSegmenter = await mediaPipeMocks.createFromOptions.mock.results[0].value;
+
+            // The camera turns out to deliver landscape frames.
+            send({ type: "process-frame", frameId: 1, frame: createBitmap(16, 9), timestampMs: 10 });
+            await waitForPosted(2);
+
+            expect(modelsBuilt()).toEqual(["/assets/general.tflite", "/assets/landscape.tflite"]);
+            await vi.waitFor(() => expect(portraitSegmenter.close).toHaveBeenCalledOnce());
+        });
+
+        it("ignores a hint without a usable size", async () => {
+            send({ type: "initialize", assets, config: { mode: "blur" }, cameraSize: { width: 0, height: 0 } });
+            await waitForPosted(1);
+
+            expect(modelsBuilt()).toEqual(["/assets/general.tflite"]);
+        });
+    });
+
     it("posts pipeline stats once a 15 s window of rendering has elapsed", async () => {
         let nowMs = 0;
         vi.spyOn(performance, "now").mockImplementation(() => nowMs);
@@ -339,7 +388,10 @@ describe("MediaPipeTasksVisionWorkerRuntime", () => {
         const segmenter = await mediaPipeMocks.createFromOptions.mock.results[0].value;
 
         const written: VideoFrame[] = [];
-        const input = createVideoFrame(1_000_000);
+        // 30 days of uptime in microseconds: the camera clock counts from boot, and MediaPipe takes at most
+        // 2^31 - 1 ms (about 24.9 days).
+        const thirtyDaysUs = 30 * 24 * 3600 * 1_000_000;
+        const input = createVideoFrame(thirtyDaysUs);
         const readable = new ReadableStream<VideoFrame>({
             start(controller) {
                 controller.enqueue(input);
@@ -353,15 +405,61 @@ describe("MediaPipeTasksVisionWorkerRuntime", () => {
         send({ type: "start-stream", streamId: 1, readable, writable });
 
         await vi.waitFor(() => expect(written).toHaveLength(1));
-        expect(segmenter.segmentForVideo).toHaveBeenCalledWith(input, 1000, expect.any(Function));
+        expect(segmenter.segmentForVideo).toHaveBeenCalledWith(input, expect.any(Number), expect.any(Function));
+        expect(segmenter.segmentForVideo.mock.calls[0][1]).toBeLessThan(2 ** 31);
         expect(written[0]).not.toBe(input);
-        expect(written[0].timestamp).toBe(1_000_000);
+        // The output frame keeps the capture timestamp.
+        expect(written[0].timestamp).toBe(thirtyDaysUs);
         // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(input.close).toHaveBeenCalledOnce();
 
         send({ type: "stop-stream", streamId: 1 });
         await vi.waitFor(() => expect(readable.locked).toBe(false));
         expect(posted.some((message) => message.type === "fatal")).toBe(false);
+    });
+
+    it("keeps the spacing of camera frames and stays strictly increasing across a restarted pipe", async () => {
+        send({ type: "initialize", assets, config: { mode: "blur" } });
+        await waitForPosted(1);
+        const segmenter = await mediaPipeMocks.createFromOptions.mock.results[0].value;
+
+        const pipe = async (streamId: number, timestampsUs: number[]) => {
+            const written: VideoFrame[] = [];
+            send({
+                type: "start-stream",
+                streamId,
+                readable: new ReadableStream<VideoFrame>({
+                    start(controller) {
+                        for (const timestampUs of timestampsUs) {
+                            controller.enqueue(createVideoFrame(timestampUs));
+                        }
+                    },
+                }),
+                writable: new WritableStream<VideoFrame>({
+                    write(frame) {
+                        written.push(frame);
+                    },
+                }),
+            });
+            await vi.waitFor(() => expect(written).toHaveLength(timestampsUs.length));
+            send({ type: "stop-stream", streamId });
+        };
+        const segmentedTimestamps = () =>
+            segmenter.segmentForVideo.mock.calls.map((call: unknown[]) => call[1] as number);
+
+        const day = 24 * 3600 * 1_000_000;
+        // Segmentation runs on every 2nd frame (ResegmentController), so use 4 frames per pipe.
+        await pipe(1, [40 * day, 40 * day + 100_000, 40 * day + 200_000, 40 * day + 300_000]);
+        const first = segmentedTimestamps();
+        expect(first).toEqual([0, 200]);
+
+        // The camera restarts with a clock that went back to 0: still above everything already segmented.
+        await pipe(2, [0, 100_000, 200_000, 300_000]);
+        const all = segmentedTimestamps();
+        // Pipe 1 ended on timestamp 300, so pipe 2 starts at 301 and keeps the camera's 200 ms spacing. Without the
+        // carried-over offset it would restart near 0 and only the +1 ms clamp would keep it increasing.
+        expect(all).toEqual([0, 200, 301, 501]);
+        expect(all.every((timestamp: number, index: number) => index === 0 || timestamp > all[index - 1])).toBe(true);
     });
 
     it("reports a broken pipe without giving up on the worker", async () => {
