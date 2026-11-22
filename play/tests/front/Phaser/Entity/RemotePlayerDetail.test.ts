@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import * as Phaser from "phaser";
 import type * as PhaserModule from "phaser";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PositionMessage_Direction } from "@workadventure/messages";
 import { CancelablePromise } from "cancelable-promise";
 import type { GameScene } from "../../../../src/front/Phaser/Game/GameScene";
 import { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
+import { setAvatarFlags } from "../avatarFlags";
 
 // The name is a DOM element: it does not run in a unit test.
 vi.mock("../../../../src/front/Phaser/Components/UsernameDisplay", () => ({
@@ -111,7 +112,13 @@ function walkTo(player: RemotePlayer, x: number, direction: PositionMessage_Dire
     player.updatePosition({ x, y: 0, direction, moving: true });
 }
 
+// The scene here has no physics world and no bake texture: it specifies the paths of the flags that are off.
+beforeEach(() => {
+    setAvatarFlags({ avatarZeroWork: false, avatarBake: false });
+});
+
 afterEach(() => {
+    localStorage.clear();
     vi.restoreAllMocks();
 });
 

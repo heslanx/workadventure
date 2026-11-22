@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     AVATAR_DETAIL_BUDGET,
+    AVATAR_DETAIL_BUDGET_ENABLED,
     AVATAR_DETAIL_STORAGE_KEY,
     chooseFullDetail,
     type DetailCandidate,
@@ -87,23 +88,37 @@ describe("isAvatarDetailBudgetEnabled", () => {
         getItem: (key: string) => (key === AVATAR_DETAIL_STORAGE_KEY ? value : null),
     });
 
-    it("is off by default", () => {
-        expect(isAvatarDetailBudgetEnabled(storage(null))).toBe(false);
-        expect(isAvatarDetailBudgetEnabled(undefined)).toBe(false);
+    // The default of the budget is AVATAR_DETAIL_BUDGET_ENABLED, one line. Holding the budget back is a change of that line
+    // and of this test: every other test follows the constant, and "ships on" is the only one that spells the value.
+    it("ships on, since the 2026-11-22 run", () => {
+        expect(AVATAR_DETAIL_BUDGET_ENABLED).toBe(true);
     });
 
-    it("follows the storage override", () => {
-        expect(isAvatarDetailBudgetEnabled(storage("1"))).toBe(true);
+    it("is on with no value, whatever the constant says it is", () => {
+        expect(isAvatarDetailBudgetEnabled(storage(null))).toBe(AVATAR_DETAIL_BUDGET_ENABLED);
+        expect(isAvatarDetailBudgetEnabled(undefined)).toBe(AVATAR_DETAIL_BUDGET_ENABLED);
+    });
+
+    it('is off only for the value "0"', () => {
         expect(isAvatarDetailBudgetEnabled(storage("0"))).toBe(false);
     });
 
-    it("falls back to the default when the storage throws", () => {
+    it('is on with the value "1", whatever the constant says it is', () => {
+        expect(isAvatarDetailBudgetEnabled(storage("1"))).toBe(true);
+    });
+
+    it.each(["true", "false", "", "off", "00"])("leaves the default for the value %j", (value) => {
+        expect(isAvatarDetailBudgetEnabled(storage(value))).toBe(AVATAR_DETAIL_BUDGET_ENABLED);
+    });
+
+    it("stays on, without throwing, when the storage cannot be read", () => {
         const blocked = {
             getItem: () => {
                 throw new Error("SecurityError");
             },
         };
 
-        expect(isAvatarDetailBudgetEnabled(blocked)).toBe(false);
+        expect(() => isAvatarDetailBudgetEnabled(blocked)).not.toThrow();
+        expect(isAvatarDetailBudgetEnabled(blocked)).toBe(AVATAR_DETAIL_BUDGET_ENABLED);
     });
 });

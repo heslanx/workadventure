@@ -8,6 +8,7 @@ import type { GameScene } from "../../../../src/front/Phaser/Game/GameScene";
 import { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
 import { AvatarBuildQueue } from "../../../../src/front/Phaser/Entity/AvatarBuildQueue";
 import { RemotePlayerCulling } from "../../../../src/front/Phaser/Game/RemotePlayerCulling";
+import { setAvatarFlags } from "../avatarFlags";
 import { registerCustomEmoteProvider, type CustomEmote } from "../../../../src/front/Phaser/Entity/CustomEmotes";
 
 const { domElements } = vi.hoisted(() => ({
@@ -189,6 +190,8 @@ describe("Character.playEmote", () => {
     let unregister: (() => void) | undefined;
 
     beforeEach(() => {
+        // The scene here has no physics world and no bake texture: it specifies the paths of the flags that are off.
+        setAvatarFlags({ avatarZeroWork: false, avatarBake: false });
         vi.stubGlobal("Image", FakeImage);
         domElements.length = 0;
         decoding.started = 0;
@@ -196,6 +199,7 @@ describe("Character.playEmote", () => {
     });
 
     afterEach(() => {
+        localStorage.clear();
         unregister?.();
         unregister = undefined;
         vi.unstubAllGlobals();

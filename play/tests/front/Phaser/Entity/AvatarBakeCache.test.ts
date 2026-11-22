@@ -4,9 +4,11 @@ import * as Sentry from "@sentry/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     acquireAvatarBake,
+    AVATAR_BAKE_ENABLED,
     bakedAvatarKey,
     getAvatarBakeStats,
     isAvatarBakeEnabled,
+    resetAvatarBakeStorageWarningForTests,
 } from "../../../../src/front/Phaser/Entity/AvatarBakeCache";
 import { getPlayerAnimations } from "../../../../src/front/Phaser/Player/Animation";
 import { createAvatarScene } from "./avatarScene";
@@ -23,6 +25,7 @@ const removedCanvases: unknown[] = [];
 let failDraw = false;
 
 beforeEach(() => {
+    resetAvatarBakeStorageWarningForTests();
     canvases.length = 0;
     removedCanvases.length = 0;
     failDraw = false;
@@ -59,8 +62,59 @@ afterEach(() => {
 });
 
 describe("the flag", () => {
-    it("is read once for a game: turning it on later changes nothing for that game", () => {
+    // The default of the bake is AVATAR_BAKE_ENABLED, one line. Holding the bake back is a change of that line and of this
+    // test: every other test here follows the constant, and "ships on" is the only one that spells the value.
+    it("ships on, since the 2026-11-22 run", () => {
+        expect(AVATAR_BAKE_ENABLED).toBe(true);
+    });
+
+    it("is on with no value in the storage, whatever the constant says it is", () => {
         localStorage.removeItem("avatarBake");
+        const world = createAvatarScene();
+        world.addLayers("a", "b");
+
+        const lease = acquireAvatarBake(world.scene, ["a", "b"]);
+
+        expect(isAvatarBakeEnabled()).toBe(AVATAR_BAKE_ENABLED);
+        expect(lease !== undefined).toBe(AVATAR_BAKE_ENABLED);
+    });
+
+    it('is on with the value "1", whatever the constant says it is', () => {
+        localStorage.setItem("avatarBake", "1");
+
+        expect(isAvatarBakeEnabled()).toBe(true);
+    });
+
+    it.each(["true", "", "off"])("leaves the default for the value %j", (value) => {
+        localStorage.setItem("avatarBake", value);
+
+        expect(isAvatarBakeEnabled()).toBe(AVATAR_BAKE_ENABLED);
+    });
+
+    it('is off, and leaves the avatar on its layers, with the value "0"', () => {
+        localStorage.setItem("avatarBake", "0");
+        const world = createAvatarScene();
+        world.addLayers("a", "b");
+
+        expect(isAvatarBakeEnabled()).toBe(false);
+        expect(acquireAvatarBake(world.scene, ["a", "b"])).toBeUndefined();
+        expect(canvases).toHaveLength(0);
+        expect(getAvatarBakeStats(world.scene.textures)).toMatchObject({ cached: 0, active: 0 });
+    });
+
+    it("is read once for a game: turning it off later changes nothing for that game", () => {
+        const world = createAvatarScene();
+        world.addLayers("a", "b", "c");
+
+        expect(acquireAvatarBake(world.scene, ["a", "b"])).toBeDefined();
+        localStorage.setItem("avatarBake", "0");
+
+        expect(acquireAvatarBake(world.scene, ["b", "c"])).toBeDefined();
+        expect(isAvatarBakeEnabled()).toBe(false);
+    });
+
+    it("is read once for a game: turning it back on later changes nothing for that game", () => {
+        localStorage.setItem("avatarBake", "0");
         const world = createAvatarScene();
         world.addLayers("a", "b");
 
@@ -73,17 +127,32 @@ describe("the flag", () => {
         expect(getAvatarBakeStats(world.scene.textures)).toMatchObject({ cached: 0, active: 0 });
     });
 
-    it("reads a blocked storage as the default, with a warning", () => {
+    it("stays on, with a warning and without throwing, when the storage cannot be read", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-        const enabled = isAvatarBakeEnabled({
+        const blocked = {
             getItem: () => {
                 throw new Error("blocked");
             },
+        };
+
+        expect(() => isAvatarBakeEnabled(blocked)).not.toThrow();
+        expect(isAvatarBakeEnabled(blocked)).toBe(AVATAR_BAKE_ENABLED);
+        expect(warn).toHaveBeenCalledTimes(1);
+    });
+
+    it("says that the storage is blocked once for the page, not once per game or per read", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+            throw new Error("blocked");
         });
 
-        expect(enabled).toBe(false);
-        expect(warn).toHaveBeenCalledTimes(1);
+        for (let game = 0; game < 3; game++) {
+            const world = createAvatarScene();
+            world.addLayers("a", "b");
+            acquireAvatarBake(world.scene, ["a", "b"]);
+        }
+
+        expect(warn.mock.calls.filter(([message]) => String(message).includes("storage is blocked"))).toHaveLength(1);
     });
 });
 
@@ -187,6 +256,27 @@ describe("the baked sheet", () => {
 
         expect(capture).toHaveBeenCalledTimes(1);
         expect((capture.mock.calls[0]?.[0] as Error).message).toBe("drawImage failed");
+    });
+
+    it("sends at most 5 failed bakes of a game to Sentry, and logs every one of them", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const capture = vi.spyOn(Sentry, "captureException").mockImplementation(() => "id");
+        failDraw = true;
+        const first = createAvatarScene();
+        const second = createAvatarScene();
+        const recipes = Array.from({ length: 8 }, (_, i) => [`a${i}`, `b${i}`]);
+        for (const recipe of recipes) {
+            first.addLayers(...recipe);
+            second.addLayers(...recipe);
+        }
+
+        for (const recipe of recipes) acquireAvatarBake(first.scene, recipe);
+        expect(capture).toHaveBeenCalledTimes(5);
+        expect(warn.mock.calls.filter(([message]) => String(message).includes("Could not bake"))).toHaveLength(8);
+
+        // The cap is per game: another game reports its own first failures.
+        acquireAvatarBake(second.scene, recipes[0]);
+        expect(capture).toHaveBeenCalledTimes(6);
     });
 
     it("is refused when a layer is not loaded, has other than 13 frames, or is not 96x128", () => {

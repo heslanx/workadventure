@@ -9,7 +9,12 @@ import { AvatarBuildQueue } from "../../../../src/front/Phaser/Entity/AvatarBuil
 import { RemotePlayerCulling } from "../../../../src/front/Phaser/Game/RemotePlayerCulling";
 import { SeatedPoseController } from "../../../../src/front/Konclui/Workplace/phaser/SeatedPoseController";
 import { getAvatarBakeStats } from "../../../../src/front/Phaser/Entity/AvatarBakeCache";
-import { isAvatarZeroWorkEnabled } from "../../../../src/front/Phaser/Entity/AvatarZeroWork";
+import {
+    AVATAR_ZERO_WORK_ENABLED,
+    isAvatarZeroWorkEnabled,
+    resetAvatarZeroWorkStorageWarningForTests,
+} from "../../../../src/front/Phaser/Entity/AvatarZeroWork";
+import { setAvatarFlags } from "../avatarFlags";
 import type { AvatarScene } from "./avatarScene";
 import { createAvatarScene } from "./avatarScene";
 
@@ -157,6 +162,8 @@ function culling(...players: RemotePlayer[]): RemotePlayerCulling<RemotePlayer> 
 }
 
 beforeEach(() => {
+    // This suite counts the layered sprites of an avatar: the bake is off unless a test turns it on.
+    setAvatarFlags({ avatarBake: false });
     plays.count = 0;
     canvases.created = 0;
     names.built = 0;
@@ -170,16 +177,47 @@ afterEach(() => {
 });
 
 describe("the avatar zero-work flag", () => {
-    it("is off unless the storage of the browser turns it on", () => {
+    it('is off only when the storage of the browser says "0"', () => {
+        expect(isAvatarZeroWorkEnabled()).toBe(AVATAR_ZERO_WORK_ENABLED);
+        localStorage.setItem("avatarZeroWork", "0");
         expect(isAvatarZeroWorkEnabled()).toBe(false);
         localStorage.setItem("avatarZeroWork", "1");
         expect(isAvatarZeroWorkEnabled()).toBe(true);
-        localStorage.setItem("avatarZeroWork", "0");
-        expect(isAvatarZeroWorkEnabled()).toBe(false);
+    });
+
+    // The default of the zero-work states is AVATAR_ZERO_WORK_ENABLED, one line. Holding it back is a change of that line
+    // and of this test: every other test follows the constant, and "ships on" is the only one that spells the value.
+    it("ships on, since the 2026-11-22 run", () => {
+        expect(AVATAR_ZERO_WORK_ENABLED).toBe(true);
+    });
+
+    it.each(["true", "", "off"])("leaves the default for the value %j", (value) => {
+        localStorage.setItem("avatarZeroWork", value);
+
+        expect(isAvatarZeroWorkEnabled()).toBe(AVATAR_ZERO_WORK_ENABLED);
+    });
+
+    it("stays on, without throwing, when the storage cannot be read, and says so once for a whole crowd", () => {
+        resetAvatarZeroWorkStorageWarningForTests();
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const blocked = {
+            getItem: () => {
+                throw new Error("blocked");
+            },
+        };
+
+        const reads = Array.from({ length: 1000 }, () => isAvatarZeroWorkEnabled(blocked));
+
+        expect(new Set(reads)).toEqual(new Set([AVATAR_ZERO_WORK_ENABLED]));
+        expect(warn).toHaveBeenCalledTimes(1);
     });
 });
 
 describe("with the zero-work flag off, a remote player is as it was", () => {
+    beforeEach(() => {
+        setAvatarFlags({ avatarZeroWork: false });
+    });
+
     it("still plays the moves of a culled player, keeps its body and its listener, and keeps the sprites of a dot", async () => {
         const world = createAvatarScene();
         world.addLayers(...LAYERS);

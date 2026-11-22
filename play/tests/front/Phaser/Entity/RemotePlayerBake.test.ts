@@ -6,12 +6,14 @@ import { PositionMessage_Direction } from "@workadventure/messages";
 import { CancelablePromise } from "cancelable-promise";
 import { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
 import {
+    AVATAR_BAKE_ENABLED,
     bakedAvatarKey,
     getAvatarBakeStats,
     isAvatarBakeEnabled,
 } from "../../../../src/front/Phaser/Entity/AvatarBakeCache";
 import { getPlayerAnimations } from "../../../../src/front/Phaser/Player/Animation";
 import { TexturesHelper } from "../../../../src/front/Phaser/Helpers/TexturesHelper";
+import { setAvatarFlags } from "../avatarFlags";
 import type { AvatarScene } from "./avatarScene";
 import { createAvatarScene } from "./avatarScene";
 
@@ -138,16 +140,20 @@ afterEach(() => {
 });
 
 describe("the avatar bake flag", () => {
-    it("is off unless the storage of the browser turns it on", () => {
+    it('is off only when the storage of the browser says "0"', () => {
+        expect(isAvatarBakeEnabled()).toBe(AVATAR_BAKE_ENABLED);
+        localStorage.setItem("avatarBake", "0");
         expect(isAvatarBakeEnabled()).toBe(false);
         localStorage.setItem("avatarBake", "1");
         expect(isAvatarBakeEnabled()).toBe(true);
-        localStorage.setItem("avatarBake", "0");
-        expect(isAvatarBakeEnabled()).toBe(false);
     });
 });
 
 describe("a remote player with the bake off", () => {
+    beforeEach(() => {
+        setAvatarFlags({ avatarBake: false });
+    });
+
     it("has one sprite per layer, each on its own texture, and bakes nothing", async () => {
         const world = createAvatarScene();
         world.addLayers(...SIX);
@@ -316,6 +322,55 @@ describe("a remote player with the bake on", () => {
     });
 });
 
+// Zero-work off with the bake on is a supported state (the flags are independent): the avatar is baked as it is with the
+// zero-work states on, and what the zero-work states would have stopped keeps running, as it did before they existed.
+describe("a remote player with the bake on and the zero-work states off", () => {
+    beforeEach(() => {
+        setAvatarFlags({ avatarBake: true, avatarZeroWork: false });
+    });
+
+    it("is one sprite on the baked sheet, a culled player still plays its moves, and a dot keeps its sprite and its body", async () => {
+        const world = createAvatarScene();
+        world.addLayers(...SIX);
+        const key = bakedAvatarKey(SIX);
+        const culled = createPlayer(world, SIX, 1);
+        const dot = createPlayer(world, SIX, 2);
+        await flushPromises();
+        culled.setCulled(true);
+        dot.setDetail("dot");
+        clearPlayed(culled);
+        clearPlayed(dot);
+
+        culled.updatePosition({ x: 10, y: 0, direction: PositionMessage_Direction.LEFT, moving: true });
+        dot.updatePosition({ x: 10, y: 0, direction: PositionMessage_Direction.LEFT, moving: true });
+
+        expect([...culled.sprites.keys()]).toEqual([key]);
+        expect([...dot.sprites.keys()]).toEqual([key]);
+        expect(played(culled)).toEqual([`${key}-left-walk`]);
+        // A dot is not animated whatever the flags say, but with the zero-work states off it keeps its sprite.
+        expect(played(dot)).toEqual([]);
+        expect(world.bodies.size).toBe(2);
+        expect(world.counts.disableBody).toBe(0);
+        expect(canvases.created).toHaveLength(1);
+        expect(getAvatarBakeStats(world.scene.textures)).toMatchObject({ cached: 1, active: 1, hits: 1, misses: 1 });
+    });
+
+    it("lets go of its lease when it is destroyed", async () => {
+        const world = createAvatarScene();
+        world.addLayers(...SIX);
+        const first = createPlayer(world, SIX, 1);
+        const second = createPlayer(world, SIX, 2);
+        await flushPromises();
+        expect(getAvatarBakeStats(world.scene.textures)).toMatchObject({ cached: 1, active: 1 });
+
+        first.destroy();
+        expect(getAvatarBakeStats(world.scene.textures)).toMatchObject({ active: 1, idle: 0 });
+        second.destroy();
+
+        expect(getAvatarBakeStats(world.scene.textures)).toMatchObject({ cached: 1, active: 0, idle: 1 });
+    });
+});
+
 describe("a crowd of 80 full avatars of 6 layers", () => {
     const CROWD = 80;
     const RECIPES = 20;
@@ -338,9 +393,10 @@ describe("a crowd of 80 full avatars of 6 layers", () => {
     }
 
     it("is 480 sprites, 480 animation plays and 480 update-list entries on layers, and 80 of each baked", async () => {
+        setAvatarFlags({ avatarBake: false });
         const layered = createAvatarScene();
         const layeredPlayers = await crowd(layered);
-        localStorage.setItem("avatarBake", "1");
+        setAvatarFlags({ avatarBake: true });
         const baked = createAvatarScene();
         const bakedPlayers = await crowd(baked);
 

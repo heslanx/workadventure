@@ -3,7 +3,9 @@ import { get } from "svelte/store";
 import type { ForceFirstPeerUnilateralDestroyResult } from "../Space/SpacePeerManager/SpacePeerManager";
 import { gameManager } from "../Phaser/Game/GameManager";
 import { POSITION_DELAY } from "../Enum/EnvironmentVariable";
-import { getAvatarBakeStats } from "../Phaser/Entity/AvatarBakeCache";
+import { getAvatarBakeStats, isAvatarBakeEnabled } from "../Phaser/Entity/AvatarBakeCache";
+import { isAvatarZeroWorkEnabled } from "../Phaser/Entity/AvatarZeroWork";
+import { isAvatarDetailBudgetEnabled } from "../Phaser/Game/AvatarDetail";
 import { backgroundProcessedLocalVideoTrackStore, rawLocalVideoTrackStore } from "../Stores/MediaStore";
 import {
     createGpuFrameTimer,
@@ -1199,6 +1201,14 @@ export const e2eHooks = {
         const { waScaleManager } = await import("../Phaser/Services/WaScaleManager");
         // Use the full-resolution camera path at the current gameplay zoom.
         waScaleManager.applyNewSize(gameManager.getCurrentGameScene().getCameraManager().getCamera(), true);
+    },
+    /** The three avatar flags as this client reads them now (default and storage override), for the frame probe's report. */
+    getAvatarFlags() {
+        return {
+            avatarDetailBudget: isAvatarDetailBudgetEnabled(),
+            avatarZeroWork: isAvatarZeroWorkEnabled(),
+            avatarBake: isAvatarBakeEnabled(),
+        };
     },
     getRendererInfo() {
         const scene = gameManager.getCurrentGameScene();

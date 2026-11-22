@@ -5,8 +5,13 @@
  * This file holds the decision only. It reads no scene and no clock, so the same inputs give the same answer.
  */
 
-/** Off by default. `localStorage["avatarDetailBudget"]` set to "1" turns it on for A/B runs, "0" turns it off. */
-export const AVATAR_DETAIL_BUDGET_ENABLED = false;
+/**
+ * On by default since the 2026-11-22 run (Chrome, Apple M1 Max, WebGL2, 999 walking synthetic players): with this budget,
+ * the zero-work states and the bake on, no frame interval went above 16.8 ms. `localStorage["avatarDetailBudget"]` set
+ * to "0" turns it off, set to "1" turns it on if this constant is ever false. A storage that cannot be read leaves the
+ * constant in charge. Independent of `avatarZeroWork` and `avatarBake`.
+ */
+export const AVATAR_DETAIL_BUDGET_ENABLED = true;
 export const AVATAR_DETAIL_STORAGE_KEY = "avatarDetailBudget";
 
 /** How many remote avatars in the camera view stay full. Below it, nothing changes. */
@@ -80,7 +85,7 @@ export function chooseFullDetail<K>(
     return full;
 }
 
-/** Whether the detail budget is on: the constant, unless this browser's storage says otherwise. */
+/** Whether the detail budget is on: the constant, unless this browser's storage says "0" (off) or "1" (on). */
 export function isAvatarDetailBudgetEnabled(storage: Pick<Storage, "getItem"> | undefined = globalStorage()): boolean {
     try {
         const value = storage?.getItem(AVATAR_DETAIL_STORAGE_KEY);

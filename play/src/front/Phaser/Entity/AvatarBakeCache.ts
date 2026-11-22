@@ -9,12 +9,18 @@ import { AvatarBakeRegistry, canonicalRecipeKey } from "./AvatarBakeRegistry";
  * so that the avatar is one sprite instead of one per layer. The bookkeeping (key, leases, LRU, cap) is in
  * AvatarBakeRegistry; this file is the Phaser side: the flag, the texture, and one registry per TextureManager.
  *
- * Off by default. `localStorage["avatarBake"] = "1"` before the page loads turns it on. Whatever goes wrong (flag off,
- * a layer that is not loaded or not 96x128, a failed bake, no room), the avatar keeps its layers as it always did.
+ * On by default since the 2026-11-22 run (Chrome, Apple M1 Max, WebGL2, 999 walking synthetic players, 22 to 26 baked
+ * sheets): `localStorage["avatarBake"] = "0"` before the page loads turns it off. Whatever goes wrong (flag off, a layer
+ * that is not loaded or not 96x128, a failed bake, no room), the avatar keeps its layers as it always did, and a failure
+ * is logged.
  */
 
-/** Off by default: it ships behind a flag until a browser run measures it. */
-export const AVATAR_BAKE_ENABLED = false;
+/**
+ * The default of the bake, on. `localStorage["avatarBake"]` set to "0" turns it off, "1" turns it on if this constant is
+ * ever false. A storage that cannot be read leaves the constant in charge. Independent of `avatarDetailBudget` and
+ * `avatarZeroWork`.
+ */
+export const AVATAR_BAKE_ENABLED = true;
 export const AVATAR_BAKE_STORAGE_KEY = "avatarBake";
 
 export const AVATAR_FRAME_WIDTH = 32;
@@ -24,14 +30,24 @@ export const AVATAR_SHEET_HEIGHT = AVATAR_FRAME_HEIGHT * 4;
 /** 12 frames of the walk cycle and the `__BASE` frame Phaser adds to every texture. */
 const LAYER_FRAME_TOTAL = 13;
 
-/** Whether the bake is on: the constant, unless this browser's storage says otherwise. */
+let warnedBlockedStorage = false;
+
+/** Lets a test see the blocked-storage warning again: it is said once per page load, not once per game. */
+export function resetAvatarBakeStorageWarningForTests(): void {
+    warnedBlockedStorage = false;
+}
+
+/** Whether the bake is on: the constant, unless this browser's storage says "0" (off) or "1" (on). */
 export function isAvatarBakeEnabled(storage: Pick<Storage, "getItem"> | undefined = globalStorage()): boolean {
     try {
         const value = storage?.getItem(AVATAR_BAKE_STORAGE_KEY);
         if (value === "1") return true;
         if (value === "0") return false;
     } catch (error) {
-        console.warn("The storage is blocked, so the avatar bake flag keeps its default", error);
+        if (!warnedBlockedStorage) {
+            warnedBlockedStorage = true;
+            console.warn("The storage is blocked, so the avatar bake flag keeps its default", error);
+        }
     }
     return AVATAR_BAKE_ENABLED;
 }
@@ -150,12 +166,22 @@ class PhaserBakeBackend implements BakeBackend {
     }
 }
 
-/** A bake that went wrong is logged and, when it is an error, sent to Sentry. The registry calls it once per recipe. */
-function reportBakeProblem(message: string, detail?: unknown): void {
-    console.warn(message, detail);
-    if (detail instanceof Error) {
-        Sentry.captureException(detail, { extra: { message } });
-    }
+/** A failure that hits every recipe (no 2D context, say) would send one Sentry event per recipe of a crowd. */
+const MAX_BAKE_SENTRY_REPORTS_PER_GAME = 5;
+
+/**
+ * A reporter for one game: every bake problem is logged, and the ones that are errors are sent to Sentry, the first
+ * MAX_BAKE_SENTRY_REPORTS_PER_GAME of them. The registry calls it once per recipe.
+ */
+function bakeProblemReporter(): (message: string, detail?: unknown) => void {
+    let sent = 0;
+    return (message, detail) => {
+        console.warn(message, detail);
+        if (detail instanceof Error && sent < MAX_BAKE_SENTRY_REPORTS_PER_GAME) {
+            sent++;
+            Sentry.captureException(detail, { extra: { message } });
+        }
+    };
 }
 
 interface BakeCache {
@@ -174,7 +200,7 @@ function cacheFor(scene: AvatarBakeScene): BakeCache {
         // The flag is read here, once per game, which is why a browser turns it on before the page loads.
         cache = {
             registry: isAvatarBakeEnabled()
-                ? new AvatarBakeRegistry(new PhaserBakeBackend(scene), { warn: reportBakeProblem })
+                ? new AvatarBakeRegistry(new PhaserBakeBackend(scene), { warn: bakeProblemReporter() })
                 : undefined,
             scenesWatched: new Set(),
         };

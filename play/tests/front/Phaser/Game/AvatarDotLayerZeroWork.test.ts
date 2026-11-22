@@ -8,6 +8,7 @@ import { AvatarBuildQueue } from "../../../../src/front/Phaser/Entity/AvatarBuil
 import { AvatarDotLayer, type DotBob } from "../../../../src/front/Phaser/Game/AvatarDotLayer";
 import { DETAIL_RECOMPUTE_INTERVAL_MS } from "../../../../src/front/Phaser/Game/AvatarDetail";
 import { createAvatarScene } from "../Entity/avatarScene";
+import { setAvatarFlags } from "../avatarFlags";
 
 /**
  * The dot layer with the real RemotePlayer, with the zero-work flag on: a dot holds no sprites, and an avatar made full
@@ -115,7 +116,8 @@ async function createCrowd(buildsPerFrame: number) {
 }
 
 beforeEach(() => {
-    localStorage.setItem("avatarZeroWork", "1");
+    // The bake is off here: this suite counts the layered sprites of an avatar (RemotePlayerZeroWork covers both on).
+    setAvatarFlags({ avatarZeroWork: true, avatarBake: false });
 });
 
 afterEach(() => {

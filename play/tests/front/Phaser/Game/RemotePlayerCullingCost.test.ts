@@ -11,6 +11,7 @@ import { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
 import { TexturesHelper } from "../../../../src/front/Phaser/Helpers/TexturesHelper";
 import type { Room } from "../../../../src/front/Connection/Room";
 import type { RemotePlayersRepository } from "../../../../src/front/Phaser/Game/RemotePlayersRepository";
+import { setAvatarFlags } from "../avatarFlags";
 import { biggestAvailableAreaStore } from "../../../../src/front/Stores/BiggestAvailableAreaStore";
 
 /**
@@ -278,6 +279,8 @@ const ALL = Array.from({ length: AVATARS }, (_, index) => index + 1);
 const OUT_OF_VIEW = ALL.slice(IN_VIEW);
 
 beforeEach(() => {
+    // This measures the committed path of the avatars (no dots, no baked sheet), whose scene has no physics world
+    setAvatarFlags({ avatarDetailBudget: false, avatarZeroWork: false, avatarBake: false });
     // The scene's queue has a time budget; a frozen clock keeps a slow machine from cutting a frame short.
     vi.spyOn(performance, "now").mockReturnValue(0);
     vi.spyOn(biggestAvailableAreaStore, "consumePendingRecompute").mockReturnValue(false);
@@ -285,6 +288,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    localStorage.clear();
     restores.splice(0).forEach((restore) => restore());
     vi.restoreAllMocks();
 });

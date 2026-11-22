@@ -11,6 +11,7 @@ import { AVATAR_DETAIL_BUDGET, NAME_TAGS_MIN_ZOOM_MODIFIER } from "../../../../s
 import { WaScaleManagerEvent } from "../../../../src/front/Phaser/Services/WaScaleManager";
 import type { Room } from "../../../../src/front/Connection/Room";
 import type { RemotePlayersRepository } from "../../../../src/front/Phaser/Game/RemotePlayersRepository";
+import { setAvatarFlags } from "../avatarFlags";
 import { biggestAvailableAreaStore } from "../../../../src/front/Stores/BiggestAvailableAreaStore";
 
 /**
@@ -334,12 +335,16 @@ function createCrowd(options: { budget: boolean; withCompanions?: boolean }) {
 }
 
 beforeEach(() => {
+    // The budget is chosen by createCrowd; the other two flags are off, the committed path of the avatars (a scene
+    // with no physics world and no baked sheet). RemotePlayerZeroWork and AvatarDotLayerZeroWork cover them on.
+    setAvatarFlags({ avatarZeroWork: false, avatarBake: false });
     vi.spyOn(performance, "now").mockReturnValue(0);
     vi.spyOn(biggestAvailableAreaStore, "consumePendingRecompute").mockReturnValue(false);
     vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
+    localStorage.clear();
     vi.restoreAllMocks();
 });
 

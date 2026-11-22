@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import * as Phaser from "phaser";
 import type * as PhaserModule from "phaser";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PositionMessage_Direction } from "@workadventure/messages";
 import { CancelablePromise } from "cancelable-promise";
 import type { GameScene } from "../../../../src/front/Phaser/Game/GameScene";
 import { RemotePlayer } from "../../../../src/front/Phaser/Entity/RemotePlayer";
 import { AvatarBuildQueue } from "../../../../src/front/Phaser/Entity/AvatarBuildQueue";
 import { RemotePlayerCulling } from "../../../../src/front/Phaser/Game/RemotePlayerCulling";
+import { setAvatarFlags } from "../avatarFlags";
 
 // A sprite that needs no animation manager.
 vi.mock("phaser", async (importOriginal) => {
@@ -117,7 +118,13 @@ function nameOf(layerElement: HTMLElement): HTMLElement {
     return name;
 }
 
+// The scene here has no physics world and no bake texture: it specifies the paths of the flags that are off.
+beforeEach(() => {
+    setAvatarFlags({ avatarZeroWork: false, avatarBake: false });
+});
+
 afterEach(() => {
+    localStorage.clear();
     vi.restoreAllMocks();
 });
 
