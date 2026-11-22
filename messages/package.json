@@ -35,7 +35,7 @@
     "grpc_tools_node_protoc_ts": "^5.3.3",
     "grpc-tools": "^1.13.1",
     "lint-staged": "^17.0.5",
-    "prettier": "^3.8.3",
+    "prettier": "^3.10.1",
     "rimraf": "^6.1.4",
     "shelljs": "^0.10.0",
     "sync-directory": "^6.0.5",

@@ -76,7 +76,7 @@
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.5",
     "patch-package": "^8.0.1",
-    "prettier": "^3.8.3",
+    "prettier": "^3.10.1",
     "prettier-plugin-svelte": "^4.2.0",
     "svelte": "^5.59.1",
     "svelte-check": "^4.7.8",

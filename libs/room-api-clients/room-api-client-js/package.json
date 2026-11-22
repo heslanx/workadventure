@@ -47,7 +47,7 @@
     "eslint": "^10.4.0",
     "grpc-tools": "^1.13.1",
     "lint-staged": "^17.0.5",
-    "prettier": "^3.8.3",
+    "prettier": "^3.10.1",
     "ts-proto": "^2.11.8",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
