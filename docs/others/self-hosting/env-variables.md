@@ -245,7 +245,7 @@ Environment variables for the Map Storage service.
 | `USE_DOMAIN_NAME_IN_PATH` | No | If true, the domain name will be used as a top level directory when fetching/storing files |
 | `PATH_PREFIX` | No | The prefix to strip if a reverse proxy is proxying calls to the map-storage from a path, e.g. /map-storage |
 | `STORAGE_DIRECTORY` | No | Storage directory for the maps on physical disk. Used if S3 storage is not configured. |
-| `CACHE_CONTROL` | No | The cache-control HTTP header to be used for "normal" resources. Note: resources containing a hash in the name will be set to "immutable", whatever this setting is. |
+| `CACHE_CONTROL` | No | The cache-control HTTP header to be used for "normal" resources. The default lets a shared cache (CDN, reverse proxy) keep a file for 10 seconds. It has no max-age, so a browser has no fixed lifetime for it: it asks the server again with If-None-Match (a 304 moves no file) or, when the response carries a Last-Modified date (disk storage), may reuse the file for a heuristic share of its age. Add a max-age (for example "public, max-age=60, s-maxage=10") to let browsers reuse a file without asking, at the price of seeing a map change later. Note: resources containing a hash in the name will be set to "immutable", whatever this setting is. |
 | `ENABLE_WEB_HOOK` | No | If true, the webhook will be called when a WAM file is created |
 | `WEB_HOOK_URL` | No | The URL of the webhook to call when a WAM file is created / updated / deleted. The URL will be called using POST. |
 | `WEB_HOOK_API_TOKEN` | No | The (optional) API token to use when calling the webhook. The token will be sent in the Authorization header of the POST request. |

@@ -13,6 +13,7 @@ import { setErrorHandler } from "@workadventure/shared-utils/src/ErrorHandler";
 import { mapStorageServer } from "./MapStorageServer";
 
 import { proxyFiles } from "./FileFetcher/FileFetcher";
+import { compressFiles } from "./FileFetcher/Compression";
 import { UploadController } from "./Upload/UploadController";
 import { fileSystem } from "./fileSystem";
 import { passportStrategies } from "./Services/Authentication";
@@ -111,7 +112,7 @@ for (const passportStrategy of passportStrategies) {
 }
 app.use(passport.initialize());
 
-app.get(/.*\.wam$/, (req, res, next) => {
+app.get(/.*\.wam$/, compressFiles, (req, res, next) => {
     const domain = req.hostname;
     if (req.path.includes("..") || domain.includes("..")) {
         res.status(400).send("Invalid request");
@@ -196,15 +197,16 @@ app.get(
     (req, res, next) => {
         Promise.resolve(verifyJWT(req, res, next)).catch(next);
     },
+    compressFiles,
     proxyFiles(fileSystem),
 );
 
-app.use(proxyFiles(fileSystem));
+app.use(compressFiles, proxyFiles(fileSystem));
 
 // Check that the dist-ui directory exists
 if (fs.existsSync("dist-ui")) {
-    app.use("/ui", express.static("dist-ui"));
-    app.get("/ui/{*splat}", (req, res, next) => {
+    app.use("/ui", compressFiles, express.static("dist-ui"));
+    app.get("/ui/{*splat}", compressFiles, (req, res, next) => {
         res.sendFile("index.html", { root: "dist-ui" });
     });
 }

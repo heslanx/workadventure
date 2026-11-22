@@ -80,9 +80,9 @@ export const EnvironmentVariables = z.object({
     CACHE_CONTROL: z
         .string()
         .optional()
-        .transform(emptyStringToDefault("public, s-max-age=10"))
+        .transform(emptyStringToDefault("public, s-maxage=10"))
         .describe(
-            'The cache-control HTTP header to be used for "normal" resources. Note: resources containing a hash in the name will be set to "immutable", whatever this setting is.',
+            'The cache-control HTTP header to be used for "normal" resources. The default lets a shared cache (CDN, reverse proxy) keep a file for 10 seconds. It has no max-age, so a browser has no fixed lifetime for it: it asks the server again with If-None-Match (a 304 moves no file) or, when the response carries a Last-Modified date (disk storage), may reuse the file for a heuristic share of its age. Add a max-age (for example "public, max-age=60, s-maxage=10") to let browsers reuse a file without asking, at the price of seeing a map change later. Note: resources containing a hash in the name will be set to "immutable", whatever this setting is.',
         ),
     ENABLE_WEB_HOOK: BoolAsString.optional()
         .transform((val) => toBool(val, true))

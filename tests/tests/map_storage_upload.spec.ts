@@ -399,7 +399,7 @@ test.describe("Map-storage Upload API @nomobile", () => {
         const accessNormalFile = await request.get(`normal-file.js`);
         expect(accessNormalFile.ok()).toBeTruthy();
         expect(accessNormalFile.headers()["etag"]).toBeDefined();
-        expect(accessNormalFile.headers()["cache-control"]).toContain("public, s-max-age=10");
+        expect(accessNormalFile.headers()["cache-control"]).toContain("public, s-maxage=10");
 
         const accessCacheControlFile = await request.get(`immutable.a45b7e8f.js`);
         expect(accessCacheControlFile.ok()).toBeTruthy();
