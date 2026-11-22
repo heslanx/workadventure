@@ -4,7 +4,10 @@ import { readable, writable } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SceneFrameContext } from "../../../ExternalModule/ClientExtensionPoints";
 import type { GameScene } from "../../../Phaser/Game/GameScene";
+import { actionsMenuStore } from "../../../Stores/ActionsMenuStore";
+import { emoteMenuStore } from "../../../Stores/EmoteStore";
 import { mapEditorModeStore } from "../../../Stores/MapEditorStore";
+import { activeSecondaryZoneActionBarStore, menuVisiblilityStore } from "../../../Stores/MenuStore";
 import { NOT_WALKING } from "../domain/walk";
 import { createTileInteractionExtension } from "./tileInteractionExtension";
 
@@ -356,10 +359,210 @@ describe("the tile interaction extension", () => {
         const cleared = scene.graphics.cleared;
 
         scene.fire("keydown-ESC", { target: document.createElement("input") });
+        extension.onFrame?.(frame(scene, 1100));
         expect(scene.graphics.cleared).toBe(cleared);
         scene.fire("keydown-ESC", { target: document.body });
+        extension.onFrame?.(frame(scene, 1200));
 
         expect(scene.graphics.cleared).toBeGreaterThan(cleared);
+    });
+
+    describe("Escape while the player walks", () => {
+        function startWalk(scene: Scene, extension: ReturnType<typeof createTileInteractionExtension>) {
+            extension.onFrame?.(frame(scene, 100));
+            click(scene, 3, 2, 1000);
+            click(scene, 3, 2, 1200);
+            scene.player.getPathAhead.mockReturnValue([{ x: 10, y: 10 }]);
+            // As the player's own does: ending the path empties it and settles the scene's walk.
+            scene.player.finishFollowingPath.mockImplementation(() => {
+                scene.player.getPathAhead.mockReturnValue([]);
+                scene.finishMove();
+            });
+            extension.onFrame?.(frame(scene, 1300));
+        }
+
+        it("ends the walk, and tells the tools it is over", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+            expect(publish).toHaveBeenLastCalledWith({ walking: true, walkStatus: "going" });
+
+            scene.fire("keydown-ESC", { target: document.body });
+            extension.onFrame?.(frame(scene, 1316));
+
+            expect(scene.player.finishFollowingPath).toHaveBeenCalledExactlyOnceWith(true);
+            expect(publish).toHaveBeenLastCalledWith(expect.objectContaining({ walking: false }));
+        });
+
+        it("drops the selection only on the next press, when the player selected a tile during the walk", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+            click(scene, 8, 5, 5000);
+            const cleared = scene.graphics.cleared;
+
+            scene.fire("keydown-ESC", { target: document.body });
+            extension.onFrame?.(frame(scene, 5100));
+            expect(scene.player.finishFollowingPath).toHaveBeenCalledTimes(1);
+            expect(scene.graphics.cleared).toBe(cleared);
+
+            scene.fire("keydown-ESC", { target: document.body });
+            extension.onFrame?.(frame(scene, 5200));
+            expect(scene.player.finishFollowingPath).toHaveBeenCalledTimes(1);
+            expect(scene.graphics.cleared).toBeGreaterThan(cleared);
+        });
+
+        it("leaves the walk alone when the key comes from a field the player types in", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+
+            for (const tag of ["textarea", "input", "select"]) {
+                scene.fire("keydown-ESC", { target: document.createElement(tag) });
+                extension.onFrame?.(frame(scene, 1316));
+            }
+            const editable = document.createElement("div");
+            editable.setAttribute("contenteditable", "true");
+            scene.fire("keydown-ESC", { target: editable });
+            const combobox = document.createElement("div");
+            combobox.setAttribute("role", "combobox");
+            scene.fire("keydown-ESC", { target: combobox });
+            extension.onFrame?.(frame(scene, 1332));
+
+            expect(scene.player.finishFollowingPath).not.toHaveBeenCalled();
+        });
+
+        it("leaves the walk alone when the key comes from a field inside a web component, which shows as its host", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+            const picker = document.createElement("emoji-picker");
+            const search = document.createElement("input");
+
+            scene.fire("keydown-ESC", { target: picker, composedPath: () => [search, picker, document.body] });
+            extension.onFrame?.(frame(scene, 1316));
+
+            expect(scene.player.finishFollowingPath).not.toHaveBeenCalled();
+        });
+
+        // D3: a click on a dock button, the Cancel walk tool or the emote opener leaves the focus there (Phaser prevents
+        // the default of a canvas mousedown, and nothing blurs the button), and the player then double clicks the floor.
+        it("ends the walk when the focus stays on a button, a link or a menu item after a click or a Tab", () => {
+            for (const target of [
+                document.createElement("button"),
+                Object.assign(document.createElement("a"), { href: "https://example.com" }),
+                Object.assign(document.createElement("div"), { role: "button" }),
+                Object.assign(document.createElement("div"), { role: "menuitem" }),
+                Object.assign(document.createElement("input"), { type: "checkbox" }),
+            ]) {
+                const scene = createScene();
+                const extension = createTileInteractionExtension(options);
+                startWalk(scene, extension);
+
+                scene.fire("keydown-ESC", { target });
+                extension.onFrame?.(frame(scene, 1316));
+
+                expect(scene.player.finishFollowingPath, target.outerHTML).toHaveBeenCalledExactlyOnceWith(true);
+                extension.onShutdown?.(scene.scene);
+            }
+        });
+
+        describe("when a menu that closes on Escape without marking the key is open", () => {
+            const surfaces: [string, () => void, () => void][] = [
+                [
+                    "the actions menu",
+                    () => actionsMenuStore.initialize("avatar", "Someone"),
+                    () => actionsMenuStore.clear(),
+                ],
+                ["the emoji picker", () => emoteMenuStore.openEmoteMenu(), () => emoteMenuStore.closeEmoteMenu()],
+                [
+                    "the emote bar",
+                    () => activeSecondaryZoneActionBarStore.set("emote"),
+                    () => activeSecondaryZoneActionBarStore.set(undefined),
+                ],
+                ["the game menu", () => menuVisiblilityStore.set(true), () => menuVisiblilityStore.set(false)],
+            ];
+
+            it.each(surfaces)(
+                "leaves the key to %s, which closes itself, and ends the walk on the next press",
+                (_name, open, close) => {
+                    const scene = createScene();
+                    const extension = createTileInteractionExtension(options);
+                    startWalk(scene, extension);
+
+                    open();
+                    // The key arrives while the menu is open (Phaser reads it first); the menu closes itself on the same key.
+                    scene.fire("keydown-ESC", { target: document.body });
+                    close();
+                    extension.onFrame?.(frame(scene, 1316));
+                    expect(scene.player.finishFollowingPath).not.toHaveBeenCalled();
+
+                    scene.fire("keydown-ESC", { target: document.body });
+                    extension.onFrame?.(frame(scene, 1332));
+                    expect(scene.player.finishFollowingPath).toHaveBeenCalledExactlyOnceWith(true);
+                },
+            );
+        });
+
+        it("ends the walk while the audio panel is open, since Escape does not close that panel", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+            // The map opens this panel by itself when its sound starts, and it shares the emote bar's store.
+            activeSecondaryZoneActionBarStore.set("audio-manager");
+            try {
+                scene.fire("keydown-ESC", { target: document.body });
+                extension.onFrame?.(frame(scene, 1316));
+
+                expect(scene.player.finishFollowingPath).toHaveBeenCalledExactlyOnceWith(true);
+            } finally {
+                activeSecondaryZoneActionBarStore.set(undefined);
+                extension.onShutdown?.(scene.scene);
+            }
+        });
+
+        it("leaves the walk alone when a menu or a dialog used the key after the scene was told of it", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+            // Phaser hands the key over from inside the window's own listener: the dialog's listener runs after it.
+            const event = { target: document.body, defaultPrevented: false };
+
+            scene.fire("keydown-ESC", event);
+            event.defaultPrevented = true;
+            extension.onFrame?.(frame(scene, 1316));
+
+            expect(scene.player.finishFollowingPath).not.toHaveBeenCalled();
+            expect(publish).toHaveBeenLastCalledWith({ walking: true, walkStatus: "going" });
+        });
+
+        it("counts a held key once: the repeats neither end the walk twice nor drop the selection", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+            click(scene, 8, 5, 5000);
+            const cleared = scene.graphics.cleared;
+
+            scene.fire("keydown-ESC", { target: document.body, repeat: false });
+            extension.onFrame?.(frame(scene, 5100));
+            scene.fire("keydown-ESC", { target: document.body, repeat: true });
+            extension.onFrame?.(frame(scene, 5200));
+
+            expect(scene.player.finishFollowingPath).toHaveBeenCalledTimes(1);
+            expect(scene.graphics.cleared).toBe(cleared);
+        });
+
+        it("does not act on a key pressed in a scene that has shut down", () => {
+            const scene = createScene();
+            const extension = createTileInteractionExtension(options);
+            startWalk(scene, extension);
+
+            scene.fire("keydown-ESC", { target: document.body });
+            extension.onShutdown?.(scene.scene);
+            extension.onFrame?.(frame(scene, 1316));
+
+            expect(scene.player.finishFollowingPath).not.toHaveBeenCalled();
+        });
     });
 
     it("sees a walk the scene started, as a right click does, within a few frames", () => {

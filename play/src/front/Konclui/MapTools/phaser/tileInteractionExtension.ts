@@ -7,8 +7,8 @@ import {
     type TileInteractionState,
     type TilePointer,
 } from "../../../Phaser/Game/TileInteractionController";
-import { isKeyFromInteractiveElement } from "../../../Utils/isKeyFromInteractiveElement";
 import { NOT_WALKING, type WalkState } from "../domain/walk";
+import { isEscapeForOpenSurface, isEscapeForTextEntry } from "./escapeClaim";
 import { createSceneTileHost } from "./sceneTileHost";
 import { createTileMarks } from "./tileMarks";
 
@@ -28,6 +28,8 @@ interface Session {
     readonly scene: GameScene;
     readonly controller: TileInteractionController;
     refresh(): void;
+    /** Acts on the Escape key pressed since the last frame, if no other handler used it. */
+    settleEscape(): void;
     end(): void;
 }
 
@@ -51,7 +53,7 @@ function pointerOf(pointer: Phaser.Input.Pointer): TilePointer {
  * Lets the player select a tile of the floor and walk there with a double click, and shows a walk's end to the tools.
  *
  * The controller (`Phaser/Game/TileInteractionController.ts`) holds the rules; this extension plugs it into one scene:
- * it reads the pointer and the Escape key from the scene's input, draws the marks on the floor and follows the walk
+ * it reads the pointer and the Escape key from the scene's input (Escape ends the walk, then drops the selection, unless a menu or a dialog used the key), draws the marks on the floor and follows the walk
  * on each frame. It does nothing until the scene has created the player and the shell is on, and it takes its
  * listeners off when the scene shuts down. An interactive object under the pointer (an avatar, a piece of furniture with an action) keeps the
  * click, as it does for the scene's own handler.
@@ -77,8 +79,14 @@ export function createTileInteractionExtension(options: TileInteractionOptions):
             controller.pointerUp(pointerOf(pointer), over.length > 0);
         const onOut = (): void => controller.pointerOut();
         const onCancel = (): void => controller.pointerCancel();
+        // Phaser hands the key over from inside the window's own listener, before the shell's menus and dialogs have
+        // seen it. Their Escape marks it handled (`preventDefault`), so the key waits for the next frame to be read.
+        let escape: KeyboardEvent | undefined;
         const onEscape = (event: KeyboardEvent): void => {
-            if (!isKeyFromInteractiveElement(event)) controller.escape();
+            // A held key repeats: it ends the walk once, and the selection goes on a later press. A field keeps its
+            // own Escape, and so does a menu that is open (it closes itself without marking the key). A button does
+            // not: it keeps the focus after a click, and Escape must still end the walk then.
+            if (!event.repeat && !isEscapeForTextEntry(event) && !isEscapeForOpenSurface()) escape = event;
         };
         scene.input.on(Phaser.Input.Events.POINTER_DOWN, onDown);
         scene.input.on(Phaser.Input.Events.POINTER_MOVE, onMove);
@@ -91,6 +99,11 @@ export function createTileInteractionExtension(options: TileInteractionOptions):
             scene,
             controller,
             refresh: () => marks.refresh(),
+            settleEscape() {
+                const event = escape;
+                escape = undefined;
+                if (event !== undefined && !event.defaultPrevented) controller.escape();
+            },
             end() {
                 scene.input.off(Phaser.Input.Events.POINTER_DOWN, onDown);
                 scene.input.off(Phaser.Input.Events.POINTER_MOVE, onMove);
@@ -99,6 +112,7 @@ export function createTileInteractionExtension(options: TileInteractionOptions):
                 scene.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, onCancel);
                 scene.game.events.off(Phaser.Core.Events.BLUR, onCancel);
                 scene.input.keyboard?.off("keydown-ESC", onEscape);
+                escape = undefined;
                 controller.dispose();
                 marks.destroy();
             },
@@ -119,6 +133,7 @@ export function createTileInteractionExtension(options: TileInteractionOptions):
                 session = begin(context.scene);
             }
             session.controller.update(context.time);
+            session.settleEscape();
             session.refresh();
         },
         onShutdown() {

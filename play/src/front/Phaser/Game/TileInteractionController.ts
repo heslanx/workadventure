@@ -97,6 +97,16 @@ interface Click {
     readonly time: number;
 }
 
+/**
+ * A walk this controller asked the host for, until the host's promise settles. `cancelled` is set when the player
+ * ended it. The host cannot be stopped while it searches for a path, so a walk cancelled before it had one is ended
+ * once, when its path starts; `ended` then says that was done, and a walk started after is left alone.
+ */
+interface PendingWalk {
+    cancelled: boolean;
+    ended: boolean;
+}
+
 const sameTile = (a: Tile | undefined, b: Tile | undefined): boolean =>
     a === b || (a !== undefined && b !== undefined && a.tileX === b.tileX && a.tileY === b.tileY);
 
@@ -111,7 +121,7 @@ export class TileInteractionController {
     /** The time of the last frame, for the changes that no frame causes. */
     private now = 0;
     /** Walks this controller started whose pathfinding or path has not ended: the host cannot say it walks before. */
-    private pendingWalks = 0;
+    private readonly pendingWalks = new Set<PendingWalk>();
     private press: Press | undefined;
     private lastClick: Click | undefined;
     private disposed = false;
@@ -191,16 +201,40 @@ export class TileInteractionController {
         this.setHovered(undefined);
     }
 
-    /** Escape drops the selection. It answers whether there was one, so the caller knows the key was used. */
+    /**
+     * Escape ends the walk in progress, and with none drops the selection. The walk is what moves, so it goes first,
+     * and a selection kept through it goes on the next press. It answers whether the key was used, and leaves the key
+     * alone while the player may not use the map (a dialog or the map editor has the controls, and Escape is theirs).
+     */
     public escape(): boolean {
+        if (!this.host.canSelect()) return false;
+        if (this.cancelWalk()) return true;
         if (this.selected === undefined) return false;
         this.setSelected(undefined);
         return true;
     }
 
-    /** Ends the walk in progress. It answers whether there was one. */
+    /**
+     * Ends the walk in progress, whoever started it. It answers whether there was one.
+     *
+     * A walk of this controller that has no path yet is still searching for one, and the host cannot be stopped there:
+     * it is marked, `update` ends it when its path starts, and it no longer counts as a walk meanwhile. The player can
+     * still move for the frame or two between that path starting and `update` ending it.
+     *
+     * Known edge: while a cancelled walk is still searching, `update` takes the first path that starts for its own. A
+     * right click or a tap that starts a path in that window, which the controller does not see, is ended instead.
+     */
     public cancelWalk(): boolean {
-        if (!this.walking) return false;
+        if (!this.walkInProgress()) return false;
+        // The path the host ends below is the oldest live walk's, so that walk has nothing left for `update` to end.
+        let pathOwnerPending = this.host.isWalking();
+        for (const walk of this.pendingWalks) {
+            if (pathOwnerPending && !walk.cancelled) {
+                walk.ended = true;
+                pathOwnerPending = false;
+            }
+            walk.cancelled = true;
+        }
         this.host.cancelWalk();
         this.walking = false;
         this.wantedStatus = "cancelled";
@@ -221,6 +255,13 @@ export class TileInteractionController {
     public update(time: number): void {
         if (this.disposed) return;
         this.now = time;
+        // A walk cancelled while it searched for its path is ended as the path starts, before the poll below sees it.
+        // Once per walk: a walk started during that search is not the one the player cancelled.
+        const searching = this.walkAwaitingEnd();
+        if (searching !== undefined && this.host.isWalking()) {
+            searching.ended = true;
+            this.host.cancelWalk();
+        }
         let changed = false;
         if (!this.host.canSelect()) {
             this.press = undefined;
@@ -230,7 +271,7 @@ export class TileInteractionController {
         }
         if (time - this.lastPollAt >= WALK_POLL_MS) {
             this.lastPollAt = time;
-            changed = this.setWalking(this.pendingWalks > 0 || this.host.isWalking()) || changed;
+            changed = this.setWalking(this.hasLiveWalk() || this.host.isWalking()) || changed;
         }
         changed = this.applyStatus(time) || changed;
         if (changed) this.emit();
@@ -247,17 +288,41 @@ export class TileInteractionController {
 
     private walkTo(tile: Tile): void {
         const { width, height } = this.host.tileSize();
-        this.pendingWalks += 1;
+        let moving: Promise<void>;
+        try {
+            moving = this.host.walkTo({ x: (tile.tileX + 0.5) * width, y: (tile.tileY + 0.5) * height });
+        } catch (error: unknown) {
+            // A walk that never started is not shown: the state changes only once the host has taken the walk.
+            console.error("[tile interaction] the host's walk threw", error);
+            return;
+        }
+        const walk: PendingWalk = { cancelled: false, ended: false };
+        this.pendingWalks.add(walk);
         this.setWalking(true);
         this.applyStatus(this.now);
         this.emit();
-        this.host
-            .walkTo({ x: (tile.tileX + 0.5) * width, y: (tile.tileY + 0.5) * height })
+        moving
             // The host reports a failed walk itself and never rejects; one that does breaks that contract, and is shown.
             .catch((error: unknown) => console.error("[tile interaction] the host's walk rejected", error))
             .finally(() => {
-                this.pendingWalks -= 1;
+                this.pendingWalks.delete(walk);
             });
+    }
+
+    private hasLiveWalk(): boolean {
+        for (const walk of this.pendingWalks) if (!walk.cancelled) return true;
+        return false;
+    }
+
+    /** The oldest walk the player cancelled whose path, once it starts, is still to be ended. */
+    private walkAwaitingEnd(): PendingWalk | undefined {
+        for (const walk of this.pendingWalks) if (walk.cancelled && !walk.ended) return walk;
+        return undefined;
+    }
+
+    /** Whether a walk goes on now, read from the walks themselves and the host rather than from the last poll. */
+    private walkInProgress(): boolean {
+        return this.hasLiveWalk() || this.host.isWalking();
     }
 
     /** Whoever started a walk (a right click, a tap, a double click), its destination marker takes the selection's place. */

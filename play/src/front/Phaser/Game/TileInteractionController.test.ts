@@ -544,6 +544,162 @@ describe("TileInteractionController: a walk", () => {
         expect(scene.controller.state.walkStatus).toBe("cancelled");
     });
 
+    it("is ended by Escape before the selection: the walk goes on the first press, the selection on the next", () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        click(scene, 6, 4, 5000);
+        expect(scene.controller.state.selected).toEqual({ tileX: 6, tileY: 4 });
+
+        expect(scene.controller.escape()).toBe(true);
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+        expect(scene.controller.state.walking).toBe(false);
+        expect(scene.controller.state.selected).toEqual({ tileX: 6, tileY: 4 });
+
+        expect(scene.controller.escape()).toBe(true);
+        expect(scene.controller.state.selected).toBeUndefined();
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+        expect(scene.controller.escape()).toBe(false);
+    });
+
+    it("is ended by Escape when the scene started it, even before the poll has noticed it", () => {
+        const scene = setup();
+        scene.host.walking = true;
+
+        expect(scene.controller.escape()).toBe(true);
+
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+        expect(scene.controller.state.walking).toBe(false);
+    });
+
+    it("leaves Escape to whoever has the controls: it ends no walk while the player may not use the map", () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        scene.host.allowed = false;
+
+        expect(scene.controller.escape()).toBe(false);
+
+        expect(scene.host.cancelWalk).not.toHaveBeenCalled();
+        expect(scene.controller.state.walking).toBe(true);
+    });
+
+    it("ends a walk cancelled while the host still searches for its path, as soon as the path starts", () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        scene.controller.update(1100 + WALK_POLL_MS);
+        scene.host.cancelWalk.mockClear();
+
+        // No path yet: the host's cancel has nothing to end.
+        scene.host.cancelWalk.mockImplementationOnce(() => undefined);
+        expect(scene.controller.cancelWalk()).toBe(true);
+        scene.controller.update(1100 + 2 * WALK_POLL_MS);
+        expect(scene.controller.state.walking).toBe(false);
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+
+        // The host finds the path and the player starts along it.
+        scene.host.walking = true;
+        scene.controller.update(1100 + 3 * WALK_POLL_MS);
+
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(2);
+        expect(scene.host.walking).toBe(false);
+        expect(scene.controller.state.walking).toBe(false);
+    });
+
+    it("ends a cancelled walk's path once, and leaves a walk started during its search alone", () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        // The host is still searching, so there is no path to end and the first walk's promise stays unsettled.
+        scene.host.cancelWalk.mockImplementation(() => {
+            scene.host.walking = false;
+        });
+        scene.controller.cancelWalk();
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+
+        // A second walk starts while the first one searches.
+        click(scene, 6, 4, 1200);
+        click(scene, 6, 4, 1300);
+        scene.host.walking = true;
+        scene.controller.update(1400);
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(2);
+
+        // The first walk's path was ended: the second walk's path, which starts now, is its own.
+        scene.host.walking = true;
+        scene.controller.update(1400 + WALK_POLL_MS);
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(2);
+        expect(scene.host.walking).toBe(true);
+        expect(scene.controller.state.walking).toBe(true);
+    });
+
+    it("does not end a path that starts after the player ended the walk that had one, before its promise settles", () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        scene.host.walking = true;
+        scene.controller.update(1100 + WALK_POLL_MS);
+        expect(scene.controller.cancelWalk()).toBe(true);
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+
+        // A right click starts a walk in the same tick, before the first walk's promise has settled.
+        scene.host.walking = true;
+        scene.controller.update(1100 + 2 * WALK_POLL_MS);
+
+        expect(scene.host.cancelWalk).toHaveBeenCalledTimes(1);
+        expect(scene.host.walking).toBe(true);
+        expect(scene.controller.state.walking).toBe(true);
+    });
+
+    it("does not show a walk cancelled during its search as going again at the next poll", () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        scene.host.cancelWalk.mockImplementationOnce(() => undefined);
+
+        scene.controller.cancelWalk();
+        scene.controller.update(1100 + WALK_POLL_MS);
+        scene.controller.update(1100 + 4 * WALK_POLL_MS);
+
+        expect(scene.controller.state.walking).toBe(false);
+        expect(scene.states.at(-1)?.walking).toBe(false);
+    });
+
+    it("stops ending walks once the cancelled one has settled, so a later walk is left alone", async () => {
+        const scene = setup();
+        click(scene, 3, 2, 1000);
+        click(scene, 3, 2, 1100);
+        scene.controller.cancelWalk();
+        await Promise.resolve();
+        await Promise.resolve();
+        scene.host.cancelWalk.mockClear();
+
+        scene.host.walking = true;
+        scene.controller.update(2000);
+
+        expect(scene.host.cancelWalk).not.toHaveBeenCalled();
+        expect(scene.controller.state.walking).toBe(true);
+    });
+
+    it("is not shown when the host throws before it has the walk, and the error is reported", () => {
+        const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const scene = setup();
+        scene.host.walkTo.mockImplementationOnce(() => {
+            throw new Error("no scene");
+        });
+        click(scene, 3, 2, 1000);
+
+        expect(() => click(scene, 3, 2, 1100)).not.toThrow();
+        scene.controller.update(1100 + WALK_POLL_MS);
+
+        expect(report).toHaveBeenCalledTimes(1);
+        expect(scene.controller.state.walking).toBe(false);
+        expect(scene.controller.state.walkStatus).toBe("idle");
+        expect(scene.states.every((state) => !state.walking)).toBe(true);
+        expect(scene.controller.cancelWalk()).toBe(false);
+        report.mockRestore();
+    });
+
     it("goes back to idle when a walk ends by arriving", () => {
         const scene = setup();
         scene.host.walking = true;
