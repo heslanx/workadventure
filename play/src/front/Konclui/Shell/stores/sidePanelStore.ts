@@ -1,5 +1,6 @@
 import { derived, get, writable, type Readable } from "svelte/store";
 import { chatVisibilityStore } from "../../../Stores/ChatStore";
+import { gameSceneStore } from "../../../Stores/GameSceneStore";
 import { navChat } from "../../../Chat/Stores/ChatStore";
 import {
     isRosterAvailable,
@@ -8,7 +9,7 @@ import {
     sidePanelView,
     type SidePanelView,
 } from "../domain/sidePanel";
-import { shellActiveStore, shellRoomStore } from "./shellStore";
+import { shellActiveStore, shellFramedStore, shellRoomStore } from "./shellStore";
 
 /** The people panel is open: the shell draws it itself, and the chat is not involved. */
 const peopleOpen = writable(false);
@@ -135,16 +136,20 @@ export function followShell(isWideScreen: () => boolean): () => void {
         if (tab.key === "users" && get(shellActiveStore) && get(chatVisibilityStore)) openPeople(true);
     });
 
-    // A wide screen opens on the people of the room, once per room and only when the chrome is drawn.
+    // A wide screen opens on the people of the room, once per room, as the frame is laid out and not as the chrome is
+    // drawn: the panel is a column of that frame, and opening it a moment after the map took its place would move the map
+    // a second time. The room is known by then, and so is whether it has a people list.
+    // Between two maps no scene runs and the room falls back to the start room, which is not the room being entered: the
+    // frame holds through that gap, and the next scene is what names the room.
     let roomOpenedFor: string | undefined;
-    const stopRoomOpening = derived([shellRoomStore, shellActiveStore], ([room, shellActive]) =>
-        shellActive ? room?.id : undefined,
+    const stopRoomOpening = derived([shellRoomStore, shellFramedStore, gameSceneStore], ([room, framed, scene]) =>
+        framed && (scene !== undefined || roomOpenedFor === undefined) ? room?.id : undefined,
     ).subscribe((roomId) => {
         if (roomId === undefined || roomId === roomOpenedFor) return;
         roomOpenedFor = roomId;
         // A notice raised in the previous room says nothing about this one.
         rosterNoticeOpen.set(false);
-        // A chat that something opened before the chrome was drawn keeps the panel.
+        // A chat that something opened before the frame was laid out keeps the panel.
         if (isWideScreen() && !get(chatVisibilityStore)) openPeople(false);
     });
 

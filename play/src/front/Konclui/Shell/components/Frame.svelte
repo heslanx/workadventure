@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount, type Snippet } from "svelte";
     import { LL } from "../../../../i18n/i18n-svelte";
-    import { shellActiveStore } from "../stores/shellStore";
+    import { shellActiveStore, shellFramedStore, shellSettlingStore } from "../stores/shellStore";
+    import { viewportLandmarkStore } from "../stores/landmarkStore";
     import {
         closeRosterNotice as endRosterNotice,
         closeSidePanel,
@@ -84,8 +85,12 @@
         if (button !== undefined) elementOf(button)?.focus();
     });
 
+    // The game is told its area as soon as the frame is laid out, which is before the chrome is drawn, and not again when
+    // the chrome appears: the scene takes the size it keeps while it is still hidden, and so is sized once. This effect reads
+    // the frame's own store and not the shell's: a re-run would publish "the window" for a moment, and that is a second
+    // resize of the scene.
     $effect(() => {
-        if (!$shellActiveStore || !viewport) {
+        if (!$shellFramedStore || !viewport) {
             gameViewportBounds.set(undefined);
             return;
         }
@@ -184,7 +189,8 @@
 
 <div
     class="office-frame"
-    class:konclui={$shellActiveStore}
+    class:konclui={$shellFramedStore}
+    class:settling={$shellSettlingStore}
     class:panel-open={view !== "closed"}
     data-testid={$shellActiveStore ? "konclui-shell" : undefined}
 >
@@ -267,7 +273,14 @@
         <WalkNotice live />
         <OfficeMenu />
     {/if}
-    <div class="viewport" bind:this={viewport}>
+    <!-- The office's area, named while the shell is drawn. It is the page's main landmark, and a region while upstream
+         draws a <main> of its own inside it (the warning banner): a page has one main landmark. -->
+    <div
+        class="viewport"
+        bind:this={viewport}
+        role={$viewportLandmarkStore}
+        aria-label={$viewportLandmarkStore === undefined ? undefined : $LL.konclui.office()}
+    >
         {@render children()}
     </div>
 </div>
@@ -300,9 +313,32 @@
     .konclui.panel-open {
         grid-template-columns: var(--rail-width) var(--panel-width) minmax(0, 1fr);
     }
+    /* The map's column is the last one, named, because the rail and the side panel are drawn after the frame is laid out:
+       in the order of the markup the map would take the first free column until they are. */
     .konclui .viewport {
+        grid-column: -2 / -1;
         border-radius: var(--k-radius-surface);
         background: var(--k-card);
+    }
+    /* The loading screen is as large as the window and sits in the game element. While the frame is laid out it stands on
+       the window itself, so it keeps covering all of it from the frame's first moment and does not move with the map.
+       The rule is for the whole life of the frame and not only for the settling: the screen fades out for 800 ms after the
+       chrome is drawn (LoaderScene.svelte), and standing in the map's cell again for that time would move a visible box
+       from the window into the cell. It fades over the chrome instead, and the office comes up under it as one. */
+    .konclui :global(#game > .bg-contrast > .h-dvh) {
+        position: fixed;
+    }
+    /* The map's box moves from the whole window into the frame as the frame is laid out, which is before the scene is
+       revealed. Chrome counts that as a layout shift for every box that is visible while it moves, the map's box and
+       whatever it holds (the game element, the canvas, Phaser's DOM container), and does not count a box that is not
+       visible: so the box is held while it settles, with all it holds, and is revealed with the chrome, at the size it
+       keeps. Only the loading screen shows through, and it does not move: it stands on the window (the rule above), so
+       what the user sees over the move is the same screen at the same place. */
+    .konclui.settling .viewport {
+        visibility: hidden;
+    }
+    .konclui.settling :global(#game > .bg-contrast > .h-dvh) {
+        visibility: visible;
     }
     .konclui :global(#game > canvas) {
         border-radius: var(--k-radius-surface);

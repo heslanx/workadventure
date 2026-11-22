@@ -17,6 +17,10 @@ vi.mock("../../../Stores/MediaStore", async () => {
     const { writable } = await import("svelte/store");
     return { enableCameraSceneVisibilityStore: writable(false) };
 });
+vi.mock("../../../Stores/MenuStore", async () => {
+    const { writable } = await import("svelte/store");
+    return { menuIconVisiblilityStore: writable(false) };
+});
 vi.mock("../../../Stores/PwaInstallStore", async () => {
     const { writable } = await import("svelte/store");
     return { pwaInstallSceneVisibleStore: writable(false) };
@@ -33,12 +37,14 @@ import { loginSceneVisibleStore } from "../../../Stores/LoginSceneStore";
 import { selectCharacterSceneVisibleStore } from "../../../Stores/SelectCharacterStore";
 import { selectCompanionSceneVisibleStore } from "../../../Stores/SelectCompanionStore";
 import { enableCameraSceneVisibilityStore } from "../../../Stores/MediaStore";
+import { menuIconVisiblilityStore } from "../../../Stores/MenuStore";
 import { pwaInstallSceneVisibleStore } from "../../../Stores/PwaInstallStore";
 import { errorStore } from "../../../Stores/ErrorStore";
 import { errorScreenStore } from "../../../Stores/ErrorScreenStore";
 import { mapDeletedPromptStore } from "../../../Stores/MapDeletedPromptStore";
 import { chatVisibilityStore } from "../../../Stores/ChatStore";
 import { navChat } from "../../../Chat/Stores/ChatStore";
+import { shellActiveStore } from "./shellStore";
 import {
     closeRosterNotice,
     closeSidePanel,
@@ -88,6 +94,7 @@ beforeEach(() => {
     gameSceneStore.set(undefined);
     gameSceneIsLoadedStore.set(false);
     loaderVisibleStore.set(false);
+    menuIconVisiblilityStore.set(false);
     loginSceneVisibleStore.set(false);
     selectCharacterSceneVisibleStore.set(false);
     selectCompanionSceneVisibleStore.set(false);
@@ -337,6 +344,57 @@ describe("entering a room", () => {
         expect(view()).toBe("people");
     });
 
+    it("opens as the frame is laid out, before the chrome is drawn, so that the map is not moved a second time", () => {
+        follow();
+        const office = room("office", true);
+        managed.room = office;
+        currentRoomStore.set(office);
+
+        menuIconVisiblilityStore.set(true);
+
+        expect(get(shellActiveStore)).toBe(false);
+        expect(view()).toBe("people");
+
+        gameSceneIsLoadedStore.set(true);
+        expect(view()).toBe("people");
+    });
+
+    it("opens nothing for a room without a people list when the frame is laid out", () => {
+        follow();
+        const lobby = room("lobby", false);
+        managed.room = lobby;
+        currentRoomStore.set(lobby);
+
+        menuIconVisiblilityStore.set(true);
+
+        expect(view()).toBe("closed");
+        expect(noticeOpen()).toBe(false);
+    });
+
+    it("does not open for the start room in the gap between two maps, only for the map that is entered", () => {
+        follow();
+        const start = room("start", true);
+        enterRoom(start);
+        menuIconVisiblilityStore.set(true);
+        // Upstream sets the start room once; the rooms entered after it come with their scene.
+        const enterNext = (next: Room) => {
+            managed.room = next;
+            gameSceneStore.set({ room: next } as unknown as GameScene);
+            gameSceneIsLoadedStore.set(true);
+        };
+        enterNext(room("garden", true));
+        togglePeople();
+        expect(view()).toBe("closed");
+
+        // The scene of the garden is gone and the next one is not joined yet: the room falls back to the start room.
+        gameSceneIsLoadedStore.set(false);
+        gameSceneStore.set(undefined);
+        expect(view()).toBe("closed");
+
+        enterNext(room("terrace", true));
+        expect(view()).toBe("people");
+    });
+
     it("opens once per room, and again for another room", () => {
         follow();
         const office = room("office", true);
@@ -395,8 +453,9 @@ describe("a new run of followShell", () => {
         togglePeople();
         expect(noticeOpen()).toBe(true);
         stopEarlierRun();
-        // The chrome is covered, so the reactions to the room and the chat cannot be what closes the notice.
-        loaderVisibleStore.set(true);
+        // The frame is not laid out (an entry screen has the window), so the reactions to the room and the chat cannot be
+        // what closes the notice.
+        loginSceneVisibleStore.set(true);
 
         follow();
 
@@ -408,7 +467,7 @@ describe("a new run of followShell", () => {
         enterRoom(room("office", true));
         expect(view()).toBe("people");
         stopEarlierRun();
-        loaderVisibleStore.set(true);
+        loginSceneVisibleStore.set(true);
 
         follow();
 

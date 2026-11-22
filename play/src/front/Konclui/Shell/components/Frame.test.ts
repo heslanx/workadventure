@@ -94,3 +94,32 @@ describe("Frame: the people sheet on a phone", () => {
         expect(/min-height:\s*([^;]+);/.exec(rule)?.[1].trim()).toBe("144px");
     });
 });
+
+// The loading screen is the one thing in the game element that is as large as the window, and the frame lays the game
+// element out before the screen has gone. It stays where it is only if it stands on the window, which the frame's rule
+// does by the structure upstream gives it: pinned here, so a change of that markup fails this test and not the page.
+describe("Frame: the loading screen over a frame that is laid out", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const read = (relative: string) => readFileSync(join(here, relative), "utf8");
+    const style = read("Frame.svelte")
+        .slice(read("Frame.svelte").indexOf("<style>"))
+        .replace(/\/\*[\s\S]*?\*\//g, "");
+
+    it("stands the loading screen on the window while the frame is laid out", () => {
+        const rule = /\.konclui :global\(#game > \.bg-contrast > \.h-dvh\)\s*\{([^}]*)\}/.exec(style)?.[1] ?? "";
+
+        expect(/position:\s*([^;]+);/.exec(rule)?.[1].trim()).toBe("fixed");
+    });
+
+    it("matches the markup of the loading screen: a .bg-contrast wrapper in the game overlay around a .h-dvh root", () => {
+        const overlay = read("../../../Components/GameOverlay.svelte");
+        const loader = read("../../../Components/Loader/LoaderScene.svelte");
+
+        expect(overlay).toMatch(/\{#if \$loaderVisibleStore\}\s*<div class="bg-contrast">\s*<LoaderScene \/>/);
+        // The overlay is a direct child of the game element, which is what `#game > .bg-contrast` needs.
+        expect(read("../../../Components/App.svelte")).toMatch(
+            /<div\s+id="game"[^>]*>\s*\{#if game\}\s*<GameOverlay \{game\} \/>/,
+        );
+        expect(loader).toMatch(/<div\s+class="absolute [^"]*\bh-dvh\b[^"]*"/);
+    });
+});

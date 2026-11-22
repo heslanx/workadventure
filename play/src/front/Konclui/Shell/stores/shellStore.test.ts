@@ -8,6 +8,10 @@ vi.mock("../../../Stores/MediaStore", async () => {
     const { writable } = await import("svelte/store");
     return { enableCameraSceneVisibilityStore: writable(false) };
 });
+vi.mock("../../../Stores/MenuStore", async () => {
+    const { writable } = await import("svelte/store");
+    return { menuIconVisiblilityStore: writable(false) };
+});
 vi.mock("../../../Stores/PwaInstallStore", async () => {
     const { writable } = await import("svelte/store");
     return { pwaInstallSceneVisibleStore: writable(false) };
@@ -24,11 +28,18 @@ import { loginSceneVisibleStore } from "../../../Stores/LoginSceneStore";
 import { selectCharacterSceneVisibleStore } from "../../../Stores/SelectCharacterStore";
 import { selectCompanionSceneVisibleStore } from "../../../Stores/SelectCompanionStore";
 import { enableCameraSceneVisibilityStore } from "../../../Stores/MediaStore";
+import { menuIconVisiblilityStore } from "../../../Stores/MenuStore";
 import { pwaInstallSceneVisibleStore } from "../../../Stores/PwaInstallStore";
 import { errorStore } from "../../../Stores/ErrorStore";
 import { errorScreenStore } from "../../../Stores/ErrorScreenStore";
 import { mapDeletedPromptStore } from "../../../Stores/MapDeletedPromptStore";
-import { shellActiveStore, shellEnabledStore, shellRoomStore } from "./shellStore";
+import {
+    shellActiveStore,
+    shellEnabledStore,
+    shellFramedStore,
+    shellRoomStore,
+    shellSettlingStore,
+} from "./shellStore";
 
 const cameraScene = enableCameraSceneVisibilityStore as unknown as Writable<boolean>;
 const errorScreen = errorScreenStore as unknown as Writable<object | undefined>;
@@ -49,6 +60,7 @@ beforeEach(() => {
     gameSceneStore.set(undefined);
     gameSceneIsLoadedStore.set(false);
     loaderVisibleStore.set(false);
+    menuIconVisiblilityStore.set(false);
     loginSceneVisibleStore.set(false);
     selectCharacterSceneVisibleStore.set(false);
     selectCompanionSceneVisibleStore.set(false);
@@ -136,4 +148,155 @@ describe("shellActiveStore", () => {
         cover();
         expect(get(shellActiveStore)).toBe(false);
     });
+});
+
+describe("shellFramedStore", () => {
+    const sceneCreated = menuIconVisiblilityStore;
+
+    it("is off before a scene exists, whatever the room says: the entry screens come first", () => {
+        expect(get(shellFramedStore)).toBe(false);
+        currentRoomStore.set(room("start"));
+        expect(get(shellFramedStore)).toBe(false);
+    });
+
+    it("turns on when the scene is created, while the shell is still not drawn", () => {
+        currentRoomStore.set(room("start"));
+
+        sceneCreated.set(true);
+
+        expect(get(shellFramedStore)).toBe(true);
+        expect(get(shellActiveStore)).toBe(false);
+    });
+
+    it("stays on as the shell is drawn, and through the loader and the empty scene of the next map", () => {
+        currentRoomStore.set(room("start"));
+        sceneCreated.set(true);
+        const seen: boolean[] = [];
+        const stop = shellFramedStore.subscribe((framed) => seen.push(framed));
+
+        gameSceneStore.set(sceneOf(room("start")));
+        gameSceneIsLoadedStore.set(true);
+        loaderVisibleStore.set(true);
+        gameSceneIsLoadedStore.set(false);
+        gameSceneStore.set(undefined);
+        loaderVisibleStore.set(false);
+        gameSceneStore.set(sceneOf(room("next")));
+        gameSceneIsLoadedStore.set(true);
+        stop();
+
+        expect(seen).toEqual([true]);
+    });
+
+    it.each<[string, () => void]>([
+        ["the login screen is shown", () => loginSceneVisibleStore.set(true)],
+        ["the character screen is shown", () => selectCharacterSceneVisibleStore.set(true)],
+        ["the companion screen is shown", () => selectCompanionSceneVisibleStore.set(true)],
+        ["the camera screen is shown", () => cameraScene.set(true)],
+        ["the install screen is shown", () => pwaInstallSceneVisibleStore.set(true)],
+        ["an error message is shown", () => errorStore.addErrorMessage("The connection was lost")],
+        ["the error screen is shown", () => errorScreen.set({ type: "error" })],
+        ["the map was deleted", () => mapDeletedPromptStore.set(true)],
+    ])("turns off while %s, which fills the window", (_reason, cover) => {
+        currentRoomStore.set(room("start"));
+        sceneCreated.set(true);
+        gameSceneIsLoadedStore.set(true);
+
+        cover();
+
+        expect(get(shellFramedStore)).toBe(false);
+    });
+
+    it("never turns on for a room whose metadata opts out", () => {
+        currentRoomStore.set(room("start", optedOut));
+
+        sceneCreated.set(true);
+        gameSceneIsLoadedStore.set(true);
+
+        expect(get(shellFramedStore)).toBe(false);
+    });
+
+    it("turns on with the metadata the room already has when its scene is created, and for no other metadata", () => {
+        currentRoomStore.set(room("start", { konclui: { shell: "no" } }));
+
+        sceneCreated.set(true);
+
+        expect(get(shellFramedStore)).toBe(true);
+    });
+});
+
+describe("shellSettlingStore", () => {
+    const sceneCreated = menuIconVisiblilityStore;
+
+    it("is off before a scene exists and for a room that opts out", () => {
+        currentRoomStore.set(room("start"));
+        expect(get(shellSettlingStore)).toBe(false);
+
+        currentRoomStore.set(room("plain", optedOut));
+        sceneCreated.set(true);
+        expect(get(shellSettlingStore)).toBe(false);
+    });
+
+    it("is on from the moment the frame is laid out, for a room that does not opt out, until the shell is drawn", () => {
+        currentRoomStore.set(room("start", undefined));
+        const seen: boolean[] = [];
+        const stop = shellSettlingStore.subscribe((settling) => seen.push(settling));
+
+        sceneCreated.set(true);
+        expect(get(shellFramedStore)).toBe(true);
+        gameSceneStore.set(sceneOf(room("start")));
+        gameSceneIsLoadedStore.set(true);
+        stop();
+
+        expect(seen).toEqual([false, true, false]);
+    });
+
+    it("holds the game again behind the loader of the next map, which keeps the frame, and releases it with the chrome", () => {
+        currentRoomStore.set(room("start"));
+        sceneCreated.set(true);
+        gameSceneStore.set(sceneOf(room("start")));
+        gameSceneIsLoadedStore.set(true);
+
+        loaderVisibleStore.set(true);
+        gameSceneIsLoadedStore.set(false);
+        gameSceneStore.set(undefined);
+        expect(get(shellFramedStore)).toBe(true);
+        expect(get(shellSettlingStore)).toBe(true);
+
+        loaderVisibleStore.set(false);
+        gameSceneStore.set(sceneOf(room("next")));
+        gameSceneIsLoadedStore.set(true);
+        expect(get(shellSettlingStore)).toBe(false);
+    });
+
+    it("is off while an entry screen takes the window, because the game is not in the frame then", () => {
+        currentRoomStore.set(room("start"));
+        sceneCreated.set(true);
+
+        loginSceneVisibleStore.set(true);
+
+        expect(get(shellSettlingStore)).toBe(false);
+    });
+});
+
+// A limit, pinned so that it is a decision and not an accident. The frame follows the room of the running scene, and
+// between two maps the scene is gone, so the room is the start room: the next map's room is only named when its scene
+// joins. From a start map that opts out into a default map the frame therefore turns on with the join, after the game
+// element was laid out over the window, and that one shift is not held back.
+describe("the frame between two maps", () => {
+    it("takes the start room's opt-out into the next map until that map's scene joins", () => {
+        currentRoomStore.set(room("plain", optedOut));
+        sceneCreatedAfterExit();
+
+        expect(get(shellFramedStore)).toBe(false);
+        expect(get(shellSettlingStore)).toBe(false);
+
+        gameSceneStore.set(sceneOf(room("office")));
+        expect(get(shellFramedStore)).toBe(true);
+    });
+
+    function sceneCreatedAfterExit(): void {
+        menuIconVisiblilityStore.set(true);
+        loaderVisibleStore.set(true);
+        gameSceneStore.set(undefined);
+    }
 });
