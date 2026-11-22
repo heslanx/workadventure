@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.65.1",
     "@types/adm-zip": "^0.5.0",
     "@types/dockerode": "^3.3.11",
     "@workadventure/eslint-config": "1.0.0",
@@ -14,7 +14,7 @@
     "dockerode": "^3.3.4",
     "dotenv-cli": "^6.0.0",
     "eslint": "^9.39.4",
-    "eslint-plugin-playwright": "^2.2.2",
+    "eslint-plugin-playwright": "^2.12.2",
     "lint-staged": "^13.0.3",
     "prettier": "^3.8.3"
   },

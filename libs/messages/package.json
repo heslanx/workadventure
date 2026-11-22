@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "tsx": "^4.22.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "zod-to-json-schema": "^3.25.2"
   },

@@ -73,7 +73,7 @@
     "passport-http": "^0.3.0",
     "passport-http-bearer": "^1.0.1",
     "rimraf": "^6.1.4",
-    "tsx": "^4.22.3",
+    "tsx": "^4.23.15",
     "unzipper": "^0.12.5",
     "zip-stream": "^7.0.5",
     "zod": "^3.23.8",

@@ -23,15 +23,15 @@
   ],
   "license": "SEE LICENSE IN LICENSE.txt",
   "dependencies": {
-    "@types/ws": "^8.18.1",
+    "@types/ws": "^8.18.2",
     "@workadventure/messages": "1.0.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3",
-    "ws": "^8.21.0"
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "tsx": "^4.22.3",
+    "tsx": "^4.23.15",
     "vitest": "^4.1.7"
   }
 }
