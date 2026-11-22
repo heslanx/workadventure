@@ -104,7 +104,7 @@ class TestObject {
         frame?: string | number,
         public readonly config?: ShaderConfig,
     ) {
-        this.texture = { key };
+        this.texture = scene.textureFor(key);
         this.frame = { name: frame };
     }
 
@@ -119,7 +119,7 @@ class TestObject {
     }
 
     setTexture(key: string): this {
-        this.texture = { key };
+        this.texture = this.scene.textureFor(key);
         return this;
     }
 
@@ -194,6 +194,7 @@ class TestScene {
     public readonly list: unknown[] = [];
     public readonly created: TestObject[] = [];
     public readonly textureKeys = new Set<string>();
+    private readonly textureObjects = new Map<string, { key: string }>();
     public readonly listeners = new Map<string, Set<() => void>>();
     public readonly offs: [string, () => void][] = [];
     public readonly filters = { list: [] as unknown[], removed: [] as [unknown, boolean][] };
@@ -251,9 +252,12 @@ class TestScene {
             textures: {
                 addImage: (key: string) => this.addTexture(key),
                 addCanvas: (key: string) => this.addTexture(key),
+                get: (key: string) => this.textureFor(key),
                 getFrame: () => this.frame,
                 exists: (key: string) => this.textureKeys.has(key),
                 remove: (key: string) => this.textureKeys.delete(key),
+                on: () => undefined,
+                off: () => undefined,
             } as unknown as EffectsHost["textures"],
             children: { list: this.list } as unknown as EffectsHost["children"],
             events: {
@@ -279,6 +283,16 @@ class TestScene {
                     getEntitiesManager: () => ({ getEntities: () => new Map() }),
                 }) as unknown as ReturnType<EffectsHost["getGameMapFrontWrapper"]>,
         };
+    }
+
+    /** The Texture the manager holds under a key: one object for as long as the key stays, as Phaser's. */
+    textureFor(key: string): { key: string } {
+        let texture = this.textureObjects.get(key);
+        if (!texture) {
+            texture = { key };
+            this.textureObjects.set(key, texture);
+        }
+        return texture;
     }
 
     /** A texture of the scene that is not the effects': added with the key, or null when it exists (as Phaser does). */

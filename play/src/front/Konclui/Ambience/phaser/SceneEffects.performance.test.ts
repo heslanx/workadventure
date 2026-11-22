@@ -132,7 +132,7 @@ class MeterObject {
         frame?: string | number,
         public readonly config?: ShaderConfig,
     ) {
-        this.texture = { key };
+        this.texture = scene.textureFor(key);
         this.frame = { name: frame };
     }
 
@@ -147,7 +147,7 @@ class MeterObject {
     }
 
     setTexture(key: string): this {
-        this.texture = { key };
+        this.texture = this.scene.textureFor(key);
         return this;
     }
 
@@ -259,6 +259,7 @@ class MeterScene {
     public readonly listeners = new Map<string, Set<() => void>>();
     public readonly uploads: UploadMeter = { bytes: 0, uploads: 0, byKey: new Map() };
     public readonly textureKeys = new Set<string>();
+    private readonly textureObjects = new Map<string, { key: string }>();
     public readonly renderer = {
         renderNodes: { hasNode: () => true },
     } as unknown as Phaser.Renderer.WebGL.WebGLRenderer;
@@ -318,9 +319,12 @@ class MeterScene {
             textures: {
                 addImage: (key: string, image: HTMLImageElement) => this.addTexture(key, image),
                 addCanvas: (key: string, canvas: HTMLCanvasElement) => this.addTexture(key, canvas),
+                get: (key: string) => this.textureFor(key),
                 getFrame: () => this.frame,
                 exists: (key: string) => this.textureKeys.has(key),
                 remove: (key: string) => this.textureKeys.delete(key),
+                on: () => undefined,
+                off: () => undefined,
             } as unknown as EffectsHost["textures"],
             children: { list: this.list } as unknown as EffectsHost["children"],
             events: {
@@ -345,6 +349,16 @@ class MeterScene {
 
     /** What the map's entity manager gives: nothing by default. */
     public entities = new Map();
+
+    /** The Texture the manager holds under a key: one object for as long as the key stays, as Phaser's. */
+    textureFor(key: string): { key: string } {
+        let texture = this.textureObjects.get(key);
+        if (!texture) {
+            texture = { key };
+            this.textureObjects.set(key, texture);
+        }
+        return texture;
+    }
 
     addTexture(key: string, source?: { width: number; height: number }) {
         if (this.textureKeys.has(key)) return null;

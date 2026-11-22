@@ -108,7 +108,12 @@ export interface EffectsHost {
     readonly textures: Pick<
         Phaser.Textures.TextureManager,
         "addImage" | "addCanvas" | "get" | "getFrame" | "exists" | "remove"
-    >;
+    > & {
+        // The game's texture manager outlives the scene: the effects listen to it for the removal of a texture they
+        // show (an evicted baked avatar) and stop at their release.
+        on(event: string, listener: (key: string) => void): unknown;
+        off(event: string, listener: (key: string) => void): unknown;
+    };
     readonly children: Pick<Phaser.GameObjects.DisplayList, "list">;
     readonly events: {
         on(event: string, listener: () => void): unknown;
@@ -575,6 +580,8 @@ export class SceneEffects {
         // Registered first, so that a failure while building still gives back what was made so far.
         this.resources.onRelease(() => this.scene.events.off(Phaser.Scenes.Events.PRE_RENDER, this.onPreRender));
         this.resources.onRelease(() => this.restorePage());
+        scene.textures.on(Phaser.Textures.Events.REMOVE, this.onTextureRemoved);
+        this.resources.onRelease(() => this.scene.textures.off(Phaser.Textures.Events.REMOVE, this.onTextureRemoved));
         try {
             for (const name of EFFECT_TEXTURES) {
                 const key = `kfx-${generation}-${name}`;
@@ -946,7 +953,7 @@ export class SceneEffects {
     private paintAtlas(pieces: readonly MirrorPiece[]): void {
         for (const key of this.pieceBacks.values()) {
             for (const image of this.mirrorPool) {
-                if (image.texture.key === key) image.setVisible(false).setTexture(this.key("tv-slide"));
+                if (image.texture.key === key) this.parkMirrorImage(image);
             }
             this.resources.dropTexture(key);
         }
@@ -1901,7 +1908,11 @@ export class SceneEffects {
                     img = this.scene.add.image(0, 0, key, frame);
                     this.mirror.add(img);
                     pool.push(img);
-                } else if (img.texture.key !== key || (frame !== undefined && !sameFrame(img.frame.name, frame))) {
+                } else if (
+                    img.texture.key !== key ||
+                    !this.holdsLiveTexture(img) ||
+                    (frame !== undefined && !sameFrame(img.frame.name, frame))
+                ) {
                     img.setTexture(key, frame);
                 }
                 img.setOrigin(0, 0)
@@ -1923,6 +1934,34 @@ export class SceneEffects {
         if (this.mirror.visible !== n > 0) this.mirror.setVisible(n > 0);
         this.mirrorShown = n;
     }
+
+    /**
+     * Whether a pooled image holds the Texture the texture manager has under its key now. A key can come back as
+     * another Texture: a baked avatar's sheet is destroyed when its recipe is evicted and baked again as a new object
+     * under the same key (AvatarBakeRegistry), so the key string says nothing about the Texture, and an image that kept
+     * the old one would draw a destroyed texture. A destroyed Texture is never the one the manager holds, so this covers it.
+     */
+    private holdsLiveTexture(image: Phaser.GameObjects.Image): boolean {
+        return this.scene.textures.get(image.texture.key) === image.texture;
+    }
+
+    /** Parks an image on a texture of the effects' own and hides it, so that it holds no texture that is going. */
+    private parkMirrorImage(image: Phaser.GameObjects.Image): void {
+        image.setVisible(false).setTexture(this.key("tv-slide"));
+    }
+
+    /**
+     * A texture left the scene's manager (Textures REMOVE, after its destruction): a pooled image that still holds it
+     * is parked now. The next `drawMirror` would re-point it, but a removal can land between two of them, and a pooled
+     * image that is shown must never hold a destroyed Texture at a draw.
+     */
+    private readonly onTextureRemoved = (key: string): void => {
+        const pool = this.mirrorPool;
+        for (let i = 0; i < pool.length; i++) {
+            const image = pool[i];
+            if (image.texture.key === key && !this.holdsLiveTexture(image)) this.parkMirrorImage(image);
+        }
+    };
 
     private anyLive(panes: readonly GlassPane[]): boolean {
         for (let i = 0; i < panes.length; i++) if (this.isLive(panes[i])) return true;
