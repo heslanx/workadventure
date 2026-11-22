@@ -122,21 +122,18 @@ afterEach(() => {
 });
 
 describe("the name of a remote player that is culled", () => {
-    it("is hidden with one write, and shown again with one", async () => {
+    it("detaches its tag when culled and restores the same tag", async () => {
         const { scene, layerElement } = createScene();
         const player = createPlayer(scene, 10, 20);
         await flushPromises();
-        const writes = watchStyleWrites(layerElement);
-
+        const tag = nameOf(layerElement);
         player.setCulled(true);
-        const writesToHide = writes();
-        const displayWhileCulled = nameOf(layerElement).style.display;
+        expect(layerElement.contains(tag)).toBe(false);
+        const writes = watchStyleWrites(tag);
         player.setCulled(true);
-        const writesToHideAgain = writes();
+        expect(writes()).toBe(0);
         player.setCulled(false);
-
-        expect([writesToHide, writesToHideAgain, writes()]).toEqual([1, 0, 1]);
-        expect(displayWhileCulled).toBe("none");
+        expect(nameOf(layerElement)).toBe(tag);
         expect(nameOf(layerElement).style.display).toBe("");
     });
 
@@ -144,8 +141,9 @@ describe("the name of a remote player that is culled", () => {
         const { scene, layerElement, render } = createScene();
         const player = createPlayer(scene, 10, 20);
         await flushPromises();
+        const tag = nameOf(layerElement);
         player.setCulled(true);
-        const writes = watchStyleWrites(layerElement);
+        const writes = watchStyleWrites(tag);
 
         for (const x of [100, 200, 300]) {
             move(player, x, 80);
@@ -221,7 +219,7 @@ describe("the name of a remote player that is culled", () => {
         render();
 
         expect(namesBeforeTheBuild).toBe(0);
-        expect(nameOf(layerElement).style.display).toBe("none");
+        expect(layerElement.querySelector(".username-display")).toBeNull();
         expect(writes()).toBe(0);
     });
 });
@@ -250,10 +248,10 @@ describe("a remote player that is culled by RemotePlayerCulling", () => {
         culling.track(player);
 
         culling.update({ x: 2_000, y: 2_000, right: 2_960, bottom: 2_540 });
-        const displayOutsideTheView = nameOf(layerElement).style.display;
+        const tagOutsideTheView = layerElement.querySelector(".username-display");
         culling.update({ x: 0, y: 0, right: 960, bottom: 540 });
 
-        expect(displayOutsideTheView).toBe("none");
+        expect(tagOutsideTheView).toBeNull();
         expect(nameOf(layerElement).style.display).toBe("");
     });
 });

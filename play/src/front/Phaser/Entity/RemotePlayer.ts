@@ -12,6 +12,9 @@ import type { WokaMenuAction } from "../../Stores/WokaMenuStore";
 import { wokaMenuStore } from "../../Stores/WokaMenuStore";
 import { Character } from "../Entity/Character";
 import type { AvatarBuildQueue } from "../Entity/AvatarBuildQueue";
+import { acquireAvatarBake } from "../Entity/AvatarBakeCache";
+import type { BakeLease } from "../Entity/AvatarBakeRegistry";
+import { isAvatarZeroWorkEnabled } from "../Entity/AvatarZeroWork";
 import type { GameScene } from "../Game/GameScene";
 import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
 import type { ActivatableInterface } from "../Game/ActivatableInterface";
@@ -35,6 +38,9 @@ import { modals } from "@wa-modals";
  * With an `avatarBuildQueue`, the player exists at once (it has a position and the scene can find it) but its sprites,
  * name and companion are created when the queue gets to it.
  */
+/** How many turns of the build queue a restore of the sprites gets before it waits for the next promotion. */
+const MAX_RESTORE_ATTEMPTS = 3;
+
 export class RemotePlayer extends Character implements ActivatableInterface {
     public readonly userId: number;
     public readonly userUuid: string;
@@ -43,6 +49,13 @@ export class RemotePlayer extends Character implements ActivatableInterface {
     private visitCardUrl: string | null;
     private culled = false;
     private dot = false;
+    // See AvatarZeroWork: read once, so that a player is in one mode for its whole life.
+    private readonly zeroWork = isAvatarZeroWorkEnabled();
+    private bakeLease: BakeLease | undefined;
+    // Whether a restore of the sprites of a dot that is promoted waits in the build queue. The queue has one slot per
+    // avatar, and the same slot can hold the first build (name, companion, sprites), which a dot must not lose.
+    private restoreQueued = false;
+    private restoreAttempts = 0;
     private pathFollowingUpdateCallback: (time: number, delta: number) => void;
 
     constructor(
@@ -82,7 +95,7 @@ export class RemotePlayer extends Character implements ActivatableInterface {
         // What a dot builds (sprites, name, companion) is hidden in the call that builds it.
         const build = () => {
             grant();
-            if (this.dot) {
+            if (this.dot || this.isZeroWorkCulled()) {
                 this.applyDetail();
             }
         };
@@ -101,8 +114,17 @@ export class RemotePlayer extends Character implements ActivatableInterface {
      * moves then leave nothing to draw, which is what lets the scene skip the frame they would ask for.
      */
     public setCulled(culled: boolean): void {
+        const wasCulled = this.culled;
         this.culled = culled;
         this.applyDetail();
+        if (wasCulled && !culled && this.zeroWork) {
+            // The moves made while culled were remembered, not played.
+            this.replayAnimation();
+        }
+    }
+
+    public isCulled(): boolean {
+        return this.culled;
     }
 
     /**
@@ -116,22 +138,122 @@ export class RemotePlayer extends Character implements ActivatableInterface {
         }
         this.dot = dot;
         this.applyDetail();
-        if (!dot) {
-            // The moves made as a dot were remembered, not played.
-            this.replayAnimation();
+        if (dot) {
+            if (this.zeroWork) {
+                // A dot holds no sprites. One that waits for its restore has nothing to restore any more. Only that
+                // restore is taken out of the queue: the slot may hold the first build, which still has to run.
+                if (this.restoreQueued) {
+                    this.restoreQueued = false;
+                    this.avatarBuildQueue?.remove(this);
+                }
+                this.restoreAttempts = 0;
+                this.dropSprites();
+            }
+            return;
         }
+        if (this.hasDroppedSprites()) {
+            // The sprites come back in a turn of the build queue, as the first ones did: a crowd promoted at once
+            // (the player crosses the map) is spread over frames instead of built in one.
+            this.restoreAttempts = 0;
+            this.requestRestore();
+            return;
+        }
+        // The moves made as a dot were remembered, not played.
+        this.replayAnimation();
+    }
+
+    private requestRestore(): void {
+        this.restoreQueued = true;
+        this.requestBuildTurn(() => {
+            this.restoreQueued = false;
+            this.restoreDroppedSprites();
+        });
+    }
+
+    private restoreDroppedSprites(): void {
+        if (this.dot || !this.hasDroppedSprites()) {
+            return;
+        }
+        if (this.restoreSprites()) {
+            this.restoreAttempts = 0;
+            this.applyDetail();
+            return;
+        }
+        // The failure is reported by restoreSprites(). A few more turns, then it waits for the next promotion: a
+        // build that keeps failing must not take a slot of the queue every frame for good.
+        this.restoreAttempts += 1;
+        if (this.restoreAttempts < MAX_RESTORE_ATTEMPTS) {
+            this.requestRestore();
+            return;
+        }
+        console.error(`Gave up building the sprites of player ${this.userId} after ${this.restoreAttempts} tries`);
+    }
+
+    public getDetail(): AvatarDetailLevel {
+        return this.dot ? "dot" : "full";
     }
 
     protected isAnimated(): boolean {
-        return !this.dot;
+        return !this.dot && !this.isZeroWorkCulled();
+    }
+
+    protected holdsSprites(): boolean {
+        return !(this.zeroWork && this.dot);
+    }
+
+    protected resolveTextures(layers: string[]): string[] {
+        const lease = acquireAvatarBake(this.scene, layers);
+        if (lease === undefined) {
+            return layers;
+        }
+        this.bakeLease = lease;
+        return [lease.key];
+    }
+
+    protected releaseTextures(): void {
+        this.bakeLease?.release();
+        this.bakeLease = undefined;
+    }
+
+    protected discardTextures(error: unknown): void {
+        // The registry reports it once for the recipe and keeps the next avatars of it on their layers.
+        this.bakeLease?.discard(error);
+        this.bakeLease = undefined;
+    }
+
+    // The companion has an arcade body of its own, which is stepped every frame like the player's.
+    private setCompanionBodyEnabled(enabled: boolean): void {
+        const companion = this.companion;
+        const body = companion?.body;
+        if (companion === undefined || !(body instanceof Phaser.Physics.Arcade.Body) || body.enable === enabled) {
+            return;
+        }
+        if (enabled) {
+            this.scene.physics.world.enableBody(companion);
+        } else {
+            this.scene.physics.world.disableBody(body);
+        }
+    }
+
+    private isZeroWorkCulled(): boolean {
+        return this.zeroWork && this.culled;
     }
 
     private applyDetail(): void {
         this.setNameHidden(this.culled || this.dot);
         // The companion follows the detail whether or not it is culled: a dot's companion neither moves nor animates.
-        this.companion?.setSuspended(this.dot);
+        this.companion?.setSuspended(this.dot || this.isZeroWorkCulled());
+        if (this.zeroWork) {
+            const idle = this.dot || this.culled;
+            this.setFrameWorkSuspended(idle);
+            this.setCompanionBodyEnabled(!idle);
+        }
         if (this.culled) {
-            // The culling hid everything already.
+            // The culling hid everything that existed when it ran. Sprites built since (a restore, a first build)
+            // are active, and would be advanced every frame for nobody.
+            if (this.zeroWork) {
+                this.deactivateSprites();
+            }
             return;
         }
         const drawn = !this.dot;
@@ -144,6 +266,15 @@ export class RemotePlayer extends Character implements ActivatableInterface {
         this.companion?.setActive(drawn);
         for (const sprite of this.companion?.sprites.values() ?? []) {
             sprite.setActive(drawn);
+        }
+    }
+
+    private deactivateSprites(): void {
+        for (const sprite of this.sprites.values()) {
+            sprite.setActive(false);
+        }
+        for (const sprite of this.companion?.sprites.values() ?? []) {
+            sprite.setActive(false);
         }
     }
 

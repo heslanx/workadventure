@@ -84,6 +84,12 @@ export abstract class Character extends Container implements OutlineableInterfac
     private textsToBuild = new Map();
     scene: GameScene;
     private lastRenderedSprite: string | undefined;
+    // What the sprites were built from, so that a subclass that drops them for a while can build them again.
+    private layerIds: string[] | undefined;
+    private spriteFrame: string | number = 0;
+    // Whether the sprites are held back or dropped on purpose (see holdsSprites() and dropSprites()), not lost to a failed build.
+    private spritesDropped = false;
+    private frameWorkSuspended = false;
     private readonly _pictureStore: Readable<string | undefined>;
     protected readonly outlineColorStore = createColorStore();
     private outlineColorStoreUnsubscribe: Unsubscriber | undefined;
@@ -298,19 +304,34 @@ export abstract class Character extends Container implements OutlineableInterfac
     }
 
     private async getSnapshot(): Promise<string> {
-        const sprites = Array.from(this.sprites.values()).map((sprite) => {
+        // A character whose sprites were dropped on purpose (a dot, see dropSprites()) is drawn from its layers, in sprites
+        // that go with the snapshot. One that has none because its build failed keeps nothing to draw, as it always did.
+        const temporary: Sprite[] = [];
+        if (this.sprites.size === 0 && this.spritesDropped) {
+            for (const layer of this.layerIds ?? []) {
+                temporary.push(new Sprite(this.scene, 0, 0, layer, 1));
+            }
+        }
+        const drawn = temporary.length > 0 ? temporary : Array.from(this.sprites.values());
+        const sprites = drawn.map((sprite) => {
             return { sprite, frame: 1 };
         });
-        return TexturesHelper.getSnapshot(this.scene, ...sprites).catch((reason) => {
-            console.warn(reason);
-            for (const sprite of this.sprites.values()) {
-                // we can be sure that either predefined woka or body texture is at this point loaded
-                if (sprite.texture.key.includes("color") || sprite.texture.key.includes("male")) {
-                    return this.scene.textures.getBase64(sprite.texture.key);
+        return TexturesHelper.getSnapshot(this.scene, ...sprites)
+            .finally(() => {
+                for (const sprite of temporary) {
+                    sprite.destroy();
                 }
-            }
-            return "male1";
-        });
+            })
+            .catch((reason) => {
+                console.warn(reason);
+                for (const sprite of drawn) {
+                    // we can be sure that either predefined woka or body texture is at this point loaded
+                    if (sprite.texture.key.includes("color") || sprite.texture.key.includes("male")) {
+                        return this.scene.textures.getBase64(sprite.texture.key);
+                    }
+                }
+                return "male1";
+            });
     }
 
     public toggleTalk(show = true): void {
@@ -418,7 +439,13 @@ export abstract class Character extends Container implements OutlineableInterfac
     }
 
     private showTextures(textures: string[], frame: string | number): void {
-        this.addTextures(textures, frame);
+        this.layerIds = textures;
+        this.spriteFrame = frame;
+        if (this.holdsSprites()) {
+            this.addTextures(textures, frame);
+        } else {
+            this.spritesDropped = true;
+        }
         this.invisible = false;
         this.playAnimation(this.animationDirection, this.animationMoving);
         this.textureLoadedDeferred.resolve();
@@ -433,7 +460,37 @@ export abstract class Character extends Container implements OutlineableInterfac
             if (this.scene && !this.scene.textures.exists(texture)) {
                 throw new CharacterTextureError(`Texture "${texture}" not found`);
             }
+        }
+
+        this.releaseTextures();
+        // The sprites are the layers, or what the subclass made of them (see resolveTextures()).
+        const textureIds = this.resolveTextures(textures);
+        if (textureIds === textures) {
+            this.buildSprites(textures, frame);
+            return;
+        }
+        const built: Sprite[] = [];
+        try {
+            this.buildSprites(textureIds, frame, built);
+        } catch (error) {
+            // What resolveTextures() made is not usable: its sprites go, and its textures are given up (a texture that
+            // is let go of can be destroyed). The failure is the subclass's to report. The avatar keeps its own layers,
+            // not the default woka that a throw out of here would show.
+            for (const sprite of built) {
+                this.scene?.sys.updateList.remove(sprite);
+                sprite.destroy();
+            }
+            this.sprites.clear();
+            this.discardTextures(error);
+            this.buildSprites(textures, frame);
+        }
+    }
+
+    /** One sprite per texture, each with its animations. `built` collects the sprites as they are made. */
+    private buildSprites(textureIds: string[], frame: string | number | undefined, built: Sprite[] = []): void {
+        for (const texture of textureIds) {
             const sprite = new Sprite(this.scene, 0, 0, texture, frame);
+            built.push(sprite);
             this.add(sprite);
             getPlayerAnimations(texture).forEach((d) => {
                 if (!this.scene.anims.exists(d.key)) {
@@ -451,6 +508,92 @@ export abstract class Character extends Container implements OutlineableInterfac
             }
             this.sprites.set(texture, sprite);
         }
+    }
+
+    /**
+     * The textures the sprites are made of, for the layers of the character (ordered bottom to top). The layers
+     * themselves by default; a subclass can return fewer, e.g. the one texture that bakes them (see AvatarBakeCache). It
+     * must not throw: a throw in the build shows the default woka. releaseTextures() lets go of what this took.
+     */
+    protected resolveTextures(layers: string[]): string[] {
+        return layers;
+    }
+
+    /** Lets go of what resolveTextures() took. Called before it again, and when the character goes. It can be called twice. */
+    protected releaseTextures(): void {}
+
+    /**
+     * Gives up what resolveTextures() took because the sprites made of it failed to build (`error` is why). The
+     * character is then built from its own layers. A subclass reports the failure here, once; letting go is the default.
+     */
+    protected discardTextures(_error: unknown): void {
+        this.releaseTextures();
+    }
+
+    /** Whether the character holds sprites when it is built. A subclass that draws it otherwise (a dot) returns false. */
+    protected holdsSprites(): boolean {
+        return true;
+    }
+
+    /** Destroys the sprites, which can be built again by restoreSprites(). Their textures are let go of. */
+    protected dropSprites(): void {
+        for (const sprite of this.sprites.values()) {
+            this.scene.sys.updateList.remove(sprite);
+            sprite.destroy();
+        }
+        this.sprites.clear();
+        this.releaseTextures();
+        this.spritesDropped = this.layerIds !== undefined;
+    }
+
+    /**
+     * Whether the sprites were held back or dropped on purpose (holdsSprites(), dropSprites()): restoreSprites() has
+     * something to do. A character whose build failed is not one: it has no layers to build from again.
+     */
+    protected hasDroppedSprites(): boolean {
+        return this.spritesDropped && !this.destroyed;
+    }
+
+    /**
+     * Builds the sprites again after dropSprites(), in the pose last asked for. It runs in a turn of the build queue, so
+     * it does not throw: a build that fails is reported and the character stays as it was, still marked as dropped, so
+     * that a later call can try again (the subclass decides when, and how often). Returns whether the sprites are back.
+     */
+    protected restoreSprites(): boolean {
+        if (!this.hasDroppedSprites()) {
+            return false;
+        }
+        try {
+            this.addTextures(this.layerIds ?? [], this.spriteFrame);
+        } catch (error) {
+            console.error("Could not build the sprites of a character again", error);
+            Sentry.captureException(error);
+            return false;
+        }
+        this.spritesDropped = false;
+        this.replayAnimation();
+        return true;
+    }
+
+    /**
+     * Stops what the character does every frame, or starts it again: the arcade body (its pre-update and its place in
+     * the collision tree) and the sync of the name with the body. A character nobody draws needs neither: setPosition()
+     * places its name and depth.
+     */
+    protected setFrameWorkSuspended(suspended: boolean): void {
+        if (suspended === this.frameWorkSuspended || this.destroyed) {
+            return;
+        }
+        this.frameWorkSuspended = suspended;
+        if (suspended) {
+            this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncDisplayPositionWithPhysics);
+            this.scene.physics.world.disableBody(this.getBody());
+            return;
+        }
+        // The body takes the position of the container again at its next pre-update.
+        this.scene.physics.world.enableBody(this);
+        this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.syncDisplayPositionWithPhysics);
+        this.syncDisplayPositionWithPhysics();
     }
 
     /**
@@ -691,6 +834,7 @@ export abstract class Character extends Container implements OutlineableInterfac
         }
         this.texturePromise?.cancel();
         this.list.forEach((objectContaining) => objectContaining.destroy());
+        this.releaseTextures();
         this.outlineColorStoreUnsubscribe?.();
         this.destroyed = true;
         super.destroy();
