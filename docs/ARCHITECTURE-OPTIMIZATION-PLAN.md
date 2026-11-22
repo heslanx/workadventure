@@ -1,5 +1,7 @@
 # Architecture Optimization Plan
 
+Open work is tracked in [TODO.md](TODO.md); this file keeps measurements and rationale, not a second list of open items.
+
 ## Context
 
 Started 2026-11-18 on branch `konclui/main` at `700362b82` ("perf(scene): queue avatar builds and cull avatars outside the camera"), with an uncommitted working tree that another workflow was editing in `back/`, `play/src` and `play/tests` (TECH-DEBT DL-02, resolved on 2026-11-19: Next Action 1). Refreshed 2026-11-19 at `a0fc2bf18`, and again at `75db31b6d` (sixteen commits later, with phase 8). Refreshed 2026-11-22 at `ae2d88ad9` for the engine and UI pass of 2026-11-21 and 2026-11-22 (`560239d63` to `ae2d88ad9`): the first browser GPU measurement, the viewer budget rework and the three avatar flags on by default; lines marked "Update 2026-11-22" and the new rows carry it.

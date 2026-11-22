@@ -22,6 +22,10 @@ WorkAdventure is a TypeScript monorepo (npm workspaces) for building collaborati
 
 - When several sessions edit this checkout, or you commit, merge or push here: read `docs/integration/LOOP.md` and its queue `docs/integration/STATE.md`. One integrator session is the single git writer.
 
+## Open work
+
+- `docs/TODO.md` is the one register of open work. Read it before starting, add an item in the same change that discovers it, and close an item with the commit or the decision that settled it.
+
 ## Shared guidance
 
 For Konclui migration work, read `docs/konclui-migration/README.md` for product contracts, isolated runtime, verification, and ownership. Preserve the upstream guides below.

@@ -1,5 +1,7 @@
 # Technical Debt
 
+Open work is tracked in [TODO.md](TODO.md); this file keeps measurements and rationale, not a second list of open items.
+
 Debt queue of the remove-technical-debt journey (tracker: `docs/REMOVE-TECHNICAL-DEBT-PLAN.md`). GS rows come from Phase 1 for `play/src/front/Phaser/Game/GameScene.ts` (2026-11-12). Baseline: the checkout's `GameScene.ts`, sha256 `652254f9…97940e8`, which is the same as `HEAD`. The evidence for each row is in `docs/audits/tech-debt/phase1-gamescene/README.md`.
 
 ## Debt Ledger
