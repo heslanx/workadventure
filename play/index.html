@@ -47,6 +47,53 @@
              Vite rewrites the href to the fingerprinted file; a font fetch is anonymous CORS, hence crossorigin. -->
         <link rel="preload" as="font" type="font/woff2" href="/src/front/style/fonts/urbanist/urbanist-latin.woff2" crossorigin />
 
+        <!-- Boot splash: the brand logo, painted by this document alone (see the #boot-splash block in the body).
+             Same file as the logo the app imports, so Vite fingerprints it to the same URL and the app's own <img>
+             is served from this preload. A world can set its own logo through the admin: when the server tells the
+             template so (loadingLogo or loginSceneLogo), the splash is left out rather than showing the wrong brand. -->
+        {{^loadingLogo}}{{^loginSceneLogo}}
+        <link rel="preload" as="image" href="/src/front/Components/images/konclui-logo.svg" fetchpriority="high" />
+        {{/loginSceneLogo}}{{/loadingLogo}}
+
+        <style>
+            /* The splash matches LoaderScene.svelte: a logo of 268 + 2 x 16px of padding (max-w-[300px] px-4) centred as
+               one group with the 12px progress bar that sits 16px under it. Fixed and transparent, so it takes no
+               room in the layout (its removal moves nothing), shows the body's own colour, and lets every click through. */
+            #boot-splash {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                width: 100dvw;
+                height: 100dvh;
+                z-index: 1000;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                pointer-events: none;
+                transition: opacity 150ms linear;
+            }
+            #boot-splash.boot-splash-leaving {
+                opacity: 0;
+            }
+            #boot-splash img {
+                display: block;
+                box-sizing: content-box;
+                width: 268px;
+                max-width: calc(100vw - 32px);
+                height: auto;
+                padding: 0 16px;
+                margin: 0 0 28px;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #boot-splash {
+                    transition: none;
+                }
+            }
+        </style>
+
         <style>
             /*hide cowebsite container before CSS is loaded*/
             #cowebsite,
@@ -280,6 +327,55 @@
         </script>
         <input type="hidden" id="authToken" value="{{ authToken }}" name="authToken">
         <input type="hidden" id="matrixLoginToken" value="{{ matrixLoginToken }}" name="matrixLoginToken">
+        {{^loadingLogo}}{{^loginSceneLogo}}
+        <!-- Boot splash. Decorative (the app announces its own loading state), so it is hidden from assistive
+             technology and has an empty alt. src/front/Utils/BootSplash.ts removes it once the app has drawn its
+             first screen. -->
+        <div id="boot-splash" aria-hidden="true">
+            <img src="/src/front/Components/images/konclui-logo.svg" width="714" height="162" alt="" fetchpriority="high" draggable="false" />
+        </div>
+        <script>
+            (function () {
+                var splash = document.getElementById("boot-splash");
+                if (!splash) return;
+                // A world's admin can replace the logo, and the server does not say here whether it did: with an
+                // admin configured, show no logo rather than a possibly wrong one.
+                if (window.env && window.env.ADMIN_URL) {
+                    splash.remove();
+                    return;
+                }
+                // If the app cannot start, an error must not sit behind a logo. Only the app's own failures count: a
+                // script of this origin that throws, or the module script itself that does not load. Errors of
+                // third-party scripts (analytics, extensions, "Script error." with no file) and rejected promises
+                // are common on a healthy boot and say nothing about the app, so they leave the splash alone.
+                function appOrigin() {
+                    var module = document.querySelector('script[type="module"][src]');
+                    return module ? new URL(module.src, location.href).origin : location.origin;
+                }
+                function onError(event) {
+                    var target = event.target;
+                    var failed = false;
+                    if (target && target.tagName) {
+                        // An element whose resource did not load (the event does not bubble: this listener is in the capture phase).
+                        failed = target.tagName === "SCRIPT" && target.type === "module";
+                    } else if (event.filename) {
+                        try {
+                            failed = new URL(event.filename, location.href).origin === appOrigin();
+                        } catch (e) {}
+                    }
+                    if (failed) {
+                        window.removeEventListener("error", onError, true);
+                        splash.remove();
+                    }
+                }
+                window.addEventListener("error", onError, true);
+                // src/front/Utils/BootSplash.ts fires this when it takes the splash away: stop watching.
+                splash.addEventListener("boot-splash-removed", function () {
+                    window.removeEventListener("error", onError, true);
+                });
+            })();
+        </script>
+        {{/loginSceneLogo}}{{/loadingLogo}}
         <div id="app"></div>
         <script type="module" src="/src/svelte.ts"></script>
     </body>

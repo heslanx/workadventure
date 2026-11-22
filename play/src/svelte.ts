@@ -5,6 +5,7 @@ import App from "./front/Components/App.svelte";
 import { HtmlUtils } from "./front/WebRtc/HtmlUtils";
 import { e2eHooks } from "./front/Utils/E2EHooks";
 import { installKonclui } from "./front/Konclui/integration";
+import { installBootSplashRemoval } from "./front/Utils/BootSplashScreens";
 
 // Initialize E2E hooks
 declare global {
@@ -19,5 +20,8 @@ installKonclui();
 const app = mount(App, {
     target: HtmlUtils.getElementByIdOrFail("app"),
 });
+
+// The splash that index.html paints goes away on the frame of the first screen (loading, entry or error).
+installBootSplashRemoval();
 
 export default app;
