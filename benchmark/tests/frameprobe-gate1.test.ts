@@ -21,6 +21,7 @@ import {
     type Gate1Mode,
     type Gate1Session,
 } from "../frame-probe/gate1";
+import { avatarFlagProblems, GATE1_STORAGE, gate1Storage, missingBuffer } from "../frame-probe/gate1Browser";
 import { pageBench, pageCrowd, pageNight, pageRenderer, SWIFTSHADER } from "./support/frameProbeFixtures";
 
 function capture(
@@ -783,5 +784,79 @@ describe("the gate1 command", () => {
 
         expect(await main(["gate1", ROOM], deps)).toBe(2);
         expect(errors).toEqual(["could not load @playwright/test"]);
+    });
+});
+
+describe("the window of a client that draws the game in a frame", () => {
+    it("grows by what the frame takes, and not at all when the buffer is already the gate's size", () => {
+        // The office shell at 1920x1080: a side panel and a gutter leave the game 1558x1068
+        expect(missingBuffer({ width: 1558, height: 1068 })).toEqual({ width: 362, height: 12 });
+        expect(missingBuffer({ width: 1920, height: 1080 })).toEqual({ width: 0, height: 0 });
+        expect(missingBuffer({ width: 2400, height: 1000 })).toEqual({ width: 0, height: 80 });
+    });
+});
+
+describe("the storage a gate run starts with", () => {
+    it("sets no avatar flag in a normal run, which measures the shipping defaults (the three flags are on)", () => {
+        expect(gate1Storage(undefined)).toEqual({ "konclui.e2e.bench": "1", "konclui.fx.rim": "1" });
+        expect(gate1Storage("0")).toEqual(GATE1_STORAGE);
+        expect(gate1Storage("")).toEqual(GATE1_STORAGE);
+        expect(Object.keys(GATE1_STORAGE)).not.toEqual(
+            expect.arrayContaining(["avatarDetailBudget", "avatarZeroWork", "avatarBake"]),
+        );
+    });
+
+    it('forces the three avatar flags to "0" in a baseline, and keeps the keys of a normal run', () => {
+        expect(gate1Storage("1")).toEqual({
+            "konclui.e2e.bench": "1",
+            "konclui.fx.rim": "1",
+            avatarDetailBudget: "0",
+            avatarZeroWork: "0",
+            avatarBake: "0",
+        });
+    });
+
+    it.each(["true", "yes", "2", " 1"])(
+        "refuses FRAME_PROBE_GATE1_BASELINE=%j rather than run a normal run that looks like a baseline",
+        (value) => {
+            expect(() => gate1Storage(value)).toThrow(/FRAME_PROBE_GATE1_BASELINE/);
+        },
+    );
+
+    it("does not change the shared table of a normal run when it builds a baseline", () => {
+        gate1Storage("1");
+
+        expect(GATE1_STORAGE).toEqual({ "konclui.e2e.bench": "1", "konclui.fx.rim": "1" });
+    });
+});
+
+describe("the avatar flags the page reports", () => {
+    const on = { avatarDetailBudget: true, avatarZeroWork: true, avatarBake: true };
+    const off = { avatarDetailBudget: false, avatarZeroWork: false, avatarBake: false };
+
+    it("are all on in a normal run and all off in a baseline, with no problem", () => {
+        expect(avatarFlagProblems(on, false)).toEqual([]);
+        expect(avatarFlagProblems(off, true)).toEqual([]);
+    });
+
+    it("name each flag that is not what the run needs, so a client built before the defaults changed is not measured as a normal run", () => {
+        expect(avatarFlagProblems({ ...on, avatarBake: false }, false)).toEqual([
+            "avatarBake is false in the page, and a normal run needs it on",
+        ]);
+        expect(avatarFlagProblems(off, false)).toHaveLength(3);
+        expect(avatarFlagProblems({ ...off, avatarZeroWork: true }, true)).toEqual([
+            "avatarZeroWork is true in the page, and a baseline run needs it off",
+        ]);
+    });
+
+    it("are a problem when the client reports nothing", () => {
+        expect(avatarFlagProblems(undefined, false)).toEqual([expect.stringContaining("getAvatarFlags")]);
+        expect(avatarFlagProblems(null, true)).toHaveLength(1);
+    });
+
+    it("are a problem when a flag is missing from the report", () => {
+        expect(avatarFlagProblems({ avatarDetailBudget: true, avatarZeroWork: true }, false)).toEqual([
+            "avatarBake is undefined in the page, and a normal run needs it on",
+        ]);
     });
 });

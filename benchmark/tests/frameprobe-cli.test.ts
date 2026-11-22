@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseArgs, parseViewport, UsageError, type FramesConfig } from "../frame-probe/args";
 import type { FrameProbeReport } from "../frame-probe/report";
-import { launchOptions, type Measurer } from "../frame-probe/browser";
+import { browserChannel, launchOptions, type Measurer } from "../frame-probe/browser";
 import { main, type CliDependencies } from "../frame-probe/cli";
 import { pairShots, shotFileName, type Shot } from "../frame-probe/compare";
 import type { ScheduledRun } from "../frame-probe/matrix";
@@ -138,6 +138,15 @@ describe("the browser flags", () => {
             headless: true,
             args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
         });
+    });
+
+    it("runs the installed Chrome when the channel variable asks for it, and refuses any other name", () => {
+        const gpu = { renderer: "gpu", angle: "metal", playwrightDir: undefined, locale: "pt-BR" } as const;
+        expect(browserChannel(undefined)).toBe("chromium");
+        expect(browserChannel("")).toBe("chromium");
+        expect(browserChannel("chrome")).toBe("chrome");
+        expect(launchOptions(gpu, browserChannel("chrome")).channel).toBe("chrome");
+        expect(() => browserChannel("firefox")).toThrow(/FRAME_PROBE_BROWSER_CHANNEL/);
     });
 });
 

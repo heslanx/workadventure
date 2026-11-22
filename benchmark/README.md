@@ -288,7 +288,9 @@ npx tsx frame-probe/run.ts frames <room url> [options]
 
 **What a run is.** A session is one fresh browser context per condition: the scene effects (`konclui.fx.off`) on or off and
 the avatar detail budget (`localStorage avatarDetailBudget`, commit `47865006b`) off or on, applied before the page loads
-and read back after it. Inside a session: enter as a guest, settle 5 s, record 25 s at the default zoom, then send two wheel
+and read back after it. The budget is on by default in the client since 2026-11-22, and so are `avatarZeroWork` and
+`avatarBake`, which this command does not touch: its budget-off arm keeps the zero-work states and the bake on, so it is
+not the old all-off baseline. The all-off "before" is `gate1` with `FRAME_PROBE_GATE1_BASELINE=1` (below). Inside a session: enter as a guest, settle 5 s, record 25 s at the default zoom, then send two wheel
 events over the canvas, record the zoom step (from the first wheel event to 2 s after the last one), wait until the scale
 stops changing, wait 2 s more, and record 25 s at the whole-map zoom. After each of the two long recordings the WebSocket
 bytes are counted through CDP in a window of their own (5 s): CDP copies every frame's payload on the page's main thread,
@@ -400,17 +402,31 @@ cd benchmark
 npx tsx frame-probe/run.ts gate1 "http://127.0.0.1:3010/~/konclui-office/office.wam" --out-dir=../.local/konclui/qa/gate1
 ```
 
-It opens Chromium on the GPU (Metal on macOS) at 1920x1080, with WebGL 2 forced (`?phaserMode=webgl2`), and turns on the
-default-off engine flags in localStorage before the page loads: `konclui.e2e.bench` (opens the page to the crowd),
-`avatarDetailBudget`, `avatarZeroWork`, `avatarBake` and `konclui.fx.rim`. Then: enter as a guest, spawn 999, settle
+On a host without Playwright's Chromium, `FRAME_PROBE_BROWSER_CHANNEL=chrome` runs the installed Google Chrome instead.
+
+It opens Chromium on the GPU (Metal on macOS) at 1920x1080, with WebGL 2 forced (`?phaserMode=webgl2`), and sets two keys
+in localStorage before the page loads: `konclui.e2e.bench` (opens the page to the crowd) and `konclui.fx.rim`. It sets no
+avatar flag: `avatarDetailBudget`, `avatarZeroWork` and `avatarBake` are on by default in the client since the 2026-11-22
+run, so the gate measures what ships. Then: enter as a guest, spawn 999, settle
 `--settle-seconds` (10), and for each of three windows set the hour (`setBenchNight(level)`, the effects' `konclui.fx.hour`
 QA key, which they re-read once a second: the probe waits 2 s) and capture 300 consecutive frames with `captureFrameBench()`
 while `panCamera` swings the view out and back. At the end it clears the crowd and the fixed hour, whatever happened.
 
-**Requires the `?phaserMode=webgl2` case of `play/src/front/Components/App.svelte`.** It is an uncommitted change outside the
-probe's files: without it the client throws "phaserMode parameter must be one of ..." at start and never shows the room. The
-probe names that error when it sees it, and a client that drops the query parameter in a redirect shows as "a WebGL 2
-context is required" (`gate1.json` records the final URL). Land the change with the gate.
+`FRAME_PROBE_GATE1_BASELINE=1` runs the same command with the three avatar flags forced off (`"0"` in localStorage, on top
+of the two keys above): layered avatars, no detail budget, no zero-work states, no bake. It is the "before" of a
+comparison, on the same scene and lights. Any other value of the variable than empty, `0` or `1` stops the run before the
+browser opens, so a typo cannot give a normal run that looks like a baseline. Both runs record the storage the page started
+with (`engine.storage`) and the three flags the page reported through `window.e2eHooks.getAvatarFlags()`
+(`engine.avatarFlags`), so a figure can be tied to the configuration that produced it. The run is invalid, with the flag
+named, when the page's flags are not all on (a normal run) or all off (a baseline): a client built before the defaults
+changed would otherwise measure the layered avatars under the storage of a correct run. On 2026-11-22 (Chrome, Apple M1 Max, 999 players) the two
+gave the same GPU time (at most 8.43 ms with the flags on, 8.07 ms off); the flags off had two windows of six with a frame
+of 33.3 to 33.5 ms, the flags on had none above 16.8 ms: the flags remove dropped frames, they do not lower GPU time.
+
+**Requires the `?phaserMode=webgl2` case of `play/src/front/Components/App.svelte`** (in the client since `89dd5ecdf`). A
+client built before it throws "phaserMode parameter must be one of ..." at start and never shows the room: the probe names
+that error when it sees it, and a client that drops the query parameter in a redirect shows as "a WebGL 2 context is
+required" (`gate1.json` records the final URL).
 
 The three windows:
 

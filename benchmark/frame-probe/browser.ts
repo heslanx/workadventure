@@ -61,10 +61,25 @@ export async function loadPlaywright(directory: string | undefined): Promise<Pla
     }
 }
 
+export type BrowserChannel = "chromium" | "chrome";
+
+/**
+ * Playwright's own Chromium by default. FRAME_PROBE_BROWSER_CHANNEL=chrome runs the Google Chrome installed on the
+ * machine instead, for a host where Playwright's browser is not downloaded. Any other value stops the run.
+ */
+export function browserChannel(value: string | undefined = process.env.FRAME_PROBE_BROWSER_CHANNEL): BrowserChannel {
+    if (value === undefined || value === "" || value === "chromium") return "chromium";
+    if (value === "chrome") return "chrome";
+    throw new Error(`FRAME_PROBE_BROWSER_CHANNEL must be "chromium" or "chrome", got "${value}"`);
+}
+
 /** A GPU Chromium (the full build, new headless) or the headless shell on SwiftShader, as the earlier probes were run. */
-export function launchOptions(options: BrowserOptions): {
+export function launchOptions(
+    options: BrowserOptions,
+    channel: BrowserChannel = browserChannel(),
+): {
     headless: true;
-    channel?: "chromium";
+    channel?: BrowserChannel;
     args: string[];
 } {
     if (options.renderer === "swiftshader") {
@@ -72,7 +87,7 @@ export function launchOptions(options: BrowserOptions): {
     }
     return {
         headless: true,
-        channel: "chromium",
+        channel,
         args: [
             ...(options.angle === undefined ? [] : [`--use-angle=${options.angle}`]),
             "--enable-gpu",
