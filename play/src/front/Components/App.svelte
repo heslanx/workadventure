@@ -25,6 +25,8 @@
     import { ReconnectingScene } from "../Phaser/Reconnecting/ReconnectingScene";
     import { ErrorScene } from "../Phaser/Reconnecting/ErrorScene";
     import { Game } from "../Phaser/Game/Game";
+    import { isGameNoStencilEnabled } from "../Phaser/Game/GameLoopFlags";
+    import { isMapFullyCovered, mapCovers } from "../Phaser/Game/GameRenderSkip";
     import { waScaleManager } from "../Phaser/Services/WaScaleManager";
     import { startBackgroundBootPump } from "../Phaser/Services/BackgroundBootPump";
     import { HtmlUtils } from "../WebRtc/HtmlUtils";
@@ -37,6 +39,8 @@
     import { isStructuredCloneSupported } from "../Utils/BrowserCompatibility";
     import { createWebgl2Canvas } from "../Utils/Webgl2Canvas";
     import { gameSceneIsLoadedStore } from "../Stores/GameSceneStore";
+    import { highlightFullScreen } from "../Stores/ActionsCamStore";
+    import { highlightedEmbedScreen } from "../Stores/HighlightedEmbedScreenStore";
     import { getAppFrame } from "../ExternalModule/ClientExtensionPoints";
     import GameOverlay from "./GameOverlay.svelte";
     import CoWebsitesContainer from "./EmbedScreens/CoWebsitesContainer.svelte";
@@ -167,6 +171,10 @@
                 );
         }
 
+        // Read before the game exists: the stencil of the framebuffers and the depth of our own context are fixed at
+        // creation (flag "gameNoStencil", off by default: see GameLoopFlags.ts).
+        const noStencil = isGameNoStencilEnabled();
+
         const hdpiManager = new HdpiManager(640 * 480, 196 * 196);
         const { game: gameSize, real: realSize } = hdpiManager.getOptimalGameSize({ width, height });
 
@@ -206,6 +214,9 @@
                 roundPixels: false,
                 antialias: false,
                 antialiasGL: false,
+                // We use no Stencil, StencilReference or CustomContext object, and Phaser's filters and masks draw to
+                // textures: nothing reads a stencil buffer.
+                stencil: !noStencil,
             },
             plugins: {
                 global: [
@@ -239,7 +250,9 @@
         if (phaserMode === "webgl2") {
             // Phaser otherwise creates a WebGL1 context. An explicit WebGL2 run fails if the context is unavailable,
             // and asks for the attributes Phaser would ask for (Utils/Webgl2Canvas.ts), so its timing is comparable.
-            const { canvas, context } = createWebgl2Canvas(document, new Phaser.Core.Config(config));
+            const { canvas, context } = createWebgl2Canvas(document, new Phaser.Core.Config(config), {
+                depth: !noStencil,
+            });
             config.canvas = canvas;
             // @ts-expect-error Phaser's WebGLRenderer accepts an existing GL context; GameConfig declares only Canvas2D.
             config.context = context;
@@ -288,6 +301,19 @@
         if ($fullScreenCowebsite && $coWebsites.length < 1) {
             closeCoWebsiteFullScreen();
         }
+    });
+
+    // The map is not drawn while a full-screen co-website hides it (flag "gameRenderSkipCovered"). The full-screen meeting
+    // is translucent, so it does not count as a cover: see GameRenderSkip.ts.
+    $effect(() => {
+        game?.setCoveredByUi(
+            isMapFullyCovered(
+                mapCovers({
+                    fullScreenCowebsite: $fullScreenCowebsite,
+                    fullScreenMeeting: $highlightFullScreen && $highlightedEmbedScreen !== undefined,
+                }),
+            ),
+        );
     });
 
     //$: $coWebsites.length < 1 ? (flexBasis = undefined) : null;

@@ -3,6 +3,8 @@ import * as Phaser from "phaser";
 import * as Sentry from "@sentry/svelte";
 import { SKIP_RENDER_OPTIMIZATIONS } from "../../Enum/EnvironmentVariable";
 import { ResizableScene } from "../Login/ResizableScene";
+import { isGameRenderSkipCoveredEnabled, isGameStepCapEnabled } from "./GameLoopFlags";
+import { StepCap } from "./GameStepCap";
 
 const FRAME_ERROR_REPORT_INTERVAL_MS = 10_000;
 
@@ -13,9 +15,15 @@ const FRAME_ERROR_REPORT_INTERVAL_MS = 10_000;
  * Beware, the "step" function might vary in future versions of Phaser.
  *
  * It also automatically calls "onResize" on any scenes extending ResizableScene.
+ *
+ * Two optimizations of the loop, each behind a flag (GameLoopFlags.ts): the step is capped at 60 per second (on by
+ * default), and the render is skipped while the map is fully covered (off until measured).
  */
 export class Game extends Phaser.Game {
     private _isDirty = false;
+    private _coveredByUi = false;
+    private readonly stepCap = isGameStepCapEnabled() ? new StepCap() : undefined;
+    private readonly renderSkipCoveredEnabled = isGameRenderSkipCoveredEnabled();
     private lastFrameErrorReport = Number.NEGATIVE_INFINITY;
     private frameErrorsSinceReport = 0;
 
@@ -69,6 +77,16 @@ export class Game extends Phaser.Game {
             return;
         }
 
+        // On a screen that refreshes faster than 60 Hz a frame can come too soon after the last step: it is skipped,
+        // and the step that follows is given the time of every frame skipped before it.
+        if (this.stepCap) {
+            const steppedDelta = this.stepCap.admit(time, delta);
+            if (steppedDelta === undefined) {
+                return;
+            }
+            delta = steppedDelta;
+        }
+
         const eventEmitter = this.events;
 
         //  Global Managers like Input and Sound update in the prestep
@@ -88,7 +106,9 @@ export class Game extends Phaser.Game {
         eventEmitter.emit(Phaser.Core.Events.POST_STEP, time, delta);
 
         // This "if" is the changed introduced by the new "Game" class to avoid rendering unnecessarily.
-        if (SKIP_RENDER_OPTIMIZATIONS || this.isDirty()) {
+        // The scenes keep updating while the map is covered (the network, the timers and the keyboard need them), and
+        // their dirty flags stay set until a render clears them, so nothing is lost: only the drawing is skipped.
+        if (!this._coveredByUi && (SKIP_RENDER_OPTIMIZATIONS || this.isDirty())) {
             const renderer = this.renderer;
 
             //  Run the Pre-render (clearing the canvas, setting background colors, etc)
@@ -151,6 +171,21 @@ export class Game extends Phaser.Game {
      */
     public markDirty(): void {
         this._isDirty = true;
+    }
+
+    /**
+     * Tells the game whether the map is fully covered (a full-screen co-website: see GameRenderSkip.ts). While it is,
+     * and only with the `gameRenderSkipCovered` flag on, the steps run and the render is skipped. The step after the
+     * cover goes away draws the map at once, even if nothing moved under the cover.
+     */
+    public setCoveredByUi(covered: boolean): void {
+        if (!this.renderSkipCoveredEnabled) {
+            return;
+        }
+        if (this._coveredByUi && !covered) {
+            this.markDirty();
+        }
+        this._coveredByUi = covered;
     }
 
     /**

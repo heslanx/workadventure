@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
 import * as Phaser from "phaser";
 import { describe, expect, it, vi } from "vitest";
 import { createWebgl2Canvas, phaserWebgl2Attributes } from "../../../src/front/Utils/Webgl2Canvas";
@@ -76,7 +76,84 @@ describe("phaserWebgl2Attributes", () => {
     });
 });
 
+describe("the gameNoStencil flag on the WebGL2 context", () => {
+    it("keeps the depth buffer Phaser asks for unless told otherwise", () => {
+        const config = new Phaser.Core.Config(appLikeConfig());
+
+        expect(phaserWebgl2Attributes(config)).toMatchObject({ depth: true });
+        expect(phaserWebgl2Attributes(config, {})).toMatchObject({ depth: true });
+        expect(phaserWebgl2Attributes(config, { depth: true })).toMatchObject({ depth: true });
+    });
+
+    it("drops the depth buffer on request and changes nothing else", () => {
+        const config = new Phaser.Core.Config(appLikeConfig());
+
+        expect(phaserWebgl2Attributes(config, { depth: false })).toEqual({
+            ...phaserWebgl2Attributes(config),
+            depth: false,
+        });
+    });
+
+    it("takes the stencil from the Phaser config, the single source Phaser's own context uses", () => {
+        const withoutStencil = new Phaser.Core.Config(
+            appLikeConfig({
+                render: { pixelArt: false, roundPixels: false, antialias: false, antialiasGL: false, stencil: false },
+            }),
+        );
+
+        const ours = phaserWebgl2Attributes(withoutStencil, { depth: false });
+
+        expect(ours.stencil).toBe(false);
+        expect(phaserContextAttributes(withoutStencil).stencil).toBe(false);
+        // Without the flag the config says nothing and Phaser keeps its stencil buffer
+        expect(phaserWebgl2Attributes(new Phaser.Core.Config(appLikeConfig())).stencil).toBe(true);
+    });
+
+    it("is read before the game is created and drives both the framebuffers and the context", () => {
+        const flagRead = APP.indexOf("const noStencil = isGameNoStencilEnabled();");
+
+        expect(flagRead).toBeGreaterThan(-1);
+        expect(flagRead).toBeLessThan(APP.indexOf("game = new Game(config)"));
+        expect(APP).toContain("stencil: !noStencil,");
+        expect(APP).toContain("depth: !noStencil,");
+        expect(APP.match(/noStencil/g)).toHaveLength(3);
+    });
+
+    it("is safe because no source of ours uses an object or a call that needs a stencil buffer", () => {
+        // Phaser 4.2.1 reads the stencil only in Stencil, StencilReference and CustomContext (DrawingContext.setStencil
+        // is called nowhere else); its filters and masks draw to textures, and the framebuffers it pools are the
+        // only other place the stencil attachment is created.
+        const needsStencil =
+            /GameObjects\.(Stencil|StencilReference|CustomContext)\b|\.add\.(stencil|stencilReference|customContext)\b|\.setStencil\(|StencilModifier/;
+        const offenders: string[] = [];
+        const visit = (directory: string) => {
+            for (const entry of readdirSync(directory, { withFileTypes: true })) {
+                const path = join(directory, entry.name);
+                if (entry.isDirectory()) {
+                    visit(path);
+                } else if (/\.(ts|svelte)$/.test(entry.name) && needsStencil.test(readFileSync(path, "utf8"))) {
+                    offenders.push(path);
+                }
+            }
+        };
+        visit(resolve(__dirname, "../../../src/front"));
+
+        expect(offenders).toEqual([]);
+    }, 60_000);
+});
+
 describe("createWebgl2Canvas", () => {
+    it("hands its options to the context attributes", () => {
+        const getContext = vi.fn(() => ({}) as WebGL2RenderingContext);
+        const doc = { createElement: () => ({ getContext }) as unknown as HTMLCanvasElement };
+        const config = new Phaser.Core.Config(appLikeConfig());
+
+        createWebgl2Canvas(doc, config, { depth: false });
+
+        expect(getContext).toHaveBeenCalledWith("webgl2", phaserWebgl2Attributes(config, { depth: false }));
+        expect(getContext.mock.calls[0]).toEqual(["webgl2", expect.objectContaining({ depth: false })]);
+    });
+
     it("returns the canvas and the context created with the attributes", () => {
         const context = {} as WebGL2RenderingContext;
         const getContext = vi.fn(() => context);
@@ -113,7 +190,7 @@ describe("App.svelte hands the context to Phaser only for phaserMode=webgl2", ()
 
         expect(configLiteral).not.toMatch(/^\s{12}canvas:/m);
         expect(configLiteral).not.toMatch(/^\s{12}context:/m);
-        expect(branch).toContain("createWebgl2Canvas(document, new Phaser.Core.Config(config))");
+        expect(branch).toContain("createWebgl2Canvas(document, new Phaser.Core.Config(config), {");
         expect(branch).toContain("config.canvas = canvas;");
         expect(branch).toContain("config.context = context;");
         expect(APP.match(/config\.(canvas|context) =/g)).toHaveLength(2);
