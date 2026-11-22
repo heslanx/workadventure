@@ -42,7 +42,7 @@
   "homepage": "https://github.com/thecodingmachine/workadventure#readme",
   "dependencies": {
     "@anatine/zod-openapi": "^2.2.8",
-    "@aws-sdk/client-s3": "^3.1054.0",
+    "@aws-sdk/client-s3": "^3.1175.0",
     "@grpc/grpc-js": "^1.14.7",
     "@sentry/node": "^10.54.0",
     "@types/express": "^5.0.6",
