@@ -27,6 +27,7 @@ Exports PNG layers, woka.json and accessories.json only. Native Svelte owns the 
 The historical renderer comparison requires the legacy compositor and is not a standalone build gate.
 """
 import argparse
+import importlib.util
 import json
 import shutil
 import sys
@@ -38,6 +39,17 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'avatars'))
 import sections  # noqa: E402  (avatars/sections.py, the section contract)
+
+
+def _load_avatar_sheetcheck():
+    """avatars/sheetcheck.py by path: pets/tools has a sheetcheck.py too, and `sections` puts that folder first on sys.path."""
+    spec = importlib.util.spec_from_file_location('avatar_sheetcheck', ROOT / 'avatars' / 'sheetcheck.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+sheetcheck = _load_avatar_sheetcheck()  # the pixel contract of a sheet
 
 CATALOG = ROOT / 'avatars/catalog.json'
 URL = 'resources/konclui'
@@ -148,6 +160,8 @@ def build(base_path, output_dir, catalogue_dir):
 
     ids = [texture['id'] for part in items.values() for texture, _ in part]
     assert len(set(ids)) == len(ids), 'texture ids must be unique across parts'
+    if sheetcheck.check_exported(generated, out=sys.stderr):        # the layers the engine loads: binary alpha, 96 x 128 (stdout stays the JSON result)
+        raise ValueError(f'The exported avatar layers under {generated} break the pixel contract (lines above)')
     merged = sections.woka_list(contract, base, items, strict=True)
     (catalogue_dir / 'woka.json').write_text(json.dumps(merged, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     write_multi_accessory(contract, merged, out)

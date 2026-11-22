@@ -583,7 +583,9 @@ Pedido do dono em 20/10/2026: olhar o ambiente e as oportunidades de shader, dep
 - **Dados do mapa:** `fx.py` grava `dist/fx/` no build: a água parada e os dados de profundidade, a máscara do vidro, as
   máscaras do mapa (lado de fora, parede, piso polido ou vidro da fachada, gramado, água), as paredes para a sombra, o
   slide da TV e o `manifest.json` (39 KB) com as luzes por sprite e a pegada de cada peça colocada. Uma sala sem
-  `fx/manifest.json` não recebe efeito.
+  `fx/manifest.json` não recebe efeito. O `normal.png` (normais das peças colocadas, `tools/normals.py`) também sai por
+  padrão (`KONCLUI_FX_NORMALS=0` o omite); o contrato de pixels do build (alpha binário, camadas translúcidas declaradas
+  em `translucent.py`) é verificado por `sheetcheck.py`; os dois estão em `tools/README.md`.
 - **Sombra do chão:** o navegador desenha num canvas fora da tela as paredes e a pegada de cada peça (a de uma peça nova do
   editor é medida na hora), desfoca uma vez e refaz quando algo se move; o quad do chão lê esse campo em faixas.
 - **Luzes seguem o editor:** uma luminária movida no editor leva a luz junto, porque as luzes saem das imagens da cena.

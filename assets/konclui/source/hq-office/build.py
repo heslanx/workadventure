@@ -41,6 +41,7 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 sys.path.insert(0, str(REPO / 'office'))
+sys.path.insert(0, str(REPO / 'tools'))
 sys.path.insert(0, str(REPO / 'map'))
 sys.path.insert(0, str(HERE))
 import catalogue as CAT  # noqa: E402
@@ -54,6 +55,8 @@ import pool as POOL  # noqa: E402
 import sheets as SHEETS  # noqa: E402
 import signature as SIG  # noqa: E402
 import taxonomy as TAX  # noqa: E402
+import translucent as TRANSLUCENT  # noqa: E402
+import sheetcheck as SHEETCHECK  # noqa: E402
 from v7.paint import TileBank, slice_into  # noqa: E402
 from validate_map import validate  # noqa: E402
 
@@ -680,6 +683,7 @@ def write_collection(dist, name, prefabs, folder):
     written = {}
     for prefab, img, _ in prefabs.values():
         path = out / prefab['imagePath']
+        img = TRANSLUCENT.snapped(prefab['name'], img)        # binary alpha, but the declared translucent layers
         if path in written:                  # a shared picture (on_surface): the engine would show only one of them
             assert written[path].tobytes() == img.tobytes(), f"{prefab['id']}: another picture at {prefab['imagePath']}"
             continue
@@ -908,7 +912,7 @@ def main(out, render_out=None, whiteboard_namespace=NS):
     layers.append(tile_layer('start', start_tiles, opacity=0))
 
     # Objects and the WAM
-    collections = [CAT.build(dist, lambda p: MOB[p['id']][0], lambda p, img: MOB[p['id']][1]),
+    collections = [CAT.build(dist, lambda p: MOB[p['id']][0], lambda p, img: TRANSLUCENT.snapped(MOB[p['id']][0]['name'], MOB[p['id']][1])),
                    write_collection(dist, KCOLL, KONCLUI, 'konclui'),
                    *[write_collection(dist, name, prefabs, SHEET_FOLDERS[name]) for name, prefabs in SHEET_COLLECTIONS.items()]]
     for prefabs in SHEET_COLLECTIONS.values():          # chairs seen from behind: the whole piece over the sitter
@@ -954,8 +958,9 @@ def main(out, render_out=None, whiteboard_namespace=NS):
                     for c, src in ((CAT.COLLECTION, MOB), (KCOLL, KONCLUI), *SHEET_COLLECTIONS.items())
                     for pid, (_, _, seat) in src.items() if seat]
     (dist / 'seats/front').mkdir(parents=True, exist_ok=True)
+    names = {pid: p['name'] for src in (MOB, KONCLUI, *SHEET_COLLECTIONS.values()) for pid, (p, _, _) in src.items()}
     for pid, front in FRONTS.items():
-        front.save(dist / 'seats/front' / f'{pid}.png', optimize=True)
+        TRANSLUCENT.snapped(names[pid], front).save(dist / 'seats/front' / f'{pid}.png', optimize=True)
     grids = {f"{c}/{p['id']}": p['collisionGrid'] for c, src in ((CAT.COLLECTION, MOB), (KCOLL, KONCLUI),
                                                                   *SHEET_COLLECTIONS.items())
              for p, _, _ in src.values() if p.get('collisionGrid')}
@@ -1044,7 +1049,8 @@ def main(out, render_out=None, whiteboard_namespace=NS):
     for (tx, ty), cell in decor.items():
         comp.alpha_composite(cell[0], (tx * T, ty * T))
     comp.alpha_composite(wall_art)
-    drawn = sorted(((y + d['image'].height + d['prefab'].get('depthOffset', 0), x, y, d['image'])
+    drawn = sorted(((y + d['image'].height + d['prefab'].get('depthOffset', 0), x, y,
+                     TRANSLUCENT.snapped(d['prefab']['name'], d['image']))
                     for d, x, y in placed.values()), key=lambda t: (t[0], t[1]))
     for _, x, y, img in drawn:
         comp.alpha_composite(img, (x, y))
@@ -1055,6 +1061,11 @@ def main(out, render_out=None, whiteboard_namespace=NS):
     (dist / 'hud.json').write_text(json.dumps(dict(plan=dict(file='planta.webp', width=W * T, height=H * T))))
 
     result = validate(dist)
+    contract = SHEETCHECK.check_dist(dist)                # binary alpha, declared translucent layers, tileset grids
+    for name, px in TRANSLUCENT.lost_only_shadow(dist):   # a placed piece the runtime draws no shadow for lost its own
+        print(f'FAIL {name}: the alpha repair dropped {px} shadow px and the runtime draws no shadow for it: declare it '
+              f'in hq-office/translucent.py (baked-shadow)')
+        contract += 1
     summary = dict(size=[W, H], objects=len(entities), seats=len(seats), areas=1 + len(areas),
                    wall_faces=len(faces), thin_wall_tiles=len(edges), pool_tiles=len(pool.blocked),
                    animated_tiles=animated, reachable_tiles=len(reach), konclui_prefabs=len(KONCLUI),
@@ -1069,7 +1080,7 @@ def main(out, render_out=None, whiteboard_namespace=NS):
     for w in result.warnings:
         if w['code'] != 'DOOR_AT_CORNER':
             print('warning', w['code'], w['message'], w.get('x'), w.get('y'), w.get('objectName', ''))
-    return 1 if result.errors else 0
+    return 1 if result.errors or contract else 0
 
 
 if __name__ == '__main__':

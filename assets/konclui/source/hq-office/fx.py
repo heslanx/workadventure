@@ -10,17 +10,27 @@ map's folder; a room without dist/fx/manifest.json gets no effects.
   masks.png       full map, opaque: R 255 outside (lawn, path, the lawn seen through the north glass) or 96 a
                   wall (faces and caps), G 255 polished
                   floor (hall porcelain, reception terrazzo) or 128 a facade's glass, B 255 walkable lawn or 128 open water
+  normal.png      the map-space normal texture of the placed sprites, tools/normals.py: spritefusion-sprite-normals when it
+                  is installed, else the luminance fallback, and the build prints which one ran. Written by default;
+                  KONCLUI_FX_NORMALS=0 leaves it out. The manifest advertises it ("normal": true). The runtime asks for it
+                  only when its night-lit setting is on and ignores a missing or wrong-sized file, so the default costs
+                  no frame time; tools/README.md has the decision and the determinism check
   manifest.json   sizes, the water region and palette, lights by sprite, static lights, lockable rooms, every room's
                   floor (light stays in its room), the lawn palette, each standing sprite's footprint (its shadow)
 Lights follow the objects as placed: the runtime lights every scene image whose sprite is listed under "lights", so
 a lamp moved in the editor moves its light.
 """
 import json
+import os
 import re
+import sys
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+import normals as NORMALS  # noqa: E402  (tools/normals.py)
 import glass as GL
 import lawn as LAWN
 import pool as POOL
@@ -364,4 +374,17 @@ def write(dist, *, pool, kind_map, wall_art, P, lockable):
         spaces=spaces(P), glassFaces=glass_faces(P),
         ink=list(rgb('#0A0A3D')))
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
+    add_normals(dist, out, manifest)
     return manifest
+
+
+def add_normals(dist, out, manifest, environ=os.environ):
+    """Write fx/normal.png and advertise it in the manifest ("normal": true), unless KONCLUI_FX_NORMALS=0. Runs after
+    the manifest is on disk: the composer reads the map size from it. Prints which method made the texture. Returns
+    True when it wrote the file."""
+    if environ.get('KONCLUI_FX_NORMALS') == '0':
+        return False
+    print(f"fx/normal.png: method {NORMALS.describe(NORMALS.write(dist, out / 'normal.png', 'auto'))}")
+    manifest['normal'] = True
+    (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
+    return True

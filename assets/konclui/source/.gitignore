@@ -1,0 +1,4 @@
+# Python bytecode from the art tools, and what build.py writes beside its sources by default
+__pycache__/
+hq-office/renders/
+hq-office/dist/

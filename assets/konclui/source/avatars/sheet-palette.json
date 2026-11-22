@@ -1,0 +1,39 @@
+{
+ "_": "Locked palettes of the avatar sheets under art/out (96x128, 3x4 cells of 32x32): wokas = the five pre-v3 Koncluí pieces, companions = Koru. The check fails a sheet that uses a colour outside its group. Adding a colour is an edit of this file, on purpose. Built from the sheets as committed on 2026-11-21 (so it locks them, it does not derive from a design-system list: avatars/catalog.json colours are a different, per-option palette).",
+ "wokas": [
+  "#018e8c",
+  "#02d1ce",
+  "#06141f",
+  "#0e2a3a",
+  "#173e52",
+  "#3a3a3a",
+  "#505050",
+  "#616161",
+  "#767678",
+  "#7d7d7d",
+  "#8cf0ec",
+  "#969ea6",
+  "#a7a7a9",
+  "#c9c9cb",
+  "#d6dce0",
+  "#e8ecee",
+  "#f5f7f8",
+  "#fafaf8",
+  "#ffffff"
+ ],
+ "companions": [
+  "#0b3d43",
+  "#12767e",
+  "#13646a",
+  "#187079",
+  "#18787e",
+  "#18868e",
+  "#1b5562",
+  "#27a3af",
+  "#35a7b0",
+  "#4d6e63",
+  "#63ab9f",
+  "#8c956b",
+  "#ec9532"
+ ]
+}

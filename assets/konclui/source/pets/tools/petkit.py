@@ -16,6 +16,9 @@ from PIL import Image, ImageDraw
 CELL = 32
 COLS = 16
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / 'tools'))
+from pixelgrid import problems as sheet_problems
+
 PETS = REPO / 'pets'
 DIRS = ('down', 'left', 'up')
 PLANS = {
@@ -222,16 +225,20 @@ def build(species_dir, output_root=None):
     base = load_rgba(species_dir / 'base.png')
     key = pal['key']
     keyset = {hex_rgb(v) for v in key.values()}
-    opaque = {tuple(int(c) for c in px) for px in base[base[..., 3] > 0][:, :3]}
-    stray = opaque - keyset
-    if stray:
-        sys.exit(f'{species}: base.png uses colours outside palette.json key: {sorted(stray)[:8]}')
+    failures = sheet_problems(base, cell=CELL, palette=keyset)
+    if base.shape[1] != CELL * COLS:
+        failures.append(f'expected {COLS} columns of {CELL} pixels')
+    if failures:
+        sys.exit(f"{species}: base.png: {', '.join(failures)}")
     out = (Path(output_root) if output_root is not None else PETS / 'out') / species
     out.mkdir(parents=True, exist_ok=True)
     variants = []
     for v in pal['variants']:
         atlas = recolour(base, key, v.get('colors', {}))
         a_name, p_name = f'{species}-{v["id"]}.png', f'{species}-{v["id"]}.picker.png'
+        broken = sheet_problems(atlas, cell=CELL)       # the recoloured atlas the engine loads: binary alpha, 32 px cells
+        if broken:
+            sys.exit(f"{species}: {a_name}: {', '.join(broken)}")
         Image.fromarray(atlas, 'RGBA').save(out / a_name, optimize=True)
         Image.fromarray(picker_sheet(atlas, spec['picker']), 'RGBA').save(out / p_name, optimize=True)
         variants.append({'id': v['id'], 'name': v['name'], 'atlas': a_name, 'picker': p_name})
