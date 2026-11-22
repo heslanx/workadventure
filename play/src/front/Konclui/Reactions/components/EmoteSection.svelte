@@ -127,6 +127,35 @@
         min-width: 40px;
     }
 
+    /*
+     * A finger needs 44 px, the shell's minimum touch target. Six columns of 44 px and 8 px gaps need 304 px, which a
+     * menu fits down to a 360 px screen (the menu keeps 8 px at each side, and the bar, the section and the grid 4 px
+     * each): a narrower one takes five columns.
+     */
+    @media (pointer: coarse) {
+        .grid {
+            grid-template-columns: repeat(6, 44px);
+        }
+
+        .emote {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+        }
+    }
+
+    @media (pointer: coarse) and (max-width: 359px) {
+        .grid {
+            grid-template-columns: repeat(5, 44px);
+        }
+    }
+
+    @media (pointer: coarse) and (min-width: 640px) {
+        .grid {
+            grid-template-columns: repeat(9, 44px);
+        }
+    }
+
     .emote img {
         display: block;
         width: 32px;

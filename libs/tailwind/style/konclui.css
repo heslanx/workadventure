@@ -172,6 +172,25 @@ html [data-theme="default"] {
 
 /* Same specificity as the design system rules they replace; they win by coming later. */
 @layer components {
+  /* The emoji picker (upstream's emoji-picker-element: the reactions' "Edit" and the chat) is a light panel unless the
+     system asks for the dark scheme, and its own dark colors are not the chrome's. Its variables are set on the
+     element, which outranks the `:host` rules inside its shadow tree whatever the scheme, so the picker is the dark
+     chrome everywhere the theme is. `color-scheme` is not a variable: it is set here as well, for the search field
+     and the scrollbars. */
+  emoji-picker {
+    color-scheme: dark;
+    --background: var(--k-chrome);
+    --border-color: var(--k-chrome-border);
+    --indicator-color: var(--k-accent);
+    --input-border-color: var(--k-border);
+    --input-font-color: var(--k-fg);
+    --input-placeholder-color: var(--k-fg-muted);
+    --outline-color: var(--k-accent);
+    --category-font-color: var(--k-fg);
+    --button-active-background: var(--k-elevated);
+    --button-hover-background: var(--k-hover);
+  }
+
   /* The design system's `.btn` sets `outline-none` in this layer, which beats the base focus ring: keyboard users
      could not see which design-system button had the focus. The base halo still fills the offset gap. */
   .btn:focus-visible {

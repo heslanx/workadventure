@@ -31,11 +31,15 @@
 
     interface Props {
         arrowAction: ArrowAction;
+        // Moves the focus back to the control that opened the menu. Called when the keyboard closes the menu, so the
+        // focus does not fall to the page when the focused element leaves with the menu.
+        returnFocus?: () => void;
     }
 
-    let { arrowAction }: Props = $props();
+    let { arrowAction, returnFocus = undefined }: Props = $props();
 
     let triggerElement: HTMLElement | undefined = $state(undefined);
+    let menuElement: HTMLElement | undefined = $state(undefined);
 
     const isSayBubbleEnabled = connectionManager.currentRoom?.isSayEnabled ?? true;
 
@@ -124,6 +128,15 @@
         }, 2000);
     }
 
+    // Escape closes the menu, and the element that has the focus inside it leaves the page with it. The focus goes
+    // back to the opener then, and also when it was already lost. A focus that is somewhere else is not taken.
+    function closeWithKeyboard() {
+        const active = document.activeElement;
+        const focusLeaves = active === null || active === document.body || menuElement?.contains(active) === true;
+        activeSecondaryZoneActionBarStore.set(undefined);
+        if (focusLeaves) returnFocus?.();
+    }
+
     function onKeyDown(e: KeyboardEvent) {
         if (!gameManager.getCurrentGameScene().userInputManager.isControlsEnabled) return;
         let key = null;
@@ -146,7 +159,7 @@
             key = 6;
         }
         if (e.key === "Escape") {
-            activeSecondaryZoneActionBarStore.set(undefined);
+            closeWithKeyboard();
             return;
         }
         if (!key) {
@@ -164,6 +177,7 @@
 <svelte:window onkeydown={onKeyDown} />
 <div
     class="flex justify-center m-auto w-auto z-[500]"
+    bind:this={menuElement}
     transition:fly={{ y: 20, duration: 150 }}
     use:clickOutside={() => {
         if (!$emoteMenuStore) {
@@ -174,8 +188,9 @@
     <div
         class="bottom-action-bar k-chrome transition-all rounded-lg px-1 flex flex-col items-stretch pointer-events-auto justify-center m-auto bottom-6 md:bottom-4 z-[251] duration-300"
     >
-        <div class="flex animate flex-row items-center select-none">
-            <div class="py-1 flex">
+        <!-- The row wraps when the screen is narrower than the favourites and the edit button side by side. -->
+        <div class="flex animate flex-row flex-wrap justify-center items-center select-none">
+            <div class="py-1 flex flex-wrap justify-center">
                 {#each [...$emoteDataStore.keys()] as key, index (index)}
                     {@const editSelected = $emoteMenuStore && $emoteMenuSubCurrentEmojiSelectedStore === key}
                     {@const emojiName = $emoteDataStore.get(key)?.name}
@@ -192,7 +207,7 @@
                             id={`button-${$emoteDataStore.get(key)?.name}`}
                             title={reactionLabel}
                             aria-label={reactionLabel}
-                            class="group emoji py-2 px-2 m-0 flex items-center transition-all rounded {editSelected
+                            class="group emoji py-2 px-2 max-sm:px-1 m-0 flex items-center transition-all rounded {editSelected
                                 ? 'bg-secondary'
                                 : 'hover:bg-white/20'}"
                         >

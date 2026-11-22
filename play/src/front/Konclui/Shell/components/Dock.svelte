@@ -260,7 +260,14 @@
         background: transparent;
         backdrop-filter: none;
     }
-    .dock-controls :global(button[data-testid]),
+    /*
+     * The dock's own controls: each is a button inside the wrapper its component draws (ActionBarButton), and that
+     * wrapper is a direct child of the controls or of the devices. A descendant selector would also reach the buttons
+     * of a menu a control opens (the reactions menu, the apps menu), which stand inside .dock-controls in the DOM and
+     * set their own size.
+     */
+    .dock-controls > :global(div > button[data-testid]),
+    .dock-devices > :global(div > button[data-testid]),
     .media-settings {
         width: 36px;
         height: 36px;
@@ -269,7 +276,8 @@
         padding: 4px;
         margin: 0;
     }
-    .dock-controls :global(button > svg) {
+    .dock-controls > :global(div > button > svg),
+    .dock-devices > :global(div > button > svg) {
         width: 18px;
         height: 18px;
     }
@@ -295,11 +303,13 @@
      * Off is shown by the slashed icon and the button's name, as in the reference: no red fill, which read as an error
      * on a dock where off is the usual state. A device that cannot turn on keeps upstream's dimmed look.
      */
-    .dock-controls :global(button.bg-danger) {
+    .dock-controls > :global(div > button.bg-danger),
+    .dock-devices > :global(div > button.bg-danger) {
         background: transparent;
         color: var(--k-fg);
     }
-    .dock-controls :global(button.bg-danger:hover) {
+    .dock-controls > :global(div > button.bg-danger:hover),
+    .dock-devices > :global(div > button.bg-danger:hover) {
         background: var(--k-hover);
     }
     .dock-profile {
@@ -398,7 +408,8 @@
             width: 36px;
             min-width: 36px;
         }
-        .dock-controls :global(button.relative[data-testid]::after),
+        .dock-controls > :global(div > button.relative[data-testid]::after),
+        .dock-devices > :global(div > button.relative[data-testid]::after),
         .media-settings::after {
             content: "";
             position: absolute;

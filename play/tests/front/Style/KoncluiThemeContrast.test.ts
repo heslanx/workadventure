@@ -759,9 +759,12 @@ describe("Konclui theme contrast", () => {
         });
 
         it("shows a device turned off without the red fill, with the dock's hover", () => {
-            expect(dock).toMatch(/\.dock-controls :global\(button\.bg-danger\) \{\s*background: transparent;/);
+            // The dock's own buttons only: the wrapper a button draws is a direct child of the controls or the devices.
             expect(dock).toMatch(
-                /\.dock-controls :global\(button\.bg-danger:hover\) \{\s*background: var\(--k-hover\);/,
+                /\.dock-controls > :global\(div > button\.bg-danger\),\s*\.dock-devices > :global\(div > button\.bg-danger\) \{\s*background: transparent;/,
+            );
+            expect(dock).toMatch(
+                /\.dock-controls > :global\(div > button\.bg-danger:hover\),\s*\.dock-devices > :global\(div > button\.bg-danger:hover\) \{\s*background: var\(--k-hover\);/,
             );
         });
     });
