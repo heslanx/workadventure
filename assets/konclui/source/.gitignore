@@ -2,3 +2,6 @@
 __pycache__/
 hq-office/renders/
 hq-office/dist/
+# ingest lane (tools/ingest.py): pictures waiting to be ingested, and what a run stages. Never part of the sources.
+tools/inbox/
+tools/staging/

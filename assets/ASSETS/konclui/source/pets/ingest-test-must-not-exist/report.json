@@ -1,0 +1,144 @@
+{
+  "tool": "ingest",
+  "schema": 1,
+  "family": "office",
+  "cell": 32,
+  "incomplete": false,
+  "options": {
+    "pixelSize": null,
+    "maxBytes": 20971520,
+    "maxPixels": 25000000
+  },
+  "palette": {
+    "file": null,
+    "sha256": null,
+    "colours": null,
+    "source": null,
+    "appliedBy": "not applied",
+    "lane": "palettesnap.py present"
+  },
+  "toolchain": {
+    "tools": {
+      "pixel-snapper": {
+        "name": "pixel-snapper",
+        "path": "/opt/homebrew/bin/spritefusion-pixel-snapper",
+        "version": "1.0.0",
+        "sha256": "f862285d7d65623c1a29ae655030d59ab60c4a8a0f937695d08b6dd09de99b4f",
+        "pinnedVersion": "1.0.0",
+        "pinnedCommit": "5743009265051098831ad7298092072325d1149b",
+        "matches": true,
+        "versionOutput": "spritefusion-pixel-snapper 1.0.0"
+      },
+      "sprite-normals": {
+        "name": "sprite-normals",
+        "path": "/opt/homebrew/bin/spritefusion-sprite-normals",
+        "version": "0.1.0",
+        "sha256": "559b9a534a36aa5e4c938211226bd015a5d2b1b1b2b696d7abf308b8a4dcd6ce",
+        "pinnedVersion": "0.1.0",
+        "pinnedCommit": "d14b06726cabab09c68a403ce2e684a52efbfe4c",
+        "matches": true,
+        "versionOutput": "spritefusion-sprite-normals 0.1.0"
+      },
+      "palette-snapper": {
+        "name": "palette-snapper",
+        "path": "/opt/homebrew/bin/spritefusion-palette-snapper",
+        "version": "0.1.0",
+        "sha256": "87c7bd2d74f10507289f8569a0d2175bb407131fd18246b6c06e51341e49a704",
+        "pinnedVersion": "0.1.0",
+        "pinnedCommit": "ea647826abf82b70f87f54a4e45a58515eab650a",
+        "matches": true,
+        "versionOutput": "spritefusion-palette-snapper 0.1.0"
+      }
+    },
+    "missing": {}
+  },
+  "secondOpinionModule": "perfect_pixel",
+  "pictures": [
+    {
+      "name": "piece.png",
+      "verdict": "needs review",
+      "input": {
+        "bytes": 138435,
+        "sha256": "1eb2e1d53532c95db1497536ace07727a0d4b6310e306854af75dc47c6b5c9b0",
+        "format": "PNG",
+        "width": 256,
+        "height": 256,
+        "colours": 24847
+      },
+      "pixelSize": {
+        "detected": 8.0,
+        "source": "auto-detected",
+        "impliedByWidth": 8.0
+      },
+      "alpha": {
+        "snapperOutput": "flat",
+        "partialPx": 40,
+        "afterRepair": "binary",
+        "transparentPx": 212,
+        "opaquePx": 812
+      },
+      "secondOpinion": {
+        "status": "not available"
+      },
+      "quantisation": {
+        "colourCount": 16,
+        "palette": "none"
+      },
+      "checks": [
+        {
+          "name": "size",
+          "result": "pass",
+          "reason": "32x32 fits the office family on the 32 px cell grid",
+          "severity": "reject"
+        },
+        {
+          "name": "alpha",
+          "result": "pass",
+          "reason": "alpha is binary (0 or 255)",
+          "severity": "reject"
+        },
+        {
+          "name": "transparency",
+          "result": "pass",
+          "reason": "212 of 1024 px are transparent",
+          "severity": "review"
+        },
+        {
+          "name": "palette",
+          "result": "not checked",
+          "reason": "no palettes/office.hex: pass --palette with a palette file or the name of one under tools/palettes; not checked",
+          "severity": "review"
+        },
+        {
+          "name": "colours",
+          "result": "fail",
+          "reason": "the snapper reduced 24847 colours to 5 (asked for at most 16) with no locked palette handed to it (there is no palette for this run): the colours may have shifted, compare the preview",
+          "severity": "review"
+        },
+        {
+          "name": "second-opinion",
+          "result": "not checked",
+          "reason": "perfect_pixel is not importable",
+          "severity": "review"
+        }
+      ],
+      "reasons": [
+        "piece.png: colours: the snapper reduced 24847 colours to 5 (asked for at most 16) with no locked palette handed to it (there is no palette for this run): the colours may have shifted, compare the preview"
+      ],
+      "output": {
+        "width": 32,
+        "height": 32,
+        "colours": 5,
+        "sha256": "53e36aa39fbdbdc3bfeaea9652293e772d500b840398cc504bd6b90586a1b7ad"
+      },
+      "staged": "piece.png",
+      "preview": "piece.preview.png"
+    }
+  ],
+  "summary": {
+    "ready": 0,
+    "needs review": 1,
+    "rejected": 0
+  },
+  "promotion": "Staging is a dead end: nothing here is part of any build. To promote a ready picture, a person copies its NAME.png from this folder into the family's source art folder and reviews the diff; ingest never does it."
+}

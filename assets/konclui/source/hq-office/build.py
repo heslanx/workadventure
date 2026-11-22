@@ -17,6 +17,7 @@ dist/bell.json         the sales bell's area name, sound and quiet rects; dist/s
 dist/koi/              koi module (pool/koi/) and one scene per overlay (lake, canal): masks at map resolution
 dist/build_report.json wall faces, doors, seats and rooms for map/validate_map.py
 renders/preview.png    the whole map composited (frame 0); renders/build.json the summary
+renders/palette-contact.png  before/after of the 12 pictures the palette snap would change most (palette contract, tools/palettesnap.py)
 
 Thin walls (a wall on the edge between two tiles, both walkable). Each V wall of the plan stands on a
 tile boundary (plan.vb) and is written to the tile layer "thin-walls" (opacity 0) as tiles of the embedded tileset
@@ -1062,6 +1063,9 @@ def main(out, render_out=None, whiteboard_namespace=NS):
 
     result = validate(dist)
     contract = SHEETCHECK.check_dist(dist)                # binary alpha, declared translucent layers, tileset grids
+    # The palette contract (tools/palettesnap.py, spritefusion-palette-snapper): reported and counted while the office does
+    # not conform (SHEETCHECK.PALETTE_ENFORCED), a failure once it does; a missing tool stops the build with its install command.
+    contract += SHEETCHECK.check_palette(dist, contact=renders / 'palette-contact.png')
     for name, px in TRANSLUCENT.lost_only_shadow(dist):   # a placed piece the runtime draws no shadow for lost its own
         print(f'FAIL {name}: the alpha repair dropped {px} shadow px and the runtime draws no shadow for it: declare it '
               f'in hq-office/translucent.py (baked-shadow)')

@@ -86,6 +86,7 @@ a página carrega `fx.mjs`, e o `GameManager` traz o `x-konclui-scene-fx`. Uploa
 
 ```sh
 python3 hq-office/build.py
+python3 -I tools/verify.py hq-office/dist           # o build está pronto para publicar? ferramentas, grade, alpha, paleta, normais (--rebuild: build duas vezes e compara os bytes); o relatório verify.json nunca vai para a árvore de fontes: com dist em hq-office/ ele vai para $TMPDIR/konclui-verify/ (o caminho sai na última linha), ou use --out ARQUIVO
 cd local-wa && ./load_map.sh ../hq-office/dist konclui-office && cd ..   # a sala de trabalho; antes: capture_edits.py
 python3 hq-office/qa.py                             # grupos: views walls thin doors seats koi interactions social lawn water
 python3 hq-office/seat_sheet.py                     # folha do avatar sentado (--all: as 213 vagas)
@@ -101,7 +102,10 @@ node --test theme/fx/*.test.mjs                     # shaders: luz da hora, luze
 python3 hq-office/perf.py --gpu --check [--hour 13]  # custo de desenho com os efeitos (a hora muda os efeitos)
 ```
 
-O build é determinístico: os IDs são UUID5 das chaves do plano. `load_map.sh` sem `--preserve-wam` troca a pasta
+O build é determinístico: os IDs são UUID5 das chaves do plano (`tools/verify.py --rebuild` constrói duas vezes em pastas
+temporárias e compara todos os arquivos por sha256). Uma pasta servida que o editor também altera só recebe um build por
+`tools/publish.py` (`plan`, `apply --backup`, `rollback`, `verify`: nunca sobrescreve um arquivo editado à mão, guarda o
+backup e desfaz); a publicação real no volume servido é do integrador, não do build (`tools/README.md`). `load_map.sh` sem `--preserve-wam` troca a pasta
 inteira da sala, então compare antes o `.wam` servido com `dist/office.wam` e só carregue se forem iguais.
 
 ## Edições no editor
@@ -584,8 +588,11 @@ Pedido do dono em 20/10/2026: olhar o ambiente e as oportunidades de shader, dep
   máscaras do mapa (lado de fora, parede, piso polido ou vidro da fachada, gramado, água), as paredes para a sombra, o
   slide da TV e o `manifest.json` (39 KB) com as luzes por sprite e a pegada de cada peça colocada. Uma sala sem
   `fx/manifest.json` não recebe efeito. O `normal.png` (normais das peças colocadas, `tools/normals.py`) também sai por
-  padrão (`KONCLUI_FX_NORMALS=0` o omite); o contrato de pixels do build (alpha binário, camadas translúcidas declaradas
-  em `translucent.py`) é verificado por `sheetcheck.py`; os dois estão em `tools/README.md`.
+  padrão (`KONCLUI_FX_NORMALS=0` o omite) e o manifest ganha `tools` (versões e hashes das três ferramentas SpriteFusion que
+  fizeram o build; o runtime ignora a chave). O contrato de pixels do build (grade, alpha binário, camadas translúcidas
+  declaradas em `translucent.py`) é verificado por `sheetcheck.py check_dist`; a paleta travada (`tools/palettes/office.hex`,
+  gerada de `palette.py`) por `sheetcheck.check_palette`, que hoje só reporta o escritório, com contagem e baseline, e falha se
+  ele piorar; e `tools/verify.py` reúne tudo isso com as normais e o determinismo. Tudo isso está em `tools/README.md`.
 - **Sombra do chão:** o navegador desenha num canvas fora da tela as paredes e a pegada de cada peça (a de uma peça nova do
   editor é medida na hora), desfoca uma vez e refaz quando algo se move; o quad do chão lê esse campo em faixas.
 - **Luzes seguem o editor:** uma luminária movida no editor leva a luz junto, porque as luzes saem das imagens da cena.

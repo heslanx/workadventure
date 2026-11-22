@@ -1,6 +1,9 @@
 """Pixel contract of the avatar sheets under art/out (tools/pixelgrid.py): 96 x 128 px (3 x 4 cells of 32 x 32), binary
-alpha, and only the colours of the group's locked palette (avatars/sheet-palette.json). That palette is a FREEZE
-guard (a regression check): it was built from the committed sheets, so it passes them by construction and is not a design list.
+alpha, and only the colours of the group's locked palette (avatars/sheet-palette.json, the source of truth:
+tools/palettes/avatars.hex is generated from it and a test fails when they differ). That palette is a FREEZE guard (a
+regression check): it was built from the committed sheets, so it passes them by construction and is not a design list; a
+new colour is an edit of that file. The same pinned tool that would fix a sheet also checks it (tools/palettesnap.py): a
+sheet with a colour off its palette fails, and a missing tool fails the check, never passes it.
 
   python3 avatars/sheetcheck.py check [ART_OUT_DIR]     art/out/wokas/*.png and art/out/companions/*.png; exit 1
 
@@ -11,11 +14,11 @@ modular avatars of avatars/catalog.json are run-length palette data, not sheets,
 the palette lock: the catalog's colour options are many and curated, there is no fixed list. native_export.py calls it
 and fails the export on a partial-alpha pixel or a sheet that is not 96 x 128.
 """
-import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+import palettesnap as PS  # noqa: E402
 import pixelgrid as PG  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -30,13 +33,20 @@ def size_rule(pixels):
 
 
 def check(root=ART_OUT, out=sys.stdout):
-    palettes = {g: PG.hex_colours(v) for g, v in json.loads((HERE / 'sheet-palette.json').read_text()).items()
-                if g in GROUPS}
+    """Size, alpha and palette of every sheet (pixelgrid), then the same lock through the snapper tool, per group
+    (palettesnap.check_family: the one run `palettesnap.py check --family avatars` makes too): a sheet that has a colour off
+    its group's palette fails (these sheets conform, so palettesnap.FAMILY_DECLARATION enforces it). Returns the failure
+    count."""
+    groups = PS.avatar_groups()                 # {group: sorted (r, g, b)} from sheet-palette.json: one reader, one source
     failed = 0
     for group in GROUPS:
-        folder = Path(root) / group
-        failed += PG.check([folder], palette_for=lambda _p, g=group: palettes[g], out=out, extra_for=size_rule)
-    return failed
+        failed += PG.check([Path(root) / group], palette_for=lambda _p, g=group: set(groups[g]), out=out,
+                           extra_for=size_rule)
+    stats = {}
+    changes = PS.check_family('avatars', [Path(root) / g for g in GROUPS], stats=stats)
+    # A sheet off its palette is ONE failure whichever contract names it: the tool's and pixelgrid's palette rule are the same
+    # exact test (a pixel whose colour is not listed), so the tool's failures are a subset of pixelgrid's.
+    return max(failed, PS.judge('avatars', changes, stats, out))
 
 
 def check_exported(folder, out=sys.stdout):

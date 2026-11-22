@@ -1,7 +1,9 @@
 """Pixel contract of the pets' source sheets (pets/README.md "Contrato do atlas"), run over species/*/base.png.
 
   python3 pets/tools/sheetcheck.py check [SPECIES_DIR]   binary alpha, 32 px cells, only the species' palette.json key
-                                                          colours; one line per failure; exit 1
+                                                          colours (also checked by tools/palettesnap.py, the snapper
+                                                          tool: a sheet off its palette fails); one line per failure;
+                                                          exit 1
   python3 pets/tools/sheetcheck.py snap SPECIES OUT.png   the explicit snap step (tools/pixelgrid.py): refuses a sheet
                                                           that already passes, never writes in place
 
@@ -11,6 +13,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
+import palettesnap as PS  # noqa: E402
 import pixelgrid as PG  # noqa: E402
 
 SPECIES = Path(__file__).resolve().parents[1] / 'species'
@@ -31,7 +34,14 @@ def main(argv):
     bases = sorted(root.glob('*/base.png'))
     if not bases:
         raise SystemExit(f'no */base.png under {root}')
-    return 1 if PG.check(bases, palette_for=palette_for, extra_for=wide_rule) else 0
+    failed = PG.check(bases, palette_for=palette_for, extra_for=wide_rule)
+    # the same palette through spritefusion-palette-snapper, one species' palette at a time (palettesnap.check_family, the
+    # run `palettesnap.py check --family pets` makes too): the sheets conform, so a sheet with a colour off its palette fails
+    # (palettesnap.FAMILY_DECLARATION)
+    stats = {}
+    changes = PS.check_family('pets', bases, stats=stats)
+    failed += PS.judge('pets', changes, stats)
+    return 1 if failed else 0
 
 
 def wide_rule(pixels):

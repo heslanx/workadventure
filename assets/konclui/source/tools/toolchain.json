@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "note": "The pins of the three SpriteFusion command-line tools the art pipeline runs. Data, reviewed in a diff: tools/toolchain.py reads it and nothing else decides a version. A change here is a deliberate upgrade of a tool. 'sha256' lists the accepted binary hashes of this build host (macOS arm64); it is printed always and enforced only with KONCLUI_TOOLCHAIN_SHA256=enforce, because a rebuild of the same commit gives another hash. The palette-snapper hash is of a build from a LOCAL CHECKOUT of the pinned commit (cargo install from a local path, recorded in ~/.cargo/.crates2.json), not of one made by the documented 'cargo install --git ... --rev' command, which can give another hash: re-measure and list it when that command is run on the build host.",
+  "tools": {
+    "pixel-snapper": {
+      "binary": "spritefusion-pixel-snapper",
+      "env": "SPRITEFUSION_PIXEL_SNAPPER_BIN",
+      "version": "1.0.0",
+      "repository": "https://github.com/Hugo-Dz/spritefusion-pixel-snapper",
+      "commit": "5743009265051098831ad7298092072325d1149b",
+      "license": "MIT",
+      "install": "brew install hugo-dz/tap/spritefusion-pixel-snapper",
+      "sha256": [
+        "f862285d7d65623c1a29ae655030d59ab60c4a8a0f937695d08b6dd09de99b4f"
+      ]
+    },
+    "sprite-normals": {
+      "binary": "spritefusion-sprite-normals",
+      "env": "SPRITEFUSION_NORMALS_BIN",
+      "version": "0.1.0",
+      "repository": "https://github.com/Hugo-Dz/spritefusion-sprite-normals",
+      "commit": "d14b06726cabab09c68a403ce2e684a52efbfe4c",
+      "license": "MIT",
+      "install": "cargo install --locked --git https://github.com/Hugo-Dz/spritefusion-sprite-normals --rev d14b06726cabab09c68a403ce2e684a52efbfe4c",
+      "sha256": [
+        "559b9a534a36aa5e4c938211226bd015a5d2b1b1b2b696d7abf308b8a4dcd6ce"
+      ]
+    },
+    "palette-snapper": {
+      "binary": "spritefusion-palette-snapper",
+      "env": "SPRITEFUSION_PALETTE_SNAPPER_BIN",
+      "version": "0.1.0",
+      "repository": "https://github.com/Hugo-Dz/spritefusion-palette-snapper",
+      "commit": "ea647826abf82b70f87f54a4e45a58515eab650a",
+      "license": "MIT",
+      "install": "cargo install --locked --git https://github.com/Hugo-Dz/spritefusion-palette-snapper --rev ea647826abf82b70f87f54a4e45a58515eab650a",
+      "sha256": [
+        "87c7bd2d74f10507289f8569a0d2175bb407131fd18246b6c06e51341e49a704"
+      ]
+    }
+  }
+}

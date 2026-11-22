@@ -21,7 +21,6 @@ Python stdlib + numpy + Pillow, as the rest of the repository's art tools.
 """
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -32,18 +31,28 @@ import numpy as np
 from PIL import Image
 
 CELL = 32
-SNAPPER_ENV = 'SPRITEFUSION_PIXEL_SNAPPER_BIN'
-SNAPPER_DEFAULT = 'spritefusion-pixel-snapper'
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import toolchain  # noqa: E402  (tools/toolchain.py: the one place that finds and identifies a tool)
+
+SNAPPER_ENV = toolchain.TOOLS['pixel-snapper']['env']
+SNAPPER_DEFAULT = toolchain.TOOLS['pixel-snapper']['binary']
 
 
 def tool_path(env, default):
-    """The tool a step runs: the env var when set, else the name on PATH. A clear error when neither exists."""
-    value = os.environ.get(env) or shutil.which(default)
-    if not value or not Path(value).is_file():
-        raise SystemExit(f'{default} not found: install it (tools/README.md has the command) or point {env} at the '
-                         f'binary; {env} is ' + (f'set to {os.environ[env]!r}, which is not a file' if os.environ.get(env)
-                                                 else 'not set') + f' and {default} is not on PATH')
-    return value
+    """The tool a step runs: the env var when set, else the name on PATH. A clear error when neither exists. The lookup
+    is toolchain's (the three SpriteFusion tools carry their install command in the message); ~/.cargo/bin is left out,
+    as it always was here, so a step finds exactly what it found before."""
+    try:
+        return toolchain.locate(env, default, cargo=False, install=_install_command(env, default))
+    except toolchain.ToolMissing as error:
+        raise SystemExit(str(error))
+
+
+def _install_command(env, default):
+    for spec in toolchain.TOOLS.values():
+        if (spec['env'], spec['binary']) == (env, default):
+            return spec['install']
+    return None
 
 
 def load_rgba(path):

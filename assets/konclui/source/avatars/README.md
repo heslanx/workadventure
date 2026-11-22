@@ -79,6 +79,12 @@ fixed when the user recolors the headset. No runtime fitting heuristics are used
 
 Checks:
 
+- `python3 avatars/sheetcheck.py check` is the pixel contract of the sheets under `art/out/wokas` and `art/out/companions`: 96 x 128,
+  binary alpha, and only the colours of the group's locked palette (`sheet-palette.json`, the source of truth; `tools/palettes/avatars.hex`
+  is generated from it). The palette is checked by the pinned `spritefusion-palette-snapper` too (`tools/palettesnap.py`), so a missing
+  tool fails the check and never passes it. `python3 -I tools/verify.py DIST --family avatars` runs it with the toolchain check and
+  writes a `verify.json` (outside the source tree, `dist_examined: false`: it says nothing about DIST). The pipeline, its tool pins and the ingest lane for art that was not drawn on the grid are in
+  [`tools/README.md`](../tools/README.md).
 - `python3 avatars/build.py` validates anatomy before building the catalog.
 - `python3 -m unittest tests.test_avatar_fit` protects source eyes, ear anchors, lens enclosure and gait.
 - `python3 -m unittest avatars.identity.faces.test_fit -v` checks scalp coverage,

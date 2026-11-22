@@ -16,7 +16,8 @@ map's folder; a room without dist/fx/manifest.json gets no effects.
                   only when its night-lit setting is on and ignores a missing or wrong-sized file, so the default costs
                   no frame time; tools/README.md has the decision and the determinism check
   manifest.json   sizes, the water region and palette, lights by sprite, static lights, lockable rooms, every room's
-                  floor (light stays in its room), the lawn palette, each standing sprite's footprint (its shadow)
+                  floor (light stays in its room), the lawn palette, each standing sprite's footprint (its shadow), and "tools": the
+                  versions and hashes of the three SpriteFusion tools that made the build (tool_record; the runtime ignores it)
 Lights follow the objects as placed: the runtime lights every scene image whose sprite is listed under "lights", so
 a lamp moved in the editor moves its light.
 """
@@ -31,6 +32,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import normals as NORMALS  # noqa: E402  (tools/normals.py)
+import toolchain as TOOLCHAIN  # noqa: E402  (tools/toolchain.py)
 import glass as GL
 import lawn as LAWN
 import pool as POOL
@@ -349,6 +351,16 @@ def glass_faces(P):
     return [[P.vb(a) * T, P.vb(b) * T, row * T + 60] for row, a, b, _, material in P.H_WALLS if material == 'glass']
 
 
+def tool_record():
+    """Which tools made this build, for the manifest's "tools" entry (tools/publish.py copies it into the release ledger, so a
+    published map says which tool versions made it): toolchain.versions() without the build host's paths and raw --version
+    output (the manifest is served to browsers), and the missing tools by name only."""
+    found = TOOLCHAIN.versions()
+    keep = ('version', 'pinnedVersion', 'pinnedCommit', 'sha256', 'matches')
+    return dict(tools={name: {k: ident[k] for k in keep} for name, ident in found['tools'].items()},
+                missing=sorted(found['missing']))
+
+
 def write(dist, *, pool, kind_map, wall_art, P, lockable):
     out = dist / 'fx'
     out.mkdir(parents=True, exist_ok=True)
@@ -372,7 +384,7 @@ def write(dist, *, pool, kind_map, wall_art, P, lockable):
         lawn={k: list(v) for k, v in LAWN.GRASS.items()},
         lights=found, shadows=shadows(dist), staticLights=static_lights(P, pool), rooms=rooms(P, lockable),
         spaces=spaces(P), glassFaces=glass_faces(P),
-        ink=list(rgb('#0A0A3D')))
+        ink=list(rgb('#0A0A3D')), tools=tool_record())
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
     add_normals(dist, out, manifest)
     return manifest

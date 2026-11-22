@@ -27,9 +27,7 @@ Characters and pets walk, so their atlas normals cannot be stamped into a map-sp
 separate files and nothing in the runtime reads them (the shader has no per-sprite normal path). fx.py writes
 fx/normal.png by default (KONCLUI_FX_NORMALS=0 turns it off; tools/README.md has the decision).
 """
-import hashlib
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -40,9 +38,10 @@ from PIL import Image, PngImagePlugin
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pixelgrid as PG  # noqa: E402
+import toolchain  # noqa: E402
 
-NORMALS_ENV = 'SPRITEFUSION_NORMALS_BIN'
-NORMALS_DEFAULT = 'spritefusion-sprite-normals'
+NORMALS_ENV = toolchain.TOOLS['sprite-normals']['env']
+NORMALS_DEFAULT = toolchain.TOOLS['sprite-normals']['binary']
 FLAT = (128, 128, 255, 0)
 STRENGTH = 1.0
 
@@ -80,7 +79,7 @@ def geometry(rgba):
 def tool_identity():
     """(path, sha256 of the binary) of the normals tool a run would use; the error of `tool_path` when it is missing."""
     path = PG.tool_path(NORMALS_ENV, NORMALS_DEFAULT)
-    return path, hashlib.sha256(Path(path).resolve().read_bytes()).hexdigest()
+    return path, toolchain.sha256_of(path)
 
 
 def tool_normals(sprites):
@@ -161,7 +160,7 @@ def resolve_method(method):
     luminance fallback with a loud notice on stderr. 'tool' with no usable tool is a SystemExit (tool_path)."""
     if method != 'auto':
         return method
-    if os.environ.get(NORMALS_ENV) or PG.shutil.which(NORMALS_DEFAULT):
+    if toolchain.declared('sprite-normals', cargo=False):
         return 'tool'
     print(f'normals: !!! {NORMALS_DEFAULT} not found ({NORMALS_ENV} unset, not on PATH): using the LUMINANCE FALLBACK, '
           f'not silhouette-aware normals', file=sys.stderr)
