@@ -41,7 +41,7 @@
     "@workadventure/map-editor": "1.0.0",
     "@workadventure/messages": "1.0.0",
     "@workadventure/tiled-map-type-guard": "^2.1.2",
-    "axios": "^1.16.1",
+    "axios": "^1.21.1",
     "catch-unknown": "^2.0.0",
     "debug": "^4.4.3",
     "posthog-node": "^5.70.0",
