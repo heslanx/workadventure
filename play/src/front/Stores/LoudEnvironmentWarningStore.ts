@@ -13,8 +13,14 @@ import {
 } from "./MediaStore";
 import { noiseSuppressionEnabledStore } from "./NoiseSuppressionStore";
 import { LoudEnvironmentDetectionController } from "./LoudEnvironmentDetectionController";
+import { isLoudEnvironmentDetectionEnabled } from "./LoudEnvironmentDetectionFlag";
 
 export const loudEnvironmentWarningStore = readable(false, (set) => {
+    // Off by default: no input store is derived, no controller is built, and so no detector, RNNoise or worklet is
+    // requested. See LoudEnvironmentDetectionFlag.ts.
+    if (!isLoudEnvironmentDetectionEnabled()) {
+        return;
+    }
     // Built at the first subscription, not when the module loads: GameScene imports this module while MediaStore can
     // still be loading (import cycle), and its stores are then undefined.
     const input = derived(

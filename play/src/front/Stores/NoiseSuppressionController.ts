@@ -2,17 +2,34 @@ import { get } from "svelte/store";
 import { AbortError } from "@workadventure/shared-utils/src/Abort/AbortError";
 import type { NoiseSuppressionEngine } from "../Connection/LocalUserStore";
 import { analyticsClient } from "../Administration/AnalyticsClient";
-import {
-    type NoiseSuppressionStatusMessage,
+import type {
+    NoiseSuppressionStatusMessage,
     NoiseSuppressionTransformer,
 } from "../WebRtc/NoiseSuppression/NoiseSuppressionTransformer";
 import { noiseSuppressionStateStore } from "./NoiseSuppressionStore";
+
+interface NoiseSuppressionTransformerModule {
+    NoiseSuppressionTransformer: typeof NoiseSuppressionTransformer;
+}
+
+/**
+ * The only way into the transformer module, and so into the @workadventure/noise-suppression package (the model and the
+ * worklet it loads): a dynamic import, reached only once noise suppression is on and there is a microphone track.
+ * NoiseSuppressionImportGraph.test.ts fails if a static import of either comes back.
+ */
+export function loadNoiseSuppressionTransformerModule(): Promise<NoiseSuppressionTransformerModule> {
+    return import("../WebRtc/NoiseSuppression/NoiseSuppressionTransformer");
+}
 
 export class NoiseSuppressionController {
     private transformer: NoiseSuppressionTransformer | undefined;
     private engine: NoiseSuppressionEngine = "deepfilternet";
     /** When the current initialization began; cleared once it is reported, so each start is counted once. */
     private initStartedAt: number | undefined;
+
+    public constructor(
+        private readonly loadTransformerModule: () => Promise<NoiseSuppressionTransformerModule> = loadNoiseSuppressionTransformerModule,
+    ) {}
 
     public async transform(
         audioTrack: MediaStreamTrack | undefined,
@@ -44,6 +61,20 @@ export class NoiseSuppressionController {
             return audioTrack;
         }
 
+        let transformerModule: NoiseSuppressionTransformerModule;
+        try {
+            transformerModule = await this.loadTransformerModule();
+        } catch (error) {
+            // The chunk could not be fetched (offline, a deploy replaced it): fall back to the browser's processing
+            this.updateState({
+                status: "error",
+                message: error instanceof Error ? error.message : "Custom noise suppression could not be loaded.",
+            });
+            return audioTrack;
+        }
+        this.throwIfAborted(signal);
+        const { NoiseSuppressionTransformer } = transformerModule;
+
         const support = NoiseSuppressionTransformer.getSupport();
         if (!support.supported) {
             await this.destroy();
@@ -53,7 +84,9 @@ export class NoiseSuppressionController {
             return audioTrack;
         }
 
-        if (currentNoiseSuppressionState.status !== "initializing" && currentNoiseSuppressionState.status !== "ready") {
+        // Read again: the state may have moved while the module loaded
+        const stateAfterLoad = get(noiseSuppressionStateStore).status;
+        if (stateAfterLoad !== "initializing" && stateAfterLoad !== "ready") {
             noiseSuppressionStateStore.set({ status: "initializing" });
             this.initStartedAt = performance.now();
         }

@@ -1,4 +1,5 @@
 import { get } from "svelte/store";
+import { AbortError } from "@workadventure/shared-utils/src/Abort/AbortError";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { trackAdminEvent, FakeTransformer } = vi.hoisted(() => {
@@ -171,5 +172,74 @@ describe("NoiseSuppressionController", () => {
         expect(await controller.transform(microphone, false, "deepfilternet")).toBe(microphone);
         expect(FakeTransformer.instances).toHaveLength(0);
         expect(trackAdminEvent).not.toHaveBeenCalled();
+    });
+
+    describe("loading the transformer module", () => {
+        // The fake stands in for the module, and has only the part the controller uses
+        const loadFake = (() =>
+            Promise.resolve({ NoiseSuppressionTransformer: FakeTransformer })) as unknown as NonNullable<
+            ConstructorParameters<typeof NoiseSuppressionController>[0]
+        >;
+
+        it("does not load the module while noise suppression is off or there is no microphone", async () => {
+            const load = vi.fn(loadFake);
+            const controller = new NoiseSuppressionController(load);
+
+            await controller.transform(microphone, false, "deepfilternet");
+            await controller.transform(undefined, true, "deepfilternet");
+
+            expect(load).not.toHaveBeenCalled();
+        });
+
+        it("loads the module when noise suppression is on, and keeps one pipeline for later tracks", async () => {
+            const load = vi.fn(loadFake);
+            const controller = new NoiseSuppressionController(load);
+
+            await controller.transform(microphone, true, "deepfilternet");
+            await controller.transform({ id: "other-mic" } as MediaStreamTrack, true, "deepfilternet");
+
+            expect(load).toHaveBeenCalled();
+            expect(FakeTransformer.instances).toHaveLength(1);
+        });
+
+        it("hands the raw microphone to the browser and reports the error when the module cannot load", async () => {
+            const controller = new NoiseSuppressionController(() => Promise.reject(new Error("chunk 404")));
+
+            const track = await controller.transform(microphone, true, "deepfilternet");
+
+            expect(track).toBe(microphone);
+            expect(get(noiseSuppressionStateStore)).toEqual({ status: "error", message: "chunk 404" });
+            expect(eventsNamed("media.noise_suppression.failed")).toEqual([
+                { engine: "deepfilternet", status: "error", reason: "chunk 404" },
+            ]);
+        });
+
+        it("reads the state again after the load: a state that moved during it is not overwritten", async () => {
+            // The state was "pendingInitialization" when the transform began. While the module loaded, another path
+            // (a second transform for the same pipeline) brought it to "ready": this call must not put it back to
+            // "initializing". The transformer stays silent so that only the controller moves the state.
+            FakeTransformer.onTransform = () => undefined;
+            const controller = new NoiseSuppressionController(() => {
+                noiseSuppressionStateStore.set({ status: "ready" });
+                return loadFake();
+            });
+
+            await controller.transform(microphone, true, "deepfilternet");
+
+            expect(get(noiseSuppressionStateStore)).toEqual({ status: "ready" });
+        });
+
+        it("stops when the transform is aborted while the module loads", async () => {
+            const abortController = new AbortController();
+            const controller = new NoiseSuppressionController(() => {
+                abortController.abort(new AbortError("replaced"));
+                return loadFake();
+            });
+
+            await expect(
+                controller.transform(microphone, true, "deepfilternet", abortController.signal),
+            ).rejects.toThrow("replaced");
+            expect(FakeTransformer.instances).toHaveLength(0);
+        });
     });
 });

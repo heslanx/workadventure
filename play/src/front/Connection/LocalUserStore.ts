@@ -68,6 +68,16 @@ const codecRetryTimesKey = "codecRetryTimes";
 const legacyVideoBandwidthKey = "videoBandwidth";
 const legacyScreenShareBandwidthKey = "screenShareBandwidth";
 const noiseSuppressionEnabledKey = "noiseSuppressionEnabled";
+/**
+ * Whether the WorkAdventure noise suppression is on for a user who never chose. Off since the 2026-11-22 owner decision:
+ * it loads about 10.8 MB of model and worklet on the first microphone and blocks the audio thread while it starts.
+ * The stored values tell a choice from the default: only setNoiseSuppressionEnabled writes the enabled key (the settings
+ * row, the loud environment toast), so "true" and "false" are choices and an absent key is the default. The old default
+ * (on) never wrote anything, so it cannot be mistaken for a choice and needs no version marker. The one old-default user
+ * who left a trace is the one who used the provider or engine select, shown only while it was on: a stored provider or
+ * engine with an absent enabled key reads as on (see getNoiseSuppressionEnabled).
+ */
+export const NOISE_SUPPRESSION_ENABLED_DEFAULT = false;
 const noiseSuppressionProviderKey = "noiseSuppressionProvider";
 const noiseSuppressionEngineKey = "noiseSuppressionEngine";
 const microphoneAutoGainControlKey = "microphoneAutoGainControl";
@@ -841,8 +851,26 @@ class LocalUserStore {
             localStorage.setItem(noiseSuppressionProviderKey, "workadventure");
             return false;
         }
-        // On by default: only an explicit "false" turns it off.
-        return localStorage.getItem(noiseSuppressionEnabledKey) !== "false";
+        // A stored "true" or "false" is the user's choice; anything else (absent, unknown) is the default...
+        const stored = localStorage.getItem(noiseSuppressionEnabledKey);
+        if (stored === "true") return true;
+        if (stored === "false") return false;
+        // ...unless the user used the provider or engine select. Both only show while noise suppression is on, and under
+        // the old default (on) the enabled key was never written, so a stored provider or engine is a user who set it up
+        // while it was on by default: it stays on, and their voice isolation choice is kept.
+        if (this.hasStoredNoiseSuppressionProviderOrEngine()) return true;
+        return NOISE_SUPPRESSION_ENABLED_DEFAULT;
+    }
+
+    private hasStoredNoiseSuppressionProviderOrEngine(): boolean {
+        const provider = localStorage.getItem(noiseSuppressionProviderKey);
+        const engine = localStorage.getItem(noiseSuppressionEngineKey);
+        return (
+            provider === "voiceIsolation" ||
+            provider === "workadventure" ||
+            engine === "dtln" ||
+            engine === "deepfilternet"
+        );
     }
 
     setNoiseSuppressionProvider(value: NoiseSuppressionProvider) {

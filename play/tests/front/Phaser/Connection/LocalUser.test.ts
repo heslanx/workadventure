@@ -18,7 +18,7 @@ import {
     isUserNameValid,
     maxUserNameLength,
 } from "../../../../src/front/Connection/LocalUserUtils";
-import { localUserStore } from "../../../../src/front/Connection/LocalUserStore";
+import { localUserStore, NOISE_SUPPRESSION_ENABLED_DEFAULT } from "../../../../src/front/Connection/LocalUserStore";
 
 describe("isUserNameValid()", () => {
     it("should validate name with letters", () => {
@@ -71,10 +71,65 @@ describe("localUserStore microphone noise suppression settings", () => {
         localStorage.clear();
     });
 
-    it("turns advanced noise suppression and browser noise suppression on by default", () => {
-        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(true);
+    it("keeps advanced noise suppression off and browser noise suppression on for a user who never chose", () => {
+        expect(NOISE_SUPPRESSION_ENABLED_DEFAULT).toBe(false);
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(false);
         expect(localUserStore.getNoiseSuppressionProvider()).toBe("workadventure");
         expect(localUserStore.getMicrophoneBrowserNoiseSuppression()).toBe(true);
+    });
+
+    it("never writes the setting just by reading it, so the default stays distinguishable from a choice", () => {
+        localUserStore.getNoiseSuppressionEnabled();
+
+        expect(localStorage.getItem("noiseSuppressionEnabled")).toBeNull();
+    });
+
+    it("keeps advanced noise suppression on for a user who turned it on", () => {
+        localUserStore.setNoiseSuppressionEnabled(true);
+
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(true);
+    });
+
+    it("keeps the choice of a user who turned it on before the default changed", () => {
+        // The old default wrote nothing, so a stored "true" can only come from a user who turned it on
+        localStorage.setItem("noiseSuppressionEnabled", "true");
+
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(true);
+    });
+
+    // The provider and engine selects only show while noise suppression is on, and under the old default (on) the enabled
+    // key was never written: a stored provider or engine is a user who set it up while it was on by default.
+    it.each([
+        ["voiceIsolation provider", "noiseSuppressionProvider", "voiceIsolation"],
+        ["workadventure provider", "noiseSuppressionProvider", "workadventure"],
+        ["dtln engine", "noiseSuppressionEngine", "dtln"],
+        ["deepfilternet engine", "noiseSuppressionEngine", "deepfilternet"],
+    ])("keeps it on for a user of the old default who chose a %s and never wrote the enabled key", (_, key, value) => {
+        localStorage.setItem(key, value);
+
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(true);
+        expect(localStorage.getItem("noiseSuppressionEnabled")).toBeNull();
+    });
+
+    it("lets an explicit off win over a stored provider or engine", () => {
+        localStorage.setItem("noiseSuppressionProvider", "voiceIsolation");
+        localStorage.setItem("noiseSuppressionEngine", "dtln");
+        localUserStore.setNoiseSuppressionEnabled(false);
+
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(false);
+    });
+
+    it("does not read an unknown stored provider or engine as a choice", () => {
+        localStorage.setItem("noiseSuppressionProvider", "something");
+        localStorage.setItem("noiseSuppressionEngine", "something");
+
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(NOISE_SUPPRESSION_ENABLED_DEFAULT);
+    });
+
+    it("falls to the default when the stored value is neither true nor false", () => {
+        localStorage.setItem("noiseSuppressionEnabled", "yes");
+
+        expect(localUserStore.getNoiseSuppressionEnabled()).toBe(NOISE_SUPPRESSION_ENABLED_DEFAULT);
     });
 
     it("keeps advanced noise suppression off when explicitly disabled", () => {
