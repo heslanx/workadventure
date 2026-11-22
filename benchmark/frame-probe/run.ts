@@ -1,4 +1,4 @@
-// The entry point: npx tsx frame-probe/run.ts <frames|compare|panel> <room url> [options]    (from benchmark/)
+// The entry point: npx tsx frame-probe/run.ts <frames|compare|panel|gate1> <room url> [options]    (from benchmark/)
 import { main } from "./cli";
 
 main(process.argv.slice(2)).then(

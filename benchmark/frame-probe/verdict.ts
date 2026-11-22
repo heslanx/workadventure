@@ -214,8 +214,10 @@ export function evaluateBudgets(summaries: readonly ConditionSummary[], budgets:
             view: budget.view,
             scope: budget.scope,
             raw: budget.raw,
-            read: (summary) => summary.median[budget.metric],
-            describe: (actual) => `median ${round(actual)} against at most ${budget.limit}`,
+            read: (summary) =>
+                budget.metric.endsWith(".max") ? summary.max[budget.metric] : summary.median[budget.metric],
+            describe: (actual) =>
+                `${budget.metric.endsWith(".max") ? "worst" : "median"} ${round(actual)} against at most ${budget.limit}`,
             holds: (actual) => actual <= budget.limit,
         }),
     );
@@ -360,6 +362,9 @@ function invalidRunReasons(input: JudgeInput): string[] {
                     `${label}: the wheel did not zoom out (scale ${zoom.defaultScale} before, ${zoom.wholeMapScale} after)`,
                 );
             }
+        }
+        if (input.renderer === "gpu" && ["unknown", ""].includes(run.measurement.renderer)) {
+            reasons.push(`${label}: the GPU renderer could not be identified`);
         }
         if (input.renderer === "gpu" && !input.allowSoftwareRenderer && isSoftwareRenderer(run.measurement.renderer)) {
             reasons.push(

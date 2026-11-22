@@ -20,6 +20,11 @@ export interface Condition {
  * (`--budget=work.p95=16.7@default`). A metric that was not measured is null, never zero.
  */
 export const METRIC_NAMES = [
+    "frame.avg",
+    "frame.p50",
+    "frame.p95",
+    "frame.p99",
+    "frame.max",
     "work.avg",
     "work.p50",
     "work.p95",

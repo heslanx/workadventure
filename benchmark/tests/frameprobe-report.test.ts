@@ -270,10 +270,10 @@ describe("the report", () => {
         );
         expect(markdown).toContain("## Default zoom");
         expect(markdown).toContain(
-            "| Effects | Detail budget | Runs | Work p50 ms | Work p95 ms (runs) | Step p95 ms | Render p95 ms | Interval p95 ms | GPU p95 ms | Frames | Long tasks | Longest ms | Name tags shown / in DOM | Received KiB/s p50 / p95 |",
+            "| Effects | Detail budget | Runs | Work p50 ms | Work p95 ms (runs) | Step p95 ms | Render p95 ms | Interval p95 ms | GPU p95 ms | Frame avg / p99 / max ms | Work avg / p99 / max ms | GPU avg / p99 / max ms | Frames | Long tasks | Longest ms | Name tags shown / in DOM | Received KiB/s p50 / p95 |",
         );
         expect(markdown).toContain(
-            "| on | off | 3 | 7.4 | 8.5 (8.4 to 8.6) | 5.2 | 2.3 | 16.7 | n/a | 900 | 0 | 0 | 114 / 114 | 20.5 / 31.2 |",
+            "| on | off | 3 | 7.4 | 8.5 (8.4 to 8.6) | 5.2 | 2.3 | 16.7 | n/a | n/a / n/a / n/a | n/a / n/a / n/a | n/a / n/a / n/a | 900 | 0 | 0 | 114 / 114 | 20.5 / 31.2 |",
         );
         expect(markdown).not.toContain("## Whole map");
     });
@@ -310,7 +310,9 @@ describe("the report", () => {
         );
 
         expect(markdown).not.toContain("GPU time: n/a");
-        expect(markdown).toContain("| on | off | 1 | n/a | 8 | n/a | n/a | n/a | 4.2 | 1500 |");
+        expect(markdown).toContain(
+            "| on | off | 1 | n/a | 8 | n/a | n/a | n/a | 4.2 | n/a / n/a / n/a | n/a / n/a / n/a | n/a / n/a / n/a | 1500 |",
+        );
     });
 
     it("records the expectations of the run in its configuration, and judges them", () => {

@@ -19,8 +19,11 @@ Commands
   compare <room url>   Walks the entry and the settings and saves one screenshot per step; with --reference-url it
                        walks the reference too and saves each step side by side.
   panel <room url>     The side panel pass: arrival by width, Escape, focus return, the people and chat buttons.
+  gate1 <room url>     Gate 1 of the mandate, from one command: 999 synthetic moving players in the room (spawned inside
+                       the page, no bots needed), 300 frames in day and 300 in night while the camera pans, judged on
+                       GPU time: avg <= 11.0 ms, p99 <= 15.5 ms, max <= 16.7 ms, and 0 full-map texture uploads.
 
-The bots are not started by this tool. Start them first (benchmark/scripts/load-staircase.sh) on the same room and
+The bots are not started by this tool (gate1 needs none: its crowd is made inside the page). For frames, start them first (benchmark/scripts/load-staircase.sh) on the same room and
 keep them running for as long as "frames --dry-run" says.
 
 Options for every command
@@ -61,6 +64,15 @@ Options for compare
 
 Options for panel
   --viewports=WxH,...      Default 1440x900,1000x800,768x1024,360x780
+
+Options for gate1
+  --settle-seconds=10      Wait after the crowd entered, for the avatar builds and bakes, before the first window
+  --name=Probe             Guest name
+  The viewport is fixed at 1920x1080, the size the gate is defined at; it needs a real GPU and a browser that offers a
+  GPU timer query. Open the room at a URL whose client has window.e2eHooks (any Koncluí build).
+
+Exit codes (gate1): 0 every limit held in day and in night, 1 a limit was exceeded, 2 the run cannot be judged (software
+renderer, no GPU timer, a crowd that did not enter, fewer than 300 frames or 90% GPU samples, no post pass) or failed.
 
 Exit codes (frames): 0 every budget held (or none was given), 1 a budget was exceeded, 2 the measurement cannot be
 trusted (a run failed, a recording was cut, a software renderer, an expected crowd that is not there, a metric no run
@@ -122,7 +134,16 @@ export interface PanelConfig {
     readonly viewports: readonly Viewport[];
 }
 
-export type ProbeConfig = FramesConfig | CompareConfig | PanelConfig;
+export interface Gate1Config {
+    readonly command: "gate1";
+    readonly url: string;
+    readonly browser: BrowserOptions;
+    readonly outDir: string | undefined;
+    readonly settleSeconds: number;
+    readonly name: string;
+}
+
+export type ProbeConfig = FramesConfig | CompareConfig | PanelConfig | Gate1Config;
 
 export interface ParseEnvironment {
     readonly platform: string;
@@ -155,6 +176,7 @@ const ALLOWED_FLAGS: Record<ProbeConfig["command"], readonly string[]> = {
     ],
     compare: [...COMMON_FLAGS, "reference-url", "viewports"],
     panel: [...COMMON_FLAGS, "viewports"],
+    gate1: [...COMMON_FLAGS, "settle-seconds", "name"],
 };
 const BOOLEAN_FLAGS = ["allow-software-renderer", "screenshots", "dry-run"];
 
@@ -257,8 +279,8 @@ function roomUrl(text: string | undefined, what: string): string {
 /** Reads the command line. Throws UsageError for anything it does not understand: a typo must not become a default. */
 export function parseArgs(argv: readonly string[], environment: ParseEnvironment): ProbeConfig {
     const [command, ...rest] = argv;
-    if (command !== "frames" && command !== "compare" && command !== "panel") {
-        throw new UsageError(`the first argument must be frames, compare or panel (got "${command ?? ""}")`);
+    if (command !== "frames" && command !== "compare" && command !== "panel" && command !== "gate1") {
+        throw new UsageError(`the first argument must be frames, compare, panel or gate1 (got "${command ?? ""}")`);
     }
     const raw = splitArguments(rest, ALLOWED_FLAGS[command]);
     if (raw.positionals.length > 1) {
@@ -277,6 +299,16 @@ export function parseArgs(argv: readonly string[], environment: ParseEnvironment
             browser,
             outDir,
             viewports: viewports(raw, "1451x855"),
+        };
+    }
+    if (command === "gate1") {
+        return {
+            command,
+            url,
+            browser,
+            outDir,
+            settleSeconds: number(raw, "settle-seconds", 10, 0),
+            name: last(raw, "name") ?? "Probe",
         };
     }
     if (command === "panel") {

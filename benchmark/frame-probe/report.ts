@@ -132,6 +132,21 @@ const COLUMNS: readonly { readonly title: string; readonly cell: (summary: Condi
     { title: "Render p95 ms", cell: (summary) => median(summary, "render.p95") },
     { title: "Interval p95 ms", cell: (summary) => median(summary, "interval.p95") },
     { title: "GPU p95 ms", cell: (summary) => median(summary, "gpu.p95") },
+    {
+        title: "Frame avg / p99 / max ms",
+        cell: (summary) =>
+            `${median(summary, "frame.avg")} / ${median(summary, "frame.p99")} / ${formatNumber(summary.max["frame.max"])}`,
+    },
+    {
+        title: "Work avg / p99 / max ms",
+        cell: (summary) =>
+            `${median(summary, "work.avg")} / ${median(summary, "work.p99")} / ${formatNumber(summary.max["work.max"])}`,
+    },
+    {
+        title: "GPU avg / p99 / max ms",
+        cell: (summary) =>
+            `${median(summary, "gpu.avg")} / ${median(summary, "gpu.p99")} / ${formatNumber(summary.max["gpu.max"])}`,
+    },
     { title: "Frames", cell: (summary) => median(summary, "frames") },
     { title: "Long tasks", cell: (summary) => median(summary, "longTasks.count") },
     { title: "Longest ms", cell: (summary) => median(summary, "longTasks.maxMs") },
@@ -187,7 +202,7 @@ export function renderMarkdown(report: FrameProbeReport): string {
         "# Frame probe",
         "",
         `Started ${report.startedAt}. Room ${config.url}. Viewport ${config.viewport.width}x${config.viewport.height}, ` +
-            `${config.runs} rounds, the figure of each condition is the median of its runs.`,
+            `${config.runs} rounds, each condition shows the median across runs. Maximum frame, work and GPU times use the worst run.`,
         `Browser ${environment.browserVersion} on ${environment.platform}. ` +
             `Renderer ${environment.renderers.join(", ") || "unknown"} (${environment.gpu ? "GPU" : "not a GPU"}).`,
         "",

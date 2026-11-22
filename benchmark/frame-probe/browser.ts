@@ -34,6 +34,7 @@ const DETAIL_BUDGET_KEY = "avatarDetailBudget";
 const SCALE_BASELINE = 1000;
 
 interface ProbeHooks {
+    getRendererInfo?(): { renderer: string };
     startFrameRecording(): void;
     stopFrameRecording(): unknown;
     gameToBrowserCoordinates(point: Point, options?: { timeoutMs?: number }): Promise<Point>;
@@ -167,6 +168,8 @@ async function assertFlagsApplied(page: Page, run: ScheduledRun): Promise<void> 
 
 async function readRenderer(page: Page): Promise<string> {
     return page.evaluate(() => {
+        const actual = (window as ProbeWindow).e2eHooks?.getRendererInfo?.();
+        if (actual) return actual.renderer;
         const gl = document.createElement("canvas").getContext("webgl");
         const info = gl?.getExtension("WEBGL_debug_renderer_info");
         return gl !== null && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unknown";

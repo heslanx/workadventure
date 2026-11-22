@@ -7,6 +7,7 @@ import {
     USAGE,
     type CompareConfig,
     type FramesConfig,
+    type Gate1Config,
     type PanelConfig,
     type ParseEnvironment,
 } from "./args";
@@ -36,6 +37,7 @@ export interface CliDependencies {
     readonly createMeasurer: (config: FramesConfig, screenshotDir: string | undefined) => Promise<Measurer>;
     readonly runCompare: (config: CompareConfig, outDir: string, log: (line: string) => void) => Promise<number>;
     readonly runPanel: (config: PanelConfig, outDir: string, log: (line: string) => void) => Promise<number>;
+    readonly runGate1: (config: Gate1Config, outDir: string, log: (line: string) => void) => Promise<number>;
 }
 
 export function defaultDependencies(): CliDependencies {
@@ -53,6 +55,7 @@ export function defaultDependencies(): CliDependencies {
         },
         runCompare: async (config, outDir, log) => (await import("./compare")).runCompare(config, outDir, log),
         runPanel: async (config, outDir, log) => (await import("./panel")).runPanel(config, outDir, log),
+        runGate1: async (config, outDir, log) => (await import("./gate1Browser")).runGate1(config, outDir, log),
     };
 }
 
@@ -190,8 +193,11 @@ export async function main(argv: readonly string[], deps: CliDependencies = defa
         const outDir =
             config.outDir ?? join(deps.temporaryDirectory(), `frame-probe-${config.command}-${stamp(deps.now())}`);
         deps.makeDirectory(outDir);
-        return config.command === "compare"
-            ? await deps.runCompare(config, outDir, deps.log)
+        if (config.command === "compare") {
+            return await deps.runCompare(config, outDir, deps.log);
+        }
+        return config.command === "gate1"
+            ? await deps.runGate1(config, outDir, deps.log)
             : await deps.runPanel(config, outDir, deps.log);
     } catch (error: unknown) {
         deps.error(error instanceof Error ? error.message : String(error));

@@ -139,6 +139,11 @@ export function phaseMeasurement({ recording, longTasks, nameTags, ws }: PhaseIn
         gpuNote,
         metrics: {
             ...emptyMetrics(),
+            "frame.avg": recording.frames > 1 ? (recording.intervalMs.avg ?? null) : null,
+            "frame.p50": recording.frames > 1 ? recording.intervalMs.p50 : null,
+            "frame.p95": recording.frames > 1 ? recording.intervalMs.p95 : null,
+            "frame.p99": recording.frames > 1 ? recording.intervalMs.p99 : null,
+            "frame.max": recording.frames > 1 ? recording.intervalMs.max : null,
             "work.avg": recording.workMs.avg ?? null,
             "work.p50": recording.workMs.p50,
             "work.p95": recording.workMs.p95,

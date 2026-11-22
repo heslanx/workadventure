@@ -99,7 +99,7 @@ describe("the command line", () => {
         [["frames", "not-a-url"], /not an http\(s\) URL/],
         [["frames"], /needs the room URL/],
         [["frames", ROOM, "extra"], /expected one room URL/],
-        [["measure", ROOM], /must be frames, compare or panel/],
+        [["measure", ROOM], /must be frames, compare, panel or gate1/],
         [["panel", ROOM, "--runs=3"], /unknown option --runs/],
     ])("refuses %j instead of falling back to a default", (argv, message) => {
         expect(() => parseArgs(argv, MAC)).toThrow(UsageError);
@@ -231,6 +231,7 @@ function harness(measure: (run: ScheduledRun) => SessionMeasurement): Harness {
             },
             runCompare: () => Promise.resolve(0),
             runPanel: () => Promise.resolve(0),
+            runGate1: () => Promise.resolve(0),
         },
     };
 }

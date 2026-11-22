@@ -33,19 +33,19 @@ Accepted room sessions and open sockets are counted separately. The bot answers 
 
 The defaults reproduce the baseline runs: every bot walks the same ellipse at `--move-hz`, with a 640 x 400 viewport,
 and never joins the world space. The flags below change the load without changing that default, so old numbers stay
-comparable. Everything that picks a bot (path, walker, world-space role) depends only on its *global* index, the
+comparable. Everything that picks a bot (path, walker, world-space role) depends only on its _global_ index, the
 session index plus `--index-offset`, so the same bot behaves the same in any process.
 
-| Flag | Default | Meaning |
-|---|---|---|
-| `--viewport` | `bot` | What the camera reports to the pusher: `bot` is the 640 x 400 box of the baselines; `browser` is a 960 x 540 canvas plus the 300 px margin the client adds on each side, clipped to the 2752 x 1792 map; `zoomout` is the whole map |
-| `--pattern` | `ellipse` | `ellipse` is the baseline path (736 x 545 px around (1056, 745)); `ring` a 300 px circle around the same centre, 36 px per move; `plaza` laps of the Plateia rectangle (192, 416, 416 x 544) on four lanes; `walk-stop` stop and go over the whole floor: 12 moves to the next stop, then 5 to 30 silent ticks, the last move of a leg carrying `moving=false` |
-| `--moving-fraction` | `1` | Share of the bots that walk. The others join, report their viewport and send nothing. The selection is spread evenly over any run of consecutive indexes: 20% of 250 bots is 50 +- 2 |
-| `--world-space` | `0` | Share of the bots (`0`..`1`, also `on`/`off`) that subscribe to the user list of the `allWorldUser` space. Joining and subscribing are what `GameScene` and `Space` send: a `joinSpaceQuery` (ALL_USERS, `availabilityStatus` and `chatID`), then an `addSpaceFilterMessage` once it is answered |
-| `--world-members` | `1` when `--world-space` is above 0, else `0` | Share of the bots that join the space. The watchers are part of it, so it cannot be lower than `--world-space`. `--world-members=1` alone measures members that never subscribe to the roster |
-| `--index-offset` | `0` | Added to every session index for the name (`<prefix>-<global index>`), the path and the roles. Give each generator process its own range |
-| `--steady-window` | `0` (whole run) | Seconds at the end of the run that traffic, delivery, latency and the per-type bytes cover. Must fit after the ramp: at most duration minus ramp |
-| `--metrics-urls` | none | Comma-separated Prometheus `/metrics` URLs, scraped when the window starts (or at the start of the run), every 5 s and once more at the stop |
+| Flag                | Default                                       | Meaning                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--viewport`        | `bot`                                         | What the camera reports to the pusher: `bot` is the 640 x 400 box of the baselines; `browser` is a 960 x 540 canvas plus the 300 px margin the client adds on each side, clipped to the 2752 x 1792 map; `zoomout` is the whole map                                                                                                                            |
+| `--pattern`         | `ellipse`                                     | `ellipse` is the baseline path (736 x 545 px around (1056, 745)); `ring` a 300 px circle around the same centre, 36 px per move; `plaza` laps of the Plateia rectangle (192, 416, 416 x 544) on four lanes; `walk-stop` stop and go over the whole floor: 12 moves to the next stop, then 5 to 30 silent ticks, the last move of a leg carrying `moving=false` |
+| `--moving-fraction` | `1`                                           | Share of the bots that walk. The others join, report their viewport and send nothing. The selection is spread evenly over any run of consecutive indexes: 20% of 250 bots is 50 +- 2                                                                                                                                                                           |
+| `--world-space`     | `0`                                           | Share of the bots (`0`..`1`, also `on`/`off`) that subscribe to the user list of the `allWorldUser` space. Joining and subscribing are what `GameScene` and `Space` send: a `joinSpaceQuery` (ALL_USERS, `availabilityStatus` and `chatID`), then an `addSpaceFilterMessage` once it is answered                                                               |
+| `--world-members`   | `1` when `--world-space` is above 0, else `0` | Share of the bots that join the space. The watchers are part of it, so it cannot be lower than `--world-space`. `--world-members=1` alone measures members that never subscribe to the roster                                                                                                                                                                  |
+| `--index-offset`    | `0`                                           | Added to every session index for the name (`<prefix>-<global index>`), the path and the roles. Give each generator process its own range                                                                                                                                                                                                                       |
+| `--steady-window`   | `0` (whole run)                               | Seconds at the end of the run that traffic, delivery, latency and the per-type bytes cover. Must fit after the ramp: at most duration minus ramp                                                                                                                                                                                                               |
+| `--metrics-urls`    | none                                          | Comma-separated Prometheus `/metrics` URLs, scraped when the window starts (or at the start of the run), every 5 s and once more at the stop                                                                                                                                                                                                                   |
 
 A pattern is a pure function of the global index and the step, so the probe can recompute it. `ring` and `plaza`
 repeat exactly after 52 and 54 moves and the probe looks back one move fewer than that (a move delayed by a whole lap,
@@ -67,26 +67,26 @@ npm start -- \
 
 Every flag is also an environment variable (`--ramp-seconds` is `WA_RAMP_SECONDS`); flags win.
 
-| Flag | Default | Meaning |
-|---|---|---|
-| `--pusher-url` | required | http(s) base URL of the play/pusher service |
-| `--ws-url` | `--pusher-url` | WebSocket base URL when it differs (http→ws is applied automatically) |
-| `--room-urls` | required | Comma-separated room URLs; session `i` joins room `i mod rooms` |
-| `--sessions` | required | Number of sessions to start |
-| `--ramp-seconds` | `10` | Session `i` starts at `i × ramp / sessions` |
-| `--duration-seconds` | `60` | Total run time, ramp included. Shorter than the ramp stops mid-ramp |
-| `--move-hz` | `1` | Movement messages per second per accepted session, `0` for idle |
-| `--join-timeout-seconds` | `30` | Not joined in time counts as rejected (`join_timeout`) |
-| `--close-timeout-seconds` | `5` | A socket that does not close in time is terminated |
-| `--auth` | `anonymous` | `anonymous` or `none` |
-| `--api-version` | `apiVersionHash` of this checkout | Must equal the pusher's `apiVersionHash`, else it answers `NEW_VERSION` |
-| `--character-texture` | `male1` | Woka texture id |
-| `--name-prefix` | `bot` | Player name is `<prefix>-<index>` |
-| `--disconnect-fraction` | `0` | Share of sessions (lowest indexes) that leave early; one not started by then never starts |
-| `--disconnect-at-seconds` | half the duration | When they leave |
-| `--probe-observers` | `20` | Sessions after the early leavers that record move delivery; `0` turns the probe off |
-| `--min-accepted` | `1` | Fewer accepted sessions makes the run invalid |
-| `--output` | none | Also write the JSON summary to this file |
+| Flag                      | Default                           | Meaning                                                                                   |
+| ------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------- |
+| `--pusher-url`            | required                          | http(s) base URL of the play/pusher service                                               |
+| `--ws-url`                | `--pusher-url`                    | WebSocket base URL when it differs (http→ws is applied automatically)                     |
+| `--room-urls`             | required                          | Comma-separated room URLs; session `i` joins room `i mod rooms`                           |
+| `--sessions`              | required                          | Number of sessions to start                                                               |
+| `--ramp-seconds`          | `10`                              | Session `i` starts at `i × ramp / sessions`                                               |
+| `--duration-seconds`      | `60`                              | Total run time, ramp included. Shorter than the ramp stops mid-ramp                       |
+| `--move-hz`               | `1`                               | Movement messages per second per accepted session, `0` for idle                           |
+| `--join-timeout-seconds`  | `30`                              | Not joined in time counts as rejected (`join_timeout`)                                    |
+| `--close-timeout-seconds` | `5`                               | A socket that does not close in time is terminated                                        |
+| `--auth`                  | `anonymous`                       | `anonymous` or `none`                                                                     |
+| `--api-version`           | `apiVersionHash` of this checkout | Must equal the pusher's `apiVersionHash`, else it answers `NEW_VERSION`                   |
+| `--character-texture`     | `male1`                           | Woka texture id                                                                           |
+| `--name-prefix`           | `bot`                             | Player name is `<prefix>-<index>`                                                         |
+| `--disconnect-fraction`   | `0`                               | Share of sessions (lowest indexes) that leave early; one not started by then never starts |
+| `--disconnect-at-seconds` | half the duration                 | When they leave                                                                           |
+| `--probe-observers`       | `20`                              | Sessions after the early leavers that record move delivery; `0` turns the probe off       |
+| `--min-accepted`          | `1`                               | Fewer accepted sessions makes the run invalid                                             |
+| `--output`                | none                              | Also write the JSON summary to this file                                                  |
 
 `SIGINT`/`SIGTERM` stop the run early; the summary is still printed after every socket and timer is released
 (`stopReason: "aborted"`, covered by a test that interrupts the CLI process).
@@ -215,10 +215,10 @@ protocol version the pusher accepts. Nothing is published on the host.
 
 `ci/load-run.env` holds what runs, and a value in the environment wins over it:
 
-| Step                      | What it is                                                                                                                                                                              |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `calibration`             | The procedure of the workstation baseline (every bot walks, one generator process, 60 s, statistics over the whole run), to tell the host from the workstation.                         |
-| `budget-off`, `budget-on` | The staircase with the defaults of the code and with `PUSHER_VIEWER_BUDGET_ENABLED=true`. The two scenarios of a level run side by side, and the one that goes first alternates.        |
+| Step                      | What it is                                                                                                                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `calibration`             | The procedure of the workstation baseline (every bot walks, one generator process, 60 s, statistics over the whole run), to tell the host from the workstation.                          |
+| `budget-off`, `budget-on` | The staircase with the defaults of the code and with `PUSHER_VIEWER_BUDGET_ENABLED=true`. The two scenarios of a level run side by side, and the one that goes first alternates.         |
 | `profile`                 | One more level with a CPU profile of the pusher inside the steady window (`scripts/inspector-profile.mjs`, summarized by `scripts/profile-summary.mjs`). Its numbers carry the profiler. |
 
 Read the result with three cautions:
@@ -297,11 +297,11 @@ laid out), so the count is the crowd at the end of the phase. The whole matrix r
 starting one condition later than the last, and the figure of a condition is the median of its runs, with the lowest and
 highest beside it. The first failed session stops the run.
 
-| Phase (`@view`) | What it covers |
-|---|---|
-| `default` | The recording at the default zoom |
-| `zoom` | From the first wheel event to the end of `--zoom-window-seconds`: the avatar rebuilds the zoom causes are its frames, and its long tasks are the "2 s after the zoom" |
-| `wholeMap` | The recording at the whole-map zoom, after the scale settled |
+| Phase (`@view`) | What it covers                                                                                                                                                        |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default`       | The recording at the default zoom                                                                                                                                     |
+| `zoom`          | From the first wheel event to the end of `--zoom-window-seconds`: the avatar rebuilds the zoom causes are its frames, and its long tasks are the "2 s after the zoom" |
+| `wholeMap`      | The recording at the whole-map zoom, after the scale settled                                                                                                          |
 
 Each phase reports `work`, `step` and `render` p50 and p95 (the recorder's definitions; `work` is the series a budget is
 judged on), `interval` p95, frames, long tasks (count, longest, total, from a page observer, in that phase's window), name
@@ -336,11 +336,11 @@ is the neighbourhood, not the crowd; at the whole-map zoom the viewport is the m
 bots plus one. Put the minimum on `@wholeMap` (the bots, so one of slack) or, with `--views=default`, on a count you saw
 in a run.
 
-| Exit code | Meaning |
-|---|---|
-| 0 | Every budget held, or none was given |
-| 1 | A budget was exceeded |
-| 2 | The measurement cannot be trusted, or the arguments are wrong: a session failed, the run stopped early, a recording outgrew its buffer or has no frame, the wheel did not zoom out, the renderer is software, an expected crowd is not there, or a budget names something nobody measured. Never read as a pass |
+| Exit code | Meaning                                                                                                                                                                                                                                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0         | Every budget held, or none was given                                                                                                                                                                                                                                                                            |
+| 1         | A budget was exceeded                                                                                                                                                                                                                                                                                           |
+| 2         | The measurement cannot be trusted, or the arguments are wrong: a session failed, the run stopped early, a recording outgrew its buffer or has no frame, the wheel did not zoom out, the renderer is software, an expected crowd is not there, or a budget names something nobody measured. Never read as a pass |
 
 `--out-dir` (default: a new folder under the system temp directory) receives `frame-probe.json` (schema version 1: the
 runs, the summaries and the verdict) and `frame-probe.md` (the summary, also printed). `--screenshots` adds a PNG at the end
@@ -388,6 +388,73 @@ session read low, and `--expect-at-least` turns it into an invalid run.
 The generator and the browser share the machine, so read `generator.cpuPercentOfOneCore` of the staircase's `gen-0.json`
 next to the report: a saturated generator or a loaded machine makes the numbers indicative only.
 
+**Gate 1 of the mandate (999 players, GPU time).** `gate1` is the client frame gate of
+`.local/konclui/MANDATE-2026-11-21.md`, from one command, against one URL. It needs no bots: the crowd is made inside the
+page by `window.e2eHooks.spawnSyntheticCrowd(999)` (`play/src/front/Utils/SyntheticCrowd.ts`), which joins 999 remote
+players through the repository a real join uses (so culling, the detail budget, the build queue and the avatar bake all
+run), in four groups (near the glass, under the lights, across room borders, spread over the map), each walking 5 moves a
+second on a path fixed by its index.
+
+```bash
+cd benchmark
+npx tsx frame-probe/run.ts gate1 "http://127.0.0.1:3010/~/konclui-office/office.wam" --out-dir=../.local/konclui/qa/gate1
+```
+
+It opens Chromium on the GPU (Metal on macOS) at 1920x1080, with WebGL 2 forced (`?phaserMode=webgl2`), and turns on the
+default-off engine flags in localStorage before the page loads: `konclui.e2e.bench` (opens the page to the crowd),
+`avatarDetailBudget`, `avatarZeroWork`, `avatarBake` and `konclui.fx.rim`. Then: enter as a guest, spawn 999, settle
+`--settle-seconds` (10), and for each of three windows set the hour (`setBenchNight(level)`, the effects' `konclui.fx.hour`
+QA key, which they re-read once a second: the probe waits 2 s) and capture 300 consecutive frames with `captureFrameBench()`
+while `panCamera` swings the view out and back. At the end it clears the crowd and the fixed hour, whatever happened.
+
+**Requires the `?phaserMode=webgl2` case of `play/src/front/Components/App.svelte`.** It is an uncommitted change outside the
+probe's files: without it the client throws "phaserMode parameter must be one of ..." at start and never shows the room. The
+probe names that error when it sees it, and a client that drops the query parameter in a redirect shows as "a WebGL 2
+context is required" (`gate1.json` records the final URL). Land the change with the gate.
+
+The three windows:
+
+| Window | `setBenchNight` | What it is                                                                                                                                                                                                                  |
+| ------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| day    | 0               | The plain day (hour 12)                                                                                                                                                                                                     |
+| dusk   | 0.85            | The mandate's literal "night 0.85": the lamps factor of a dusk look (hour 17.85). The effects switch their night-only lights on at lamps 0.9, so these lights are **off** here and this window is lighter than a real night |
+| night  | 1               | The full night (hour 19.3), night-only lights **on**                                                                                                                                                                        |
+
+Each window is judged on `getFrameBench()` with the limits of the mandate: GPU time from the disjoint timer query
+`avgGpuMs <= 11.0`, `p99GpuMs <= 15.5`, `maxGpuMs <= 16.7`, and two upload criteria, both `== 0`. `fullMapUploads` is the
+mandate's: texImage2D or texSubImage2D calls whose width and height are both at least the map's. It cannot see the mirror of
+this tree, which is the map wide and 128 px per glass row high (2752 x 384 for the konclui-office, 4.2 MB), so
+`largeUploads` is judged beside it: calls that hand the GPU 1 MiB or more of CPU data, whatever their shape (the occlusion
+canvas, half the map, is 4.9 MB). The largest single upload is in the report. A `texImage2D` with no data (Phaser allocating
+a render target) moves no CPU data: it is counted as an `allocation`, shown, and not judged. Frame intervals, upload bytes a
+second and the full, dot and culled avatar counts are in the report and do not decide it.
+
+| Exit | Meaning                                                                            |
+| ---- | ---------------------------------------------------------------------------------- |
+| 0    | All fifteen criteria held (five in each of three windows)                          |
+| 1    | A criterion was exceeded; the run was valid                                        |
+| 2    | The run cannot be judged, or failed (the report is still written, with the reason) |
+
+An exit 2 is, in order of likelihood on a first run: no GPU timer (`gpuTimer none`: headless Chromium may not expose
+`EXT_disjoint_timer_query_webgl2`, which is a fact about the browser and not a defect of the code); a software renderer or an
+unnamed GPU; no WebGL 2 context; a drawing buffer below 1920x1080 in either dimension; fewer than 90% of the frames with a
+GPU sample; a window of other than 300 frames; fewer than 999 players in the scene; **a crowd group that fell back to
+spread placement** (the map's `fx/manifest.json` is missing, or has no glass face, light or room) or an avatar of fewer than
+two layers; **the post pass `KfxPost` active in fewer than 95% of a window's rendered frames** (it switches itself off in a
+plain day with nobody mirrored and no room locked, and a frame without it is lighter than the lit scene the gate names; the
+share is in the report); the night-only lights in the wrong state for a window; a pan, a capture of 301 game steps that did not
+complete in 60 s (a hidden tab), or any page error.
+
+`--out-dir` receives `gate1.json` (the gate, the verdict, every criterion, every window, the crowd's groups, the flags the page
+ran with and the URL it ended on), `gate1.md` (the same, as tables, also printed), and `day.png`, `dusk.png` and `night.png`
+taken after each window. A number from a run is a GPU number only if `gpuTimer` says `webgl2` and the renderer is the GPU
+named in the report; the GPU window trails the frame window by at most the query pool (8 frames), and the browser may
+coarsen timer queries.
+
+```bash
+npm test -- tests/frameprobe-gate1.test.ts     # parsing the page's shape, the judge, the sequence on a canned session, the command
+```
+
 **Screenshot passes.** The same entry flow drives the two QA walkthroughs, reproducible from git:
 
 ```bash
@@ -407,6 +474,9 @@ npm test -- tests/frameprobe-verdict.test.ts   # budget grammar, medians against
 npm test -- tests/frameprobe-report.test.ts    # schedule, estimate, median of runs, report shape and Markdown
 npm test -- tests/frameprobe-cli.test.ts       # the command line, and the gate end to end with a canned browser
 ```
+
+The report shape the page returns is also tested from the page's side, with the real recorder and the real bench on a
+fake GL (`play/tests/front/Utils/FrameProbeContract.test.ts`, run from `play/`), so the two sides cannot drift apart.
 
 The tests run without a browser: the page is stood in for by canned sessions, so nothing here proves a selector or a wheel
 event works. That is checked by running the probe.
