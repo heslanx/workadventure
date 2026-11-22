@@ -24,7 +24,11 @@ const FRAME_MS = 16;
 // The camera pass the effects add, and its uniforms source: a draw of the scene asks it for its uniforms.
 const camera = vi.hoisted(() => ({
     passes: [] as { active: boolean }[],
+    posts: [] as { place(): void }[],
     sources: [] as { postUniforms(): Record<string, unknown> }[],
+    /** How many times the pass was added to, and taken off, each of the camera's lists. */
+    added: { internal: 0, external: 0 },
+    removed: { internal: 0, external: 0 },
 }));
 vi.mock("./postFilter", async (importOriginal) => {
     const actual = await importOriginal<typeof PostFilter>();
@@ -32,9 +36,10 @@ vi.mock("./postFilter", async (importOriginal) => {
         ...actual,
         addPostFilter: (...args: Parameters<typeof actual.addPostFilter>) => {
             camera.sources.push(args[2]);
-            const pass = actual.addPostFilter(...args);
-            camera.passes.push(pass);
-            return pass;
+            const post = actual.addPostFilter(...args);
+            camera.passes.push(post.controller);
+            camera.posts.push(post);
+            return post;
         },
     };
 });
@@ -262,6 +267,8 @@ class MeterScene {
     private readonly textureObjects = new Map<string, { key: string }>();
     public readonly renderer = {
         renderNodes: { hasNode: () => true },
+        width: 300,
+        height: 200,
     } as unknown as Phaser.Renderer.WebGL.WebGLRenderer;
     public readonly host: EffectsHost;
     public readonly view = { x: 0, y: 0, width: 300, height: 200 };
@@ -288,14 +295,26 @@ class MeterScene {
         }));
         this.list.push(...layers);
         const view = this.view;
-        const camera = {
+        const mainCamera = {
             worldView: view,
             scrollX: 0,
             scrollY: 0,
             width: 300,
             height: 200,
             zoom: 1,
-            filters: { internal: { add: () => undefined, remove: () => undefined } },
+            x: 0,
+            y: 0,
+            alpha: 1,
+            filters: {
+                internal: {
+                    add: () => (camera.added.internal += 1),
+                    remove: () => (camera.removed.internal += 1),
+                },
+                external: {
+                    add: () => (camera.added.external += 1),
+                    remove: () => (camera.removed.external += 1),
+                },
+            },
         };
         const current = this.current;
         const canvas = document.createElement("canvas");
@@ -331,7 +350,7 @@ class MeterScene {
                 on: (event, listener) => this.listenersOf(event).add(listener),
                 off: (event, listener) => this.listenersOf(event).delete(listener),
             },
-            cameras: { main: camera as unknown as Phaser.Cameras.Scene2D.Camera },
+            cameras: { main: mainCamera as unknown as Phaser.Cameras.Scene2D.Camera },
             game: { canvas },
             MapPlayersByKey: this.players,
             get fullDetailPlayers() {
@@ -797,6 +816,11 @@ beforeEach(() => {
     clock.visited = 0;
     camera.passes.length = 0;
     camera.sources.length = 0;
+    camera.posts.length = 0;
+    camera.added.internal = 0;
+    camera.added.external = 0;
+    camera.removed.internal = 0;
+    camera.removed.external = 0;
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function (this: HTMLCanvasElement) {
         const own = contexts.get(this) ?? new MeterContext();
         contexts.set(this, own);
@@ -950,6 +974,72 @@ describe("the mirror with a crowd of 80 drawn players of 6 layers each at the gl
 
         report("heap bytes per draw, 480 pictures in the mirror", { bytesPerDraw: Math.round(bytes / 240) });
         expect(bytes / 240).toBeLessThan(64);
+    });
+});
+
+describe("the camera pass on the external filter list (konclui.fx.external on)", () => {
+    const KEY = "konclui.fx.external";
+    afterEach(() => localStorage.removeItem(KEY));
+
+    // These tests do not claim a GPU saving, and the meters here cannot show one: the camera of this scene is a double
+    // that only counts what is added to and taken off its lists. What they pin is the CPU side the flag adds to a frame
+    // (the pass is placed once, then left alone) and that the pass never moves between lists on a steady scene. The
+    // saved blit and framebuffer are Phaser's, and only a Gate 1 run in a browser measures them.
+
+    it("puts the pass on the external list once, and a steady frame never moves it", () => {
+        localStorage.setItem(KEY, "1");
+        const built = build(22);
+        expect(camera.added, "flag on: the pass is on the external list only").toEqual({ internal: 0, external: 1 });
+
+        for (let i = 0; i < 1000; i++) frame(built);
+
+        expect(camera.added, "no frame re-adds the pass").toEqual({ internal: 0, external: 1 });
+        expect(camera.removed, "no frame takes it off").toEqual({ internal: 0, external: 0 });
+    });
+
+    it("puts the pass on the internal list only, as before, with the flag off", () => {
+        localStorage.setItem(KEY, "0");
+        const built = build(22);
+        expect(camera.added).toEqual({ internal: 1, external: 0 });
+
+        for (let i = 0; i < 1000; i++) frame(built);
+
+        expect(camera.added).toEqual({ internal: 1, external: 0 });
+        expect(camera.removed).toEqual({ internal: 0, external: 0 });
+    });
+
+    it("places the pass without allocating, on either list", () => {
+        for (const flag of ["0", "1"]) {
+            localStorage.setItem(KEY, flag);
+            build(22);
+            const [post] = camera.posts.slice(-1);
+
+            const bytes = allocatedBytes(() => {
+                for (let i = 0; i < 10_000; i++) post.place();
+            });
+
+            // The profiler samples, so a count of zero is the only figure that does not depend on when the GC ran.
+            expect(bytes / 10_000, `flag ${flag}`).toBeLessThan(1);
+        }
+    });
+
+    it("a steady frame allocates what the budgets above allow with the flag on", () => {
+        localStorage.setItem(KEY, "1");
+        const built = build(22);
+        for (let i = 0; i < 3000; i++) frame(built);
+        built.scene.resetMeters();
+
+        const bytes = allocatedBytes(() => {
+            for (let i = 0; i < 240; i++) frame(built);
+        });
+
+        report("heap bytes per frame, refresh included, camera pass on the external list", {
+            external: Math.round(bytes / 240),
+        });
+        // MEASURED once each, in one run: 76 bytes a frame with the pass on the internal list and 182 on the external. The
+        // placing allocates nothing (the test above), so the gap is the sampler's, not the list's. A comparison of the two
+        // sampled figures failed by chance once, so this bound is a ceiling for a leak and compares nothing.
+        expect(bytes / 240).toBeLessThan(1024);
     });
 });
 

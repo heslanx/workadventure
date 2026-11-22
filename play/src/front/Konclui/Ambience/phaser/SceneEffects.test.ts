@@ -197,9 +197,16 @@ class TestScene {
     private readonly textureObjects = new Map<string, { key: string }>();
     public readonly listeners = new Map<string, Set<() => void>>();
     public readonly offs: [string, () => void][] = [];
+    /** The camera's internal filter list, and the controllers taken off it (with whether each was destroyed). */
     public readonly filters = { list: [] as unknown[], removed: [] as [unknown, boolean][] };
+    /** The same for the external list. */
+    public readonly externalFilters = { list: [] as unknown[], removed: [] as [unknown, boolean][] };
+    /** The camera as the camera node sees it: where it sits, how big it is and how opaque; the canvas is 300 x 200. */
+    public readonly camera = { x: 0, y: 0, width: 300, height: 200, alpha: 1 };
     public readonly renderer = {
         renderNodes: { hasNode: () => true },
+        width: 300,
+        height: 200,
     } as unknown as Phaser.Renderer.WebGL.WebGLRenderer;
     public readonly host: EffectsHost;
     /** The frame every texture answers with (the fields of a Phaser frame the effects read). */
@@ -216,23 +223,21 @@ class TestScene {
     constructor() {
         const layers = ["decor", "doors", "luz", "lock-meeting"].map((name, i) => new TestLayer(name, i + 1));
         this.list.push(...layers);
-        const camera = {
+        const lists = (record: TestScene["filters"]) => ({
+            add: (controller: unknown) => record.list.push(controller),
+            // as Phaser's FilterList.remove: the controller is destroyed unless it ignores destruction or it is forced
+            remove: (controller: { ignoreDestroy: boolean }, forceDestroy = false) => {
+                record.removed.push([controller, forceDestroy || !controller.ignoreDestroy]);
+                record.list = record.list.filter((c) => c !== controller);
+            },
+        });
+        const camera = Object.assign(this.camera, {
             worldView: { x: 0, y: 0, width: 300, height: 200 },
             scrollX: 0,
             scrollY: 0,
-            width: 300,
-            height: 200,
             zoom: 1,
-            filters: {
-                internal: {
-                    add: (controller: unknown) => this.filters.list.push(controller),
-                    remove: (controller: unknown, forceDestroy: boolean) => {
-                        this.filters.removed.push([controller, forceDestroy]);
-                        this.filters.list = this.filters.list.filter((c) => c !== controller);
-                    },
-                },
-            },
-        };
+            filters: { internal: lists(this.filters), external: lists(this.externalFilters) },
+        });
         const current = this.current;
         const canvas = document.createElement("canvas");
         // the page shows the camera's 300 x 200 at its own size, from its top left (jsdom measures every box as 0)
@@ -542,6 +547,143 @@ function release(effects: SceneEffects): void {
     effects.destroy();
     expect(logged).not.toHaveBeenCalled();
 }
+
+describe("the camera pass, on the camera's filter lists", () => {
+    const KEY = "konclui.fx.external";
+    afterEach(() => localStorage.removeItem(KEY));
+
+    /** The controllers on both lists: where the pass is, and whether it is anywhere twice. */
+    function lists(scene: TestScene): { internal: unknown[]; external: unknown[] } {
+        return { internal: scene.filters.list, external: scene.externalFilters.list };
+    }
+
+    it("sits on the internal list alone, as it always has, with the flag unset or off", () => {
+        for (const value of [null, "0"]) {
+            if (value === null) localStorage.removeItem(KEY);
+            else localStorage.setItem(KEY, value);
+            const { scene, effects } = build();
+            const [pass] = scene.filters.list;
+
+            expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+
+            // a camera that no longer fills the canvas changes nothing: only the flag moves the pass
+            scene.camera.x = 20;
+            scene.camera.width = 200;
+            scene.emit(PRE_RENDER);
+            expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+
+            release(effects);
+            expect(scene.filters.removed).toEqual([[pass, true]]);
+            expect(scene.externalFilters.removed).toEqual([]);
+            expect(lists(scene)).toEqual({ internal: [], external: [] });
+        }
+    });
+
+    it("sits on the external list alone with the flag on, and leaves it, destroyed, when the effects are", () => {
+        localStorage.setItem(KEY, "1");
+        const { scene, effects } = build();
+        const [pass] = scene.externalFilters.list;
+
+        expect(pass).toBeDefined();
+        expect(lists(scene)).toEqual({ internal: [], external: [pass] });
+        scene.emit(PRE_RENDER);
+        scene.emit(PRE_RENDER);
+        expect(lists(scene)).toEqual({ internal: [], external: [pass] });
+
+        release(effects);
+
+        expect(scene.externalFilters.removed).toEqual([[pass, true]]);
+        expect(scene.filters.removed).toEqual([]);
+        expect(lists(scene)).toEqual({ internal: [], external: [] });
+    });
+
+    it("reads the flag when the effects are built, not on a later draw", () => {
+        const { scene, effects } = build();
+        const [pass] = scene.filters.list;
+
+        localStorage.setItem(KEY, "1");
+        scene.emit(PRE_RENDER);
+
+        expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+        release(effects);
+    });
+
+    it("gives the build's failure back from the external list too", () => {
+        localStorage.setItem(KEY, "1");
+        const scene = new TestScene();
+        scene.failOn = "container";
+
+        expect(() => construct(scene)).toThrow("container failed");
+
+        expect(lists(scene)).toEqual({ internal: [], external: [] });
+    });
+
+    describe("with the flag on, when the camera does not fill the canvas", () => {
+        beforeEach(() => localStorage.setItem(KEY, "1"));
+
+        // The camera node copies the camera's picture into a canvas-sized context before an external filter when the
+        // camera is off the canvas origin or not its size, and draws a filter straight to the canvas only at alpha 1.
+        it.each([
+            ["is moved right", { x: 20 }],
+            ["is moved down", { y: 20 }],
+            ["is narrower than the canvas", { width: 200 }],
+            ["is shorter than the canvas", { height: 100 }],
+            ["is translucent", { alpha: 0.5 }],
+        ])("keeps the pass on the internal list when the camera %s", (_, geometry) => {
+            const scene = new TestScene();
+            Object.assign(scene.camera, geometry);
+            const { effects } = construct(scene);
+            const [pass] = scene.filters.list;
+
+            expect(pass).toBeDefined();
+            expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+
+            release(effects);
+            expect(scene.filters.removed).toEqual([[pass, true]]);
+            expect(scene.externalFilters.removed).toEqual([]);
+        });
+
+        it("moves the pass between the lists as the camera leaves the canvas and returns, never on both", () => {
+            const { scene, effects } = build();
+            const [pass] = scene.externalFilters.list;
+            const seen = () => lists(scene).internal.length + lists(scene).external.length;
+
+            scene.camera.width = 200; // the window is resized and the camera has not caught up
+            scene.emit(PRE_RENDER);
+            expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+            expect(seen()).toBe(1);
+
+            scene.camera.width = 300;
+            scene.emit(PRE_RENDER);
+            expect(lists(scene)).toEqual({ internal: [], external: [pass] });
+            expect(seen()).toBe(1);
+
+            scene.camera.x = 10;
+            scene.emit(PRE_RENDER);
+            expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+
+            // a move is not a destruction: Phaser's list destroys a controller it drops unless it is told otherwise
+            const moves = [...scene.externalFilters.removed, ...scene.filters.removed];
+            expect(moves).toHaveLength(3);
+            expect(moves.every(([, destroyed]) => !destroyed)).toBe(true);
+
+            release(effects);
+            expect(scene.filters.removed.at(-1)).toEqual([pass, true]);
+            expect(lists(scene)).toEqual({ internal: [], external: [] });
+        });
+
+        it("follows a renderer that is resized, not only the camera", () => {
+            const { scene, effects } = build();
+            const [pass] = scene.externalFilters.list;
+
+            Object.assign(scene.renderer, { width: 600, height: 400 });
+            scene.emit(PRE_RENDER);
+
+            expect(lists(scene)).toEqual({ internal: [pass], external: [] });
+            release(effects);
+        });
+    });
+});
 
 describe("the effects of a scene, when they are destroyed", () => {
     it("take the camera pass off the camera's filter list", () => {

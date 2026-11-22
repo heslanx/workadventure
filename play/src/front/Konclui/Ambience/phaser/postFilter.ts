@@ -3,6 +3,46 @@ import { POST } from "../domain/shaders";
 
 const POST_NODE = "KfxPost";
 
+/**
+ * Whether the camera pass sits on the camera's external filter list, where Phaser 4.2.1 draws the last filter straight
+ * to the canvas (no pooled framebuffer and no closing full-screen blit) while the camera fills the canvas. Off until
+ * Gate 1 measures it on a real run (docs/PERFORMANCE.md): the estimate is 0.05 to 0.2 ms on an M1 Max, unmeasured.
+ * `localStorage["konclui.fx.external"] = "1"` turns it on, "0" off; read once, when the effects are built. A storage
+ * that cannot be read leaves the constant in charge.
+ */
+export const EXTERNAL_POST_FILTER_ENABLED = false;
+export const EXTERNAL_POST_FILTER_STORAGE_KEY = "konclui.fx.external";
+
+let warnedBlockedStorage = false;
+
+/** Lets a test see the blocked-storage warning again: it is said once per page load. */
+export function resetExternalPostFilterStorageWarningForTests(): void {
+    warnedBlockedStorage = false;
+}
+
+/** Whether the camera pass goes on the external list: the constant, unless this browser's storage says "1" or "0". */
+export function isExternalPostFilterEnabled(storage: Pick<Storage, "getItem"> | undefined = globalStorage()): boolean {
+    try {
+        const value = storage?.getItem(EXTERNAL_POST_FILTER_STORAGE_KEY);
+        if (value === "1") return true;
+        if (value === "0") return false;
+    } catch (error: unknown) {
+        if (!warnedBlockedStorage) {
+            warnedBlockedStorage = true;
+            console.warn("The storage is blocked, so the external post filter flag keeps its default", error);
+        }
+    }
+    return EXTERNAL_POST_FILTER_ENABLED;
+}
+
+function globalStorage(): Storage | undefined {
+    try {
+        return typeof localStorage === "undefined" ? undefined : localStorage;
+    } catch {
+        return undefined;
+    }
+}
+
 /** A uniform value as Phaser's program manager takes it. */
 export type UniformValue = number | number[] | readonly number[] | Float32Array;
 
@@ -49,19 +89,85 @@ function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer): void {
     nodes.addNodeConstructor(POST_NODE, PostNode);
 }
 
+/** Which of the camera's two filter lists holds the pass. */
+export type PostFilterList = "internal" | "external";
+
+/** The camera pass and where it sits. */
+export interface PostFilter {
+    readonly controller: Phaser.Filters.Controller;
+    /** The list the pass is on now. */
+    readonly list: PostFilterList;
+    /** Before each draw: with the external list asked for, puts the pass where the camera's geometry allows. */
+    place(): void;
+    /** Takes the pass off its list and destroys it. */
+    remove(): void;
+}
+
 /**
- * The camera pass of the effects: a filter at the end of the camera's internal list, off until `active` is set. The
- * caller removes it from the list when done.
+ * Whether Phaser would draw an external filter straight to the canvas AND hand it the same picture the internal list
+ * does. The camera node (renderNodes/Camera.js) renders the camera into a framebuffer of the camera's size, with its
+ * scroll and zoom already applied (those are in `camera.matrix`, which both lists see). It then copies that picture to a
+ * canvas-sized context before an external filter whenever the camera is not at the canvas origin (`matrixExternal` is
+ * the camera's x and y) or its size is not the canvas's: the filter would then read a canvas-sized texture with the
+ * camera's picture pasted in, so `outTexCoord` would no longer be the camera's own, and the copy is the very blit the
+ * move is meant to save. A camera alpha below 1 also keeps the last filter off the canvas. In all of these the pass
+ * stays on the internal list, whose picture is the camera's own.
+ *
+ * What this does NOT establish: that the pixels are the same. Where the camera fills the canvas both lists hand the
+ * shader the same texture (read from Phaser 4.2.1's Camera.js, not run). But the direct draw skips the closing blit,
+ * with its `alphaStrategy` and tint, and blends the shader's output onto the canvas itself; where the shader writes
+ * alpha below 1 (it writes `vec4(0.0)` on some paths) that can differ from the internal list. Only a pixel comparison
+ * of the day, dusk and night frames, one of them over a translucent or transparent canvas if the app can make one,
+ * settles it (docs/PERFORMANCE.md, Gate 1).
+ */
+function cameraFillsCanvas(
+    renderer: Phaser.Renderer.WebGL.WebGLRenderer,
+    camera: Phaser.Cameras.Scene2D.Camera,
+): boolean {
+    return (
+        camera.x === 0 &&
+        camera.y === 0 &&
+        camera.alpha === 1 &&
+        Math.round(camera.width) === renderer.width &&
+        Math.round(camera.height) === renderer.height
+    );
+}
+
+/**
+ * The camera pass of the effects: a filter on one of the camera's lists, off until `active` is set. The internal list
+ * is today's path. With `external` set the pass goes on the external list while the camera fills the canvas, and moves
+ * back to the internal one whenever it does not (`place`). It is never on both. The caller calls `remove` when done.
  */
 export function addPostFilter(
     renderer: Phaser.Renderer.WebGL.WebGLRenderer,
     camera: Phaser.Cameras.Scene2D.Camera,
     source: PostSource,
-): Phaser.Filters.Controller {
+    external: boolean = isExternalPostFilterEnabled(),
+): PostFilter {
     registerPostNode(renderer);
     const controller = new Phaser.Filters.Controller(camera, POST_NODE);
     sources.set(controller, source);
     controller.active = false;
-    camera.filters.internal.add(controller);
-    return controller;
+    let list: PostFilterList = external && cameraFillsCanvas(renderer, camera) ? "external" : "internal";
+    camera.filters[list].add(controller);
+    return {
+        controller,
+        get list() {
+            return list;
+        },
+        place() {
+            if (!external) return;
+            const wanted: PostFilterList = cameraFillsCanvas(renderer, camera) ? "external" : "internal";
+            if (wanted === list) return;
+            // `remove` destroys a controller unless it ignores destruction: this one is only changing lists.
+            controller.ignoreDestroy = true;
+            camera.filters[list].remove(controller);
+            camera.filters[wanted].add(controller);
+            controller.ignoreDestroy = false;
+            list = wanted;
+        },
+        remove() {
+            camera.filters[list].remove(controller, true);
+        },
+    };
 }

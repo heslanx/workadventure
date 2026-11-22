@@ -10,6 +10,9 @@
 //   post    one camera filter: locked rooms blurred into blocks from outside, avatars mirrored on the polished floor,
 //           pressed grass behind walkers, cloud shadows, daylight and lamps by Brasília's hour, the focus vignette and
 //           the arrival iris
+//           (on the camera's internal filter list; with localStorage "konclui.fx.external" = "1", read at the build, on the
+//           external list while the camera fills the canvas, where Phaser draws the last filter straight to it: off
+//           until a Gate 1 run measures it, see postFilter.ts)
 //   tv      a meeting room's TV shows the K slide (and lights the room at night) while two or more people are in it
 // A draw makes no array and under 64 bytes of heap (asserted, SceneEffects.performance.test.ts), except where a locked
 // room is in view with name tags on the page: hideLabels then reads each tag's place from the page (a DOMRect each, at
@@ -81,7 +84,7 @@ import { GLASS, GROUND, WATER } from "../domain/shaders";
 import { isPlainDay, localHour, lookAt, type Look, type Rgb } from "../domain/timeOfDay";
 import { PlacedSnapshot } from "../domain/placedSnapshot";
 import { Trail, type WalkerId } from "../domain/trail";
-import { addPostFilter, type UniformValue } from "./postFilter";
+import { addPostFilter, type PostFilter, type UniformValue } from "./postFilter";
 import { SceneResources } from "./SceneResources";
 
 /** What the effects read from the page and the user's settings on each use. */
@@ -433,6 +436,7 @@ export class SceneEffects {
     private readonly ground: Phaser.GameObjects.Shader;
     private readonly glass: Phaser.GameObjects.Shader;
     private readonly post: Phaser.Filters.Controller;
+    private readonly postFilter: PostFilter;
 
     // who is drawn: the player and the remote characters the scene draws in full, read each frame
     private readonly drawn: DrawnPeople<number, RemotePlayer>;
@@ -633,13 +637,14 @@ export class SceneEffects {
             this.mirrorTexture.setFilter(Phaser.Textures.FilterMode.NEAREST);
             this.glass = this.buildGlass();
             this.placeAbove(this.mirror, this.glass);
-            this.post = addPostFilter(this.renderer, scene.cameras.main, {
+            this.postFilter = addPostFilter(this.renderer, scene.cameras.main, {
                 postUniforms: () => this.postUniforms(),
                 masksTexture: () => this.texture("masks"),
                 normalsTexture: () => (this.normalsOn > 0 ? this.texture("normal") : null),
             });
-            const post = this.post;
-            this.resources.onRelease(() => this.scene.cameras.main.filters.internal.remove(post, true));
+            this.post = this.postFilter.controller;
+            const postFilter = this.postFilter;
+            this.resources.onRelease(() => postFilter.remove());
             scene.events.on(Phaser.Scenes.Events.PRE_RENDER, this.onPreRender);
             this.refresh(true);
             if (options.reveal) this.startReveal();
@@ -1444,6 +1449,7 @@ export class SceneEffects {
 
     /** Before each draw: the camera pass's state, the mirror's pictures and what shows. Allocates nothing. */
     private frame(): void {
+        this.postFilter.place();
         const now = this.now;
         const view = this.view();
         this.gather();
