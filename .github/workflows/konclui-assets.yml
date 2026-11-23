@@ -13,7 +13,8 @@
 # The pixel snapper is the FIXED build (the pinned commit plus tools/patches/pixel-snapper-fix.patch), installed once with
 #   cd assets/konclui/source && python3 -I tools/build_pixel_snapper.py      (needs git and cargo; the stock tool is refused)
 # into ~/.cargo/bin as spritefusion-pixel-snapper-fixed; the stock Homebrew spritefusion-pixel-snapper is not the pin.
-# Until that is done on a runner, step 1 and the tests of test_ingest.py and test_toolchain.py fail there, by design (no fallback).
+# Until that is done on a runner, step 1 and the snapper tests of test_ingest.py and test_pixelgrid.py fail there, by design (no
+# fallback); the real-tool tests of test_toolchain.py skip when a binary is absent.
 # A build manifest made before the fixed snapper became the pin says "1.0.0" and cannot say which build made it: rebuild it
 # (hq-office/build.py) after installing the fixed one.
 # Nothing here publishes: the publish step (tools/publish.py) writes into a served map directory and stays a manual act.

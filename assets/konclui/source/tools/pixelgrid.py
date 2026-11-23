@@ -9,13 +9,14 @@
   report PNG_OR_DIR...  what `binary_alpha` would change: files per class, partial px dropped and raised
   binarize IN OUT       the size-preserving repair, `binary_alpha` below, never in place; a picture with no partial
                         alpha is left alone (idempotent).
-  snap IN OUT           for AI-UPSCALED art only: run spritefusion-pixel-snapper and accept the result only when it
-                        passes the same check. A passing IN is never touched: exit 0, nothing written.
+  snap IN OUT           for AI-UPSCALED art only: run the pinned FIXED pixel snapper (toolchain.require: a stock build is
+                        refused) and accept the result only when it passes the same check. A passing IN is never
+                        touched: exit 0, nothing written.
 
-The snapper re-detects the grid, so it RESIZES and crops: it can NOT repair a native sheet. MEASURED here (tools/
-README.md): a native 32x32 cell with `--pixel-size 1` comes back 25x25, the 512x128 gato sheet 370x100, so `snap`
-rejects both. It succeeds only when the upscaled input happens to resize onto the grid (test_pixelgrid.py has one such
-fixture). That is why `snap` never writes in place and re-checks the size.
+The snapper re-detects the grid, so it can RESIZE: `snap` never writes in place and re-checks the result. The fixed build
+returns art that is already on its grid unchanged (the stock one shrank it: tools/patches/README.md), so `snap` no longer
+breaks a native sheet, but it does not repair partial alpha either: that is `binarize`. `snap` is not judged by gridguard;
+art from a model goes through ingest.py, which is.
 
 Python stdlib + numpy + Pillow, as the rest of the repository's art tools.
 """
