@@ -564,6 +564,224 @@ npx eslint -c frame-probe/eslint.config.mjs frame-probe tests/frameprobe-*.test.
 
 It is the shared config with one change: `no-await-in-loop` is off, because the sessions run one at a time on purpose.
 
+## Shader lab (the ambience filter, alone, in a real GPU)
+
+`shader-lab/` draws the office's camera pass (`POST` in `play/src/front/Konclui/Ambience/domain/shaders.ts`, and the
+shaded program next to it once the tree has one) on a bare WebGL context in the installed Google Chrome, without Phaser
+and without a game server. It answers two questions fast: what does the light look like, and what does the pass cost.
+It compiles the REAL shader source (bundled from the repository by esbuild, in memory), sets its uniforms for an hour, a
+camera and a crowd, and writes pictures and numbers.
+
+```bash
+cd benchmark
+npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --preset reception            # night, one view
+npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --preset all --hour 17.4      # every preset, one folder each
+npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --hour 19.3 --camera 1391,1330,2 --people "1176,1334;1392,1404"
+npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --flag konclui.fx.rim=legacy  # today's rim instead of the shaded program
+npx tsx shader-lab/run.ts --list-presets
+npx tsx shader-lab/run.ts --phaser --out /tmp/lab-phaser                                      # the Phaser probe (below): no map needed
+```
+
+`<built map dir>` is a build with `fx/` (manifest, masks, normal) and `office.wam` with its collections. No server runs:
+the page and the map are served to Chrome with `page.route`. Chrome is launched as the frame probe does (`channel chrome`,
+headless, `--use-angle=metal --enable-gpu --ignore-gpu-blocklist`); `--channel chromium` uses Playwright's own browser.
+Playwright and esbuild come from the repository root's `node_modules`.
+
+| Option                                                 | Meaning                                                                                                                                                         |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--hour H`                                             | decimal hour in the office's zone; else the flag `konclui.fx.hour`; else 22 (night)                                                                             |
+| `--camera x,y,zoom`                                    | the world point at the centre of the window, in map px (fractions allowed), and the zoom                                                                        |
+| `--people x,y;x,y`                                     | feet of the synthetic people in map px; `none` for nobody. Default: the preset's                                                                                |
+| `--preset NAME\|all`                                   | `reception` (default), `lounge`, `entrance`, `floor-lamps`, `overview`; `all` writes one folder each                                                            |
+| `--flag k=v ...`                                       | the client's switches: `konclui.fx.hour`, `konclui.fx.rim` (`0`, `1`, `full`, `reduced`, `legacy`). `konclui.fx.off` is ignored (the lab always draws the pass) |
+| `--size WxH`                                           | the window in screen px (default 960x540)                                                                                                                       |
+| `--gl 1\|2`, `--webgl2`                                | the context of the pictures (default WebGL1, as the game). Timing always runs on both                                                                           |
+| `--frame map\|compose\|FILE`                           | the colour frame (below)                                                                                                                                        |
+| `--no-timing`, `--timing-draws N`, `--timing-size WxH` | skip the GPU timing, or set its draws (default 200 per round, 3 rounds) and window (default 1920x1080)                                                          |
+| `--on-shader FILE`, `--off-shader FILE`                | GLSL to draw instead of the tree's shaded program or `POST`: try a shader without editing `shaders.ts`                                                          |
+| `--phaser`                                             | the Phaser probe instead of the lab (below); needs `--out`, not a map; `--webgl2` picks the context                                                             |
+| `--no-clouds`                                          | no cloud shadows (they are in the pass; the lab freezes them at offset 0)                                                                                       |
+| `--unmarked`                                           | draw the people with no mark (alpha 255), as the avatars beyond the marks' cap are, and list the first 8 in `uCrowd`; `acceptance.unmarkedPeopleTakeNoRelief`   |
+| `--shimmer`                                            | also render 4 fractional scrolls at zoom 1 and 2, off and on, and count what swims (`acceptance.shimmer`)                                                       |
+
+Presets are the views of the owner's captures, read from the built map: **reception** (the desk between the arcs at
+(1151,1281) and (1568,1280)), **lounge** (the arc at (2453,1108) and the pendant at (2373,1278)), **entrance** (the glass
+and the door light at (1392,1522)), **floor-lamps** (the west lounge's two at (576,1152) and (576,1440)) and
+**overview** (the building at zoom 0.75; use `--size 2048x1200` to see all of it). Each has people under a lamp's pool,
+beside it and away from it. A synthetic person is a 14x26 capsule with an outline, a head, a torso and legs, feet at the
+given point.
+
+### What it writes
+
+In `--out` (or `--out/<preset>` with `--preset all`):
+
+- `off.png`, `on.png`, `diff.png` (the off picture dimmed to 40%, every pixel whose largest channel changed by more than
+  2/255 painted red), `sheet.png` (all of them and the elements, labelled).
+- `el-<element>.png`: one element switched alone, where the shader has a switch. With today's `POST`: `el-bevel` (props
+  only: `uPeopleN = 0`) and `el-person-rim` (people only: `uNormalsOn = 0`). With the shaded program: `el-relief`
+  (`uShade = (level, 0, 0, 0)`, people marked but not lit), `el-person-light` (only `uShade.w`, normals off), one
+  `el-contact`, `el-key`, `el-lamp`, `el-surface` for each baked channel alone (the runtime's `bakeCast` with only that
+  option on; the receiver mask `solid` stays, because it says where a shadow may land; relief and person light are off)
+  and `el-person-shadow` (only the people's stamps). Each `el-*` picture is the element's own render, and the `sheet.png`
+  tile for it is its diff against `off`. An element whose runtime module is missing is listed under `skippedElements`.
+- `stats.json`: per variant `changedShare`, `changedPixels`, `maxDelta`, `alphaMin` of the draw, `rugChanged` (changed
+  pixels on a rug's own visible pixels: the stripes defect), `flatPropChanged` (changed pixels where the normal map holds a FLAT
+  normal on a prop, the inside of a table top or a lamp: relief must leave them as they were, so it is 0 for `relief`), `wallWaterFacadeChanged`, `personPixels`,
+  `changedOnPeople`, `changedOutsidePeople` (spill: light that is not on a person), `personLuma` against `offPersonLuma`,
+  `personSides` (for each person: how much brighter their left half and their right half are than off, the side a lamp
+  lighting them is on, and the side that is lit more: a person beside a lamp must be lit on the side that faces it);
+  `bake` (with the shaded program and the runtime's bake: CPU milliseconds of the whole bake and of each element, the
+  runtime's counts, the kinds of the 664 pieces and where they came from, painted pieces, how many `stand` pieces throw
+  at least 8 shadow px outside their silhouette, the ones that do not with the reason, the shortest and longest shadow
+  in px against the cap; `floatingShadows`: the stand pieces whose shadow, baked alone, does not touch the foot row of
+  their picture's fully opaque pixels (the lounge's bedside tables floated 16 px until the silhouette stopped counting
+  a baked pool of light; listed empty now, five pieces with `SOLID_ALPHA` back at 128); `topsWithoutShadow` and
+  `hangsWithoutShadow`: the pieces on furniture and on a wall that leave no shadow on a support or a wall of their own
+  (empty: every one of the 177 and the 30 does); `lamps`: for each caster lamp, where its light lands and the pieces it
+  casts shadows from), `acceptance.lampShadow` (the lamp element alone must change at least 1% of the window by 50/255 or more where a caster lamp with casters
+  lights the window; `meets` is null for a window with no such lamp, as the floor lamps' and the overview's), `castChannels` (pixels each channel marks, over the map and in the view), `stamps` (the
+  runtime's pick for each person); the renderer, the uniforms the program declares and nothing set (`unsetUniforms`, a drift alarm), `compile`
+  (per program: status, driver log, uniform vectors, source and `WEBGL_debug_shaders` translated length), the
+  `maxFragmentUniformVectors` of the GPU, the lights in the view, and the self-test.
+- `timing.json`: GPU time of the pass alone, on WebGL1 (`EXT_disjoint_timer_query`) and WebGL2
+  (`EXT_disjoint_timer_query_webgl2`), `off` and `on`, through `play/src/front/Utils/GpuFrameTimer.ts` imported as is.
+  3 interleaved rounds of 200 timed draws at 1920x1080 per context and variant; mean, median, p95, p99, max, the median
+  of each round (a drifting GPU clock shows there), dropped samples. The numbers are marked `valid: false` when the
+  renderer is SwiftShader or llvmpipe, and `gpuTimer: "unavailable"` replaces them when the extension is missing. Each
+  draw is a full-screen quad into a framebuffer: the pass alone, without the camera pass, the scene or the compositor.
+  Plus the compile log.
+- `log.txt`: the notes of the run (lights found, uniforms source, what was left out).
+
+A shader that does not compile or link stops the run (exit 1) with the driver's message and, for each error it gives a
+line for, the source line with its neighbours (the pragma line Phaser's template engine reads is blanked, not removed, so
+line numbers match the file). The first run of a session also runs a self-test (exit 2 if it fails): the masks texture
+read through POST's own `mapUV` at the map's four corners against the decoded PNG (texture row order), the camera pass
+at a fractional scroll against a CPU nearest crop, and `POST` drawn twice giving the same picture.
+
+### The Phaser probe (`--phaser`)
+
+`shader-lab/phaser-probe.ts` builds a real `Phaser.Game` (4.2.1, WebGL1; `--webgl2` for the other) with the real `postFilter.ts`
+and `peopleMark.ts` and a scene of coloured rectangles, depth-sorted like the office. It writes `phaser-probe.json` and prints:
+the draw calls of a frame with the marks on and off for 0, 24 and 80 avatars; the blend mode as the renderer holds it and that a
+second registration reuses the id; the alpha an avatar leaves (0 on its opaque pixels, back to 1 under a prop drawn after it); the
+final canvas alpha (255 everywhere); the row order of the cast texture through `POST_SHADED` (one marked pixel at map (3, 1) must
+darken exactly that pixel); a camera at half a map pixel putting the world-keyed lookups where the next whole pixel does; and the
+GPU time of the whole frame (`EXT_disjoint_timer_query`) and the CPU time of the render call, with the marks on and off, for 80
+avatars. Exit code 2 when the row order, the alpha or the sub-pixel camera is wrong. Measured on the M1 Max on 2026-11-23:
+4 draw calls more for each marked avatar (324 for 80), and 5.2 ms of whole-frame GPU for 80 marked avatars against 0.2 ms
+unmarked at 200x120, so the runtime marks 20 at most at level 2 (10 at level 1), about 1.3 ms. It is not Gate 1: that runs the
+real office (`frame-probe`).
+
+### The colour frame, and what the lab lacks
+
+The pass receives the camera's picture; the lab builds it from the build's whole-map render (`preview.png` beside the
+build, in `fx/`, or in the sibling `renders<N>` of `dist<N>`), cropped by the camera with one nearest sample per screen
+pixel, people drawn into it. With no render it composes one (`--frame compose`): a flat floor and lawn from the masks,
+then every piece's picture at its placement in the game's depth order; it has no tiles, walls or doors, so it is only
+good enough to judge light on furniture. What the lab does NOT have, on purpose: Phaser (so whether the alpha-0 mark
+survives the camera filter chain, the draw calls it breaks, and the CPU of a render call are the Phaser probe's job, not
+this one's), the ground-shadow quad, the water, glass and sun-layer passes, the mirrored floor (`uAvN = 0`), locked rooms
+(`uLockN = 0`), the grass trail (`uStepN = 0`), the vignette and the arrival iris (off), name tags and emotes (a known
+artifact: in the game they sit under the pass, so a tag inside a shadow zone is darkened; the lab draws none), and
+anything animated. The preview's pictures still carry their own painted shadows. Weak-GPU timings do not exist on the Mac
+this was written on: the lab prints the renderer it ran on and nothing else should be read from it.
+
+With the shaded program present, people are drawn with alpha 0 (the mark of plan 2f), the stamps of the runtime's
+`personShadow.ts` are blended under them (first-frame picks, no hysteresis), and the cast texture is the runtime's own
+bake of the built map for the hour: every piece's picture is decoded in the page, its silhouette, kind and painted flag
+read by `shadeShapes.ts` and `casterKind.ts` (or the manifest's `kinds` and `painted` when the build has them), the
+caster lamps by `casterLampsFrom`, the key by `keyLightAt`. Without those modules the lab falls back, and says so in
+`log.txt`: to the 1x1 `(0,0,0,255)` dummy ("nothing is a receiver") for the cast, and to no stamps. The bake's CPU time is
+wall clock in the page (it is a report, not an assertion); a first bake includes the JIT warming up. A cast texture is
+uploaded for each picture and not on a timed draw, but the `on` GPU timing does read the map-sized texture.
+
+### Mirrored from the runtime (read this when a picture looks wrong)
+
+Imported, not copied: `lookAt` (`timeOfDay.ts`), `lightsFrom`, `staticLights`, `visibleLights`, `visibleRects`,
+`touchesView`, `EMISSIVE_TINTS` (`lights.ts`), `POST`, `POST_SHADED`, `forProbe` (`shaders.ts`), and, when the file exists
+in the tree at run time, `lightUniformsInto`, `keyLightAt`, `newKeyLight`, `shadeUniformsInto`, `newShadeUniforms`,
+`bakeCast`, `newCastBuffer`, `silhouetteOf`, `hasPaintedShadow`, `lengthScale`, `classifyPiece`, `casterLampsFrom`,
+`personShadowFrames`, `pickPersonShadow`, `newPersonShadow` and `stampFrameAt`.
+`SceneEffects.ts` is too entangled with Phaser to import, so `shader-lab/uniforms.ts` mirrors these parts of it, cited by name
+(line numbers go stale with every edit of a 2,300-line file; search the symbol):
+
+| Mirrored in `uniforms.ts`                                                                                                                                                                                     | From `SceneEffects.ts`                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `lookAt(hour, { light: true })`                                                                                                                                                                               | `refresh`, with the light switch on                                                                        |
+| `night = look.lamps >= 0.9`, pools with `night` kept only then, then `visibleLights(..., view, 32)`                                                                                                           | `litCache` and `const night`; the lab asks for the view itself, the game for the camera's 16 px cell       |
+| the pool packing loop, used only if `lightUniforms.ts` is absent                                                                                                                                              | `postUniforms`, the loop over `lit`                                                                        |
+| the glow rectangles: `visibleRects(..., 64)`, `touchesView`, at most 24, the tint index in the width's fraction                                                                                               | `GLOW_CANDIDATES`, `MAX_GLOW` and `postUniforms`                                                           |
+| `uShafts = [look.shafts, 58, 24, 0.84]`                                                                                                                                                                       | `shafts`                                                                                                   |
+| `uCloud = [look.clouds, 236, 0, 0]` (offset frozen at 0)                                                                                                                                                      | `cloud`                                                                                                    |
+| `uVignette = [0, 0.62]`, `uReveal = [0, 0, -1, 0]`                                                                                                                                                            | `vignetteUniform`, `revealUniform`                                                                         |
+| `uFrost = [0.59, 0.8, 0.76]`                                                                                                                                                                                  | `FROST`                                                                                                    |
+| `uInk = manifest.ink / 255`                                                                                                                                                                                   | the constructor, `inkUniform`                                                                              |
+| `uLime`, `uCream`: PLACEHOLDERS (unused while `uStepN = 0`)                                                                                                                                                   | `TRAIL_COLOURS`                                                                                            |
+| the people's feet into `uPeople` (first 8), `uPeopleN`                                                                                                                                                        | `placePeopleUniform` (the lab does no nearest-eight selection)                                             |
+| `uCrowd[0]`: the first 8 people when `--unmarked`, else zeros                                                                                                                                                 | `Shading.chooseCrowd` / `placeCrowd` (phaser/shading.ts): the 8 unmarked avatars nearest the view's centre |
+| the default fallback key `(-0.7071, 0.7071, 1, 1)`, `uShade = (level, 0.42, 0.6, 0.9)`, `uKeyShade` day/night mix: used only when `keyLight.ts` or `shadeUniforms.ts` is absent or throws (said in `log.txt`) | plan 2d / 1b                                                                                               |
+
+Everything else in `uniforms.ts` is an import. `stats.json > unsetUniforms` lists any uniform the program declares that
+the lab did not set: if a new uniform appears there, the lab has drifted from the runtime.
+
+### Reading the numbers
+
+`changedShare` is over the whole window, so it depends on the view: compare the same preset at the same size. A change
+inside a rug's own pixels (`rugChanged`) is the relief stripes defect (a rug is a floor piece and gets no relief); it is
+non-zero on a build whose `normal.png` still stamps rugs. `changedOutsidePeople` for `person-light` is the light that
+spills past the people. For hours, run the command in a loop (`for h in 12.5 15.5 17.4 22; do ... --hour $h; done`).
+
+### Acceptances (`stats.json > acceptance`, printed with the run)
+
+Each is a number for a defect the reviewers of 2026-11-23 saw in a picture and measured by hand; they are plain arithmetic over the
+pictures (`shader-lab/acceptance.ts`, unit-tested with the defect and the fix as small pictures). On the shader text of that
+review (lab run with `--on-shader`) the reception window gave relief correlation -0.01 with 8% of the changed pixels not darker,
+people lit on the far side from the lamp, and 1,525 swimming pixels; on the tree they pass.
+
+| Key                                         | Question                                                                                                                                                                                                                                                                     | Passes when                                                                                                                                                         |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lampShadow`                                | is a lamp's shadow evident around a lamp that has casters                                                                                                                                                                                                                    | the lamp element changes 1% of the window by 50/255                                                                                                                 |
+| `reliefLit`                                 | is a prop's lit side the lamp's side, and does the relief only darken (it was 96 to 97% darker, the lamp-facing side the darkest)                                                                                                                                            | correlation of (gain, lean toward the lamp) >= 0.2 over the prop pixels a lamp lights, and >= 20% of the changed pixels not darker; null with under 200 such pixels |
+| `peopleLampSide`                            | is a person whose lamp pool or rim reaches their feet (within 100 px) lit on the lamp's side                                                                                                                                                                                 | every checked person is; null with none checked, and always null with `--unmarked`                                                                                  |
+| `shadowCoverage`                            | does every standing piece, and every piece on furniture, have a shadow that SHOWS beside it (key and lamp alone for a standing one, key and surface alone for one on furniture; contact does not count, 6/255 delta), for the pieces whole in the window with 36 px of reach | the lists `stand.without` and `top.without` are empty, each gap with its reason (`none`, `wall`, `dark receiver`)                                                   |
+| `shimmer` (`--shimmer`)                     | a camera one screen px along must give the picture one px along, at 4 fractional scrolls at zoom 1 and 2                                                                                                                                                                     | on never differs in more pixels than off by over the slack (0.02% of the window)                                                                                    |
+| `unmarkedPeopleTakeNoRelief` (`--unmarked`) | does an avatar drawn in full with no mark take a sofa's relief                                                                                                                                                                                                               | the relief element changes none of their pixels (8 are listed in `uCrowd`; null beyond 8 people)                                                                    |
+
+For the whole map at once: `--preset overview --camera 1376,896,1 --size 2752x1792` (the coverage then judges every piece
+whole in the picture: 426 standing and 178 on furniture at the time of writing).
+
+### What the shading does not reach (say this to the owner)
+
+- Light on people reaches 20 avatars at most (10 at level 1): each marked avatar is a blend mode of its own and costs 4 draw
+  calls (measured in the Phaser probe). The others are drawn as they are; the shader is told the feet of the 8 nearest to the
+  view's centre among them (`uCrowd`) so that they take none of a sofa's relief, and beyond those 8 an avatar in front of a
+  prop still takes its relief. All the avatars with a stamp (every one drawn in full) have a shadow under them; baked contact
+  and key shadows still darken an unmarked avatar standing in them.
+- Far avatars drawn as dots, and people culled, get no shadow and no light: they are not drawn in full.
+- Level 1 saves little in the pass on an M1 Max (it drops one texture tap, the lamp accumulation and the person scan; the pass
+  measured 5.28 ms off and 5.56 ms on at level 2, night, 1920x1080, and level 1 is within the noise of it). Its real saving is
+  half the marks (about 40 draw calls). Whether it saves more on a weak GPU has not been measured: there is none here.
+- The budget is MEASURED for the pass alone (the table above; the lab's p99 of 13 to 16 ms is a timer-query artifact of its
+  pass-only loop, present with the shading off too) and ESTIMATED for the whole frame (the probe's 15 us a draw, about 1.2 ms for
+  80 more draws on the M1 Max). Gate 1 at night, level 2, 80 drawn avatars, `konclui.fx.rim=full`, and then on a weak
+  integrated GPU, has not been run (`scripts/gate.sh` was out of bounds for this work).
+
+### Tests
+
+```bash
+npm test -- tests/shaderlab-args.test.ts    # the grammar: options, camera, people, flags, every refusal
+npm test -- tests/shaderlab-model.test.ts   # presets, view maths, people, picture diffs, percentiles, shader errors, placements, uniforms
+npm test -- tests/shaderlab-cast.test.ts    # the bake's inputs and channel counts, the real bake on a small map, the stamps
+npm test -- tests/shaderlab-acceptance.test.ts   # the arithmetic acceptances: relief agreement, shimmer, coverage, lamp side, each with the defect it guards
+npm test -- tests/shaderlab-smoke.test.ts   # the lab on a built map in Chrome; skips with a message without them
+npx tsc -p shader-lab/tsconfig.lint.json    # types
+npx eslint -c shader-lab/eslint.config.mjs shader-lab tests/shaderlab-*.test.ts
+```
+
+The smoke test needs a build with `fx/` (`SHADER_LAB_DIST`, default `/private/tmp/kv/dist2`) and a Google Chrome; it
+draws a 320x180 window without timing, checks the PNGs, the self-test, the compile status, and that a shader with an
+undeclared identifier stops the run with the driver's message and the source line.
+
 ## What to watch on the server
 
 - CPU of the play and back Node processes.
