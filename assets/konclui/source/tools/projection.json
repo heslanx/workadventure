@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "default": "oblique",
+  "plan_reference": "camera75",
+  "plan_reference_note": "The figures of the prototype plan (plan section 11: rim ratio 0.75, canvas 64 x 48 for the air hockey table) were written for this projection. pieceboard.py reads each projection's own expectation from its \"expect\" block below and never a number written for another projection.",
+  "note": "World axes are metres, x right, y toward the viewer along the ground, z up; 1 tile = 1 m. Screen: sx = sx_px_per_m * x, sy = sy_px_per_m * y - sz_px_per_m * z (rows grow downward). Nothing else in the toolchain may hard-code these numbers: bake.py and the checks read this file.",
+  "tile_m": 1.0,
+  "projections": {
+    "oblique": {
+      "sx_px_per_m": 32,
+      "sy_px_per_m": 32,
+      "sz_px_per_m": 21,
+      "status": "default",
+      "expect": {
+        "rim_ratio": 1.0,
+        "canvas_extra_rows_per_tile": 8
+      },
+      "expect_note": "rim_ratio: a ground circle (a pot rim) is a circle here, height over width sy / sx = 1.0. canvas_extra_rows_per_tile: sy - the plan reference's sy (32 - 24), added per tile of footprint depth to the canvas height the plan allows.",
+      "note": "THE DEFAULT, decided by the integrator: ground 32 px per tile in both screen axes, which is what the map's floor, rugs, collision grid and tables already use (MEASURED in the asset audit, critic item 1). Height 21 px per metre, drawn straight up. In this projection a tall thing drawn in elevation is correct."
+    },
+    "camera75": {
+      "sx_px_per_m": 32,
+      "sy_px_per_m": 24,
+      "sz_px_per_m": 21,
+      "status": "comparison-only",
+      "expect": {
+        "rim_ratio": 0.75,
+        "canvas_extra_rows_per_tile": 0
+      },
+      "expect_note": "The plan reference: its own numbers (rim ratio 0.75 = sy / sx = 24 / 32, no extra canvas rows).",
+      "note": "KEPT FOR COMPARISON ONLY, never the build's projection: it squashes every 1x1 prop to 24 rows on a 32-row tile, so it does not line up with the floor, rugs, collision grid and sofas. One physical orthographic camera at 48.6 degrees elevation: ground squash sin(48.6 deg) = 0.75 (24 px per metre of depth), height 32 * cos(48.6 deg) = 21.2 px per metre."
+    }
+  },
+  "bake": {
+    "supersample": 4,
+    "coverage": 0.5,
+    "margin_px": 1,
+    "foot_gap_max": 1,
+    "crease_px": 3.0,
+    "override_budget": 0.08,
+    "colour_cap": 24,
+    "light": [0.0, 0.4, 0.92],
+    "light_note": "Direction TOWARD the light in the world frame: straight above, slightly toward the viewer, no x component. The runtime lighting pass owns direction (its key light swings from one side to the other during the day), so the baked tones carry form only: top faces lightest, the south face one ramp step darker, undersides darkest."
+  }
+}
