@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { startFrameBench, FRAME_BENCH_WINDOW } from "../../../src/front/Utils/FrameBench";
-import type { FrameBenchAvatarCounts, FrameBenchEvents } from "../../../src/front/Utils/FrameBench";
+import type { FrameBenchAvatarCounts, FrameBenchEvents, ShadingCounters } from "../../../src/front/Utils/FrameBench";
+import {
+    clearShadingBenchSource,
+    markShadingNight,
+    readShadingCounters,
+    readShadingNightMark,
+    setShadingBenchSource,
+    shadingActivity,
+} from "../../../src/front/Utils/FrameBench";
 import { createFakeTimerGl } from "./fakeTimerGl";
 
 const PRE_STEP = "prestep";
@@ -45,6 +53,8 @@ function setup(
         gpuMs?: (number | null)[];
         autoReady?: boolean;
         postFilterActive?: () => boolean;
+        shading?: () => ShadingCounters | null;
+        shadingNightMark?: () => ShadingCounters | null;
     } = {},
 ) {
     const timer = createFakeTimerGl({
@@ -72,6 +82,8 @@ function setup(
         mapSize: MAP,
         counts: () => COUNTS,
         postFilterActive: options.postFilterActive,
+        shading: options.shading,
+        shadingNightMark: options.shadingNightMark,
     });
     /** One frame whose requestAnimationFrame timestamp is `at`, with an upload of `rgbaPixels` during it. */
     const frame = (at: number, upload?: { width: number; height: number; data?: null }) => {
@@ -576,5 +588,154 @@ describe("draw call counter", () => {
         expect(reading.gpuTimer).toBe("none");
         expect(reading.avgGpuMs).toBeNull();
         expect(reading.drawCalls).toMatchObject({ avg: 4, max: 4 });
+    });
+});
+
+const SHADING_START: ShadingCounters = {
+    bakes: 3,
+    slices: 40,
+    uploads: 3,
+    uploadedBytes: 59_179_008,
+    levelChanges: 0,
+    level: 2,
+    marked: 20,
+};
+
+describe("the shading's activity over a window", () => {
+    it("is null in a room without the shading, and so is the stretch since the night", () => {
+        const { bench, frame } = setup();
+        for (let i = 0; i < 5; i++) frame(i * 16);
+
+        expect(bench.snapshot()).toMatchObject({ shading: null, shadingSinceNight: null });
+    });
+
+    it("reads the bakes, slices, uploads and bytes that happened since the bench started, and the state as it is", () => {
+        let now: ShadingCounters = { ...SHADING_START };
+        const { bench, frame } = setup({ shading: () => now });
+        for (let i = 0; i < 5; i++) frame(i * 16);
+        // an hour switch inside the window: a bake of 17 slices and its upload of the 19.7 MB cast buffer
+        now = {
+            ...now,
+            bakes: 4,
+            slices: 57,
+            uploads: 4,
+            uploadedBytes: SHADING_START.uploadedBytes + 19_726_336,
+            marked: 18,
+        };
+
+        expect(bench.snapshot().shading).toEqual({
+            bakes: 1,
+            slices: 17,
+            uploads: 1,
+            uploadedBytes: 19_726_336,
+            levelChanges: 0,
+            level: 2,
+            marked: 18,
+        });
+    });
+
+    it("reads the stretch since the night was set, which can begin before the bench did", () => {
+        const atNight: ShadingCounters = { ...SHADING_START, bakes: 2, uploads: 2, uploadedBytes: 39_452_672 };
+        const now: ShadingCounters = { ...SHADING_START, bakes: 3, uploads: 3, uploadedBytes: 59_179_008 };
+        const { bench, frame } = setup({ shading: () => now, shadingNightMark: () => atNight });
+        for (let i = 0; i < 5; i++) frame(i * 16);
+
+        const reading = bench.snapshot();
+
+        // the upload fell after the hour was set and before the window opened: the window has none, the night has it
+        expect(reading.shading?.uploads).toBe(0);
+        expect(reading.shadingSinceNight).toMatchObject({ bakes: 1, uploads: 1, uploadedBytes: 19_726_336 });
+    });
+
+    it("has no stretch since the night when the night was never set", () => {
+        const { bench, frame } = setup({ shading: () => SHADING_START, shadingNightMark: () => null });
+        for (let i = 0; i < 5; i++) frame(i * 16);
+
+        expect(bench.snapshot()).toMatchObject({ shadingSinceNight: null });
+        expect(bench.snapshot().shading).toMatchObject({ uploads: 0 });
+    });
+
+    it("stops counting when the bench stops: what the shading does while the queries drain is not the window's", () => {
+        let now: ShadingCounters = { ...SHADING_START };
+        const { bench, frame } = setup({ shading: () => now });
+        for (let i = 0; i < 5; i++) frame(i * 16);
+        const stopped = bench.stop();
+        now = { ...now, uploads: now.uploads + 1, bakes: now.bakes + 1 };
+
+        expect(stopped.shading).toMatchObject({ uploads: 0, bakes: 0 });
+        expect(bench.snapshot().shading).toMatchObject({ uploads: 0, bakes: 0 });
+    });
+
+    it("is null when the shading is gone by the time it is read", () => {
+        let now: ShadingCounters | null = { ...SHADING_START };
+        const { bench, frame } = setup({ shading: () => now });
+        for (let i = 0; i < 5; i++) frame(i * 16);
+        now = null;
+
+        expect(bench.snapshot().shading).toBeNull();
+    });
+
+    it("subtracts the five totals and keeps the two states of the later reading", () => {
+        const later = {
+            ...SHADING_START,
+            bakes: 5,
+            slices: 90,
+            uploads: 5,
+            uploadedBytes: 100,
+            levelChanges: 2,
+            level: 1,
+            marked: 7,
+        };
+
+        expect(shadingActivity(SHADING_START, later)).toEqual({
+            bakes: 2,
+            slices: 50,
+            uploads: 2,
+            uploadedBytes: 100 - 59_179_008,
+            levelChanges: 2,
+            level: 1,
+            marked: 7,
+        });
+    });
+});
+
+describe("the shading's counters as the effects publish them", () => {
+    const source = (uploads: number) => (): ShadingCounters => ({ ...SHADING_START, uploads });
+
+    it("reads nothing until the effects publish a source, and nothing after they withdraw it", () => {
+        expect(readShadingCounters()).toBeNull();
+        const published = source(7);
+        setShadingBenchSource(published);
+        expect(readShadingCounters()?.uploads).toBe(7);
+
+        clearShadingBenchSource(published);
+
+        expect(readShadingCounters()).toBeNull();
+    });
+
+    it("leaves a newer source alone when an older scene's effects are destroyed late", () => {
+        const older = source(1);
+        const newer = source(2);
+        setShadingBenchSource(older);
+        setShadingBenchSource(newer);
+
+        clearShadingBenchSource(older);
+
+        expect(readShadingCounters()?.uploads).toBe(2);
+        clearShadingBenchSource(newer);
+    });
+
+    it("remembers the counters at the night, and forgets them with the source", () => {
+        let uploads = 1;
+        const published = (): ShadingCounters => ({ ...SHADING_START, uploads });
+        setShadingBenchSource(published);
+        expect(readShadingNightMark()).toBeNull();
+
+        markShadingNight();
+        uploads = 2;
+
+        expect(readShadingNightMark()?.uploads).toBe(1);
+        clearShadingBenchSource(published);
+        expect(readShadingNightMark()).toBeNull();
     });
 });

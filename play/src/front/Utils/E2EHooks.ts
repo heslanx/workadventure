@@ -14,7 +14,15 @@ import {
     type GpuTimerUnavailableReason,
 } from "./GpuFrameTimer";
 import { percentileOfSorted, summarizeFrameTimes, type E2EFrameStats } from "./FrameStats";
-import { FRAME_BENCH_WINDOW, startFrameBench, type E2EFrameBench, type FrameBench } from "./FrameBench";
+import {
+    FRAME_BENCH_WINDOW,
+    markShadingNight,
+    readShadingCounters,
+    readShadingNightMark,
+    startFrameBench,
+    type E2EFrameBench,
+    type FrameBench,
+} from "./FrameBench";
 import { createBenchNight, type BenchNightResult } from "./BenchNight";
 import { createCameraPanner } from "./CameraPan";
 import {
@@ -948,6 +956,9 @@ function startFrameBenchHook(): void {
             const { activeFullAvatars, activeDotAvatars, culledAvatars, bakedAvatarTextures } = getRenderingCounts();
             return { activeFullAvatars, activeDotAvatars, culledAvatars, bakedAvatarTextures };
         },
+        // The Koncluí shading's counters, published by the effects through FrameBench (this file does not import Koncluí)
+        shading: readShadingCounters,
+        shadingNightMark: readShadingNightMark,
         // Called at each rendered frame: a plain loop over the camera's filter list, no allocation
         postFilterActive: () => {
             const list = scene.cameras?.main?.filters?.internal?.list;
@@ -1134,6 +1145,8 @@ const benchNight = createBenchNight({
  */
 function setBenchNight(level: number | null): BenchNightResult {
     assertBenchSession();
+    // Before the change, so that what the new hour causes (a bake, an upload) is counted from here
+    markShadingNight();
     return benchNight(level);
 }
 

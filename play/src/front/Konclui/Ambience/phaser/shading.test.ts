@@ -296,6 +296,45 @@ describe("Shading, the bake's schedule", () => {
         expect(s.bakes).toBe(2);
     });
 
+    it("counts for the frame probe: bakes, slices, uploads and their bytes, level changes and marks", () => {
+        const { s } = withPixels();
+        expect(s.counters()).toEqual({
+            bakes: 0,
+            slices: 0,
+            uploads: 0,
+            uploadedBytes: 0,
+            levelChanges: 0,
+            level: 2,
+            marked: 0,
+        });
+        s.setHour(12);
+        s.setPieces([piece("a.png", 10, 10)], 0, true);
+        for (let t = 0; t < 600; t++) s.frame(t * 16, empty());
+        s.setLevel(1);
+        s.setLevel(1); // not a change
+        const counters = s.counters();
+
+        expect(counters).toMatchObject({ bakes: 1, uploads: 1, uploadedBytes: 64 * 48 * 4, levelChanges: 1, level: 1 });
+        expect(counters.slices).toBe(s.slices);
+        expect(counters.slices).toBeGreaterThan(0);
+    });
+
+    it("counts a second bake and a second upload when the hour crosses into another key state", () => {
+        const { s } = withPixels();
+        s.setHour(12);
+        s.setPieces([piece("a.png", 10, 10)], 0, true);
+        let t = 0;
+        while (s.bakes < 1) s.frame((t += 16), empty());
+        const day = s.counters();
+        s.setHour(19.3);
+        while (s.bakes < 2 && t < 10_000) s.frame((t += 16), empty());
+        const night = s.counters();
+
+        expect(night.bakes - day.bakes).toBe(1);
+        expect(night.uploads - day.uploads).toBe(1);
+        expect(night.uploadedBytes - day.uploadedBytes).toBe(64 * 48 * 4);
+    });
+
     it("paces the picks of a moving person: one in PICK_EVERY frames each", () => {
         expect(PICK_EVERY).toBeGreaterThan(1);
     });

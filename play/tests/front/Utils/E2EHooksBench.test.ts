@@ -24,6 +24,11 @@ import {
     POST_FILTER_NODE,
     SHADED_POST_FILTER_NODE,
 } from "../../../src/front/Utils/E2EHooks";
+import {
+    clearShadingBenchSource,
+    setShadingBenchSource,
+    type ShadingCounters,
+} from "../../../src/front/Utils/FrameBench";
 import { createFakeTimerGl } from "./fakeTimerGl";
 
 const { PRE_STEP, POST_STEP, POST_RENDER } = Phaser.Core.Events;
@@ -332,6 +337,8 @@ describe("e2eHooks frame bench", () => {
                 "renderedFrames",
                 "postFilterFrames",
                 "postFilterShare",
+                "shading",
+                "shadingSinceNight",
                 "gpuSamples",
                 "gpuDroppedFrames",
             ].sort(),
@@ -528,6 +535,32 @@ describe("e2eHooks night and camera", () => {
         expect(e2eHooks.setBenchNight(1).nightOn).toBe(true);
         e2eHooks.setBenchNight(null);
         expect(localStorage.getItem("konclui.fx.hour")).toBeNull();
+    });
+
+    it("marks the shading's counters when the night is set, so that what the new hour uploads is counted from there", () => {
+        makeScene();
+        let uploads = 3;
+        const published = (): ShadingCounters => ({
+            bakes: uploads,
+            slices: 0,
+            uploads,
+            uploadedBytes: uploads * 19_726_336,
+            levelChanges: 0,
+            level: 2,
+            marked: 0,
+        });
+        setShadingBenchSource(published);
+        try {
+            e2eHooks.startFrameBench();
+            e2eHooks.setBenchNight(1);
+            uploads = 4; // the bake the night asks for, put on the GPU
+            const reading = e2eHooks.stopFrameBench();
+
+            expect(reading.shadingSinceNight).toMatchObject({ uploads: 1, uploadedBytes: 19_726_336 });
+            expect(reading.shading).toMatchObject({ uploads: 1 });
+        } finally {
+            clearShadingBenchSource(published);
+        }
     });
 
     it("pans the camera from the scene's update and releases it", async () => {

@@ -9,6 +9,7 @@ import { lookAt } from "../domain/timeOfDay";
 import { POST } from "../domain/shaders";
 import { textHash } from "../domain/textHash";
 import type { ShadingFlag } from "../domain/shadingLevel";
+import { readShadingCounters } from "../../../Utils/FrameBench";
 import { postProgram } from "./postFilter";
 import type { Shading } from "./shading";
 import { browserEnvironment } from "./browserEffectsPort";
@@ -2008,6 +2009,22 @@ describe("with konclui.fx.rim on, the shaded pass", () => {
         expect(shading.bakes).toBe(1);
         expect(cast.update).toHaveBeenCalledTimes(1);
         release(effects);
+    });
+
+    it("publishes its counters for the frame probe while it lives, and withdraws them when it is destroyed", () => {
+        expect(readShadingCounters()).toBeNull();
+        const { scene, effects } = shadedRoom();
+        frames(scene, effects, 0, 400);
+
+        expect(readShadingCounters()).toMatchObject({
+            bakes: 1,
+            uploads: 1,
+            uploadedBytes: 400 * 300 * 4,
+            levelChanges: 0,
+            level: 2,
+        });
+        release(effects);
+        expect(readShadingCounters()).toBeNull();
     });
 
     it("measures the picture once for each sprite, 24 at a time at most, and bakes in slices of a bounded size", () => {

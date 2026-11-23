@@ -175,6 +175,18 @@ describe("watchTextureUploads", () => {
         ]);
     });
 
+    it("counts the call that puts the Koncluí cast texture on the GPU: 9 arguments, a Uint8Array of the whole map, 19,726,336 B", () => {
+        // What Phaser's WebGLTextureWrapper.update does for a typed array (CastTexture.upload), on the context's own method
+        const { gl } = fakeGl();
+        const seen: TextureUpload[] = [];
+        const stop = watchTextureUploads(gl, (upload) => seen.push(upload));
+
+        gl.texImage2D(TEXTURE_2D, 0, RGBA, 2752, 1792, 0, RGBA, UNSIGNED_BYTE, new Uint8Array(2752 * 1792 * 4));
+        stop();
+
+        expect(seen).toEqual([{ kind: "texImage2D", width: 2752, height: 1792, bytes: 19_726_336, cpuData: true }]);
+    });
+
     it("puts the prototype methods back when it stops, leaving no own property, and counts nothing after", () => {
         const { gl, prototype } = fakeGl();
         const seen: TextureUpload[] = [];

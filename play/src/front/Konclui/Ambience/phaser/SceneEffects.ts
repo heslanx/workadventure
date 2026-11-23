@@ -104,6 +104,7 @@ import { lightUniformsInto } from "../domain/lightUniforms";
 import { isPlainDay, localHour, lookAt, type Look, type Rgb } from "../domain/timeOfDay";
 import { PlacedSnapshot } from "../domain/placedSnapshot";
 import { Trail, type WalkerId } from "../domain/trail";
+import { clearShadingBenchSource, setShadingBenchSource } from "../../../Utils/FrameBench";
 import { addPostFilter, type PostFilter, type UniformValue } from "./postFilter";
 import { PeopleStamps, spriteFactory, stampFrameRects } from "./peopleShadow";
 import { Shading, type ShadeBody } from "./shading";
@@ -684,7 +685,13 @@ export class SceneEffects {
             // same canvas was 4,931,584 B at the office's size). The first refresh then has lights and screens to make.
             this.shading = this.shadingFlag === "off" ? undefined : this.buildShading(generation);
             const shading = this.shading;
-            if (shading) this.resources.onRelease(() => shading.destroy());
+            if (shading) {
+                this.resources.onRelease(() => shading.destroy());
+                // the frame probe reads the shading's counters through the bench (Utils/FrameBench.ts), never a frame's work
+                const source = () => shading.counters();
+                setShadingBenchSource(source);
+                this.resources.onRelease(() => clearShadingBenchSource(source));
+            }
             this.readPieces(true);
             this.piecesUnseen = true;
             const occTexture = this.addCanvasTexture("occ", `kfx-${generation}-occ`, this.occCanvas);

@@ -27,6 +27,11 @@ import { watchTextureUploads, type TextureUpload } from "./GlTextureUploads";
  * - postFilterShare is the share of the window's rendered frames in which the Koncluí post pass was active when the
  *   frame began to render. The pass is switched per refresh (a plain day with nobody mirrored runs without it), so a
  *   window can be lighter than the lit scene it is meant to measure; the share says by how much.
+ * - `shading` is what the Koncluí shading did while the bench ran (bakes, bake slices, cast-texture uploads and their
+ *   bytes, level changes), read from the counters the effects publish (see ShadingCounters); `shadingSinceNight` is the
+ *   same since the last setBenchNight() call, so that an upload that fell between the hour switch and the window is seen
+ *   too. Both are null in a room without the shading. They are totals since their start, like the upload counts, not
+ *   window figures.
  * - The bench is not free on the main thread: while it runs, every draw call and texture upload of the game's context
  *   goes through a wrapper (a counter and a call). The frame interval and the CPU work of a frame include that cost,
  *   which grows with the draw count, so the 11 ms gate is quoted on the GPU time, which the wrapper does not touch.
@@ -40,6 +45,78 @@ export const FRAME_BENCH_WINDOW = 300;
  * crowd are far under 1 MiB. A call this big during a measured window is a stall, whatever it uploads.
  */
 export const LARGE_UPLOAD_BYTES = 1 << 20;
+
+/**
+ * What the Koncluí shading counts, published by the effects (Konclui/Ambience/phaser/shading.ts `counters()`) through
+ * setShadingBenchSource(). `bakes`, `slices`, `uploads`, `uploadedBytes` and `levelChanges` are totals since the shading
+ * was built; `level` and `marked` are its state now.
+ */
+export interface ShadingCounters {
+    /** Whole bakes of the cast texture that went to the GPU. */
+    bakes: number;
+    /** Slices of bake run (one per frame while a bake is under way). */
+    slices: number;
+    /** Uploads of the cast texture, and their bytes (the CPU data handed to the GPU). */
+    uploads: number;
+    uploadedBytes: number;
+    /** Times the shading level really changed (the governor's falls, the zoom's and the GPU's picks). */
+    levelChanges: number;
+    level: number;
+    /** Avatars carrying a mark now. */
+    marked: number;
+}
+
+/** The shading's counters over a stretch of time: the five totals as differences, the two states as at its end. */
+export type ShadingActivity = ShadingCounters;
+
+/** The difference of two readings of the same shading: counts since `from`, state as at `to`. */
+export function shadingActivity(from: ShadingCounters, to: ShadingCounters): ShadingActivity {
+    return {
+        bakes: to.bakes - from.bakes,
+        slices: to.slices - from.slices,
+        uploads: to.uploads - from.uploads,
+        uploadedBytes: to.uploadedBytes - from.uploadedBytes,
+        levelChanges: to.levelChanges - from.levelChanges,
+        level: to.level,
+        marked: to.marked,
+    };
+}
+
+export type ShadingCountersSource = () => ShadingCounters | null;
+
+let shadingSource: ShadingCountersSource | undefined;
+let nightMark: ShadingCounters | null = null;
+
+/**
+ * The effects of the scene publish their shading's counters here, so that the bench (an upstream file, which does not
+ * import Koncluí) reads them without knowing what they are. One source at a time: a later scene replaces the earlier.
+ */
+export function setShadingBenchSource(source: ShadingCountersSource): void {
+    shadingSource = source;
+    nightMark = null;
+}
+
+/** Withdraws a source when its effects are destroyed; a source that was already replaced is left alone. */
+export function clearShadingBenchSource(source: ShadingCountersSource): void {
+    if (shadingSource !== source) return;
+    shadingSource = undefined;
+    nightMark = null;
+}
+
+/** The shading's counters now, or null in a room without the shading. */
+export function readShadingCounters(): ShadingCounters | null {
+    return shadingSource?.() ?? null;
+}
+
+/** Remembers the counters now: setBenchNight() calls this, so that the uploads it causes are counted from this moment. */
+export function markShadingNight(): void {
+    nightMark = readShadingCounters();
+}
+
+/** The counters at the last markShadingNight(), or null when there was none (or the shading was replaced since). */
+export function readShadingNightMark(): ShadingCounters | null {
+    return nightMark;
+}
 
 /** Which extension measures GPU time: WebGL2's, the WebGL1 one Phaser's default context needs, or none. */
 export type FrameBenchGpuTimer = "webgl2" | "webgl1-ext" | "none";
@@ -83,6 +160,10 @@ export interface E2EFrameBench extends FrameBenchAvatarCounts {
     postFilterFrames: number | null;
     /** postFilterFrames / renderedFrames; null with no sampler or with no rendered frame. */
     postFilterShare: number | null;
+    /** The shading's activity since the bench started (a fixed capture: the window); null without the shading. */
+    shading: ShadingActivity | null;
+    /** The shading's activity since the last setBenchNight() until now; null when there was none or no shading. */
+    shadingSinceNight: ShadingActivity | null;
     /** GPU samples in the window: below `frames` when frames were dropped or are not resolved yet. */
     gpuSamples: number;
     /** Rendered frames since the bench started that produced no GPU sample (disjoint, no free query, failed read). */
@@ -113,6 +194,10 @@ export interface FrameBenchOptions {
     counts(): FrameBenchAvatarCounts;
     /** Whether the post pass is active now. Called at every rendered frame: it must not allocate. */
     postFilterActive?(): boolean;
+    /** The shading's counters now (null: none), read when the bench starts, when it is read and when it stops. */
+    shading?(): ShadingCounters | null;
+    /** The shading's counters when the night was last set (null: never), see markShadingNight(). */
+    shadingNightMark?(): ShadingCounters | null;
     window?: number;
 }
 
@@ -204,6 +289,9 @@ export function startFrameBench(options: FrameBenchOptions): FrameBench {
     let allocations = 0;
     let bytesSinceLastFrame = 0;
     let previousTimestamp: number | undefined;
+    const shadingAtStart = options.shading?.() ?? null;
+    // Read when the bench is detached: the drain that follows a fixed capture must not count into the window
+    let shadingAtEnd: ShadingCounters | null | undefined;
 
     let timer: GpuFrameTimer | undefined;
     try {
@@ -272,6 +360,13 @@ export function startFrameBench(options: FrameBenchOptions): FrameBench {
         options.events.on(event, listener);
     }
 
+    /** The shading's activity since `from`; null with no start reading, no shading now, or a shading replaced since. */
+    const shadingSince = (from: ShadingCounters | null): ShadingActivity | null => {
+        if (!from) return null;
+        const to = shadingAtEnd === undefined ? (options.shading?.() ?? null) : shadingAtEnd;
+        return to ? shadingActivity(from, to) : null;
+    };
+
     const snapshot = (): E2EFrameBench => {
         const frameMs = intervals.toArray();
         const gpuMs = gpu.toArray();
@@ -310,12 +405,15 @@ export function startFrameBench(options: FrameBenchOptions): FrameBench {
             renderedFrames,
             postFilterFrames: options.postFilterActive ? postFilterFrames : null,
             postFilterShare: options.postFilterActive && renderedFrames > 0 ? postFilterFrames / renderedFrames : null,
+            shading: shadingSince(shadingAtStart),
+            shadingSinceNight: shadingSince(options.shadingNightMark?.() ?? null),
             gpuSamples: gpuMs.length,
             gpuDroppedFrames,
         };
     };
 
     const detach = () => {
+        shadingAtEnd ??= options.shading?.() ?? null;
         for (const [event, listener] of listeners) options.events.off(event, listener);
         closeWork();
         stopWatching?.();

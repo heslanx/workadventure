@@ -18,7 +18,7 @@ import {
     phaseMeasurement,
 } from "../../../../benchmark/frame-probe/recording";
 import { GPU_MIN_COVERAGE as PAGE_MIN_COVERAGE } from "../../../src/front/Utils/E2EHooks";
-import { startFrameBench } from "../../../src/front/Utils/FrameBench";
+import { startFrameBench, type ShadingCounters } from "../../../src/front/Utils/FrameBench";
 import {
     GATE1,
     GATE1_DEFAULT_SETUP,
@@ -201,6 +201,9 @@ describe("Gate 1 reads the real rolling bench", () => {
             upload?: { width: number; height: number };
             /** Draw calls the game issues in each rendered frame: one drawArrays and the rest drawElements. */
             draws?: number;
+            /** The shading's counters, read by the bench at its start and end. */
+            shading?: () => ShadingCounters | null;
+            shadingNightMark?: () => ShadingCounters | null;
         } = {},
     ) {
         const listeners = new Map<string, Set<Listener>>();
@@ -240,6 +243,8 @@ describe("Gate 1 reads the real rolling bench", () => {
                 bakedAvatarTextures: 48,
             }),
             postFilterActive: () => (options.postActive ? options.postActive(frame) : true),
+            shading: options.shading,
+            shadingNightMark: options.shadingNightMark,
         });
         for (let i = 0; i < frames; i++) {
             clock = 16.7 * i;
@@ -330,6 +335,54 @@ describe("Gate 1 reads the real rolling bench", () => {
         });
     const judgeGate1AsIs = (bench: unknown) => gate(all(bench));
     const all = (bench: unknown): Record<Gate1Mode, unknown> => ({ day: bench, dusk: bench, night: bench });
+
+    it("reads the shading's counters of the real bench, and flags the window whose shading uploaded the cast texture", () => {
+        // The shading's side: a bake finishes and its 19.7 MB buffer goes up at frame 100, as the real counters would say
+        let uploads = 3;
+        const counters = (): ShadingCounters => ({
+            bakes: uploads,
+            slices: uploads * 17,
+            uploads,
+            uploadedBytes: uploads * 19_726_336,
+            levelChanges: 0,
+            level: 2,
+            marked: 20,
+        });
+        const quiet = realBench("webgl2", 6, { shading: counters });
+        const raised = realBench("webgl2", 12, {
+            shading: () => counters(),
+            upload: { width: 2752, height: 1792 },
+        });
+        // the same bench with a source whose counters move while the window runs (the upload is at frame 100)
+        let calls = 0;
+        const moving = realBench("webgl2", 6, {
+            shading: () => {
+                calls += 1;
+                if (calls === 2) uploads += 1;
+                return counters();
+            },
+        });
+
+        expect(parseFrameBench(quiet).shading).toEqual({
+            ...counters(),
+            bakes: 0,
+            slices: 0,
+            uploads: 0,
+            uploadedBytes: 0,
+        });
+        expect(parseFrameBench(moving).shading).toMatchObject({ bakes: 1, uploads: 1, uploadedBytes: 19_726_336 });
+        // the probe's own upload counters see the same call, so the gate fails the window as it always did
+        expect(parseFrameBench(raised)).toMatchObject({
+            fullMapUploads: 1,
+            largeUploads: 1,
+            largestUploadBytes: 19_726_336,
+        });
+        const verdict = gate({ day: quiet, dusk: quiet, night: moving });
+        expect(verdict.status).toBe("pass");
+        expect(verdict.flags).toEqual([
+            expect.stringContaining("night: the shading put its cast texture on the GPU 1 time(s) inside the window"),
+        ]);
+    });
 
     it("judges the windows of a WebGL 2 bench against the limits, with the figures the bench measured", () => {
         const verdict = gate({

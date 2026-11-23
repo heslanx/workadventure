@@ -14,6 +14,7 @@ import { CastBake, type BakeInput, type BakePiece } from "../domain/shadeBake";
 import { hasPaintedShadow, placedSilhouette, silhouetteOf, type Silhouette } from "../domain/shadeShapes";
 import { newShadeUniforms, shadeUniformsInto } from "../domain/shadeUniforms";
 import type { ShadingLevel } from "../domain/shadingLevel";
+import type { ShadingCounters } from "../../../Utils/FrameBench";
 import { CastTexture, type CastRenderer } from "./castTexture";
 import { PeopleMarks, type MarkRenderer } from "./peopleMark";
 import type { PeopleStamps } from "./peopleShadow";
@@ -140,6 +141,8 @@ export class Shading {
     bakes = 0;
     slices = 0;
     measures = 0;
+    /** How many times the level really changed (the governor's falls and the picks): the probe's read of a window. */
+    levelChanges = 0;
 
     constructor(private readonly options: ShadingOptions) {
         this.current = options.level;
@@ -157,6 +160,7 @@ export class Shading {
     setLevel(level: ShadingLevel): void {
         if (level === this.current) return;
         this.current = level;
+        this.levelChanges += 1;
         if (level === 0) {
             this.marks.unmark();
             this.crowdCount = 0;
@@ -166,6 +170,22 @@ export class Shading {
             this.marksNeeded = true;
         }
         shadeUniformsInto(this.uniforms, this.key, this.current);
+    }
+
+    /**
+     * What the frame probe reads of the shading (Utils/FrameBench.ts): totals since this shading was made. Called when a
+     * bench window opens and closes, never on a frame: it makes one small record.
+     */
+    counters(): ShadingCounters {
+        return {
+            bakes: this.bakes,
+            slices: this.slices,
+            uploads: this.cast.uploads,
+            uploadedBytes: this.cast.uploadedBytes,
+            levelChanges: this.levelChanges,
+            level: this.current,
+            marked: this.marks.size,
+        };
     }
 
     /** The cast texture's GPU side, for the camera pass's unit 3. */
