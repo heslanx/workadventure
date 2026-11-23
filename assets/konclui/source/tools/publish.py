@@ -5,9 +5,9 @@ A built map (for the office: the build's `dist` directory itself, as hq-office/b
 tilesets/, entities/, fx/, scripts/ ...) is served by map-storage from a directory that people also EDIT in place through
 the map editor. A plain copy would destroy those edits, so nothing reaches that directory except through here.
 
-    publish.py plan     DIST TARGET [--only GLOB ...] [--exclude GLOB ...] [--json] [--all]
-    publish.py apply    DIST TARGET --backup DIR [--only ...] [--exclude ...] [--include-edited GLOB ...]
-                        [--time ISO8601] [--json]
+    publish.py plan     DIST TARGET [--public-base-url URL] [--only GLOB ...] [--exclude GLOB ...] [--json] [--all]
+    publish.py apply    DIST TARGET --backup DIR [--public-base-url URL] [--only ...] [--exclude ...]
+                        [--include-edited GLOB ...] [--time ISO8601] [--json]
     publish.py rollback TARGET --backup DIR [--release ID] [--include-edited GLOB ...] [--time ISO8601] [--json]
     publish.py verify   TARGET [--json]
 
@@ -32,6 +32,26 @@ rollback  Puts back the files of one release from its backup (the latest publish
           stays protected afterwards (not-in-ledger). Refused, before writing anything, if a file of the release changed since (a later publish, an editor edit;
           --include-edited GLOB overrides), if the backup is incomplete, or if the release was already rolled back.
 verify    Every file of the latest ledger entry still has the hash that entry says; lists what drifted (exit 1).
+
+entityCollections (--public-base-url). The client does not resolve the "url" of a WAM's `entityCollections` against the map: it
+calls fetch() on it, which resolves a relative URL against the page's own <base href="/"> (the play origin, never the
+map-storage), and then new URL(imagePath, url), which throws on a relative url (play/src/front/Phaser/Game/GameScene.ts
+loadEntityCollections, MapEditor/EntitiesCollectionsManager.ts loadCollections). A map whose WAM has relative URLs, as
+hq-office/build.py writes them (the build's own tools read them relative to the dist), therefore loads with no furniture.
+No relative form works, so the URL has to be absolute in the file that is served. The build is not changed: this tool writes
+the absolute form into the STAGED copy of each .wam, from a base the operator names, never guessed:
+  --public-base-url URL  the URL under which TARGET is served: http or https, ending in "/", no credentials, query or
+                         fragment. Every relative `entityCollections` url of a selected .wam is resolved against the .wam's
+                         own public URL (URL + its path in the target), exactly as the client resolves `mapUrl`. An absolute
+                         url is left alone and listed. Only the url values change: the rest of the file keeps its bytes.
+  Without it a selected .wam with a relative url is REFUSED (plan and apply, exit 2, nothing written): a map published like
+  that has no furniture. Leave the .wam out with --exclude '*.wam' to publish the rest. A .wam that is not JSON with an
+  `entityCollections` list is published as it is and said so in the plan.
+The DIST is never written. The rewritten bytes are written to BACKUP/<release id>/staged/<path> (kept, as the record of what
+was published) and copied from there; their hash is what the plan, the ledger and `verify` know, so a .wam whose only
+difference from the last publish is the rewrite is identical, and one that differs in anything else is `as-published` or
+`edited` by the same rules as any file. The ledger entry records `public_base_url` and, per rewritten file, `rewrites`
+(the hash of the DIST copy and the old and new value of every url). A rollback puts back the bytes the target held.
 
 Exit codes: 0 ok, 1 verify found drift, 2 refused or invalid input, or an OS error before the first write (an unusable
 backup directory, a full disk while saving the originals, an unreadable file): nothing was written to the target; 3 apply
@@ -86,6 +106,7 @@ import shutil
 import stat
 import sys
 from pathlib import Path
+from urllib.parse import quote, urljoin, urlsplit
 
 try:
     import fcntl
@@ -287,14 +308,163 @@ def read_tools(dist):
     return tools if isinstance(tools, dict) and tools else None
 
 
+def read_bytes(path):
+    """The bytes of a regular file, never through a symlink."""
+    with os.fdopen(os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0)), 'rb') as handle:
+        return handle.read()
+
+
+# ---------------------------------------------------------------------------------------------------- entity collections
+WAM_SUFFIX = '.wam'
+_JSON = json.JSONDecoder()
+_JSON_SPACE = ' \t\n\r'
+
+
+def check_public_base_url(value):
+    """The URL under which the target directory is served, as the operator gave it (None: not given). Refused unless it is
+    an http or https URL with a host, ending in "/", with no credentials (fetch() rejects them), query or fragment: it is
+    never completed, trimmed or guessed, because a wrong base is a map with no furniture again."""
+    if value is None:
+        return None
+    problem = None
+    try:
+        parts = urlsplit(value)
+        parts.port                                           # a bad port raises ValueError here
+    except ValueError as error:
+        parts, problem = None, str(error)
+    if parts is not None:
+        if any(ord(c) <= 32 or ord(c) == 127 for c in value):
+            problem = 'it has a space or a control character'
+        elif parts.scheme not in ('http', 'https'):
+            problem = 'it must be an absolute http or https URL'
+        elif not parts.hostname:
+            problem = 'it has no host'
+        elif '@' in parts.netloc:
+            problem = 'it has credentials, which fetch() refuses'
+        elif '?' in value or '#' in value:
+            problem = 'it has a query or a fragment'
+        elif not parts.path.endswith('/'):
+            problem = 'it must end in "/" (it is the URL of a directory)'
+    if problem:
+        raise PublishError(f'--public-base-url {value!r}: {problem}; give the URL under which the target is served, '
+                           'for example http://localhost:9090/maps/office/')
+    return value
+
+
+def _skip_space(text, i):
+    while text[i] in _JSON_SPACE:
+        i += 1
+    return i
+
+
+def _json_members(text, start):
+    """(key, value start, value end) for each member of the JSON object at text[start] == "{". `text` is valid JSON (the
+    caller parsed it); values are decoded only to learn where they end, so nothing is copied or re-formatted."""
+    i = _skip_space(text, start + 1)
+    while text[i] != '}':
+        key, i = _JSON.raw_decode(text, i)
+        i = _skip_space(text, _skip_space(text, i) + 1)      # past the ':'
+        end = _JSON.raw_decode(text, i)[1]
+        yield key, i, end
+        i = _skip_space(text, end)
+        if text[i] == ',':
+            i = _skip_space(text, i + 1)
+
+
+def _json_items(text, start):
+    """(value start, value end) for each item of the JSON array at text[start] == "["."""
+    i = _skip_space(text, start + 1)
+    while text[i] != ']':
+        end = _JSON.raw_decode(text, i)[1]
+        yield i, end
+        i = _skip_space(text, end)
+        if text[i] == ',':
+            i = _skip_space(text, i + 1)
+
+
+def collection_entries(text):
+    """The entries of the top-level "entityCollections" list of a WAM, as [dict(index, url, span)] where span is where the
+    url's JSON string sits in `text` (url None: the entry has no string url, span None). None when `text` is not a JSON
+    object with that list. The last of two duplicate keys wins, as in every JSON parser."""
+    try:
+        document = json.loads(text)
+    except (ValueError, RecursionError):
+        return None
+    if not isinstance(document, dict) or not isinstance(document.get('entityCollections'), list):
+        return None
+    listed = [(s, e) for key, s, e in _json_members(text, _skip_space(text, 0)) if key == 'entityCollections']
+    entries = []
+    for index, (start, _end) in enumerate(_json_items(text, listed[-1][0])):
+        url, span = None, None
+        if text[start] == '{':
+            urls = [(s, e) for key, s, e in _json_members(text, start) if key == 'url']
+            if urls:
+                value = _JSON.raw_decode(text, urls[-1][0])[0]
+                url, span = (value if isinstance(value, str) else None), urls[-1]
+        entries.append(dict(index=index, url=url, span=span))
+    return entries
+
+
+def resolve_collections(rel, data, base):
+    """What to do with the entityCollections of one build .wam, `rel` its path in the build and `data` its bytes.
+    Returns (entries, staged): `staged` is the rewritten bytes, or None when nothing changes; `entries` is None when the file
+    is not a JSON object with an "entityCollections" list (then it is published as it is), else one dict(index, old, new,
+    action) per entry, the action being
+      rewrite     a relative url, resolved against the .wam's own public URL (base + rel), as the client resolves `mapUrl`
+      keep        an absolute url (any scheme): left alone
+      unresolved  a relative url and no base: apply refuses
+      invalid     no usable string url: left alone
+    Only the url values are replaced, in the text, so the rest keeps its bytes; the result is parsed again and compared with
+    the original to prove it."""
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        return None, None
+    found = collection_entries(text)
+    if found is None:
+        return None, None
+    wam_url = None if base is None else base + quote(rel)
+    entries, edits = [], []
+    for item in found:
+        old = item['url']
+        entry = dict(index=item['index'], old=old, new=old, action='invalid')
+        try:
+            if old is not None and old.strip():
+                if urlsplit(old).scheme:
+                    entry.update(action='keep')
+                elif wam_url is None:
+                    entry.update(new=None, action='unresolved')
+                else:
+                    entry.update(new=urljoin(wam_url, old), action='rewrite')
+                    edits.append((item['span'], entry['new']))
+        except ValueError:                                   # urlsplit: a malformed url is not ours to fix; it stays invalid
+            pass
+        entries.append(entry)
+    if not edits:
+        return entries, None
+    staged = text
+    for (start, end), new in sorted(edits, reverse=True):
+        staged = staged[:start] + json.dumps(new, ensure_ascii=False) + staged[end:]
+    expected = json.loads(text)
+    for entry in entries:
+        if entry['action'] == 'rewrite':
+            expected['entityCollections'][entry['index']]['url'] = entry['new']
+    if json.loads(staged) != expected:
+        raise PublishError(f'{rel}: the rewrite of its entityCollections would change more than the urls (a bug of this tool); '
+                           'nothing was written')
+    return entries, staged.encode('utf-8')
+
+
 # --------------------------------------------------------------------------------------------------------------- ledger
 def canonical(data):
     return json.dumps(data, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
 
 
-def release_id(published, written, time, tools):
-    payload = canonical(dict(files=published, written=written, time=time, tools=tools))
-    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+def release_id(published, written, time, tools, public_base_url=None):
+    payload = dict(files=published, written=written, time=time, tools=tools)
+    if public_base_url is not None:                          # absent when not given: the id of a plain publish is unchanged
+        payload['public_base_url'] = public_base_url
+    return hashlib.sha256(canonical(payload).encode()).hexdigest()[:16]
 
 
 def load_ledger(target):
@@ -348,18 +518,44 @@ def latest_publish(ledger):
 
 
 # ----------------------------------------------------------------------------------------------------------------- plan
-def make_plan(dist, target, only=(), exclude=(), include_edited=()):
-    """(plan dict, ledger). No writes."""
+def _unresolved_message(unresolved):
+    lines = []
+    for rel, entries in sorted(unresolved.items()):
+        shown = ', '.join(e['old'] for e in entries[:3]) + (f' and {len(entries) - 3} more' if len(entries) > 3 else '')
+        lines.append(f'  {rel}: {len(entries)} relative entityCollections url(s): {shown}')
+    return ('a .wam would be published with relative entityCollections urls and no --public-base-url. The client resolves them '
+            'against the play page, not against the map, so the map would load with no furniture. Nothing was written.\n'
+            + '\n'.join(lines) + '\ngive --public-base-url URL (the URL under which the target is served, ending in "/"), '
+            "or leave the .wam out with --exclude '*.wam'")
+
+
+def _make_plan(dist, target, only=(), exclude=(), include_edited=(), public_base_url=None):
+    """(plan dict, ledger, staged) where staged is {rel: rewritten bytes} for the .wam files whose entityCollections get the
+    absolute form. No writes: the dist is only read, and the rewrite exists only in memory."""
+    base = check_public_base_url(public_base_url)
     ledger = load_ledger(target)
     known = known_state(ledger)
     build, skipped = scan_dist(dist)
-    files = []
+    files, staged, unresolved = [], {}, {}
     for rel in sorted(build):
         st = dest_state(target, rel)
-        sha, size = hash_file(build[rel])
+        collections, rewritten, source_sha, source_size = None, False, None, None
+        if rel.endswith(WAM_SUFFIX):
+            data = read_bytes(build[rel])
+            sha, size = hashlib.sha256(data).hexdigest(), len(data)
+            collections, rewrite = resolve_collections(rel, data, base)
+            if rewrite is not None:
+                source_sha, source_size, rewritten = sha, size, True
+                sha, size = hashlib.sha256(rewrite).hexdigest(), len(rewrite)
+                staged[rel] = rewrite
+        else:
+            sha, size = hash_file(build[rel])
         item = dict(path=rel, size=size, sha256=sha, status='new', editor_owned=editor_owned(rel),
                     selected=(not only or matches(rel, only)) and not matches(rel, exclude),
-                    edit_state=None, target_size=None, target_sha256=None, protected_by=[], protection_overridden=False)
+                    edit_state=None, target_size=None, target_sha256=None, protected_by=[], protection_overridden=False,
+                    entity_collections=collections, rewritten=rewritten, source_sha256=source_sha, source_size=source_size)
+        if item['selected'] and collections and any(e['action'] == 'unresolved' for e in collections):
+            unresolved[rel] = [e for e in collections if e['action'] == 'unresolved']
         if st is not None:
             item['target_sha256'], item['target_size'] = hash_file(os.path.join(target, rel))
             item['status'] = 'identical' if item['target_sha256'] == sha else 'changed'
@@ -375,6 +571,8 @@ def make_plan(dist, target, only=(), exclude=(), include_edited=()):
                 item['protected_by'].append('not-in-ledger')
             item['protection_overridden'] = bool(item['protected_by']) and matches(rel, include_edited)
         files.append(item)
+    if unresolved:                                           # before any protection or write: a map without furniture
+        raise PublishError(_unresolved_message(unresolved))
     left_alone = [dict(path=rel, in_ledger=rel in known) for rel in scan_target(target)
                   if rel not in build and rel != LEDGER_NAME]
     chosen = [f for f in files if f['selected']]
@@ -383,9 +581,33 @@ def make_plan(dist, target, only=(), exclude=(), include_edited=()):
                   protected=sum(bool(f['protected_by']) and not f['protection_overridden']
                                 for f in chosen if f['status'] == 'changed'))
     latest = latest_publish(ledger)
-    plan = dict(dist=str(dist), target=str(target), counts=counts, files=files, left_alone=left_alone,
+    plan = dict(dist=str(dist), target=str(target), public_base_url=base, counts=counts, files=files, left_alone=left_alone,
                 skipped_in_build=skipped, ledger=dict(entries=len(ledger['entries']), latest_publish=latest and latest['id']))
+    return plan, ledger, staged
+
+
+def make_plan(dist, target, only=(), exclude=(), include_edited=(), public_base_url=None):
+    """(plan dict, ledger). No writes."""
+    plan, ledger, _staged = _make_plan(dist, target, only, exclude, include_edited, public_base_url)
     return plan, ledger
+
+
+def format_collections(f):
+    """The lines that say what happens to the entityCollections of a planned .wam: old and new value of every entry."""
+    if f['entity_collections'] is None:
+        return ['    entityCollections: not inspected (not a JSON object with an entityCollections list), published as it is']
+    lines = []
+    for e in f['entity_collections']:
+        where = f"    entityCollections[{e['index']}]  "
+        if e['action'] == 'rewrite':
+            lines.append(f"{where}{e['old']}  ->  {e['new']}")
+        elif e['action'] == 'keep':
+            lines.append(f"{where}{e['old']}  absolute, left alone")
+        elif e['action'] == 'unresolved':
+            lines.append(f"{where}{e['old']}  RELATIVE: apply refuses without --public-base-url")
+        else:
+            lines.append(f"{where}{e['old']!r}  no usable url, left alone")
+    return lines
 
 
 def format_plan(plan, show_identical=False):
@@ -393,19 +615,27 @@ def format_plan(plan, show_identical=False):
     lines = [f"plan {plan['dist']} -> {plan['target']}",
              f"new {c['new']}, changed {c['changed']}, identical {c['identical']}, left alone {c['left_alone']}, "
              f"protected {c['protected']}, excluded {c['excluded']}, skipped dot files in the build {c['skipped']}"]
+    if plan.get('public_base_url'):
+        lines.append(f"public base url {plan['public_base_url']}: relative entityCollections urls of a .wam are resolved against it")
     for f in plan['files']:
         if not f['selected']:
             continue
         if f['status'] == 'identical':
             if show_identical:
                 lines.append(f"identical  {f['path']}")
+                if f['path'].endswith(WAM_SUFFIX):
+                    lines.extend(format_collections(f))
             continue
         extra = ''
         if f['status'] == 'changed':
             extra = f"  target {f['target_sha256'][:12]} -> build {f['sha256'][:12]}  {f['edit_state']}"
             if f['protected_by']:
                 extra += '  PROTECTED (' + ', '.join(f['protected_by']) + ')' + (' overridden' if f['protection_overridden'] else '')
+        if f['rewritten']:
+            extra += f"  REWRITTEN (the build's copy is {f['source_sha256'][:12]}, {f['source_size']} B)"
         lines.append(f"{f['status']:<9}  {f['path']}  {f['size']} B{extra}")
+        if f['path'].endswith(WAM_SUFFIX):
+            lines.extend(format_collections(f))
     for f in plan['left_alone']:
         lines.append(f"left alone  {f['path']}" + ('  (written by this tool once)' if f['in_ledger'] else ''))
     if plan['counts']['excluded']:
@@ -578,11 +808,11 @@ def _entry_files(items):
 
 
 # ----------------------------------------------------------------------------------------------------------------- apply
-def apply(dist, target, backup, only=(), exclude=(), include_edited=(), time=None, now=None):
+def apply(dist, target, backup, only=(), exclude=(), include_edited=(), time=None, now=None, public_base_url=None):
     stamp = resolve_time(time, now)
     dist_real, target_real, backup_real = resolve_roots(dist, target, backup)
     with locked(target_real):
-        plan, ledger = make_plan(dist_real, target_real, only, exclude, include_edited)
+        plan, ledger, staged = _make_plan(dist_real, target_real, only, exclude, include_edited, public_base_url)
         chosen = [f for f in plan['files'] if f['selected']]
         blocked = [f for f in chosen if f['status'] == 'changed' and f['protected_by'] and not f['protection_overridden']]
         if blocked:
@@ -593,22 +823,26 @@ def apply(dist, target, backup, only=(), exclude=(), include_edited=(), time=Non
         if not todo:
             latest = latest_publish(ledger)
             held = latest if latest and latest['id'] not in rolled_back(ledger) else None
-            return dict(noop=True, release=held and held['id'], written=[], plan=plan, backup=None)
+            return dict(noop=True, release=held and held['id'], written=[], plan=plan, backup=None,
+                        public_base_url=public_base_url, rewritten=[])
         tools = read_tools(dist_real)
         published = {f['path']: f['sha256'] for f in chosen}
         written = {f['path']: f['sha256'] for f in todo}
-        rid = release_id(published, written, stamp, tools)
+        rid = release_id(published, written, stamp, tools, public_base_url)
         release_dir = backup_real / rid
         if release_dir.exists():
             raise PublishError(f'{release_dir} already exists; choose another backup directory')
         backup_real.mkdir(parents=True, exist_ok=True)
         release_dir.mkdir()
-        sources = scan_dist(dist_real)[0]
-        ops = [(f['path'], sources[f['path']], f['sha256'], f['target_sha256']) for f in todo]
         recorded = known_state(ledger)
+        rewrites = {f['path']: dict(source_sha256=f['source_sha256'], source_size=f['source_size'],
+                                    entity_collections=[dict(index=e['index'], old=e['old'], new=e['new'])
+                                                        for e in f['entity_collections'] if e['action'] == 'rewrite'])
+                    for f in chosen if f['rewritten']}
 
         def finalize(created):
-            entry = dict(id=rid, kind='publish', time=stamp, tools=tools, files=_entry_files(chosen),
+            entry = dict(id=rid, kind='publish', time=stamp, tools=tools, public_base_url=public_base_url, rewrites=rewrites,
+                         files=_entry_files(chosen),
                          written={f['path']: dict(sha256=f['sha256'], size=f['size'],
                                                   previous=None if f['status'] == 'new'
                                                   else dict(sha256=f['target_sha256'], size=f['target_size']),
@@ -622,10 +856,18 @@ def apply(dist, target, backup, only=(), exclude=(), include_edited=(), time=Non
                                stat.S_IMODE(os.lstat(ledger_path).st_mode) if os.path.exists(ledger_path) else default_mode())
 
         try:
+            sources = scan_dist(dist_real)[0]
+            for f in todo:                                    # a rewritten file is copied from its staged bytes, never from the dist
+                if f['path'] in staged:
+                    staged_path = release_dir / 'staged' / f['path']
+                    staged_path.parent.mkdir(parents=True, exist_ok=True)
+                    write_bytes_atomic(str(staged_path), staged[f['path']], default_mode())
+                    sources[f['path']] = str(staged_path)
+            ops = [(f['path'], sources[f['path']], f['sha256'], f['target_sha256']) for f in todo]
             # What this release means to do, written before anything is saved or written and removed once the ledger has it.
             # After a hard crash (SIGKILL, power loss) it is the only record: see "After a crash" in the module docstring.
             write_bytes_atomic(str(release_dir / INTENT_NAME), ledger_bytes(dict(
-                release=rid, time=stamp, target=str(target_real), tools=tools,
+                release=rid, time=stamp, target=str(target_real), tools=tools, public_base_url=public_base_url,
                 written={f['path']: dict(sha256=f['sha256'], previous=None if f['status'] == 'new' else f['target_sha256'])
                          for f in todo})), default_mode())
             run_transaction(target_real, release_dir / 'files', ops, finalize)
@@ -638,7 +880,8 @@ def apply(dist, target, backup, only=(), exclude=(), include_edited=(), time=Non
             raise
         with contextlib.suppress(OSError):
             os.unlink(release_dir / INTENT_NAME)
-        return dict(noop=False, release=rid, written=[f['path'] for f in todo], plan=plan, backup=str(release_dir))
+        return dict(noop=False, release=rid, written=[f['path'] for f in todo], plan=plan, backup=str(release_dir),
+                    public_base_url=public_base_url, rewritten=sorted(rewrites))
 
 
 # --------------------------------------------------------------------------------------------------------------- rollback
@@ -756,15 +999,22 @@ def build_parser():
                            help='allow overwriting these protected files (edited in place, never recorded, or the editor\'s own)')
         p.add_argument('--json', action='store_true', help='machine-readable result on stdout')
 
+    def base_url(p):
+        p.add_argument('--public-base-url', metavar='URL', default=None,
+                       help='the URL under which TARGET is served (http or https, ending in "/"): relative entityCollections urls of '
+                            'a .wam are written absolute against it in the published copy; required when a selected .wam has any')
+
     p = sub.add_parser('plan', help='what apply would do; writes nothing')
     p.add_argument('dist')
     p.add_argument('target')
     p.add_argument('--all', action='store_true', help='also list identical files in the text output')
+    base_url(p)
     globs(p, edited=False)
     p = sub.add_parser('apply', help='publish the build into the target, with a backup and a ledger entry')
     p.add_argument('dist')
     p.add_argument('target')
     p.add_argument('--backup', required=True, help='directory for the copies of what is replaced (outside the target and the build)')
+    base_url(p)
     p.add_argument('--time', help='ISO 8601 time recorded in the release (default: now, taken once)')
     globs(p)
     p = sub.add_parser('rollback', help='undo one release from its backup')
@@ -786,16 +1036,19 @@ def main(argv=None, out=None, now=None):
     try:
         if args.command == 'plan':
             dist, target, _ = resolve_roots(args.dist, args.target)
-            plan, _ledger = make_plan(dist, target, args.only, args.exclude)
+            plan, _ledger = make_plan(dist, target, args.only, args.exclude, public_base_url=args.public_base_url)
             emit(plan, format_plan(plan, args.all))
             return 0
         if args.command == 'apply':
-            result = apply(args.dist, args.target, args.backup, args.only, args.exclude, args.include_edited, args.time, now)
+            result = apply(args.dist, args.target, args.backup, args.only, args.exclude, args.include_edited, args.time, now,
+                           args.public_base_url)
             counts = result['plan']['counts']
             text = (f"nothing to publish: the target already holds the build (release {result['release']})" if result['noop'] else
                     f"published {len(result['written'])} files as release {result['release']}\nbackup: {result['backup']}\n"
                     f"ledger: {Path(args.target).resolve() / LEDGER_NAME}\n"
-                    f"left alone: {counts['left_alone']} files only the target has; identical: {counts['identical']}")
+                    f"left alone: {counts['left_alone']} files only the target has; identical: {counts['identical']}"
+                    + (f"\nentityCollections rewritten against {result['public_base_url']} in: {', '.join(result['rewritten'])}"
+                       if result['rewritten'] else ''))
             emit({k: v for k, v in result.items() if k != 'plan'} | dict(counts=counts), text)
             return 0
         if args.command == 'rollback':

@@ -972,6 +972,348 @@ class Repairs(Case):
         self.assertEqual(sorted(p.name for p in (self.backup / result['release']).iterdir()), ['ledger-entry.json'])
 
 
+BASE = 'http://example.test/maps/office/'
+OTHER_BASE = 'https://maps.example.test/office/'
+ELSEWHERE = 'https://cdn.example.test/collections/FurnitureCollection.json'
+RELATIVE = ['entities/mobilia/collection.json', 'entities/konclui/collection.json']
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def wam(urls, **changes):
+    """A WAM shaped like the build's (indent 1, no ASCII escaping), with decoys a naive search would trip on: a "url" inside
+    an entity and an "entityCollections" key inside settings."""
+    document = {'version': '2.1.0', 'mapUrl': 'office.tmj',
+                'entities': {'e1': {'x': 32, 'y': 64, 'url': 'not/a/collection.json',
+                                    'prefabRef': {'collectionName': 'mobilia', 'id': 'chair'}}},
+                'areas': [], 'entityCollections': [{'url': u, 'type': 'file'} for u in urls],
+                'settings': {'entityCollections': 'entities/decoy/collection.json', 'megaphone': {'enabled': True}}}
+    document.update(changes)
+    return json.dumps(document, ensure_ascii=False, indent=1).encode()
+
+
+class EntityCollections(Case):
+    """The client fetches a WAM's entityCollections urls as they are written and fails on a relative one (see the module
+    docstring), so a published .wam must hold absolute urls, built from a base the operator names."""
+
+    def put_wam(self, urls, **changes):
+        write_tree(self.dist, {'office.wam': wam(urls, **changes)})
+
+    def served_urls(self, target=None, rel='office.wam'):
+        return [c['url'] for c in json.loads((Path(target or self.target) / rel).read_text())['entityCollections']]
+
+    def cli(self, *argv):
+        return subprocess.run([sys.executable, '-I', str(HERE / 'publish.py'), *map(str, argv)], capture_output=True, text=True)
+
+    def test_plan_shows_the_old_and_new_value_of_every_entry_and_writes_nothing(self):
+        self.put_wam(RELATIVE + [ELSEWHERE])
+        dist_before, target_before = snapshot(self.dist), snapshot(self.target)
+        code, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)
+        self.assertEqual(code, 0)
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual(item['entity_collections'], [
+            dict(index=0, old=RELATIVE[0], new=BASE + RELATIVE[0], action='rewrite'),
+            dict(index=1, old=RELATIVE[1], new=BASE + RELATIVE[1], action='rewrite'),
+            dict(index=2, old=ELSEWHERE, new=ELSEWHERE, action='keep')])
+        self.assertTrue(item['rewritten'])
+        self.assertEqual(plan['public_base_url'], BASE)
+        source = (self.dist / 'office.wam').read_bytes()
+        self.assertEqual((item['source_sha256'], item['source_size']), (sha(source), len(source)))
+        self.assertNotEqual(item['sha256'], item['source_sha256'])
+        self.assertEqual(snapshot(self.dist), dist_before)
+        self.assertEqual(snapshot(self.target), target_before)
+        self.assertFalse(self.backup.exists())
+        text = run('plan', self.dist, self.target, '--public-base-url', BASE)[1]
+        self.assertIn(f'entityCollections[0]  {RELATIVE[0]}  ->  {BASE}{RELATIVE[0]}', text)
+        self.assertIn(f'entityCollections[2]  {ELSEWHERE}  absolute, left alone', text)
+        self.assertIn(f'public base url {BASE}', text)
+
+    def test_apply_writes_absolute_urls_into_the_target_and_never_touches_the_dist(self):
+        self.put_wam(RELATIVE + [ELSEWHERE])
+        dist_before = snapshot(self.dist)
+        code, result, _ = self.apply('--public-base-url', BASE)
+        self.assertEqual((code, result['rewritten'], result['public_base_url']), (0, ['office.wam'], BASE))
+        self.assertEqual(snapshot(self.dist), dist_before)                       # not a byte, not an mtime
+        self.assertEqual(self.served_urls(), [BASE + RELATIVE[0], BASE + RELATIVE[1], ELSEWHERE])
+        # Only the url strings differ: put the old ones back and the file is the build's again, byte for byte.
+        served = (self.target / 'office.wam').read_text()
+        for url in RELATIVE:
+            served = served.replace(json.dumps(BASE + url), json.dumps(url))
+        self.assertEqual(served, (self.dist / 'office.wam').read_text())
+        code, report, _ = run_json('verify', self.target)
+        self.assertEqual((code, report['ok']), (0, True))
+        (self.target / 'office.wam').write_bytes((self.target / 'office.wam').read_bytes() + b' ')
+        code, report, _ = run_json('verify', self.target)
+        self.assertEqual((code, [d['path'] for d in report['drift']]), (1, ['office.wam']))
+
+    def test_the_ledger_records_the_base_the_rewrite_and_the_hash_of_what_was_written(self):
+        self.put_wam(RELATIVE)
+        source = (self.dist / 'office.wam').read_bytes()
+        _, result, _ = self.apply('--public-base-url', BASE)
+        served = (self.target / 'office.wam').read_bytes()
+        entry = self.ledger()['entries'][-1]
+        self.assertEqual(entry['public_base_url'], BASE)
+        self.assertEqual(entry['rewrites'], {'office.wam': dict(
+            source_sha256=sha(source), source_size=len(source),
+            entity_collections=[dict(index=i, old=u, new=BASE + u) for i, u in enumerate(RELATIVE)])})
+        self.assertEqual(entry['files']['office.wam'], dict(sha256=sha(served), size=len(served)))
+        self.assertEqual(entry['written']['office.wam']['sha256'], sha(served))
+        saved = self.backup / result['release']
+        self.assertEqual(json.loads((saved / 'ledger-entry.json').read_text()), entry)
+        self.assertEqual((saved / 'staged/office.wam').read_bytes(), served)     # the record of what was published
+        self.assertFalse((saved / P.INTENT_NAME).exists())
+        self.assertFalse([rel for rel in snapshot(self.target) if rel.startswith('staged')])
+        self.no_temporary_files()
+
+    def test_the_release_id_follows_the_base_and_is_the_same_for_the_same_inputs(self):
+        self.put_wam(RELATIVE)
+        ids = []
+        for n, base in enumerate((BASE, BASE, OTHER_BASE)):
+            target = self.root / f'served-{n}'
+            target.mkdir()
+            code, result, _ = run_json('apply', self.dist, target, '--backup', self.root / f'backup-{n}', '--time', TIME,
+                                       '--public-base-url', base)
+            self.assertEqual(code, 0)
+            ids.append(result['release'])
+        self.assertEqual(ids[0], ids[1])
+        self.assertNotEqual(ids[0], ids[2])
+        self.assertEqual(self.served_urls(self.root / 'served-2'), [OTHER_BASE + u for u in RELATIVE])
+
+    def test_a_relative_url_without_a_base_is_refused_by_plan_and_apply_and_nothing_is_written(self):
+        self.put_wam(RELATIVE + [ELSEWHERE])
+        for argv in (('plan', self.dist, self.target), ('apply', self.dist, self.target, '--backup', self.backup)):
+            code, out, err = run(*argv)
+            self.assertEqual((code, out), (2, ''), argv[0])
+            self.assertIn('--public-base-url', err)
+            self.assertIn(RELATIVE[0], err)
+            self.assertNotIn(ELSEWHERE, err)                                       # only the relative ones are named
+        self.assertEqual(os.listdir(self.target), [])
+        self.assertFalse(self.backup.exists())
+        self.assertEqual(self.apply('--only', 'office.wam')[0], 2)
+        self.assertEqual(self.apply('--only', 'tilesets/**')[0], 0)                # the wam is not selected: nothing to refuse
+        self.assertEqual(self.apply('--exclude', '*.wam', time='2026-11-22T11:00:00Z')[0], 0)
+        self.assertFalse((self.target / 'office.wam').exists())
+
+    def test_a_refusal_comes_before_the_protection_check(self):
+        self.put_wam(RELATIVE)
+        self.assertEqual(self.apply('--public-base-url', BASE)[0], 0)
+        self.put_wam(RELATIVE + ['entities/extra/collection.json'])
+        code, _, err = run('apply', self.dist, self.target, '--backup', self.backup, '--time', '2026-11-22T11:00:00Z')
+        self.assertEqual(code, 2)                                                  # not 3: the missing base is named first
+        self.assertIn('--public-base-url', err)
+
+    def test_absolute_urls_are_left_alone_and_a_wam_with_only_those_needs_no_base(self):
+        absolute = ['http://localhost:9090/maps/office/entities/a/collection.json', ELSEWHERE]
+        self.put_wam(absolute)
+        source = (self.dist / 'office.wam').read_bytes()
+        code, plan, _ = run_json('plan', self.dist, self.target)                   # no base, nothing relative: no refusal
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual((code, item['rewritten'], item['source_sha256'], {e['action'] for e in item['entity_collections']}),
+                         (0, False, None, {'keep'}))
+        self.assertEqual(self.apply()[0], 0)
+        self.assertEqual((self.target / 'office.wam').read_bytes(), source)
+        entry = self.ledger()['entries'][-1]
+        self.assertEqual((entry['public_base_url'], entry['rewrites']), (None, {}))
+        code, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)   # a base changes nothing here
+        self.assertEqual((code, next(f for f in plan['files'] if f['path'] == 'office.wam')['status']), (0, 'identical'))
+
+    def test_the_same_publish_twice_is_a_no_op_and_the_rewrite_alone_is_not_an_edit(self):
+        self.put_wam(RELATIVE)
+        _, first, _ = self.apply('--public-base-url', BASE)
+        code, again, _ = self.apply('--public-base-url', BASE, time='2026-11-22T11:00:00Z')
+        self.assertEqual((code, again['noop'], again['release']), (0, True, first['release']))
+        _, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual((item['status'], item['edit_state'], item['protected_by']), ('identical', None, []))
+        self.assertEqual(plan['counts']['protected'], 0)
+        # Another base is a real change of the file, and the file is still what the last publish wrote: as-published.
+        _, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', OTHER_BASE)
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual((item['status'], item['edit_state'], item['protected_by']), ('changed', 'as-published', ['editor-owned']))
+
+    def test_a_rebuilt_wam_is_protected_as_editor_owned_and_a_real_edit_is_still_caught(self):
+        self.put_wam(RELATIVE)
+        self.apply('--public-base-url', BASE)
+        self.put_wam(RELATIVE + ['entities/extra/collection.json'])
+        later = '2026-11-22T11:00:00Z'
+        code, _, err = run('apply', self.dist, self.target, '--backup', self.backup, '--time', later, '--public-base-url', BASE)
+        self.assertEqual(code, 3)
+        self.assertIn('editor-owned', err)
+        self.assertNotIn('edited-in-place', err)
+        self.assertEqual(self.apply('--public-base-url', BASE, '--include-edited', '*.wam', time=later)[0], 0)
+        self.assertEqual(self.served_urls(), [BASE + u for u in RELATIVE + ['entities/extra/collection.json']])
+        served = json.loads((self.target / 'office.wam').read_text())                # the editor adds an area and rewrites it
+        served['areas'].append({'id': 'a1'})
+        (self.target / 'office.wam').write_text(json.dumps(served))
+        _, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual((item['edit_state'], item['protected_by']), ('edited', ['editor-owned', 'edited-in-place']))
+        code, _, err = run('apply', self.dist, self.target, '--backup', self.backup, '--time', '2026-11-22T12:00:00Z',
+                           '--public-base-url', BASE)
+        self.assertEqual(code, 3)
+        self.assertIn('edited-in-place', err)
+
+    def test_a_wam_published_before_the_rewrite_existed_is_changed_not_edited_and_rolls_back(self):
+        self.put_wam(RELATIVE)
+        with mock.patch.object(P, 'resolve_collections', lambda rel, data, base: (None, None)):    # the tool as it was
+            self.assertEqual(self.apply()[0], 0)
+        relative_bytes = (self.target / 'office.wam').read_bytes()
+        self.assertEqual(relative_bytes, (self.dist / 'office.wam').read_bytes())
+        later = '2026-11-22T11:00:00Z'
+        _, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual((item['status'], item['edit_state'], item['protected_by'], item['rewritten']),
+                         ('changed', 'as-published', ['editor-owned'], True))
+        self.assertEqual(self.apply('--public-base-url', BASE, '--include-edited', '*.wam', time=later)[0], 0)
+        self.assertEqual(self.served_urls(), [BASE + u for u in RELATIVE])
+        code, result, _ = run_json('rollback', self.target, '--backup', self.backup, '--time', '2026-11-22T12:00:00Z')
+        self.assertEqual((code, result['restored']), (0, ['office.wam']))
+        self.assertEqual((self.target / 'office.wam').read_bytes(), relative_bytes)       # the previous bytes, exactly
+        self.assertEqual(run_json('verify', self.target)[1]['ok'], True)
+        _, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)  # still as-published after the rollback
+        self.assertEqual(next(f for f in plan['files'] if f['path'] == 'office.wam')['edit_state'], 'as-published')
+
+    def test_rollback_of_a_new_rewritten_wam_removes_it(self):
+        self.put_wam(RELATIVE)
+        before = snapshot(self.target)
+        self.assertEqual(self.apply('--public-base-url', BASE)[0], 0)
+        self.assertTrue((self.target / 'office.wam').exists())
+        self.assertEqual(run_json('rollback', self.target, '--backup', self.backup, '--time', '2026-11-22T12:00:00Z')[0], 0)
+        self.assertFalse((self.target / 'office.wam').exists())
+        after = snapshot(self.target)
+        after.pop(P.LEDGER_NAME)
+        self.assertEqual(after, before)
+
+    def test_a_wam_in_a_subdirectory_is_resolved_against_its_own_public_url(self):
+        write_tree(self.dist, {'maps/office/office.wam': wam(['entities/x/collection.json', '../shared/y.json', '/root/z.json',
+                                                              '//cdn.example.test/w.json']),
+                               'maps/my office/room.wam': wam(['entities/a.json'])})
+        self.assertEqual(self.apply('--public-base-url', BASE)[0], 0)
+        self.assertEqual(self.served_urls(rel='maps/office/office.wam'),
+                         [BASE + 'maps/office/entities/x/collection.json', BASE + 'maps/shared/y.json',
+                          'http://example.test/root/z.json', 'http://cdn.example.test/w.json'])
+        self.assertEqual(self.served_urls(rel='maps/my office/room.wam'), [BASE + 'maps/my%20office/entities/a.json'])
+
+    def test_a_bad_base_is_refused_and_nothing_is_written(self):
+        self.put_wam(RELATIVE)
+        bad = ['', 'example.test/maps/', '/maps/office/', 'ftp://example.test/maps/', 'file:///tmp/maps/',
+               'http://example.test/maps', 'http://example.test', 'http://user:pw@example.test/maps/',
+               'http://example.test/maps/?x=1', 'http://example.test/maps/#f', 'http://example.test/ maps/', 'http://:80/maps/',
+               'http://example.test:99999/maps/', 'http://example.test/maps/\n']
+        for base in bad:
+            for argv in (('plan', self.dist, self.target), ('apply', self.dist, self.target, '--backup', self.backup)):
+                with self.subTest(base=base, command=argv[0]):
+                    code, _, err = run(*argv, '--public-base-url', base)
+                    self.assertEqual(code, 2)
+                    self.assertIn('--public-base-url', err)
+        self.assertEqual(os.listdir(self.target), [])
+        self.assertFalse(self.backup.exists())
+        for base in ('https://maps.example.test/', 'http://localhost:9090/maps/office/', 'http://[::1]:9090/office/'):
+            with self.subTest(base=base):
+                self.assertEqual(P.check_public_base_url(base), base)                # kept exactly as given
+                self.assertEqual(run('plan', self.dist, self.target, '--public-base-url', base)[0], 0)
+
+    def test_only_the_urls_change_whatever_the_formatting_and_escapes(self):
+        text = ('{"version":"2.1.0",\r\n "entityCollections" : [ {"type":"file","url":"entities\\/mobilia\\/collection.json"} ,'
+                ' {"url" :"entities/caf\\u00e9/c.json","type":"file"} ],\r\n"areas":[],"entities":{},"mapUrl":"office.tmj"}')
+        write_tree(self.dist, {'office.wam': text.encode()})
+        self.assertEqual(self.apply('--public-base-url', BASE)[0], 0)
+        served = (self.target / 'office.wam').read_bytes().decode()               # read_text() would turn CRLF into LF
+        expected = (text.replace('"entities\\/mobilia\\/collection.json"', json.dumps(BASE + 'entities/mobilia/collection.json'))
+                    .replace('"entities/caf\\u00e9/c.json"', json.dumps(BASE + 'entities/café/c.json', ensure_ascii=False)))
+        self.assertEqual(served, expected)                                         # CRLF, spaces and key order are the build's
+        self.assertEqual(self.served_urls(), [BASE + 'entities/mobilia/collection.json', BASE + 'entities/café/c.json'])
+
+    def test_the_last_of_two_duplicate_keys_is_the_one_that_counts(self):
+        text = '{"entityCollections":[{"url":"first/a.json"}],"entityCollections":[{"url":"last/b.json"}]}'
+        entries, staged = P.resolve_collections('office.wam', text.encode(), BASE)
+        self.assertEqual([(e['old'], e['new']) for e in entries], [('last/b.json', BASE + 'last/b.json')])
+        self.assertEqual(staged.decode(), text.replace('"last/b.json"', json.dumps(BASE + 'last/b.json')))
+
+    def test_a_wam_that_is_not_a_collection_list_is_published_as_it_is_and_said_so(self):
+        for n, data in enumerate((b'wam v2 from the build', b'\xff\xfe not utf-8', b'[1, 2]', b'{"version": "2.1.0"}',
+                                  b'{"entityCollections": "x"}', b'{"entityCollections": [', b'')):
+            with self.subTest(data=data):
+                dist, target = self.root / f'dist-{n}', self.root / f'served-{n}'
+                target.mkdir()
+                write_tree(dist, {'office.wam': data, 'office.tmj': b'{}'})
+                code, plan, _ = run_json('plan', dist, target)
+                item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+                self.assertEqual((code, item['entity_collections'], item['rewritten']), (0, None, False))
+                self.assertIn('not inspected', run('plan', dist, target)[1])
+                code, _, _ = run_json('apply', dist, target, '--backup', self.root / f'backup-{n}', '--time', TIME)
+                self.assertEqual((code, (target / 'office.wam').read_bytes()), (0, data))
+
+    def test_entries_without_a_usable_url_are_listed_and_left_alone(self):
+        document = json.loads(wam(['entities/a.json']))
+        document['entityCollections'] = [{'type': 'file'}, {'url': 5, 'type': 'file'}, 'x', {'url': '  ', 'type': 'file'},
+                                         {'url': 'entities/a.json', 'type': 'file'}]
+        write_tree(self.dist, {'office.wam': json.dumps(document, indent=1).encode()})
+        code, plan, _ = run_json('plan', self.dist, self.target, '--public-base-url', BASE)
+        item = next(f for f in plan['files'] if f['path'] == 'office.wam')
+        self.assertEqual((code, [e['action'] for e in item['entity_collections']]), (0, ['invalid'] * 4 + ['rewrite']))
+        self.assertEqual(self.apply('--public-base-url', BASE)[0], 0)
+        served = json.loads((self.target / 'office.wam').read_text())['entityCollections']
+        self.assertEqual(served, document['entityCollections'][:4] + [{'url': BASE + 'entities/a.json', 'type': 'file'}])
+        self.assertEqual(run('plan', self.dist, self.target)[0], 2)               # without a base the one relative entry is refused
+
+    def test_the_rewrite_cannot_change_more_than_the_urls(self):
+        text = wam(RELATIVE).decode()
+        start = text.index('"2.1.0"')
+        wrong = [dict(index=0, url='entities/a.json', span=(start, start + len('"2.1.0"')))]     # a span on the wrong value
+        with mock.patch.object(P, 'collection_entries', return_value=wrong):
+            with self.assertRaises(P.PublishError) as caught:
+                P.resolve_collections('office.wam', text.encode(), BASE)
+        self.assertIn('more than the urls', str(caught.exception))
+
+    def test_a_failed_write_of_a_rewritten_wam_leaves_neither_target_nor_backup_behind(self):
+        self.put_wam(RELATIVE)
+        real = os.replace
+
+        def flaky(src, dst):
+            if dst.startswith(str(self.target)) and dst.endswith('office.wam'):      # the write into the target, not the staging
+                raise OSError(5, 'injected')
+            return real(src, dst)
+        with mock.patch.object(P.os, 'replace', flaky):
+            code, _, _ = self.apply('--public-base-url', BASE)
+        self.assertEqual(code, 4)
+        self.assertEqual(os.listdir(self.target), [])
+        self.assertEqual(os.listdir(self.backup), [])                                # the staged copy went with the release
+
+    def test_a_failure_while_staging_is_refused_before_any_write_and_leaves_no_backup_behind(self):
+        self.put_wam(RELATIVE)
+        real = os.replace
+
+        def flaky(src, dst):
+            if '/staged/' in dst:
+                raise OSError(28, 'injected: no space left')
+            return real(src, dst)
+        with mock.patch.object(P.os, 'replace', flaky):
+            code, _, err = self.apply('--public-base-url', BASE)
+        self.assertEqual(code, 2)
+        self.assertIn('nothing was written to the target', err)
+        self.assertEqual(os.listdir(self.target), [])
+        self.assertEqual(os.listdir(self.backup), [])
+
+    def test_the_flag_works_as_a_program(self):
+        self.put_wam(RELATIVE)
+        refused = self.cli('plan', self.dist, self.target)
+        self.assertEqual((refused.returncode, refused.stdout), (2, ''))
+        self.assertIn('--public-base-url', refused.stderr)
+        planned = self.cli('plan', self.dist, self.target, '--public-base-url', BASE)
+        self.assertEqual(planned.returncode, 0, planned.stderr)
+        self.assertIn(f'{RELATIVE[0]}  ->  {BASE}{RELATIVE[0]}', planned.stdout)
+        applied = self.cli('apply', self.dist, self.target, '--backup', self.backup, '--time', TIME, '--public-base-url', BASE)
+        self.assertEqual(applied.returncode, 0, applied.stderr)
+        self.assertIn(f'entityCollections rewritten against {BASE} in: office.wam', applied.stdout)
+        self.assertEqual(self.cli('verify', self.target).returncode, 0)
+        self.assertEqual(self.cli('rollback', self.target, '--backup', self.backup).returncode, 0)
+        self.assertEqual(self.cli('rollback', self.target, '--help').returncode, 0)
+        self.assertNotIn('--public-base-url', self.cli('rollback', self.target, '--help').stdout)   # only plan and apply take it
+
+
 class CommandLine(Case):
     def cli(self, *argv):
         return subprocess.run([sys.executable, '-I', str(HERE / 'publish.py'), *map(str, argv)], capture_output=True, text=True)
