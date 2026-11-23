@@ -1,18 +1,26 @@
 {
   "schema": 1,
-  "note": "The pins of the three SpriteFusion command-line tools the art pipeline runs. Data, reviewed in a diff: tools/toolchain.py reads it and nothing else decides a version. A change here is a deliberate upgrade of a tool. 'sha256' lists the accepted binary hashes of this build host (macOS arm64); it is printed always and enforced only with KONCLUI_TOOLCHAIN_SHA256=enforce, because a rebuild of the same commit gives another hash. The palette-snapper hash is of a build from a LOCAL CHECKOUT of the pinned commit (cargo install from a local path, recorded in ~/.cargo/.crates2.json), not of one made by the documented 'cargo install --git ... --rev' command, which can give another hash: re-measure and list it when that command is run on the build host.",
+  "note": "The pins of the three SpriteFusion command-line tools the art pipeline runs. Data, reviewed in a diff: tools/toolchain.py reads it and nothing else decides a version. A change here is a deliberate upgrade of a tool. 'sha256' lists the accepted binary hashes of this build host (macOS arm64); it is printed always and enforced only with KONCLUI_TOOLCHAIN_SHA256=enforce, because a rebuild of the same commit gives another hash. The palette-snapper hash is of a build from a LOCAL CHECKOUT of the pinned commit (cargo install from a local path, recorded in ~/.cargo/.crates2.json), not of one made by the documented 'cargo install --git ... --rev' command, which can give another hash: re-measure and list it when that command is run on the build host. 'pixel-snapper' is the FIXED build: the pinned commit plus the carried patch (patch, patchSha256; tools/patches/README.md), installed as spritefusion-pixel-snapper-fixed by tools/build_pixel_snapper.py. The patch does not change the crate version, so 'capability' is a probe that tells it from the stock tool (its --help lists --expect-cell). 'stock' keeps the pins of the stock 1.0.0 build (the Homebrew one) so that it is recognised and refused by name; nothing in ingest runs it.",
   "tools": {
     "pixel-snapper": {
-      "binary": "spritefusion-pixel-snapper",
+      "binary": "spritefusion-pixel-snapper-fixed",
       "env": "SPRITEFUSION_PIXEL_SNAPPER_BIN",
       "version": "1.0.0",
       "repository": "https://github.com/Hugo-Dz/spritefusion-pixel-snapper",
       "commit": "5743009265051098831ad7298092072325d1149b",
       "license": "MIT",
-      "install": "brew install hugo-dz/tap/spritefusion-pixel-snapper",
+      "install": "cd assets/konclui/source && python3 -I tools/build_pixel_snapper.py",
       "sha256": [
-        "f862285d7d65623c1a29ae655030d59ab60c4a8a0f937695d08b6dd09de99b4f"
-      ]
+        "ffd76a7420b4d6e89b7b42c136401cb4b914d7fad252eadc57ade44ddd6896d7"
+      ],
+      "patch": "patches/pixel-snapper-fix.patch",
+      "patchSha256": "32bb537ec17dc2a0910d371fcf4e636364485fd15766c2b30bd3e649a9bede0a",
+      "capability": {
+        "args": [
+          "--help"
+        ],
+        "contains": "--expect-cell"
+      }
     },
     "sprite-normals": {
       "binary": "spritefusion-sprite-normals",
@@ -36,6 +44,19 @@
       "install": "cargo install --locked --git https://github.com/Hugo-Dz/spritefusion-palette-snapper --rev ea647826abf82b70f87f54a4e45a58515eab650a",
       "sha256": [
         "87c7bd2d74f10507289f8569a0d2175bb407131fd18246b6c06e51341e49a704"
+      ]
+    }
+  },
+  "stock": {
+    "pixel-snapper": {
+      "binary": "spritefusion-pixel-snapper",
+      "version": "1.0.0",
+      "repository": "https://github.com/Hugo-Dz/spritefusion-pixel-snapper",
+      "commit": "5743009265051098831ad7298092072325d1149b",
+      "license": "MIT",
+      "install": "brew install hugo-dz/tap/spritefusion-pixel-snapper",
+      "sha256": [
+        "f862285d7d65623c1a29ae655030d59ab60c4a8a0f937695d08b6dd09de99b4f"
       ]
     }
   }

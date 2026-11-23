@@ -1,0 +1,1961 @@
+diff --git a/README.md b/README.md
+index 019a3b1..dfd8029 100644
+--- a/README.md
++++ b/README.md
+@@ -72,6 +72,15 @@ spritefusion-pixel-snapper sprites/batch_inputs sprites/batch_outputs 16 --pixel
+ 
+ This is useful when the auto-detection doesn't match the expected grid size. The value must be between 1 and half the smallest image dimension.
+ 
++`--pixel-size 1` says the picture is already one image pixel per art pixel: it is kept as it is (colours are only reduced if you also pass a colour count or a palette).
++
++#### What the auto-detection does with a picture
++
++- Art that is already on its grid (it has one-pixel details) comes back unchanged, at the same size.
++- Enlarged art (sharp, blurred, noisy, cropped or padded by a few pixels, interpolated, a slightly different horizontal and vertical scale) comes back at one pixel per art pixel.
++- When no grid can be established with enough evidence (a picture with only a handful of edges, a blank or smooth picture), nothing is written, the reason is printed and the exit code is `3`. Pass `--pixel-size N` (or `1`) to decide yourself.
++- `--expect-cell N` states that the result must be a whole number of `N`-pixel cells (for example `32` for sprite sheets). Grids that do not give one are rejected, and a picture whose size is a multiple of `N` with no grid in sight is taken to be on its grid.
++
+ Constrain the output to a fixed palette with `--palette`, passing comma-separated hex colors:
+ 
+ ```bash
+diff --git a/src/lib.rs b/src/lib.rs
+index 92a0dec..648304a 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -24,6 +24,12 @@ const MAX_PALETTE_COLORS: usize = 256;
+ pub struct Config {
+     pub k_colors: usize,
+     pub pixel_size_override: Option<f64>,
++    /// When set, the snapped picture must have a width and height that are multiples of this
++    /// cell size, otherwise processing fails with `PixelSnapperError::Unresolved`.
++    pub expect_cell: Option<u32>,
++    /// True when the caller asked for a colour count. A picture that is already on its grid is
++    /// only colour-reduced when this is set or a palette is given.
++    k_colors_explicit: bool,
+     palette: Option<Vec<[u8; 3]>>,
+     k_seed: u64,
+     /// Input image path only used for CLI use
+@@ -33,11 +39,16 @@ pub struct Config {
+     #[allow(dead_code)]
+     output_path: String,
+     max_kmeans_iterations: usize,
+-    peak_threshold_multiplier: f64,
+-    peak_distance_filter: usize,
+     walker_search_window_ratio: f64,
+     walker_min_search_window: f64,
+     walker_strength_threshold: f64,
++    edge_tolerance: u8,
++    min_lattice_share: f64,
++    min_lattice_significance: f64,
++    min_spikes: u64,
++    min_spike_share: f64,
++    curvature_tolerance: u8,
++    min_lattice_boundaries: usize,
+     min_cuts_per_axis: usize,
+     fallback_target_segments: usize,
+     max_step_ratio: f64,
+@@ -51,15 +62,22 @@ impl Default for Config {
+             input_path: "samples/2/skeleton.png".to_string(),
+             output_path: "samples/2/skeleton_fixed_clean2.png".to_string(),
+             max_kmeans_iterations: 15,
+-            peak_threshold_multiplier: 0.2,
+-            peak_distance_filter: 4,
+             walker_search_window_ratio: 0.35,
+-            walker_min_search_window: 2.0,
++            walker_min_search_window: 0.5,
+             walker_strength_threshold: 0.5,
++            edge_tolerance: 24,
++            min_lattice_share: 0.85,
++            min_lattice_significance: 6.0,
++            min_spikes: 3,
++            min_spike_share: 0.0025,
++            curvature_tolerance: 36,
++            min_lattice_boundaries: 8,
+             min_cuts_per_axis: 4,
+             fallback_target_segments: 64,
+             max_step_ratio: 1.8, // Lowered from 3.0 to catch more skew cases
+             pixel_size_override: None,
++            expect_cell: None,
++            k_colors_explicit: false,
+             palette: None,
+         }
+     }
+@@ -70,6 +88,8 @@ pub enum PixelSnapperError {
+     ImageError(image::ImageError),
+     InvalidInput(String),
+     ProcessingError(String),
++    /// No pixel grid could be established with enough evidence. Nothing is written.
++    Unresolved(String),
+ }
+ 
+ impl fmt::Display for PixelSnapperError {
+@@ -78,6 +98,9 @@ impl fmt::Display for PixelSnapperError {
+             PixelSnapperError::ImageError(e) => write!(f, "Image error: {}", e),
+             PixelSnapperError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+             PixelSnapperError::ProcessingError(msg) => write!(f, "Processing error: {}", msg),
++            PixelSnapperError::Unresolved(msg) => {
++                write!(f, "Could not resolve a pixel grid: {}", msg)
++            }
+         }
+     }
+ }
+@@ -103,7 +126,8 @@ pub type Result<T> = std::result::Result<T, PixelSnapperError>;
+ struct ProcessedImage {
+     output_bytes: Vec<u8>,
+     pixel_size: f64,
+-    pixel_size_override: bool,
++    pixel_size_source: &'static str,
++    detail: String,
+     output_width: u32,
+     output_height: u32,
+ }
+@@ -114,7 +138,9 @@ pub struct BatchConfig {
+     pub input_dir: PathBuf,
+     pub output_dir: PathBuf,
+     pub k_colors: usize,
++    pub k_colors_explicit: bool,
+     pub pixel_size_override: Option<f64>,
++    pub expect_cell: Option<u32>,
+     pub palette: Option<Vec<[u8; 3]>>,
+ }
+ 
+@@ -125,7 +151,9 @@ impl From<&Config> for BatchConfig {
+             input_dir: PathBuf::from(&config.input_path),
+             output_dir: PathBuf::from(&config.output_path),
+             k_colors: config.k_colors,
++            k_colors_explicit: config.k_colors_explicit,
+             pixel_size_override: config.pixel_size_override,
++            expect_cell: config.expect_cell,
+             palette: config.palette.clone(),
+         }
+     }
+@@ -136,7 +164,9 @@ impl From<&BatchConfig> for Config {
+     fn from(config: &BatchConfig) -> Self {
+         Self {
+             k_colors: config.k_colors,
++            k_colors_explicit: config.k_colors_explicit,
+             pixel_size_override: config.pixel_size_override,
++            expect_cell: config.expect_cell,
+             palette: config.palette.clone(),
+             ..Default::default()
+         }
+@@ -177,7 +207,7 @@ pub enum BatchEvent {
+ #[cfg(not(target_arch = "wasm32"))]
+ #[derive(Debug)]
+ enum CliCommand {
+-    Run(Config),
++    Run(Box<Config>),
+     Help,
+     Version,
+ }
+@@ -199,6 +229,10 @@ pub fn run_cli() -> std::process::ExitCode {
+         }
+         Ok(CliCommand::Run(config)) => match process(&config) {
+             Ok(()) => std::process::ExitCode::SUCCESS,
++            Err(error @ PixelSnapperError::Unresolved(_)) => {
++                eprintln!("Error: {error}");
++                std::process::ExitCode::from(3)
++            }
+             Err(error) => {
+                 eprintln!("Error: {error}");
+                 std::process::ExitCode::from(1)
+@@ -225,13 +259,15 @@ fn print_cli_help() {
+             "  <OUTPUT>  Output PNG file, or a different output directory for a batch\n",
+             "  [COLORS]  Number of palette colors [default: 16]\n\n",
+             "OPTIONS:\n",
+-            "  --pixel-size <PIXELS>  Override the auto-detected pixel size\n",
++            "  --pixel-size <PIXELS>  Override the auto-detected pixel size (1 = already on the grid)\n",
++            "  --expect-cell <N>      Fail unless the output width and height are multiples of N\n",
+             "  --palette <HEX,...>    Use comma-separated 6-digit hex palette colors\n",
+             "  -h, --help             Print help\n",
+             "  -V, --version          Print version\n\n",
+             "EXAMPLES:\n",
+             "  spritefusion-pixel-snapper input.png output.png\n",
+             "  spritefusion-pixel-snapper input.png output.png 16 --pixel-size 8\n",
++            "  spritefusion-pixel-snapper sheet.png out.png --expect-cell 32\n",
+             "  spritefusion-pixel-snapper inputs outputs --palette 0d2b45,ffecd6"
+         ),
+         version = env!("CARGO_PKG_VERSION")
+@@ -245,6 +281,11 @@ fn process_image_common(input_bytes: &[u8], config: Option<Config>) -> Result<Pr
+     let (width, height) = img.dimensions();
+ 
+     validate_image_dimensions(width, height)?;
++    if width < 3 || height < 3 {
++        return Err(PixelSnapperError::InvalidInput(
++            "Image too small (minimum 3x3)".to_string(),
++        ));
++    }
+ 
+     if let Some(px) = config.pixel_size_override {
+         if !px.is_finite() || px < 1.0 || px > (width.min(height) as f64 / 2.0) {
+@@ -258,31 +299,76 @@ fn process_image_common(input_bytes: &[u8], config: Option<Config>) -> Result<Pr
+ 
+     let rgba_img = img.to_rgba8();
+ 
+-    let analysis_img = quantize_image(&rgba_img, &config)?;
+-    let (profile_x, profile_y) = compute_profiles(&analysis_img)?;
+-
+-    // Estimate step sizes
+-    let step_x_opt = estimate_step_size(&profile_x, &config);
+-    let step_y_opt = estimate_step_size(&profile_y, &config);
+-
+-    // Resolve step sizes. Some instabilities so use sibling axis if one fails, or fallback if both fail
+-    let (step_x, step_y) = resolve_step_sizes(step_x_opt, step_y_opt, width, height, &config);
++    // Decide per axis whether the picture is already on its grid, enlarged, or unresolvable.
++    let plan = plan_grid(&rgba_img, &config)?;
+ 
+-    let raw_col_cuts = walk(&profile_x, step_x, width as usize, &config)?;
+-    let raw_row_cuts = walk(&profile_y, step_y, height as usize, &config)?;
++    let (analysis_img, col_cuts, row_cuts) = match (plan.cols, plan.rows) {
++        (AxisGrid::OnGrid, AxisGrid::OnGrid) => {
++            // One image pixel per art pixel already: nothing to find, and colours are only
++            // reduced when the caller asked for it (colour count or palette).
++            let analysis_img = if config.k_colors_explicit {
++                quantize_image(&rgba_img, &config)?
++            } else {
++                rgba_img.clone()
++            };
++            (
++                analysis_img,
++                identity_cuts(width as usize),
++                identity_cuts(height as usize),
++            )
++        }
++        _ => {
++            let analysis_img = quantize_image(&rgba_img, &config)?;
++            let (stats_x, stats_y) = compute_profiles(&analysis_img, &config)?;
++            let raw_col_cuts = axis_cuts(&stats_x.profile, plan.cols, width as usize, &config)?;
++            let raw_row_cuts = axis_cuts(&stats_y.profile, plan.rows, height as usize, &config)?;
++
++            let (col_cuts, row_cuts) = if matches!(
++                (plan.cols, plan.rows),
++                (
++                    AxisGrid::Enlarged { lattice: false, .. },
++                    AxisGrid::Enlarged { lattice: false, .. }
++                )
++            ) {
++                // Cross-validate the two axes against each other
++                stabilize_both_axes(
++                    &stats_x.profile,
++                    &stats_y.profile,
++                    raw_col_cuts,
++                    raw_row_cuts,
++                    width as usize,
++                    height as usize,
++                    &config,
++                )
++            } else {
++                (raw_col_cuts, raw_row_cuts)
++            };
++            (analysis_img, col_cuts, row_cuts)
++        }
++    };
+ 
+-    // Two-pass stabilization: first pass with raw cuts, then cross-validate
+-    let (col_cuts, row_cuts) = stabilize_both_axes(
+-        &profile_x,
+-        &profile_y,
+-        raw_col_cuts,
+-        raw_row_cuts,
+-        width as usize,
+-        height as usize,
+-        &config,
+-    );
++    let output_width = (col_cuts.len() - 1) as u32;
++    let output_height = (row_cuts.len() - 1) as u32;
++    if output_width < 2 || output_height < 2 {
++        return Err(PixelSnapperError::Unresolved(format!(
++            "the detected grid gives a {}x{} picture ({})",
++            output_width, output_height, plan.detail
++        )));
++    }
++    if let Some(cell) = config.expect_cell {
++        if !output_width.is_multiple_of(cell) || !output_height.is_multiple_of(cell) {
++            return Err(PixelSnapperError::Unresolved(format!(
++                "the detected grid gives {}x{}, which is not a multiple of the expected cell size {} ({})",
++                output_width, output_height, cell, plan.detail
++            )));
++        }
++    }
+ 
+-    let snapped_img = resample(&analysis_img, &col_cuts, &row_cuts)?;
++    let snapped_img = if output_width == width && output_height == height {
++        analysis_img
++    } else {
++        resample(&analysis_img, &col_cuts, &row_cuts)?
++    };
+     let output_img = match config.palette.as_deref() {
+         Some(palette) => apply_palette(&snapped_img, palette)?,
+         None => snapped_img,
+@@ -297,10 +383,11 @@ fn process_image_common(input_bytes: &[u8], config: Option<Config>) -> Result<Pr
+ 
+     Ok(ProcessedImage {
+         output_bytes,
+-        pixel_size: step_x,
+-        pixel_size_override: config.pixel_size_override.is_some(),
+-        output_width: (col_cuts.len() - 1) as u32,
+-        output_height: (row_cuts.len() - 1) as u32,
++        pixel_size: plan.pixel_size,
++        pixel_size_source: plan.pixel_size_source,
++        detail: plan.detail,
++        output_width,
++        output_height,
+     })
+ }
+ 
+@@ -322,6 +409,7 @@ pub fn process_image(
+             ));
+         }
+         config.k_colors = k as usize;
++        config.k_colors_explicit = true;
+     }
+ 
+     config.pixel_size_override = pixel_size_override;
+@@ -384,6 +472,24 @@ fn parse_cli_args(args: &[String]) -> Result<CliCommand> {
+                 }
+                 i += 2;
+             }
++            "--expect-cell" => {
++                let Some(val) = args.get(i + 1) else {
++                    return Err(PixelSnapperError::InvalidInput(
++                        "--expect-cell requires a value".to_string(),
++                    ));
++                };
++
++                match val.parse::<u32>() {
++                    Ok(cell) if cell > 0 => config.expect_cell = Some(cell),
++                    _ => {
++                        return Err(PixelSnapperError::InvalidInput(format!(
++                            "invalid --expect-cell '{}': expected a positive integer",
++                            val
++                        )))
++                    }
++                }
++                i += 2;
++            }
+             "--palette" => {
+                 let Some(val) = args.get(i + 1) else {
+                     return Err(PixelSnapperError::InvalidInput(
+@@ -402,7 +508,10 @@ fn parse_cli_args(args: &[String]) -> Result<CliCommand> {
+             }
+             k_arg => {
+                 match k_arg.parse::<usize>() {
+-                    Ok(k) if k > 0 => config.k_colors = k,
++                    Ok(k) if k > 0 => {
++                        config.k_colors = k;
++                        config.k_colors_explicit = true;
++                    }
+                     _ => {
+                         return Err(PixelSnapperError::InvalidInput(format!(
+                             "invalid color count '{}': expected a positive integer",
+@@ -415,7 +524,7 @@ fn parse_cli_args(args: &[String]) -> Result<CliCommand> {
+         }
+     }
+ 
+-    Ok(CliCommand::Run(config))
++    Ok(CliCommand::Run(Box::new(config)))
+ }
+ 
+ #[cfg(not(target_arch = "wasm32"))]
+@@ -438,7 +547,8 @@ fn process_single(config: &Config) -> Result<()> {
+     println!("Processing: {}", config.input_path);
+     print_processed_image(
+         processed.pixel_size,
+-        processed.pixel_size_override,
++        processed.pixel_size_source,
++        &processed.detail,
+         processed.output_width,
+         processed.output_height,
+     );
+@@ -636,19 +746,13 @@ fn process_file(input_path: &Path, output_path: &Path, config: &Config) -> Resul
+ #[cfg(not(target_arch = "wasm32"))]
+ fn print_processed_image(
+     pixel_size: f64,
+-    pixel_size_override: bool,
++    pixel_size_source: &str,
++    detail: &str,
+     output_width: u32,
+     output_height: u32,
+ ) {
+-    println!(
+-        "Pixel size: {:.1}px ({})",
+-        pixel_size,
+-        if pixel_size_override {
+-            "override"
+-        } else {
+-            "auto-detected"
+-        }
+-    );
++    println!("Pixel size: {:.1}px ({})", pixel_size, pixel_size_source);
++    println!("Grid evidence: {}", detail);
+     println!("Output size: {}x{}", output_width, output_height);
+ }
+ 
+@@ -739,6 +843,15 @@ fn quantize_image(img: &RgbaImage, config: &Config) -> Result<RgbaImage> {
+     if n_pixels == 0 {
+         return Ok(img.clone());
+     }
++    // Nothing to reduce: k-means would only reproduce the colours that are already there
++    let distinct_colors: std::collections::HashSet<[u8; 3]> = img
++        .pixels()
++        .filter(|p| p[3] != 0)
++        .map(|p| [p[0], p[1], p[2]])
++        .collect();
++    if distinct_colors.len() <= config.k_colors {
++        return Ok(img.clone());
++    }
+ 
+     let mut rng = ChaCha8Rng::seed_from_u64(config.k_seed);
+     let k = config.k_colors.min(n_pixels);
+@@ -936,7 +1049,133 @@ fn apply_palette(img: &RgbaImage, palette: &[[u8; 3]]) -> Result<RgbaImage> {
+     Ok(recolored_img)
+ }
+ 
+-fn compute_profiles(img: &RgbaImage) -> Result<(Vec<f64>, Vec<f64>)> {
++/// What the grid detection concluded for one axis of the picture.
++#[derive(Debug, Clone, Copy, PartialEq)]
++enum AxisGrid {
++    /// One image pixel per art pixel: the axis is kept as it is.
++    OnGrid,
++    /// Enlarged art: cells are `step` pixels wide and grid lines are at `phase + k * step`.
++    /// With `lattice` the lines come from a fitted lattice and are used as they are; otherwise
++    /// the step is only a hint and the walker follows the boundaries.
++    Enlarged {
++        step: f64,
++        phase: f64,
++        lattice: bool,
++        /// Interpolated art: its boundaries are found from the bends, not the steps
++        ramp: bool,
++    },
++}
++
++struct GridPlan {
++    cols: AxisGrid,
++    rows: AxisGrid,
++    pixel_size: f64,
++    pixel_size_source: &'static str,
++    /// Human readable evidence, printed by the CLI and quoted in `Unresolved` errors.
++    detail: String,
++}
++
++/// Boundary evidence along one axis of the picture.
++struct AxisStats {
++    /// `profile[i]`: summed colour change between lines `i - 1` and `i`, i.e. the strength of a
++    /// cut at position `i`. A boundary between two cells shows up at exactly one position.
++    profile: Vec<f64>,
++    /// `edge_counts[i]`: lines whose colour change at cut `i` is above the edge tolerance. Noise
++    /// and compression artefacts stay below it, so unlike the profile it has no noise floor.
++    edge_counts: Vec<u32>,
++    /// `curve_counts[i]`: lines whose second difference at pixel `i` is above the curvature
++    /// tolerance. Where `edge_counts` finds the steps of sharp or blurred art, this finds the
++    /// kinks of a ramp: an interpolated enlargement bends at the centre of every cell.
++    curve_counts: Vec<u32>,
++    /// One-pixel features: a pixel that differs from both neighbours, which resemble each other.
++    /// They are what pixel art is made of and an enlargement has none.
++    spikes: u64,
++}
++
++impl AxisStats {
++    fn new(len: usize) -> Self {
++        Self {
++            profile: vec![0.0; len],
++            edge_counts: vec![0; len],
++            curve_counts: vec![0; len],
++            spikes: 0,
++        }
++    }
++
++    /// `changes[i]` is the difference between positions `i` and `i + 1` along one line.
++    fn add_line(&mut self, changes: &[u8], tolerance: u8) {
++        for (i, &change) in changes.iter().enumerate() {
++            self.profile[i + 1] += change as f64;
++            if change > tolerance {
++                self.edge_counts[i + 1] += 1;
++            }
++        }
++    }
++
++    /// `bends[i]` is the second difference, over `BEND_SPAN` pixels each way, at pixel
++    /// `i + BEND_SPAN` of a line.
++    fn add_curvature(&mut self, bends: &[u8], tolerance: u8) {
++        for (i, &bend) in bends.iter().enumerate() {
++            if bend > tolerance {
++                self.curve_counts[i + BEND_SPAN] += 1;
++            }
++        }
++    }
++
++    /// A one-pixel feature at position `i + 2` of a line of `changes` (`changes[j]` is the change
++    /// between positions `j` and `j + 1`): it differs from both neighbours, the neighbours match
++    /// each other (`skips[i]` is the change between them), and the line is flat beyond one of them.
++    /// A ramp of interpolated pixels never has flat ground next to a bump.
++    fn add_spikes(&mut self, changes: &[u8], skips: &[u8], tolerance: u8) {
++        for i in 1..skips.len().saturating_sub(1) {
++            // positions i .. i + 4 are the outer neighbour, neighbour, feature, neighbour, outer
++            let (outer_left, left, right, outer_right) =
++                (changes[i - 1], changes[i], changes[i + 1], changes[i + 2]);
++            if left > tolerance
++                && right > tolerance
++                && skips[i] <= tolerance
++                && (outer_left <= tolerance || outer_right <= tolerance)
++            {
++                self.spikes += 1;
++            }
++        }
++    }
++}
++
++fn premultiplied(img: &RgbaImage) -> Vec<[u8; 4]> {
++    img.pixels()
++        .map(|p| {
++            let a = p[3] as u32;
++            let scale = |c: u8| ((c as u32 * a + 127) / 255) as u8;
++            [scale(p[0]), scale(p[1]), scale(p[2]), p[3]]
++        })
++        .collect()
++}
++
++/// Largest channel difference of two premultiplied pixels. A transparent pixel is (0, 0, 0, 0),
++/// so its hidden RGB is ignored and an alpha edge counts at full strength.
++fn pixel_change(a: [u8; 4], b: [u8; 4]) -> u8 {
++    a.iter()
++        .zip(b.iter())
++        .map(|(x, y)| x.abs_diff(*y))
++        .max()
++        .unwrap_or(0)
++}
++
++/// Pixels on each side that a bend is measured over. Blurring spreads a kink over a few pixels;
++/// two pixels each way still see it, and adds up twice the change of slope.
++const BEND_SPAN: usize = 2;
++
++/// Largest channel second difference `a - 2b + c` of three premultiplied pixels, capped at 255
++fn pixel_bend(a: [u8; 4], b: [u8; 4], c: [u8; 4]) -> u8 {
++    (0..4)
++        .map(|i| (a[i] as i32 - 2 * b[i] as i32 + c[i] as i32).unsigned_abs())
++        .max()
++        .unwrap_or(0)
++        .min(255) as u8
++}
++
++fn compute_profiles(img: &RgbaImage, config: &Config) -> Result<(AxisStats, AxisStats)> {
+     let (w, h) = img.dimensions();
+ 
+     if w < 3 || h < 3 {
+@@ -945,114 +1184,607 @@ fn compute_profiles(img: &RgbaImage) -> Result<(Vec<f64>, Vec<f64>)> {
+         ));
+     }
+ 
+-    let mut col_proj = vec![0.0; w as usize];
+-    let mut row_proj = vec![0.0; h as usize];
+-
+-    let gray = |x, y| {
+-        let p = img.get_pixel(x, y);
+-        if p[3] == 0 {
+-            0.0
+-        } else {
+-            0.299 * p[0] as f64 + 0.587 * p[1] as f64 + 0.114 * p[2] as f64
+-        }
+-    };
++    let (w, h) = (w as usize, h as usize);
++    let pixels = premultiplied(img);
++    let tolerance = config.edge_tolerance;
++    let mut cols = AxisStats::new(w);
++    let mut rows = AxisStats::new(h);
++    let mut changes = vec![0u8; w.max(h)];
++    let mut skips = vec![0u8; w.max(h)];
++    let mut bends = vec![0u8; w.max(h)];
++    // Pictures of three or four pixels have no room for a bend
++    let (bend_w, bend_h) = (
++        w.saturating_sub(2 * BEND_SPAN),
++        h.saturating_sub(2 * BEND_SPAN),
++    );
+ 
+-    // kernels: [-1, 0, 1]
+     for y in 0..h {
++        for x in 1..w {
++            changes[x - 1] = pixel_change(pixels[y * w + x - 1], pixels[y * w + x]);
++        }
+         for x in 1..w - 1 {
+-            let left = gray(x - 1, y);
+-            let right = gray(x + 1, y);
+-            let grad = (right - left).abs();
+-            col_proj[x as usize] += grad;
++            skips[x - 1] = pixel_change(pixels[y * w + x - 1], pixels[y * w + x + 1]);
+         }
++        for x in BEND_SPAN..BEND_SPAN + bend_w {
++            bends[x - BEND_SPAN] = pixel_bend(
++                pixels[y * w + x - BEND_SPAN],
++                pixels[y * w + x],
++                pixels[y * w + x + BEND_SPAN],
++            );
++        }
++        cols.add_curvature(&bends[..bend_w], config.curvature_tolerance);
++        cols.add_line(&changes[..w - 1], tolerance);
++        cols.add_spikes(&changes[..w - 1], &skips[..w - 2], tolerance);
+     }
+     for x in 0..w {
++        for y in 1..h {
++            changes[y - 1] = pixel_change(pixels[(y - 1) * w + x], pixels[y * w + x]);
++        }
+         for y in 1..h - 1 {
+-            let top = gray(x, y - 1);
+-            let bottom = gray(x, y + 1);
+-            let grad = (bottom - top).abs();
+-            row_proj[y as usize] += grad;
++            skips[y - 1] = pixel_change(pixels[(y - 1) * w + x], pixels[(y + 1) * w + x]);
+         }
++        for y in BEND_SPAN..BEND_SPAN + bend_h {
++            bends[y - BEND_SPAN] = pixel_bend(
++                pixels[(y - BEND_SPAN) * w + x],
++                pixels[y * w + x],
++                pixels[(y + BEND_SPAN) * w + x],
++            );
++        }
++        rows.add_curvature(&bends[..bend_h], config.curvature_tolerance);
++        rows.add_line(&changes[..h - 1], tolerance);
++        rows.add_spikes(&changes[..h - 1], &skips[..h - 2], tolerance);
+     }
+ 
+-    Ok((col_proj, row_proj))
++    Ok((cols, rows))
+ }
+ 
+-fn estimate_step_size(profile: &[f64], config: &Config) -> Option<f64> {
+-    if profile.is_empty() {
+-        return None;
++/// Distance from `position` to the nearest line of the lattice `phase + k * step`.
++fn lattice_distance(position: f64, phase: f64, step: f64) -> f64 {
++    let m = (position - phase).rem_euclid(step);
++    m.min(step - m)
++}
++
++/// How far a boundary may sit from a lattice line and still belong to it. Sharp art has no
++/// slack; from 5px up blur, noise and a non-integer scale move a boundary by a pixel.
++const TIGHT_TOLERANCE: f64 = 0.5;
++const WIDE_TOLERANCE: f64 = 1.5;
++
++fn lattice_tolerance(step: f64) -> f64 {
++    if step < 5.0 {
++        TIGHT_TOLERANCE
++    } else {
++        WIDE_TOLERANCE
+     }
++}
++
++/// Smaller cells cannot be told from art that is already on its grid
++const MIN_ENLARGED_STEP: f64 = 3.5;
++/// A picture needs at least this many cells to be pixel art
++const MIN_CELLS: f64 = 12.0;
++
++/// Spread of the kernel that rewards boundaries for sitting close to a lattice line
++const LATTICE_SIGMA: f64 = 0.7;
++
++#[derive(Debug, Clone, Copy)]
++struct LatticeFit {
++    step: f64,
++    phase: f64,
++    /// Share of the boundary weight that lies within the tolerance of the lattice
++    share: f64,
++    /// Share of the positions the lattice covers, which is what chance would give
++    coverage: f64,
++}
+ 
+-    let max_val = profile.iter().cloned().fold(f64::NAN, f64::max);
+-    if max_val == 0.0 {
+-        return None; // Decide later
++impl LatticeFit {
++    /// Scores the lattice with the tight and the wide reading of "on the lattice" and keeps the
++    /// one that is further above chance: sharp art sits exactly on its lattice, blurred or
++    /// resampled art within a pixel.
++    fn new(peaks: &[(f64, f64)], step: f64, phase: f64) -> Self {
++        let total: f64 = peaks.iter().map(|p| p.1).sum();
++        let reading = |tol: f64| {
++            let on: f64 = peaks
++                .iter()
++                .filter(|&&(p, _)| lattice_distance(p, phase, step) <= tol)
++                .map(|&(_, weight)| weight)
++                .sum();
++            Self {
++                step,
++                phase,
++                share: on / total.max(1e-9),
++                coverage: (2.0 * tol / step).min(1.0),
++            }
++        };
++        let tight = reading(TIGHT_TOLERANCE);
++        if step < 5.0 {
++            return tight;
++        }
++        let wide = reading(WIDE_TOLERANCE);
++        if wide.significance(peaks.len()) > tight.significance(peaks.len()) {
++            wide
++        } else {
++            tight
++        }
+     }
+-    let threshold = max_val * config.peak_threshold_multiplier;
+ 
+-    let mut peaks = Vec::new();
+-    for i in 1..profile.len() - 1 {
+-        if profile[i] > threshold && profile[i] > profile[i - 1] && profile[i] > profile[i + 1] {
+-            peaks.push(i);
++    /// How many standard deviations above chance the share is, for `boundaries` boundaries.
++    /// Boundaries are counted without their weight: it is the number of independent places.
++    fn significance(&self, boundaries: usize) -> f64 {
++        let spread = (self.coverage * (1.0 - self.coverage) / boundaries.max(1) as f64).sqrt();
++        (self.share - self.coverage) / spread.max(1e-9)
++    }
++}
++
++/// Places that stand out in a count histogram, with their weight: the local maxima within two
++/// positions, so that a blurred boundary counts once instead of once per shoulder. `shift` turns
++/// a pixel index into a position (a curvature at pixel `i` sits at `i + 0.5`).
++fn count_peaks(counts: &[u32], shift: f64) -> Vec<(f64, f64)> {
++    let max_count = counts.iter().copied().max().unwrap_or(0);
++    let floor = (max_count as f64 * 0.05).max(1.0);
++    let mut peaks: Vec<(usize, f64)> = Vec::new();
++    for i in 1..counts.len().saturating_sub(1) {
++        let v = counts[i];
++        if (v as f64) < floor {
++            continue;
+         }
++        let lo = i.saturating_sub(2).max(1);
++        let hi = (i + 2).min(counts.len() - 1);
++        if counts[lo..=hi].iter().any(|&o| o > v) {
++            continue;
++        }
++        // On a flat top only the first position counts
++        if matches!(peaks.last(), Some(&(j, w)) if i - j <= 2 && w == v as f64) {
++            continue;
++        }
++        peaks.push((i, v as f64));
+     }
++    peaks
++        .into_iter()
++        .map(|(i, w)| (i as f64 + shift, w))
++        .collect()
++}
+ 
+-    if peaks.len() < 2 {
++/// The regular grid (`phase + k * step`, step from 3.5 to a twelfth of the picture, or within
++/// `range`) the boundaries sit on. Boundaries on the lattice are rewarded the closer they are; a lattice of half the
++/// step scores the same (it only adds lines), so among the lattices that score about the best the
++/// coarsest wins. Its step and phase are then refined by a least-squares line through the
++/// boundaries it explains.
++fn fit_lattice(peaks: &[(f64, f64)], len: usize, range: Option<(f64, f64)>) -> Option<LatticeFit> {
++    let total: f64 = peaks.iter().map(|p| p.1).sum();
++    if peaks.len() < 3 || total <= 0.0 {
+         return None;
+     }
+ 
+-    let mut clean_peaks = vec![peaks[0]];
+-    for &p in peaks.iter().skip(1) {
+-        if p - clean_peaks.last().unwrap() > (config.peak_distance_filter - 1) {
+-            clean_peaks.push(p);
++    // The heaviest boundaries propose the phases
++    let mut proposers = peaks.to_vec();
++    proposers.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal));
++    proposers.truncate(12);
++
++    let tightness = |step: f64, phase: f64| -> f64 {
++        peaks
++            .iter()
++            .map(|&(p, weight)| {
++                let d = lattice_distance(p, phase, step);
++                weight * (-d * d / (2.0 * LATTICE_SIGMA * LATTICE_SIGMA)).exp()
++            })
++            .sum::<f64>()
++            / total
++    };
++
++    let (min_step, max_step) = range.unwrap_or((MIN_ENLARGED_STEP, len as f64 / MIN_CELLS));
++    // (step, phase, tightness) of the best phase for every step
++    let mut scan: Vec<(f64, f64, f64)> = Vec::new();
++    let mut step = min_step;
++    while step <= max_step {
++        // A lattice that covers most positions explains nothing
++        if 2.0 * lattice_tolerance(step) / step <= 0.6 {
++            let best = proposers
++                .iter()
++                .map(|&(proposer, _)| {
++                    let phase = proposer.rem_euclid(step);
++                    (step, phase, tightness(step, phase))
++                })
++                .fold(None::<(f64, f64, f64)>, |acc, f| match acc {
++                    Some(a) if a.2 >= f.2 => Some(a),
++                    _ => Some(f),
++                });
++            scan.extend(best);
+         }
++        // Small enough that the drift over the whole picture stays within the tolerance
++        step += if step >= 5.0 {
++            step / len as f64
++        } else {
++            0.5 * step / len as f64
++        };
+     }
+ 
+-    if clean_peaks.len() < 2 {
++    let best_tightness = scan.iter().map(|s| s.2).fold(0.0, f64::max);
++    if best_tightness <= 0.0 {
+         return None;
+     }
++    let coarsest = scan
++        .iter()
++        .filter(|s| s.2 >= 0.9 * best_tightness)
++        .map(|s| s.0)
++        .fold(0.0, f64::max);
++    // Within the family of the coarsest step the tightest lattice is the most accurate
++    let (mut step, mut phase, _) = scan
++        .iter()
++        .filter(|s| s.0 >= 0.94 * coarsest && s.0 <= coarsest)
++        .fold(
++            (0.0, 0.0, -1.0),
++            |acc, s| if s.2 > acc.2 { *s } else { acc },
++        );
++
++    for _ in 0..4 {
++        let tol = (lattice_tolerance(step) + 0.5).max(1.0);
++        let points: Vec<(f64, f64, f64)> = peaks
++            .iter()
++            .filter(|&&(p, _)| lattice_distance(p, phase, step) <= tol)
++            .map(|&(p, weight)| (((p - phase) / step).round(), p, weight))
++            .collect();
++        let distinct = points
++            .iter()
++            .map(|p| p.0 as i64)
++            .collect::<std::collections::HashSet<_>>()
++            .len();
++        if distinct < 3 {
++            break;
++        }
++        // Weighted least squares of p = phase + k * step
++        let w: f64 = points.iter().map(|p| p.2).sum();
++        let mean_k = points.iter().map(|p| p.2 * p.0).sum::<f64>() / w;
++        let mean_p = points.iter().map(|p| p.2 * p.1).sum::<f64>() / w;
++        let var_k: f64 = points.iter().map(|p| p.2 * (p.0 - mean_k).powi(2)).sum();
++        if var_k <= 0.0 {
++            break;
++        }
++        let cov: f64 = points
++            .iter()
++            .map(|p| p.2 * (p.0 - mean_k) * (p.1 - mean_p))
++            .sum();
++        let new_step = cov / var_k;
++        if (new_step / step - 1.0).abs() > 0.1 {
++            break;
++        }
++        let new_phase = (mean_p - mean_k * new_step).rem_euclid(new_step);
++        // Keep the refinement only when the boundaries sit closer to the new lattice
++        if tightness(new_step, new_phase) <= tightness(step, phase) {
++            break;
++        }
++        step = new_step;
++        phase = new_phase;
++    }
++    Some(LatticeFit::new(peaks, step, phase))
++}
+ 
+-    // Compute diffs
+-    let mut diffs: Vec<f64> = clean_peaks
+-        .windows(2)
+-        .map(|w| (w[1] - w[0]) as f64)
+-        .collect();
+-
+-    // Median
+-    diffs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+-    Some(diffs[diffs.len() / 2])
++/// First grid line position for a known step: the phase that puts most boundary strength on the
++/// lattice. Used when the step is given or borrowed from the other axis.
++fn best_phase(profile: &[f64], step: f64) -> usize {
++    let strength_at = |phase: usize| -> f64 {
++        let mut sum = 0.0;
++        let mut k = 0.0;
++        loop {
++            let pos = (phase as f64 + k * step).round() as usize;
++            if pos >= profile.len() {
++                break;
++            }
++            if pos >= 1 {
++                sum += profile[pos - 1]
++                    .max(profile[pos])
++                    .max(profile.get(pos + 1).copied().unwrap_or(0.0));
++            }
++            k += 1.0;
++        }
++        sum
++    };
++    let mut best = (0usize, -1.0);
++    for phase in 0..step.ceil() as usize {
++        let strength = strength_at(phase);
++        if strength > best.1 {
++            best = (phase, strength);
++        }
++    }
++    best.0
+ }
+ 
+-fn resolve_step_sizes(
+-    step_x_opt: Option<f64>,
+-    step_y_opt: Option<f64>,
+-    width: u32,
+-    height: u32,
++/// A lattice that is clearly more than chance, and compatible with the expected cell
++fn accepted_lattice(
++    fit: Option<LatticeFit>,
++    boundaries: usize,
++    len: usize,
+     config: &Config,
+-) -> (f64, f64) {
++) -> Option<LatticeFit> {
++    fit.filter(|fit| {
++        boundaries >= config.min_lattice_boundaries
++            && fit.share >= config.min_lattice_share
++            && fit.significance(boundaries) >= config.min_lattice_significance
++            && config
++                .expect_cell
++                .is_none_or(|cell| ((len as f64 / fit.step).round() as u32).is_multiple_of(cell))
++    })
++}
++
++/// The acceptable lattice for `peaks`. With an expected cell only steps that make a whole number
++/// of cells are tried, and the coarsest acceptable one wins.
++fn find_lattice(peaks: &[(f64, f64)], len: usize, config: &Config) -> Option<LatticeFit> {
++    match config.expect_cell {
++        None => accepted_lattice(fit_lattice(peaks, len, None), peaks.len(), len, config),
++        Some(cell) => (1..)
++            .map(|cells| len as f64 / (cells * cell) as f64)
++            .take_while(|&step| step >= MIN_ENLARGED_STEP)
++            .filter_map(|step| {
++                let fit = fit_lattice(peaks, len, Some((step * 0.96, step * 1.04)));
++                accepted_lattice(fit, peaks.len(), len, config)
++            })
++            .max_by(|a, b| a.step.partial_cmp(&b.step).unwrap_or(Ordering::Equal)),
++    }
++}
++
++fn describe_fit(label: &str, fit: &Option<LatticeFit>, places: usize) -> String {
++    match fit {
++        Some(fit) => format!(
++            ", {}: grid {:.2}px (phase {:.1}) holds {:.0}% of {} places, {:.1} sigma above chance",
++            label,
++            fit.step,
++            fit.phase,
++            fit.share * 100.0,
++            places,
++            fit.significance(places)
++        ),
++        None => String::new(),
++    }
++}
++
++/// Decides for one axis between "already on the grid", "enlarged by `step`" and "no verdict".
++fn classify_axis(stats: &AxisStats, config: &Config) -> (Option<AxisGrid>, String) {
++    let len = stats.profile.len();
++    let edges: u64 = stats.edge_counts.iter().map(|&c| c as u64).sum();
++    if edges == 0 {
++        return (None, "no edges".to_string());
++    }
++    // Art that is one pixel per art pixel is not an enlargement, whatever its edges look like:
++    // there is no room for a dozen cells of the smallest step that can be measured
++    if (len as f64) < MIN_CELLS * MIN_ENLARGED_STEP {
++        return (
++            Some(AxisGrid::OnGrid),
++            format!("{} pixels are too few for an enlargement", len),
++        );
++    }
++
++    let steps = count_peaks(&stats.edge_counts, 0.0);
++    let bends = count_peaks(&stats.curve_counts, 0.5);
++    let mut detail = format!("{} edges, {} one-pixel features", edges, stats.spikes);
++    detail.push_str(&describe_fit(
++        "steps",
++        &fit_lattice(&steps, len, None),
++        steps.len(),
++    ));
++    detail.push_str(&describe_fit(
++        "bends",
++        &fit_lattice(&bends, len, None),
++        bends.len(),
++    ));
++
++    // One-pixel features exist only at the resolution of the art itself
++    if stats.spikes >= config.min_spikes
++        && stats.spikes as f64 >= config.min_spike_share * edges as f64
++    {
++        return (Some(AxisGrid::OnGrid), detail);
++    }
++
++    // Sharp or blurred art steps at the cell boundaries. Interpolated art ramps between cell
++    // centres and bends there, so its boundaries lie half a cell after each bend.
++    if let Some(fit) = find_lattice(&steps, len, config) {
++        let grid = AxisGrid::Enlarged {
++            step: fit.step,
++            phase: fit.phase,
++            lattice: true,
++            ramp: false,
++        };
++        return (Some(grid), detail);
++    }
++    if let Some(fit) = find_lattice(&bends, len, config) {
++        detail.push_str(", interpolated");
++        let grid = AxisGrid::Enlarged {
++            step: fit.step,
++            phase: (fit.phase + fit.step / 2.0).rem_euclid(fit.step),
++            lattice: true,
++            ramp: true,
++        };
++        return (Some(grid), detail);
++    }
++    // No grid stands out. If the caller says the size is a whole number of cells, the picture is
++    // taken to be on its grid, unless a grid that does not fit the cells stands out; otherwise
++    // there is no verdict.
++    if let Some(cell) = config.expect_cell {
++        let free = Config {
++            expect_cell: None,
++            ..config.clone()
++        };
++        let misfit = find_lattice(&steps, len, &free).is_some()
++            || find_lattice(&bends, len, &free).is_some();
++        if (len as u32).is_multiple_of(cell) && !misfit {
++            detail.push_str(&format!(
++                ", {} is a multiple of the expected cell size {}",
++                len, cell
++            ));
++            return (Some(AxisGrid::OnGrid), detail);
++        }
++    }
++    (None, detail)
++}
++
++/// The grid of an axis whose step is given: the lattice within 3% of it that the boundaries
++/// sit on best, or, when they do not form one, the walker started at the strongest phase.
++fn grid_for_step(stats: &AxisStats, step: f64) -> AxisGrid {
++    let len = stats.profile.len();
++    let range = Some((step * 0.97, step * 1.03));
++    let steps = count_peaks(&stats.edge_counts, 0.0);
++    let bends = count_peaks(&stats.curve_counts, 0.5);
++    let best = [(&steps, false), (&bends, true)]
++        .into_iter()
++        .filter_map(|(peaks, ramp)| {
++            fit_lattice(peaks, len, range)
++                .filter(|fit| fit.share >= 0.7)
++                .map(|fit| (fit, fit.significance(peaks.len()), ramp))
++        })
++        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
++    match best {
++        Some((fit, _, ramp)) => AxisGrid::Enlarged {
++            step: fit.step,
++            phase: if ramp {
++                (fit.phase + fit.step / 2.0).rem_euclid(fit.step)
++            } else {
++                fit.phase
++            },
++            lattice: true,
++            ramp,
++        },
++        None => AxisGrid::Enlarged {
++            step,
++            phase: best_phase(&stats.profile, step) as f64,
++            lattice: false,
++            ramp: false,
++        },
++    }
++}
++
++fn plan_grid(img: &RgbaImage, config: &Config) -> Result<GridPlan> {
++    let (stats_x, stats_y) = compute_profiles(img, config)?;
++
+     if let Some(px) = config.pixel_size_override {
+-        return (px, px);
++        if px == 1.0 {
++            return Ok(GridPlan {
++                cols: AxisGrid::OnGrid,
++                rows: AxisGrid::OnGrid,
++                pixel_size: 1.0,
++                pixel_size_source: "override",
++                detail: "pixel size given".to_string(),
++            });
++        }
++        return Ok(GridPlan {
++            cols: grid_for_step(&stats_x, px),
++            rows: grid_for_step(&stats_y, px),
++            pixel_size: px,
++            pixel_size_source: "override",
++            detail: "pixel size given".to_string(),
++        });
+     }
+ 
+-    match (step_x_opt, step_y_opt) {
+-        (Some(sx), Some(sy)) => {
+-            let ratio = if sx > sy { sx / sy } else { sy / sx };
+-            if ratio > config.max_step_ratio {
+-                let smaller = sx.min(sy);
+-                (smaller, smaller)
++    let (verdict_x, note_x) = classify_axis(&stats_x, config);
++    let (verdict_y, note_y) = classify_axis(&stats_y, config);
++    let detail = format!("x: {}; y: {}", note_x, note_y);
++
++    // An axis without a verdict of its own takes the step of its sibling, when its own boundaries
++    // agree with that step
++    let follow = |verdict: AxisGrid, stats: &AxisStats| match verdict {
++        AxisGrid::OnGrid => Some(AxisGrid::OnGrid),
++        AxisGrid::Enlarged { step, ramp, .. } => {
++            let (counts, shift) = if ramp {
++                (&stats.curve_counts, 0.5)
+             } else {
+-                let avg = (sx + sy) / 2.0;
+-                (avg, avg)
+-            }
++                (&stats.edge_counts, 0.0)
++            };
++            let places = count_peaks(counts, shift);
++            places
++                .iter()
++                .map(|&(p, _)| LatticeFit::new(&places, step, p.rem_euclid(step)))
++                .filter(|fit| places.len() >= 3 && fit.share >= 0.7)
++                .max_by(|a, b| a.share.partial_cmp(&b.share).unwrap_or(Ordering::Equal))
++                .map(|fit| AxisGrid::Enlarged {
++                    step,
++                    phase: if ramp {
++                        (fit.phase + step / 2.0).rem_euclid(step)
++                    } else {
++                        fit.phase
++                    },
++                    lattice: true,
++                    ramp,
++                })
+         }
++    };
++    let unresolved = |why: &str| {
++        PixelSnapperError::Unresolved(format!(
++            "{} ({}). Pass --pixel-size N, or 1 if it is already on the grid",
++            why, detail
++        ))
++    };
++    let (cols, rows) = match (verdict_x, verdict_y) {
++        (Some(x), Some(y)) => (x, y),
++        (Some(x), None) => (
++            x,
++            follow(x, &stats_y).ok_or_else(|| unresolved("only one axis has a grid"))?,
++        ),
++        (None, Some(y)) => (
++            follow(y, &stats_x).ok_or_else(|| unresolved("only one axis has a grid"))?,
++            y,
++        ),
++        (None, None) => {
++            return Err(unresolved(
++                "neither a pixel grid nor one-pixel detail stands out",
++            ))
++        }
++    };
++    if matches!(
++        (cols, rows),
++        (AxisGrid::OnGrid, AxisGrid::Enlarged { .. })
++            | (AxisGrid::Enlarged { .. }, AxisGrid::OnGrid)
++    ) {
++        return Err(PixelSnapperError::Unresolved(format!(
++            "one axis looks enlarged and the other does not ({}). Pass --pixel-size N, or 1 if it is already on the grid",
++            detail
++        )));
++    }
+ 
+-        (Some(sx), None) => (sx, sx),
++    let (pixel_size, pixel_size_source) = match cols {
++        AxisGrid::OnGrid => (1.0, "already on the grid"),
++        AxisGrid::Enlarged { step, .. } => (step, "auto-detected"),
++    };
++    Ok(GridPlan {
++        cols,
++        rows,
++        pixel_size,
++        pixel_size_source,
++        detail,
++    })
++}
+ 
+-        (None, Some(sy)) => (sy, sy),
++/// Cuts on the lattice `phase + k * step`. A partial cell of less than half a step at either end
++/// (crop, padding) belongs to its neighbour.
++fn lattice_cuts(step: f64, phase: f64, limit: usize) -> Vec<usize> {
++    let mut cuts = vec![0usize];
++    let mut k = 0.0;
++    loop {
++        let cut = (phase + k * step).round() as usize;
++        k += 1.0;
++        if cut >= limit {
++            break;
++        }
++        let leading_runt = cuts.len() == 1 && (cut as f64) < step / 2.0;
++        if cut > 0 && !leading_runt && cut > cuts[cuts.len() - 1] {
++            cuts.push(cut);
++        }
++    }
++    let last = cuts[cuts.len() - 1];
++    if last > 0 && ((limit - last) as f64) < step / 2.0 {
++        cuts.pop();
++    }
++    cuts.push(limit);
++    cuts
++}
+ 
+-        (None, None) => {
+-            let fallback_step =
+-                ((width.min(height) as f64) / config.fallback_target_segments as f64).max(1.0);
+-            (fallback_step, fallback_step)
++/// Cut positions for one axis: the lattice or the walker for an enlarged axis, every pixel otherwise.
++fn axis_cuts(profile: &[f64], grid: AxisGrid, limit: usize, config: &Config) -> Result<Vec<usize>> {
++    match grid {
++        AxisGrid::OnGrid => Ok(identity_cuts(limit)),
++        AxisGrid::Enlarged {
++            step,
++            phase,
++            lattice: true,
++            ..
++        } => Ok(lattice_cuts(step, phase, limit)),
++        AxisGrid::Enlarged { step, phase, .. } => {
++            walk(profile, step, phase.round() as usize, limit, config)
+         }
+     }
+ }
+@@ -1130,7 +1862,17 @@ fn stabilize_both_axes(
+ 
+ // Tried uniform grid instead of an elastic-ish walker, but the result was a bit worse.
+ // Keeping the walker for now. But some distortions might happen...
+-fn walk(profile: &[f64], step_size: f64, limit: usize, config: &Config) -> Result<Vec<usize>> {
++//
++// `profile[i]` is the boundary strength of a cut at position `i` (between pixels `i - 1` and `i`),
++// so a cut at `i` makes `i` the first pixel of a cell. `first` is the position of the first grid
++// line found by the lattice fit (0 when the picture starts on a grid line).
++fn walk(
++    profile: &[f64],
++    step_size: f64,
++    first: usize,
++    limit: usize,
++    config: &Config,
++) -> Result<Vec<usize>> {
+     if profile.is_empty() {
+         return Err(PixelSnapperError::ProcessingError(
+             "Cannot walk on empty profile".to_string(),
+@@ -1139,47 +1881,73 @@ fn walk(profile: &[f64], step_size: f64, limit: usize, config: &Config) -> Resul
+ 
+     let mut cuts = vec![0];
+     let mut current_pos = 0.0;
+-    let search_window =
+-        (step_size * config.walker_search_window_ratio).max(config.walker_min_search_window);
++    if first > 0 && first < limit {
++        // A leading partial cell narrower than half a step (crop or padding) belongs to the next cell
++        if first as f64 >= step_size / 2.0 {
++            cuts.push(first);
++        }
++        current_pos = first as f64;
++    }
++    // Never wider than half a step, so the walker cannot jump over a cell
++    let search_window = (step_size * config.walker_search_window_ratio)
++        .max(config.walker_min_search_window)
++        .min(step_size / 2.0);
+     let mean_val: f64 = profile.iter().sum::<f64>() / profile.len() as f64;
+ 
+     while current_pos < limit as f64 {
+         let target = current_pos + step_size;
+         if target >= limit as f64 {
+-            cuts.push(limit);
+             break;
+         }
+ 
+-        let start_search = ((target - search_window) as usize).max((current_pos + 1.0) as usize);
+-        let end_search = ((target + search_window) as usize).min(limit);
+-
+-        if end_search <= start_search {
+-            current_pos = target;
+-            continue;
+-        }
++        // Cuts are strictly increasing and always leave room before `limit`
++        let min_cut = current_pos.floor() as usize + 1;
++        let start_search = ((target - search_window).ceil().max(0.0) as usize).max(min_cut);
++        let end_search = ((target + search_window).floor() as usize).min(limit - 1);
+ 
+-        let mut max_val = -1.0;
+-        let mut max_idx = start_search;
+-        for (i, &value) in profile
++        let max_val = profile
+             .iter()
+-            .enumerate()
+-            .take(end_search)
++            .take(end_search + 1)
+             .skip(start_search)
+-        {
+-            if value > max_val {
+-                max_val = value;
+-                max_idx = i;
+-            }
+-        }
++            .cloned()
++            .fold(0.0, f64::max);
+ 
+         if max_val > mean_val * config.walker_strength_threshold {
+-            cuts.push(max_idx);
+-            current_pos = max_idx as f64;
++            // The boundary is the middle of the strong part within half a step of the target: a
++            // sharp edge is one position, a blurred or interpolated one is a bump or a ramp
++            // that is symmetric around it.
++            let lo = ((target - step_size / 2.0).ceil().max(0.0) as usize).max(min_cut);
++            let hi = ((target + step_size / 2.0).floor() as usize).min(limit - 1);
++            let strong = profile
++                .iter()
++                .take(hi + 1)
++                .skip(lo)
++                .cloned()
++                .fold(0.0, f64::max)
++                * 0.5;
++            let (mut weight_sum, mut moment) = (0.0, 0.0);
++            for (i, &v) in profile.iter().enumerate().take(hi + 1).skip(lo) {
++                if v > strong {
++                    weight_sum += v;
++                    moment += v * i as f64;
++                }
++            }
++            let cut = ((moment / weight_sum).round() as usize).clamp(min_cut, limit - 1);
++            cuts.push(cut);
++            current_pos = cut as f64;
+         } else {
+-            cuts.push(target as usize);
++            cuts.push((target.round() as usize).clamp(min_cut, limit - 1));
+             current_pos = target;
+         }
+     }
++
++    // A trailing cell narrower than half a step is a crop remnant, not a pixel
++    if let Some(&last) = cuts.last() {
++        if last > 0 && ((limit - last) as f64) < step_size / 2.0 {
++            cuts.pop();
++        }
++    }
++    cuts.push(limit);
+     Ok(cuts)
+ }
+ 
+@@ -1342,6 +2110,25 @@ fn snap_uniform_cuts(
+     cuts
+ }
+ 
++/// How far from 0 or 255 an alpha value may be and still count as transparent or opaque. Blur
++/// and interpolation never reach the extremes next to an edge.
++const ALPHA_SLACK: u8 = 16;
++
++/// 0 = transparent, 1 = partially transparent, 2 = opaque
++fn alpha_class(alpha: u8) -> usize {
++    if alpha <= ALPHA_SLACK {
++        0
++    } else if alpha >= 255 - ALPHA_SLACK {
++        2
++    } else {
++        1
++    }
++}
++
++fn identity_cuts(limit: usize) -> Vec<usize> {
++    (0..=limit).collect()
++}
++
+ fn resample(img: &RgbaImage, cols: &[usize], rows: &[usize]) -> Result<RgbaImage> {
+     if cols.len() < 2 || rows.len() < 2 {
+         return Err(PixelSnapperError::ProcessingError(
+@@ -1363,20 +2150,43 @@ fn resample(img: &RgbaImage, cols: &[usize], rows: &[usize]) -> Result<RgbaImage
+                 continue;
+             }
+ 
++            // Vote on the alpha class first (transparent, partial, opaque), then on the exact
++            // colour inside the winning class. Transparent pixels with different hidden RGB
++            // values must not split the vote and let a few opaque pixels win.
++            let mut class_votes = [0usize; 3];
+             let mut counts: HashMap<[u8; 4], usize> = HashMap::new();
+ 
+-            for y in ys..ye {
+-                for x in xs..xe {
++            // Only the middle third of the cell votes, the closer to the centre the louder: its
++            // border holds blur, ramp and neighbours, and an interpolated cell has its true
++            // colour at the centre
++            let (margin_x, margin_y) = ((xe - xs) / 3, (ye - ys) / 3);
++            for y in (ys + margin_y)..(ye - margin_y) {
++                for x in (xs + margin_x)..(xe - margin_x) {
+                     if x < img.width() as usize && y < img.height() as usize {
+                         let p = img.get_pixel(x as u32, y as u32).0;
+-                        *counts.entry(p).or_insert(0) += 1;
++                        // Squared distance to the cell centre, in half pixels
++                        let dx = (2 * x + 1).abs_diff(xs + xe);
++                        let dy = (2 * y + 1).abs_diff(ys + ye);
++                        let weight = 64 / (1 + dx * dx + dy * dy);
++                        class_votes[alpha_class(p[3])] += weight;
++                        *counts.entry(p).or_insert(0) += weight;
+                     }
+                 }
+             }
+ 
++            let mut winning_class = 0;
++            for (class, &votes) in class_votes.iter().enumerate() {
++                if votes > class_votes[winning_class] {
++                    winning_class = class;
++                }
++            }
++
+             let mut best_pixel = [0, 0, 0, 0];
+ 
+-            let mut candidates: Vec<([u8; 4], usize)> = counts.into_iter().collect();
++            let mut candidates: Vec<([u8; 4], usize)> = counts
++                .into_iter()
++                .filter(|(p, _)| alpha_class(p[3]) == winning_class)
++                .collect();
+             candidates.sort_by(|a, b| {
+                 let count_cmp = b.1.cmp(&a.1);
+                 if count_cmp == Ordering::Equal {
+@@ -1393,9 +2203,24 @@ fn resample(img: &RgbaImage, cols: &[usize], rows: &[usize]) -> Result<RgbaImage
+             final_img.put_pixel(x_i as u32, y_i as u32, Rgba(best_pixel));
+         }
+     }
++    snap_binary_alpha(&mut final_img);
+     Ok(final_img)
+ }
+ 
++/// A picture whose cells are (almost) all transparent or opaque is binary art: the partial alpha
++/// that is left comes from blur or interpolation and goes to the nearer extreme. Art that really
++/// uses partial alpha (shadows, glows) has more than a tenth of its cells in between.
++fn snap_binary_alpha(img: &mut RgbaImage) {
++    let total = (img.width() * img.height()) as usize;
++    let partial = img.pixels().filter(|p| alpha_class(p[3]) == 1).count();
++    if partial * 10 > total {
++        return;
++    }
++    for p in img.pixels_mut() {
++        p[3] = if p[3] < 128 { 0 } else { 255 };
++    }
++}
++
+ #[cfg(all(test, not(target_arch = "wasm32")))]
+ mod cli_tests {
+     use super::*;
+@@ -1458,3 +2283,523 @@ mod cli_tests {
+         assert!(error.to_string().contains("unknown argument '--unknown'"));
+     }
+ }
++
++#[cfg(all(test, not(target_arch = "wasm32")))]
++mod grid_tests {
++    use super::*;
++    use rand_distr::Normal;
++
++    const PALETTE: [[u8; 3]; 6] = [
++        [20, 24, 46],
++        [200, 60, 50],
++        [240, 190, 60],
++        [70, 150, 90],
++        [90, 120, 200],
++        [235, 235, 225],
++    ];
++
++    /// Pixel art made of runs of one to a few pixels, one-pixel details and a transparent
++    /// background, with binary alpha.
++    fn sprite(width: u32, height: u32, seed: u64) -> RgbaImage {
++        let mut rng = ChaCha8Rng::seed_from_u64(seed);
++        let mut img = RgbaImage::new(width, height);
++        for y in 0..height {
++            for x in 0..width {
++                let roll = rng.gen_range(0..100);
++                let pixel = if roll < 45 && x > 0 {
++                    *img.get_pixel(x - 1, y)
++                } else if roll < 75 && y > 0 {
++                    *img.get_pixel(x, y - 1)
++                } else if rng.gen_range(0..6) == 0 {
++                    Rgba([0, 0, 0, 0])
++                } else {
++                    let c = PALETTE[rng.gen_range(0..PALETTE.len())];
++                    Rgba([c[0], c[1], c[2], 255])
++                };
++                img.put_pixel(x, y, pixel);
++            }
++        }
++        img
++    }
++
++    /// Like `sprite` but with many more colours than the default colour count.
++    fn colorful_sprite(width: u32, height: u32, seed: u64) -> RgbaImage {
++        let mut img = sprite(width, height, seed);
++        let mut rng = ChaCha8Rng::seed_from_u64(seed ^ 0xC0105);
++        let shades: Vec<[u8; 3]> = (0..40).map(|_| rng.gen()).collect();
++        // The shade follows the run: it changes where the original colour or the row changes
++        for y in 0..height {
++            let mut shade = 0;
++            for x in 0..width {
++                let p = img.get_pixel_mut(x, y);
++                if p[3] == 0 {
++                    continue;
++                }
++                if x == 0 || (x + y).is_multiple_of(5) || p[0].is_multiple_of(2) {
++                    shade = (shade + 7 + p[0] as usize) % shades.len();
++                }
++                let c = shades[shade];
++                *p = Rgba([c[0], c[1], c[2], 255]);
++            }
++        }
++        img
++    }
++
++    fn enlarge(img: &RgbaImage, scale_x: f64, scale_y: f64) -> RgbaImage {
++        let w = (img.width() as f64 * scale_x).round() as u32;
++        let h = (img.height() as f64 * scale_y).round() as u32;
++        RgbaImage::from_fn(w, h, |x, y| {
++            let sx = ((x as f64 / scale_x) as u32).min(img.width() - 1);
++            let sy = ((y as f64 / scale_y) as u32).min(img.height() - 1);
++            *img.get_pixel(sx, sy)
++        })
++    }
++
++    /// Bilinear enlargement of premultiplied colour and alpha, as an image resizer does it:
++    /// every cell is a ramp between the values at the centres of its source pixel and the next.
++    fn enlarge_bilinear(img: &RgbaImage, scale: f64) -> RgbaImage {
++        let (w, h) = (img.width() as i64, img.height() as i64);
++        let premult = |x: i64, y: i64| -> [f64; 4] {
++            let p = img.get_pixel(x.clamp(0, w - 1) as u32, y.clamp(0, h - 1) as u32);
++            let a = p[3] as f64 / 255.0;
++            [
++                p[0] as f64 * a,
++                p[1] as f64 * a,
++                p[2] as f64 * a,
++                p[3] as f64,
++            ]
++        };
++        RgbaImage::from_fn(
++            (w as f64 * scale).round() as u32,
++            (h as f64 * scale).round() as u32,
++            |x, y| {
++                let (sx, sy) = (
++                    (x as f64 + 0.5) / scale - 0.5,
++                    (y as f64 + 0.5) / scale - 0.5,
++                );
++                let (x0, y0) = (sx.floor() as i64, sy.floor() as i64);
++                let (fx, fy) = (sx - x0 as f64, sy - y0 as f64);
++                let mut acc = [0.0; 4];
++                for (dy, wy) in [(0, 1.0 - fy), (1, fy)] {
++                    for (dx, wx) in [(0, 1.0 - fx), (1, fx)] {
++                        let p = premult(x0 + dx, y0 + dy);
++                        for c in 0..4 {
++                            acc[c] += p[c] * wx * wy;
++                        }
++                    }
++                }
++                let alpha = acc[3];
++                let unpremult = |v: f64| if alpha > 0.0 { v * 255.0 / alpha } else { 0.0 };
++                Rgba([
++                    unpremult(acc[0]).round().clamp(0.0, 255.0) as u8,
++                    unpremult(acc[1]).round().clamp(0.0, 255.0) as u8,
++                    unpremult(acc[2]).round().clamp(0.0, 255.0) as u8,
++                    alpha.round().clamp(0.0, 255.0) as u8,
++                ])
++            },
++        )
++    }
++
++    /// A 1-2-1 blur of premultiplied colour and alpha, then Gaussian noise on the colour.
++    fn blur_and_noise(img: &RgbaImage, seed: u64) -> RgbaImage {
++        let mut rng = ChaCha8Rng::seed_from_u64(seed);
++        let noise = Normal::new(0.0, 4.0).unwrap();
++        let (w, h) = img.dimensions();
++        let premult = |x: i64, y: i64| -> [f64; 4] {
++            let p = img.get_pixel(
++                x.clamp(0, w as i64 - 1) as u32,
++                y.clamp(0, h as i64 - 1) as u32,
++            );
++            let a = p[3] as f64 / 255.0;
++            [
++                p[0] as f64 * a,
++                p[1] as f64 * a,
++                p[2] as f64 * a,
++                p[3] as f64,
++            ]
++        };
++        let kernel = [(-1i64, 1.0), (0, 2.0), (1, 1.0)];
++        RgbaImage::from_fn(w, h, |x, y| {
++            let mut acc = [0.0; 4];
++            for &(dy, wy) in &kernel {
++                for &(dx, wx) in &kernel {
++                    let p = premult(x as i64 + dx, y as i64 + dy);
++                    for c in 0..4 {
++                        acc[c] += p[c] * wx * wy / 16.0;
++                    }
++                }
++            }
++            let alpha = acc[3];
++            let unpremult = |v: f64| if alpha > 0.0 { v * 255.0 / alpha } else { 0.0 };
++            let mut channel = |v: f64| {
++                (unpremult(v) + noise.sample(&mut rng))
++                    .round()
++                    .clamp(0.0, 255.0) as u8
++            };
++            Rgba([
++                channel(acc[0]),
++                channel(acc[1]),
++                channel(acc[2]),
++                alpha.round().clamp(0.0, 255.0) as u8,
++            ])
++        })
++    }
++
++    fn png(img: &RgbaImage) -> Vec<u8> {
++        let mut bytes = Vec::new();
++        img.write_to(
++            &mut std::io::Cursor::new(&mut bytes),
++            image::ImageFormat::Png,
++        )
++        .unwrap();
++        bytes
++    }
++
++    fn snap(img: &RgbaImage, config: Config) -> Result<(RgbaImage, ProcessedImage)> {
++        let processed = process_image_common(&png(img), Some(config))?;
++        let out = image::load_from_memory(&processed.output_bytes)
++            .unwrap()
++            .to_rgba8();
++        Ok((out, processed))
++    }
++
++    /// Share of pixels that match: same alpha, and colours within 30 levels (the colour count
++    /// replaces blurred and noisy colours by cluster means), ignoring the colour of transparent pixels
++    fn agreement(a: &RgbaImage, b: &RgbaImage) -> f64 {
++        assert_eq!(a.dimensions(), b.dimensions());
++        let close = |p: &Rgba<u8>, q: &Rgba<u8>| {
++            p[3] == q[3] && (p[3] == 0 || (0..3).all(|c| p[c].abs_diff(q[c]) <= 30))
++        };
++        let same = a
++            .pixels()
++            .zip(b.pixels())
++            .filter(|(p, q)| close(p, q))
++            .count();
++        same as f64 / (a.width() * a.height()) as f64
++    }
++
++    #[test]
++    fn picture_already_on_its_grid_comes_back_unchanged() {
++        for (w, h) in [(32, 32), (96, 128), (64, 48)] {
++            for seed in 1..=4 {
++                let art = sprite(w, h, seed);
++                let (out, processed) = snap(&art, Config::default()).unwrap();
++                assert_eq!(out, art, "{}x{} seed {}", w, h, seed);
++                assert_eq!(processed.pixel_size_source, "already on the grid");
++            }
++        }
++    }
++
++    #[test]
++    fn fully_opaque_picture_on_its_grid_keeps_its_size() {
++        // The old output was 33x33 for 32x32 and 97x129 for 96x128
++        for (w, h) in [(32, 32), (96, 128)] {
++            let mut art = sprite(w, h, 9);
++            for p in art.pixels_mut() {
++                if p[3] == 0 {
++                    *p = Rgba([PALETTE[2][0], PALETTE[2][1], PALETTE[2][2], 255]);
++                }
++            }
++            let (out, _) = snap(&art, Config::default()).unwrap();
++            assert_eq!(out, art);
++        }
++    }
++
++    #[test]
++    fn on_grid_picture_is_only_colour_reduced_when_asked() {
++        let art = colorful_sprite(48, 48, 3);
++        let colors = |img: &RgbaImage| {
++            img.pixels()
++                .filter(|p| p[3] != 0)
++                .map(|p| [p[0], p[1], p[2]])
++                .collect::<std::collections::HashSet<_>>()
++                .len()
++        };
++        assert!(colors(&art) > 16);
++
++        let (untouched, _) = snap(&art, Config::default()).unwrap();
++        assert_eq!(untouched, art);
++
++        let asked = Config {
++            k_colors: 8,
++            k_colors_explicit: true,
++            ..Default::default()
++        };
++        let (reduced, _) = snap(&art, asked).unwrap();
++        assert_eq!(reduced.dimensions(), art.dimensions());
++        assert!(colors(&reduced) <= 8);
++
++        let palette = Config {
++            palette: Some(vec![[0, 0, 0], [255, 255, 255]]),
++            ..Default::default()
++        };
++        let (two_colors, _) = snap(&art, palette).unwrap();
++        assert!(colors(&two_colors) <= 2);
++    }
++
++    #[test]
++    fn transparent_pixels_stay_transparent_on_the_grid() {
++        let art = sprite(32, 32, 5);
++        let (out, _) = snap(&art, Config::default()).unwrap();
++        for (p, q) in art.pixels().zip(out.pixels()) {
++            assert_eq!(p, q);
++            assert!(q[3] == 0 || q[3] == 255);
++        }
++    }
++
++    #[test]
++    fn clean_enlargements_return_the_original() {
++        for scale in [4.0, 8.0, 10.0, 7.3] {
++            for (w, h) in [(32, 32), (40, 56)] {
++                let art = sprite(w, h, 11);
++                let big = enlarge(&art, scale, scale);
++                let (out, processed) = snap(&big, Config::default()).unwrap();
++                assert_eq!(
++                    out.dimensions(),
++                    (w, h),
++                    "scale {} of {}x{}: {}",
++                    scale,
++                    w,
++                    h,
++                    processed.detail
++                );
++                assert!(agreement(&out, &art) > 0.98, "scale {}", scale);
++                assert_eq!(processed.pixel_size_source, "auto-detected");
++            }
++        }
++    }
++
++    #[test]
++    fn blurred_noisy_enlargement_has_no_extra_cell() {
++        // The old code turned 256x256 (8x of 32x32) into 33x33 and 768x1024 into 97x129
++        for (w, h) in [(32, 32), (40, 56)] {
++            for seed in 1..=3 {
++                let art = sprite(w, h, seed);
++                let messy = blur_and_noise(&enlarge(&art, 8.0, 8.0), seed);
++                let (out, processed) = snap(&messy, Config::default()).unwrap();
++                assert_eq!(
++                    out.dimensions(),
++                    (w, h),
++                    "{}x{} seed {}: {}",
++                    w,
++                    h,
++                    seed,
++                    processed.detail
++                );
++                let same = agreement(&out, &art);
++                assert!(same > 0.95, "{}x{} seed {}: agreement {}", w, h, seed, same);
++                assert!(out.pixels().all(|p| p[3] == 0 || p[3] == 255));
++            }
++        }
++    }
++
++    #[test]
++    fn interpolated_enlargement_returns_to_its_size() {
++        // An interpolated picture has no steps, only ramps that bend at the cell centres
++        for scale in [7.3, 9.6] {
++            let art = sprite(40, 48, 5);
++            let big = enlarge_bilinear(&art, scale);
++            let (out, processed) = snap(&big, Config::default()).unwrap();
++            assert_eq!(
++                out.dimensions(),
++                (40, 48),
++                "scale {}: {}",
++                scale,
++                processed.detail
++            );
++            let same = agreement(&out, &art);
++            assert!(same > 0.9, "scale {}: agreement {}", scale, same);
++            assert!(out.pixels().all(|p| p[3] == 0 || p[3] == 255));
++        }
++    }
++
++    #[test]
++    fn pixel_size_override_has_no_extra_cell() {
++        let art = sprite(32, 32, 2);
++        let messy = blur_and_noise(&enlarge(&art, 8.0, 8.0), 2);
++        let config = Config {
++            pixel_size_override: Some(8.0),
++            ..Default::default()
++        };
++        let (out, processed) = snap(&messy, config).unwrap();
++        assert_eq!(out.dimensions(), (32, 32));
++        assert_eq!(processed.pixel_size_source, "override");
++    }
++
++    #[test]
++    fn pixel_size_one_keeps_the_picture() {
++        let art = colorful_sprite(32, 32, 6);
++        let config = Config {
++            pixel_size_override: Some(1.0),
++            ..Default::default()
++        };
++        let (out, _) = snap(&art, config).unwrap();
++        assert_eq!(out, art);
++    }
++
++    #[test]
++    fn crop_and_padding_do_not_change_the_cell_count() {
++        let art = sprite(32, 32, 4);
++        let big = enlarge(&art, 8.0, 8.0);
++        for crop in 1..=3 {
++            let cropped =
++                image::imageops::crop_imm(&big, crop, crop, 256 - crop, 256 - crop).to_image();
++            let (out, _) = snap(&cropped, Config::default()).unwrap();
++            assert_eq!(out.dimensions(), (32, 32), "crop {}", crop);
++        }
++        for pad in 1..=3u32 {
++            let padded = RgbaImage::from_fn(256 + pad, 256 + pad, |x, y| {
++                *big.get_pixel(
++                    x.saturating_sub(pad).min(255),
++                    y.saturating_sub(pad).min(255),
++                )
++            });
++            let (out, _) = snap(&padded, Config::default()).unwrap();
++            assert_eq!(out.dimensions(), (32, 32), "pad {}", pad);
++        }
++    }
++
++    #[test]
++    fn different_horizontal_and_vertical_scales_are_kept_apart() {
++        let art = sprite(32, 32, 8);
++        let big = enlarge(&art, 8.0, 9.0);
++        let (out, _) = snap(&big, Config::default()).unwrap();
++        assert_eq!(out.dimensions(), (32, 32));
++        assert!(agreement(&out, &art) > 0.98);
++    }
++
++    #[test]
++    fn tiny_pictures_are_handled() {
++        for size in [3, 4, 5, 8] {
++            let art = sprite(size, size, 1);
++            match snap(&art, Config::default()) {
++                Ok((out, _)) => assert_eq!(out, art),
++                Err(error) => assert!(matches!(error, PixelSnapperError::Unresolved(_))),
++            }
++        }
++    }
++
++    #[test]
++    fn picture_without_structure_is_reported_not_guessed() {
++        let flat = RgbaImage::from_pixel(64, 64, Rgba([120, 120, 120, 255]));
++        let error = snap(&flat, Config::default()).err().unwrap();
++        assert!(
++            matches!(error, PixelSnapperError::Unresolved(_)),
++            "{}",
++            error
++        );
++
++        let gradient =
++            RgbaImage::from_fn(64, 64, |x, y| Rgba([(x * 3) as u8, (y * 3) as u8, 90, 255]));
++        let error = snap(&gradient, Config::default()).err().unwrap();
++        assert!(
++            matches!(error, PixelSnapperError::Unresolved(_)),
++            "{}",
++            error
++        );
++        assert!(error.to_string().contains("--pixel-size"));
++    }
++
++    #[test]
++    fn expected_cell_rejects_a_grid_that_does_not_fit() {
++        // 24x24 art enlarged 8.5 times is 204 pixels: no whole number of 32 pixel cells
++        let art = sprite(24, 24, 3);
++        let big = enlarge(&art, 8.5, 8.5);
++        let config = Config {
++            expect_cell: Some(32),
++            ..Default::default()
++        };
++        let error = snap(&big, config).err().unwrap();
++        assert!(
++            matches!(error, PixelSnapperError::Unresolved(_)),
++            "{}",
++            error
++        );
++
++        // The same expectation accepts art that is a multiple of the cell
++        let art = sprite(64, 32, 3);
++        let config = Config {
++            expect_cell: Some(32),
++            ..Default::default()
++        };
++        let (out, _) = snap(&enlarge(&art, 8.0, 8.0), config).unwrap();
++        assert_eq!(out.dimensions(), (64, 32));
++    }
++
++    #[test]
++    fn walker_does_not_skip_pixels_at_small_steps() {
++        let config = Config::default();
++        // A boundary at every position: the grid is the pixel grid
++        let mut profile = vec![10.0; 40];
++        profile[0] = 0.0;
++        let cuts = walk(&profile, 1.0, 0, 40, &config).unwrap();
++        assert_eq!(cuts, identity_cuts(40));
++
++        // Boundaries every two pixels
++        let profile: Vec<f64> = (0..40)
++            .map(|i| if i % 2 == 0 { 10.0 } else { 0.0 })
++            .collect();
++        let cuts = walk(&profile, 2.0, 0, 40, &config).unwrap();
++        assert!(cuts.windows(2).all(|w| w[1] - w[0] == 2), "{:?}", cuts);
++    }
++
++    #[test]
++    fn walker_folds_a_crop_remnant_into_its_neighbour() {
++        let config = Config::default();
++        // Boundaries every 8 pixels starting at 8, and a 1 pixel remnant at the end
++        let profile: Vec<f64> = (0..65)
++            .map(|i| if i % 8 == 0 { 10.0 } else { 0.0 })
++            .collect();
++        let cuts = walk(&profile, 8.0, 0, 65, &config).unwrap();
++        assert_eq!(cuts, vec![0, 8, 16, 24, 32, 40, 48, 56, 65]);
++    }
++
++    #[test]
++    fn transparent_pixels_cannot_outvote_the_opaque_majority_or_the_reverse() {
++        let mut cell = RgbaImage::new(8, 8);
++        for (i, p) in cell.pixels_mut().enumerate() {
++            *p = if i < 40 {
++                // Transparent, with a different hidden colour each time
++                Rgba([i as u8, (i * 3) as u8, 7, 0])
++            } else {
++                Rgba([200, 10, 10, 255])
++            };
++        }
++        let out = resample(&cell, &[0, 8], &[0, 8]).unwrap();
++        assert_eq!(out.get_pixel(0, 0)[3], 0);
++
++        // And partial alpha is its own class
++        let shadow = RgbaImage::from_pixel(8, 8, Rgba([0, 0, 0, 100]));
++        let out = resample(&shadow, &[0, 8], &[0, 8]).unwrap();
++        assert_eq!(out.get_pixel(0, 0).0, [0, 0, 0, 100]);
++    }
++
++    #[test]
++    fn cli_parses_the_new_options() {
++        let args: Vec<String> = ["in.png", "out.png", "32", "--expect-cell", "32"]
++            .iter()
++            .map(|s| s.to_string())
++            .collect();
++        let CliCommand::Run(config) = parse_cli_args(&args).unwrap() else {
++            panic!("expected a processing command");
++        };
++        assert_eq!(config.expect_cell, Some(32));
++        assert_eq!(config.k_colors, 32);
++        assert!(config.k_colors_explicit);
++
++        let args: Vec<String> = ["in.png", "out.png"]
++            .iter()
++            .map(|s| s.to_string())
++            .collect();
++        let CliCommand::Run(config) = parse_cli_args(&args).unwrap() else {
++            panic!("expected a processing command");
++        };
++        assert!(!config.k_colors_explicit);
++
++        let args: Vec<String> = ["in.png", "out.png", "--expect-cell", "0"]
++            .iter()
++            .map(|s| s.to_string())
++            .collect();
++        assert!(parse_cli_args(&args).is_err());
++    }
++}

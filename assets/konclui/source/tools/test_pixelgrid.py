@@ -23,6 +23,7 @@ SOURCE = HERE.parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(SOURCE / 'hq-office'))
 import normals as N  # noqa: E402
+import toolchain  # noqa: E402
 import pixelgrid as PG  # noqa: E402
 import translucent as TL  # noqa: E402
 
@@ -74,15 +75,16 @@ class Check(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 PG.snap(src, src)
 
-    @unittest.skipUnless(shutil.which('spritefusion-pixel-snapper'), 'snapper not installed')
-    def test_snap_rejects_a_result_that_leaves_the_grid(self):
-        # MEASURED: with --pixel-size 1 the snapper crops a 32x32 cell to 25x25, so the re-check must fail it.
+    def test_snap_rejects_a_result_that_still_fails_the_check(self):
+        # The fixed snapper keeps a picture at --pixel-size 1 (the stock one cropped a 32x32 cell to 25x25), so the re-check that
+        # fails it is the partial alpha the snapper does not repair.
+        toolchain.require('pixel-snapper')
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(tmp) / 'a.png'
             Image.fromarray(sheet(32, 32, lambda px: px.__setitem__((6, 6), (10, 20, 30, 90))), 'RGBA').save(src)
             out = io.StringIO()
             self.assertEqual(PG.snap(src, Path(tmp) / 'b.png', {(10, 20, 30)}, pixel_size=1, out=out), 1)
-            self.assertIn('not a multiple of 32', out.getvalue())
+            self.assertIn('partial alpha', out.getvalue())
             self.assertFalse((Path(tmp) / 'b.png').exists())
 
 
@@ -498,14 +500,31 @@ class PipelineGates(unittest.TestCase):
             self.assertIn('partial alpha', str(raised.exception))
 
 
-@unittest.skipUnless(shutil.which('spritefusion-pixel-snapper'), 'snapper not installed')
+class SnapperPath(unittest.TestCase):
+    def test_a_stock_snapper_through_the_override_is_refused(self):
+        # A build whose --help lacks --expect-cell is the stock one: it returns wrong sizes with exit 0, so `snap` must not run it.
+        with tempfile.TemporaryDirectory() as tmp:
+            stock = Path(tmp) / 'spritefusion-pixel-snapper'
+            stock.write_text('#!/bin/sh\nif [ "$1" = "--version" ]; then echo "spritefusion-pixel-snapper 1.0.0"; exit 0; fi\n'
+                             'echo "usage: tool INPUT OUTPUT [COLORS] [--pixel-size N]"\n')
+            stock.chmod(0o755)
+            with mock.patch.dict(os.environ, {PG.SNAPPER_ENV: str(stock)}):
+                with self.assertRaises(SystemExit) as raised:
+                    PG.snapper_path()
+            self.assertIn('STOCK', str(raised.exception))
+
+    def test_the_pinned_fixed_build_is_what_snap_runs(self):
+        self.assertEqual(PG.snapper_path(), toolchain.require('pixel-snapper'))
+
+
 class SnapSucceeds(unittest.TestCase):
     def test_an_upscaled_picture_that_resizes_onto_the_grid_is_written_with_binary_alpha(self):
-        # 31 x 31 art upscaled 4x (124 px) with one stray half-transparent pixel: `--pixel-size 4` returns 32 x 32
-        # (MEASURED 2026-11-21; 32 x 32 art upscaled 4x comes back 33 x 33 and is rejected, see tools/README.md).
+        # 32 x 32 art upscaled 4x (128 px) with one stray half-transparent pixel: `--pixel-size 4` returns 32 x 32 (the stock
+        # snapper returned 33 x 33 for it, and 32 x 32 for 31 x 31 art; the fixed one does not).
+        toolchain.require('pixel-snapper')
         colours = np.array([(200, 30, 30, 255), (30, 200, 30, 255), (30, 30, 200, 255), (240, 240, 60, 255)], np.uint8)
-        art = np.zeros((31, 31, 4), np.uint8)
-        art[3:28, 3:28] = colours[np.random.default_rng(1).integers(0, 4, (25, 25))]
+        art = np.zeros((32, 32, 4), np.uint8)
+        art[3:29, 3:29] = colours[np.random.default_rng(1).integers(0, 4, (26, 26))]
         up = art.repeat(4, 0).repeat(4, 1)
         up[41, 41, 3] = 128
         palette = {tuple(int(v) for v in c[:3]) for c in colours}

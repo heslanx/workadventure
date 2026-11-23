@@ -48,6 +48,15 @@ def tool_path(env, default):
         raise SystemExit(str(error))
 
 
+def snapper_path():
+    """The pixel snapper `snap` runs: the pinned FIXED build, checked by toolchain.require. A stock build given through the
+    override is refused there, because it returns wrong sizes with exit 0 (tools/patches/README.md)."""
+    try:
+        return toolchain.require('pixel-snapper')
+    except (toolchain.ToolMissing, toolchain.ToolMismatch) as error:
+        raise SystemExit(str(error))
+
+
 def _install_command(env, default):
     for spec in toolchain.TOOLS.values():
         if (spec['env'], spec['binary']) == (env, default):
@@ -264,7 +273,7 @@ def snap(source, target, palette=None, cell=CELL, pixel_size=None, out=None):
     if not problems(load_rgba(source), cell, palette):
         print(f'{source}: already passes, not snapped', file=out)
         return 0
-    command = [tool_path(SNAPPER_ENV, SNAPPER_DEFAULT)]
+    command = [snapper_path()]
     with tempfile.TemporaryDirectory() as tmp:
         staged = Path(tmp) / 'snapped.png'
         command += [str(source), str(staged), str(len(palette) if palette else 16)]

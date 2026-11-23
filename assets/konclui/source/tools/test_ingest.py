@@ -2,11 +2,11 @@
 second opinion, determinism, and that the input is never touched.
 Run (from assets/konclui/source, isolated mode as the repository asks): python3 -I tools/test_ingest.py
 
-The tests that run the pixel snapper are skipped, with the reason, when spritefusion-pixel-snapper is missing or is not
-the pinned one. Their fixtures are drawn here (a sprite on a 32 px grid, scaled by 8 with a blur and noise, as a model's
-output is) and are tied to the pinned snapper, 1.0.0: MEASURED, the snapper returns the grid size or one more row and
-column depending on the noise (50% of 16 fixtures of 32x32 came back 33x33), so the fixtures use fixed seeds that were
-run against it, and a snapper upgrade that changes them is a deliberate re-measure.
+The tests that run the pixel snapper need the FIXED build (the pinned commit plus tools/patches/pixel-snapper-fix.patch,
+installed by tools/build_pixel_snapper.py). They do not skip without it (principle 1: no silent fallback): every one of
+them ERRORS with toolchain.ToolMissing or ToolMismatch and the install command. Their fixtures are drawn here (a sprite on a
+32 px grid, scaled by 8 with a blur and noise, as a model's output is) and are tied to the fixed snapper; the stock one
+returned one cell more on half of them (33x33 for a 32x32 sprite) and is refused by toolchain.py.
 No test needs perfect_pixel (a fake one is put on sys.path where the second opinion is exercised) and none writes under
 the repository: every output is a temporary folder."""
 import contextlib
@@ -22,20 +22,28 @@ from pathlib import Path
 from unittest import mock
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, PngImagePlugin
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import gridguard as GG  # noqa: E402
 import ingest as I  # noqa: E402
 import pixelgrid as PG  # noqa: E402
+import test_gridguard as TG  # noqa: E402  (its drawn-looking fixtures: runs(), resampled())
 import toolchain  # noqa: E402
 
-SNAPPER_PROBLEM = None
-try:
-    SNAPPER_PROBLEM = toolchain.problem('pixel-snapper')
-except toolchain.ToolError as error:
-    SNAPPER_PROBLEM = str(error)
-needs_snapper = unittest.skipIf(SNAPPER_PROBLEM is not None, f'pixel snapper unavailable: {SNAPPER_PROBLEM}')
+def needs_snapper(cls):
+    """Class decorator: the tests of `cls` run the fixed pixel snapper. When it is missing, stock or another version the class
+    does not skip: setUpClass raises toolchain.ToolMissing / ToolMismatch, whose message is the install command."""
+    own = cls.setUpClass
+
+    def setUpClass(klass):
+        toolchain.require('pixel-snapper')
+        own.__func__(klass)
+    cls.setUpClass = classmethod(setUpClass)
+    return cls
+
+
 needs_lane = unittest.skipUnless(I.PALETTE_MODULE.is_file(), 'tools/palettesnap.py (the palette lane) is not there')
 REAL_PALETTES = I.PALETTES                           # the repository's own palettes/<family>.hex, before any test patches it
 DEFAULT = object()                                   # run_ingest(palette=DEFAULT): the palette file made in setUp
@@ -228,6 +236,27 @@ class Contract(Base):
         record = I.not_checked('palette', 'why', I.REVIEW)
         self.assertIs(I.palette_check(px, 32, (None, record)), record)
 
+    def test_the_preview_width_is_capped_for_a_wide_sheet(self):
+        """MEASURED before the fix: a 512x64 pet sheet from a 4096x512 picture gave a preview about 8,200 px wide."""
+        after = sprite(512, 64)
+        before = Image.fromarray(sprite(4096, 512), 'RGBA')
+        wide = I.preview(before, after)
+        self.assertLessEqual(wide.size[0], I.PREVIEW_MAX_WIDTH)
+        self.assertEqual(wide.size[1], 64)                                    # the whole factor fell to 1, the height with it
+        uncapped = I.preview(before, after, max_width=10 ** 6)
+        self.assertGreater(uncapped.size[0], 8000)                            # the old size, for the record
+        self.assertLessEqual(I.preview(before, sprite(3000, 8)).size[0], I.PREVIEW_MAX_WIDTH)   # a staged picture wider than the cap
+        small = I.preview(model_like(sprite(4, 4), scale=8), sprite(4, 4))
+        self.assertEqual(small.size, (32 + 8 + 4 * 8, 4 * 8))                 # a small sheet keeps its factor of 8
+        capped = I.preview(before, after, max_width=1500)
+        self.assertLessEqual(capped.size[0], 1500)
+        self.assertEqual(wide.tobytes(), I.preview(before, after).tobytes())
+
+    def test_the_inbox_and_the_staging_folders_are_git_ignored(self):
+        lines = (I.SOURCE / '.gitignore').read_text().splitlines()
+        for folder in (I.INBOX, I.STAGING_ROOT):
+            self.assertIn(f'{folder.relative_to(I.SOURCE).as_posix()}/', lines, f'{folder.name} is not in assets/konclui/source/.gitignore')
+
     def test_preview_is_nearest_neighbour_and_deterministic(self):
         after = sprite(4, 4)
         before = model_like(after, scale=8)                       # 32x32
@@ -402,8 +431,30 @@ class MissingTool(Base):
         done = subprocess.run([sys.executable, '-I', str(HERE / 'ingest.py'), 'run', str(source), '--family', 'office',
                                '--out', str(self.tmp / 'out')], capture_output=True, text=True, env=env)
         self.assertEqual(done.returncode, 2)
-        self.assertIn('brew install', done.stderr)
+        self.assertIn(toolchain.TOOLS['pixel-snapper']['install'], done.stderr)
+        self.assertIn('build_pixel_snapper.py', done.stderr)
         self.assertFalse((self.tmp / 'out').exists())
+
+    def test_the_stock_build_through_the_override_is_refused_and_nothing_is_written(self):
+        source = self.folder()
+        self.model(source)
+        out = self.tmp / 'out'
+        stock = self.tmp / 'spritefusion-pixel-snapper'
+        stock.write_text('#!/bin/sh\n[ "$1" = "--version" ] && { echo "spritefusion-pixel-snapper 1.0.0"; exit 0; }\n'
+                         '[ "$1" = "--help" ] && { echo "usage: spritefusion-pixel-snapper INPUT OUTPUT [COLORS] [--pixel-size N]"; exit 0; }\n'
+                         'exit 0\n')
+        stock.chmod(0o755)
+        os.environ[toolchain.TOOLS['pixel-snapper']['env']] = str(stock)
+        os.environ[toolchain.ALLOW_MISMATCH_ENV] = '1'                      # and the variable does not waive it
+        with self.assertRaises(toolchain.ToolMismatch) as caught:
+            self.run_ingest(source, out=out)
+        self.assertIn('STOCK', str(caught.exception))
+        self.assertIn(toolchain.TOOLS['pixel-snapper']['install'], str(caught.exception))
+        self.assertFalse(out.exists(), 'nothing is written when the tool is the stock one')
+        done = subprocess.run([sys.executable, '-I', str(HERE / 'ingest.py'), 'run', str(source), '--family', 'office', '--out', str(out)],
+                              capture_output=True, text=True, env=dict(os.environ))
+        self.assertEqual(done.returncode, 2)
+        self.assertIn('STOCK', done.stderr)
 
     def test_a_wrong_version_stops_the_run_too(self):
         source = self.folder()
@@ -421,13 +472,19 @@ class MissingTool(Base):
         self.model(source, 'b.png')
         fake = self.tmp / 'snapper-bad'
         fake.write_text('#!/bin/sh\n[ "$1" = "--version" ] && { echo "spritefusion-pixel-snapper 1.0.0"; exit 0; }\n'
+                        '[ "$1" = "--help" ] && { echo "usage: tool --expect-cell N"; exit 0; }\n'
                         'echo "boom: cannot decode" >&2\nexit 3\n')
         fake.chmod(0o755)
         os.environ[toolchain.TOOLS['pixel-snapper']['env']] = str(fake)
         report = self.run_ingest(source)
         self.assertEqual([p['verdict'] for p in report['pictures']], ['rejected', 'rejected'])
         self.assertIn('boom: cannot decode', report['pictures'][0]['reasons'][0])
+        self.assertEqual(report['pictures'][0]['guard']['reason'], 'tool-unresolved')      # exit 3 is the fixed tool's "no grid"
         self.assertEqual(I.exit_code(report), 1)
+        fake.write_text(fake.read_text().replace('exit 3', 'exit 1'))
+        failed = self.run_ingest(source, out=self.tmp / 'out-failed')
+        self.assertEqual(failed['pictures'][0]['guard']['reason'], 'tool-failed')
+        self.assertEqual({p['verdict'] for p in failed['pictures']}, {'rejected'})
 
 
 @needs_snapper
@@ -454,16 +511,28 @@ class Run(Base):
         self.assertEqual(PG.problems(staged, 32), [])                      # the existing contract, over the output
         self.assertEqual(I.exit_code(report), 0)
         self.assertTrue(picture.exists())
+        guard = entry['guard']                                              # and the guard says why, with its numbers
+        self.assertEqual((guard['decision'], guard['reason']), (GG.ACCEPT, 'enlargement-proven'))
+        self.assertEqual(guard['evidence']['factor'], [8.0, 8.0])
+        self.assertGreaterEqual(guard['evidence']['agreement'], GG.AGREEMENT_MIN)
+        self.assertEqual(guard['evidence']['snapped'], [32, 32])
 
-    def test_partial_alpha_from_the_snapper_is_repaired_and_recorded(self):
+    def test_partial_alpha_is_repaired_and_recorded_with_the_class_of_the_input_and_of_the_output(self):
         source = self.folder()
-        self.model(source)
+        native = sprite(32, 32)
+        native[5, 16] = (200, 60, 40, 90)                                  # two stray soft pixels on art that is on its grid
+        native[6, 16] = (200, 60, 40, 200)
+        Image.fromarray(native, 'RGBA').save(source / 'soft.png')
         entry = self.run_ingest(source)['pictures'][0]
-        self.assertGreater(entry['alpha']['partialPx'], 0)                 # the snapper's own output had partial alpha
+        self.assertEqual(entry['guard']['decision'], GG.PASS_THROUGH)
+        self.assertEqual(entry['alpha']['inputClass'], 'partial')          # the input's class, not only the snapper's
+        self.assertEqual(entry['alpha']['partialPx'], 2)
         self.assertIn(entry['alpha']['snapperOutput'], ('flat', 'aa'))
         self.assertEqual(entry['alpha']['afterRepair'], 'binary')
-        alpha = load(self.tmp / 'out' / 'piece.png')[..., 3]
+        alpha = load(self.tmp / 'out' / 'soft.png')[..., 3]
         self.assertEqual(set(np.unique(alpha)), {0, 255})
+        self.assertEqual((alpha[5, 16], alpha[6, 16]), (0, 255))           # 90 dropped, 200 raised: pixelgrid.binary_alpha's rule
+        self.assertFalse(entry['output']['identicalToInput'])              # the repair changed it, so it is not a byte copy
         self.assertEqual(entry['alpha']['transparentPx'] + entry['alpha']['opaquePx'], 32 * 32)
 
     def test_the_report_has_what_the_lane_promises(self):
@@ -486,7 +555,7 @@ class Run(Base):
         staged_colours = visible(load(self.tmp / 'out' / 'piece.png'))
         self.assertEqual(entry['output']['colours'], len(staged_colours))
         self.assertTrue(staged_colours <= set(COLOURS))
-        self.assertEqual(entry['quantisation'], {'colourCount': 32, 'palette': 'handed to the snapper'})
+        self.assertEqual(entry['quantisation'], {'colourCount': I.GEOMETRY_COLOURS, 'palette': 'handed to the snapper'})
         self.assertEqual([c['name'] for c in entry['checks']],
                          ['size', 'alpha', 'transparency', 'palette', 'colours', 'second-opinion'])
         self.assertTrue(all(c['reason'] for c in entry['checks']))
@@ -567,7 +636,7 @@ class Run(Base):
         report = self.run_ingest(source, palette=None)
         entry = report['pictures'][0]
         self.assertEqual(entry['verdict'], 'needs review')
-        self.assertEqual(entry['quantisation'], {'colourCount': 16, 'palette': 'none'})
+        self.assertEqual(entry['quantisation'], {'colourCount': I.GEOMETRY_COLOURS, 'palette': 'none'})
         colours = [c for c in entry['checks'] if c['name'] == 'colours'][0]
         self.assertEqual(colours['result'], 'fail')
         self.assertIn('no locked palette handed to it', colours['reason'])
@@ -586,7 +655,7 @@ class Run(Base):
         entry = report['pictures'][0]
         self.assertEqual(report['palette']['colours'], 305)
         self.assertIn('checked after the snap only: 305 colours', report['palette']['appliedBy'])
-        self.assertEqual(entry['quantisation'], {'colourCount': 16, 'palette': 'checked after the snap only'})
+        self.assertEqual(entry['quantisation'], {'colourCount': I.GEOMETRY_COLOURS, 'palette': 'checked after the snap only'})
         self.assertNotIn('snapper failed', ' '.join(entry['reasons']))
         self.assertNotEqual(entry['verdict'], 'rejected')
         colours = [c for c in entry['checks'] if c['name'] == 'colours'][0]
@@ -765,6 +834,328 @@ class Run(Base):
         self.assertEqual(refused.returncode, 2)
         self.assertIn('source art tree', refused.stderr)
         self.assertFalse((I.SOURCE / 'pets' / 'x').exists())
+
+
+def fake_snapper(directory, answer_size, name='fake-snapper'):
+    """A stand-in for the fixed snapper that answers every picture with its own pixels resized (nearest) to `answer_size`: the
+    wrong answers a real one gave, made on purpose. It passes toolchain's version and capability probes."""
+    path = Path(directory) / name
+    path.write_text(f'#!{sys.executable}\n'
+                    'import sys\nfrom PIL import Image\n'
+                    'if sys.argv[1] == "--version": print("spritefusion-pixel-snapper 1.0.0"); sys.exit(0)\n'
+                    'if sys.argv[1] == "--help": print("usage: tool --expect-cell N"); sys.exit(0)\n'
+                    f'Image.open(sys.argv[1]).convert("RGBA").resize({tuple(answer_size)!r}, Image.NEAREST).save(sys.argv[2])\n'
+                    'print("Pixel size: 7.8px (auto-detected)")\n')
+    path.chmod(0o755)
+    return path
+
+
+def drawn(width, height, seed=3, **kw):
+    """sprite() with colours drawn at random from the whole RGB cube: far more than 256 colours on a 32x32 sprite."""
+    px = sprite(width, height, seed)
+    r = np.random.default_rng(seed + 100)
+    visible = px[..., 3] > 0
+    px[..., :3][visible] = r.integers(0, 256, (int(visible.sum()), 3), dtype=np.uint8)
+    return px
+
+
+@needs_snapper
+class PassThrough(Base):
+    """Art that is already on its grid is not touched: the snapper returns it, the guard says so, the input is staged."""
+
+    def native(self, width, height, name='piece.png', seed=3, array=None, folder=None):
+        """A native PNG written so that its bytes are not what Pillow would write for its pixels (a text chunk and a low
+        compression level): only a byte copy gives the same bytes back, a re-encoding does not."""
+        folder = folder or self.folder()
+        path = Path(folder) / name
+        info = PngImagePlugin.PngInfo()
+        info.add_text('made-by', 'a drawing tool, not Pillow')
+        Image.fromarray(sprite(width, height, seed) if array is None else array, 'RGBA').save(path, pnginfo=info, compress_level=1)
+        with Image.open(path) as written:
+            reencoded = io.BytesIO()
+            written.save(reencoded, format='PNG')
+        self.assertNotEqual(reencoded.getvalue(), path.read_bytes(), 'the fixture must not survive a re-encoding byte for byte')
+        return path
+
+    def test_a_native_32x32_passes_through_byte_identical(self):
+        picture = self.native(32, 32)
+        report = self.run_ingest(picture.parent)
+        entry = report['pictures'][0]
+        self.assertEqual(entry['verdict'], 'ready', entry['reasons'])
+        self.assertEqual((entry['guard']['decision'], entry['guard']['reason']), (GG.PASS_THROUGH, 'on-grid'))
+        self.assertEqual((self.tmp / 'out' / 'piece.png').read_bytes(), picture.read_bytes())
+        self.assertTrue(entry['output']['identicalToInput'])
+        self.assertEqual(entry['output']['sha256'], entry['input']['sha256'])
+        self.assertEqual(entry['pixelSize']['detected'], 1.0)
+        self.assertEqual(entry['alpha']['inputClass'], 'binary')
+        self.assertEqual(entry['quantisation']['palette'], 'not applied: the picture is on its grid and is kept as it is')
+        self.assertTrue((self.tmp / 'out' / 'piece.preview.png').is_file())
+        self.assertEqual(I.exit_code(report), 0)
+
+    def test_a_native_96x128_avatar_sheet_passes_through_byte_identical(self):
+        """MEASURED before the fix, with the stock snapper: 96x128 sheets came back 24x34, 19x23 and 21x27."""
+        picture = self.native(96, 128)
+        entry = self.run_ingest(picture.parent, 'avatars')['pictures'][0]
+        self.assertEqual(entry['verdict'], 'ready', entry['reasons'])
+        self.assertEqual(entry['guard']['decision'], GG.PASS_THROUGH)
+        self.assertEqual((self.tmp / 'out' / 'piece.png').read_bytes(), picture.read_bytes())
+        self.assertEqual((entry['output']['width'], entry['output']['height']), (96, 128))
+
+    def test_a_native_pet_strip_passes_through_byte_identical(self):
+        """MEASURED before the fix: a 512x128 pet sheet came back 112x27."""
+        picture = self.native(512, 128)
+        entry = self.run_ingest(picture.parent, 'pets')['pictures'][0]
+        self.assertEqual(entry['verdict'], 'ready', entry['reasons'])
+        self.assertEqual((self.tmp / 'out' / 'piece.png').read_bytes(), picture.read_bytes())
+
+    def test_a_native_with_more_than_256_colours_is_asked_again_without_a_count_and_stays_identical(self):
+        picture = self.native(32, 32, array=drawn(32, 32))
+        with Image.open(picture) as image:
+            self.assertGreater(I.colour_count(np.asarray(image.convert('RGBA'))), I.GEOMETRY_COLOURS)
+        entry = self.run_ingest(picture.parent)['pictures'][0]
+        self.assertEqual(entry['guard']['decision'], GG.PASS_THROUGH, entry['guard'])
+        self.assertTrue(entry['input']['rerunWithoutColourCount'])
+        self.assertEqual((self.tmp / 'out' / 'piece.png').read_bytes(), picture.read_bytes())
+
+    def test_colours_off_the_palette_stay_off_it_and_the_picture_needs_review_instead_of_being_recoloured(self):
+        px = sprite(32, 32)
+        px[10:14, 10:14, :3] = (1, 2, 3)                                    # a colour that is not in the palette
+        picture = self.native(32, 32, array=px)
+        report = self.run_ingest(picture.parent)
+        entry = report['pictures'][0]
+        self.assertEqual(entry['verdict'], 'needs review')
+        checks = {c['name']: c for c in entry['checks']}
+        self.assertEqual(checks['palette']['result'], 'fail')
+        self.assertEqual(checks['colours']['result'], 'pass')               # nothing was changed: it says so
+        self.assertIn('unchanged', checks['colours']['reason'])
+        self.assertEqual((self.tmp / 'out' / 'piece.png').read_bytes(), picture.read_bytes())
+
+    def test_pixel_size_one_keeps_a_picture_the_snapper_cannot_resolve_and_says_it_was_asserted(self):
+        source = self.folder()
+        Image.fromarray(np.zeros((128, 96, 4), np.uint8), 'RGBA').save(source / 'blank.png')    # a clear layer: no grid to find
+        refused = self.run_ingest(source, 'avatars')['pictures'][0]
+        self.assertEqual((refused['verdict'], refused['guard']['reason']), ('rejected', 'tool-unresolved'))
+        self.assertIn('Could not resolve a pixel grid', refused['reasons'][0])
+        self.assertNotIn('output', refused)                                   # the snapper wrote nothing
+        kept = self.run_ingest(source, 'avatars', pixel_size=1, out=self.tmp / 'out-1')['pictures'][0]
+        self.assertEqual((kept['verdict'], kept['guard']['reason']), ('ready', 'on-grid-asserted'))
+        self.assertEqual(kept['pixelSize']['source'], 'override')
+
+    def test_a_lossless_webp_native_is_staged_with_the_same_pixels(self):
+        source = self.folder()
+        native = sprite(32, 32)
+        Image.fromarray(native, 'RGBA').save(source / 'piece.webp', lossless=True)
+        entry = self.run_ingest(source)['pictures'][0]
+        self.assertEqual(entry['guard']['decision'], GG.PASS_THROUGH)
+        self.assertEqual(entry['input']['convertedForSnapper'], 'webp to png')
+        self.assertTrue(GG.same_pixels(load(self.tmp / 'out' / 'piece.png'), native))
+        self.assertFalse(entry['output']['identicalToInput'])                 # a PNG written from a WEBP: pixels, not bytes
+
+    def test_the_input_of_a_native_is_never_modified_and_a_run_twice_is_identical(self):
+        source = self.folder()
+        self.native(32, 32, 'a.png', folder=source)
+        self.native(96, 128, 'b.png', seed=4, folder=source)
+        before = tree_bytes(source)
+        self.run_ingest(source, out=self.tmp / 'one')
+        self.run_ingest(source, out=self.tmp / 'two')
+        self.assertEqual(tree_bytes(source), before)
+        one, two = tree_bytes(self.tmp / 'one'), tree_bytes(self.tmp / 'two')
+        self.assertEqual(one, two)
+        self.assertEqual((one['a.png'], one['b.png']), (before['a.png'], before['b.png']))      # both staged as the very bytes
+        self.assertEqual(sorted(one), ['a.png', 'a.preview.png', 'b.png', 'b.preview.png', 'report.json'])
+
+
+@needs_snapper
+class Enlargements(Base):
+    """Enlargements the guard proves are staged at the native size; the ones it cannot prove are rejected with the reason."""
+
+    def enlarged(self, width, height, scale, name='piece.png', **kw):
+        folder = self.folder()
+        Image.fromarray(sprite(width, height), 'RGBA').resize((width * scale, height * scale), Image.NEAREST).save(folder / name)
+        return folder
+
+    def test_a_clean_8x_enlargement_is_accepted_and_staged_as_the_native_art(self):
+        entry = self.run_ingest(self.enlarged(32, 32, 8))['pictures'][0]
+        self.assertEqual((entry['verdict'], entry['guard']['decision']), ('ready', GG.ACCEPT), entry['reasons'])
+        self.assertEqual((entry['output']['width'], entry['output']['height']), (32, 32))
+        staged = load(self.tmp / 'out' / 'piece.png')
+        self.assertTrue(GG.same_pixels(staged, sprite(32, 32)))               # clean in, the very art out
+        self.assertEqual(entry['guard']['evidence']['agreement'], 1.0)
+        self.assertEqual(entry['pixelSize']['detected'], 8.0)
+
+    def test_a_blurred_and_noisy_8x_enlargement_is_accepted_at_the_native_size(self):
+        source = self.folder()
+        self.model(source)
+        entry = self.run_ingest(source)['pictures'][0]
+        self.assertEqual(entry['guard']['decision'], GG.ACCEPT)
+        self.assertEqual((entry['output']['width'], entry['output']['height']), (32, 32))
+        self.assertGreaterEqual(entry['guard']['evidence']['agreement'], GG.AGREEMENT_MIN)
+
+    def test_a_16x_enlargement_is_rejected_out_of_range_whatever_the_snapper_returns(self):
+        source = self.enlarged(32, 32, 16)
+        real = self.run_ingest(source)['pictures'][0]
+        self.assertEqual((real['verdict'], real['guard']['decision']), ('rejected', GG.REFUSE), real['reasons'])
+        self.assertEqual(real['guard']['reason'], 'factor-out-of-range')       # the snapper does return the native size for it
+        self.assertIsNone(real['staged'])
+        self.assertTrue((self.tmp / 'out' / 'rejected' / 'piece.png').is_file())
+        for size in ((32, 32), (64, 64), (128, 128)):                          # and for whatever else it might return
+            os.environ[toolchain.TOOLS['pixel-snapper']['env']] = str(fake_snapper(self.tmp, size))
+            fake = self.run_ingest(source, out=self.tmp / f'out-{size[0]}')['pictures'][0]
+            self.assertEqual(fake['verdict'], 'rejected', size)
+            self.assertEqual(fake['guard']['decision'], GG.REFUSE, size)
+
+    def test_an_off_by_one_result_is_rejected_and_kept_for_inspection_only(self):
+        source = self.folder()
+        self.model(source)
+        os.environ[toolchain.TOOLS['pixel-snapper']['env']] = str(fake_snapper(self.tmp, (33, 32)))
+        entry = self.run_ingest(source)['pictures'][0]
+        self.assertEqual((entry['verdict'], entry['guard']['reason']), ('rejected', 'off-grid-size'))
+        self.assertIn('33x32 is not a whole number of 32 px cells', entry['reasons'][0])
+        self.assertEqual(sorted(p.name for p in (self.tmp / 'out').iterdir()), ['rejected', 'report.json'])
+        self.assertEqual((entry['output']['width'], entry['output']['height']), (33, 32))
+
+    def test_a_pixel_size_at_half_the_true_one_is_rejected_and_the_true_one_is_accepted(self):
+        source = self.folder()
+        self.model(source)
+        half = self.run_ingest(source, pixel_size=4)['pictures'][0]
+        self.assertEqual((half['verdict'], half['guard']['reason']), ('rejected', 'coarser-grid-explains'), half['reasons'])
+        true = self.run_ingest(source, pixel_size=8, out=self.tmp / 'out-8')['pictures'][0]
+        self.assertEqual((true['verdict'], true['guard']['decision']), ('ready', GG.ACCEPT))
+
+    def test_a_non_integer_bilinear_enlargement_is_accepted_at_the_native_size(self):
+        source = self.folder()
+        native = Image.fromarray(sprite(64, 64), 'RGBA')
+        native.convert('RGBa').resize((467, 467), Image.BILINEAR).convert('RGBA').save(source / 'piece.png')       # 7.3x
+        entry = self.run_ingest(source)['pictures'][0]
+        self.assertEqual(entry['guard']['decision'], GG.ACCEPT, entry['reasons'])
+        self.assertEqual((entry['output']['width'], entry['output']['height']), (64, 64))
+
+    def test_the_stock_pixel_snapper_cannot_be_what_ran(self):
+        report = self.run_ingest(self.enlarged(32, 32, 8))
+        tool = report['toolchain']['tools']['pixel-snapper']
+        self.assertIs(tool['capability'], True)
+        self.assertTrue(tool['path'].endswith('spritefusion-pixel-snapper-fixed') or os.environ.get(toolchain.TOOLS['pixel-snapper']['env']))
+
+
+@needs_snapper
+class PassThroughScreens(Base):
+    """What the real snapper does with an enlargement below 3.5x is to give it back unchanged (MEASURED on the lab's art: 184 of
+    857 such pictures; the synthetic fixtures here are refused by the real snapper, so a stand-in that answers with the input
+    makes the same answer). The guard must not turn that into a native."""
+
+    def keep_as_it_is(self, size):
+        os.environ[toolchain.TOOLS['pixel-snapper']['env']] = str(fake_snapper(self.tmp, size))
+
+    def test_a_blocky_picture_the_snapper_gave_back_unchanged_is_rejected_with_the_reason(self):
+        picture = np.repeat(np.repeat(TG.runs(48, 64), 2, axis=0), 2, axis=1)
+        source = self.folder()
+        Image.fromarray(picture, 'RGBA').save(source / 'piece.png')
+        self.keep_as_it_is((96, 128))
+        entry = self.run_ingest(source, 'avatars')['pictures'][0]
+        self.assertEqual((entry['verdict'], entry['guard']['decision'], entry['guard']['reason']), ('rejected', GG.REFUSE, 'input-blocky'))
+        self.assertGreaterEqual(entry['guard']['evidence']['selfCoarseAgreement']['2'], GG.SELF_COARSE_MAX)
+        self.assertIsNone(entry['staged'])
+        self.assertTrue((self.tmp / 'out' / 'rejected' / 'piece.png').is_file())
+        self.assertFalse((self.tmp / 'out' / 'piece.png').exists())
+        self.assertIn('input-blocky', entry['reasons'][0])
+
+    def test_a_resampled_picture_the_snapper_gave_back_unchanged_is_rejected_with_the_reason(self):
+        source = self.folder()
+        Image.fromarray(TG.resampled(TG.runs(48, 64), 96, 128), 'RGBA').save(source / 'piece.png')
+        self.keep_as_it_is((96, 128))
+        report = self.run_ingest(source, 'avatars')
+        entry = report['pictures'][0]
+        self.assertEqual((entry['verdict'], entry['guard']['reason']), ('rejected', 'input-resampled'))
+        self.assertGreaterEqual(entry['guard']['evidence']['blendShare'], GG.BLEND_MAX)
+        text = io.StringIO()
+        I.print_report(report, text)
+        self.assertIn('guard: REFUSE (input-resampled), blend ', text.getvalue())
+
+    def test_pixel_size_one_is_how_the_caller_keeps_such_a_picture_and_the_report_says_it_was_asserted(self):
+        source = self.folder()
+        Image.fromarray(np.repeat(np.repeat(TG.runs(48, 64), 2, axis=0), 2, axis=1), 'RGBA').save(source / 'piece.png')
+        self.keep_as_it_is((96, 128))
+        entry = self.run_ingest(source, 'avatars', pixel_size=1)['pictures'][0]
+        self.assertEqual((entry['verdict'], entry['guard']['decision'], entry['guard']['reason']), ('ready', GG.PASS_THROUGH, 'on-grid-asserted'),
+                         entry['reasons'])
+        self.assertTrue(entry['output']['identicalToInput'])
+
+
+class Registration(Base):
+    """An enlargement is staged only when its result fits where it is better than one art pixel over."""
+
+    def test_art_whose_registration_cannot_be_told_is_rejected_even_when_the_size_is_right(self):
+        stripes = TG.Refuse.stripes()                                  # random rows, identical columns: no move along a row shows
+        source = self.folder()
+        Image.fromarray(np.repeat(np.repeat(stripes, 8, axis=0), 8, axis=1), 'RGBA').save(source / 'piece.png')
+        os.environ[toolchain.TOOLS['pixel-snapper']['env']] = str(fake_snapper(self.tmp, (32, 32)))
+        report = self.run_ingest(source)
+        entry = report['pictures'][0]
+        self.assertEqual((entry['verdict'], entry['guard']['reason']), ('rejected', 'registration-ambiguous'))
+        self.assertEqual(entry['guard']['evidence']['registration']['margin'], 0.0)
+        self.assertEqual((entry['output']['width'], entry['output']['height']), (32, 32))            # kept for inspection only
+        self.assertIsNone(entry['staged'])
+        self.assertTrue((self.tmp / 'out' / 'rejected' / 'piece.png').is_file())
+        text = io.StringIO()
+        I.print_report(report, text)
+        self.assertIn('guard: REFUSE (registration-ambiguous), factor 8.0x8.0, agreement 1.000, registration margin 0.000', text.getvalue())
+
+
+@needs_snapper
+class GuardReport(Base):
+    """The report states, for every picture, the guard's decision, the reason and the numbers behind it."""
+
+    def test_each_picture_has_its_decision_reason_and_evidence(self):
+        source = self.folder()
+        Image.fromarray(sprite(32, 32), 'RGBA').save(source / 'a-native.png')
+        self.model(source, 'b-model.png')
+        Image.fromarray(sprite(32, 32), 'RGBA').resize((512, 512), Image.NEAREST).save(source / 'c-too-big.png')
+        Image.fromarray(np.zeros((32, 32, 4), np.uint8), 'RGBA').save(source / 'd-blank.png')
+        report = self.run_ingest(source)
+        by_name = {p['name']: p for p in report['pictures']}
+        found = {name: (p['guard']['decision'], p['guard']['reason']) for name, p in by_name.items()}
+        self.assertEqual(found, {'a-native.png': (GG.PASS_THROUGH, 'on-grid'), 'b-model.png': (GG.ACCEPT, 'enlargement-proven'),
+                                 'c-too-big.png': (GG.REFUSE, 'factor-out-of-range'), 'd-blank.png': (GG.REFUSE, 'tool-unresolved')})
+        for p in report['pictures']:
+            self.assertEqual(sorted(p['guard']), ['decision', 'evidence', 'message', 'reason'])
+            self.assertTrue(p['guard']['message'])
+            self.assertEqual(p['guard']['evidence']['input'], [p['input']['width'], p['input']['height']])
+            self.assertIn(p['guard']['reason'], GG.REASONS[p['guard']['decision']])
+        self.assertEqual(by_name['b-model.png']['guard']['evidence']['factor'], [8.0, 8.0])
+        self.assertIn('agreement', by_name['b-model.png']['guard']['evidence'])
+        self.assertEqual(by_name['c-too-big.png']['guard']['evidence']['factor'], [16.0, 16.0])
+        self.assertEqual(report['grid'], {'geometryColours': I.GEOMETRY_COLOURS, 'guard': GG.parameters()})
+        native = by_name['a-native.png']['guard']['evidence']                  # a pass-through shows why it is trusted
+        self.assertLess(native['blendShare'], GG.BLEND_MAX)
+        self.assertLess(max(native['selfCoarseAgreement'].values()), GG.SELF_COARSE_MAX)
+        self.assertGreaterEqual(by_name['b-model.png']['guard']['evidence']['registration']['margin'], GG.REGISTRATION_MARGIN)
+        text = io.StringIO()
+        I.print_report(report, text)
+        for wanted in ('guard: PASS_THROUGH (on-grid), blend 0.000, self-coarse ', 'guard: ACCEPT (enlargement-proven), factor 8.0x8.0, agreement',
+                       ', registration margin ',
+                       'guard: REFUSE (factor-out-of-range), factor 16.0x16.0', 'guard: REFUSE (tool-unresolved)'):
+            self.assertIn(wanted, text.getvalue())
+        json.dumps(report)
+        self.assertEqual(json.loads((self.tmp / 'out' / 'report.json').read_text()), report)
+
+    def test_the_input_alpha_class_is_in_the_report(self):
+        source = self.folder()
+        opaque = sprite(32, 32)
+        opaque[..., 3] = 255
+        soft = sprite(32, 32)
+        soft[8, 8, 3] = 100
+        for name, px in {'opaque': opaque, 'binary': sprite(32, 32), 'partial': soft}.items():
+            Image.fromarray(px, 'RGBA').save(source / f'{name}.png')
+        report = self.run_ingest(source)
+        self.assertEqual({p['name'][:-4]: p['alpha']['inputClass'] for p in report['pictures']},
+                         {'opaque': 'opaque', 'binary': 'binary', 'partial': 'partial'})
+
+    def test_a_refused_picture_still_says_what_class_it_came_in(self):
+        source = self.folder()
+        Image.fromarray(np.zeros((32, 32, 4), np.uint8), 'RGBA').save(source / 'blank.png')
+        entry = self.run_ingest(source)['pictures'][0]
+        self.assertEqual(entry['guard']['reason'], 'tool-unresolved')
+        self.assertEqual(entry['alpha'], {'inputClass': 'binary'})
 
 
 @needs_snapper

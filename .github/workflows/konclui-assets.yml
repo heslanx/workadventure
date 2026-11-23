@@ -2,7 +2,7 @@
 #
 # Started by hand only (workflow_dispatch): nothing pushes or pulls it. It runs, in this order:
 #   1. python3 -I tools/toolchain.py status   the three SpriteFusion tools must resolve and match their pins
-#   2. the Python tests of assets/konclui/source/tools
+#   2. the Python tests of assets/konclui/source/tools (test_gridguard.py needs no tool; test_ingest.py needs the FIXED pixel snapper)
 #   3. (input build_and_verify) hq-office/build.py into $RUNNER_TEMP, then tools/verify.py over it
 #      (input rebuild adds verify.py --rebuild: the build runs twice and the bytes are compared)
 #
@@ -10,6 +10,12 @@
 # SPRITEFUSION_PIXEL_SNAPPER_BIN, SPRITEFUSION_NORMALS_BIN, SPRITEFUSION_PALETTE_SNAPPER_BIN). This workflow installs NOTHING:
 # when a tool is missing or is not the pinned version, step 1 fails and prints the exact install command of each one, to be
 # run once on the host by whoever owns it (assets/konclui/source/tools/README.md, "Tools, versions, provenance").
+# The pixel snapper is the FIXED build (the pinned commit plus tools/patches/pixel-snapper-fix.patch), installed once with
+#   cd assets/konclui/source && python3 -I tools/build_pixel_snapper.py      (needs git and cargo; the stock tool is refused)
+# into ~/.cargo/bin as spritefusion-pixel-snapper-fixed; the stock Homebrew spritefusion-pixel-snapper is not the pin.
+# Until that is done on a runner, step 1 and the tests of test_ingest.py and test_toolchain.py fail there, by design (no fallback).
+# A build manifest made before the fixed snapper became the pin says "1.0.0" and cannot say which build made it: rebuild it
+# (hq-office/build.py) after installing the fixed one.
 # Nothing here publishes: the publish step (tools/publish.py) writes into a served map directory and stays a manual act.
 name: Konclui assets
 
@@ -61,8 +67,8 @@ jobs:
         run: |
           if [ -d "$RUNNER_TEMP/konclui-assets/dist" ]; then export KONCLUI_DIST="$RUNNER_TEMP/konclui-assets/dist"; fi
           failed=0
-          for test in tools/test_toolchain.py tools/test_pixelgrid.py tools/test_palettesnap.py tools/test_ingest.py \
-                      tools/test_publish.py tools/test_verify.py; do
+          for test in tools/test_toolchain.py tools/test_pixelgrid.py tools/test_palettesnap.py tools/test_gridguard.py \
+                      tools/test_ingest.py tools/test_publish.py tools/test_verify.py; do
             echo "::group::$test"
             python3 -I "$test" || { echo "::error::$test failed"; failed=1; }
             echo "::endgroup::"

@@ -9,12 +9,33 @@ reported as rejected). For each picture, in this order:
   1 refuse     not a PNG/JPEG/WEBP (by extension AND by content), animated, larger than --max-bytes or --max-pixels.
                The whole run is refused (exit 2, nothing written) when STAGING is inside a source art directory (anything
                under assets/konclui except tools/staging), inside $KONCLUI_DIST, equal to the input, or inside/around it.
-  2 snap       the grid is recovered by spritefusion-pixel-snapper through toolchain.run (a missing or wrong tool stops
-               the whole run with toolchain.ToolMissing / ToolMismatch and the install command: never a fallback). The pixel
-               size is auto-detected unless --pixel-size is given. WEBP is converted to a PNG in a temporary folder first
-               (the snapper reads PNG and JPEG only). When a palette is available it is handed to the snapper as well.
-  3 check      the snapper's result goes through the existing alpha repair (pixelgrid.binary_alpha: same size, so the
-               cell grid survives) and is then checked with pixelgrid.problems and the family's size rule:
+  2 snap       the grid is recovered by the FIXED spritefusion-pixel-snapper (the pinned commit plus tools/patches/
+               pixel-snapper-fix.patch, installed as spritefusion-pixel-snapper-fixed by tools/build_pixel_snapper.py)
+               through toolchain.run: a missing tool, the stock build, or another version stops the whole run with
+               toolchain.ToolMissing / ToolMismatch and the install command: never a fallback. The run is colour-neutral
+               (at most GEOMETRY_COLOURS colours, no palette): it only finds the grid. The pixel size is auto-detected
+               unless --pixel-size is given (--pixel-size 1 says "already on its grid, keep it"). WEBP is converted to a
+               PNG in a temporary folder first (the snapper reads PNG and JPEG only).
+  3 guard      tools/gridguard.py decides, from the picture and the snapper's answer alone, one of
+                 PASS_THROUGH  the picture is already on its grid: the snapper returned it unchanged and the picture shows no
+                               trace of an enlargement below the snapper's range (it is not made of blocks and not resampled:
+                               `input-blocky`, `input-resampled` otherwise; a screen, not a proof, tools/README.md "Is it on its
+                               grid?"). Or `--pixel-size 1` said so, and then it is the caller's word. The INPUT is staged, byte
+                               for byte when it is a PNG whose alpha needs no repair. The snapper's palette and colour
+                               reduction are not applied: art on its grid is kept as it is.
+                 ACCEPT        an enlargement whose recovered grid is proven (cell multiples, family size, a factor in the
+                               proven range, equal on both axes, not itself blocky, the result enlarged back agrees with the
+                               input, and the result fits better where it is than moved by one art pixel). The snapper's
+                               result is staged; with a palette of up to 256 colours a second, colour-only pass
+                               (`--pixel-size 1 --palette`) maps it onto the palette without touching the grid.
+                 REFUSE        anything else: the picture is rejected with the guard's reason (gridguard.REASONS) and, when the
+                               snapper produced a picture, kept for inspection as rejected/NAME.png only.
+               A refusal of the snapper ("Unresolved", exit 3) is a REFUSE: the family's hard contract is not taken as proof of
+               a grid (an 8x enlargement of 32x32 art is 256x256, a multiple of the cell). The report of every picture holds
+               the decision, the reason and the evidence numbers (`guard`).
+  4 check      the staged picture goes through the existing alpha repair (pixelgrid.binary_alpha: same size, so the cell
+               grid survives; a picture with binary alpha is not changed) and is then checked with pixelgrid.problems and the
+               family's size rule:
                  office   width and height multiples of the cell
                  avatars  exactly 3 x 4 cells (96 x 128 at cell 32)
                  pets     16 cells wide (512 at cell 32), a whole number of rows
@@ -24,37 +45,39 @@ reported as rejected). For each picture, in this order:
                lane's tools/palettesnap.py (`read_palette(path)`) when that file exists. With no palette file, or no
                palettesnap.py, the check reads "not checked" and does not fail the picture on that alone; a palettesnap
                that cannot read the file fails it.
-               The snapper reads at most 256 palette colours. A palette of up to 256 is handed to it (every colour of the
-               result is then a palette colour). A larger one (pets.hex has 377: the union of the species keys) is NOT
-               handed over: the snapper reduces the colours on its own and the result is checked against the whole
-               palette afterwards, which a quantised picture seldom passes (needs review; for a ready pet pass --palette
-               with one species' palette). Without a palette the snapper is given a count of 16 colours; the "colours"
-               check then says the colours were changed with no locked palette behind them: needs review.
-  4 second     only when the Python module perfect_pixel is importable: it is asked for the grid size of the input (colour
-    opinion    channels only; it never produces the output) and the answer is compared with the snapper's output size.
+               The snapper reads at most 256 palette colours. A palette of up to 256 is handed to it in the colour pass of an
+               ACCEPTed picture (every colour of the result is then a palette colour). A larger one (pets.hex has 377: the
+               union of the species keys) is NOT handed over and the result is checked against the whole palette
+               afterwards, which a reduced picture seldom passes (needs review; for a ready pet pass --palette with one
+               species' palette). A picture that was reduced to at most GEOMETRY_COLOURS colours with no palette behind
+               it is "needs review" (the "colours" check); a PASS_THROUGH picture keeps its own colours and its
+               "colours" check says so.
+  5 second     only when the Python module perfect_pixel is importable: it is asked for the grid size of the input (colour
+    opinion    channels only; it never produces the output) and the answer is compared with the size that was produced.
                perfectPixel has no licence file: it is never required, vendored or copied, and a run without it gives the
                same staged files and the same verdicts, except that this check reads "not checked".
-  5 write      per picture NAME.png (the staged picture), NAME.preview.png (before | after, nearest-neighbour, on a
-               checkerboard) and, for the run, report.json: hashes, sizes, detected pixel size, colour counts, alpha
-               class, every check with its result and reason, the tool identities, and the verdict.
+  6 write      per picture NAME.png (the staged picture), NAME.preview.png (before | after, nearest-neighbour, on a
+               checkerboard, at most PREVIEW_MAX_WIDTH px wide) and, for the run, report.json: hashes, sizes, detected pixel
+               size, colour counts, the INPUT's alpha class and the snapper output's, the guard's decision with its reason
+               and numbers, every check with its result and reason, the tool identities, and the verdict.
 
 Verdict per picture:  ready (no check failed), needs review (a judgement check failed: palette, colours, opaque
-background, second opinion), rejected (refused, the tool failed, or a check on the sheet's size or alpha failed; `size`
-is the cell-grid check). A rejected picture is never staged under NAME.png: what the snapper produced is kept for
-inspection as rejected/NAME.png and rejected/NAME.preview.png only. Exit 0 only when every picture is ready (and there
-is at least one). Exit 2: the run was refused or a tool is missing, nothing (or, after a crash, nothing but report.json
+background, second opinion), rejected (refused by the guard or earlier, the tool failed, or a check on the sheet's size or
+alpha failed; `size` is the cell-grid check). A rejected picture is never staged under NAME.png: what the snapper produced is
+kept for inspection as rejected/NAME.png and rejected/NAME.preview.png only. Exit 0 only when every picture is ready (and
+there is at least one). Exit 2: the run was refused or a tool is missing, nothing (or, after a crash, nothing but report.json
 with "incomplete": true) is left in STAGING.
 
-This lane is NOT held to principle (4) ("a checker returns the same pixels on conforming art"): the snapper re-derives
-the grid and the colours of whatever it is given, and a native 32x32 sprite can come back as 7x8. Art that is already
-on the grid goes through pixelgrid/palettesnap, not here. --protect DIR (repeatable) names more folders that STAGING may
-not be in or around (the served map folder lives outside the repository); a STAGING that already holds a
-.konclui-release.json ledger or a .tmj map is refused whatever the flags.
+Art that is already on the grid is no longer excluded from this lane: the fixed snapper returns it unchanged, the guard says
+PASS_THROUGH, and the staged picture is the input. (The stock snapper re-derived a grid for whatever it was given and a native
+32x32 sprite came back 7x7; principle 4 of tools/README.md therefore did not hold for it.) --protect DIR (repeatable) names
+more folders that STAGING may not be in or around (the served map folder lives outside the repository); a STAGING that already
+holds a .konclui-release.json ledger or a .tmj map is refused whatever the flags.
 
 Staging is a dead end by design: nothing here is read by a build, and promoting a staged picture into a family's sources
 is a human copy (the last line of report.json and of the output says so). The input is only read, never modified or moved.
 
-Python stdlib + numpy + Pillow, as the other art tools; toolchain.py for the snapper.
+Python stdlib + numpy + Pillow, as the other art tools; toolchain.py for the snapper and gridguard.py for the decisions.
 """
 import argparse
 import hashlib
@@ -63,6 +86,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -72,6 +96,7 @@ from PIL import Image
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import gridguard as GG  # noqa: E402
 import pixelgrid as PG  # noqa: E402
 import toolchain  # noqa: E402
 
@@ -88,12 +113,14 @@ EXTENSIONS = {'.png': 'PNG', '.jpg': 'JPEG', '.jpeg': 'JPEG', '.webp': 'WEBP'}
 MAX_BYTES = 20 * 1024 * 1024
 MAX_PIXELS = 25_000_000
 PREVIEW_MAX_SCALE = 16
+PREVIEW_MAX_WIDTH = 2048                  # a wide pet sheet used to give a preview of about 8,200 px
+UNRESOLVED_EXIT = 3                       # the fixed snapper's exit code for "no grid found"
+GEOMETRY_COLOURS = 256                    # colours kept by the grid run (no palette): it finds the grid, it does not recolour
 SECOND_OPINION_MODULE = 'perfect_pixel'
 REPORT = 'report.json'
 REJECTED = 'rejected'                     # a rejected picture's inspection copies go here, never beside the ready ones
 PUBLISH_LEDGER = '.konclui-release.json'  # what publish.py writes into a served map folder
 MAX_SNAPPER_PALETTE = 256                 # the snapper reads at most 256 palette colours (palettesnap.MAX_PALETTE)
-NO_PALETTE_COLOURS = 16                   # the count handed to the snapper when no palette is
 PROMOTION = ('Staging is a dead end: nothing here is part of any build. To promote a ready picture, a person copies its '
              'NAME.png from this folder into the family\'s source art folder and reviews the diff; ingest never does it.')
 
@@ -277,17 +304,8 @@ def colour_count(pixels):
 # ---------------------------------------------------------------------------------------------------- the family contract
 
 def family_size_problems(family, width, height, cell=CELL):
-    """The failures of a sheet's size against its family (empty when it fits)."""
-    if family == 'avatars':
-        want = (3 * cell, 4 * cell)
-        return [] if (width, height) == want else [f'size {width}x{height} is not {want[0]}x{want[1]} (3 x 4 cells of {cell})']
-    if family == 'pets':
-        if width != 16 * cell:
-            return [f'width {width} is not {16 * cell} (16 cells of {cell})']
-        return [] if height and height % cell == 0 else [f'height {height} is not a whole number of {cell} px rows']
-    if family == 'office':
-        return [] if width % cell == 0 and height % cell == 0 else [f'size {width}x{height} is not a multiple of {cell}']
-    raise ValueError(f'unknown family {family!r}: expected one of {", ".join(FAMILIES)}')
+    """The failures of a sheet's size against its family (empty when it fits). The rule is gridguard.FamilyContract's."""
+    return GG.family_contract(family, cell).size_problems(width, height)
 
 
 def check(name, passed, reason, severity):
@@ -315,11 +333,17 @@ def contract_checks(pixels, family, cell):
     return out
 
 
-def colours_check(handed, palette_size, count, before, after):
+def colours_check(handed, palette_size, count, before, after, changed=True):
     """Were the colours changed with a locked palette behind them? `handed` is the palette given to the snapper (a set)
-    or None; `palette_size` the colours of the family palette (None: no palette); `count` what the snapper was told."""
+    or None; `palette_size` the colours of the family palette (None: no palette); `count` what the snapper was told.
+    `changed` False: the picture was kept as it is (PASS_THROUGH), nothing was reduced or mapped."""
+    if not changed:
+        return check('colours', True, f'the picture is on its grid and was kept as it is: its own {before} colours are unchanged',
+                     REVIEW)
     if handed:
         return check('colours', True, f'the snapper mapped {before} input colours onto the {len(handed)} of the palette', REVIEW)
+    if after >= before:
+        return check('colours', True, f'no colour was merged or replaced ({before} in, {after} out) and no palette was applied', REVIEW)
     why = ('there is no palette for this run' if not palette_size else
            f'the palette has {palette_size} colours and the snapper reads at most {MAX_SNAPPER_PALETTE}'
            if palette_size > MAX_SNAPPER_PALETTE else 'the palette could not be read')
@@ -415,16 +439,21 @@ def second_opinion(rgb, produced):
 
 # ---------------------------------------------------------------------------------------------------- the preview
 
-def preview(before, after, scale_cap=PREVIEW_MAX_SCALE):
+def preview(before, after, scale_cap=PREVIEW_MAX_SCALE, max_width=PREVIEW_MAX_WIDTH):
     """Side-by-side PNG image: the input and the staged picture at the same height, both scaled with nearest-neighbour
-    (the staged one by a whole factor), over a grey checkerboard so transparency shows."""
+    (the staged one by a whole factor), over a grey checkerboard so transparency shows. At most `max_width` px wide: the
+    whole factor is lowered (to 1 at the least) until it fits, and a picture that is still wider at 1 (a staged picture wider
+    than the cap) is scaled down as a whole, for the eye only."""
     after_img = Image.fromarray(after, 'RGBA')
     wa, ha = after_img.size
+    gutter = 8
     k = max(1, min(scale_cap, -(-before.size[1] // ha)))
+    left_width = lambda height: max(1, round(before.size[0] * height / before.size[1]))
+    while k > 1 and left_width(ha * k) + gutter + wa * k > max_width:
+        k -= 1
     height = ha * k
     right = after_img.resize((wa * k, height), Image.NEAREST)
-    left = before.convert('RGBA').resize((max(1, round(before.size[0] * height / before.size[1])), height), Image.NEAREST)
-    gutter = 8
+    left = before.convert('RGBA').resize((left_width(height), height), Image.NEAREST)
     width = left.size[0] + gutter + right.size[0]
     yy, xx = np.mgrid[0:height, 0:width]
     board = np.where(((xx // 8 + yy // 8) % 2)[..., None] == 0, np.uint8(200), np.uint8(160))
@@ -433,7 +462,10 @@ def preview(before, after, scale_cap=PREVIEW_MAX_SCALE):
     canvas.alpha_composite(right, (left.size[0] + gutter, 0))
     flat = np.asarray(canvas).copy()
     flat[:, left.size[0]:left.size[0] + gutter] = (40, 40, 40, 255)
-    return Image.fromarray(flat[..., :3], 'RGB')
+    shown = Image.fromarray(flat[..., :3], 'RGB')
+    if shown.size[0] > max_width:
+        shown = shown.resize((max_width, max(1, round(shown.size[1] * max_width / shown.size[0]))), Image.NEAREST)
+    return shown
 
 
 # ---------------------------------------------------------------------------------------------------- one picture
@@ -447,14 +479,38 @@ def verdict_of(checks, refusal=None):
     return 'needs review' if any(c['result'] == 'fail' for c in checks) else 'ready'
 
 
+def run_snapper(source, target, count, pixel_size=None, palette=None):
+    """Run the fixed snapper through toolchain; `count` None leaves the colour count out (the snapper then keeps the colours of
+    art that is already on its grid exactly). (RGBA array of what it wrote or a gridguard.ToolRefusal, its stdout). A missing
+    or wrong tool is toolchain.ToolMissing / ToolMismatch (not caught here): it stops the run."""
+    command = [str(Path(source).resolve()), str(target)] + ([str(count)] if count else [])
+    if pixel_size:
+        command += ['--pixel-size', str(pixel_size)]
+    if palette:
+        command += ['--palette', ','.join('%02x%02x%02x' % c for c in sorted(palette))]
+    try:
+        done = toolchain.run('pixel-snapper', command)
+    except toolchain.ToolFailed as error:
+        return GG.ToolRefusal('unresolved' if error.returncode == UNRESOLVED_EXIT else 'failed', error.stderr), ''
+    try:
+        with Image.open(target) as image:
+            return np.asarray(image.convert('RGBA')).copy(), done.stdout or ''
+    except (OSError, ValueError) as error:
+        return GG.ToolRefusal('unreadable', f'{type(error).__name__}: {error}'), done.stdout or ''
+
+
+def _rejected_entry(entry, name, reason):
+    entry.update(verdict='rejected', reasons=[f'{name}: {reason}'])
+    return entry
+
+
 def ingest_picture(path, stem, args, palette, handed, work):
-    """The report entry of one picture; the staged files are written when the snapper produced a result."""
+    """The report entry of one picture; the staged files are written when the snapper and the guard produced one."""
     entry = {'name': path.name, 'verdict': None}
     info, refusal = inspect(path, args['max_bytes'], args['max_pixels'])
     entry['input'] = info
     if refusal:
-        entry.update(verdict='rejected', reasons=[f'{path.name}: {refusal}'])
-        return entry
+        return _rejected_entry(entry, path.name, refusal)
     source = path
     if info['format'] == 'WEBP':
         source = work / f'{stem}.webp.png'
@@ -462,48 +518,65 @@ def ingest_picture(path, stem, args, palette, handed, work):
             image.convert('RGBA').save(source)
         entry['input']['convertedForSnapper'] = 'webp to png'
     with Image.open(path) as image:
-        pixels_in = np.asarray(image.convert('RGBA'))
+        pixels_in = np.asarray(image.convert('RGBA')).copy()
     entry['input']['colours'] = colour_count(pixels_in)
-    snapped = work / f'{stem}.snapped.png'
-    count = max(len(handed), 2) if handed else NO_PALETTE_COLOURS
-    command = [str(source.resolve()), str(snapped), str(count)]
-    if args['pixel_size']:
-        command += ['--pixel-size', str(args['pixel_size'])]
-    if handed:
-        command += ['--palette', ','.join('%02x%02x%02x' % c for c in sorted(handed))]
-    try:
-        done = toolchain.run('pixel-snapper', command)
-        with Image.open(snapped) as image:
-            raw = np.asarray(image.convert('RGBA'))
-    except toolchain.ToolFailed as error:
-        entry.update(verdict='rejected', reasons=[f'{path.name}: the pixel snapper failed: {error}'])
-        return entry
-    except (OSError, ValueError) as error:
-        entry.update(verdict='rejected', reasons=[f'{path.name}: the pixel snapper wrote no readable picture ({error})'])
-        return entry
-    found = _PIXEL_SIZE.search(done.stdout or '')
-    height_out, width_out = raw.shape[:2]
+    input_class = GG.alpha_class(pixels_in)
+    snapped, stdout = run_snapper(source, work / f'{stem}.snapped.png', GEOMETRY_COLOURS, args['pixel_size'])
+    if (not isinstance(snapped, GG.ToolRefusal) and snapped.shape == pixels_in.shape and not GG.same_pixels(pixels_in, snapped)
+            and entry['input']['colours'] > GEOMETRY_COLOURS):
+        # kept at its size, with more colours than the run keeps: it reduced them, so the run cannot show that the art was
+        # left alone. Ask again without a colour count: art on its grid then comes back exactly (MEASURED, tools/README.md).
+        again, again_stdout = run_snapper(source, work / f'{stem}.neutral.png', None, args['pixel_size'])
+        if not isinstance(again, GG.ToolRefusal) and again.shape == pixels_in.shape:
+            snapped, stdout = again, again_stdout
+            entry['input']['rerunWithoutColourCount'] = True
+    decision = GG.decide(pixels_in, snapped, args['cell'], GG.family_contract(args['family'], args['cell']),
+                         pixel_size=args['pixel_size'])
+    entry['guard'] = decision.as_json()
+    found = _PIXEL_SIZE.search(stdout)
+    refused_by_tool = isinstance(snapped, GG.ToolRefusal)
+    if refused_by_tool:
+        entry['alpha'] = {'inputClass': input_class}
+        return _rejected_entry(entry, path.name, f'grid guard: {decision.reason}: {decision.message}')
+    height_out, width_out = snapped.shape[:2]
     entry['pixelSize'] = {'detected': float(found.group(1)) if found else None,
                           'source': found.group(2) if found else 'not reported by the tool',
                           'impliedByWidth': round(info['width'] / width_out, 3)}
-    partial = (raw[..., 3] > 0) & (raw[..., 3] < 255)
-    fixed = PG.binary_alpha(raw)
-    entry['alpha'] = {'snapperOutput': PG.partial_class(raw), 'partialPx': int(partial.sum()),
+    passed_through = decision.outcome == GG.PASS_THROUGH
+    produced, colour_pass = pixels_in if passed_through else snapped, False
+    if decision.outcome == GG.ACCEPT and handed:
+        mapped, _ = run_snapper(work / f'{stem}.snapped.png', work / f'{stem}.mapped.png', max(len(handed), 2),
+                                pixel_size=1, palette=handed)
+        if isinstance(mapped, GG.ToolRefusal) or mapped.shape != snapped.shape:
+            why = mapped.message.strip() if isinstance(mapped, GG.ToolRefusal) else f'it returned {mapped.shape[1]}x{mapped.shape[0]}'
+            entry['alpha'] = {'inputClass': input_class}
+            return _rejected_entry(entry, path.name, f'the colour pass over the recovered grid failed: {why}')
+        produced, colour_pass = mapped, True
+    partial = (produced[..., 3] > 0) & (produced[..., 3] < 255)
+    fixed = PG.binary_alpha(produced)
+    entry['alpha'] = {'inputClass': input_class, 'snapperOutput': PG.partial_class(produced), 'partialPx': int(partial.sum()),
                       'afterRepair': 'binary', 'transparentPx': int((fixed[..., 3] == 0).sum()),
                       'opaquePx': int((fixed[..., 3] == 255).sum())}
-    checks = contract_checks(fixed, args['family'], args['cell'])
-    checks.append(palette_check(fixed, args['cell'], palette))
     after = colour_count(fixed)
-    checks.append(colours_check(handed, len(palette[0]) if palette[0] else None, count, entry['input']['colours'], after))
-    opinion, opinion_check = second_opinion(pixels_in[..., :3], (width_out, height_out))
-    checks.append(opinion_check)
-    entry['secondOpinion'] = opinion
-    entry['quantisation'] = {'colourCount': count,
-                             'palette': 'handed to the snapper' if handed else
+    if decision.outcome == GG.REFUSE:
+        checks, verdict_reasons = [], [f'{path.name}: grid guard: {decision.reason}: {decision.message}']
+        entry['verdict'] = 'rejected'
+    else:
+        checks = contract_checks(fixed, args['family'], args['cell'])
+        checks.append(palette_check(fixed, args['cell'], palette))
+        checks.append(colours_check(handed if colour_pass else None, len(palette[0]) if palette[0] else None, GEOMETRY_COLOURS,
+                                    entry['input']['colours'], after, changed=not passed_through))
+        opinion, opinion_check = second_opinion(pixels_in[..., :3], (width_out, height_out))
+        checks.append(opinion_check)
+        entry['secondOpinion'] = opinion
+        entry['verdict'] = verdict_of(checks)
+        verdict_reasons = [f'{path.name}: {c["name"]}: {c["reason"]}' for c in checks if c['result'] == 'fail']
+    entry['quantisation'] = {'colourCount': None if passed_through else GEOMETRY_COLOURS,
+                             'palette': 'not applied: the picture is on its grid and is kept as it is' if passed_through else
+                             'handed to the snapper' if colour_pass else
                              'checked after the snap only' if palette[0] else 'none'}
     entry['checks'] = checks
-    entry['verdict'] = verdict_of(checks)
-    entry['reasons'] = [f'{path.name}: {c["name"]}: {c["reason"]}' for c in checks if c['result'] == 'fail']
+    entry['reasons'] = verdict_reasons
     rejected = entry['verdict'] == 'rejected'
     folder = args['out'] / REJECTED if rejected else args['out']
     staged, preview_path = folder / f'{stem}.png', folder / f'{stem}.preview.png'
@@ -512,10 +585,14 @@ def ingest_picture(path, stem, args, palette, handed, work):
     folder.mkdir(exist_ok=True)
     for target in (staged, preview_path):
         args['written'].append(target)           # recorded before the write: a crash can still clean up
-    Image.fromarray(fixed, 'RGBA').save(staged, format='PNG')
+    if passed_through and info['format'] == 'PNG' and fixed is produced:
+        shutil.copyfile(path, staged)            # on its grid and needing no repair: the very bytes it came with
+    else:
+        Image.fromarray(fixed, 'RGBA').save(staged, format='PNG')
     with Image.open(path) as before:
         preview(before, fixed).save(preview_path, format='PNG')
-    entry['output'] = {'width': width_out, 'height': height_out, 'colours': after, 'sha256': sha256_file(staged)}
+    entry['output'] = {'width': width_out, 'height': height_out, 'colours': after, 'sha256': sha256_file(staged),
+                       'identicalToInput': sha256_file(staged) == info['sha256']}
     relative = lambda target: target.relative_to(args['out']).as_posix()
     if rejected:
         entry['staged'], entry['inspection'], entry['preview'] = None, relative(staged), relative(preview_path)
@@ -567,6 +644,7 @@ def run_ingest(input_path, family, out, cell=CELL, pixel_size=None, palette=None
     report.update({
         'incomplete': False,
         'options': {'pixelSize': pixel_size, 'maxBytes': max_bytes, 'maxPixels': max_pixels},
+        'grid': {'geometryColours': GEOMETRY_COLOURS, 'guard': GG.parameters()},
         'palette': {'file': palette_file.name if palette_file else None,
                     'sha256': sha256_file(palette_file) if palette_file else None,
                     'colours': len(colours) if colours else None,
@@ -589,12 +667,33 @@ def exit_code(report):
     return 0 if pictures and all(p['verdict'] == 'ready' for p in pictures) else 1
 
 
+def _evidence_line(guard):
+    evidence = guard.get('evidence', {})
+    parts = []
+    if evidence.get('factor'):
+        parts.append('factor {}x{}'.format(*evidence['factor']))
+    if evidence.get('agreement') is not None:
+        parts.append(f'agreement {evidence["agreement"]:.3f}')
+    margin = (evidence.get('registration') or {}).get('margin')
+    if margin is not None:
+        parts.append(f'registration margin {margin:.3f}')
+    if evidence.get('blendShare') is not None:
+        parts.append(f'blend {evidence["blendShare"]:.3f}')
+    if evidence.get('selfCoarseAgreement'):
+        parts.append(f'self-coarse {max(evidence["selfCoarseAgreement"].values()):.3f}')
+    return ', '.join(parts)
+
+
 def print_report(report, out=None):
     out = out or sys.stdout
     for p in report['pictures']:
         size = f'{p["output"]["width"]}x{p["output"]["height"]}' if p.get('output') else '-'
         pixel = (p.get('pixelSize') or {}).get('detected')
         print(f'{p["verdict"].upper():12} {p["name"]}  {size}' + (f'  pixel {pixel:g}' if pixel else ''), file=out)
+        guard = p.get('guard')
+        if guard:
+            numbers = _evidence_line(guard)
+            print(f'    guard: {guard["decision"]} ({guard["reason"]})' + (f', {numbers}' if numbers else ''), file=out)
         for reason in p.get('reasons', []):
             print(f'    {reason}', file=out)
         for c in p.get('checks', []):
@@ -615,7 +714,7 @@ def main(argv=None):
     run.add_argument('--family', required=True, choices=FAMILIES)
     run.add_argument('--out', required=True)
     run.add_argument('--cell', type=int, default=CELL)
-    run.add_argument('--pixel-size', type=int)
+    run.add_argument('--pixel-size', type=int, help='the enlargement of the picture, when known; 1 says it is already on its grid and keeps it')
     run.add_argument('--palette')
     run.add_argument('--max-bytes', type=int, default=MAX_BYTES)
     run.add_argument('--max-pixels', type=int, default=MAX_PIXELS)

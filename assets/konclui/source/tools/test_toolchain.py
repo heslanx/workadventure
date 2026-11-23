@@ -23,15 +23,22 @@ SCRIPT = HERE / 'toolchain.py'
 ENVS = [spec['env'] for spec in TC.TOOLS.values()]
 
 
-def fake_tool(directory, binary, version='1.0.0', mode='ok'):
+FIXED_HELP = 'usage: tool INPUT OUTPUT [COLORS] [--pixel-size N] [--expect-cell N] [--palette HEX]'
+STOCK_HELP = 'usage: tool INPUT OUTPUT [COLORS] [--pixel-size N] [--palette HEX]'
+
+
+def fake_tool(directory, binary, version='1.0.0', mode='ok', help_text=FIXED_HELP):
     """A shell script named `binary` in `directory`. --version prints `<binary> <version>` (mode 'ok'), fails (mode
-    'novers') or prints no number (mode 'garbage'), prints a good number but exits 1 (mode 'failver') or hangs (mode 'hang'); any other call prints to stdout and stderr and exits with the first
-    argument when it is a number."""
+    'novers') or prints no number (mode 'garbage'), prints a good number but exits 1 (mode 'failver') or hangs (mode 'hang');
+    --help prints `help_text` (FIXED_HELP lists --expect-cell, which is how the fixed pixel snapper is told from the stock
+    one; STOCK_HELP does not); any other call prints to stdout and stderr and exits with the first argument when it is a
+    number."""
     path = Path(directory) / binary
     versions = {'ok': f'echo "{binary} {version}"', 'novers': 'echo broken >&2; exit 3', 'garbage': 'echo "no number here"',
                 'failver': f'echo "{binary} {version}"; exit 1', 'hang': 'exec /bin/sleep 30'}
     path.write_text('#!/bin/sh\n'
                     f'if [ "$1" = "--version" ]; then {versions.get(mode) or mode}; exit 0; fi\n'
+                    f'if [ "$1" = "--help" ]; then echo "{help_text}"; exit 0; fi\n'
                     'echo "out:$*"; echo "err:$*" >&2; case "$1" in [0-9]*) exit "$1";; esac; exit 0\n')
     path.chmod(0o755)
     return str(path)
@@ -67,7 +74,7 @@ class Pins(unittest.TestCase):
         self.assertEqual(TC.TOOLS['sprite-normals']['env'], 'SPRITEFUSION_NORMALS_BIN')
         self.assertEqual(TC.TOOLS['palette-snapper']['env'], 'SPRITEFUSION_PALETTE_SNAPPER_BIN')
         self.assertEqual({s['binary'] for s in TC.TOOLS.values()},
-                         {'spritefusion-pixel-snapper', 'spritefusion-sprite-normals', 'spritefusion-palette-snapper'})
+                         {'spritefusion-pixel-snapper-fixed', 'spritefusion-sprite-normals', 'spritefusion-palette-snapper'})
 
     def test_a_cargo_install_command_pins_the_commit_it_is_compared_against(self):
         for name in ('sprite-normals', 'palette-snapper'):
@@ -75,7 +82,7 @@ class Pins(unittest.TestCase):
             self.assertIn(f'--rev {spec["commit"]}', spec['install'])
             self.assertIn(spec['repository'], spec['install'])
             self.assertIn('--locked', spec['install'])
-        self.assertEqual(TC.TOOLS['pixel-snapper']['install'], 'brew install hugo-dz/tap/spritefusion-pixel-snapper')
+        self.assertIn('tools/build_pixel_snapper.py', TC.TOOLS['pixel-snapper']['install'])     # the fixed build is made here, not brewed
 
     def test_a_malformed_pin_file_is_rejected_naming_the_file(self):
         good = json.loads(TC.PINS_FILE.read_text())
@@ -85,6 +92,17 @@ class Pins(unittest.TestCase):
             'an extra field': lambda d: d['tools']['sprite-normals'].update(extra='x'),
             'an empty version': lambda d: d['tools']['sprite-normals'].update(version=' '),
             'a bad hash': lambda d: d['tools']['pixel-snapper'].update(sha256=['xyz']),
+            'a patch with no hash': lambda d: d['tools']['pixel-snapper'].pop('patchSha256'),
+            'a patch hash with no patch': lambda d: d['tools']['sprite-normals'].update(patchSha256='0' * 64),
+            'a bad patch hash': lambda d: d['tools']['pixel-snapper'].update(patchSha256='abc'),
+            'an absolute patch path': lambda d: d['tools']['pixel-snapper'].update(patch='/etc/passwd'),
+            'a patch path that leaves the folder': lambda d: d['tools']['pixel-snapper'].update(patch='../x.patch'),
+            'a capability with no needle': lambda d: d['tools']['pixel-snapper'].update(capability={'args': ['--help']}),
+            'a capability with no args': lambda d: d['tools']['pixel-snapper'].update(capability={'args': [], 'contains': 'x'}),
+            'a stock entry with an extra field': lambda d: d['stock']['pixel-snapper'].update(extra='x'),
+            'a stock entry of an unknown tool': lambda d: d['stock'].update({'perfect-pixel': d['stock']['pixel-snapper']}),
+            'a stock bad hash': lambda d: d['stock']['pixel-snapper'].update(sha256=['xyz']),
+            'a stock short commit': lambda d: d['stock']['pixel-snapper'].update(commit='abc123'),
         }
         with tempfile.TemporaryDirectory() as tmp:
             for label, mutate in broken.items():
@@ -94,13 +112,39 @@ class Pins(unittest.TestCase):
                 path.write_text(json.dumps(data))
                 with self.subTest(label), self.assertRaises(ValueError) as raised:
                     TC.load_pins(path)
+                    TC.load_stock(path)
                 self.assertIn(str(path), str(raised.exception))
             path.write_text(json.dumps(good))
             self.assertEqual(sorted(TC.load_pins(path)), sorted(TC.TOOLS))
+            self.assertEqual(sorted(TC.load_stock(path)), sorted(TC.STOCK))
 
     def test_an_unknown_tool_name_is_a_key_error(self):
         with self.assertRaises(KeyError):
             TC.resolve('perfect-pixel')
+
+    def test_the_pixel_snapper_entry_is_the_fixed_build_and_the_stock_one_is_kept_apart(self):
+        fixed, stock = TC.TOOLS['pixel-snapper'], TC.STOCK['pixel-snapper']
+        self.assertEqual(fixed['binary'], 'spritefusion-pixel-snapper-fixed')
+        self.assertEqual(stock['binary'], 'spritefusion-pixel-snapper')
+        self.assertEqual((fixed['version'], fixed['commit']), (stock['version'], stock['commit']))   # the same crate version and commit
+        self.assertEqual(fixed['env'], 'SPRITEFUSION_PIXEL_SNAPPER_BIN')
+        self.assertEqual(fixed['capability'], {'args': ['--help'], 'contains': '--expect-cell'})
+        self.assertEqual(stock['install'], 'brew install hugo-dz/tap/spritefusion-pixel-snapper')
+        self.assertTrue(set(stock['sha256']).isdisjoint(fixed['sha256']))
+        self.assertNotIn('capability', TC.TOOLS['sprite-normals'])
+
+    def test_the_carried_patch_is_the_file_whose_hash_is_pinned(self):
+        fixed = TC.TOOLS['pixel-snapper']
+        patch = TC.PINS_FILE.parent / fixed['patch']
+        self.assertTrue(patch.is_file(), patch)
+        self.assertEqual(hashlib.sha256(patch.read_bytes()).hexdigest(), fixed['patchSha256'])
+        text = patch.read_text()
+        self.assertEqual([line for line in text.splitlines() if line.startswith('diff --git')],
+                         ['diff --git a/README.md b/README.md', 'diff --git a/src/lib.rs b/src/lib.rs'])
+        notes = (patch.parent / 'README.md').read_text()
+        for wanted in (fixed['patchSha256'], fixed['commit'], 'https://github.com/Hugo-Dz/spritefusion-pixel-snapper/issues/15',
+                       'Remov'):
+            self.assertIn(wanted, notes)
 
 
 class Resolve(unittest.TestCase):
@@ -341,6 +385,125 @@ class Identity(unittest.TestCase):
     def test_identity_of_a_missing_tool_raises(self):
         with mock.patch.dict(os.environ, clean_env(self.tmp)), self.assertRaises(TC.ToolMissing):
             TC.identity('pixel-snapper')
+
+
+class FixedAndStock(unittest.TestCase):
+    """The patch does not change the crate version: the fixed pixel snapper and the stock one both say 1.0.0, so the toolchain
+    tells them apart by a probe (the fixed build's --help lists --expect-cell) and refuses the stock one."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = self._tmp.name
+        self.addCleanup(self._tmp.cleanup)
+        self.env_name = TC.TOOLS['pixel-snapper']['env']
+
+    def given(self, binary='spritefusion-pixel-snapper', help_text=STOCK_HELP, **extra):
+        path = fake_tool(self.tmp, binary, '1.0.0', help_text=help_text)
+        patcher = mock.patch.dict(os.environ, clean_env(self.tmp, **{self.env_name: path}, **extra))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return path
+
+    def test_a_build_that_lists_expect_cell_is_the_fixed_one(self):
+        path = self.given(help_text=FIXED_HELP)
+        ident = TC.identity('pixel-snapper')
+        self.assertEqual((ident['version'], ident['capability'], ident['matches']), ('1.0.0', True, True))
+        self.assertEqual(TC.require('pixel-snapper'), path)
+        self.assertIsNone(TC.problem('pixel-snapper'))
+        self.assertFalse(TC.is_stock(ident))
+
+    def test_the_stock_build_says_1_0_0_too_and_does_not_match(self):
+        self.given(help_text=STOCK_HELP)
+        ident = TC.identity('pixel-snapper')
+        self.assertEqual((ident['version'], ident['capability'], ident['matches']), ('1.0.0', False, False))
+        self.assertTrue(TC.is_stock(ident))
+
+    def test_the_stock_build_through_the_override_is_refused_with_the_install_command(self):
+        path = self.given(help_text=STOCK_HELP)
+        with self.assertRaises(TC.ToolMismatch) as raised:
+            TC.require('pixel-snapper')
+        message = str(raised.exception)
+        for wanted in (path, 'STOCK', TC.TOOLS['pixel-snapper']['install'], '--expect-cell', TC.TOOLS['pixel-snapper']['commit']):
+            self.assertIn(wanted, message)
+        with self.assertRaises(TC.ToolMismatch):
+            TC.run('pixel-snapper', ['in.png', 'out.png'])
+        self.assertIn(TC.TOOLS['pixel-snapper']['install'], TC.problem('pixel-snapper'))
+
+    def test_allow_mismatch_does_not_waive_a_missing_capability(self):
+        self.given(help_text=STOCK_HELP, **{TC.ALLOW_MISMATCH_ENV: '1'})
+        with contextlib.redirect_stderr(io.StringIO()) as err, self.assertRaises(TC.ToolMismatch) as raised:
+            TC.require('pixel-snapper')
+        self.assertIn('does not waive', str(raised.exception))
+        self.assertNotIn('NOT the pinned one', err.getvalue())
+
+    def test_another_version_without_the_capability_is_refused_without_offering_the_waiver(self):
+        path = fake_tool(self.tmp, 'other', '9.9.9', help_text=STOCK_HELP)
+        with mock.patch.dict(os.environ, clean_env(self.tmp, **{self.env_name: path, TC.ALLOW_MISMATCH_ENV: '1'})):
+            with self.assertRaises(TC.ToolMismatch) as raised:
+                TC.require('pixel-snapper')
+        self.assertIn('9.9.9', str(raised.exception))
+        self.assertIn('does not waive', str(raised.exception))
+        self.assertNotIn('to run anyway', str(raised.exception))
+
+    def test_allow_mismatch_still_waives_a_version_for_a_tool_without_a_probe(self):
+        path = fake_tool(self.tmp, 'n', '0.2.0')
+        with mock.patch.dict(os.environ, clean_env(self.tmp, **{TC.TOOLS['sprite-normals']['env']: path, TC.ALLOW_MISMATCH_ENV: '1'})), \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(TC.require('sprite-normals'), path)
+            self.assertIsNone(TC.identity('sprite-normals')['capability'])
+
+    def test_a_tool_that_crashes_or_hangs_on_the_probe_fails_it(self):
+        path = Path(self.tmp) / 'p'
+        path.write_text('#!/bin/sh\n[ "$1" = "--version" ] && { echo "p 1.0.0"; exit 0; }\nexit 7\n')
+        path.chmod(0o755)
+        with mock.patch.dict(os.environ, clean_env(self.tmp, **{self.env_name: str(path)})):
+            self.assertIs(TC.identity('pixel-snapper')['capability'], False)
+        hang = Path(self.tmp) / 'h'
+        hang.write_text('#!/bin/sh\n[ "$1" = "--version" ] && { echo "h 1.0.0"; exit 0; }\nexec /bin/sleep 30\n')
+        hang.chmod(0o755)
+        with mock.patch.dict(os.environ, clean_env(self.tmp, **{self.env_name: str(hang)})), mock.patch.object(TC, 'VERSION_TIMEOUT', 0.5):
+            self.assertIs(TC.identity('pixel-snapper')['capability'], False)
+
+    def test_a_rewritten_binary_is_probed_again(self):
+        path = self.given(help_text=STOCK_HELP)
+        self.assertFalse(TC.identity('pixel-snapper')['matches'])
+        fake_tool(self.tmp, 'spritefusion-pixel-snapper', '1.0.0', help_text=FIXED_HELP + ' (fixed)')
+        os.utime(path, (1_000_000_000, 1_000_000_000))
+        self.assertTrue(TC.identity('pixel-snapper')['matches'])
+
+    def test_the_hash_of_the_stock_build_alone_marks_it_stock(self):
+        path = self.given(help_text=STOCK_HELP)
+        digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        listed = {**TC.STOCK['pixel-snapper'], 'sha256': (digest,)}
+        with mock.patch.object(TC, 'STOCK', {'pixel-snapper': listed}):
+            self.assertTrue(TC.is_stock({'name': 'pixel-snapper', 'sha256': digest, 'version': '2.0.0', 'capability': True}))
+            self.assertFalse(TC.is_stock({'name': 'pixel-snapper', 'sha256': '0' * 64, 'version': '2.0.0', 'capability': False}))
+        self.assertFalse(TC.is_stock({'name': 'sprite-normals', 'sha256': digest, 'version': '1.0.0', 'capability': False}))
+
+    def test_inspect_binary_judges_a_file_that_resolve_did_not_find(self):
+        path = fake_tool(self.tmp, 'elsewhere', '1.0.0', help_text=FIXED_HELP)
+        with mock.patch.dict(os.environ, clean_env(self.tmp)):
+            ident = TC.inspect_binary('pixel-snapper', path)
+        self.assertEqual((ident['path'], ident['matches'], ident['capability']), (path, True, True))
+        with self.assertRaises(TC.ToolMissing) as raised:
+            TC.inspect_binary('pixel-snapper', str(Path(self.tmp) / 'nope'))
+        self.assertIn(TC.TOOLS['pixel-snapper']['install'], str(raised.exception))
+
+    def test_status_names_the_stock_build_as_a_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fakes = StatusCommand.all_fakes(None, tmp)
+            fakes[self.env_name] = fake_tool(tmp, 'stock', '1.0.0', help_text=STOCK_HELP)
+            run = subprocess.run([sys.executable, '-I', str(SCRIPT), 'status'], env=clean_env(tmp, **fakes), capture_output=True, text=True)
+        self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
+        self.assertIn('MISMATCH', run.stdout)
+        self.assertIn('STOCK', run.stdout)
+        self.assertIn('1 of 3 tools need attention', run.stdout)
+
+    def test_the_manifest_keeps_the_capability_and_stays_json(self):
+        self.given(help_text=FIXED_HELP)
+        found = TC.versions()
+        self.assertIs(found['tools']['pixel-snapper']['capability'], True)
+        json.dumps(found)
 
 
 class Require(unittest.TestCase):
@@ -662,6 +825,201 @@ class LegacyLookups(unittest.TestCase):
             self.assertEqual(N.resolve_method('auto'), 'tool')
         with mock.patch.dict(os.environ, clean_env(self.tmp, **{N.NORMALS_ENV: '/no/such'})):
             self.assertEqual(N.resolve_method('auto'), 'tool')
+
+
+FAKE_CARGO = """#!/bin/sh
+# a stand-in for cargo: records how it was called and "builds" a tool that is fixed only when src/lib.rs carries the marker
+echo "args:$*" >> "$CARGO_LOG"
+echo "cwd:$(pwd)" >> "$CARGO_LOG"
+echo "cargo_home:$CARGO_HOME" >> "$CARGO_LOG"
+echo "rustflags:$RUSTFLAGS" >> "$CARGO_LOG"
+[ "$1" = "build" ] || exit 9
+mkdir -p target/release
+if grep -q PATCHED src/lib.rs; then help='usage: tool [--expect-cell N]'; else help='usage: tool'; fi
+printf '#!/bin/sh\\nif [ "$1" = "--version" ]; then echo "spritefusion-pixel-snapper 1.0.0"; exit 0; fi\\nif [ "$1" = "--help" ]; then echo "%s"; exit 0; fi\\nexit 0\\n' "$help" > target/release/spritefusion-pixel-snapper
+chmod +x target/release/spritefusion-pixel-snapper
+"""
+
+
+class BuildScript(unittest.TestCase):
+    """tools/build_pixel_snapper.py against a tiny local git repository and a stand-in for cargo: nothing is compiled,
+    nothing is cloned from the network and nothing is installed outside a temporary folder."""
+
+    @classmethod
+    def setUpClass(cls):
+        import build_pixel_snapper as B
+        cls.B = B
+
+    def git(self, *args, cwd=None):
+        done = subprocess.run(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', *args],
+                              cwd=cwd or self.repo, capture_output=True, text=True)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return done.stdout.strip()
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name).resolve()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = self.tmp / 'upstream'
+        (self.repo / 'src').mkdir(parents=True)
+        (self.repo / 'README.md').write_text('readme\n')
+        (self.repo / 'src' / 'lib.rs').write_text('fn snap() {}\n')
+        (self.repo / 'Cargo.lock').write_text('# lock\n')
+        (self.repo / 'Cargo.toml').write_text('[package]\nname = "x"\n')
+        self.git('init', '-q')
+        self.git('add', '.')
+        self.git('commit', '-q', '-m', 'upstream')
+        self.commit = self.git('rev-parse', 'HEAD')
+        # the carried patch: README.md and src/lib.rs, made by git as the real one was
+        (self.repo / 'README.md').write_text('readme\nfixed\n')
+        (self.repo / 'src' / 'lib.rs').write_text('fn snap() {}\n// PATCHED\n')
+        self.patch = self.tmp / 'fix.patch'
+        self.patch.write_text(self.git('diff', '--', 'README.md', 'src/lib.rs') + '\n')
+        self.git('checkout', '-q', '--', '.')
+        self.pin = {**TC.TOOLS['pixel-snapper'], 'commit': self.commit, 'patchSha256': hashlib.sha256(self.patch.read_bytes()).hexdigest(),
+                    'sha256': ()}
+        fake_bin = self.tmp / 'fakebin'
+        fake_bin.mkdir()
+        (fake_bin / 'cargo').write_text(FAKE_CARGO)
+        (fake_bin / 'cargo').chmod(0o755)
+        self.log = self.tmp / 'cargo.log'
+        self.bin_dir, self.build_dir = self.tmp / 'bin', self.tmp / 'build'
+        patcher = mock.patch.dict(os.environ, {'PATH': f'{fake_bin}:{os.environ.get("PATH", "")}', 'CARGO_LOG': str(self.log),
+                                               'CARGO_HOME': str(self.tmp / 'cargo-home')})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        patch_file = mock.patch.object(TC, 'PINS_FILE', self.tmp / 'toolchain.json')       # the patch is looked for beside the pins
+        patch_file.start()
+        self.addCleanup(patch_file.stop)
+        (self.tmp / 'patches').mkdir()
+        (self.tmp / 'patches' / 'pixel-snapper-fix.patch').write_bytes(self.patch.read_bytes())
+        self.pin['patch'] = 'patches/pixel-snapper-fix.patch'
+
+    def run_build(self, *extra, pin=None):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = self.B.main(['--repo', str(self.repo), '--build-dir', str(self.build_dir), '--bin-dir', str(self.bin_dir), *extra],
+                               out=out, pin=pin or self.pin)
+        return code, out.getvalue(), err.getvalue()
+
+    def installed(self):
+        return self.bin_dir / 'spritefusion-pixel-snapper-fixed'
+
+    def test_it_builds_the_pinned_commit_with_the_patch_and_installs_the_fixed_name(self):
+        stock = self.bin_dir / 'spritefusion-pixel-snapper'
+        self.bin_dir.mkdir()
+        stock.write_text('the stock tool, untouched')
+        code, out, err = self.run_build()
+        self.assertEqual(code, 0, out + err)
+        digest = hashlib.sha256(self.installed().read_bytes()).hexdigest()
+        self.assertIn(f'sha256: {digest}', out)
+        self.assertIn('does NOT list this hash', out)                       # a fixture hash is not in toolchain.json
+        self.assertTrue(os.access(self.installed(), os.X_OK))
+        self.assertEqual(stock.read_text(), 'the stock tool, untouched')    # the stock tool stays where it is
+        self.assertEqual(sorted(p.name for p in self.bin_dir.iterdir()), ['spritefusion-pixel-snapper', 'spritefusion-pixel-snapper-fixed'])
+        ident = TC.inspect_binary('pixel-snapper', str(self.installed()))
+        self.assertTrue(ident['matches'] and ident['capability'])           # the installed file is the fixed one
+        source = self.build_dir / self.commit[:12] / 'src'
+        self.assertEqual(self.git('rev-parse', 'HEAD', cwd=source), self.commit)
+        self.assertIn('PATCHED', (source / 'src' / 'lib.rs').read_text())
+
+    def test_cargo_is_called_locked_and_release_and_the_paths_are_remapped(self):
+        self.assertEqual(self.run_build()[0], 0)
+        log = self.log.read_text()
+        self.assertIn('args:build --release --locked\n', log)
+        self.assertNotIn('--offline', log)
+        source = self.build_dir / self.commit[:12] / 'src'
+        self.assertIn(f'cwd:{source}\n', log)
+        self.assertIn(f'cargo_home:{self.tmp / "cargo-home"}\n', log)                 # the caller's CARGO_HOME reaches cargo
+        self.assertIn(f'--remap-path-prefix={source}=/build/pixel-snapper', log)
+        self.assertIn(f'--remap-path-prefix={self.tmp / "cargo-home"}=/cargo', log)
+
+    def test_offline_adds_the_cargo_flag_and_cargo_home_is_the_callers(self):
+        self.assertEqual(self.run_build('--offline')[0], 0)
+        self.assertIn('args:build --release --locked --offline\n', self.log.read_text())
+
+    def test_a_second_run_is_a_no_op_and_prints_the_same_hash(self):
+        first = self.run_build()
+        stamp = self.installed().stat().st_mtime_ns
+        second = self.run_build()
+        self.assertEqual((first[0], second[0]), (0, 0), first[2] + second[2])
+        self.assertIn('already installed', second[1])
+        self.assertEqual(self.installed().stat().st_mtime_ns, stamp)
+        digest = lambda text: [line for line in text.splitlines() if line.startswith('sha256: ')]
+        self.assertEqual(digest(first[1]), digest(second[1]))
+        self.assertEqual(len(digest(first[1])), 1)
+        forced = self.run_build('--force')
+        self.assertIn('installed:', forced[1])
+        self.assertEqual(digest(forced[1]), digest(first[1]))
+
+    def test_a_listed_hash_is_reported_as_listed(self):
+        first = self.run_build()
+        digest = hashlib.sha256(self.installed().read_bytes()).hexdigest()
+        code, out, _ = self.run_build(pin={**self.pin, 'sha256': (digest,)})
+        self.assertEqual(code, 0)
+        self.assertIn('toolchain.json lists this hash', out)
+
+    def test_a_patch_that_is_not_the_pinned_one_is_refused_before_anything_is_built(self):
+        (self.tmp / 'patches' / 'pixel-snapper-fix.patch').write_text(self.patch.read_text() + ' \n')
+        code, out, err = self.run_build()
+        self.assertEqual(code, 2, out + err)
+        self.assertIn('patchSha256', err)
+        self.assertIn(self.pin['patchSha256'], err)
+        self.assertFalse(self.log.exists(), 'cargo was not called')
+        self.assertFalse(self.bin_dir.exists())
+        self.assertFalse(self.build_dir.exists())
+
+    def test_a_commit_the_repository_does_not_have_is_refused(self):
+        code, out, err = self.run_build(pin={**self.pin, 'commit': 'f' * 40})
+        self.assertEqual(code, 2, out + err)
+        self.assertIn('ffffffffffffffffffffffffffffffffffffffff', err)
+        self.assertFalse(self.bin_dir.exists())
+
+    def test_a_patch_that_touches_other_files_is_a_failure_and_installs_nothing(self):
+        (self.repo / 'Cargo.toml').write_text('[package]\nname = "y"\n')
+        wide = self.git('diff', '--', 'Cargo.toml') + '\n'
+        self.git('checkout', '-q', '--', '.')
+        (self.tmp / 'patches' / 'pixel-snapper-fix.patch').write_text(wide)
+        code, out, err = self.run_build(pin={**self.pin, 'patchSha256': hashlib.sha256(wide.encode()).hexdigest()})
+        self.assertEqual(code, 1, out + err)
+        self.assertIn('expected exactly', err)
+        self.assertFalse(self.bin_dir.exists())
+
+    def test_a_build_that_is_not_the_fixed_tool_is_not_installed(self):
+        (self.repo / 'src' / 'lib.rs').write_text('fn snap() {}\n')            # the same patch, but the marker is not in it
+        self.git('add', '.')
+        stock_like = {**self.pin}
+        with mock.patch.object(self.B, 'apply_patch', lambda source, patch: None):
+            code, out, err = self.run_build(pin=stock_like)
+        self.assertEqual(code, 1, out + err)
+        self.assertIn('expect-cell', err)
+        self.assertFalse(self.installed().exists())
+
+    def test_a_tree_changed_by_hand_is_reset_to_the_pinned_commit_and_the_patch_applies_once(self):
+        self.assertEqual(self.run_build()[0], 0)
+        source = self.build_dir / self.commit[:12] / 'src'
+        (source / 'src' / 'lib.rs').write_text('garbage\n')
+        (source / 'stray.txt').write_text('x')
+        code, out, err = self.run_build('--force')
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual((source / 'src' / 'lib.rs').read_text().count('PATCHED'), 1)
+        self.assertFalse((source / 'stray.txt').exists())
+
+    def test_without_cargo_or_git_it_is_refused_naming_the_tool(self):
+        for tool in ('cargo', 'git'):
+            with self.subTest(tool), mock.patch.object(self.B.shutil, 'which', lambda name, tool=tool: None if name == tool else '/usr/bin/' + name):
+                code, out, err = self.run_build()
+            self.assertEqual(code, 2, out + err)
+            self.assertIn(f'{tool} is not on PATH', err)
+
+    def test_a_commit_without_a_lockfile_is_refused_because_locked_could_not_hold(self):
+        (self.repo / 'Cargo.lock').unlink()
+        self.git('add', '-A')
+        self.git('commit', '-q', '-m', 'no lock')
+        pin = {**self.pin, 'commit': self.git('rev-parse', 'HEAD')}
+        code, out, err = self.run_build(pin=pin)
+        self.assertEqual(code, 2, out + err)
+        self.assertIn('no Cargo.lock', err)
 
 
 def real_tool_test(name):
