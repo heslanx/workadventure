@@ -252,6 +252,7 @@ precision highp float;
 uniform sampler2D uMainSampler;
 uniform sampler2D uMasks;
 uniform sampler2D uNormals;                               // @night-lit
+// @night-lit @anchor:uniforms
 uniform vec3 uWarm;
 uniform vec4 uWorld;
 uniform vec2 uMap;
@@ -303,9 +304,11 @@ vec2 mapUV(vec2 w, float scale) { vec2 uv = (floor(w * scale) + 0.5) / (uMap * s
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 float sat(vec3 c) { float mx = max(c.r, max(c.g, c.b)); return mx > 0.0 ? (mx - min(c.r, min(c.g, c.b))) / mx : 0.0; }
 bool within(vec2 w, vec4 r) { return w.x >= r.x && w.y >= r.y && w.x < r.x + r.z && w.y < r.y + r.w; }
+// @night-lit @anchor:functions
 void main() {
   vec2 uv = outTexCoord;
   vec2 w = floor(toWorld(uv)) + 0.5;
+  // @night-lit @anchor:world
   vec4 c = texture2D(uMainSampler, uv);
   vec4 m = texture2D(uMasks, mapUV(w, 1.0));
   bool outside = m.r > 0.75;
@@ -314,6 +317,7 @@ void main() {
   bool water = abs(m.b - 0.5) < 0.1;
   bool facade = abs(m.g - 0.5) < 0.1;
   bool green = c.g > c.r * 1.08 && c.g > c.b;
+  // @night-lit @anchor:head
   // locked rooms seen from outside: 5 px blocks on the world grid, one sample each, then frosted turquoise
   for (int i = 0; i < 6; i++) {
     if (i >= uLockN) break;
@@ -396,6 +400,7 @@ void main() {
     amb *= mix(vec3(1.0 - 0.17 * uShafts.x, 1.0 - 0.13 * uShafts.x, 1.0 - 0.02 * uShafts.x),
                vec3(1.0 + 0.1 * uShafts.x, 1.0 + 0.12 * uShafts.x, 1.0 + 0.04 * uShafts.x), lit);
   }
+  // @night-lit @anchor:amb
   vec3 illum = amb;
   if (uLN > 0) {
     vec3 tint = vec3(0.0), haloC = vec3(0.0); float total = 0.0, point = 0.0;
@@ -433,6 +438,7 @@ void main() {
         float d = length(vec2(w.x - l.x, (w.y - l.y) / l.w)) / abs(l.z);
         if (d < 1.0) {
           f = pow(1.0 - d, 1.4); point += f * abs(uLC[i].a);
+          // @night-lit @anchor:loop
           // @night-lit-begin
           if (nightLit && hasNormal && !onPerson) {
             // The normal map is OpenGL (+Y up), the map +Y down; the lamp hangs 42 px up. Against a flat pixel: 1.0.
@@ -450,6 +456,7 @@ void main() {
       f *= abs(uLC[i].a);
       tint += uLC[i].rgb * f; total += f;
     }
+    // @night-lit @anchor:afterloop
     if (total > 0.0) {
       float lit = min(total, 1.0) * smoothstep(0.2, 0.5, lum(c.rgb));    // dark things stay silhouettes
       float q = floor(sqrt(lit) * 8.0 + 0.5) / 8.0;                        // eight bands, finer where the light is faint
@@ -487,6 +494,7 @@ void main() {
   bool brand = !facade && !water && cmax > 0.8 && (cmax - cmin) / cmax > 0.6 && c.g >= c.r && c.g + 0.02 >= c.b && c.b > c.r + 0.25;
   if (glow && glowC.a > 0.0) c.rgb = mix(c.rgb, glowC.rgb, glowC.a);         // a bulb, painted lit
   else if (glow || brand) illum = max(illum, glow ? glowC.rgb : vec3(1.08));
+  // @night-lit @anchor:relief
   c.rgb = min(c.rgb * illum, vec3(1.0));
   if (brand && uNight > 0.0) { c.b = max(c.b, c.g * 0.97 * uNight + c.b * (1.0 - uNight)); c.rgb = mix(c.rgb, vec3(0.75, 1.0, 1.0), 0.45 * uNight); }
   if (wall && uShafts.x > 0.0) c.rgb = mix(vec3(lum(c.rgb)), c.rgb, 1.0 - 0.4 * uShafts.x);
@@ -509,6 +517,149 @@ void main() {
     if (d > uReveal.z) c.rgb = uInk;
     else if (d > uReveal.z - 3.0) c.rgb = vec3(0.008, 0.82, 0.81);
   }
+  // @night-lit @anchor:final
   gl_FragColor = c;
 }
 `;
+
+// ------------------------------------------------------------------------------------------------ POST_SHADED
+// The camera pass with the cast shadows and the light on the props and the people (konclui.fx.rim). It is not written
+// out again: it is POST with its legacy night-lit code taken out (the rim and the bevel of the preview) and the segments
+// below put in at the anchors `// @night-lit @anchor:<name>` that POST carries. The day's own code therefore cannot drift
+// between the two programs, and a test takes every `@shade` line and block back out of this text and gets POST's day.
+// What it reads: `uCast` (the map-space picture the bake writes, domain/shadeBake), `uNormals` (the placed props'
+// normals), and the alpha of the colour buffer, which the avatars' sprites leave at 0 (phaser/peopleMark): a pixel of a
+// person is a pixel with alpha under a half, inside the map.
+
+/** The marker of a line or block that belongs to POST_SHADED only. */
+export const SHADE_MARK = "@shade";
+
+const SHADE_SEGMENTS: Readonly<Record<string, string>> = {
+    uniforms: `uniform sampler2D uNormals;
+uniform sampler2D uCast;
+uniform float uNormalsOn;
+uniform vec4 uShade;      // x level (1 reduced, 2 full), y contact strength, z key strength, w person light strength
+uniform vec4 uKey;        // xy shadow direction (x right, y down), z 1/len clamped, w key weight in the relief
+uniform vec3 uKeyShade;   // the colour the ambient goes toward inside a key shadow
+uniform vec4 uCrowd[8];   // feet (x, y, 1) of avatars drawn in full but not marked: they take no prop's relief; z 0 ends the list`,
+    // a point that lies exactly on the edge of a screen pixel (a camera at half a map px, at zoom 1) is read from the pixel on
+    // its +x, +y side every time: 0.002 px is far under a pixel and over the float error of the position
+    world: `if (uShade.x > 0.5) w = floor(toWorld(uv) + 0.002) + 0.5;`,
+    functions: `bool personPx(vec2 q) { return texture2D(uMainSampler, toScreen(q + 0.002)).a < 0.5; }`,
+    head: `bool shaded = uShade.x > 0.5;
+bool person = shaded && c.a < 0.5 && w.x > 0.0 && w.y > 0.0 && w.x < uMap.x && w.y < uMap.y;
+vec4 sh = vec4(0.0, 0.0, 0.0, 1.0);
+vec4 nm = vec4(0.5, 0.5, 1.0, 0.0);
+// an avatar drawn in full that carries no mark (the crowd beyond the marks' cap) is not a prop: its body takes no relief from
+// the sofa or the desk it stands in front of. A box of the body's size round its feet, as the legacy rim's was
+bool crowd = false;
+if (shaded && uCrowd[0].z > 0.5) {
+  for (int i = 0; i < 8; i++) {
+    if (uCrowd[i].z < 0.5) break;
+    if (abs(w.x - uCrowd[i].x) < 8.0 && w.y >= uCrowd[i].y - 26.0 && w.y < uCrowd[i].y) { crowd = true; break; }
+  }
+}
+if (shaded && !person) {
+  sh = texture2D(uCast, mapUV(w, 1.0));
+  if (uNormalsOn > 0.5 && uShade.x > 1.5 && !crowd) nm = texture2D(uNormals, mapUV(w, 1.0));   // level 1 reads the cast only: one tap
+}
+// a rug or floor piece (cast alpha 40) takes no relief, whatever the normal map holds under it
+bool prop = nm.a > 0.5 && !(sh.a > 0.1 && sh.a < 0.25);
+vec3 nProp = prop ? normalize(nm.rgb * 2.0 - 1.0) : vec3(0.0, 0.0, 1.0);
+bool floorLike = !wall && !water && !facade;
+bool recv = shaded && !person && floorLike && sh.a < 0.25;
+bool surf = shaded && !person && sh.a > 0.25 && sh.a < 0.75;
+vec3 La = vec3(0.0);`,
+    amb: `vec3 ambLit = amb;
+float kq = (recv || surf) ? floor(sh.g * 2.0 + 0.5) * 0.5 * uShade.z : 0.0;
+if (kq > 0.0) amb *= mix(vec3(1.0), uKeyShade, kq);`,
+    loop: `if (uShade.x > 1.5 && (prop || person)) { vec3 v = vec3(l.x - w.x, w.y - l.y, 42.0); La += v * (inversesqrt(dot(v, v)) * f * abs(uLC[i].a)); }`,
+    afterloop: `if (kq > 0.0 && sh.r > 0.0) {
+  // in a lamp's shadow (R above 0) the moon's is not there: the piece's one shadow is the lamp's, which the bake cast in the same
+  // shape and direction (shadeBake: a piece a lamp reaches casts its key shadow away from that lamp at night), and below it takes
+  // the light off the pool. A pool that casts no shadow (a TV's, a totem's) does not take the moon's shadow of what stands in it
+  amb = mix(amb, ambLit, smoothstep(0.3, 0.7, uNight));
+  illum = amb;
+}
+if (recv && sh.r > 0.0) {
+  float blk = sh.r * 1.5 * uNight;
+  total = max(total - blk, 0.0);
+  tint = max(tint - vec3(1.0, 0.737, 0.314) * blk, vec3(0.0));
+  point = max(point - blk, 0.0);
+  // and the shadow is darker than the ambient the pool falls back to, in three steps (the rim of the pool, where little
+  // light was taken, a step lighter): a lamp's shadow is a shadow, as dark as the key's umbra, not only the lamp's absence
+  amb *= mix(vec3(1.0), uKeyShade, floor(min(sh.r * 12.0, 1.0) * 3.0 + 0.5) / 3.0 * min(uShade.z * 1.5, 0.7) * uNight);
+  illum = amb;
+}`,
+    relief: `if (recv || surf) c.rgb *= 1.0 - uShade.y * floor(sh.b * 2.0 + 0.5) * 0.5;
+if (shaded && prop && !glow && !brand) {
+  // The light on a prop: a lamp whose pool (or its rim) covers the pixel, else the key (the sun, or the moon at night). Under
+  // a lamp the moon is gone, so the lit side of a prop is the lamp's side; the amount never falls below the moon's, so there
+  // is no gap where the pool ends, and it grows to the full as the pool gets stronger.
+  float lampPull = length(La);
+  bool byLamp = uNight > 0.5 && lampPull > 0.02;
+  vec3 Lk = normalize(vec3(-uKey.x, uKey.y, uKey.z));
+  vec3 Ls = byLamp ? La : Lk * uKey.w;
+  float lsl = byLamp ? clamp(lampPull * 4.0, uKey.w, 1.0) : length(Ls);
+  vec3 Ln = Ls / max(length(Ls), 0.0001);
+  // How far the face tilts toward that light: the normal's horizontal part along the light's own. A domed piece has no
+  // flat pixel (its normals average 40 degrees off), so the band is read against the dome and not against a flat face:
+  // a third of it is lit (x1.30), a third as it is, the rest dim and dark, and the mean stays where the picture was.
+  float tilt = dot(nProp.xy, Ln.xy);
+  float s = tilt > 0.2 ? 1.0 : tilt > -0.12 ? 0.0 : tilt > -0.42 ? -1.0 : -2.0;
+  float amt = min(lsl, 1.0);
+  c.rgb *= 1.0 + amt * (s > 0.0 ? 0.30 : 0.17 * s);          // lit x1.30, mid x1.00, dim x0.83, dark x0.66 at full light
+  if (s > 0.0) c.rgb += vec3(0.05, 0.035, 0.0) * amt * uNight;
+}
+if (person && uShade.w > 0.0 && uShade.x > 1.5) {
+  // the light on a person comes from the lamp that lights them (any pool or its rim), else from the key
+  float lamps = length(La.xy);
+  bool lamped = lamps > 0.02;
+  vec2 g = lamped ? vec2(La.x, -La.y) / lamps : -uKey.xy;
+  float tl = lamped ? 0.5 + min(lamps, 1.0) * 0.5 : max(uKey.w, 0.6);
+  float dl = 0.0, dr = 0.0;
+  for (int i = 1; i <= 8; i++) { if (!personPx(w - vec2(float(i), 0.0))) break; dl += 1.0; }
+  for (int i = 1; i <= 8; i++) { if (!personPx(w + vec2(float(i), 0.0))) break; dr += 1.0; }
+  float u = (dl + dr) > 0.5 ? (dl - dr) / (dl + dr + 1.0) : 0.0;
+  vec2 n = vec2(u, sqrt(max(1.0 - u * u, 0.0)));
+  vec2 lg = normalize(vec2(g.x, g.y * 0.6 + 0.4));
+  float b = dot(n, lg) > 0.5 ? 1.0 : dot(n, lg) > -0.1 ? 0.0 : -1.0;
+  float amt = uShade.w * min(tl, 1.0);
+  c.rgb *= 1.0 + amt * (b > 0.0 ? 0.36 : 0.24 * b);          // the lit side x1.32, the dark side x0.78, at full strength
+  if (b < 0.0) c.rgb = mix(c.rgb, c.rgb * uKeyShade, 0.3 * amt);
+}`,
+    final: `if (person) c.a = 1.0;`,
+};
+
+const ANCHOR = /@night-lit @anchor:(\w+)/;
+
+/** POST with its legacy night-lit code out and the shade segments in at the anchors: see the comment above. */
+function buildShaded(base: string): string {
+    const out: string[] = [];
+    let legacy = false;
+    for (const line of base.split("\n")) {
+        if (line.includes("@night-lit-begin")) legacy = true;
+        else if (line.includes("@night-lit-end")) legacy = false;
+        else if (legacy) continue;
+        else if (ANCHOR.test(line)) {
+            const name = ANCHOR.exec(line)?.[1] ?? "";
+            const segment = SHADE_SEGMENTS[name];
+            if (segment === undefined) throw new Error(`POST has an anchor with no shade segment: ${name}`);
+            const indent = /^\s*/.exec(line)?.[0] ?? "";
+            out.push(`${indent}// ${SHADE_MARK}-begin ${name}`);
+            for (const text of segment.split("\n")) out.push(text.length > 0 ? `${indent}${text}` : text);
+            out.push(`${indent}// ${SHADE_MARK}-end`);
+        } else if (!line.includes("@night-lit")) out.push(line);
+    }
+    return out.join("\n");
+}
+
+export const POST_SHADED = buildShaded(POST);
+
+/** The names of the segments, for the tests: every anchor of POST has one, and the other way round. */
+export const SHADE_SEGMENT_NAMES: readonly string[] = Object.keys(SHADE_SEGMENTS);
+
+/** A shader as a plain WebGL context takes it: without Phaser's template line, which only Phaser's own build resolves. */
+export function forProbe(source: string): string {
+    return source.replace(/^#pragma phaserTemplate\(.*\)$/gm, "");
+}

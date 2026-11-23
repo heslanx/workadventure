@@ -124,15 +124,35 @@ describe("browserEffectsPort", () => {
             expect(environment.fixedHour()).toBeUndefined();
         });
 
-        it("answers the night-lit preview only for the value 1, at each ask", () => {
+        it("answers the legacy night-lit preview only for the value legacy, at each ask", () => {
             const environment = browserEnvironment(() => false);
             expect(environment.nightLit()).toBe(false);
 
-            localStorage.setItem("konclui.fx.rim", "1");
+            localStorage.setItem("konclui.fx.rim", "legacy");
             expect(environment.nightLit()).toBe(true);
+
+            // "1" is the new shading: the legacy rim stays off
+            localStorage.setItem("konclui.fx.rim", "1");
+            expect(environment.nightLit()).toBe(false);
 
             localStorage.setItem("konclui.fx.rim", "0");
             expect(environment.nightLit()).toBe(false);
+        });
+
+        it("reads konclui.fx.rim as the shading flag: unset or 0 off, 1 auto, full and reduced forced", () => {
+            const environment = browserEnvironment(() => false);
+            expect(environment.shading?.()).toBe("off");
+            for (const [value, flag] of [
+                ["0", "off"],
+                ["1", "auto"],
+                ["full", "full"],
+                ["reduced", "reduced"],
+                ["legacy", "legacy"],
+                ["garbage", "off"],
+            ] as const) {
+                localStorage.setItem("konclui.fx.rim", value);
+                expect(environment.shading?.(), value).toBe(flag);
+            }
         });
 
         it("reports a storage that cannot be read, and answers the defaults", () => {

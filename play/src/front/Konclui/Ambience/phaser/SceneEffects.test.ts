@@ -6,6 +6,11 @@ import type { Player } from "../../../Phaser/Player/Player";
 import { EFFECT_TEXTURES, type EffectTexture, type EffectsManifest } from "../domain/effectsManifest";
 import { parseFeatures, type FeatureSwitches } from "../../Preferences/domain/effectSwitches";
 import { lookAt } from "../domain/timeOfDay";
+import { POST } from "../domain/shaders";
+import { textHash } from "../domain/textHash";
+import type { ShadingFlag } from "../domain/shadingLevel";
+import { postProgram } from "./postFilter";
+import type { Shading } from "./shading";
 import { browserEnvironment } from "./browserEffectsPort";
 import {
     LABEL_MEASURE_MS,
@@ -66,6 +71,10 @@ class TestContext {
     public readonly scale = vi.fn();
     public readonly putImageData = vi.fn();
 
+    createImageData(width: number, height: number) {
+        return { width, height, data: new Uint8ClampedArray(width * height * 4) };
+    }
+
     drawImage(source: unknown): void {
         this.drawn = source;
     }
@@ -124,6 +133,10 @@ class TestObject {
     }
 
     setOrigin(): this {
+        return this;
+    }
+
+    setFrame(): this {
         return this;
     }
 
@@ -203,10 +216,37 @@ class TestScene {
     public readonly externalFilters = { list: [] as unknown[], removed: [] as [unknown, boolean][] };
     /** The camera as the camera node sees it: where it sits, how big it is and how opaque; the canvas is 300 x 200. */
     public readonly camera = { x: 0, y: 0, width: 300, height: 200, alpha: 1 };
+    /** The render nodes the effects registered, by name: a room without the shading registers only the legacy pass. */
+    public readonly nodeNames: string[] = [];
+    /** The renderer's blend table (Phaser 4.2.1 has 18 built in), and the GPU textures made from arrays. */
+    public readonly blendTable: { func: number[] }[] = Array.from({ length: 18 }, () => ({ func: [1, 771, 1, 771] }));
+    public readonly arrayTextures: { update: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> }[] = [];
     public readonly renderer = {
-        renderNodes: { hasNode: () => true },
+        renderNodes: {
+            hasNode: (name: string) => this.nodeNames.includes(name),
+            addNodeConstructor: (name: string) => this.nodeNames.push(name),
+        },
         width: 300,
         height: 200,
+        gl: {
+            ONE: 1,
+            ZERO: 0,
+            ONE_MINUS_SRC_ALPHA: 771,
+            FUNC_ADD: 32774,
+            CLAMP_TO_EDGE: 33071,
+            NEAREST: 9728,
+            RGBA: 6408,
+        },
+        blendModes: this.blendTable,
+        addBlendMode: (func: number[]) => this.blendTable.push({ func: [func[0], func[1], func[0], func[1]] }) - 2,
+        updateBlendMode: (index: number, func: number[]) => {
+            if (index > 17 && this.blendTable[index]) this.blendTable[index].func = [...func];
+        },
+        createUint8ArrayTexture: () => {
+            const texture = { update: vi.fn(), destroy: vi.fn() };
+            this.arrayTextures.push(texture);
+            return texture;
+        },
     } as unknown as Phaser.Renderer.WebGL.WebGLRenderer;
     public readonly host: EffectsHost;
     /** The frame every texture answers with (the fields of a Phaser frame the effects read). */
@@ -251,6 +291,8 @@ class TestScene {
             add: {
                 shader: (config: ShaderConfig) => this.make("shader", `shader ${config.name}`, "", undefined, config),
                 container: () => this.make("container", "container"),
+                sprite: (_x: number, _y: number, key: string, frame?: string | number) =>
+                    this.make("image", `sprite ${key}`, key, frame),
                 image: (_x: number, _y: number, key: string, frame?: string | number) =>
                     this.make("image", `image ${key}`, key, frame),
             } as unknown as EffectsHost["add"],
@@ -304,7 +346,7 @@ class TestScene {
     addTexture(key: string) {
         if (this.textureKeys.has(key)) return null;
         this.textureKeys.add(key);
-        return { key, setFilter: vi.fn(), refresh: vi.fn() };
+        return { key, setFilter: vi.fn(), refresh: vi.fn(), add: vi.fn() };
     }
 
     unlist(object: unknown): void {
@@ -1750,5 +1792,321 @@ describe("the effects, in a crowd the scene does not draw in full", () => {
         scene.emit(PRE_RENDER);
 
         expect(mirrorContainer(scene).visible).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------------------------------- the shading
+
+/** Indoors, no water, no polished floor: a plain day draws no camera pass at all. */
+const INDOORS: Colour = [0, 0, 0, 255];
+
+/** The record of the camera pass's uniforms before the shading existed: a room without the flag has exactly these. */
+const UNIFORMS_BEFORE_THE_SHADING = [
+    "uWorld",
+    "uMap",
+    "uRes",
+    "uInside",
+    "uOutside",
+    "uLawn",
+    "uWall",
+    "uVivid",
+    "uFacade",
+    "uWarm",
+    "uToe",
+    "uDarks",
+    "uSat",
+    "uNight",
+    "uL[0]",
+    "uLC[0]",
+    "uLClip[0]",
+    "uLN",
+    "uEm[0]",
+    "uEmT[0]",
+    "uEmN",
+    "uShafts",
+    "uCloud",
+    "uLock[0]",
+    "uLockN",
+    "uFrost",
+    "uSteps[0]",
+    "uStepN",
+    "uLime",
+    "uCream",
+    "uAv[0]",
+    "uAvN",
+    "uPeople[0]",
+    "uPeopleN",
+    "uNormalsOn",
+    "uRimOn",
+    "uVignette",
+    "uReveal",
+    "uInk",
+];
+
+// The hash of POST, the program a room runs with the flag off (the same one domain/shaders.test.ts pins).
+const POST_HASH = "188ecb5a34f26a";
+
+function shadingEnvironment(flag: ShadingFlag): Partial<EffectsEnvironment> {
+    return {
+        shading: () => flag,
+        shadedPostCompiles: () => true,
+        gpu: () => ({ renderer: "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max)", maxFragmentUniformVectors: 1024 }),
+    };
+}
+
+function passUniforms(): Record<string, unknown> {
+    const uniforms = postSources.at(-1)?.postUniforms();
+    if (!uniforms) throw new Error("the camera pass has no source");
+    return uniforms;
+}
+
+/** A piece of the map drawn from a 4 x 4 picture: opaque everywhere, so its silhouette is a box. */
+function placedBox(x: number, y: number): { image: Phaser.GameObjects.Image; source: HTMLImageElement } {
+    const source = Object.assign(new Image(), { width: 4, height: 4 });
+    const image = fake<Phaser.GameObjects.Image>(Phaser.GameObjects.Image.prototype, {
+        type: "Image",
+        texture: { key: "office/entities/box.png", getSourceImage: () => source },
+        x,
+        y,
+        depth: 5,
+        flipX: false,
+        displayWidth: 4,
+        displayHeight: 4,
+    });
+    return { image, source };
+}
+
+/** A sprite of a character's body that the mark can take: NORMAL blend mode, set through setBlendMode. */
+function bodySprite(): Phaser.GameObjects.Sprite & { blendMode: number } {
+    const sprite = fake<Phaser.GameObjects.Sprite & { blendMode: number }>(Phaser.GameObjects.Sprite.prototype, {
+        blendMode: 0,
+    });
+    sprite.setBlendMode = (mode: number) => {
+        sprite.blendMode = mode;
+        return sprite;
+    };
+    return sprite;
+}
+
+function frames(scene: TestScene, effects: SceneEffects, from: number, to: number, step = 16): void {
+    for (let time = from; time <= to; time += step) {
+        effects.onFrame(time);
+        scene.emit(PRE_RENDER);
+    }
+}
+
+describe("with konclui.fx.rim unset, the camera pass and the picture are what they were (by day and by night)", () => {
+    it.each([
+        ["day", 12, false],
+        ["night", 22, true],
+    ])("runs the legacy pass, with nothing of the shading made, at %s", (_name, hour, active) => {
+        postSources.length = 0;
+        const scene = new TestScene();
+        const piece = placedBox(100, 100);
+        scene.list.push(piece.image);
+        scene.current.player = character(50, 80, [bodySprite()]);
+        const { effects } = construct(scene, { hour, masks: INDOORS, features: active ? {} : { light: false } });
+        frames(scene, effects, 0, 600);
+
+        // the legacy node and nothing else; its program is POST, the text pinned
+        expect(scene.nodeNames).toEqual(["KfxPost"]);
+        expect(postProgram(false)).toEqual({ node: "KfxPost", source: POST });
+        expect(textHash(postProgram(false).source)).toBe(POST_HASH);
+        const [pass] = scene.filters.list as { renderNode: string; active: boolean }[];
+        expect(pass.renderNode).toBe("KfxPost");
+        // the old expression: a plain day draws no pass at all, a night does
+        expect(pass.active).toBe(active);
+        // no cast texture, no blend mode, no stamps, no sprite of the shading
+        expect(scene.arrayTextures).toHaveLength(0);
+        expect(scene.blendTable).toHaveLength(18);
+        expect([...scene.textureKeys].filter((key) => /stamps|cast/.test(key))).toEqual([]);
+        expect(scene.created.filter((object) => object.label.startsWith("sprite"))).toEqual([]);
+        // the uniforms are the old ones, no more
+        expect(Object.keys(passUniforms()).sort()).toEqual([...UNIFORMS_BEFORE_THE_SHADING].sort());
+        release(effects);
+    });
+
+    it("leaves a person's sprites alone and ignores the flag's unknown values", () => {
+        const scene = new TestScene();
+        const layer = bodySprite();
+        scene.current.player = character(50, 80, [layer]);
+        const { effects } = construct(scene, { hour: 22, environment: shadingEnvironment("off") });
+        frames(scene, effects, 0, 600);
+        expect(layer.blendMode).toBe(0);
+        expect(scene.nodeNames).toEqual(["KfxPost"]);
+        release(effects);
+    });
+
+    it("keeps the legacy rim when the flag says legacy, and still builds none of the new shading", () => {
+        const scene = new TestScene();
+        const { effects } = construct(scene, { hour: 22, nightLit: true, environment: shadingEnvironment("legacy") });
+        frames(scene, effects, 0, 300);
+        expect(scene.nodeNames).toEqual(["KfxPost"]);
+        expect(passUniforms().uRimOn).toBe(1);
+        expect(Object.keys(passUniforms())).not.toContain("uShade");
+        release(effects);
+    });
+});
+
+describe("with konclui.fx.rim on, the shaded pass", () => {
+    function shadedRoom(setup: Setup = {}) {
+        postSources.length = 0;
+        const scene = new TestScene();
+        const piece = placedBox(100, 100);
+        scene.list.push(piece.image);
+        const layer = bodySprite();
+        scene.current.player = character(50, 80, [layer]);
+        const built = construct(scene, { hour: 12, environment: shadingEnvironment("full"), ...setup });
+        const painted = paint;
+        paint = (source) => (source === piece.source ? [0, 0, 0, 255] : painted(source));
+        const shading = (built.effects as unknown as { shading: Shading }).shading;
+        return { scene, layer, piece, shading, ...built };
+    }
+
+    it("registers its own node and the people's blend mode, and draws by day too", () => {
+        const { scene, effects } = shadedRoom();
+        frames(scene, effects, 0, 100);
+        expect(scene.nodeNames).toEqual(["KfxPostShaded"]);
+        const [pass] = scene.filters.list as { renderNode: string; active: boolean }[];
+        expect(pass.renderNode).toBe("KfxPostShaded");
+        expect(pass.active).toBe(true);
+        // the first custom blend id is 18: the table's length before it was registered
+        expect(scene.blendTable).toHaveLength(19);
+        expect(scene.blendTable[18].func).toEqual([1, 771, 0, 771]);
+        const uniforms = passUniforms();
+        expect(Object.keys(uniforms).sort()).toEqual(
+            [...UNIFORMS_BEFORE_THE_SHADING, "uShade", "uKey", "uKeyShade", "uCrowd[0]"].sort(),
+        );
+        expect((uniforms.uShade as number[])[0]).toBe(2);
+        release(effects);
+    });
+
+    it("marks the drawn person's sprites, once, and puts a stamp under them below their depth", () => {
+        const { scene, layer, effects } = shadedRoom();
+        frames(scene, effects, 0, 100);
+        expect(layer.blendMode).toBe(18);
+        const stamps = scene.created.filter((object) => object.label.startsWith("sprite"));
+        expect(stamps).toHaveLength(1);
+        expect(stamps[0].visible).toBe(true);
+        expect(stamps[0].depth).toBeCloseTo(-0.01);
+        release(effects);
+        // and the mark is given back with the stamp when the effects go
+        expect(layer.blendMode).toBe(0);
+        expectEachDestroyedOnce(scene);
+    });
+
+    it("bakes after the pieces' pictures are measured, uploads once, and uploads nothing on a steady frame", () => {
+        const { scene, effects, shading } = shadedRoom();
+        frames(scene, effects, 0, 400);
+        const [cast] = scene.arrayTextures;
+        expect(shading.bakes).toBe(1);
+        expect(cast.update).toHaveBeenCalledTimes(1);
+        const size = 400 * 300 * 4;
+        expect(shading.cast.uploadedBytes).toBe(size);
+        // 5 s of steady frames: no bake, no upload
+        frames(scene, effects, 416, 5400);
+        expect(shading.bakes).toBe(1);
+        expect(cast.update).toHaveBeenCalledTimes(1);
+        release(effects);
+    });
+
+    it("measures the picture once for each sprite, 24 at a time at most, and bakes in slices of a bounded size", () => {
+        const { scene, effects, shading } = shadedRoom();
+        frames(scene, effects, 0, 400);
+        expect(shading.measures).toBe(1);
+        expect(shading.slices).toBeGreaterThan(1);
+        release(effects);
+    });
+
+    it("casts a shadow below a standing piece: the key's channel under the box is set, the box itself is covered", () => {
+        const { scene, effects, shading } = shadedRoom();
+        frames(scene, effects, 0, 400);
+        const px = (x: number, y: number, c: number) => shading.cast.pixels[((300 - 1 - y) * 400 + x) * 4 + c];
+        expect(px(101, 101, 3)).toBe(255); // under the box's own picture
+        expect(px(101, 105, 1)).toBeGreaterThan(0); // the shadow below its foot, at noon
+        expect(px(101, 105, 3)).toBe(0); // a floor that receives
+        expect(px(101, 104, 2)).toBe(255); // and its hard contact row
+        release(effects);
+    });
+
+    it("bakes only the key's channel again, once, when the hour moves the key to another state", () => {
+        let hour = 12;
+        const { scene, effects, shading } = shadedRoom({ hourNow: () => hour });
+        frames(scene, effects, 0, 400);
+        expect(shading.bakes).toBe(1);
+        const keyed = shading.key.dirIndex;
+        hour = 17.4;
+        frames(scene, effects, 416, 2000);
+        expect(shading.key.dirIndex).not.toBe(keyed);
+        expect(shading.bakes).toBe(2);
+        expect(scene.arrayTextures[0].update).toHaveBeenCalledTimes(2);
+        // a change of hour inside one state bakes nothing
+        hour = 17.45;
+        frames(scene, effects, 2016, 4000);
+        expect(shading.bakes).toBe(2);
+        release(effects);
+    });
+
+    it("waits for the pieces to hold still: no bake while a piece keeps moving, one once it stops", () => {
+        const { scene, effects, piece, shading } = shadedRoom();
+        frames(scene, effects, 0, 400);
+        expect(shading.bakes).toBe(1);
+        // a piece moves every second for six seconds: the snapshot changes at each refresh and the bake keeps waiting
+        let t = 416;
+        for (let second = 0; second < 6; second++) {
+            piece.image.x += 3;
+            frames(scene, effects, t, t + 1000);
+            t += 1016;
+            expect(shading.bakes, `second ${second}`).toBeLessThanOrEqual(1);
+        }
+        frames(scene, effects, t, t + 3000);
+        expect(shading.bakes).toBe(2);
+        release(effects);
+    });
+
+    it("steps down a level after 90 slow frames and puts its uniforms and marks to the new level", () => {
+        const { scene, layer, effects } = shadedRoom();
+        frames(scene, effects, 0, 100);
+        expect((passUniforms().uShade as number[])[0]).toBe(2);
+        for (let i = 0, time = 200; i < 91; i++, time += 40) effects.onFrame(time);
+        expect((passUniforms().uShade as number[])[0]).toBe(1);
+        expect(layer.blendMode).toBe(18);
+        release(effects);
+    });
+
+    it("is off, at level 0, when the Shadows switch is off: no mark, no stamp, and the legacy day", () => {
+        const { scene, layer, effects } = shadedRoom({ features: { shadows: false, light: false }, masks: INDOORS });
+        frames(scene, effects, 0, 300);
+        expect(layer.blendMode).toBe(0);
+        expect((passUniforms().uShade as number[])[0]).toBe(0);
+        const [pass] = scene.filters.list as { active: boolean }[];
+        expect(pass.active).toBe(false); // a plain day, level 0: the old expression
+        release(effects);
+    });
+
+    it("keeps the legacy pass when the shaded one does not compile, with no shading at all", () => {
+        const { scene, effects } = shadedRoom({
+            environment: { ...shadingEnvironment("full"), shadedPostCompiles: () => false },
+        });
+        frames(scene, effects, 0, 100);
+        expect(scene.nodeNames).toEqual(["KfxPost"]);
+        expect(scene.blendTable).toHaveLength(18);
+        expect(Object.keys(passUniforms()).sort()).toEqual([...UNIFORMS_BEFORE_THE_SHADING].sort());
+        release(effects);
+    });
+
+    it("drops the footprints from the ground's shade while the shading is on, and brings them back at level 0", () => {
+        const { scene, effects } = shadedRoom({ features: { shadows: true } });
+        frames(scene, effects, 0, 100);
+        const ground = scene.created.find((object) => object.config?.name === "kfxGround");
+        const people = (): unknown => {
+            let n: unknown = -1;
+            ground?.config?.setupUniforms((name, value) => {
+                if (name === "uPeopleN") n = value;
+            });
+            return n;
+        };
+        expect(people()).toBe(0);
+        release(effects);
     });
 });

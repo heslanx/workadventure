@@ -59,6 +59,16 @@ export const effectsManifestSchema = z.object({
     rooms: z.array(room),
     /** The room floors that keep a light in. */
     spaces: z.array(quad).optional(),
+    /** The building's outline [x, y, w, h]: a shadow cast in the garden stays out of it. */
+    building: quad.optional(),
+    /**
+     * What each placed sprite is to the shading, by sprite key (casterKind.ts has the rules): a piece that stands and
+     * casts a shadow, sits on furniture, hangs on a wall, or is a floor piece. A build without it leaves the runtime to
+     * work it out from the prefab.
+     */
+    kinds: z.record(z.enum(["stand", "top", "hang", "floor"])).optional(),
+    /** The sprite keys whose picture carries its own contact shadow: the runtime draws none for them. */
+    painted: z.array(z.string()).optional(),
     /** [x0, x1, foot] of each glass face. */
     glassFaces: z.array(z.tuple([z.number(), z.number(), z.number()])).optional(),
     /** The night's darkest colour, 0..255. */

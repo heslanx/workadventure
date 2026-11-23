@@ -12,6 +12,11 @@ import { parseFeatures, type FeatureSwitches } from "../../Preferences/domain/ef
 import type * as PostFilter from "./postFilter";
 import { LABEL_MEASURE_MS, SceneEffects, type EffectsEnvironment, type EffectsHost } from "./SceneEffects";
 
+// These cases build a map of 664 pieces and walk a crowd for hundreds of frames: about 1.5 s alone, and over the default 5 s when
+// the whole of src/front/Konclui runs in parallel (the "480 pictures" case timed out at 5 s in such a run, measuring 34 bytes a
+// draw). The limit is a bound on a hang, not on speed: nothing here asserts a time.
+vi.setConfig({ testTimeout: 60_000 });
+
 // The cost of the effects per frame, measured on a hand-made scene (the SceneEffects.test.ts harness, cut down to what
 // the numbers need). Every figure the tests print (`[ambience-perf]`) comes from here and is rerun with
 //   npx vitest run src/front/Konclui/Ambience/phaser/SceneEffects.performance.test.ts
@@ -97,6 +102,10 @@ class MeterContext {
     public readonly scale = vi.fn();
     public readonly putImageData = vi.fn();
 
+    createImageData(width: number, height: number) {
+        return { width, height, data: new Uint8ClampedArray(width * height * 4) };
+    }
+
     drawImage(source: unknown): void {
         this.drawn = source;
     }
@@ -157,6 +166,10 @@ class MeterObject {
     }
 
     setOrigin(): this {
+        return this;
+    }
+
+    setFrame(): this {
         return this;
     }
 
@@ -265,10 +278,33 @@ class MeterScene {
     public readonly uploads: UploadMeter = { bytes: 0, uploads: 0, byKey: new Map() };
     public readonly textureKeys = new Set<string>();
     private readonly textureObjects = new Map<string, { key: string }>();
+    public readonly blendTable: object[] = Array.from({ length: 18 }, () => ({}));
     public readonly renderer = {
         renderNodes: { hasNode: () => true },
         width: 300,
         height: 200,
+        gl: {
+            ONE: 1,
+            ZERO: 0,
+            ONE_MINUS_SRC_ALPHA: 771,
+            FUNC_ADD: 32774,
+            CLAMP_TO_EDGE: 33071,
+            NEAREST: 9728,
+            RGBA: 6408,
+        },
+        blendModes: this.blendTable,
+        addBlendMode: () => this.blendTable.push({}) - 2,
+        updateBlendMode: () => undefined,
+        createUint8ArrayTexture: () => ({
+            // the cast texture: uploaded whole when a bake finishes, counted with every other upload
+            update: (_pixels: unknown, width: number, height: number) => {
+                const bytes = width * height * 4;
+                this.uploads.bytes += bytes;
+                this.uploads.uploads += 1;
+                this.uploads.byKey.set("cast", (this.uploads.byKey.get("cast") ?? 0) + bytes);
+            },
+            destroy: () => undefined,
+        }),
     } as unknown as Phaser.Renderer.WebGL.WebGLRenderer;
     public readonly host: EffectsHost;
     public readonly view = { x: 0, y: 0, width: 300, height: 200 };
@@ -334,6 +370,8 @@ class MeterScene {
                 shader: (config: ShaderConfig) => this.make("shader", "", undefined, config),
                 container: () => this.make("container", ""),
                 image: (_x: number, _y: number, key: string, frame?: string | number) => this.make("image", key, frame),
+                sprite: (_x: number, _y: number, key: string, frame?: string | number) =>
+                    this.make("sprite", key, frame),
             } as unknown as EffectsHost["add"],
             textures: {
                 addImage: (key: string, image: HTMLImageElement) => this.addTexture(key, image),
@@ -393,6 +431,7 @@ class MeterScene {
             key,
             setFilter: vi.fn(),
             refresh: upload,
+            add: vi.fn(),
         };
     }
 
@@ -488,6 +527,11 @@ function figureLayer(texture: string, frame = 1): Phaser.GameObjects.Sprite {
         flipX: false,
         scaleX: 1,
         scaleY: 1,
+        blendMode: 0,
+        setBlendMode(this: { blendMode: number }, mode: number) {
+            this.blendMode = mode;
+            return this;
+        },
     });
 }
 
@@ -522,6 +566,9 @@ function placedSprites(): Pick<EffectsManifest, "lights" | "shadows"> {
     return { lights, shadows };
 }
 
+/** The picture of every placed piece of the crowded scenes: opaque, so each piece has a silhouette to cast a shadow from. */
+const PIECE_PICTURE = Object.assign(new Image(), { width: 16, height: 32 });
+
 /** One placed map image, as the entity manager keeps it: an Image of the scene that is also an entity. */
 function placedImage(n: number): Phaser.GameObjects.Image {
     // the prefab is a stored object, as the editor's: the entity gives it back, it does not make one on each call
@@ -538,7 +585,7 @@ function placedImage(n: number): Phaser.GameObjects.Image {
         y: (n * 53) % 270,
         originX: 0.5,
         originY: 1,
-        texture: { key: spriteKey(n) },
+        texture: { key: spriteKey(n), getSourceImage: () => PIECE_PICTURE },
         frame: { name: 1 },
         flipX: false,
         scaleX: 1,
@@ -605,7 +652,14 @@ function pictures(size: Dimensions = SMALL_ROOM): Record<EffectTexture, HTMLImag
         "tv-slide": sized(...size.slide),
         occluders: sized(...size.occluders),
     };
-    paint = (source) => (source === images.masks ? ALL_MASKS : source === images.glass ? GLASS_ALL_OVER : [0, 0, 0, 0]);
+    paint = (source) =>
+        source === images.masks
+            ? ALL_MASKS
+            : source === images.glass
+              ? GLASS_ALL_OVER
+              : source === PIECE_PICTURE
+                ? [0, 0, 0, 255]
+                : [0, 0, 0, 0];
     return images;
 }
 
@@ -623,13 +677,15 @@ interface BuildOptions {
     readonly size?: Dimensions;
     /** What the map's entity manager holds when the effects are built (a piece at the glass at the build). */
     readonly entities?: Map<string, unknown>;
+    /** The `konclui.fx.rim` flag: the shading on, at a forced level. Absent: off. */
+    readonly shading?: "full" | "reduced";
 }
 
 function build(
     hour = 22,
     features: Partial<FeatureSwitches> = {},
     placed = 0,
-    { hourNow, normal = false, size = SMALL_ROOM, entities }: BuildOptions = {},
+    { hourNow, normal = false, size = SMALL_ROOM, entities, shading }: BuildOptions = {},
 ): Built {
     const scene = new MeterScene();
     placeImages(scene, placed);
@@ -640,6 +696,7 @@ function build(
         fixedHour: () => (hourNow ? hourNow() : hour),
         focused: () => false,
         nightLit: () => false,
+        ...(shading ? { shading: () => shading, shadedPostCompiles: () => true } : {}),
     };
     const images = pictures(size);
     const effects = new SceneEffects({
@@ -1834,5 +1891,121 @@ describe("the effects' own switches", () => {
         frame(built);
         const mirror = built.scene.list.find((object) => object instanceof MeterObject && object.children.length > 0);
         expect(mirror === undefined || (mirror as MeterObject).visible === false).toBe(true);
+    });
+});
+
+describe("the shading in a crowd of 1,000 remote players, 80 of them drawn and marked", () => {
+    const REMOTES = 1000;
+    const DRAWN = 80;
+    const FRAMES = 240;
+    const INSIDE = { x: 60, y: 60 };
+
+    function shadedCrowd(shading: "full" | "reduced", size: Dimensions = SMALL_ROOM): { built: Built; bodies: Body[] } {
+        const built = build(22, {}, PLACED, { shading, size });
+        built.scene.current.player = { ...INSIDE, visible: true, list: [figureLayer("me")] } as unknown as Player;
+        const bodies = crowd(built.scene, REMOTES, DRAWN);
+        // warm: the sprites measured, the bake in its slices, its one upload, the marks, the stamps, V8's compiler
+        for (let i = 0; i < 700; i++) frame(built);
+        return { built, bodies };
+    }
+
+    function walkSome(bodies: readonly Body[], step: number): void {
+        for (let n = 0; n < 20; n++) bodies[n].walk(step % 2 === 0 ? 1 : -1);
+    }
+
+    function drawer(built: Built): () => void {
+        return () => {
+            clock.frame += 1;
+            built.scene.draw();
+        };
+    }
+
+    it.each(["full", "reduced"] as const)(
+        "allocates under 64 bytes a draw at level %s, 20 players walking",
+        (level) => {
+            const { built, bodies } = shadedCrowd(level);
+            const draw = drawer(built);
+            for (let i = 0; i < 1500; i++) {
+                walkSome(bodies, i);
+                draw();
+            }
+            // Three windows of 240 draws, the lowest counts: the heap profiler samples, and a window that V8 is still
+            // compiling in reads high without the code having changed (a settled 17 B read 100 B in a cold window).
+            const perDraw = [0, 1, 2].map(
+                () =>
+                    allocatedBytes(() => {
+                        for (let i = 0; i < FRAMES; i++) {
+                            walkSome(bodies, i);
+                            draw();
+                        }
+                    }) / FRAMES,
+            );
+            report(`heap bytes allocated per draw, shading level ${level}, 664 pieces, 80 drawn and marked`, {
+                frames: FRAMES,
+                bytesPerDraw: Math.round(Math.min(...perDraw)),
+                worstWindow: Math.round(Math.max(...perDraw)),
+            });
+            expect(Math.min(...perDraw)).toBeLessThan(64);
+        },
+    );
+
+    it("makes no array, typed array, map or set on a draw with the shading on", () => {
+        const { built, bodies } = shadedCrowd("full");
+        const draw = drawer(built);
+        for (let i = 0; i < 600; i++) {
+            walkSome(bodies, i);
+            draw();
+        }
+        const made = countConstructions(() => {
+            for (let i = 0; i < FRAMES; i++) {
+                walkSome(bodies, i);
+                draw();
+            }
+        });
+        expect(made).toBe(0);
+    });
+
+    it("marks the player and the nearest 19 of the 80 drawn people, a stamp under each of the 81", () => {
+        const { built } = shadedCrowd("full");
+        const shading = (built.effects as unknown as { shading: { marked: number } }).shading;
+        // every mark is a blend mode of its own, which breaks the draw into batches (4 draw calls more for each avatar
+        // marked, measured in a real Phaser game): 20 of them, the player's among them
+        expect(shading.marked).toBe(20);
+        const stamps = built.scene.list.filter(
+            (o) => (o as { texture?: { key: string } }).texture?.key === "kfx-1-stamps",
+        );
+        expect(stamps).toHaveLength(DRAWN + 1);
+    });
+
+    it("marks only the player and 9 others at level 1, to keep the draw calls down", () => {
+        const { built } = shadedCrowd("reduced");
+        const shading = (built.effects as unknown as { shading: { marked: number } }).shading;
+        expect(shading.marked).toBe(10);
+    });
+
+    it("puts the cast texture on the GPU once at the office's own size: 19,726,336 B, then 0 bytes on a steady frame", () => {
+        const built = build(22, {}, PLACED, { shading: "full", size: OFFICE });
+        const buildBytes = built.scene.uploads.byKey.get("cast") ?? 0;
+        expect(buildBytes).toBe(0); // before the first bake the texture is the 1 x 1 dummy
+        for (let i = 0; i < 700; i++) frame(built);
+        expect(built.scene.uploads.byKey.get("cast")).toBe(2752 * 1792 * 4);
+        built.scene.resetMeters();
+        for (let i = 0; i < FRAMES; i++) frame(built);
+        expect(built.scene.uploads.bytes).toBe(0);
+        expect(built.scene.uploads.uploads).toBe(0);
+    });
+
+    it("keeps one slice of the bake to 64 casters, so a frame does a bounded part of it", () => {
+        const built = build(22, {}, PLACED, { shading: "full" });
+        const shading = (built.effects as unknown as { shading: { slices: number; bakes: number } }).shading;
+        let frames = 0;
+        while (shading.bakes === 0 && frames < 2000) {
+            frame(built);
+            frames += 1;
+        }
+        expect(shading.bakes).toBe(1);
+        // 664 pieces and a dozen lamps are well over 64 items: the bake took several frames, none of them all of it
+        expect(shading.slices).toBeGreaterThan(10);
+        report("frames the first bake takes, 664 pieces, 64 casters a slice", { frames, slices: shading.slices });
     });
 });

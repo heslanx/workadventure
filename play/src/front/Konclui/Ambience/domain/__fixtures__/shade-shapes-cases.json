@@ -1,0 +1,54 @@
+{
+    "note": "Pictures as rows of tokens, read by shadeShapes.test.ts (silhouetteOf, hasPaintedShadow) and tools/test_kinds.py (silhouette_rows, painted_shadow): the runtime and the build must give the same top, foot and painted answer on the same pixels. # solid (200,120,60 alpha 255), s a dark shadow pixel (10,10,61 alpha 150), f a faint dark shadow pixel (10,10,61 alpha 40), p a warm bright pool of light (255,240,160 alpha 130), . empty.",
+    "tokens": {
+        "#": [200, 120, 60, 255],
+        "s": [10, 10, 61, 150],
+        "f": [10, 10, 61, 40],
+        "p": [255, 240, 160, 130],
+        ".": [0, 0, 0, 0]
+    },
+    "cases": [
+        {
+            "name": "a clean cut-out",
+            "rows": ["....", ".##.", ".##.", ".##.", "####"],
+            "top": 1,
+            "foot": 4,
+            "painted": false
+        },
+        {
+            "name": "six faint dark pixels under the foot are a painted shadow",
+            "rows": ["....", ".##.", ".##.", ".##.", "####", "ffff", "ff.."],
+            "top": 1,
+            "foot": 4,
+            "painted": true
+        },
+        {
+            "name": "five are not",
+            "rows": ["....", ".##.", ".##.", ".##.", "####", "ffff", "f..."],
+            "top": 1,
+            "foot": 4,
+            "painted": false
+        },
+        {
+            "name": "a dark shadow of alpha 150 is a shadow, not the piece: the foot stays on the body",
+            "rows": ["....", ".##.", ".##.", ".##.", "####", "ssss", "ss.."],
+            "top": 1,
+            "foot": 4,
+            "painted": true
+        },
+        {
+            "name": "a bright warm pool under a table is neither a shadow nor the piece: the foot stays on the legs",
+            "rows": ["..##..", "..##..", "..##..", ".####.", "pppppp", "pppppp", ".pppp."],
+            "top": 0,
+            "foot": 3,
+            "painted": false
+        },
+        {
+            "name": "partial alpha far above the foot is not a shadow",
+            "rows": ["ffff", "ffff", ".##.", ".##.", ".##.", ".##.", ".##.", "####"],
+            "top": 2,
+            "foot": 7,
+            "painted": false
+        }
+    ]
+}

@@ -3,17 +3,19 @@ import { asError } from "catch-unknown";
 import { get } from "svelte/store";
 import { localUserStore } from "../../../Connection/LocalUserStore";
 import { effectSwitchesStore } from "../../Preferences/stores/effectSwitchesStore";
+import { parseShadingFlag } from "../domain/shadingLevel";
 import { loadEffectsData } from "./effectsLoader";
 import { SceneEffects, type EffectsEnvironment } from "./SceneEffects";
 import type { SceneEffectsPort } from "./sceneEffectsExtension";
-import { shadersCompile } from "./shaderCheck";
+import { shadedPostCompiles, shadersCompile } from "./shaderCheck";
 
-// Kept in localStorage, for QA: every effect off ("1"), a fixed hour, the night-lit preview ("1"). The switches are the
-// Preferences store's. The effects poll the hour and the preview (and the animation settings) every QA_POLL_MS, so a
-// change shows within a second, with no reload: a bench goes from day to night 0.85 in one session by setting
-// konclui.fx.hour. The preview is different in one way: the normal map is fetched once, when the map loads, and only
-// when the preview is on then. So konclui.fx.rim=1 must be set BEFORE the page loads for a run that looks at the night-lit
-// look; switched on later in the same session it lights the people with flat normals and no bevel on the props.
+// Kept in localStorage, for QA: every effect off ("1"), a fixed hour, and the shading (konclui.fx.rim). The switches are
+// the Preferences store's. The effects poll the hour (and the animation settings) every QA_POLL_MS, so a change shows
+// within a second, with no reload: a bench goes from day to night 0.85 in one session by setting konclui.fx.hour.
+// konclui.fx.rim is read once, when the page loads: unset or "0" nothing changes; "1" the cast shadows and the light on
+// the props and people at the level the machine allows; "full" or "reduced" force a level; "legacy" is the old night-lit
+// preview (the people's rim and the props' bevel at night). The normal map is fetched once, when the map loads, and only
+// when the flag is not off then.
 const EFFECTS_OFF_KEY = "konclui.fx.off";
 const FIXED_HOUR_KEY = "konclui.fx.hour";
 const NIGHT_LIT_KEY = "konclui.fx.rim";
@@ -38,8 +40,27 @@ export function browserEnvironment(focused: () => boolean): EffectsEnvironment {
             return Number.isFinite(fixed) ? fixed : undefined;
         },
         focused,
-        nightLit: () => readSetting(NIGHT_LIT_KEY) === "1",
+        nightLit: () => parseShadingFlag(readSetting(NIGHT_LIT_KEY)) === "legacy",
+        shading: () => parseShadingFlag(readSetting(NIGHT_LIT_KEY)),
+        shadedPostCompiles,
+        gpu: gpuFacts,
     };
+}
+
+let gpu: { readonly renderer: string; readonly maxFragmentUniformVectors: number } | undefined;
+
+/** The unmasked renderer string and the fragment uniform limit, read once from a scratch context. */
+function gpuFacts(): { readonly renderer: string; readonly maxFragmentUniformVectors: number } {
+    if (gpu) return gpu;
+    const gl = document.createElement("canvas").getContext("webgl");
+    if (!gl) return (gpu = { renderer: "", maxFragmentUniformVectors: 0 });
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    gpu = {
+        renderer: info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "",
+        maxFragmentUniformVectors: Number(gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS)),
+    };
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return gpu;
 }
 
 export interface BrowserEffectsOptions {
@@ -58,7 +79,8 @@ export function createBrowserEffectsPort({ focused = () => false }: BrowserEffec
             scene.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer &&
             Boolean(scene.mapUrlFile) &&
             shadersCompile(),
-        load: (scene) => loadEffectsData(scene.mapUrlFile, { normal: readSetting(NIGHT_LIT_KEY) === "1" }),
+        load: (scene) =>
+            loadEffectsData(scene.mapUrlFile, { normal: parseShadingFlag(readSetting(NIGHT_LIT_KEY)) !== "off" }),
         create(scene, { manifest, images, normal }, start) {
             const renderer = scene.renderer;
             if (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)) {

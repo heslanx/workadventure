@@ -6,6 +6,9 @@ interface Piece {
     texture: { key: string };
     x: number;
     y: number;
+    flipX?: boolean;
+    displayWidth?: number;
+    displayHeight?: number;
 }
 
 const piece = (key: string, x: number, y: number): Piece => ({ kind: "piece", texture: { key }, x, y });
@@ -89,5 +92,33 @@ describe("a snapshot of the placed images", () => {
 
         expect(snapshot.matches(placed, isPiece)).toBe(true);
         expect(snapshot.matches([...placed, piece("c", 5, 6)], isPiece)).toBe(false);
+    });
+
+    // Seen failing with the snapshot reading only key and position: a piece mirrored or resized in the editor kept its
+    // old shadow until something else moved.
+    it("does not match once a piece is mirrored or drawn at another size, which move its shadow", () => {
+        const make = (flipX: boolean, w: number): Piece => ({
+            ...piece("a", 1, 2),
+            flipX,
+            displayWidth: w,
+            displayHeight: 32,
+        });
+        const snapshot = new PlacedSnapshot(true);
+        snapshot.capture([make(false, 32)]);
+        expect(snapshot.matches([make(false, 32)], isPiece)).toBe(true);
+        expect(snapshot.matches([make(true, 32)], isPiece)).toBe(false);
+        expect(snapshot.matches([make(false, 48)], isPiece)).toBe(false);
+    });
+
+    it("reads neither flip nor size unless asked to (a room without the shading reads what it always did)", () => {
+        const make = (flipX: boolean, w: number): Piece => ({
+            ...piece("a", 1, 2),
+            flipX,
+            displayWidth: w,
+            displayHeight: 32,
+        });
+        const snapshot = new PlacedSnapshot();
+        snapshot.capture([make(false, 32)]);
+        expect(snapshot.matches([make(true, 48)], isPiece)).toBe(true);
     });
 });

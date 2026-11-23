@@ -14,6 +14,13 @@
 //           external list while the camera fills the canvas, where Phaser draws the last filter straight to it: off
 //           until a Gate 1 run measures it, see postFilter.ts)
 //   tv      a meeting room's TV shows the K slide (and lights the room at night) while two or more people are in it
+//   shading (localStorage "konclui.fx.rim" = "1", "full" or "reduced"; off by default, and with it off nothing below exists)
+//           a second camera pass, POST_SHADED, with a cast texture baked on the CPU from the map's pieces (domain/shadeBake,
+//           phaser/shading: the key light's shadow, the lamps' shadows, a contact band under each object, for a rug no
+//           relief), the props lit on one side by relief on their normals, the people marked (phaser/peopleMark: their
+//           sprites leave alpha 0 in the colour buffer) so the pass lights their own pixels, and a stamp under each person
+//           (phaser/peopleShadow). The level (domain/shadingLevel, shadingGovernor) falls from full to reduced to off by
+//           the GPU, the zoom and the frame times; the Shadows switch off, or a pass that does not compile, leave the legacy pass.
 // A draw makes no array and under 64 bytes of heap (asserted, SceneEffects.performance.test.ts), except where a locked
 // room is in view with name tags on the page: hideLabels then reads each tag's place from the page (a DOMRect each, at
 // most every LABEL_MEASURE_MS, and only when a camera, a crowd or a tag moved), a cost in a browser nobody has measured.
@@ -81,10 +88,25 @@ import {
     type MaskBits,
 } from "../domain/pixelMaps";
 import { GLASS, GROUND, WATER } from "../domain/shaders";
+import {
+    newPersonShadow,
+    personShadowFrames,
+    STAMP_ATLAS_HEIGHT,
+    STAMP_ATLAS_WIDTH,
+    STAMP_CLASSES,
+    STAMP_DIRECTIONS,
+    STAMP_SIZE,
+    type PersonShadow,
+} from "../domain/personShadow";
+import { ShadingGovernor } from "../domain/shadingGovernor";
+import { pickShadingLevel, shadingWanted, type ShadingFlag, type ShadingLevel } from "../domain/shadingLevel";
+import { lightUniformsInto } from "../domain/lightUniforms";
 import { isPlainDay, localHour, lookAt, type Look, type Rgb } from "../domain/timeOfDay";
 import { PlacedSnapshot } from "../domain/placedSnapshot";
 import { Trail, type WalkerId } from "../domain/trail";
 import { addPostFilter, type PostFilter, type UniformValue } from "./postFilter";
+import { PeopleStamps, spriteFactory, stampFrameRects } from "./peopleShadow";
+import { Shading, type ShadeBody } from "./shading";
 import { SceneResources } from "./SceneResources";
 
 /** What the effects read from the page and the user's settings on each use. */
@@ -99,6 +121,15 @@ export interface EffectsEnvironment {
     focused(): boolean;
     /** QA preview: rim light on the people and bevels on the props at night (domain/shaders, `@night-lit`). Off by default. */
     nightLit(): boolean;
+    /**
+     * `konclui.fx.rim`: how the room is shaded (cast shadows and light on the props and people). Read once, when the
+     * effects are built. Absent: "off", and the effects are what they were before the shading existed.
+     */
+    shading?(): ShadingFlag;
+    /** Whether the camera pass with the shading compiles on this GPU. Absent: it does. */
+    shadedPostCompiles?(): boolean;
+    /** The GPU's facts for the quality level: the unmasked renderer and the fragment shader's uniform limit. */
+    gpu?(): { readonly renderer: string; readonly maxFragmentUniformVectors: number };
 }
 
 /**
@@ -107,7 +138,8 @@ export interface EffectsEnvironment {
  * one, so production passes it as it is; a test hands over a made object, to see what the effects give back.
  */
 export interface EffectsHost {
-    readonly add: Pick<Phaser.GameObjects.GameObjectFactory, "shader" | "container" | "image">;
+    readonly add: Pick<Phaser.GameObjects.GameObjectFactory, "shader" | "container" | "image"> &
+        Partial<Pick<Phaser.GameObjects.GameObjectFactory, "sprite">>;
     readonly textures: Pick<
         Phaser.Textures.TextureManager,
         "addImage" | "addCanvas" | "get" | "getFrame" | "exists" | "remove"
@@ -168,6 +200,8 @@ interface Person {
     /** Bit 4 of the masks: the lawn, where walkers press the grass. */
     onLawn: boolean;
     polished: boolean;
+    /** The stamp under the person: its direction and length, kept between frames. */
+    readonly shadow: PersonShadow;
 }
 
 /** What the effects read of a character: its feet, whether it is drawn, and its sprites. */
@@ -176,6 +210,8 @@ interface Body {
     readonly y: number;
     readonly visible: boolean;
     readonly list: readonly unknown[];
+    /** Its depth in the scene: the stamp under it is drawn just below. */
+    readonly depth?: number;
 }
 
 /** A picture in the mirror. The records of the people's pictures are pooled, so the fields are written in place. */
@@ -262,10 +298,11 @@ const NO_FACE: GlassFace = [0, 0, 0];
 const NO_PANES: readonly GlassPane[] = [];
 const NO_LIGHTS: readonly Light[] = [];
 const NO_UNIFORMS: Record<string, UniformValue> = {};
+const NO_FEET: readonly Rect[] = [];
 const NO_MEETING = (): boolean => false;
 
 /** A map piece in the scene's children: an Image (what the entity manager places), not a layer or an effect's own. */
-const isPlacedImage = (child: unknown): child is Phaser.GameObjects.Image =>
+export const isPlacedImage = (child: unknown): child is Phaser.GameObjects.Image =>
     child instanceof Phaser.GameObjects.Image && child.type === "Image";
 const ZERO_TINT = [0, 0, 0, 0];
 
@@ -379,7 +416,7 @@ export class SceneEffects {
     private occTexture: Phaser.Textures.CanvasTexture | undefined;
     private occRaw: HTMLCanvasElement | undefined;
     private occSignature = "";
-    private readonly placedSnapshot = new PlacedSnapshot();
+    private readonly placedSnapshot: PlacedSnapshot;
     // the pieces were read at the build, before the first refresh: its lights and screens are still to be worked out
     private piecesUnseen = false;
     // the placed images that give a light, as of the last change to the placed images
@@ -478,6 +515,24 @@ export class SceneEffects {
     // a hash of where the drawn people stand, written by `gather`: it changes when one of them moves
     private crowdHash = 0;
     private rimOn = 0;
+    // the shading (konclui.fx.rim = 1, full, reduced): made only when the flag asks for it, so a room without it has none
+    // of it: no texture, no blend mode, no stamps, no node, and the uniform record it always had
+    private readonly shading: Shading | undefined;
+    private readonly governor: ShadingGovernor | undefined;
+    private readonly shadingFlag: ShadingFlag;
+    private lastFrameTime = Number.NaN;
+    private readonly crowdBodies: Body[] = [];
+    private lastRebuilds = -1;
+    private lastFeet: readonly Rect[] = [];
+    private readonly peopleFrame: {
+        count: number;
+        people: readonly Person[];
+        bodies: readonly ShadeBody[];
+        rebuilt: boolean;
+        pools: readonly Light[];
+        lamps: number;
+        centre: [number, number];
+    };
     private readonly resolution = [0, 0];
     private readonly shafts = [0, 58, 24, 0.84];
     private readonly cloud = [0, 236, 0, 0];
@@ -580,6 +635,22 @@ export class SceneEffects {
         };
         this.normalsOn = normal ? 1 : 0;
         this.rimOn = this.environment.nightLit() ? 1 : 0;
+        // The shading needs its own program to compile; when it does not the room keeps the legacy pass, with a warning.
+        const flag = this.environment.shading?.() ?? "off";
+        const shaded = shadingWanted(flag) && (this.environment.shadedPostCompiles?.() ?? true);
+        this.shadingFlag = shaded ? flag : "off";
+        const picked = this.pickLevel();
+        this.governor = shaded ? new ShadingGovernor(picked) : undefined;
+        this.placedSnapshot = new PlacedSnapshot(shaded);
+        this.peopleFrame = {
+            count: 0,
+            people: this.crowd,
+            bodies: this.crowdBodies,
+            rebuilt: false,
+            pools: NO_LIGHTS,
+            lamps: 0,
+            centre: [0, 0],
+        };
         this.postRecord = this.postUniformRecord();
         // Registered first, so that a failure while building still gives back what was made so far.
         this.resources.onRelease(() => this.scene.events.off(Phaser.Scenes.Events.PRE_RENDER, this.onPreRender));
@@ -611,7 +682,10 @@ export class SceneEffects {
             // The pieces already on the map are read and their footprints drawn into the canvas before it is made a
             // texture: the first upload is the finished field, not a blank one and then this (the second upload of the
             // same canvas was 4,931,584 B at the office's size). The first refresh then has lights and screens to make.
-            this.readPieces();
+            this.shading = this.shadingFlag === "off" ? undefined : this.buildShading(generation);
+            const shading = this.shading;
+            if (shading) this.resources.onRelease(() => shading.destroy());
+            this.readPieces(true);
             this.piecesUnseen = true;
             const occTexture = this.addCanvasTexture("occ", `kfx-${generation}-occ`, this.occCanvas);
             occTexture.setFilter(Phaser.Textures.FilterMode.LINEAR);
@@ -637,11 +711,18 @@ export class SceneEffects {
             this.mirrorTexture.setFilter(Phaser.Textures.FilterMode.NEAREST);
             this.glass = this.buildGlass();
             this.placeAbove(this.mirror, this.glass);
-            this.postFilter = addPostFilter(this.renderer, scene.cameras.main, {
-                postUniforms: () => this.postUniforms(),
-                masksTexture: () => this.texture("masks"),
-                normalsTexture: () => (this.normalsOn > 0 ? this.texture("normal") : null),
-            });
+            this.postFilter = addPostFilter(
+                this.renderer,
+                scene.cameras.main,
+                {
+                    postUniforms: () => this.postUniforms(),
+                    masksTexture: () => this.texture("masks"),
+                    normalsTexture: () => (this.normalsOn > 0 ? this.texture("normal") : null),
+                    castTexture: () => this.shading?.glTexture ?? null,
+                },
+                undefined,
+                this.shading !== undefined,
+            );
             this.post = this.postFilter.controller;
             const postFilter = this.postFilter;
             this.resources.onRelease(() => postFilter.remove());
@@ -657,6 +738,10 @@ export class SceneEffects {
     /** Called on each game step with the frame time: the once-a-second refresh, the tile clock and transitions. */
     onFrame(time: number): void {
         this.now = time;
+        if (this.governor && Number.isFinite(this.lastFrameTime) && this.governor.push(time - this.lastFrameTime)) {
+            this.applyShadingLevel();
+        }
+        this.lastFrameTime = time;
         // Both clocks advance by their own period, not to the frame time, so a frame that lands late does not slow
         // them; one that is more than four periods behind (a hidden tab) starts over instead of catching up.
         if (time - this.lastRefresh >= REFRESH_MS) {
@@ -805,7 +890,8 @@ export class SceneEffects {
                     set("uMap", this.mapSize);
                     set("uShadow", this.look.shadow);
                     set("uPeople[0]", this.peopleData);
-                    set("uPeopleN", this.peopleCount);
+                    // with the shading on, the people's shadows are the stamps': none here, or they would be doubled
+                    set("uPeopleN", this.shadingOn() ? 0 : this.peopleCount);
                 },
             },
             this.mapW / 2,
@@ -1080,7 +1166,11 @@ export class SceneEffects {
                 maskY: Number.NaN,
                 onLawn: false,
                 polished: false,
+                shadow: newPersonShadow(),
             });
+        // another person at this place: their stamp starts from their own light, not the last one's
+        if (person.id !== id) person.shadow.picked = false;
+        this.crowdBodies[n] = body;
         person.id = id;
         person.x = x;
         person.y = y + 15;
@@ -1178,7 +1268,8 @@ export class SceneEffects {
     /** Every second and on a settings change: the hour, locks, meetings and lights; marks the scene dirty on change. */
     private refresh(force: boolean): void {
         this.readStillness();
-        const look = lookAt(this.hour(), this.features);
+        const hour = this.hour();
+        const look = lookAt(hour, this.features);
         // everyone counts for a room, the culled and the dots too: a TV lights for two people in its room whether or
         // not they are drawn (once a second, not on each frame)
         this.countRooms();
@@ -1216,6 +1307,11 @@ export class SceneEffects {
         }
         const focus = this.features.vignette && this.environment.focused();
         const lookKey = JSON.stringify(look);
+        if (this.shading) {
+            // the key's state (direction and length) moves a dozen times a day: only then is the key's channel baked again
+            this.shading.setHour(hour);
+            if (this.applyShadingLevel()) changed = true;
+        }
         if (lookKey !== this.lookKey) {
             this.look = look;
             this.lookKey = lookKey;
@@ -1262,7 +1358,7 @@ export class SceneEffects {
      * Reads the placed images again: which give a light, and where the floor is blocked. True when the blocked floor
      * changed and the occlusion was drawn again.
      */
-    private readPieces(): boolean {
+    private readPieces(settled = false): boolean {
         const placed = this.scene.children.list.filter(isPlacedImage);
         this.placedSnapshot.capture(placed);
         this.litPieces = placed.filter((o) => this.lightSpec(o) !== undefined);
@@ -1270,11 +1366,95 @@ export class SceneEffects {
             placed.map((o) => ({ key: o.texture.key, x: o.x, y: o.y })),
             this.shadowSpecs(placed),
         );
-        const occSignature = feet.map((r) => r.join(",")).join(";");
+        this.shading?.setPieces(placed, this.now, settled);
+        this.lastFeet = feet;
+        // with the shading on the ground quad keeps the walls' band and drops the footprints: the cast shadows are theirs
+        const shown = this.shadingOn() ? NO_FEET : feet;
+        const occSignature = `${shown === NO_FEET ? "s|" : ""}${feet.map((r) => r.join(",")).join(";")}`;
         if (occSignature === this.occSignature) return false;
-        this.drawOcclusion(feet);
+        this.drawOcclusion(shown);
         this.occSignature = occSignature;
         return true;
+    }
+
+    /** Whether the shading is drawing now: the flag asked for it and the level is above 0. */
+    private shadingOn(): boolean {
+        return this.shading !== undefined && this.shading.level > 0;
+    }
+
+    /**
+     * The level the machine and the view allow: the flag, the GPU, the zoom and the picture's size (domain/shadingLevel).
+     * The switches and the governor come after.
+     */
+    private pickLevel(): ShadingLevel {
+        if (!shadingWanted(this.shadingFlag)) return 0; // a room without the shading reads nothing from the GPU
+        const gpu = this.environment.gpu?.() ?? { renderer: "", maxFragmentUniformVectors: 1024 };
+        return pickShadingLevel(this.shadingFlag, {
+            renderer: gpu.renderer,
+            maxFragmentUniformVectors: gpu.maxFragmentUniformVectors,
+            zoom: this.scene.cameras.main.zoom,
+            viewPixels: this.renderer.width * this.renderer.height,
+        });
+    }
+
+    /** The level in force: 0 with the shadows switch off, else the lower of the governor's and the one picked now. */
+    private appliedLevel(): ShadingLevel {
+        if (!this.governor || !this.features.shadows) return 0;
+        return Math.min(this.governor.level, this.pickLevel()) as ShadingLevel;
+    }
+
+    /** Puts the level in force; true when it changed. The ground's footprints come back or go with it. */
+    private applyShadingLevel(): boolean {
+        const shading = this.shading;
+        if (!shading) return false;
+        const level = this.appliedLevel();
+        if (level === shading.level) return false;
+        const was = shading.level > 0;
+        shading.setLevel(level);
+        if (was !== level > 0) {
+            this.occSignature = "";
+            this.readPieces();
+        }
+        this.scene.markDirty();
+        return true;
+    }
+
+    /** The shading's parts: the cast texture and its bake, the marks, and the stamps under the people. */
+    private buildShading(generation: number): Shading {
+        const stamps = this.buildStamps(generation);
+        const masks = this.masks;
+        return new Shading({
+            renderer: this.renderer,
+            manifest: this.manifest,
+            level: this.appliedLevel(),
+            isWall: (x, y) => (maskByteAt(masks, x, y) & 16) !== 0,
+            readPixels: (source) =>
+                source instanceof HTMLImageElement || source instanceof HTMLCanvasElement
+                    ? source.width > 0 && source.height > 0
+                        ? readPixels(source)
+                        : undefined
+                    : undefined,
+            stamps,
+        });
+    }
+
+    /** The people's stamp atlas as a texture, and the pool of sprites that draw it: none where the scene has no sprites. */
+    private buildStamps(generation: number): PeopleStamps | undefined {
+        const add = this.scene.add;
+        if (!add.sprite) return undefined;
+        const canvas = makeCanvas(STAMP_ATLAS_WIDTH, STAMP_ATLAS_HEIGHT);
+        const ctx = context2d(canvas);
+        const image = ctx.createImageData(STAMP_ATLAS_WIDTH, STAMP_ATLAS_HEIGHT);
+        image.data.set(personShadowFrames());
+        ctx.putImageData(image, 0, 0);
+        const key = `kfx-${generation}-stamps`;
+        const texture = this.addCanvasTexture("stamps", key, canvas);
+        texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+        for (const { name, x, y } of stampFrameRects(STAMP_DIRECTIONS, STAMP_CLASSES)) {
+            texture.add(name, 0, x, y, STAMP_SIZE, STAMP_SIZE);
+        }
+        const stamps = new PeopleStamps(spriteFactory({ sprite: add.sprite.bind(add) }), key);
+        return stamps;
     }
 
     private readonly isKnownWalker = (id: WalkerId): boolean =>
@@ -1530,7 +1710,9 @@ export class SceneEffects {
         state.me = me;
         state.lit = lit;
         state.glowCount = glowCount;
+        this.dressPeople(view, look.lamps, lit);
         this.post.active =
+            this.shadingOn() ||
             !this.plainDay ||
             lockCount > 0 ||
             mirroredN > 0 ||
@@ -1540,6 +1722,21 @@ export class SceneEffects {
             (motion && features.trail && this.trail.steps.length > 0);
         this.hideLabels(locks, lockN, lockMask);
         this.glass.setVisible((features.glass && look.sheen > 0) || (features.reflections && this.mirrorStatic));
+    }
+
+    /** The shading's frame: some of the bake, the marks on the drawn people and the stamps under them. Allocates nothing. */
+    private dressPeople(view: Rect, lamps: number, lit: readonly Light[]): void {
+        const shading = this.shading;
+        if (!shading) return;
+        const frame = this.peopleFrame;
+        frame.count = this.crowdCount;
+        frame.rebuilt = this.drawn.rebuilds !== this.lastRebuilds;
+        this.lastRebuilds = this.drawn.rebuilds;
+        frame.pools = lit;
+        frame.lamps = lamps;
+        frame.centre[0] = view[0] + view[2] / 2;
+        frame.centre[1] = view[1] + view[3] / 2;
+        shading.frame(this.now, frame);
     }
 
     /**
@@ -2016,6 +2213,15 @@ export class SceneEffects {
             uVignette: this.vignetteUniform,
             uReveal: this.revealUniform,
             uInk: this.inkUniform,
+            // the shading's three, only in a room that has it: the record of a room without keeps its old keys
+            ...(this.shading
+                ? {
+                      uShade: this.shading.uniforms.shade,
+                      uKey: this.shading.uniforms.key,
+                      uKeyShade: this.shading.uniforms.keyShade,
+                      "uCrowd[0]": this.shading.crowd,
+                  }
+                : {}),
         };
     }
 
@@ -2038,30 +2244,7 @@ export class SceneEffects {
             em[i * 4 + 2] = g.rect[2] + g.tint / 8;
             em[i * 4 + 3] = g.rect[3];
         }
-        const L = this.lightData;
-        const LC = this.lightColorData;
-        const LClip = this.lightClipData;
-        L.fill(0);
-        LC.fill(0);
-        LClip.fill(0);
-        for (let i = 0; i < lit.length; i++) {
-            const l = lit[i];
-            const o = i * 4;
-            L[o] = l.x; // a negative reach: the lamp also glows
-            L[o + 1] = l.y;
-            L[o + 2] = l.halo ? -l.reach : l.reach;
-            L[o + 3] = l.squash;
-            LC[o] = l.color[0];
-            LC[o + 1] = l.color[1];
-            LC[o + 2] = l.color[2];
-            LC[o + 3] = l.power * (l.self ? Math.max(look.lamps, 0.75) : look.lamps);
-            if (l.clip) {
-                LClip[o] = l.clip[0];
-                LClip[o + 1] = l.clip[1];
-                LClip[o + 2] = l.clip[2];
-                LClip[o + 3] = l.clip[3];
-            }
-        }
+        lightUniformsInto(lit, look, this.lightData, this.lightColorData, this.lightClipData);
         const lock = this.lockData;
         lock.fill(0);
         const lockCount = Math.min(state.lockCount, MAX_LOCKS);
@@ -2114,6 +2297,7 @@ export class SceneEffects {
         u.uAvN = state.mirroredCount;
         u.uPeopleN = this.peopleCount;
         u.uRimOn = this.rimOn;
+        if (this.shading) this.shading.uniformsInto(u);
         return u;
     }
 }

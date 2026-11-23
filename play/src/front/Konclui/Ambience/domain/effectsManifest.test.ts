@@ -68,4 +68,31 @@ describe("effects manifest", () => {
         expect(effectsManifestSchema.safeParse(without("ink")).success).toBe(false);
         expect(effectsManifestSchema.safeParse({ ...manifest, map: [2752] }).success).toBe(false);
     });
+
+    describe("the shading's optional keys (kinds, painted, building)", () => {
+        it("reads what each placed sprite is to the shading, the sprites that carry a painted shadow and the building", () => {
+            const parsed = effectsManifestSchema.parse({
+                ...manifest,
+                building: [192, 192, 2400, 1408],
+                kinds: { "escritorio-moderno/sprites/mo-153.png": "top", "konclui/sprites/rug.png": "floor" },
+                painted: ["escritorio-moderno/sprites/mo-160.png"],
+            });
+            expect(parsed.building).toEqual([192, 192, 2400, 1408]);
+            expect(parsed.kinds?.["konclui/sprites/rug.png"]).toBe("floor");
+            expect(parsed.painted).toEqual(["escritorio-moderno/sprites/mo-160.png"]);
+        });
+
+        // An old build has none of them: the runtime then classifies by prefab and treats `painted` as empty.
+        it("leaves them out for a build that has none", () => {
+            const parsed = effectsManifestSchema.parse(manifest);
+            expect(parsed.kinds).toBeUndefined();
+            expect(parsed.painted).toBeUndefined();
+            expect(parsed.building).toBeUndefined();
+        });
+
+        it("rejects a kind that is not one of the four", () => {
+            expect(effectsManifestSchema.safeParse({ ...manifest, kinds: { "a.png": "wall" } }).success).toBe(false);
+            expect(effectsManifestSchema.safeParse({ ...manifest, painted: [1] }).success).toBe(false);
+        });
+    });
 });

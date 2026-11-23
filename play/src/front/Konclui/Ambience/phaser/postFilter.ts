@@ -1,7 +1,9 @@
 import * as Phaser from "phaser";
-import { POST } from "../domain/shaders";
+import { POST, POST_SHADED } from "../domain/shaders";
 
 const POST_NODE = "KfxPost";
+/** The camera pass with the shading (konclui.fx.rim): registered only for a room that asks for it. */
+export const SHADED_POST_NODE = "KfxPostShaded";
 
 /**
  * Whether the camera pass sits on the camera's external filter list, where Phaser 4.2.1 draws the last filter straight
@@ -51,17 +53,25 @@ export interface PostSource {
     postUniforms(): Record<string, UniformValue>;
     masksTexture(): Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper | null;
     normalsTexture?(): Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper | null;
+    /** The cast texture the shaded pass reads (unit 3): the shadows baked from the map's pieces. */
+    castTexture?(): Phaser.Renderer.WebGL.Wrappers.WebGLTextureWrapper | null;
 }
 
 // Phaser builds a filter's render node itself from the controller's node name; the node finds what to draw here.
 const sources = new WeakMap<Phaser.Filters.Controller, PostSource>();
 
-function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer): void {
+/** The node name and the fragment source of the camera pass: the legacy program, or with `shaded` the one with the shading. */
+export function postProgram(shaded: boolean): { readonly node: string; readonly source: string } {
+    return shaded ? { node: SHADED_POST_NODE, source: POST_SHADED } : { node: POST_NODE, source: POST };
+}
+
+function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer, shaded: boolean): string {
+    const { node: name, source } = postProgram(shaded);
     const nodes = renderer.renderNodes;
-    if (nodes.hasNode(POST_NODE)) return;
+    if (nodes.hasNode(name)) return name;
     class PostNode extends Phaser.Renderer.WebGL.RenderNodes.BaseFilterShader {
         constructor(manager: Phaser.Renderer.WebGL.RenderNodes.RenderNodeManager) {
-            super(POST_NODE, manager, undefined, POST);
+            super(name, manager, undefined, source);
         }
 
         override setupTextures(
@@ -73,6 +83,11 @@ function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer): void {
             if (masks) textures[1] = masks;
             const normals = source?.normalsTexture?.() ?? masks;
             if (normals) textures[2] = normals;
+            // unit 3 is the cast texture: the program that reads it is the only one that has the sampler
+            if (shaded) {
+                const cast = source?.castTexture?.();
+                if (cast) textures[3] = cast;
+            }
         }
 
         override setupUniforms(controller: Phaser.Filters.Controller): void {
@@ -81,12 +96,14 @@ function registerPostNode(renderer: Phaser.Renderer.WebGL.WebGLRenderer): void {
             const programs = this.programManager;
             programs.setUniform("uMasks", 1);
             programs.setUniform("uNormals", 2);
+            if (shaded) programs.setUniform("uCast", 3);
             // for...in, not Object.entries: this runs on every draw and the pairs are garbage
             const uniforms = source.postUniforms();
             for (const name in uniforms) programs.setUniform(name, uniforms[name]);
         }
     }
-    nodes.addNodeConstructor(POST_NODE, PostNode);
+    nodes.addNodeConstructor(name, PostNode);
+    return name;
 }
 
 /** Which of the camera's two filter lists holds the pass. */
@@ -137,15 +154,18 @@ function cameraFillsCanvas(
  * The camera pass of the effects: a filter on one of the camera's lists, off until `active` is set. The internal list
  * is today's path. With `external` set the pass goes on the external list while the camera fills the canvas, and moves
  * back to the internal one whenever it does not (`place`). It is never on both. The caller calls `remove` when done.
+ * With `shaded` the pass is the one with the shading (POST_SHADED, its own node, registered only then); without it the
+ * node is the legacy one, exactly as before.
  */
 export function addPostFilter(
     renderer: Phaser.Renderer.WebGL.WebGLRenderer,
     camera: Phaser.Cameras.Scene2D.Camera,
     source: PostSource,
     external: boolean = isExternalPostFilterEnabled(),
+    shaded = false,
 ): PostFilter {
-    registerPostNode(renderer);
-    const controller = new Phaser.Filters.Controller(camera, POST_NODE);
+    const node = registerPostNode(renderer, shaded);
+    const controller = new Phaser.Filters.Controller(camera, node);
     sources.set(controller, source);
     controller.active = false;
     let list: PostFilterList = external && cameraFillsCanvas(renderer, camera) ? "external" : "internal";
