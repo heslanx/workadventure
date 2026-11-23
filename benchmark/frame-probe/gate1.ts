@@ -12,6 +12,16 @@
  * met, an invalid run is one that measured nothing worth judging (software renderer, no GPU timer, a crowd that did not
  * enter), and it is never read as either answer.
  */
+import {
+    canaryBaseline,
+    canaryComparable,
+    canaryRatio,
+    CANARY,
+    medianOf,
+    parseCanaryRun,
+    type CanaryRun,
+    type CanaryWindow,
+} from "./canary";
 import { GPU_MIN_COVERAGE } from "./recording";
 import { isSoftwareRenderer } from "./signals";
 
@@ -75,6 +85,20 @@ export interface DrawCallsReading {
     readonly max: number;
 }
 
+/**
+ * What the Koncluí shading did over a stretch (ShadingActivity in play/src/front/Utils/FrameBench.ts): the five counts
+ * since the stretch began, the level and the marked avatars as they were at its end.
+ */
+export interface ShadingReading {
+    readonly bakes: number;
+    readonly slices: number;
+    readonly uploads: number;
+    readonly uploadedBytes: number;
+    readonly levelChanges: number;
+    readonly level: number;
+    readonly marked: number;
+}
+
 /** What the probe reads of `e2eHooks.getFrameBench()` (play/src/front/Utils/FrameBench.ts). */
 export interface FrameBenchReading {
     readonly frames: number;
@@ -106,6 +130,12 @@ export interface FrameBenchReading {
     /** GPU samples in the window, and rendered frames since the start that produced none. */
     readonly gpuSamples: number;
     readonly gpuDroppedFrames: number;
+    /**
+     * What the shading did while the window ran, and since the night was last set (which can be before it). Null: the
+     * room has no shading, or the client does not report it (a build from before the counters).
+     */
+    readonly shading: ShadingReading | null;
+    readonly shadingSinceNight: ShadingReading | null;
 }
 
 /** What the probe reads of `e2eHooks.getRendererInfo()`. */
@@ -149,6 +179,25 @@ function drawCallsOf(bench: Record<string, unknown>, path: string): DrawCallsRea
     return { avg: finite(stats, "avg", `${path}.drawCalls`), max: finite(stats, "max", `${path}.drawCalls`) };
 }
 
+function shadingOf(bench: Record<string, unknown>, name: string, path: string): ShadingReading | null {
+    const value = bench[name];
+    // A client built before the counters has no such field: no reading, not a broken one
+    if (value === null || value === undefined) {
+        return null;
+    }
+    const at = `${path}.${name}`;
+    const counters = asRecord(value, at);
+    return {
+        bakes: finite(counters, "bakes", at),
+        slices: finite(counters, "slices", at),
+        uploads: finite(counters, "uploads", at),
+        uploadedBytes: finite(counters, "uploadedBytes", at),
+        levelChanges: finite(counters, "levelChanges", at),
+        level: finite(counters, "level", at),
+        marked: finite(counters, "marked", at),
+    };
+}
+
 /** Checks the object the page returned for one 300-frame window. A bench that changed shape fails here, by name. */
 export function parseFrameBench(value: unknown, path = "bench"): FrameBenchReading {
     const bench = asRecord(value, path);
@@ -180,6 +229,8 @@ export function parseFrameBench(value: unknown, path = "bench"): FrameBenchReadi
         drawCalls: drawCallsOf(bench, path),
         gpuSamples: finite(bench, "gpuSamples", path),
         gpuDroppedFrames: finite(bench, "gpuDroppedFrames", path),
+        shading: shadingOf(bench, "shading", path),
+        shadingSinceNight: shadingOf(bench, "shadingSinceNight", path),
     };
 }
 
@@ -317,6 +368,10 @@ export interface Gate1Capture {
     readonly renderer: RendererReading;
     readonly bench: FrameBenchReading;
     readonly screenshot?: string;
+    /** Which capture of this mode it is, from 1 (absent: the only one). */
+    readonly repeat?: number;
+    /** The contention canary read before and after the window; absent when the session has none. */
+    readonly canary?: CanaryWindow;
 }
 
 export interface Gate1Measurement {
@@ -325,6 +380,25 @@ export interface Gate1Measurement {
     readonly renderer: RendererReading;
     readonly crowd: CrowdReading;
     readonly captures: readonly Gate1Capture[];
+    /**
+     * The same windows measured with the shading off, in the same browser session: what a failure is compared with. A
+     * limit that is also exceeded here is not the shading's.
+     */
+    readonly control?: { readonly captures: readonly Gate1Capture[] };
+    /** Why the control was asked for and not measured (see controlFailureNote). Set instead of `control`, never with it. */
+    readonly controlFailure?: string;
+}
+
+/**
+ * What the report says when the shading-off control was asked for and could not be measured: the verdict stands without a
+ * cause, and a reader must not take that for a run that never asked for one. The first line of the error, bounded: a
+ * Playwright timeout carries a call log of many lines.
+ */
+export function controlFailureNote(error: unknown): string {
+    const text = error instanceof Error ? error.message : String(error);
+    const line = text.split("\n")[0].trim();
+    const reason = line.length > 200 ? `${line.slice(0, 200)}...` : line;
+    return `the shading-off control was asked for and could not be measured (${reason || "no reason given"}): no failure is classified as contention or shading`;
 }
 
 export type Gate1Status = "pass" | "fail" | "invalid";
@@ -333,8 +407,19 @@ export interface Gate1Criterion {
     readonly mode: Gate1Mode;
     readonly name: "avgGpuMs" | "p99GpuMs" | "maxGpuMs" | "fullMapUploads" | "largeUploads";
     readonly limit: number;
+    /** The median of the judged windows' figures for a GPU limit, their maximum for an upload limit. */
     readonly actual: number | null;
     readonly pass: boolean;
+    /** The windows judged (those whose canary was in range), and how many of them exceeded the limit. */
+    readonly windows?: number;
+    readonly over?: number;
+    /** The windows captured for the mode: the votes needed to fail are half of these, not half of `windows`. */
+    readonly captured?: number;
+    /**
+     * For a failed GPU limit when the run also measured the same windows with the shading off: "contention" when the
+     * limit is exceeded there too (the machine did it, not the shading), "shading" when only the shaded run exceeded it.
+     */
+    readonly cause?: "contention" | "shading";
 }
 
 export interface Gate1Verdict {
@@ -346,16 +431,43 @@ export interface Gate1Verdict {
     readonly invalid: readonly string[];
     /** Every limit of every mode, in the order the gate lists them. Present even when the run is invalid. */
     readonly criteria: readonly Gate1Criterion[];
+    /** What the reader should know of the windows and does not change the verdict: uploads inside one, windows left out. */
+    readonly flags?: readonly string[];
 }
 
 const CRITERIA = ["avgGpuMs", "p99GpuMs", "maxGpuMs", "fullMapUploads", "largeUploads"] as const;
+const UPLOAD_CRITERIA: readonly (typeof CRITERIA)[number][] = ["fullMapUploads", "largeUploads"];
 
-function criteriaOf(capture: Gate1Capture): Gate1Criterion[] {
+/**
+ * How many windows over a GPU limit fail it, out of `windows` CAPTURED: half of them, rounded up. It is counted on the
+ * windows captured and not on the ones the canary left in, so that two windows in range of three are still judged by
+ * "two of three": one over the limit is a spike, both are a verdict. One window of one is
+ * judged as before (it fails); two of three fail, one of three does not. GPU spikes come from the machine as well as
+ * from the game (see canary.ts), so one bad window of three is not a verdict; uploads are not voted on, because
+ * contention does not make a CPU upload happen: one upload in any window fails.
+ */
+export function failingVotes(windows: number): number {
+    return Math.ceil(windows / 2);
+}
+
+function criteriaOf(mode: Gate1Mode, captures: readonly Gate1Capture[], captured: number): Gate1Criterion[] {
+    if (captures.length === 0) return [];
     return CRITERIA.map((name) => {
         const limit = GATE1.limits[name];
-        const actual = capture.bench[name];
+        const values = captures.map((capture) => capture.bench[name]);
+        const windows = values.length;
         // A missing figure is not a pass: null never compares as within the limit
-        return { mode: capture.mode, name, limit, actual, pass: actual !== null && actual <= limit };
+        const over = values.filter((value) => value === null || value > limit).length;
+        // One window is judged as it always was, and its criterion has no vote to show
+        const votes = captured > 1 ? { windows, over, captured } : {};
+        if (values.some((value) => value === null)) {
+            return { mode, name, limit, actual: null, pass: false, ...votes };
+        }
+        const figures = values as number[];
+        if (UPLOAD_CRITERIA.includes(name)) {
+            return { mode, name, limit, actual: Math.max(...figures), pass: over === 0, ...votes };
+        }
+        return { mode, name, limit, actual: medianOf(figures), pass: over < failingVotes(captured), ...votes };
     });
 }
 
@@ -424,6 +536,23 @@ function captureProblems(
     return problems;
 }
 
+/** The windows of each mode the canary lets be compared, with the baseline and the ones left out. */
+function comparableWindows(captures: readonly Gate1Capture[]) {
+    const baseline = canaryBaseline(captures.map((capture) => capture.canary));
+    return {
+        baseline,
+        byMode: GATE1_MODES.map((mode) => {
+            const all = captures.filter((capture) => capture.mode === mode);
+            const kept = all.filter((capture) => canaryComparable(capture.canary, baseline));
+            return { mode, all, kept };
+        }),
+    };
+}
+
+function captureLabel(capture: Gate1Capture): string {
+    return capture.repeat === undefined ? capture.mode : `${capture.mode} #${capture.repeat}`;
+}
+
 /** Decides the gate from the readings. Pure: the same measurement always gives the same verdict. */
 export function judgeGate1(measurement: Gate1Measurement): Gate1Verdict {
     const { context } = measurement.setup;
@@ -450,17 +579,136 @@ export function judgeGate1(measurement: Gate1Measurement): Gate1Verdict {
             invalid.push(`${mode}: no window was captured`);
         }
     }
-    const criteria: Gate1Criterion[] = [];
+    const flags: string[] = [];
     for (const capture of measurement.captures) {
         invalid.push(...captureProblems(capture, GATE1.crowd, context, measurement.renderer.version));
-        criteria.push(...criteriaOf(capture));
+        flags.push(...captureFlags(capture));
     }
+    const { baseline, byMode } = comparableWindows(measurement.captures);
+    if (baseline === null && measurement.captures.some((capture) => capture.canary !== undefined)) {
+        flags.push("the contention canary produced no usable run, so no window was checked for foreign GPU load");
+    }
+    const criteria: Gate1Criterion[] = [];
+    for (const { mode, all, kept } of byMode) {
+        for (const capture of all) {
+            if (!kept.includes(capture) && baseline !== null && capture.canary) {
+                const ratio = canaryRatio(capture.canary, baseline);
+                flags.push(
+                    `${captureLabel(capture)}: left out, the canary read ${ratio === null ? "n/a" : `${ratio.toFixed(2)}x`} the session's ` +
+                        `baseline of ${baseline.toFixed(3)} ms (allowed ${CANARY.minRatio} to ${CANARY.maxRatio}x): the GPU was under other load`,
+                );
+            }
+        }
+        // A mode needs as many windows in range as a limit needs votes to fail: with fewer, the others tell nothing
+        if (all.length > 0 && kept.length < failingVotes(all.length)) {
+            invalid.push(
+                `${mode}: only ${kept.length} of ${all.length} windows were measured with the GPU free of other load ` +
+                    `(the canary read outside ${CANARY.minRatio} to ${CANARY.maxRatio}x of the session's baseline); ` +
+                    `${failingVotes(all.length)} are needed: run again on a quiet machine`,
+            );
+        }
+        criteria.push(...criteriaOf(mode, kept.length > 0 ? kept : all, all.length));
+    }
+    if (measurement.controlFailure !== undefined) {
+        flags.push(measurement.controlFailure);
+    }
+    const { criteria: classified, flags: controlFlags } = withCauses(criteria, measurement.control);
+    flags.push(...controlFlags);
     if (invalid.length > 0) {
-        return { context, status: "invalid", exitCode: 2, invalid, criteria };
+        return { context, status: "invalid", exitCode: 2, invalid, criteria: classified, flags };
     }
-    return criteria.every((criterion) => criterion.pass)
-        ? { context, status: "pass", exitCode: 0, invalid, criteria }
-        : { context, status: "fail", exitCode: 1, invalid, criteria };
+    return classified.every((criterion) => criterion.pass)
+        ? { context, status: "pass", exitCode: 0, invalid, criteria: classified, flags }
+        : { context, status: "fail", exitCode: 1, invalid, criteria: classified, flags };
+}
+
+/** The notes a window earns that do not change the verdict: the shading did something while it was measured. */
+function captureFlags(capture: Gate1Capture): string[] {
+    const { shading } = capture.bench;
+    const label = captureLabel(capture);
+    const notes: string[] = [];
+    if (shading && shading.uploads > 0) {
+        notes.push(
+            `${label}: the shading put its cast texture on the GPU ${shading.uploads} time(s) inside the window ` +
+                `(${shading.uploadedBytes} B): a one-frame upload of that size is in these figures`,
+        );
+    }
+    if (shading && shading.levelChanges > 0) {
+        notes.push(
+            `${label}: the shading level changed ${shading.levelChanges} time(s) inside the window (now ${shading.level})`,
+        );
+    }
+    return notes;
+}
+
+const GPU_CRITERIA = CRITERIA.filter((name) => !UPLOAD_CRITERIA.includes(name));
+
+/** The shading's counters of a window that still has it on (a level above 0, or a bake), null when it is off or unreported. */
+function shadingStillOn(capture: Gate1Capture): ShadingReading | null {
+    const { shading } = capture.bench;
+    return shading && (shading.level !== 0 || shading.bakes !== 0) ? shading : null;
+}
+
+/** What the shading-off control says of one mode: its limits, and why it cannot be compared with when it cannot. */
+interface ControlMode {
+    readonly mode: Gate1Mode;
+    readonly criteria: readonly Gate1Criterion[];
+    /** Set when the control of this mode may not assign a cause: it was not a valid measurement with the shading off. */
+    readonly unusable?: string;
+}
+
+/**
+ * A control decides a cause only as a measurement of its own: it is judged like the shaded run (windows in range of the
+ * canary, as many of them as a limit needs votes, a GPU figure in each) and it must really have had the shading off.
+ */
+function controlModes(control: NonNullable<Gate1Measurement["control"]>): ControlMode[] {
+    return comparableWindows(control.captures).byMode.map(({ mode, all, kept }) => {
+        const criteria = criteriaOf(mode, kept.length > 0 ? kept : all, all.length);
+        if (all.length === 0) return { mode, criteria, unusable: "no window was captured" };
+        const reasons: string[] = [];
+        if (kept.length < failingVotes(all.length)) {
+            reasons.push(
+                `only ${kept.length} of ${all.length} windows were measured with the GPU free of other load, ` +
+                    `${failingVotes(all.length)} are needed`,
+            );
+        }
+        const withoutFigure = kept.filter((capture) => GPU_CRITERIA.some((name) => capture.bench[name] === null));
+        if (withoutFigure.length > 0) {
+            reasons.push(`${withoutFigure.length} of ${kept.length} judged windows have no GPU figure`);
+        }
+        const lit = all.filter((capture) => shadingStillOn(capture) !== null);
+        if (lit.length > 0) {
+            const shading = shadingStillOn(lit[0]);
+            reasons.push(
+                `the shading was still on in ${lit.length} of ${all.length} windows ` +
+                    `(${captureLabel(lit[0])}: level ${shading?.level}, ${shading?.bakes} bakes in the window)`,
+            );
+        }
+        return reasons.length > 0 ? { mode, criteria, unusable: reasons.join("; ") } : { mode, criteria };
+    });
+}
+
+/**
+ * Marks each failed GPU limit with whether the shading-off control exceeded it too, and says which mode's control could
+ * not be used: its limits then assign no cause.
+ */
+function withCauses(
+    criteria: readonly Gate1Criterion[],
+    control: Gate1Measurement["control"],
+): { criteria: Gate1Criterion[]; flags: string[] } {
+    if (!control) return { criteria: [...criteria], flags: [] };
+    const modes = controlModes(control);
+    const flags = modes.flatMap(({ mode, unusable }) =>
+        unusable === undefined ? [] : [`control for ${mode} unusable: ${unusable}`],
+    );
+    const classified = criteria.map((criterion): Gate1Criterion => {
+        if (criterion.pass || UPLOAD_CRITERIA.includes(criterion.name)) return criterion;
+        const controlMode = modes.find((m) => m.mode === criterion.mode);
+        if (controlMode === undefined || controlMode.unusable !== undefined) return criterion;
+        const same = controlMode.criteria.find((c) => c.name === criterion.name);
+        return same ? { ...criterion, cause: same.pass ? "shading" : "contention" } : criterion;
+    });
+    return { criteria: classified, flags };
 }
 
 /** What the browser side lets the measurement do. `gate1Browser.ts` implements it on Playwright; tests on canned data. */
@@ -481,6 +729,11 @@ export interface Gate1Session {
     screenshot(name: string): Promise<string | undefined>;
     /** `clearSyntheticCrowd()`. */
     clearCrowd(): Promise<void>;
+    /**
+     * One run of the contention canary (canary.ts) and what the page returned. Absent: the session has none, and no
+     * window is checked for foreign GPU load.
+     */
+    canary?(): Promise<unknown>;
 }
 
 export interface Gate1Options {
@@ -488,6 +741,8 @@ export interface Gate1Options {
     readonly setup?: Gate1Setup;
     /** Wait after the crowd entered, for the avatar builds and bakes to settle before the first window. */
     readonly settleMs: number;
+    /** Windows captured of each mode (default 1). With 3, a GPU limit fails when 2 of them exceed it. */
+    readonly repeats?: number;
     readonly log: (line: string) => void;
 }
 
@@ -569,27 +824,49 @@ export async function measureGate1(session: Gate1Session, options: Gate1Options)
         await session.wait(options.settleMs);
 
         const captures: Gate1Capture[] = [];
+        const repeats = options.repeats ?? 1;
+        if (!Number.isInteger(repeats) || repeats < 1) {
+            throw new Error(`gate 1: repeats is ${String(repeats)}, a whole number of 1 or more is needed`);
+        }
+        const runCanary = async (label: string): Promise<CanaryRun | null> => {
+            if (!session.canary) return null;
+            const run = parseCanaryRun(await session.canary(), `${label}.canary`);
+            log(
+                `${label}: canary ${run.medianMs === null ? `n/a (${run.reason ?? "no figure"})` : `${run.medianMs.toFixed(3)} ms`}`,
+            );
+            return run;
+        };
         for (const mode of GATE1_MODES) {
             const nightLevel = GATE1.nightLevels[mode];
             const night = parseNightResult(await session.setNight(nightLevel), `${mode}.night`);
             await session.wait(NIGHT_SETTLE_MS);
-            const atCapture = parseRendererInfo(await session.rendererInfo(), `${mode}.renderer`);
-            const bench = parseFrameBench(await captureWhilePanning(session), `${mode}.bench`);
-            const screenshot = await session.screenshot(mode);
-            log(
-                `${mode}: gpu avg ${bench.avgGpuMs ?? "n/a"} ms, p99 ${bench.p99GpuMs ?? "n/a"} ms, max ${bench.maxGpuMs ?? "n/a"} ms ` +
-                    `(${bench.gpuTimer} on ${atCapture.version ?? "no version"}), draw calls avg ${figure(bench.drawCalls?.avg ?? null, 1)} ` +
-                    `max ${figure(bench.drawCalls?.max ?? null, 0)}, full-map uploads ${bench.fullMapUploads}, large uploads ${bench.largeUploads}, ` +
-                    `post pass ${bench.postFilterShare === null ? "n/a" : `${Math.round(bench.postFilterShare * 100)}%`}`,
-            );
-            captures.push({
-                mode,
-                nightLevel,
-                night,
-                renderer: atCapture,
-                bench,
-                ...(screenshot ? { screenshot } : {}),
-            });
+            let before = await runCanary(`${mode} before`);
+            for (let repeat = 1; repeat <= repeats; repeat++) {
+                const name = repeats === 1 ? mode : `${mode} #${repeat}`;
+                const atCapture = parseRendererInfo(await session.rendererInfo(), `${name}.renderer`);
+                const bench = parseFrameBench(await captureWhilePanning(session), `${name}.bench`);
+                // The screenshot of a mode is the first window's: the others are the same scene
+                const screenshot = repeat === 1 ? await session.screenshot(mode) : undefined;
+                const after = await runCanary(`${name} after`);
+                log(
+                    `${name}: gpu avg ${bench.avgGpuMs ?? "n/a"} ms, p99 ${bench.p99GpuMs ?? "n/a"} ms, max ${bench.maxGpuMs ?? "n/a"} ms ` +
+                        `(${bench.gpuTimer} on ${atCapture.version ?? "no version"}), draw calls avg ${figure(bench.drawCalls?.avg ?? null, 1)} ` +
+                        `max ${figure(bench.drawCalls?.max ?? null, 0)}, full-map uploads ${bench.fullMapUploads}, large uploads ${bench.largeUploads}, ` +
+                        `post pass ${bench.postFilterShare === null ? "n/a" : `${Math.round(bench.postFilterShare * 100)}%`}` +
+                        `${shadingSummary(bench)}`,
+                );
+                captures.push({
+                    mode,
+                    nightLevel,
+                    night,
+                    renderer: atCapture,
+                    bench,
+                    ...(screenshot ? { screenshot } : {}),
+                    ...(repeats > 1 ? { repeat } : {}),
+                    ...(session.canary ? { canary: { before, after } } : {}),
+                });
+                before = after;
+            }
         }
         return { setup, renderer, crowd, captures };
     } finally {
@@ -597,6 +874,17 @@ export async function measureGate1(session: Gate1Session, options: Gate1Options)
         await session.setNight(null).catch((error: unknown) => log(`could not give the clock back: ${String(error)}`));
         await session.clearCrowd().catch((error: unknown) => log(`could not clear the crowd: ${String(error)}`));
     }
+}
+
+/** The shading's part of a window's log line: empty when the client reports none. */
+function shadingSummary(bench: FrameBenchReading): string {
+    const { shading, shadingSinceNight } = bench;
+    if (!shading) return "";
+    return (
+        `, shading in window: ${shading.bakes} bakes, ${shading.uploads} uploads (${shading.uploadedBytes} B), ` +
+        `${shading.levelChanges} level changes` +
+        `${shadingSinceNight ? `; since the night was set: ${shadingSinceNight.uploads} uploads (${shadingSinceNight.uploadedBytes} B)` : ""}`
+    );
 }
 
 function figure(value: number | null, digits = 2): string {
@@ -660,6 +948,67 @@ const CONTEXT_LABEL: Record<Gate1Context, string> = {
     default: "DEFAULT context (nothing forced: what a visitor gets), judged by the same limits",
 };
 
+/** What a criterion's result cell adds: the votes when several windows were judged, and the cause of a failure. */
+function resultNote(criterion: Gate1Criterion): string {
+    const votes =
+        criterion.windows !== undefined && (criterion.captured ?? criterion.windows) > 1
+            ? ` (${criterion.over ?? 0} of ${criterion.windows} windows over` +
+              (criterion.captured !== undefined && criterion.captured > criterion.windows
+                  ? `, ${criterion.captured - criterion.windows} of ${criterion.captured} left out by the canary; ${failingVotes(criterion.captured)} over fail`
+                  : "") +
+              ")"
+            : "";
+    const cause =
+        criterion.cause === "contention"
+            ? ", CONTENTION: also over with the shading off"
+            : criterion.cause === "shading"
+              ? ", under the limit with the shading off"
+              : "";
+    return `${votes}${cause}`;
+}
+
+function shadingTable(measurement: Gate1Measurement): string[] {
+    if (!measurement.captures.some((capture) => capture.bench.shading)) return [];
+    return [
+        "",
+        "| Window | Bakes in window | Slices | Uploads in window | Upload bytes | Level changes | Level | Marked | Uploads since the night was set |",
+        "|---|---|---|---|---|---|---|---|---|",
+        ...measurement.captures.map((capture) => {
+            const { shading: s, shadingSinceNight: n } = capture.bench;
+            return s
+                ? `| ${captureLabel(capture)} | ${s.bakes} | ${s.slices} | ${s.uploads} | ${s.uploadedBytes} | ${s.levelChanges} | ${s.level} | ${s.marked} | ${n ? `${n.uploads} (${n.uploadedBytes} B)` : "n/a"} |`
+                : `| ${captureLabel(capture)} | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |`;
+        }),
+        "",
+    ];
+}
+
+function canaryTable(measurement: Gate1Measurement): string[] {
+    const windows = measurement.captures.filter((capture) => capture.canary);
+    if (windows.length === 0) return [];
+    const baseline = canaryBaseline(windows.map((capture) => capture.canary));
+    const cell = (run: CanaryRun | null): string =>
+        run === null
+            ? "not run"
+            : run.medianMs === null
+              ? `n/a (${run.reason ?? "no figure"})`
+              : `${run.medianMs.toFixed(3)} ms`;
+    return [
+        `Contention canary: a fixed ${CANARY.size}x${CANARY.size} pass on a context of its own, ${CANARY.frames} frames before and after each window. ` +
+            `Session baseline ${baseline === null ? "n/a" : `${baseline.toFixed(3)} ms`}; a window is compared only when its runs are within ` +
+            `${CANARY.minRatio} to ${CANARY.maxRatio}x of it.`,
+        "",
+        "| Window | Canary before | Canary after | Ratio to baseline | Compared |",
+        "|---|---|---|---|---|",
+        ...windows.map((capture) => {
+            const window = capture.canary as CanaryWindow;
+            const ratio = baseline === null ? null : canaryRatio(window, baseline);
+            return `| ${captureLabel(capture)} | ${cell(window.before)} | ${cell(window.after)} | ${ratio === null ? "n/a" : `${ratio.toFixed(2)}x`} | ${canaryComparable(window, baseline) ? "yes" : "NO"} |`;
+        }),
+        "",
+    ];
+}
+
 /** The report in Markdown: the verdict first, the reasons if invalid, then the limits and the windows. */
 export function renderGate1Markdown(measurement: Gate1Measurement | undefined, verdict: Gate1Verdict): string {
     const lines = [
@@ -678,6 +1027,14 @@ export function renderGate1Markdown(measurement: Gate1Measurement | undefined, v
     if (verdict.invalid.length > 0) {
         lines.push("The run cannot be judged:", "", ...verdict.invalid.map((reason) => `- ${reason}`), "");
     }
+    if (verdict.flags && verdict.flags.length > 0) {
+        lines.push(
+            "Window notes (they do not change the verdict):",
+            "",
+            ...verdict.flags.map((flag) => `- ${flag}`),
+            "",
+        );
+    }
     if (measurement === undefined) {
         return `${lines.join("\n")}\n`;
     }
@@ -692,7 +1049,8 @@ export function renderGate1Markdown(measurement: Gate1Measurement | undefined, v
         "| Mode | Metric | Limit | Measured | Result |",
         "|---|---|---|---|---|",
         ...verdict.criteria.map(
-            (c) => `| ${c.mode} | ${c.name} | <= ${c.limit} | ${figure(c.actual)} | ${c.pass ? "pass" : "FAIL"} |`,
+            (c) =>
+                `| ${c.mode} | ${c.name} | <= ${c.limit} | ${figure(c.actual)} | ${c.pass ? "pass" : "FAIL"}${resultNote(c)} |`,
         ),
         "",
         "| Mode | Level | Hour | Night-only lights | Post pass share | Context | Timer | Frames | GPU samples | Dropped | GPU p95 ms |",
@@ -715,6 +1073,8 @@ export function renderGate1Markdown(measurement: Gate1Measurement | undefined, v
                 `${b.activeFullAvatars} / ${b.activeDotAvatars} / ${b.culledAvatars} | ${b.bakedAvatarTextures} |`,
         ),
         "",
+        ...shadingTable(measurement),
+        ...canaryTable(measurement),
         "Frame intervals are shown for reference and do not decide the gate: they cannot fall below the display period. " +
             "Draw calls are drawArrays, drawElements and their instanced forms counted per frame while the bench ran " +
             "(a wrapper on the context, which is also in the frame interval); they are reported, not judged.",
@@ -755,7 +1115,7 @@ export async function runGate1Report(
     const markdown = renderGate1Markdown(measurement, verdict);
     write(
         "gate1.json",
-        `${JSON.stringify({ schemaVersion: 3, gate: GATE1, setup, ...context(), verdict, measurement }, null, 2)}\n`,
+        `${JSON.stringify({ schemaVersion: 4, gate: GATE1, setup, ...context(), verdict, measurement }, null, 2)}\n`,
     );
     write("gate1.md", markdown);
     log(markdown);

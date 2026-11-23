@@ -72,6 +72,14 @@ Options for gate1
                            default forces nothing: the page gets what a visitor gets (Phaser's WebGL 1) and the GPU time
                            comes from EXT_disjoint_timer_query. Same limits; the report is labelled DEFAULT, and the run
                            is invalid, never a pass, when that context has no timer. The URL must not carry phaserMode.
+  --repeats=3              Windows captured of each mode, an odd number. A GPU limit fails when at least half of them,
+                           rounded up (2 of 3), exceed it; an upload limit fails on any. Each window is bracketed by a
+                           contention canary (a fixed 256x256 pass timed apart from the game): a window whose canary
+                           reads outside 0.5 to 2x of the session's baseline (provisional) is left out, and a mode with too few
+                           windows left is invalid, never a pass or a fail.
+  --shading-control        After the run, reload the page with the shading off (konclui.fx.rim=0) in the same browser
+                           session and capture the same windows. A GPU limit that is also exceeded there is reported as
+                           CONTENTION, not as the shading's.
   --flag=KEY=VALUE         Set a localStorage key before the page loads, to measure a flag without editing the probe
                            (e.g. --flag=gameStepCap=0 --flag=konclui.fx.external=1). Repeat for more; recorded in the
                            report. The gate's own keys (konclui.e2e.bench, konclui.fx.rim, konclui.fx.off) cannot be set.
@@ -154,6 +162,10 @@ export interface Gate1Config {
     readonly context: "webgl2" | "default";
     /** localStorage keys to set before the page loads (`--flag=KEY=VALUE`), in the order given. */
     readonly flags: Readonly<Record<string, string>>;
+    /** Windows captured of each mode (odd). */
+    readonly repeats: number;
+    /** Whether to capture the same windows again with the shading off, in the same browser session. */
+    readonly shadingControl: boolean;
 }
 
 export type ProbeConfig = FramesConfig | CompareConfig | PanelConfig | Gate1Config;
@@ -189,9 +201,9 @@ const ALLOWED_FLAGS: Record<ProbeConfig["command"], readonly string[]> = {
     ],
     compare: [...COMMON_FLAGS, "reference-url", "viewports"],
     panel: [...COMMON_FLAGS, "viewports"],
-    gate1: [...COMMON_FLAGS, "settle-seconds", "name", "context", "flag"],
+    gate1: [...COMMON_FLAGS, "settle-seconds", "name", "context", "flag", "repeats", "shading-control"],
 };
-const BOOLEAN_FLAGS = ["allow-software-renderer", "screenshots", "dry-run"];
+const BOOLEAN_FLAGS = ["allow-software-renderer", "screenshots", "dry-run", "shading-control"];
 
 interface RawArguments {
     readonly positionals: string[];
@@ -314,6 +326,15 @@ export function parseStorageFlags(values: readonly string[]): Record<string, str
     return Object.fromEntries(flags);
 }
 
+/** `--repeats`: an odd count, so that "at least half" is a majority and never a tie. */
+function gate1Repeats(raw: RawArguments): number {
+    const repeats = number(raw, "repeats", 3, 1, true);
+    if (repeats % 2 === 0) {
+        throw new UsageError(`--repeats must be odd (got ${repeats}): with an even count half of the windows is a tie`);
+    }
+    return repeats;
+}
+
 function gate1Context(raw: RawArguments): "webgl2" | "default" {
     const context = last(raw, "context") ?? "webgl2";
     if (context !== "webgl2" && context !== "default") {
@@ -357,6 +378,8 @@ export function parseArgs(argv: readonly string[], environment: ParseEnvironment
             name: last(raw, "name") ?? "Probe",
             context: gate1Context(raw),
             flags: parseStorageFlags(raw.flags.get("flag") ?? []),
+            repeats: gate1Repeats(raw),
+            shadingControl: raw.flags.has("shading-control"),
         };
     }
     if (command === "panel") {

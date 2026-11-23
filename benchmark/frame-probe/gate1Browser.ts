@@ -8,8 +8,10 @@ import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import type { Gate1Config } from "./args";
 import { launchBrowser, loadPlaywright } from "./browser";
+import { canaryExpression } from "./canary";
 import { enterRoomAsGuest } from "./entry";
 import {
+    controlFailureNote,
     Gate1InvalidRun,
     GATE1,
     measureGate1,
@@ -170,6 +172,8 @@ function sessionOn(page: Page, outDir: string): Gate1Session {
             page.evaluate(async () => {
                 await (globalThis as unknown as Bridge).__gate1Hooks().clearSyntheticCrowd();
             }),
+        // Sent as source text: evaluating it in the page is not subject to the page's content security policy
+        canary: () => page.evaluate(canaryExpression()),
     };
 }
 
@@ -223,7 +227,10 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
     const baseline = process.env.FRAME_PROBE_GATE1_BASELINE === "1";
     const setup: Gate1Setup = { context: config.context, flags: config.flags };
     const browser = await launchBrowser(playwright, config.browser);
-    try {
+    // One browser context per room entry. The control cannot enter again on the page of the first run: the game keeps
+    // the guest it made (and its session) in the context, so the login the entry flow waits for never comes back and
+    // the second entry timed out after 60 s on 2026-11-23. A fresh context starts as a first visit does.
+    const openRoom = async (roomStorage: Readonly<Record<string, string>>) => {
         const context = await browser.newContext({
             viewport: GATE1.viewport,
             deviceScaleFactor: 1,
@@ -236,7 +243,7 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
             if (window !== window.top || !location.protocol.startsWith("http")) return;
             for (const [key, value] of Object.entries(storage)) localStorage.setItem(key, value);
             localStorage.removeItem("konclui.fx.off");
-        }, storage);
+        }, roomStorage);
         const page = await context.newPage();
         const pageErrors: string[] = [];
         page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -249,6 +256,12 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
         }
         await page.evaluate(() => (globalThis as unknown as Bridge).__gate1Hooks().sizeBenchToViewport());
         const windowSize = await growWindowToDrawingBuffer(page, log);
+        return { context, page, windowSize };
+    };
+    try {
+        const room = await openRoom(storage);
+        const { page, windowSize } = room;
+        let finalUrl = page.url();
         let avatarFlags: unknown;
         return await runGate1Report(
             async () => {
@@ -257,7 +270,32 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
                 );
                 const problems = avatarFlagProblems(avatarFlags, baseline);
                 if (problems.length > 0) throw new Gate1InvalidRun(problems.join("; "));
-                return measureGate1(sessionOn(page, outDir), { settleMs: config.settleSeconds * 1000, log, setup });
+                const options = { settleMs: config.settleSeconds * 1000, log, setup, repeats: config.repeats };
+                const measured = await measureGate1(sessionOn(page, outDir), options);
+                if (!config.shadingControl) return measured;
+                if (storage["konclui.fx.rim"] === "0") {
+                    log("note: --shading-control is ignored, the run itself has the shading off");
+                    return measured;
+                }
+                // The same windows again with the shading off, on the same browser and machine: a limit that is exceeded
+                // here too is not the shading's. A control that cannot be measured leaves the verdict as it was, and
+                // the report says so (a failed control would otherwise read as no control asked for).
+                try {
+                    // Two games drawing at once would be each other's contention: the first one goes before the second
+                    finalUrl = page.url();
+                    await room.context.close();
+                    log(
+                        "control: entering the room again in a fresh browser context with the shading off (konclui.fx.rim=0)",
+                    );
+                    const controlRoom = await openRoom({ ...storage, "konclui.fx.rim": "0" });
+                    mkdirSync(join(outDir, "control"), { recursive: true });
+                    const control = await measureGate1(sessionOn(controlRoom.page, join(outDir, "control")), options);
+                    return { ...measured, control: { captures: control.captures } };
+                } catch (error: unknown) {
+                    const note = controlFailureNote(error);
+                    log(`control: ${note}`);
+                    return { ...measured, controlFailure: note };
+                }
             },
             (fileName, content) => writeFileSync(join(outDir, fileName), content),
             log,
@@ -265,7 +303,7 @@ export async function runGate1(config: Gate1Config, outDir: string, log: (line: 
             // URL it ended on (after any redirect of the room) and the window, so that a later number can be tied to its
             // configuration
             () => ({
-                engine: { storage, avatarFlags, requestedUrl: url.href, finalUrl: page.url(), window: windowSize },
+                engine: { storage, avatarFlags, requestedUrl: url.href, finalUrl, window: windowSize },
             }),
             setup,
         );

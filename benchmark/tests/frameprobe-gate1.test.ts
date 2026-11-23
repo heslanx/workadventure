@@ -1103,7 +1103,7 @@ describe("the default context (what a visitor gets), against the forced WebGL 2 
 
         expect(code).toBe(2);
         expect(json).toMatchObject({
-            schemaVersion: 3,
+            schemaVersion: 4,
             setup: { context: "default", flags: { gameStepCap: "1" } },
             verdict: { context: "default", status: "invalid" },
         });
