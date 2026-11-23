@@ -406,11 +406,11 @@ On a host without Playwright's Chromium, `FRAME_PROBE_BROWSER_CHANNEL=chrome` ru
 
 It opens Chromium on the GPU (Metal on macOS) at 1920x1080, with WebGL 2 forced (`?phaserMode=webgl2`; see `--context=default`
 below for the context a visitor gets), and sets two keys
-in localStorage before the page loads: `konclui.e2e.bench` (opens the page to the crowd) and `konclui.fx.rim`. It sets no
+in localStorage before the page loads: `konclui.e2e.bench` (opens the page to the crowd) and `konclui.fx.rim` (`1`, the lit shading, unless `FRAME_PROBE_GATE1_SHADING=off`, below). It sets no
 avatar flag: `avatarDetailBudget`, `avatarZeroWork` and `avatarBake` are on by default in the client since the 2026-11-22
 run, so the gate measures what ships. Then: enter as a guest, spawn 999, settle
-`--settle-seconds` (10), and for each of three windows set the hour (`setBenchNight(level)`, the effects' `konclui.fx.hour`
-QA key, which they re-read once a second: the probe waits 2 s) and capture 300 consecutive frames with `captureFrameBench()`
+`--settle-seconds` (10), and for each of three modes set the hour (`setBenchNight(level)`, the effects' `konclui.fx.hour`
+QA key, which they re-read once a second: the probe waits 2 s) and capture 300 consecutive frames with `captureFrameBench()`, `--repeats` times (3 by default, below),
 while `panCamera` swings the view out and back. At the end it clears the crowd and the fixed hour, whatever happened.
 
 `FRAME_PROBE_GATE1_BASELINE=1` runs the same command with the three avatar flags forced off (`"0"` in localStorage, on top
@@ -421,7 +421,7 @@ with (`engine.storage`) and the three flags the page reported through `window.e2
 (`engine.avatarFlags`), so a figure can be tied to the configuration that produced it. The run is invalid, with the flag
 named, when the page's flags are not all on (a normal run) or all off (a baseline): a client built before the defaults
 changed would otherwise measure the layered avatars under the storage of a correct run. On 2026-11-22 (Chrome, Apple M1 Max, 999 players) the two
-gave the same GPU time (at most 8.43 ms with the flags on, 8.07 ms off); the flags off had two windows of six with a frame
+gave the same GPU time (at most 8.43 ms with the flags on, 8.07 ms off); the flags off had three windows of six (`baseline1` day, `baseline2` day and night) with a frame
 of 33.3 to 33.5 ms, the flags on had none above 16.8 ms: the flags remove dropped frames, they do not lower GPU time.
 
 **The context a visitor gets (`--context=default`).** Every Gate 1 number before 2026-11-22 was taken on a WebGL 2 context,
@@ -503,11 +503,11 @@ canvas, half the map, is 4.9 MB). The largest single upload is in the report. A 
 a render target) moves no CPU data: it is counted as an `allocation`, shown, and not judged. Frame intervals, upload bytes a
 second and the full, dot and culled avatar counts are in the report and do not decide it.
 
-| Exit | Meaning                                                                            |
-| ---- | ---------------------------------------------------------------------------------- |
-| 0    | All fifteen criteria held (five in each of three windows)                          |
-| 1    | A criterion was exceeded; the run was valid                                        |
-| 2    | The run cannot be judged, or failed (the report is still written, with the reason) |
+| Exit | Meaning                                                                                                                        |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 0    | All fifteen criteria held (five in each of three modes; a GPU criterion holds while fewer than two of three windows exceed it) |
+| 1    | A criterion was exceeded; the run was valid                                                                                    |
+| 2    | The run cannot be judged, or failed (the report is still written, with the reason)                                             |
 
 An exit 2 is, in order of likelihood on a first run: no GPU timer (`gpuTimer none`: headless Chromium may not expose
 `EXT_disjoint_timer_query_webgl2`, which is a fact about the browser and not a defect of the code); a software renderer or an
@@ -516,17 +516,106 @@ GPU sample; a window of other than 300 frames; fewer than 999 players in the sce
 spread placement** (the map's `fx/manifest.json` is missing, or has no glass face, light or room) or an avatar of fewer than
 two layers; **the post pass `KfxPost` active in fewer than 95% of a window's rendered frames** (it switches itself off in a
 plain day with nobody mirrored and no room locked, and a frame without it is lighter than the lit scene the gate names; the
-share is in the report); the night-only lights in the wrong state for a window; a pan, a capture of 301 game steps that did not
+share is in the report; `KfxPostShaded`, which the lit shading draws instead, counts as the same pass since `a68442115`); the night-only lights in the wrong state for a window; **a mode with fewer windows in range of the contention canary than a limit needs votes to fail** (below); a pan, a capture of 301 game steps that did not
 complete in 60 s (a hidden tab), or any page error.
 
-`--out-dir` receives `gate1.json` (schema 3: the gate, the setup, the verdict, every criterion, every window, the crowd's groups, the flags the page
+**Three windows of each mode, and the two-of-three rule (`--repeats`).** A GPU spike can come from the machine as well as
+from the game, so one bad window is not a verdict. Each mode is captured `--repeats` times in a row (an odd number, default 3;
+an even one is refused because half of the windows would be a tie; 1 judges one window as before). A default run has nine
+windows of 300 frames, reported as `day #1`, `day #2`, `day #3`, `dusk #1` and so on. A GPU criterion (`avgGpuMs`,
+`p99GpuMs`, `maxGpuMs`) fails when at least half of the windows captured, rounded up (2 of 3), exceed its limit, and the
+figure the report shows is the median of the windows judged. An upload criterion (`fullMapUploads`, `largeUploads`) fails when
+any window exceeds it, because contention does not make a CPU upload happen, and its figure is the largest. A window with no
+GPU figure counts as over. The result cell of `gate1.md` says how many windows were over ("1 of 3 windows over") and how many
+the canary left out; `gate1.json` has `windows`, `over` and `captured` on each criterion.
+
+**The contention canary.** Another process drawing on the same GPU (a screen recorder, a video encoder, a second browser)
+makes the game's frames collide with its work, and the GPU clocks move with the load. The canary is a fixed 256 x 256 pass, a
+loop of 400 dependent `sin` and `fract` steps on a canvas of its own that the game never sees, timed by the same disjoint timer
+query. It runs for 120 frames before the first window of a mode and after every window (the "after" of one window is the
+"before" of the next), never inside a window, so its cost is not in the figures it checks. A run with fewer than 60% of its
+frames sampled says nothing. The session's baseline is the median of every usable run; a window's ratio is the one of its two
+runs that is furthest from the baseline; a window whose ratio is outside **0.5 to 2.0** (`CANARY.minRatio` and `maxRatio` in
+`frame-probe/canary.ts`) is left out of the judgement, with a note naming the ratio, because it was measured on another
+machine than the rest. The vote threshold still counts the windows captured, not the ones kept: with 3 captured and 2 kept,
+both must be over the limit to fail it. A mode with fewer windows in range than a limit needs votes to fail is **invalid**
+(exit 2, "run again on a quiet machine"), never a pass or a fail. A window with no usable canary, or a session with no
+baseline, is not left out; the report says the canary was not available.
+
+The band is **provisional**. It comes from five sessions on one machine (27 windows of 4 unstressed sessions, and 9 windows of a
+session with a foreign pass drawing beside the game, 2026-11-23); the first values, 0.7 to 1.4, left out 4 of the 27 windows
+that had no foreign load. Re-derive both edges from more sessions before reading them as a promise (`docs/TODO.md` T-266). The
+canary sees a load that changes within a session, not one that stays: a session loaded the whole time has a loaded baseline
+and passes. `gate1.md` prints the canary table (before, after, ratio to the baseline, "Compared" yes or NO) and `gate1.json`
+has `canary.before` and `canary.after` (`medianMs`, `samples`, `dropped`, and `reason` when there is no figure) on each window.
+
+**Telling the shading from contention (`--shading-control`).** The probe already knows which limits failed; this says why.
+After the lit measurement the probe closes the room's browser context (two games drawing at once would be each other's
+contention), opens a fresh context in the same browser, enters the room again with `konclui.fx.rim=0` and captures the same
+windows with the same repeats and the same canary; the screenshots go to `<out-dir>/control/`. The control is judged as a
+measurement of its own: its windows must be in range of its own canary, as many of them as a limit needs votes to fail, each with
+a GPU figure, and the shading must really have been off in them (a window whose counters report a level above 0 or any bake
+means it was still on). Each failed GPU criterion of the lit run is then labelled:
+
+| Label      | Meaning                                                                      | In the reports                                                                                               |
+| ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| contention | The control's same criterion also fails: the machine did it, not the shading | `verdict.criteria[].cause` is `"contention"`; `gate1.md` adds ", CONTENTION: also over with the shading off" |
+| shading    | The control passes the criterion: only the lit run exceeded it               | `cause` is `"shading"`; `gate1.md` adds ", under the limit with the shading off"                             |
+
+A control that cannot be used for a mode (too few windows in range, a window with no GPU figure, the shading still on, no window
+captured) assigns no cause for that mode and says why in a window note: "control for <mode> unusable: <reason>". A control
+that cannot be measured at all (the room does not open again, the page fails) leaves the verdict as it was and the report
+says so in `measurement.controlFailure` and in a window note ("the shading-off control was asked for and could not be measured
+(<reason>): no failure is classified as contention or shading"), so a failed control is not mistaken for none asked for. Upload
+criteria get no cause. **A cause never changes the verdict or the exit code**: a limit that fails with the cause "contention"
+still exits 1. It tells the reader what to do next: run again on a quiet machine, or look at the shading. `gate1.md` shows
+the lit windows only; the control's windows are in `gate1.json` (`measurement.control.captures`) and in the run's log. With the
+shading already off (`FRAME_PROBE_GATE1_SHADING=off`) the flag is ignored and the log says so.
+
+**What the shading did in a window.** The client counts what the Koncluí shading did and publishes it to the bench through a
+small registry (an upstream file must not import Konclui): `bakes` (whole bakes of the cast texture that went to the GPU),
+`slices` (slices of bake run, one per frame while a bake is under way), `uploads` and `uploadedBytes` (cast texture uploads
+and the CPU data they handed over), `levelChanges` (times the shading level really changed), and its state, `level` and `marked`
+(avatars carrying a mark for light). The bench reports them twice: for the window (`bench.shading`) and since the hour was last
+set (`bench.shadingSinceNight`), so an upload that fell between the hour change and the window is seen. Both are null in a room
+with the shading off and in a client from before `2d76250fc`. `gate1.md` has a table of them per window ("Uploads since the
+night was set"), and a window that has an upload or a level change inside it earns a **window note** (the verdict does not
+change), for example:
+
+```text
+day #2: the shading put its cast texture on the GPU 1 time(s) inside the window (19726336 B): a one-frame upload of that size is in these figures
+night #1: the shading level changed 1 time(s) inside the window (now 1)
+```
+
+The notes are in `verdict.flags` of `gate1.json` and under "Window notes" in `gate1.md`, with the canary's "left out" notes and
+the control's notes. The shading's upload is a one-frame event of one map-sized texture (19,726,336 B in the runs of
+2026-11-23), which is what a slow frame in a lit window was once suspected to be. The reading that the spikes are contention and
+not this upload is in `docs/PERFORMANCE.md`, "Gate 1 with the lit shading".
+
+**The shading switch (`FRAME_PROBE_GATE1_SHADING`).** The gate sets `konclui.fx.rim` to `1`, the lit shading, which is its
+heaviest look. `FRAME_PROBE_GATE1_SHADING=off` runs the same gate with `konclui.fx.rim` at `0`, to measure what the shading
+costs on another day than the control does; `on` or empty is the default. Any other value stops the run before the browser opens,
+so a typo cannot give a normal run that looks like a shading-off one. It combines with `FRAME_PROBE_GATE1_BASELINE` and
+`--flag`. With the shading off the page does not load the normal map (`normalMapLoaded` is `false`) and the shading counters are
+null.
+
+```bash
+# the lit gate, then the same windows again with the shading off in the same session (the control)
+FRAME_PROBE_BROWSER_CHANNEL=chrome npx tsx frame-probe/run.ts gate1 "$ROOM" --shading-control --out-dir=../.local/konclui/qa/gate1-control
+# the gate with the shading off, on its own
+FRAME_PROBE_GATE1_SHADING=off FRAME_PROBE_BROWSER_CHANNEL=chrome npx tsx frame-probe/run.ts gate1 "$ROOM" --out-dir=../.local/konclui/qa/gate1-shading-off
+```
+
+`--out-dir` receives `gate1.json` (schema 4: the gate, the setup, the verdict with its window notes and the cause of each failed GPU limit, every criterion with its votes, every window with its repeat, canary and shading counters, the shading-off control's windows, the crowd's groups, the flags the page
 ran with and the URL it ended on), `gate1.md` (the same, as tables, also printed), and `day.png`, `dusk.png` and `night.png`
-taken after each window. A number from a run is a GPU number only if `gpuTimer` says `webgl2` or `webgl1-ext` (and the report's
+taken after the first window of each mode (the same three under `control/` for a `--shading-control` run). A number from a run is a GPU number only if `gpuTimer` says `webgl2` or `webgl1-ext` (and the report's
 context says which) and the renderer is the GPU named in the report; the GPU window trails the frame window by at most the query pool (8 frames), and the browser may
 coarsen timer queries.
 
 ```bash
 npm test -- tests/frameprobe-gate1.test.ts     # parsing the page's shape, the judge, the sequence on a canned session, the command
+npm test -- tests/frameprobe-canary.test.ts    # the canary: its band, its baseline and ratios, the run in the page
+npm test -- tests/frameprobe-contention.test.ts  # the shading counters, the two-of-three rule, the canary in the judge, the shading-off control and its causes, the sequence with repeats, the options
 ```
 
 **Screenshot passes.** The same entry flow drives the two QA walkthroughs, reproducible from git:
@@ -574,10 +663,10 @@ camera and a crowd, and writes pictures and numbers.
 
 ```bash
 cd benchmark
-npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --preset reception            # night, one view
-npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --preset all --hour 17.4      # every preset, one folder each
-npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --hour 19.3 --camera 1391,1330,2 --people "1176,1334;1392,1404"
-npx tsx shader-lab/run.ts /private/tmp/kv/dist2 --out /tmp/lab --flag konclui.fx.rim=legacy  # today's rim instead of the shaded program
+npx tsx shader-lab/run.ts /private/tmp/kv/dist3 --out /tmp/lab --preset reception            # night, one view
+npx tsx shader-lab/run.ts /private/tmp/kv/dist3 --out /tmp/lab --preset all --hour 17.4      # every preset, one folder each
+npx tsx shader-lab/run.ts /private/tmp/kv/dist3 --out /tmp/lab --hour 19.3 --camera 1391,1330,2 --people "1176,1334;1392,1404"
+npx tsx shader-lab/run.ts /private/tmp/kv/dist3 --out /tmp/lab --flag konclui.fx.rim=legacy  # today's rim instead of the shaded program
 npx tsx shader-lab/run.ts --list-presets
 npx tsx shader-lab/run.ts --phaser --out /tmp/lab-phaser                                      # the Phaser probe (below): no map needed
 ```
@@ -763,8 +852,10 @@ whole in the picture: 426 standing and 178 on furniture at the time of writing).
   half the marks (about 40 draw calls). Whether it saves more on a weak GPU has not been measured: there is none here.
 - The budget is MEASURED for the pass alone (the table above; the lab's p99 of 13 to 16 ms is a timer-query artifact of its
   pass-only loop, present with the shading off too) and ESTIMATED for the whole frame (the probe's 15 us a draw, about 1.2 ms for
-  80 more draws on the M1 Max). Gate 1 at night, level 2, 80 drawn avatars, `konclui.fx.rim=full`, and then on a weak
-  integrated GPU, has not been run (`scripts/gate.sh` was out of bounds for this work).
+  80 more draws on the M1 Max). Gate 1 has since run with `konclui.fx.rim=1` on the M1 Max (2026-11-23: level 2, 80 drawn
+  avatars, the shading on against the shading off in the same session): the whole frame costs 1.0 to 1.7 ms more with it on
+  (DERIVED, differences of medians; `docs/PERFORMANCE.md`, "Gate 1 with the lit shading"). With `konclui.fx.rim=full`, and on a
+  weak integrated GPU, it has not been run.
 
 ### Tests
 
@@ -778,7 +869,7 @@ npx tsc -p shader-lab/tsconfig.lint.json    # types
 npx eslint -c shader-lab/eslint.config.mjs shader-lab tests/shaderlab-*.test.ts
 ```
 
-The smoke test needs a build with `fx/` (`SHADER_LAB_DIST`, default `/private/tmp/kv/dist2`) and a Google Chrome; it
+The smoke test needs a build with `fx/` (`SHADER_LAB_DIST`, a directory with `fx/manifest.json`: build one with `python3 hq-office/build.py --out DIR --renders DIR2` from `assets/konclui/source`; the test has no default path) and a Google Chrome; it
 draws a 320x180 window without timing, checks the PNGs, the self-test, the compile status, and that a shader with an
 undeclared identifier stops the run with the driver's message and the source line.
 

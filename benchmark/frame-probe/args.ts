@@ -77,9 +77,9 @@ Options for gate1
                            contention canary (a fixed 256x256 pass timed apart from the game): a window whose canary
                            reads outside 0.5 to 2x of the session's baseline (provisional) is left out, and a mode with too few
                            windows left is invalid, never a pass or a fail.
-  --shading-control        After the run, reload the page with the shading off (konclui.fx.rim=0) in the same browser
-                           session and capture the same windows. A GPU limit that is also exceeded there is reported as
-                           CONTENTION, not as the shading's.
+  --shading-control        After the run, enter the room again in a fresh browser context with the shading off
+                           (konclui.fx.rim=0) and capture the same windows. A GPU limit that is also exceeded there is
+                           reported as CONTENTION, not as the shading's.
   --flag=KEY=VALUE         Set a localStorage key before the page loads, to measure a flag without editing the probe
                            (e.g. --flag=gameStepCap=0 --flag=konclui.fx.external=1). Repeat for more; recorded in the
                            report. The gate's own keys (konclui.e2e.bench, konclui.fx.rim, konclui.fx.off) cannot be set.

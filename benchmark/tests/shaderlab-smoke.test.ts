@@ -1,7 +1,7 @@
 /**
  * Runs the shader lab for real: Chrome through Playwright, the built map, the repository's own shaders. It needs a built
- * map with fx/ (SHADER_LAB_DIST, default /private/tmp/kv/dist2) and an installed Google Chrome; without either it skips
- * and the skip says which one is missing.
+ * map with fx/ (SHADER_LAB_DIST: a directory with fx/manifest.json; there is no default, a scratch path does not belong in a
+ * test) and an installed Google Chrome; without either it skips and the skip says which one is missing.
  */
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { main } from "../shader-lab/run";
 
-const DIST = process.env.SHADER_LAB_DIST ?? "/private/tmp/kv/dist2";
+const DIST = process.env.SHADER_LAB_DIST ?? "";
 const CHROME_PATHS = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/usr/bin/google-chrome",
@@ -18,6 +18,7 @@ const CHROME_PATHS = [
 ];
 
 function skipReason(): string | null {
+    if (DIST === "") return "SHADER_LAB_DIST is not set (a built map: a directory with fx/manifest.json)";
     if (!existsSync(join(DIST, "fx", "manifest.json"))) {
         return `no built map at ${DIST} (set SHADER_LAB_DIST to a directory with fx/manifest.json)`;
     }
@@ -241,6 +242,6 @@ describe.skipIf(reason !== null)(`shader lab on a built map${reason === null ? "
 
 describe("shader lab smoke test gate", () => {
     it("says why it is skipped when it is", () => {
-        expect(reason === null || /no built map|not installed/.test(reason)).toBe(true);
+        expect(reason === null || /is not set|no built map|not installed/.test(reason)).toBe(true);
     });
 });
