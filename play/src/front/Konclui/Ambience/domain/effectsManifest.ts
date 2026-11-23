@@ -22,6 +22,27 @@ const spriteSpec = z.object({
     glyph: quad.optional(),
 });
 
+/**
+ * What a standing piece throws its shadow from, when its rows are not its height (a bench seen from above is 61 rows deep and
+ * 9 px tall): the build writes one for the pieces it measured, keyed like `kinds`. `h` is the height in px of the part that
+ * throws the shadow; `foot` the row of its base in the sprite (else the lowest opaque row); `span` the columns [x0, x1) of
+ * its footprint in the sprite (else the whole foot row).
+ */
+const casterSpec = z.object({
+    h: z.number().positive({ message: "a caster's h is its height in px: more than 0" }),
+    foot: z
+        .number()
+        .int({ message: "a caster's foot is a row of the sprite: a whole number" })
+        .min(0, { message: "a caster's foot is a row of the sprite: 0 or more" })
+        .optional(),
+    span: z
+        .tuple([z.number().int(), z.number().int()])
+        .refine(([x0, x1]) => x1 > x0, { message: "a caster's span is [x0, x1] with x1 after x0" })
+        .optional(),
+});
+
+export type CasterSpec = z.infer<typeof casterSpec>;
+
 const staticBase = {
     kind: z.string(),
     power: z.number().optional(),
@@ -67,6 +88,11 @@ export const effectsManifestSchema = z.object({
      * work it out from the prefab.
      */
     kinds: z.record(z.enum(["stand", "top", "hang", "floor"])).optional(),
+    /**
+     * The height, foot and footprint of the pieces whose shadow is not told by their rows, by sprite key. A piece without an
+     * entry (and a manifest without the key, the older builds') is shaded as before: its rows are its height.
+     */
+    casters: z.record(casterSpec).optional(),
     /** The sprite keys whose picture carries its own contact shadow: the runtime draws none for them. */
     painted: z.array(z.string()).optional(),
     /** [x0, x1, foot] of each glass face. */

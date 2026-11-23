@@ -217,6 +217,125 @@ describe("Shading, the unmarked avatars the shader is told about", () => {
     });
 });
 
+describe("Shading, the manifest's casters", () => {
+    const KEY = "bench.png";
+    const flat: ShadePlaced = {
+        texture: { key: `maps/entities/${KEY}`, getSourceImage: () => ({}) },
+        x: 40,
+        y: 20,
+        flipX: false,
+        displayWidth: 30,
+        displayHeight: 40,
+    };
+    const empty = (): PeopleFrame => ({
+        count: 0,
+        people: [],
+        bodies: [],
+        rebuilt: false,
+        pools: [],
+        lamps: 0,
+        centre: [0, 0],
+    });
+    const make = (casters?: EffectsManifest["casters"]) => {
+        const { r } = renderer();
+        const base = manifest();
+        return new Shading({
+            renderer: r,
+            manifest: { ...base, map: [120, 100], ...(casters ? { casters } : {}) },
+            level: 2,
+            isWall: () => false,
+            readPixels: () => ({ width: 30, height: 40, data: new Uint8ClampedArray(30 * 40 * 4).fill(255) }),
+        });
+    };
+    const bakeAll = (s: Shading, from = 0): number => {
+        const before = s.bakes;
+        let t = from;
+        while (s.bakes === before && t < from + 20_000) s.frame((t += 16), empty());
+        return t;
+    };
+    /** The lowest map row below the bench's own picture that the key's channel marks. */
+    const lowest = (s: Shading): number => {
+        let low = -1;
+        for (let y = 0; y < 100; y++)
+            for (let x = 0; x < 120; x++)
+                if (
+                    s.cast.pixels[((100 - 1 - y) * 120 + x) * 4 + 1] > 0 &&
+                    s.cast.pixels[((100 - 1 - y) * 120 + x) * 4 + 3] !== 255
+                )
+                    low = y;
+        return low;
+    };
+
+    it("bakes a piece with an entry by its h, and a piece without one by its rows", () => {
+        const plain = make();
+        plain.setHour(15.5);
+        plain.setPieces([flat], 0, true);
+        bakeAll(plain);
+        const benched = make({ [KEY]: { h: 10 } });
+        benched.setHour(15.5);
+        benched.setPieces([flat], 0, true);
+        bakeAll(benched);
+
+        expect(lowest(plain)).toBeGreaterThan(20 + 39 + 10);
+        expect(lowest(benched)).toBeLessThanOrEqual(20 + 39 + 5);
+        expect(lowest(benched)).toBeGreaterThanOrEqual(20 + 39);
+    });
+
+    it("keeps a piece the manifest has no entry for as it was, whatever the other entries say", () => {
+        const plain = make();
+        plain.setHour(15.5);
+        plain.setPieces([flat], 0, true);
+        bakeAll(plain);
+        const other = make({ "other.png": { h: 4 } });
+        other.setHour(15.5);
+        other.setPieces([flat], 0, true);
+        bakeAll(other);
+
+        expect(Buffer.from(other.cast.pixels).equals(Buffer.from(plain.cast.pixels))).toBe(true);
+    });
+
+    it("bakes again, key and fixed parts, when the casters change, and not when they are the same", () => {
+        const s = make({ [KEY]: { h: 10 } });
+        s.setHour(15.5);
+        s.setPieces([flat], 0, true);
+        let t = bakeAll(s);
+        const first = Buffer.from(s.cast.pixels);
+        const shallow = lowest(s);
+
+        expect(s.setCasters({ [KEY]: { h: 10 } })).toBe(false);
+        for (let u = 0; u < 200; u++) s.frame((t += 16), empty());
+        expect(s.bakes).toBe(1);
+
+        expect(s.setCasters({ [KEY]: { h: 22 } })).toBe(true);
+        t = bakeAll(s, t);
+        expect(s.bakes).toBe(2);
+        expect(lowest(s)).toBeGreaterThan(shallow);
+        expect(Buffer.from(s.cast.pixels).equals(first)).toBe(false);
+
+        expect(s.setCasters(undefined)).toBe(true);
+        bakeAll(s, t);
+        expect(s.bakes).toBe(3);
+    });
+
+    it("drops a bake in progress when the casters change under it, and finishes with the new ones", () => {
+        const s = make({ [KEY]: { h: 10 } });
+        s.setHour(15.5);
+        s.setPieces([flat], 0, true);
+        s.frame(0, empty());
+        s.frame(16, empty());
+        s.setCasters({ [KEY]: { h: 22 } });
+        const t = bakeAll(s, 32);
+        const reference = make({ [KEY]: { h: 22 } });
+        reference.setHour(15.5);
+        reference.setPieces([flat], 0, true);
+        bakeAll(reference);
+
+        expect(s.bakes).toBe(1);
+        expect(t).toBeGreaterThan(32);
+        expect(Buffer.from(s.cast.pixels).equals(Buffer.from(reference.cast.pixels))).toBe(true);
+    });
+});
+
 describe("Shading, the bake's schedule", () => {
     const piece = (key: string, x: number, y: number): ShadePlaced => ({
         texture: { key: `maps/entities/${key}`, getSourceImage: () => ({}) },

@@ -15,6 +15,7 @@ import type { Rect } from "./geometry";
 import type { KeyLight } from "./keyLight";
 import { lampDirection, lampLight, lampShadowLength, LAMP_DIRECTIONS, type CasterLamp } from "./lamps";
 import { castShape, footRuns, lowerPart, lengthScale, shearRuns, type Shear, type Silhouette } from "./shadeShapes";
+import type { CasterSpec } from "./effectsManifest";
 
 export const CAST_CHANNELS = 4;
 /** A shadow is at least this long, in px, so that a short object still grounds, and at most this (a lamp's: `LAMP_CAP_PX`). */
@@ -124,10 +125,9 @@ function lampShadowOf(input: BakeInput, piece: BakePiece, lamp: CasterLamp): Lam
     const direction = lampDirection(ddx, ddy);
     const dir = LAMP_DIRECTIONS[direction];
     const k = lampShadowLength(ground, lamp.z);
-    const height = sil.foot - sil.top + 1;
-    const footWidth = footRuns(sil).reduce((sum, [a, b]) => sum + b - a, 0);
+    const footWidth = baseRuns(piece, sil).reduce((sum, [a, b]) => sum + b - a, 0);
     return {
-        shear: { sx: dir[0] * k, sy: dir[1] * k, m: lengthScale(height, k, LAMP_FLOOR_PX, LAMP_CAP_PX) },
+        shear: standShear(piece, sil, dir[0] * k, dir[1] * k, k, LAMP_FLOOR_PX, LAMP_CAP_PX),
         depth: Math.round(
             Math.min(LAMP_DEPTH_MAX_PX, Math.max(LAMP_DEPTH_MIN_PX, footWidth * LAMP_DEPTH_SHARE)) *
                 (1 - Math.abs(dir[1])),
@@ -153,6 +153,104 @@ export interface BakePiece {
     readonly silhouette: Silhouette | null;
     /** Its picture has a painted contact shadow: no contact band is drawn for it. */
     readonly painted: boolean;
+    /** The manifest's caster entry for the piece, as `placedCaster` made it: its shadow's length comes from it, not from its rows. */
+    readonly caster?: BakeCaster | null;
+}
+
+/**
+ * What a caster entry of the manifest says of a placed piece, in the placed silhouette's own rows and columns: the height of the
+ * part that throws the shadow (px), the row of its base and the columns [x0, x1) of its footprint (null: the whole foot row).
+ */
+export interface BakeCaster {
+    readonly h: number;
+    readonly foot: number | null;
+    readonly span: readonly [number, number] | null;
+}
+
+/**
+ * A manifest's caster entry for a piece placed with `sil` (already resampled to the size it is drawn at and mirrored when
+ * flipped) from a sprite `sourceWidth` x `sourceHeight`: the foot and the span follow the resampling and the mirror, the height
+ * is in px of the map and so is not scaled. Null when there is no entry or the entry does not fit the picture.
+ */
+export function placedCaster(
+    entry: CasterSpec | undefined,
+    sil: Silhouette | null,
+    sourceWidth: number,
+    sourceHeight: number,
+    flipX: boolean,
+): BakeCaster | null {
+    if (!entry || !sil || !(entry.h > 0)) return null;
+    const rowScale = sil.height / Math.max(1, sourceHeight);
+    const colScale = sil.width / Math.max(1, sourceWidth);
+    const foot = entry.foot === undefined ? null : Math.min(sil.height - 1, Math.floor((entry.foot + 0.5) * rowScale));
+    let span: [number, number] | null = null;
+    if (entry.span) {
+        let x0 = Math.round(entry.span[0] * colScale);
+        let x1 = Math.round(entry.span[1] * colScale);
+        if (flipX) [x0, x1] = [sil.width - x1, sil.width - x0];
+        if (x1 > x0) span = [x0, x1];
+    }
+    return { h: entry.h, foot, span };
+}
+
+/** A string that changes when, and only when, the casters do: the bake's states are taken again when it does. */
+export function castersSignature(casters: Readonly<Record<string, CasterSpec>> | undefined): string {
+    if (!casters) return "";
+    return Object.keys(casters)
+        .sort()
+        .map((key) => {
+            const c = casters[key];
+            return `${key}:${c.h},${c.foot ?? ""},${c.span ? `${c.span[0]}-${c.span[1]}` : ""}`;
+        })
+        .join(";");
+}
+
+/** The row a caster piece's base is on: its entry's `foot` when a row of the picture holds it, else the lowest opaque row. */
+function baseRow(piece: BakePiece, sil: Silhouette): number {
+    const foot = piece.caster?.foot;
+    if (foot === null || foot === undefined || foot < sil.top) return sil.foot;
+    return Math.min(foot, sil.height - 1);
+}
+
+/** The runs of the base row, or of the nearest row above it that has some (a base row under the lowest opaque row has none). */
+function baseRuns(piece: BakePiece, sil: Silhouette): [number, number][] {
+    if (!piece.caster) return footRuns(sil);
+    let row = Math.min(baseRow(piece, sil), sil.foot);
+    while (row > sil.top && sil.starts[row] === sil.starts[row + 1]) row -= 1;
+    const out: [number, number][] = [];
+    const span = piece.caster.span;
+    for (let k = sil.starts[row]; k < sil.starts[row + 1]; k++) {
+        const a = span ? Math.max(sil.runs[k * 2], span[0]) : sil.runs[k * 2];
+        const b = span ? Math.min(sil.runs[k * 2 + 1], span[1]) : sil.runs[k * 2 + 1];
+        if (b > a) out.push([a, b]);
+    }
+    return out.length > 0 ? out : footRuns(sil);
+}
+
+/**
+ * The shear of a standing piece's shadow along (sx, sy) per px of height, `length` being the light's shadow per px of height.
+ * Without a caster entry the piece's rows are its height. With one the length comes from its `h` (kept between `lo` and `hi`),
+ * the shadow starts at the piece's base row, and a piece lower than its rows is a box: its first `h` rows are its front face and
+ * the rows over them its top face, whose px up the screen are depth (`Shear`). So a flat piece's shadow peeks out of its picture
+ * by about `h` along the light, and a piece whose `h` is its rows (or more) is sheared as a wall, as it always was.
+ */
+function standShear(
+    piece: BakePiece,
+    sil: Silhouette,
+    sx: number,
+    sy: number,
+    length: number,
+    lo: number,
+    hi: number,
+): Shear {
+    const c = piece.caster;
+    if (!c) return { sx, sy, m: lengthScale(sil.foot - sil.top + 1, length, lo, hi) };
+    const foot = baseRow(piece, sil);
+    const rows = Math.max(1, foot - sil.top + 1);
+    // a piece at least as tall as its rows is a wall; a lower one is a box: `h` rows of front face, the rest of its rows a top face
+    return c.h >= rows
+        ? { sx, sy, m: lengthScale(c.h, length, lo, hi), foot, rise: c.h / rows }
+        : { sx, sy, m: lengthScale(c.h, length, lo, hi), foot, cap: c.h };
 }
 
 export interface BakeInput {
@@ -227,6 +325,10 @@ function inRegion(input: BakeInput, region: number, x: number, y: number): boole
 
 /** The centre of a piece's foot row in map px: where its shadow starts, and what room it stands in. */
 function footCentre(piece: BakePiece, sil: Silhouette): [number, number] {
+    if (piece.caster) {
+        const runs = baseRuns(piece, sil);
+        return [piece.x + (runs[0][0] + runs[runs.length - 1][1]) / 2, piece.y + baseRow(piece, sil)];
+    }
     const first = sil.starts[sil.foot];
     const last = sil.starts[sil.foot + 1];
     return [piece.x + (sil.runs[first * 2] + sil.runs[last * 2 - 1]) / 2, piece.y + sil.foot];
@@ -366,10 +468,11 @@ export class CastBake {
         const piece = this.input.pieces[i];
         const sil = piece.silhouette;
         if (!sil || piece.kind !== "stand" || piece.painted) return;
-        for (const [a, b] of footRuns(sil)) {
-            this.band(piece.x + a - 1, piece.x + b + 1, piece.y + sil.foot + 1, HARD);
-            this.band(piece.x + a, piece.x + b, piece.y + sil.foot + 2, SOFT);
-            for (let d = 0; d <= 2; d++) this.band(piece.x + a - 1, piece.x + b + 1, piece.y + sil.foot - d, SOFT);
+        const foot = piece.caster ? baseRow(piece, sil) : sil.foot;
+        for (const [a, b] of baseRuns(piece, sil)) {
+            this.band(piece.x + a - 1, piece.x + b + 1, piece.y + foot + 1, HARD);
+            this.band(piece.x + a, piece.x + b, piece.y + foot + 2, SOFT);
+            for (let d = 0; d <= 2; d++) this.band(piece.x + a - 1, piece.x + b + 1, piece.y + foot - d, SOFT);
         }
     }
 
@@ -530,7 +633,6 @@ export class CastBake {
         const input = this.input;
         const sil = this.shadowShape(i, shape);
         const k = input.key;
-        const height = shape.foot - shape.top + 1;
         const [fx, fy] = footCentre(piece, shape);
         const region = regionAt(input, fx, fy);
         this.stats.casters += 1;
@@ -538,11 +640,7 @@ export class CastBake {
         const lamp = this.lampOf.length > 0 ? this.lampOf[i] : -1;
         const byLamp = lamp >= 0 ? lampShadowOf(input, piece, input.lamps[lamp]) : null;
         const first: { shear: Shear; depth: number } = byLamp ?? {
-            shear: {
-                sx: k.dx * k.length,
-                sy: k.dy * k.length,
-                m: lengthScale(height, k.length, SHADOW_FLOOR_PX, SHADOW_CAP_PX),
-            },
+            shear: standShear(piece, shape, k.dx * k.length, k.dy * k.length, k.length, SHADOW_FLOOR_PX, SHADOW_CAP_PX),
             depth: 0,
         };
         let best = first;

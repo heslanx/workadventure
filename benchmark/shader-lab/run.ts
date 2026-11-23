@@ -27,7 +27,7 @@ const OPTIONAL_MODULES: readonly [string, readonly string[]][] = [
     ["lightUniforms", ["lightUniformsInto"]],
     ["keyLight", ["keyLightAt", "newKeyLight"]],
     ["shadeUniforms", ["shadeUniformsInto", "newShadeUniforms"]],
-    ["shadeBake", ["bakeCast", "newCastBuffer", "lampCasters", "SHADOW_FLOOR_PX", "SHADOW_CAP_PX"]],
+    ["shadeBake", ["bakeCast", "newCastBuffer", "lampCasters", "placedCaster", "SHADOW_FLOOR_PX", "SHADOW_CAP_PX"]],
     ["shadeShapes", ["silhouetteOf", "hasPaintedShadow", "lengthScale"]],
     ["casterKind", ["classifyPiece"]],
     ["lamps", ["casterLampsFrom"]],
@@ -145,6 +145,13 @@ function summary(preset: string, dir: string, json: Record<string, unknown>): st
         >;
         shimmer?: { rows: { zoom: number; scroll: number; off: number; on: number }[]; meets: boolean };
         unmarkedPeopleTakeNoRelief?: { people: number; listed: number; meets: boolean | null };
+        castersHonoured?: {
+            entries: number;
+            applied: number;
+            dropped: string[];
+            keyPixelsChanged: number;
+            meets: boolean | null;
+        };
     }
     const acceptance = (json.acceptance ?? {}) as Acceptance;
     const verdict = (meets: boolean | null | undefined): string =>
@@ -171,6 +178,11 @@ function summary(preset: string, dir: string, json: Record<string, unknown>): st
             );
         }
     }
+    const casters = acceptance.castersHonoured;
+    if (casters)
+        lines.push(
+            `  acceptance: caster entries used by the bake (${casters.applied} of ${casters.entries} placed pieces, ${casters.keyPixelsChanged} key pixels changed${casters.dropped.length > 0 ? `, dropped: ${casters.dropped.slice(0, 3).join(", ")}` : ""}): ${verdict(casters.meets)}`,
+        );
     if (acceptance.shimmer) {
         const rows = acceptance.shimmer.rows.map((r) => `z${r.zoom}+${r.scroll}: ${r.on}/${r.off}`).join("  ");
         lines.push(`  acceptance: shimmer, on within the slack of off: ${verdict(acceptance.shimmer.meets)} (${rows})`);

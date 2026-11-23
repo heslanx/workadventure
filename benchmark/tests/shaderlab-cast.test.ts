@@ -9,7 +9,7 @@ import {
     type BakeSource,
 } from "../shader-lab/castBake";
 import { compositeStamps, missingStampHooks, planStamps, type StampHooks } from "../shader-lab/stamps";
-import { bakeCast, newCastBuffer } from "../../play/src/front/Konclui/Ambience/domain/shadeBake";
+import { bakeCast, newCastBuffer, placedCaster } from "../../play/src/front/Konclui/Ambience/domain/shadeBake";
 import { classifyPiece } from "../../play/src/front/Konclui/Ambience/domain/casterKind";
 import { casterLampsFrom } from "../../play/src/front/Konclui/Ambience/domain/lamps";
 import { keyLightAt, newKeyLight } from "../../play/src/front/Konclui/Ambience/domain/keyLight";
@@ -25,6 +25,7 @@ function picture(w: number, h: number, box: [number, number, number, number], so
 
 const REAL: BakeHooks = {
     bakeCast,
+    placedCaster,
     newCastBuffer,
     silhouetteOf,
     hasPaintedShadow,
@@ -164,6 +165,96 @@ describe("shader lab: the cast bake on a small map (the runtime's real bake)", (
         const b = buildCasts(source(), REAL, 17.4);
 
         expect(Buffer.compare(Buffer.from(a.all), Buffer.from(b.all))).toBe(0);
+    });
+});
+
+describe("shader lab: the manifest's casters", () => {
+    // a bench seen from above: 40 rows deep, 10 px high, on a map the size of the others
+    const bench = (): BakeSource => {
+        const base = source();
+        return {
+            ...base,
+            placements: [{ key: "a/bench.png", x: 40, y: 20, name: "Banco", depthOffset: 0, tags: [] }],
+            sprites: new Map<string, ImageData | null>([["a/bench.png", picture(30, 40, [0, 0, 30, 40])]]),
+            manifest: { ...base.manifest, map: [128, 96] },
+        };
+    };
+    const withCasters = (casters: BakeSource["manifest"]["casters"]): BakeSource => {
+        const b = bench();
+        return { ...b, manifest: { ...b.manifest, casters } };
+    };
+    type CasterReport = {
+        entries: number;
+        applied: number;
+        dropped: string[];
+        expectedChange: number;
+        keyPixelsChanged: number;
+    };
+
+    it("passes an entry to the piece the bake reads, and none for a piece without one", () => {
+        const plain = bakePieces(bench(), REAL);
+        const listed = bakePieces(withCasters({ "a/bench.png": { h: 10 } }), REAL);
+        const other = bakePieces(withCasters({ "a/else.png": { h: 10 } }), REAL);
+
+        expect(plain.pieces[0].caster).toBeNull();
+        expect(other.pieces[0].caster).toBeNull();
+        expect(listed.pieces[0].caster).toEqual({ h: 10, foot: null, span: null });
+        expect([listed.casterEntries, listed.casterApplied, listed.casterDropped]).toEqual([1, 1, []]);
+        expect([other.casterEntries, other.casterApplied]).toEqual([0, 0]);
+    });
+
+    it("lists an entry the lab lost on the way: the hook that makes a caster is missing", () => {
+        const lost = bakePieces(withCasters({ "a/bench.png": { h: 10 } }), { ...REAL, placedCaster: undefined });
+
+        expect(lost.pieces[0].caster).toBeNull();
+        expect(lost.casterDropped).toEqual(["a/bench.png"]);
+        expect(() =>
+            buildCasts(withCasters({ "a/bench.png": { h: 10 } }), { ...REAL, placedCaster: undefined }, 15.5),
+        ).toThrow(/needs placedCaster/);
+    });
+
+    it("bakes a different shadow with the entry, and says how many key pixels the entries changed", () => {
+        const plain = buildCasts(bench(), REAL, 15.5);
+        const listed = buildCasts(withCasters({ "a/bench.png": { h: 10 } }), REAL, 15.5);
+        const report = listed.report.casters as CasterReport;
+
+        expect(plain.report.casters as CasterReport).toEqual({
+            entries: 0,
+            applied: 0,
+            dropped: [],
+            expectedChange: 0,
+            keyPixelsChanged: 0,
+        });
+        expect(report).toMatchObject({ entries: 1, applied: 1, dropped: [], expectedChange: 1 });
+        expect(report.keyPixelsChanged).toBeGreaterThan(0);
+        expect(channelCounts(listed.all, 128, 96).key).toBeLessThan(channelCounts(plain.all, 128, 96).key);
+        expect((listed.report.shadowLengthPx as { max: number }).max).toBeLessThan(
+            (plain.report.shadowLengthPx as { max: number }).max,
+        );
+    });
+
+    it("reports no change for an entry whose h is the piece's rows, and bakes the same bytes as without it", () => {
+        const plain = buildCasts(bench(), REAL, 15.5);
+        const same = buildCasts(withCasters({ "a/bench.png": { h: 40 } }), REAL, 15.5);
+
+        expect(same.report.casters as CasterReport).toMatchObject({
+            applied: 1,
+            expectedChange: 0,
+            keyPixelsChanged: 0,
+        });
+        expect(Buffer.compare(Buffer.from(same.all), Buffer.from(plain.all))).toBe(0);
+    });
+
+    it("shows a bake that ignores the entries: the report holds no changed pixel although the entry asks for one", () => {
+        const ignoring: BakeHooks = {
+            ...REAL,
+            bakeCast: (input, out, options) =>
+                bakeCast({ ...input, pieces: input.pieces.map((p) => ({ ...p, caster: null })) }, out, options),
+        };
+        const report = buildCasts(withCasters({ "a/bench.png": { h: 10 } }), ignoring, 15.5).report
+            .casters as CasterReport;
+
+        expect(report).toMatchObject({ applied: 1, expectedChange: 1, keyPixelsChanged: 0 });
     });
 });
 

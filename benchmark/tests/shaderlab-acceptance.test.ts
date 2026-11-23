@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+    castersHonoured,
     COVERAGE_DELTA,
     LAMP_NEAR_PX,
     litTowardLamp,
@@ -249,5 +250,34 @@ describe("nearestLampSide and litTowardLamp", () => {
         expect(litTowardLamp("left", "even")).toBe(false);
         expect(litTowardLamp(null, "left")).toBeNull();
         expect(litTowardLamp("left", null)).toBeNull();
+    });
+});
+
+describe("castersHonoured", () => {
+    const used = { entries: 105, applied: 105, dropped: [], expectedChange: 62, keyPixelsChanged: 12000 };
+
+    it("meets when every entry reached the bake and the key shadows changed", () => {
+        expect(castersHonoured(used)).toEqual({ ...used, meets: true });
+    });
+
+    it("is not applicable for a manifest with no entry, nor without a report", () => {
+        expect(
+            castersHonoured({ ...used, entries: 0, applied: 0, expectedChange: 0, keyPixelsChanged: 0 })?.meets,
+        ).toBeNull();
+        expect(castersHonoured(undefined)).toBeNull();
+        expect(castersHonoured(null)).toBeNull();
+    });
+
+    it("fails when an entry was dropped on the way to the bake", () => {
+        expect(castersHonoured({ ...used, applied: 104, dropped: ["a/bench.png"] })?.meets).toBe(false);
+        expect(castersHonoured({ ...used, applied: 0, dropped: [] })?.meets).toBe(false);
+    });
+
+    it("fails when the bake gave the same key shadows with the entries as without them, though entries ask for a change", () => {
+        expect(castersHonoured({ ...used, keyPixelsChanged: 0 })?.meets).toBe(false);
+    });
+
+    it("lets entries that all say the rows (h equal to rows) change nothing", () => {
+        expect(castersHonoured({ ...used, expectedChange: 0, keyPixelsChanged: 0 })?.meets).toBe(true);
     });
 });

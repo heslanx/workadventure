@@ -10,7 +10,7 @@ import { casterLampsFrom } from "../domain/lamps";
 import { specKey, type Light } from "../domain/lights";
 import { newPersonShadow, pickStamp, type PersonShadow } from "../domain/personShadow";
 import type { Pixels } from "../domain/pixelMaps";
-import { CastBake, type BakeInput, type BakePiece } from "../domain/shadeBake";
+import { CastBake, castersSignature, placedCaster, type BakeInput, type BakePiece } from "../domain/shadeBake";
 import { hasPaintedShadow, placedSilhouette, silhouetteOf, type Silhouette } from "../domain/shadeShapes";
 import { newShadeUniforms, shadeUniformsInto } from "../domain/shadeUniforms";
 import type { ShadingLevel } from "../domain/shadingLevel";
@@ -108,6 +108,9 @@ export class Shading {
     private readonly marks: PeopleMarks;
     private current: ShadingLevel;
     private keyState = -1;
+    /** The manifest's caster entries by sprite key, and their signature: the bake's states are taken again when it changes. */
+    private casters: EffectsManifest["casters"];
+    private castersState: string;
     private placed: readonly ShadePlaced[] = [];
     private readonly measured = new Map<string, Measured>();
     private unmeasured: ShadePlaced[] = [];
@@ -146,6 +149,8 @@ export class Shading {
 
     constructor(private readonly options: ShadingOptions) {
         this.current = options.level;
+        this.casters = options.manifest.casters;
+        this.castersState = castersSignature(this.casters);
         [this.width, this.height] = options.manifest.map;
         this.cast = new CastTexture(options.renderer, this.width, this.height);
         this.marks = new PeopleMarks(options.renderer);
@@ -219,6 +224,21 @@ export class Shading {
             if (this.job.parts.fixed) this.dirtyFixed = true;
             this.job = undefined;
         }
+        return true;
+    }
+
+    /**
+     * The casters changed (the build's entries for the pieces whose rows are not their height): the fixed part and the key's part
+     * of the bake are both taken again, a job in progress is dropped, and true is returned. The same casters change nothing.
+     */
+    setCasters(casters: EffectsManifest["casters"]): boolean {
+        const state = castersSignature(casters);
+        if (state === this.castersState) return false;
+        this.casters = casters;
+        this.castersState = state;
+        this.dirtyFixed = true;
+        this.dirtyKey = true;
+        this.job = undefined;
         return true;
     }
 
@@ -305,13 +325,17 @@ export class Shading {
                 m?.silhouette && p.displayWidth > 0 && p.displayHeight > 0
                     ? placedSilhouette(m.silhouette, p.displayWidth, p.displayHeight, p.flipX)
                     : (m?.silhouette ?? null);
+            const key = this.keyOf(p);
             return {
-                key: this.keyOf(p),
+                key,
                 x: Math.round(p.x),
                 y: Math.round(p.y),
                 kind: sil ? this.kindOf(p) : "hang", // a picture that could not be read casts nothing and hides nothing
                 silhouette: sil,
                 painted: m?.painted ?? false,
+                caster: m?.silhouette
+                    ? placedCaster(this.casters?.[key], sil, m.silhouette.width, m.silhouette.height, p.flipX)
+                    : null,
             };
         });
         return {

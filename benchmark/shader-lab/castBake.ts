@@ -4,11 +4,13 @@
  * in the tree; this module only assembles its input (placements, decoded pictures, manifest) and reads its output.
  */
 import type {
+    BakeCaster,
     BakeInput,
     BakeOptions,
     BakePiece,
     BakeStats,
 } from "../../play/src/front/Konclui/Ambience/domain/shadeBake";
+import type { CasterSpec } from "../../play/src/front/Konclui/Ambience/domain/effectsManifest";
 import type { CasterKind } from "../../play/src/front/Konclui/Ambience/domain/casterKind";
 import type { CasterLamp } from "../../play/src/front/Konclui/Ambience/domain/lamps";
 import type { Silhouette } from "../../play/src/front/Konclui/Ambience/domain/shadeShapes";
@@ -25,6 +27,14 @@ export interface BakeHooks {
     silhouetteOf?: (rgba: { data: ArrayLike<number> }, width: number, height: number) => Silhouette | null;
     hasPaintedShadow?: (rgba: { data: ArrayLike<number> }, width: number, height: number, sil: Silhouette) => boolean;
     lengthScale?: (height: number, length: number, lo: number, hi: number) => number;
+    /** A manifest's caster entry, for a piece placed with this silhouette from a picture of this size. */
+    placedCaster?: (
+        entry: CasterSpec | undefined,
+        sil: Silhouette | null,
+        sourceWidth: number,
+        sourceHeight: number,
+        flipX: boolean,
+    ) => BakeCaster | null;
     classifyPiece?: (input: {
         name?: string;
         tags?: readonly string[];
@@ -45,6 +55,7 @@ export interface BakeHooks {
 /** The names a `BakeHooks` must have for the lab to bake. */
 export const REQUIRED_BAKE_HOOKS = [
     "bakeCast",
+    "placedCaster",
     "newCastBuffer",
     "silhouetteOf",
     "hasPaintedShadow",
@@ -70,6 +81,8 @@ export interface BakeSource {
         readonly building?: readonly number[];
         readonly kinds?: Readonly<Record<string, CasterKind>>;
         readonly painted?: readonly string[];
+        /** The build's optional caster entries by sprite key (a manifest without them shades every piece by its rows). */
+        readonly casters?: Readonly<Record<string, CasterSpec>>;
     };
     readonly maskPixels: Uint8ClampedArray;
 }
@@ -94,12 +107,26 @@ const WALL = 0.376;
 export function bakePieces(
     source: BakeSource,
     hooks: BakeHooks,
-): { pieces: BakePiece[]; kinds: Record<string, number>; classifiedFrom: string; painted: number; unreadable: number } {
+): {
+    pieces: BakePiece[];
+    kinds: Record<string, number>;
+    classifiedFrom: string;
+    painted: number;
+    unreadable: number;
+    /** Placed pieces with an entry in the manifest's casters, and those the bake was given a caster for. */
+    casterEntries: number;
+    casterApplied: number;
+    /** Keys with an entry and a readable picture that the bake was NOT given a caster for: the entry was dropped on the way. */
+    casterDropped: string[];
+} {
     const sil = new Map<string, Silhouette | null>();
     const paintedKeys = new Set(source.manifest.painted ?? []);
     const counts: Record<string, number> = { stand: 0, top: 0, hang: 0, floor: 0 };
     let painted = 0;
     let unreadable = 0;
+    let casterEntries = 0;
+    let casterApplied = 0;
+    const casterDropped = new Set<string>();
     const pieces = source.placements.map((p): BakePiece => {
         const image = source.sprites.get(p.key) ?? null;
         let silhouette = sil.get(p.key);
@@ -119,7 +146,13 @@ export function bakePieces(
                 silhouette !== null &&
                 hooks.hasPaintedShadow?.(image, image.width, image.height, silhouette) === true);
         if (isPainted) painted += 1;
-        return { key: p.key, x: p.x, y: p.y, kind, silhouette, painted: isPainted };
+        const entry = source.manifest.casters?.[p.key];
+        const caster =
+            entry && image ? (hooks.placedCaster?.(entry, silhouette, image.width, image.height, false) ?? null) : null;
+        if (entry) casterEntries += 1;
+        if (caster) casterApplied += 1;
+        else if (entry && silhouette) casterDropped.add(p.key);
+        return { key: p.key, x: p.x, y: p.y, kind, silhouette, painted: isPainted, caster };
     });
     return {
         pieces,
@@ -127,6 +160,9 @@ export function bakePieces(
         classifiedFrom: source.manifest.kinds ? "manifest.kinds" : "the runtime's classifyPiece on the prefab",
         painted,
         unreadable,
+        casterEntries,
+        casterApplied,
+        casterDropped: [...casterDropped].sort(),
     };
 }
 
@@ -151,7 +187,8 @@ export function buildCasts(source: BakeSource, hooks: BakeHooks, hour: number): 
     const key = newKeyLight();
     keyLightAt(hour, key);
     const pieceTimer = timed(() => bakePieces(source, hooks));
-    const { pieces, kinds, classifiedFrom, painted, unreadable } = pieceTimer.value;
+    const { pieces, kinds, classifiedFrom, painted, unreadable, casterEntries, casterApplied, casterDropped } =
+        pieceTimer.value;
     const lamps = casterLampsFrom(
         source.placements.map((p) => ({ key: `/entities/${p.key}`, x: p.x, y: p.y })),
         source.manifest.lights,
@@ -189,6 +226,25 @@ export function buildCasts(source: BakeSource, hooks: BakeHooks, hour: number): 
         lamp: run("lamp", { ...none, lamp: true }),
         surface: run("surface", { ...none, surface: true }),
     };
+    // the casters, read at full map: the key's shadows with the entries against the same bake with the entries taken off. An entry
+    // the bake ignores changes nothing; one that is honoured changes the key's pixels of the pieces whose rows are not their height.
+    let keyPixelsChanged = 0;
+    let expectedChange = 0;
+    if (casterApplied > 0) {
+        const bare = newCastBuffer(width, height);
+        bakeCast({ ...input, pieces: pieces.map((p) => ({ ...p, caster: null })) }, bare, { ...none, key: true });
+        const withEntries = alone.key;
+        for (let i = 1; i < bare.length; i += 4) if (bare[i] !== withEntries[i]) keyPixelsChanged += 1;
+        for (const p of pieces) {
+            const rows = p.silhouette ? p.silhouette.foot - p.silhouette.top + 1 : 0;
+            if (
+                p.kind === "stand" &&
+                p.caster &&
+                (p.caster.h !== rows || (p.caster.foot ?? p.silhouette?.foot) !== p.silhouette?.foot)
+            )
+                expectedChange += 1;
+        }
+    }
     const lacking = standPiecesWithoutShadow(source, hooks, pieces, key);
     const surfaces = surfacePiecesWithoutShadow(source, hooks, pieces, key);
     const lampReport = lamps.map((lamp, i) => ({
@@ -221,6 +277,13 @@ export function buildCasts(source: BakeSource, hooks: BakeHooks, hour: number): 
         hangPieces: surfaces.hangs,
         hangsWithoutShadow: surfaces.hangsWithout,
         shadowLengthPx: lacking.lengths,
+        casters: {
+            entries: casterEntries,
+            applied: casterApplied,
+            dropped: casterDropped,
+            expectedChange,
+            keyPixelsChanged,
+        },
     };
     return { all, alone, key, report, pieces };
 }
@@ -287,7 +350,7 @@ function standPiecesWithoutShadow(
                     }
                 }
             }
-            const footRow = margin + solidFoot;
+            const footRow = margin + (piece.caster?.foot ?? solidFoot);
             for (let i = 0; i < canvas.length; i += 4) {
                 if (canvas[i + 1] > 0 && canvas[i + 3] !== 255) {
                     pixels += 1;
@@ -295,7 +358,7 @@ function standPiecesWithoutShadow(
                     if (Math.abs(row - footRow) <= 1) attached = true;
                 }
             }
-            const rows = sil.foot - sil.top + 1;
+            const rows = piece.caster ? piece.caster.h : sil.foot - sil.top + 1;
             const scale = hooks.lengthScale ? hooks.lengthScale(rows, key.length, floorPx, capPx) : 1;
             measured = { pixels, length: scale * key.length * rows, attached };
             seen.set(piece.key, measured);

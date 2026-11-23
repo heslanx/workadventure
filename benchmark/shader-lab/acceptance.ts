@@ -5,7 +5,9 @@
  *  - `shiftedMismatch`: shimmer (a camera that moved by a whole screen pixel must give the picture shifted by one pixel);
  *  - `reliefAgreement`: the lit side of a prop is the lamp's side, and the relief does not only darken;
  *  - `visibleShadowCoverage`: a piece has a shadow that SHOWS beside it (not only pixels in the cast texture);
- *  - `lampSideOfPeople`: a person near a lamp is lit on the lamp's side.
+ *  - `lampSideOfPeople`: a person near a lamp is lit on the lamp's side;
+ *  - `castersHonoured`: a caster entry of the manifest (the height of a piece that lies along the ground) reaches the bake and
+ *    changes its shadows; an entry the lab or the runtime drops on the way fails the run.
  */
 
 export interface Size {
@@ -378,4 +380,35 @@ export function nearestLampSide(
 export function litTowardLamp(near: "left" | "right" | null, lit: "left" | "right" | "even" | null): boolean | null {
     if (near === null || lit === null) return null;
     return lit === near;
+}
+
+/** What the bake's report says of the manifest's casters (castBake.ts `buildCasts`, `report.casters`). */
+export interface CasterReport {
+    /** Placed pieces whose key has an entry, and those the bake was given a caster for. */
+    readonly entries: number;
+    readonly applied: number;
+    /** Keys with an entry and a readable picture that no caster reached the bake for. */
+    readonly dropped: readonly string[];
+    /** Stand pieces whose entry says a height or a foot other than their rows': their key shadow must differ. */
+    readonly expectedChange: number;
+    /** Key-channel bytes that differ between the bake with the entries and the same bake without them. */
+    readonly keyPixelsChanged: number;
+}
+
+export interface CastersHonoured extends CasterReport {
+    /** null when the manifest has no entry (an older build: nothing to honour); else whether every entry was used. */
+    readonly meets: boolean | null;
+}
+
+/**
+ * Is every caster entry of the manifest used? An entry is ignored when it never reaches the bake (`dropped`: the lab's own
+ * passthrough lost it) or when the bake gives the same key shadows with and without it although some entry asks for a height or
+ * a foot other than the rows' (`keyPixelsChanged` 0: the runtime's bake ignores it).
+ */
+export function castersHonoured(report: CasterReport | null | undefined): CastersHonoured | null {
+    if (!report) return null;
+    if (report.entries === 0) return { ...report, meets: null };
+    const reached = report.dropped.length === 0 && report.applied > 0;
+    const changed = report.expectedChange === 0 || report.keyPixelsChanged > 0;
+    return { ...report, meets: reached && changed };
 }

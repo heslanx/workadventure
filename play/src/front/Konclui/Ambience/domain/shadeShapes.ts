@@ -247,6 +247,17 @@ export interface Shear {
     readonly sy: number;
     /** Scale that keeps the shadow's length between its floor and its cap. */
     readonly m: number;
+    /**
+     * For a piece whose rows are not its height (a caster entry of the manifest; absent for every other piece, which is
+     * sheared exactly as before). `foot` is the row the shadow starts at. A row Z px above it stands at `Z * rise` px of
+     * height, but never above `cap` px: what a row has over `cap` is ground, up the screen from the foot. So a box of height
+     * `cap` is drawn as its front face (the first `cap` rows: a wall) and its top face (the rows over it: the footprint, at the
+     * height of the box), and a piece that lies along the ground has its footprint under its picture and its shadow peeks out
+     * of it by about `cap` px along the light. `cap` absent: a wall of `rise` (`h / rows`) px of height a row.
+     */
+    readonly foot?: number;
+    readonly rise?: number;
+    readonly cap?: number;
 }
 
 /** The scale that keeps a shadow of `length` x height at least `lo` and at most `hi` px long (never below 1 when it fits). */
@@ -259,7 +270,8 @@ export function lengthScale(height: number, length: number, lo: number, hi: numb
  * The runs of a silhouette's shadow, to `visit(y, x0, x1, heightShare)`: row r of the piece, Z = foot - r px above the
  * foot, lands `round(sx * m * Z)` right and `round(sy * m * Z)` down from where the piece stands. Z steps in 1/q so
  * that the offsets of two rows never leave a hole. `heightShare` is Z over the piece's height. (x0, y0) is the
- * piece's top-left corner.
+ * piece's top-left corner. With `shear.foot`, `rise` and `cap` the foot is the given row and a row stands as `Shear` says
+ * (`heightShare` is then its height over `cap`).
  */
 export function shearRuns(
     sil: Silhouette,
@@ -269,20 +281,27 @@ export function shearRuns(
     visit: (y: number, x0: number, x1: number, heightShare: number) => void,
 ): void {
     const { sx, sy, m } = shear;
-    const q = Math.max(1, Math.ceil(Math.max(Math.abs(sx * m), Math.abs(sy * m), 1)));
-    const height = Math.max(1, sil.foot - sil.top + 1);
-    for (let r = sil.top; r <= sil.foot; r++) {
+    const foot = shear.foot ?? sil.foot;
+    const rise = shear.rise ?? 1;
+    const cap = shear.cap ?? Number.POSITIVE_INFINITY;
+    const boxed = cap !== Number.POSITIVE_INFINITY;
+    const q = Math.max(1, Math.ceil(Math.max(Math.abs(sx * m * rise), Math.abs(sy * m * rise), 1)));
+    const height = Math.max(1, foot - sil.top + 1);
+    const last = Math.min(sil.foot, foot);
+    for (let r = sil.top; r <= last; r++) {
         const first = sil.starts[r];
-        const last = sil.starts[r + 1];
-        if (first === last) continue;
-        const z = sil.foot - r;
+        const end = sil.starts[r + 1];
+        if (first === end) continue;
+        const z = foot - r;
         for (let j = 0; j < q; j++) {
             const zj = z - j / q;
             if (zj < 0) break;
-            const ox = Math.round(sx * m * zj);
-            const oy = Math.round(sy * m * zj);
-            for (let k = first; k < last; k++) {
-                visit(y0 + sil.foot + oy, x0 + sil.runs[k * 2] + ox, x0 + sil.runs[k * 2 + 1] + ox, zj / height);
+            const up = Math.min(zj * rise, cap);
+            const ox = Math.round(sx * m * up);
+            const oy = Math.round(sy * m * up - (boxed ? zj - up : 0));
+            const share = boxed ? up / cap : zj / height;
+            for (let k = first; k < end; k++) {
+                visit(y0 + foot + oy, x0 + sil.runs[k * 2] + ox, x0 + sil.runs[k * 2 + 1] + ox, share);
             }
         }
     }

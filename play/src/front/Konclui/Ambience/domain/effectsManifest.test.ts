@@ -95,4 +95,50 @@ describe("effects manifest", () => {
             expect(effectsManifestSchema.safeParse({ ...manifest, painted: [1] }).success).toBe(false);
         });
     });
+
+    describe("the casters (the height, foot and footprint of a piece whose rows are not its height)", () => {
+        const sprite = "mobilia/sprites/seating/mob-6cdb5db3.png";
+
+        it("reads an entry with an h alone, and one with a foot and a span", () => {
+            const parsed = effectsManifestSchema.parse({
+                ...manifest,
+                casters: { [sprite]: { h: 18 }, "konclui/sprites/sofa.png": { h: 14.5, foot: 33, span: [2, 60] } },
+            });
+
+            expect(parsed.casters).toEqual({
+                [sprite]: { h: 18 },
+                "konclui/sprites/sofa.png": { h: 14.5, foot: 33, span: [2, 60] },
+            });
+        });
+
+        it("leaves them out of a manifest that has none (the committed one), which is read as it always was", () => {
+            const parsed = effectsManifestSchema.parse(manifest);
+
+            expect(parsed).not.toHaveProperty("casters");
+            expect(effectsManifestSchema.parse({ ...manifest, casters: {} }).casters).toEqual({});
+        });
+
+        it.each([
+            ["an h of 0", { h: 0 }, /h is its height in px: more than 0/],
+            ["a negative h", { h: -3 }, /more than 0/],
+            ["no h", { foot: 4 }, /Required/],
+            ["a foot that is not a whole row", { h: 5, foot: 3.5 }, /foot is a row of the sprite: a whole number/],
+            ["a negative foot", { h: 5, foot: -1 }, /foot is a row of the sprite: 0 or more/],
+            ["a span that ends before it starts", { h: 5, span: [9, 4] }, /span is \[x0, x1\] with x1 after x0/],
+            ["a span of one number", { h: 5, span: [9] }, /./],
+            ["an h that is not a number", { h: "18" }, /./],
+        ])("rejects %s with a message that says which part is wrong", (_what, entry, message) => {
+            const result = effectsManifestSchema.safeParse({ ...manifest, casters: { [sprite]: entry } });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0].path).toEqual([
+                    "casters",
+                    sprite,
+                    ...result.error.issues[0].path.slice(2),
+                ]);
+                expect(result.error.issues.map((i) => i.message).join("; ")).toMatch(message);
+            }
+        });
+    });
 });

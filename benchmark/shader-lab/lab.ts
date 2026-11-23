@@ -39,6 +39,7 @@ import {
 } from "./uniforms";
 
 import {
+    castersHonoured,
     litTowardLamp,
     nearestLampSide,
     reliefAgreement,
@@ -1675,6 +1676,9 @@ export async function runLab(deps: Deps, request: LabRequest): Promise<LabResult
             reach: 36,
         });
     }
+    const casterReport = (built.bake as { casters?: Parameters<typeof castersHonoured>[0] } | null)?.casters;
+    const honoured = castersHonoured(casterReport);
+    if (honoured) extraAcceptance.castersHonoured = honoured;
     if (request.unmarked) {
         const reliefVariant = variants.relief as { changedOnPeople?: number } | undefined;
         extraAcceptance.unmarkedPeopleTakeNoRelief = {
