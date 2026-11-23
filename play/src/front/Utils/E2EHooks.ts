@@ -903,9 +903,15 @@ let capturingWindow = false;
 
 /**
  * The render node name of the Koncluí post pass (POST_NODE in Konclui/Ambience/phaser/postFilter.ts: an upstream file
- * must not import Konclui, FrameProbeContract.test.ts reads that file to keep the two equal).
+ * must not import Konclui, E2EHooksBench.test.ts reads that file to keep the two equal).
  */
 export const POST_FILTER_NODE = "KfxPost";
+
+/**
+ * The same pass when the shading is on (SHADED_POST_NODE in postFilter.ts): a second program that does everything the
+ * first does and more, so a frame it drew counts as a frame with the post pass.
+ */
+export const SHADED_POST_FILTER_NODE = "KfxPostShaded";
 
 /** The longest a fixed capture waits for its 301 game steps: a hidden or throttled tab never runs them. */
 export const FRAME_CAPTURE_TIMEOUT_MS = 60_000;
@@ -947,7 +953,8 @@ function startFrameBenchHook(): void {
             const list = scene.cameras?.main?.filters?.internal?.list;
             if (!list) return false;
             for (let i = 0; i < list.length; i++) {
-                if (list[i].active && list[i].renderNode === POST_FILTER_NODE) return true;
+                const node = list[i].renderNode;
+                if (list[i].active && (node === POST_FILTER_NODE || node === SHADED_POST_FILTER_NODE)) return true;
             }
             return false;
         },

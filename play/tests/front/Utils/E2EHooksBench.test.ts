@@ -17,7 +17,13 @@ vi.mock("../../../src/front/Stores/MediaStore", () => ({
     backgroundProcessedLocalVideoTrackStore: {},
 }));
 
-import { E2E_BENCH_KEY, e2eHooks, FRAME_CAPTURE_TIMEOUT_MS, POST_FILTER_NODE } from "../../../src/front/Utils/E2EHooks";
+import {
+    E2E_BENCH_KEY,
+    e2eHooks,
+    FRAME_CAPTURE_TIMEOUT_MS,
+    POST_FILTER_NODE,
+    SHADED_POST_FILTER_NODE,
+} from "../../../src/front/Utils/E2EHooks";
 import { createFakeTimerGl } from "./fakeTimerGl";
 
 const { PRE_STEP, POST_STEP, POST_RENDER } = Phaser.Core.Events;
@@ -375,6 +381,22 @@ describe("e2eHooks frame bench", () => {
         );
 
         expect(/const POST_NODE = "([^"]+)";/.exec(source)?.[1]).toBe(POST_FILTER_NODE);
+        expect(/const SHADED_POST_NODE = "([^"]+)";/.exec(source)?.[1]).toBe(SHADED_POST_FILTER_NODE);
+    });
+
+    it("counts a frame drawn by the shaded program as a frame with the post pass", () => {
+        const { gl } = benchGl([]);
+        const fake = makeScene(gl);
+        fake.filters.push({ active: true, renderNode: "KfxPostShaded" });
+
+        e2eHooks.startFrameBench();
+        for (let frame = 0; frame < 3; frame++) {
+            fake.gameEvents.emit(PRE_STEP, frame * 16);
+            fake.gameEvents.emit(Phaser.Core.Events.PRE_RENDER);
+        }
+        const reading = e2eHooks.stopFrameBench();
+
+        expect(reading).toMatchObject({ renderedFrames: 3, postFilterFrames: 3, postFilterShare: 1 });
     });
 
     it("rejects a capture that the game never completes, stops the bench and puts everything back", async () => {
