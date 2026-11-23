@@ -68,7 +68,8 @@ jobs:
           if [ -d "$RUNNER_TEMP/konclui-assets/dist" ]; then export KONCLUI_DIST="$RUNNER_TEMP/konclui-assets/dist"; fi
           failed=0
           for test in tools/test_toolchain.py tools/test_pixelgrid.py tools/test_palettesnap.py tools/test_gridguard.py \
-                      tools/test_ingest.py tools/test_publish.py tools/test_verify.py; do
+                      tools/test_ingest.py tools/test_publish.py tools/test_verify.py tools/test_kinds.py \
+                      tools/test_fx_kinds.py; do
             echo "::group::$test"
             python3 -I "$test" || { echo "::error::$test failed"; failed=1; }
             echo "::endgroup::"

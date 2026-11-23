@@ -16,8 +16,19 @@ map's folder; a room without dist/fx/manifest.json gets no effects.
                   only when its night-lit setting is on and ignores a missing or wrong-sized file, so the default costs
                   no frame time; tools/README.md has the decision and the determinism check
   manifest.json   sizes, the water region and palette, lights by sprite, static lights, lockable rooms, every room's
-                  floor (light stays in its room), the lawn palette, each standing sprite's footprint (its shadow), and "tools": the
-                  versions and hashes of the three SpriteFusion tools that made the build (tool_record; the runtime ignores it)
+                  floor (light stays in its room), the lawn palette, each standing sprite's footprint (its shadow), "kinds"
+                  and "painted" (below), and "tools": the versions and hashes of the three SpriteFusion tools that made the
+                  build (tool_record; the runtime ignores it)
+Two optional manifest keys describe what each placed piece is to the lighting (tools/kinds.py has the one rule; version stays 1,
+an older build has neither and the runtime classifies by prefab):
+  kinds     {"<collection folder>/<image path>": "stand" | "top" | "hang" | "floor"} for every placed sprite (the keys of
+            "shadows"). A "floor" piece (rug, mat, carpet) is left out of normal.png, so it gets no relief
+  painted   ["<key>", ...] the stand or top pieces whose picture already draws its own contact shadow: the declared
+            baked-shadow layer of translucent.py (the lounge's painted rows, the catalogue's own shadows) plus any picture
+            with PAINTED_MIN_PX or more partial-alpha pixels in the bottom quarter of its silhouette (tools/kinds.py
+            painted_shadow). The runtime draws no contact shadow over these; KONCLUI_PAINTED_SHADOWS=0 builds the lounge
+            pieces without their shade rows and the list shrinks to what is still drawn
+  python3 hq-office/fx.py --dump-kinds DIST OUT.json   the shared classifier fixture [{key, name, tags, depthOffset, kind}]
 Lights follow the objects as placed: the runtime lights every scene image whose sprite is listed under "lights", so
 a lamp moved in the editor moves its light.
 """
@@ -31,11 +42,13 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+import kinds as KINDS  # noqa: E402  (tools/kinds.py: the stand / top / hang / floor rule)
 import normals as NORMALS  # noqa: E402  (tools/normals.py)
 import toolchain as TOOLCHAIN  # noqa: E402  (tools/toolchain.py)
 import glass as GL
 import lawn as LAWN
 import pool as POOL
+import translucent as TRANSLUCENT
 from palette import rgb
 
 T = 32
@@ -179,6 +192,37 @@ def placed_sprites(dist):
         if hit:
             used[hit[0]] = hit[1]
     return used
+
+
+def placed_entries(dist):
+    """{'<collection folder>/<image path>': [prefab entry, ...]} of the objects the built map places (tools/kinds.py)."""
+    return KINDS.placed_entries(dist)
+
+
+kind_of = KINDS.entry_kind
+
+
+def kinds(dist):
+    """{key: kind} of every placed sprite (tools/kinds.py kinds_of); a picture whose prefabs disagree stops the build."""
+    try:
+        return KINDS.kinds_of(dist)
+    except ValueError as error:
+        raise SystemExit(str(error))
+
+
+def painted(dist, kind_map):
+    """The sorted keys of the stand and top pieces whose picture carries its own contact shadow (see the module docstring)."""
+    declared = set(TRANSLUCENT.ENTITY_LAYERS['baked-shadow'][1])
+    entries = placed_entries(dist)
+    out = []
+    for key, kind in kind_map.items():
+        if kind not in ('stand', 'top'):
+            continue
+        if any(e.get('name') in declared for e in entries[key]) or \
+                KINDS.painted_shadow(np.asarray(Image.open(dist / 'entities' / key.split('/', 1)[0] / key.split('/', 1)[1])
+                                                .convert('RGBA'))):
+            out.append(key)
+    return sorted(out)
 
 
 def shadows(dist):
@@ -376,6 +420,7 @@ def write(dist, *, pool, kind_map, wall_art, P, lockable):
     tv_slide(tv[2] - tv[0], tv[3] - tv[1]).save(out / 'tv-slide.png', optimize=True)
     rx, ry = pool.region
     ph, pw = pool.fx['open'].shape
+    kind_map = kinds(dist)
     manifest = dict(
         version=1, map=[P.W * T, P.H * T], tile=T,
         water=dict(rect=[rx, ry, pw, ph], palette=[list(c) for c in POOL.WATER], glint=[list(c) for c in POOL.GLINT],
@@ -384,6 +429,7 @@ def write(dist, *, pool, kind_map, wall_art, P, lockable):
         lawn={k: list(v) for k, v in LAWN.GRASS.items()},
         lights=found, shadows=shadows(dist), staticLights=static_lights(P, pool), rooms=rooms(P, lockable),
         spaces=spaces(P), glassFaces=glass_faces(P),
+        kinds=kind_map, painted=painted(dist, kind_map),
         ink=list(rgb('#0A0A3D')), tools=tool_record())
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
     add_normals(dist, out, manifest)
@@ -400,3 +446,23 @@ def add_normals(dist, out, manifest, environ=os.environ):
     manifest['normal'] = True
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
     return True
+
+
+def dump_kinds(dist, target):
+    """The shared classifier fixture the runtime lane's casterKind tests read: [{key, name, tags, depthOffset, kind}] for every
+    placed sprite (the first prefab that uses it), in key order. Returns the rows."""
+    dist = Path(dist)
+    rows = []
+    for key, entries in placed_entries(dist).items():
+        e = entries[0]
+        rows.append(dict(key=key, name=e.get('name'), tags=e.get('tags', []), depthOffset=e.get('depthOffset', 0),
+                         kind=kind_of(key, e)))
+    Path(target).write_text(json.dumps(rows, ensure_ascii=False, indent=1) + '\n')
+    return rows
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 4 and sys.argv[1] == '--dump-kinds':
+        print(f'{len(dump_kinds(sys.argv[2], sys.argv[3]))} rows -> {sys.argv[3]}')
+    else:
+        raise SystemExit('usage: python3 hq-office/fx.py --dump-kinds DIST OUT.json')

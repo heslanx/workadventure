@@ -25,7 +25,13 @@ the lines only groups them):
   office.normals     fx/normal.png when the manifest advertises it: exists, has the map's size, is stamped method "tool" (the
                      legacy luminance fallback fails unless --allow-legacy-normals, then it is reported), alpha only 0 or 255,
                      every opaque pixel's normal has unit length within NORMAL_TOLERANCE, and the pixels with a normal are
-                     exactly the opaque pixels of the placed entity sprites (every other pixel has alpha 0)
+                     exactly the opaque pixels of the placed entity sprites that are not floor pieces (every other pixel has
+                     alpha 0: a rug has no normal)
+  office.kinds       fx/manifest.json "kinds" and "painted" (tools/kinds.py): every placed sprite has a kind of stand, top, hang or
+                     floor, equal to the kind re-derived from the build's own collection.json (name, tags, depthOffset, folder);
+                     "painted" lists only stand or top pieces, and every stand or top picture that draws a dark soft shadow of
+                     its own (kinds.painted_shadow) is listed. A manifest with neither key is REPORTED (an older build: the
+                     runtime classifies by prefab)
   determinism        only with --rebuild: hq-office/build.py runs twice into temporary directories and every file of the two
                      dist directories is compared by sha256
 
@@ -65,6 +71,7 @@ HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(SOURCE / 'hq-office'))
+import kinds as K  # noqa: E402
 import normals as N  # noqa: E402
 import palettesnap as PS  # noqa: E402
 import pixelgrid as PG  # noqa: E402
@@ -324,12 +331,16 @@ def pet_palette(root=None):
 # ------------------------------------------------------------------------------------------------------------- normals
 
 def expected_coverage(dist, size):
-    """Boolean (height, width) array: the pixels covered by a fully opaque (alpha 255) pixel of a placed entity sprite. Read
-    from the map and the sprites, not from normal.png: this is what the normal map must cover, whoever wrote it."""
+    """Boolean (height, width) array: the pixels covered by a fully opaque (alpha 255) pixel of a placed entity sprite that is
+    not a floor piece. Read from the map and the sprites, not from normal.png: this is what the normal map must cover,
+    whoever wrote it."""
     width, height = size
     mask = np.zeros((height, width), bool)
     cache = {}
+    floor = N.floor_sprites(dist)                 # a floor piece (the manifest's "kinds") has no normal
     for x, y, path, _ in N.placed(dist):
+        if path in floor:
+            continue
         if path not in cache:
             cache[path] = PG.load_rgba(path)[..., 3] == 255
         solid = cache[path]
@@ -407,6 +418,56 @@ def normals_result(dist, allow_legacy=False, tolerance=NORMAL_TOLERANCE):
     return Result('office.normals', REPORTED if notes else PASS, notes[0] if notes else detail, notes, data)
 
 
+# --------------------------------------------------------------------------------------------------------------- kinds
+
+def kinds_result(dist):
+    """office.kinds: the manifest's "kinds" and "painted" against the build's own prefabs and pictures."""
+    dist = Path(dist)
+    manifest_path = dist / 'fx' / 'manifest.json'
+    if not manifest_path.is_file():
+        return Result('office.kinds', FAIL, 'fx/manifest.json is missing', [f'{manifest_path}: missing'])
+    manifest = json.loads(manifest_path.read_text())
+    if 'kinds' not in manifest and 'painted' not in manifest:
+        return Result('office.kinds', REPORTED, 'the manifest has no "kinds" or "painted": an older build, the runtime '
+                      'classifies by prefab and a rug is not left out of normal.png', data=dict(present=False))
+    fails = K.manifest_problems(manifest)
+    kinds, painted = manifest.get('kinds') or {}, manifest.get('painted') or []
+    placed = K.placed_entries(dist)
+    try:
+        derived = K.kinds_of(dist)
+    except ValueError as error:
+        derived = {}
+        fails.append(str(error))
+    if derived:
+        missing = sorted(set(derived) - set(kinds))
+        extra = sorted(set(kinds) - set(derived))
+        if missing:
+            fails.append(f'{len(missing)} placed sprites have no kind, first {missing[0]!r}')
+        if extra:
+            fails.append(f'{len(extra)} kinds are not placed sprites, first {extra[0]!r}')
+        differ = sorted(k for k in set(derived) & set(kinds) if derived[k] != kinds[k])
+        if differ:
+            fails.append(f'{len(differ)} kinds differ from the rule on the build\'s prefabs, first {differ[0]!r}: manifest '
+                         f'{kinds[differ[0]]!r}, rule {derived[differ[0]]!r}')
+        listed = set(painted)
+        unlisted = []
+        for key, kind in derived.items():
+            if kind in ('stand', 'top') and key not in listed:
+                folder, image = key.split('/', 1)
+                with Image.open(dist / 'entities' / folder / image) as picture:
+                    if K.painted_shadow(np.asarray(picture.convert('RGBA'))):
+                        unlisted.append(key)
+        if unlisted:
+            fails.append(f'{len(unlisted)} stand or top pictures draw their own soft shadow but are not in "painted", first '
+                         f'{unlisted[0]!r}: the runtime would draw a second contact shadow over it')
+    counts = {kind: sum(1 for v in kinds.values() if v == kind) for kind in K.KINDS}
+    data = dict(present=True, sprites=len(kinds), painted=len(painted), **counts, placed_keys=len(placed))
+    if fails:
+        return Result('office.kinds', FAIL, f'{len(fails)} problems: ' + fails[0], fails, data)
+    return Result('office.kinds', PASS, f'{len(kinds)} placed sprites: ' + ', '.join(f'{counts[k]} {k}' for k in K.KINDS)
+                  + f'; {len(painted)} painted (their own contact shadow); kinds equal the rule on the build\'s prefabs', data=data)
+
+
 # --------------------------------------------------------------------------------------------------------- determinism
 
 def tree_hashes(root):
@@ -459,6 +520,7 @@ def run(dist, families=FAMILIES, allow_legacy_normals=False, rebuild=False, avat
         for name, function in (('office.pixels', office_pixels), ('office.palette', office_palette)):
             results += guarded(name, function, dist)
         results += guarded('office.normals', lambda: [normals_result(dist, allow_legacy_normals)])
+        results += guarded('office.kinds', lambda: [kinds_result(dist)])
     if 'avatars' in families:
         results += guarded('avatars.pixels', avatar_pixels, avatars_root)
         results += guarded('avatars.palette', avatar_palette, avatars_root)

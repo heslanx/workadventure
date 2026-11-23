@@ -22,6 +22,7 @@ it writes, and the check fails any other partial alpha. Decided on evidence, per
   * the tilesets of the walls and doors (glass tint, painted reflections) and the light overlay (an alpha gradient by
     definition): fx.py `glass_mask` reads the glass alpha levels by value. Declared, with the exact levels they may use.
 """
+import os
 from pathlib import Path
 import sys
 
@@ -29,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import pixelgrid as PG  # noqa: E402
 
 # Entity layers: layer -> (reason, prefab names). A name is the editor's name of the prefab (collection.json).
-ENTITY_LAYERS = {
+_DECLARED_LAYERS = {
     'glass': ('a pane the player sees through (desk top, record-player lid, window pane, glass door)',
               ('Mesa em meia-lua', 'Vitrola mid-century', 'Interior clássico 65',
                'Janela guilhotina', 'Janela guilhotina aberta', 'Janela pequena de batente')),
@@ -48,6 +49,41 @@ ENTITY_LAYERS = {
          'Sofá de três lugares ardósia com almofadas', 'Suporte de tacos e alvo de dardos', 'TV de parede')),
 }
 
+# The pieces whose picture lounge.py paints a contact shadow into with `shade_row` (MEASURED: the pictures of
+# `lounge.pieces()` built with and without it differ for exactly these declared names, and test_fx_kinds.py asserts it).
+# KONCLUI_PAINTED_SHADOWS=0 builds them without the rows, so they stop carrying partial alpha and stop being declared: the
+# lighting plan's last slice, taken when the runtime draws every object's own shadow. Declared names the rows do not explain
+# (the frames and the TV, the catalogue's own foosball and Lig 4 table) keep their picture's shadow either way.
+LOUNGE_ROW_SHADOWS = ('Aparador baixo de teca com livros e plantas', 'Ave-do-paraíso grande', 'Balcão de bar de teca com cafeteira',
+                      'Banqueta de bar turquesa', 'Banquinho com samambaia', 'Costela-de-adão grande',
+                      'Mesinha redonda de nogueira com caneca', 'Mesa de air hockey', 'Par de pufes',
+                      'Sofá de três lugares ardósia com almofadas', 'Suporte de tacos e alvo de dardos')
+# Pictures of those names that carry partial alpha in the default build: the baked-shadow count they take with them.
+LOUNGE_ROW_SHADOW_FILES = 13
+BASE_ENTITY_FILES = {'glass': 77, 'lamp-light-pool': 4, 'baked-shadow': 32}
+
+
+def painted_shadows(environ=os.environ):
+    """True (the default) while the lounge pieces keep their painted contact shadow; KONCLUI_PAINTED_SHADOWS=0 is False.
+    The same switch as `lounge.painted_shadows`."""
+    return environ.get('KONCLUI_PAINTED_SHADOWS', '1') != '0'
+
+
+def entity_layers(painted=True):
+    """ENTITY_LAYERS for a build that keeps (`painted`) or drops the lounge's painted shadow rows."""
+    if painted:
+        return {layer: (why, tuple(names)) for layer, (why, names) in _DECLARED_LAYERS.items()}
+    return {layer: (why, tuple(n for n in names if layer != 'baked-shadow' or n not in LOUNGE_ROW_SHADOWS))
+            for layer, (why, names) in _DECLARED_LAYERS.items()}
+
+
+def expected_entity_files(painted=True):
+    return dict(BASE_ENTITY_FILES) if painted else {
+        **BASE_ENTITY_FILES, 'baked-shadow': BASE_ENTITY_FILES['baked-shadow'] - LOUNGE_ROW_SHADOW_FILES}
+
+
+ENTITY_LAYERS = entity_layers(painted_shadows())
+
 # The partial levels a declared entity layer may use, None for any (the lamp's glow is a gradient). MEASURED over the build.
 ENTITY_LEVELS = {
     'glass': {51, 128, 179, 192, 204, 230},
@@ -57,7 +93,7 @@ ENTITY_LEVELS = {
 # The count asserted by the check: how many pictures of each layer carry partial alpha (MEASURED, tools/README.md).
 # Enforced by build.py (check_dist), by BuiltOffice over $KONCLUI_DIST and by DeclaredBudget (tools/test_pixelgrid.py),
 # NOT by the mocked DeclaredLayers tests: change a number here and DeclaredBudget says so until it is changed on purpose.
-EXPECTED_ENTITY_FILES = {'glass': 77, 'lamp-light-pool': 4, 'baked-shadow': 32}
+EXPECTED_ENTITY_FILES = expected_entity_files(painted_shadows())
 
 # Tileset layers: file name -> (layer, the only partial levels it may use, None for any).
 TILESET_LAYERS = {

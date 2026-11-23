@@ -24,6 +24,7 @@ accents (navy, turquoise, mint, lime); no letters anywhere.
     'Koncluí: lig 4'             a connect-four rack with red and yellow discs, for a table top
     'Koncluí: fliperama breakout' the catalogue's white arcade with a brick-wall screen and turquoise and mint trim
 """
+import os
 from functools import lru_cache
 
 import numpy as np
@@ -53,8 +54,17 @@ def put(a, x, y, colour):
         a[y, x] = (*(rgb(colour) if isinstance(colour, str) else colour), 255)
 
 
+def painted_shadows(environ=os.environ):
+    """Whether the pieces paint their own contact shadow on the floor (the default). KONCLUI_PAINTED_SHADOWS=0 builds them
+    without it, for the day the runtime draws every object's shadow (the lighting plan's last slice); read at each call, and
+    `pieces()` is cached, so set it before the first call."""
+    return environ.get('KONCLUI_PAINTED_SHADOWS', '1') != '0'
+
+
 def shade_row(a, y, x0, x1, alpha=48, colour=SHADOW):
     """A shadow under a piece, only where nothing is drawn yet."""
+    if not painted_shadows():
+        return
     row = a[y, x0:x1 + 1]
     empty = row[:, 3] == 0
     row[empty] = (*colour, alpha)
