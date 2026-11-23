@@ -83,8 +83,21 @@ export function gate1Storage(
         // "true" or "yes" must not quietly give a normal run, which would be taken for the "before" of a comparison
         throw new Error(`FRAME_PROBE_GATE1_BASELINE is "${baseline}": use 1 for the baseline, or leave it empty or 0`);
     }
-    if (baseline === "1") return { ...GATE1_STORAGE, ...GATE1_BASELINE_STORAGE, ...flags };
-    return { ...GATE1_STORAGE, ...flags };
+    const shading = nightShadingStorage();
+    if (baseline === "1") return { ...GATE1_STORAGE, ...GATE1_BASELINE_STORAGE, ...shading, ...flags };
+    return { ...GATE1_STORAGE, ...shading, ...flags };
+}
+
+/**
+ * The gate runs with the night-lit shading on (konclui.fx.rim), which is its heaviest look. FRAME_PROBE_GATE1_SHADING=off
+ * runs the same gate with it off, to measure what the shading costs. Any other value than "on" or "off" stops the run.
+ */
+export function nightShadingStorage(
+    value: string | undefined = process.env.FRAME_PROBE_GATE1_SHADING,
+): Record<string, string> {
+    if (value === undefined || value === "" || value === "on") return {};
+    if (value === "off") return { "konclui.fx.rim": "0" };
+    throw new Error(`FRAME_PROBE_GATE1_SHADING is "${value}": use on or off`);
 }
 
 const AVATAR_FLAGS = ["avatarDetailBudget", "avatarZeroWork", "avatarBake"] as const;

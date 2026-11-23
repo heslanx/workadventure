@@ -27,7 +27,14 @@ import {
     type Gate1Session,
     type Gate1Setup,
 } from "../frame-probe/gate1";
-import { avatarFlagProblems, GATE1_STORAGE, gate1Storage, gate1Url, missingBuffer } from "../frame-probe/gate1Browser";
+import {
+    avatarFlagProblems,
+    GATE1_STORAGE,
+    gate1Storage,
+    gate1Url,
+    missingBuffer,
+    nightShadingStorage,
+} from "../frame-probe/gate1Browser";
 import { pageBench, pageCrowd, pageNight, pageRenderer, SWIFTSHADER } from "./support/frameProbeFixtures";
 
 function capture(
@@ -1293,5 +1300,14 @@ describe("the context option of the gate1 command", () => {
 
         expect(await main(["gate1", ROOM, "--context=default", "--flag=gameStepCap=1"], deps)).toBe(0);
         expect(seen).toEqual({ context: "default", flags: { gameStepCap: "1" } });
+    });
+});
+
+describe("the night shading of a gate run", () => {
+    it("is on unless the run asks for it off, and refuses any other word", () => {
+        expect(nightShadingStorage(undefined)).toEqual({});
+        expect(nightShadingStorage("on")).toEqual({});
+        expect(nightShadingStorage("off")).toEqual({ "konclui.fx.rim": "0" });
+        expect(() => nightShadingStorage("0")).toThrow(/FRAME_PROBE_GATE1_SHADING/);
     });
 });
