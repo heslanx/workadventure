@@ -1,0 +1,2093 @@
+{
+  "schema": 1,
+  "severity": {
+    "redraw": 3,
+    "touch-up": 1,
+    "keep": 0
+  },
+  "placements": 664,
+  "sprites": 219,
+  "placements_by_verdict": {
+    "redraw": 38,
+    "touch-up": 134,
+    "keep": 492
+  },
+  "share_of_placements_not_keep": 0.259,
+  "most_repeated_keep": [
+    {
+      "key": "mobilia/sprites/seating/mob-e8bedd99-174a-444c-9c1b-3047387be390.png",
+      "name": "Poltrona Eames",
+      "direction": "Up",
+      "placements": 72
+    },
+    {
+      "key": "konclui/sprites/konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3.png",
+      "name": "Computador iMac (sobre móvel)",
+      "direction": "Down",
+      "placements": 46
+    },
+    {
+      "key": "konclui/sprites/konclui-office-chair-up-ds-petrol.png",
+      "name": "Cadeira de escritório giratória (cores da marca)",
+      "direction": "Up",
+      "placements": 46
+    },
+    {
+      "key": "mobilia/sprites/table/mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c.png",
+      "name": "Mesa de escritório",
+      "direction": "Down",
+      "placements": 46
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82.png",
+      "name": "Figueira-lira",
+      "direction": "Down",
+      "placements": 12
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-8945d1c2-50b6-482b-bcd5-2804a0f95682.png",
+      "name": "Roseira",
+      "direction": "Down",
+      "placements": 10
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7.png",
+      "name": "Costela-de-adão (monstera)",
+      "direction": "Down",
+      "placements": 10
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-c55cc63f-8edf-422b-ad0c-6494e4098eac.png",
+      "name": "Samambaia",
+      "direction": "Down",
+      "placements": 8
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-805bc9b5-8179-4376-81d8-099e96eca613.png",
+      "name": "Ave-do-paraíso (folhagem)",
+      "direction": "Down",
+      "placements": 8
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803.png",
+      "name": "Poltrona Eames",
+      "direction": "Down",
+      "placements": 8
+    }
+  ],
+  "second_look": [
+    {
+      "key": "mobilia/sprites/seating/mob-e8bedd99-174a-444c-9c1b-3047387be390.png",
+      "name": "Poltrona Eames, Up (1.18)",
+      "placements": 72,
+      "audit_verdict": "keep",
+      "second_verdict": "keep",
+      "changes_audit": false,
+      "reviewer": "lane-c-2026-11-23",
+      "reason": "Agree. Rear view with a clean 1 px ink, 3-tone copper ramp, 8 colours, foot gap 1, silhouette mirror difference 0.7%: it sits beside the best catalogue pieces and reads at 1:1 in the lit overview. Its outline has two inks, the navy frame (#30325e, 72 boundary px) and the dark-copper cushion (#623436, 14 px), 96.6% of the boundary together; the first second opinion's 81% counted the navy alone. The only defect is data, not art: its 27 solid rows are 18 px of real height, so the shadow is too long (caster h 18)."
+    },
+    {
+      "key": "konclui/sprites/konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3.png",
+      "name": "14.2 Computador iMac (sobre móvel), front: monitor, keyboard, mouse (direction Down)",
+      "placements": 46,
+      "audit_verdict": "keep",
+      "second_verdict": "keep",
+      "changes_audit": false,
+      "reviewer": "lane-c-2026-11-23",
+      "reason": "Agree (46 placements, the fourth most repeated keep). A clean front elevation: screen, stand, keyboard and mouse, readable at 1:1 and the brightest thing on every desk of the lit overview. Nothing to change."
+    },
+    {
+      "key": "konclui/sprites/konclui-office-chair-up-ds-petrol.png",
+      "name": "Cadeira de escritório giratória, Up (1.16)",
+      "placements": 46,
+      "audit_verdict": "keep",
+      "second_verdict": "keep",
+      "changes_audit": false,
+      "reviewer": "lane-c-2026-11-23",
+      "reason": "Agree with the audit's keep, after a correction. The first second opinion upgraded this to touch-up on '11% of the boundary is ink', which was an artifact of a one-ink measure (the darkest teal, 8 px). Drawn with one ink per material, as bake.py draws them, 77.8% of the boundary is in an ink (dark teal #0f262c and the navy #30325e of the armrests, wheels and base), measured by contract.py outline_share. The armrests are outlined on their outer sides, the rim of the backrest is a teal highlight with no ink, and the foot gap is 3 rows. Form, ramp and silhouette read at 1:1 beside the Eames. It stays a ratchet offender of outline (77.8% against 90%) and of foot_gap, so a redraw is held to the limit; the optional touch-up (ink the backrest rim) is cheap but not urgent. 46 placements (53 with the Down twin)."
+    },
+    {
+      "key": "mobilia/sprites/table/mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c.png",
+      "name": "3.10 Mesa de escritório (gavetas à esquerda)",
+      "placements": 46,
+      "audit_verdict": "keep",
+      "second_verdict": "keep",
+      "changes_audit": false,
+      "reviewer": "lane-c-2026-11-23",
+      "reason": "Agree for the art, with two caveats. At 1:1 in the lit overview the desk reads as a desk (white slab, drawer pedestal, one leg) under its monitor. The top is a single flat colour (mean run 11.7 against a catalogue median of 2.4), and the slab's light slate rim is drawn on row 0 of the canvas, which contract.py edge_touch flags (a rim in a lighter tone than the darkest ink cannot be told from a cut). Its outline is two inks, a light slate rim on the slab and a dark slate one under it, 97.8% of the boundary together (the first second opinion's 44% counted only the darker). And its 40 rows are 10 px of real front face (rows minus 30 px of footprint depth): the shadow is about 4 times too long, which is the visible defect: a caster entry fixes it with no new pixel."
+    }
+  ],
+  "ranked": [
+    {
+      "key": "konclui/sprites/konclui-1fad38cd-8519-4fb5-8acb-8154aa262156.png",
+      "name": "Luminária molecular (sobre móvel)",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 4,
+      "score": 12,
+      "rank": 1
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-banqueta-turquesa.png",
+      "name": "Banqueta de bar turquesa",
+      "direction": "Up",
+      "verdict": "redraw",
+      "placements": 3,
+      "score": 9,
+      "rank": 2
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-0092afb7-c02a-4ab9-930b-217394bc1522.png",
+      "name": "Luminária de arco",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 3,
+      "score": 9,
+      "rank": 3
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-743b0b9b-2916-4665-99e3-6526328f529d.png",
+      "name": "Hosta",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 8,
+      "score": 8,
+      "rank": 4
+    },
+    {
+      "key": "konclui/sprites/konclui-ac871da8-583c-4ddd-b84b-baa638df46bf.png",
+      "name": "Planta em vaso de cerâmica (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 7,
+      "score": 7,
+      "rank": 5
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-7b58a2ed-20eb-499d-a5a5-6787951f2846.png",
+      "name": "Árvore de bordo",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 6,
+      "score": 6,
+      "rank": 6
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d.png",
+      "name": "Pinheiro pequeno",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 6,
+      "score": 6,
+      "rank": 7
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-d42a8630-9665-4afc-ab25-fbe99c299050.png",
+      "name": "Bétula",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 6,
+      "score": 6,
+      "rank": 8
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef.png",
+      "name": "Cadeira wabi-sabi",
+      "direction": "Up",
+      "verdict": "touch-up",
+      "placements": 6,
+      "score": 6,
+      "rank": 9
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62.png",
+      "name": "Cadeira wabi-sabi",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 6,
+      "score": 6,
+      "rank": 10
+    },
+    {
+      "key": "konclui/sprites/konclui-knoll-couch-up-ds-petrol.png",
+      "name": "Sofá Knoll (cores da marca)",
+      "direction": "Up",
+      "verdict": "redraw",
+      "placements": 2,
+      "score": 6,
+      "rank": 11
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-planta-ave-do-paraiso-alta.png",
+      "name": "Ave-do-paraíso grande",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 2,
+      "score": 6,
+      "rank": 12
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-planta-ave-do-paraiso-branco.png",
+      "name": "Ave-do-paraíso grande",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 2,
+      "score": 6,
+      "rank": 13
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-planter-white.png",
+      "name": "Floreira branca",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 2,
+      "score": 6,
+      "rank": 14
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-0120d5d7-3959-4e9a-9658-0692d255e7a7.png",
+      "name": "Cadeira Adirondack",
+      "direction": "Left",
+      "verdict": "redraw",
+      "placements": 2,
+      "score": 6,
+      "rank": 15
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-46c60b8c-48f5-4b5e-ad5c-93dc4406782e.png",
+      "name": "Cadeira Adirondack",
+      "direction": "Right",
+      "verdict": "redraw",
+      "placements": 2,
+      "score": 6,
+      "rank": 16
+    },
+    {
+      "key": "estantes-e-livros/sprites/bookshelves-005.png",
+      "name": "Estante 6",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 4,
+      "score": 4,
+      "rank": 17
+    },
+    {
+      "key": "konclui/sprites/konclui-2493debc-b983-4ea5-a082-c0b4a78e3cca.png",
+      "name": "Maçã (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 4,
+      "score": 4,
+      "rank": 18
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-619f3393-15b0-4884-a27c-90ebae88b2a6.png",
+      "name": "Pinheiro grande",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 4,
+      "score": 4,
+      "rank": 19
+    },
+    {
+      "key": "konclui/sprites/konclui-9f805443-5047-4bb9-a8e9-a5a57735b9bb.png",
+      "name": "Garrafa térmica (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 3,
+      "score": 3,
+      "rank": 20
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-photo-frame-mountain.png",
+      "name": "Porta-retratos (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 3,
+      "score": 3,
+      "rank": 21
+    },
+    {
+      "key": "konclui/sprites/konclui-38c1b75b-4869-4c36-b3e6-00873d3e896e.png",
+      "name": "Xícara de chá (sobre móvel)",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 22
+    },
+    {
+      "key": "konclui/sprites/konclui-722a3bb0-c7c4-43f2-8fec-3fa790d6608b.png",
+      "name": "Xícara de chá (sobre móvel)",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 23
+    },
+    {
+      "key": "konclui/sprites/konclui-ae9b4039-bd9c-4978-bd51-d1bc1aebbf75.png",
+      "name": "Pizza (sobre móvel)",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 24
+    },
+    {
+      "key": "konclui/sprites/konclui-de01c12c-4045-4a00-9748-3db8b2e4c5a4.png",
+      "name": "Xícara de chá (sobre móvel)",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 25
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-air-hockey-navy.png",
+      "name": "Mesa de air hockey",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 26
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-criado-mudo-alto.png",
+      "name": "Criado-mudo de nogueira",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 27
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-lumin-ria-de-arco-preto.png",
+      "name": "Luminária de arco com cúpula",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 28
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-mesa-com-lig-4-clara.png",
+      "name": "Mesa com Lig 4",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 29
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-planta-aglaonema-branco.png",
+      "name": "Aglaonema",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 30
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-planta-costela-de-ad-o-branco.png",
+      "name": "Costela-de-adão grande",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 31
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-reception-desk-oak.png",
+      "name": "Balcão de recepção Koncluí",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 32
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-tacos-escuro.png",
+      "name": "Suporte de tacos e alvo de dardos",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 33
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-540ec809-04c2-49b6-857d-72ada4b136be.png",
+      "name": "Violão",
+      "direction": "Down",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 34
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-86fcec6a-3b67-498d-be33-125a2c69a7ba.png",
+      "name": "Luminária de arco",
+      "direction": "Up",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 35
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-3b86db60-e3ec-4e8d-81bd-4a335d334c5a.png",
+      "name": "Poltrona Knoll",
+      "direction": "Right",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 36
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-abaa90b0-ea32-43e2-be3d-beca6c9ff682.png",
+      "name": "Poltrona Knoll",
+      "direction": "Left",
+      "verdict": "redraw",
+      "placements": 1,
+      "score": 3,
+      "rank": 37
+    },
+    {
+      "key": "konclui/sprites/konclui-adba2363-77d1-49e5-8480-6a9bd6aee2af.png",
+      "name": "Globo terrestre (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 38
+    },
+    {
+      "key": "konclui/sprites/konclui-d8585f28-488b-450d-b970-51d9b749b3a6.png",
+      "name": "Copo térmico Stanley (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 39
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-logo-totem-ink.png",
+      "name": "Totem com o K",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 40
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-lumin-ria-de-mesa-creme.png",
+      "name": "Luminária de mesa com cúpula clara (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 41
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-photo-frame-pet.png",
+      "name": "Porta-retratos (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 42
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-55789498-365a-442a-bf5c-ad6118e58e49.png",
+      "name": "Broto",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 43
+    },
+    {
+      "key": "mobilia/sprites/table/mob-20dc9cf0-19cc-4f59-ac6c-f0227fb987ce.png",
+      "name": "Mesa lateral mid-century",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 44
+    },
+    {
+      "key": "mobilia/sprites/table/mob-6ec15ffb-fc53-45f1-9c3f-4db5f6165062.png",
+      "name": "Mesa lateral mid-century",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 2,
+      "score": 2,
+      "rank": 45
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-160.png",
+      "name": "Luminária de mesa 1",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 46
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-164.png",
+      "name": "Luminária de mesa 5",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 47
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-211.png",
+      "name": "Geladeira de bebidas",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 48
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-212.png",
+      "name": "Máquina de lanches",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 49
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-320.png",
+      "name": "Maço de dinheiro",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 50
+    },
+    {
+      "key": "konclui/sprites/konclui-23a241c5-c9d5-47fe-812e-bb2f0f290be3.png",
+      "name": "Garrafa térmica (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 51
+    },
+    {
+      "key": "konclui/sprites/konclui-26fda9fc-2b77-4eb2-98a5-87e9ddc53241.png",
+      "name": "Bule de café (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 52
+    },
+    {
+      "key": "konclui/sprites/konclui-4e67b39b-5493-43a9-9fe5-c6aee2eafd1b.png",
+      "name": "Coxinha (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 53
+    },
+    {
+      "key": "konclui/sprites/konclui-6624c793-3ab8-40bb-b74b-1f208ed4bcb3.png",
+      "name": "Máquina de café expresso (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 54
+    },
+    {
+      "key": "konclui/sprites/konclui-7c1d7e50-36c3-436e-85ef-d64a8bb99c89.png",
+      "name": "Caneca (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 55
+    },
+    {
+      "key": "konclui/sprites/konclui-870feb00-9bf5-43f4-a2fd-eaddcc54c5af.png",
+      "name": "Caneca alta (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 56
+    },
+    {
+      "key": "konclui/sprites/konclui-8c6d1edb-4eb5-4571-914d-cfd37063417a.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 57
+    },
+    {
+      "key": "konclui/sprites/konclui-8c7cf95c-a997-4d0e-997f-b06685279b6d.png",
+      "name": "Tablet e celular (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 58
+    },
+    {
+      "key": "konclui/sprites/konclui-8c969711-3773-4b97-978c-80c8482ab409.png",
+      "name": "Fone de ouvido (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 59
+    },
+    {
+      "key": "konclui/sprites/konclui-9efdbe45-1575-4280-83ed-5e3f907c5194.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 60
+    },
+    {
+      "key": "konclui/sprites/konclui-a354ade9-9e5f-45c6-bf37-56c911a918a2.png",
+      "name": "Caneca (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 61
+    },
+    {
+      "key": "konclui/sprites/konclui-a3b4d465-f1d2-4d75-a42a-20f133c09203.png",
+      "name": "Copo térmico Stanley (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 62
+    },
+    {
+      "key": "konclui/sprites/konclui-c049f7f0-d9c7-442f-84e2-87f7f8c2028d.png",
+      "name": "Copo térmico Stanley (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 63
+    },
+    {
+      "key": "konclui/sprites/konclui-cef2c7de-0849-497a-8de1-e51011229ea5.png",
+      "name": "Maçã (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 64
+    },
+    {
+      "key": "konclui/sprites/konclui-d008b33d-fc20-4640-aab4-23fc17ce9921.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 65
+    },
+    {
+      "key": "konclui/sprites/konclui-d4d92e2a-bdc9-4df3-aede-549f2d0f2be4.png",
+      "name": "Copo térmico Stanley (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 66
+    },
+    {
+      "key": "konclui/sprites/konclui-d8c09305-1179-420d-b566-388233e4c217.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 67
+    },
+    {
+      "key": "konclui/sprites/konclui-e5725809-b61c-49f7-a882-57f10348d877.png",
+      "name": "Garrafa térmica (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 68
+    },
+    {
+      "key": "konclui/sprites/konclui-fab25061-2a2f-48ec-b593-b0a609724608.png",
+      "name": "Cafeteira de cápsula (sobre móvel)",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 69
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-aparador-teca.png",
+      "name": "Aparador baixo de teca com livros e plantas",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 70
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-balc-o-de-bar-teca.png",
+      "name": "Balcão de bar de teca com cafeteira",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 71
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-banco-de-plantas-teca.png",
+      "name": "Banquinho com samambaia",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 72
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-carpete-de-jogos-navy.png",
+      "name": "Carpete navy da sala de jogos",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 73
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-criado-mudo-baixo.png",
+      "name": "Criado-mudo de nogueira",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 74
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-entrance-mat-ink.png",
+      "name": "Tapete de entrada com o K",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 75
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-fliperama-2048-cor.png",
+      "name": "Fliperama de 2048",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 76
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-fliperama-breakout-turquesa.png",
+      "name": "Fliperama de Breakout",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 77
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-fliperama-tetris-cor.png",
+      "name": "Fliperama de Tetris",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 78
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-mesa-de-centro-branca.png",
+      "name": "Mesa de centro oval branca com xadrez",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 79
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-mesinha-nogueira.png",
+      "name": "Mesinha redonda de nogueira com caneca",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 80
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-neon-ondas.png",
+      "name": "Letreiro neon de ondas",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 81
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-painel-navy.png",
+      "name": "Painel de destaque navy com quadros",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 82
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-pebolim-verde.png",
+      "name": "Pebolim do salão de jogos",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 83
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-pufe-par.png",
+      "name": "Par de pufes",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 84
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-gestor-ink.png",
+      "name": "Quadro: a gestora e o checklist",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 85
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-marca-k-ink.png",
+      "name": "Quadro: o K da Koncluí",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 86
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-marca-k-menta-ink.png",
+      "name": "Quadro: o K em menta",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 87
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-marca-palavra-ink.png",
+      "name": "Quadro: Koncluí",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 88
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-sof-almofadas.png",
+      "name": "Sofá de três lugares ardósia com almofadas",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 89
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-sof-manta.png",
+      "name": "Sofá de três lugares ardósia com almofadas",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 90
+    },
+    {
+      "key": "lpc/sprites/lpc-interior-052.png",
+      "name": "Interior clássico 52",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 91
+    },
+    {
+      "key": "mobilia/sprites/cabinetsandshelves/mob-f69631b3-6395-4b66-a609-0dde42feac73.png",
+      "name": "Estante de plantas",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 92
+    },
+    {
+      "key": "mobilia/sprites/machine/mob-87e53678-a56e-4db1-a04d-7b45d0d8f474.png",
+      "name": "Computador iMac",
+      "direction": "Up",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 93
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-22e4adfc-0737-4960-9171-7306a85bfb94.png",
+      "name": "Mesa de pingue-pongue",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 94
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-999b5849-deed-48f8-928d-a237c8b2bf6c.png",
+      "name": "Câmera no tripé",
+      "direction": "Up",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 95
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-c847382d-6646-4104-9966-e720579493ea.png",
+      "name": "Piano vertical",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 96
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-e6b64011-9e8e-45b8-81dc-cd8e4fdb173a.png",
+      "name": "Fliperama",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 97
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-6cdb5db3-9ae2-46b4-8780-668de4c42474.png",
+      "name": "Banco de praça",
+      "direction": "Left",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 98
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-da5dc64e-f437-4d16-8955-d3146afc068e.png",
+      "name": "Banco de praça",
+      "direction": "Right",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 99
+    },
+    {
+      "key": "mobilia/sprites/walldecor/mob-3d503fea-0884-4eeb-8170-202e76cc5437.png",
+      "name": "Vaso de parede pequeno",
+      "direction": "Down",
+      "verdict": "touch-up",
+      "placements": 1,
+      "score": 1,
+      "rank": 100
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-e8bedd99-174a-444c-9c1b-3047387be390.png",
+      "name": "Poltrona Eames",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 72,
+      "score": 0,
+      "rank": 101
+    },
+    {
+      "key": "konclui/sprites/konclui-e3a45586-bfc6-4efb-a5ba-c92c0f961ab3.png",
+      "name": "Computador iMac (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 46,
+      "score": 0,
+      "rank": 102
+    },
+    {
+      "key": "konclui/sprites/konclui-office-chair-up-ds-petrol.png",
+      "name": "Cadeira de escritório giratória (cores da marca)",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 46,
+      "score": 0,
+      "rank": 103
+    },
+    {
+      "key": "mobilia/sprites/table/mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c.png",
+      "name": "Mesa de escritório",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 46,
+      "score": 0,
+      "rank": 104
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82.png",
+      "name": "Figueira-lira",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 12,
+      "score": 0,
+      "rank": 105
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-8945d1c2-50b6-482b-bcd5-2804a0f95682.png",
+      "name": "Roseira",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 10,
+      "score": 0,
+      "rank": 106
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7.png",
+      "name": "Costela-de-adão (monstera)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 10,
+      "score": 0,
+      "rank": 107
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-c55cc63f-8edf-422b-ad0c-6494e4098eac.png",
+      "name": "Samambaia",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 8,
+      "score": 0,
+      "rank": 108
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-805bc9b5-8179-4376-81d8-099e96eca613.png",
+      "name": "Ave-do-paraíso (folhagem)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 8,
+      "score": 0,
+      "rank": 109
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803.png",
+      "name": "Poltrona Eames",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 8,
+      "score": 0,
+      "rank": 110
+    },
+    {
+      "key": "konclui/sprites/konclui-office-chair-down-ds-petrol.png",
+      "name": "Cadeira de escritório giratória (cores da marca)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 7,
+      "score": 0,
+      "rank": 111
+    },
+    {
+      "key": "mobilia/sprites/table/mob-84dc073e-3f0d-441b-a765-ab4cca62bfed.png",
+      "name": "Mesa octogonal 2x3",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 7,
+      "score": 0,
+      "rank": 112
+    },
+    {
+      "key": "konclui/sprites/konclui-87e53678-a56e-4db1-a04d-7b45d0d8f474.png",
+      "name": "Computador iMac (sobre móvel)",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 113
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-ed0d2801-ff4e-428d-9068-909933b24ece.png",
+      "name": "Ave-do-paraíso florida",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 114
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-0ad2677b-b361-45e9-8949-85185f01e3c7.png",
+      "name": "Cadeira de café",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 115
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-3977c61e-b73e-47b3-9d81-61d764f326f4.png",
+      "name": "Cadeira de café",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 116
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-7910276d-10da-4380-b750-c91d6dc1df87.png",
+      "name": "Cadeira de café",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 117
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f.png",
+      "name": "Cadeira de café",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 118
+    },
+    {
+      "key": "mobilia/sprites/table/mob-e4bba280-ef68-4a53-8a1e-043b066f3732.png",
+      "name": "Mesa de escritório",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 6,
+      "score": 0,
+      "rank": 119
+    },
+    {
+      "key": "konclui/sprites/konclui-6a5897a7-b0a3-4802-8fe5-7fa87db3747f.png",
+      "name": "Anotações a caneta (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 5,
+      "score": 0,
+      "rank": 120
+    },
+    {
+      "key": "konclui/sprites/konclui-d110bd2a-a862-48f4-bb67-fa45b1099b1b.png",
+      "name": "Babosa (aloe vera) (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 121
+    },
+    {
+      "key": "mobilia/sprites/cabinetsandshelves/mob-09792257-d9ca-41a3-8cf6-04c91c34764f.png",
+      "name": "Armário de cozinha grande",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 122
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-69d38f3e-27ac-4bcb-b963-f32f873dc367.png",
+      "name": "Equinácea",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 123
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-70a53160-3a2e-43d4-b279-6a0a588072b4.png",
+      "name": "Equinácea",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 124
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-920b1507-1b94-4d7f-8c15-cac21f9da3a7.png",
+      "name": "Equinácea",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 125
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-1e6e3d8d-eebc-4b6b-afc5-58e48f71794c.png",
+      "name": "Espada-de-são-jorge",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 126
+    },
+    {
+      "key": "mobilia/sprites/table/mob-903d4cf4-84b8-44d5-939a-4aaa586d674f.png",
+      "name": "Mesa de reunião 2x3",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 4,
+      "score": 0,
+      "rank": 127
+    },
+    {
+      "key": "konclui/sprites/konclui-3f67ae2e-ca75-445f-ab9f-73cbe2dcd753.png",
+      "name": "Caderno fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 3,
+      "score": 0,
+      "rank": 128
+    },
+    {
+      "key": "konclui/sprites/konclui-a1ed8609-d061-4979-b431-7ca824c6fe51.png",
+      "name": "Café gelado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 3,
+      "score": 0,
+      "rank": 129
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-a40ece75-7da2-4a57-8c29-1f32e317dce2.png",
+      "name": "Bebedouro",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 3,
+      "score": 0,
+      "rank": 130
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-a86c724c-1baf-4013-92be-4bb27abaf73c.png",
+      "name": "Poltrona Eames",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 3,
+      "score": 0,
+      "rank": 131
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-fe2e3920-e493-4a75-a279-55f90dc93bc3.png",
+      "name": "Poltrona Eames",
+      "direction": "Right",
+      "verdict": "keep",
+      "placements": 3,
+      "score": 0,
+      "rank": 132
+    },
+    {
+      "key": "estantes-e-livros/sprites/bookshelves-011.png",
+      "name": "Estante 12",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 133
+    },
+    {
+      "key": "konclui/sprites/konclui-03761ab2-32b1-463c-b081-8821fa9fe5a2.png",
+      "name": "Livro aberto (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 134
+    },
+    {
+      "key": "konclui/sprites/konclui-14f86cd6-c9eb-414a-975e-b118ce39853d.png",
+      "name": "Telefone de conferência (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 135
+    },
+    {
+      "key": "konclui/sprites/konclui-20b9de90-c47f-4174-8d1d-0463d946d3e5.png",
+      "name": "Lata de refrigerante (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 136
+    },
+    {
+      "key": "konclui/sprites/konclui-3b442e91-c0c7-4190-b84b-2e8a3bbf5aee.png",
+      "name": "Documento avulso (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 137
+    },
+    {
+      "key": "konclui/sprites/konclui-461ede90-00b8-4bc0-9324-3f36e574fbfb.png",
+      "name": "Livro fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 138
+    },
+    {
+      "key": "konclui/sprites/konclui-4902e533-a730-40a8-a12e-2d6e507ed625.png",
+      "name": "Documento avulso (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 139
+    },
+    {
+      "key": "konclui/sprites/konclui-51e85145-96ba-4fed-835b-5b0aa7191311.png",
+      "name": "Anotações a caneta (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 140
+    },
+    {
+      "key": "konclui/sprites/konclui-55789498-365a-442a-bf5c-ad6118e58e49.png",
+      "name": "Broto (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 141
+    },
+    {
+      "key": "konclui/sprites/konclui-5cb4d851-03f4-48c8-acaa-3effd8b31a38.png",
+      "name": "Lata de refrigerante (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 142
+    },
+    {
+      "key": "konclui/sprites/konclui-63468875-3a41-4ffb-8eb3-62809f727006.png",
+      "name": "Notebook (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 143
+    },
+    {
+      "key": "konclui/sprites/konclui-8bf95209-c70e-4e1b-bdd0-ddb4fa06870d.png",
+      "name": "Caderno fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 144
+    },
+    {
+      "key": "konclui/sprites/konclui-b2d450d9-cab0-4424-bd29-efa3fd040887.png",
+      "name": "Pilha de documentos (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 145
+    },
+    {
+      "key": "konclui/sprites/konclui-c1a73206-fc0c-477c-ba72-7f72944e4d31.png",
+      "name": "Patinho de borracha (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 146
+    },
+    {
+      "key": "konclui/sprites/konclui-ce5922e6-2812-4c20-aceb-59045fb8d07a.png",
+      "name": "Cacto pequeno (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 147
+    },
+    {
+      "key": "konclui/sprites/konclui-knoll-couch-down-ds-petrol.png",
+      "name": "Sofá Knoll (cores da marca)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 148
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-rug-10x5-mist.png",
+      "name": "Tapete de lã 10×5",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 149
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-rug-5x3-mist.png",
+      "name": "Tapete de lã 5×3",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 150
+    },
+    {
+      "key": "mobilia/sprites/cabinetsandshelves/mob-201a71f5-3652-4646-a347-098feeb12b27.png",
+      "name": "Arquivo de gavetas",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 151
+    },
+    {
+      "key": "mobilia/sprites/cabinetsandshelves/mob-3cd7296b-cc4c-40b5-96ac-53b6ea152e4d.png",
+      "name": "Estante de livros média",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 152
+    },
+    {
+      "key": "mobilia/sprites/interactive/mob-aa2d686e-ec1b-44e6-9aa5-6d8d75b573d8.png",
+      "name": "Quadro branco de parede",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 153
+    },
+    {
+      "key": "mobilia/sprites/nature/mob-03f657fd-a27e-4517-a4c4-e03bf5d96c87.png",
+      "name": "Girassol",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 154
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-5037b0bd-c0c0-4bd0-a381-edd1c595aaf2.png",
+      "name": "Luminária de chão com franjas",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 155
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-e7e8fc78-4445-46ac-8520-af922cb5c050.png",
+      "name": "Cavalete com cartaz",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 156
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-23747e7d-72e1-46da-bcf8-2b3f138a94fa.png",
+      "name": "Poltrona Le Corbusier",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 157
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-261cd100-5723-4390-b863-654920efbf0e.png",
+      "name": "Sofá Le Corbusier",
+      "direction": "Up",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 158
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-4363342e-80d8-4fb3-9262-01e6242e5c81.png",
+      "name": "Sofá Le Corbusier",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 159
+    },
+    {
+      "key": "mobilia/sprites/seating/mob-d57e51ef-a793-41b2-81f3-7d523299e0a2.png",
+      "name": "Poltrona Le Corbusier",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 160
+    },
+    {
+      "key": "mobilia/sprites/table/mob-27452e37-ffee-48dd-8c41-8ea22256049d.png",
+      "name": "Mesa de piquenique",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 161
+    },
+    {
+      "key": "mobilia/sprites/table/mob-28a54590-8b59-47c9-bcdc-ed5f13caada3.png",
+      "name": "Mesa de centro redonda",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 162
+    },
+    {
+      "key": "mobilia/sprites/table/mob-405abae6-562c-4812-8506-7abbae89e1cc.png",
+      "name": "Mesa de centro de tronco",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 163
+    },
+    {
+      "key": "mobilia/sprites/table/mob-bd44f4ea-b883-4503-97d1-42fe33071558.png",
+      "name": "Mesa de centro redonda",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 164
+    },
+    {
+      "key": "mobilia/sprites/walldecor/mob-343bb8f2-c216-4f96-8db6-f8cae8f394d1.png",
+      "name": "Painéis acústicos hexagonais",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 165
+    },
+    {
+      "key": "mobilia/sprites/walldecor/mob-55d2799f-0db5-47c6-bc1e-e33e6c246461.png",
+      "name": "TV de parede",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 166
+    },
+    {
+      "key": "mobilia/sprites/walldecor/mob-c9f0adcd-98b8-40f9-9b0c-3d6f6a409336.png",
+      "name": "Relógio de parede minimalista",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 2,
+      "score": 0,
+      "rank": 167
+    },
+    {
+      "key": "konclui/sprites/konclui-06c21df2-34d1-4a6f-88cd-f0d3cd06a7e9.png",
+      "name": "Fone de ouvido (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 168
+    },
+    {
+      "key": "konclui/sprites/konclui-1552d022-8ca6-4125-aa59-9af8023e1f44.png",
+      "name": "Lata de refrigerante (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 169
+    },
+    {
+      "key": "konclui/sprites/konclui-17820a56-098f-4fce-9d72-fd34b8891ce2.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 170
+    },
+    {
+      "key": "konclui/sprites/konclui-1e938292-ee46-4ed5-a7a8-159ce6d7d2e4.png",
+      "name": "Busto de mármore feminino (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 171
+    },
+    {
+      "key": "konclui/sprites/konclui-1f5d9315-9534-40b5-b8a5-50f4e52ca85a.png",
+      "name": "Patinho de borracha (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 172
+    },
+    {
+      "key": "konclui/sprites/konclui-2164645c-683c-4b3d-8968-d4c4a4f9f037.png",
+      "name": "Anotações a caneta (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 173
+    },
+    {
+      "key": "konclui/sprites/konclui-2ccf5d0e-b2e6-4e73-b838-47cb8aadfc29.png",
+      "name": "Caneca (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 174
+    },
+    {
+      "key": "konclui/sprites/konclui-2d39cbc6-c5bb-4925-bd51-dffdc15a4dfe.png",
+      "name": "Cesta de frutas vermelhas (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 175
+    },
+    {
+      "key": "konclui/sprites/konclui-3299d29b-0aef-48ad-8973-eb84ad140da1.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Right",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 176
+    },
+    {
+      "key": "konclui/sprites/konclui-3bbbdb1d-4e91-4e42-830b-1cfbad6a9623.png",
+      "name": "Caneca larga (sobre móvel)",
+      "direction": "Right",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 177
+    },
+    {
+      "key": "konclui/sprites/konclui-48882b95-9026-470e-b90b-db3b8665c409.png",
+      "name": "Salada (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 178
+    },
+    {
+      "key": "konclui/sprites/konclui-4e3216fe-ee90-44ad-80f8-6ab747a65b83.png",
+      "name": "Caixa de donuts (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 179
+    },
+    {
+      "key": "konclui/sprites/konclui-50405c5e-ec02-407e-bec1-e4241311fea2.png",
+      "name": "Tablet e celular (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 180
+    },
+    {
+      "key": "konclui/sprites/konclui-59544dd5-840f-43c5-87e1-d9783021d714.png",
+      "name": "Caderno fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 181
+    },
+    {
+      "key": "konclui/sprites/konclui-5b0c3caa-856d-468d-abc3-7212e673c910.png",
+      "name": "Livro fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 182
+    },
+    {
+      "key": "konclui/sprites/konclui-615bf1ca-6bd9-434e-bfe1-4dbcc8751995.png",
+      "name": "Bubble tea (boba) (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 183
+    },
+    {
+      "key": "konclui/sprites/konclui-79c76f08-0925-4468-91b1-b2dea57f024f.png",
+      "name": "Caneca (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 184
+    },
+    {
+      "key": "konclui/sprites/konclui-7cf9bd1b-c012-423e-a9ec-67d45b8530f9.png",
+      "name": "Livro fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 185
+    },
+    {
+      "key": "konclui/sprites/konclui-813e4d85-4b1d-4126-b836-e91c69c57aaa.png",
+      "name": "Documento avulso (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 186
+    },
+    {
+      "key": "konclui/sprites/konclui-85836ce4-2c63-4a14-9aa9-43ef55c40272.png",
+      "name": "Fone de ouvido (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 187
+    },
+    {
+      "key": "konclui/sprites/konclui-a5908937-e2c2-4e95-a4d5-4f8993f54466.png",
+      "name": "Açaí na tigela (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 188
+    },
+    {
+      "key": "konclui/sprites/konclui-ad953b3b-8cd1-44be-94cf-82a918be0a93.png",
+      "name": "Hosta em vaso pequeno (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 189
+    },
+    {
+      "key": "konclui/sprites/konclui-b7b384e4-58fb-48d6-ab0d-fd51c50f946e.png",
+      "name": "Hosta em vaso pequeno (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 190
+    },
+    {
+      "key": "konclui/sprites/konclui-c43d2cd7-1432-4e9b-9b56-71f371841edf.png",
+      "name": "Grama em vaso (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 191
+    },
+    {
+      "key": "konclui/sprites/konclui-c64d5e19-fb06-4dfe-bb5e-19d4b7875901.png",
+      "name": "Anotações a caneta (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 192
+    },
+    {
+      "key": "konclui/sprites/konclui-deed0ec7-d680-40e1-ba1b-cd99e59dc10b.png",
+      "name": "Livro fechado (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 193
+    },
+    {
+      "key": "konclui/sprites/konclui-e595bd32-5dc2-4a85-a42d-7fee489825b2.png",
+      "name": "Caneca (sobre móvel)",
+      "direction": "Left",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 194
+    },
+    {
+      "key": "konclui/sprites/konclui-ebab97d5-9cd1-44fe-992b-23fba888e39d.png",
+      "name": "Bandeja de sushi (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 195
+    },
+    {
+      "key": "konclui/sprites/konclui-fcd9f709-25fd-45ea-807f-46c9257c976a.png",
+      "name": "Caneca (sobre móvel)",
+      "direction": "Right",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 196
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-led-wall-ink.png",
+      "name": "Telão de LED Koncluí",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 197
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-pendente-preto.png",
+      "name": "Luminária pendente",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 198
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-photo-frame-beach.png",
+      "name": "Porta-retratos (sobre móvel)",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 199
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-cafe-ink.png",
+      "name": "Quadro: o café",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 200
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-cozinha-ink.png",
+      "name": "Quadro: a cozinha",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 201
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-equipe-ink.png",
+      "name": "Quadro: a equipe",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 202
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-fachada-ink.png",
+      "name": "Quadro: o restaurante",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 203
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-prato-ink.png",
+      "name": "Quadro: o prato",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 204
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-icp-salao-ink.png",
+      "name": "Quadro: o salão",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 205
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-koru-acenando-ink.png",
+      "name": "Quadro: Koru acenando",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 206
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-koru-apresentando-ink.png",
+      "name": "Quadro: Koru apresentando",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 207
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-koru-cafe-ink.png",
+      "name": "Quadro: Koru no café",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 208
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-koru-checklist-ink.png",
+      "name": "Quadro: Koru com o checklist",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 209
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-koru-comemorando-ink.png",
+      "name": "Quadro: Koru comemorando",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 210
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-quadro-koru-notebook-ink.png",
+      "name": "Quadro: Koru no notebook",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 211
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-sino-da-venda-ouro.png",
+      "name": "Sino da venda",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 212
+    },
+    {
+      "key": "konclui/sprites/konclui-konclui-tapete-6x3-losangos.png",
+      "name": "Tapete de losangos 6×3",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 213
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-0f6dc8d6-19ca-4090-bf7b-2036e4b3247d.png",
+      "name": "Documento avulso",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 214
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-36f3855e-5ace-439f-b0f6-5721ce48a7bb.png",
+      "name": "Mesa de sinuca",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 215
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-61e7f940-5196-4883-9909-7d202cee6dd5.png",
+      "name": "Geladeira",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 216
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-bc17706a-2e05-4006-ac74-7d1f1fd440b3.png",
+      "name": "Púlpito moderno",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 217
+    },
+    {
+      "key": "mobilia/sprites/walldecor/mob-c2946885-d808-44e1-9211-097bb0530e74.png",
+      "name": "Prateleira flutuante com livros",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 218
+    },
+    {
+      "key": "mobilia/sprites/walldecor/mob-d0ebad46-1037-4e7c-8fa3-8b49a9b209e5.png",
+      "name": "Relógio de parede minimalista",
+      "direction": "Down",
+      "verdict": "keep",
+      "placements": 1,
+      "score": 0,
+      "rank": 219
+    }
+  ]
+}

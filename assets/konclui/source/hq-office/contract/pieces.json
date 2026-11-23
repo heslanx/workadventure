@@ -1,0 +1,870 @@
+{
+  "schema": 1,
+  "units": "h and rows in px at the map's scale; 1 m of height = 21 px in every projection of tools/projection.json (they must agree on sz_px_per_m, see load_projection_numbers); the ground is 32 px per tile of depth in the default projection",
+  "declared": {
+    "konclui/sprites/konclui-knoll-couch-down-ds-petrol.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-knoll-couch-up-ds-petrol.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-konclui-air-hockey-navy.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-konclui-criado-mudo-alto.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-konclui-criado-mudo-baixo.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-konclui-reception-desk-oak.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-konclui-sof-almofadas.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-konclui-sof-manta.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-office-chair-down-ds-petrol.png": [
+      "symmetric"
+    ],
+    "konclui/sprites/konclui-office-chair-up-ds-petrol.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/roomdecor/mob-22e4adfc-0737-4960-9171-7306a85bfb94.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/roomdecor/mob-36f3855e-5ace-439f-b0f6-5721ce48a7bb.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/roomdecor/mob-c847382d-6646-4104-9966-e720579493ea.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-0ad2677b-b361-45e9-8949-85185f01e3c7.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-23747e7d-72e1-46da-bcf8-2b3f138a94fa.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-261cd100-5723-4390-b863-654920efbf0e.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-3977c61e-b73e-47b3-9d81-61d764f326f4.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-4363342e-80d8-4fb3-9262-01e6242e5c81.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-7910276d-10da-4380-b750-c91d6dc1df87.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-d57e51ef-a793-41b2-81f3-7d523299e0a2.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-e8bedd99-174a-444c-9c1b-3047387be390.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/seating/mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-20dc9cf0-19cc-4f59-ac6c-f0227fb987ce.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-27452e37-ffee-48dd-8c41-8ea22256049d.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-28a54590-8b59-47c9-bcdc-ed5f13caada3.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-6ec15ffb-fc53-45f1-9c3f-4db5f6165062.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-84dc073e-3f0d-441b-a765-ab4cca62bfed.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-903d4cf4-84b8-44d5-939a-4aaa586d674f.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/table/mob-bd44f4ea-b883-4503-97d1-42fe33071558.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/walldecor/mob-55d2799f-0db5-47c6-bc1e-e33e6c246461.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/walldecor/mob-c9f0adcd-98b8-40f9-9b0c-3d6f6a409336.png": [
+      "symmetric"
+    ],
+    "mobilia/sprites/walldecor/mob-d0ebad46-1037-4e7c-8fa3-8b49a9b209e5.png": [
+      "symmetric"
+    ]
+  },
+  "declared_notes": {
+    "tall": "in casters[key].tall: the 4 trees (Bétula 150 rows, Árvore de bordo 140, Pinheiro grande 113, Pinheiro pequeno 82); nothing else is declared tall, so the other 25 pieces over 56 rows stay offenders of height_cap",
+    "symmetric": "declared by this lane from the name (a table, sofa, chair, counter, piano, clock or TV seen from the front or the back) and the measure (silhouette mirror difference at most 12%, so it was meant to be symmetric); 35 sprites. Two of them fail the 2% limit today: the side tables at 6.0% and 4.3%",
+    "translucent": "none declared: every sprite with partial alpha is an offender of the alpha rule until it is declared or fixed"
+  },
+  "kind_corrections": [
+    {
+      "key": "escritorio-moderno/sprites/mo-160.png",
+      "name": "Luminária de mesa 1",
+      "from": "stand",
+      "to": "top",
+      "evidence": "1 of 1 placements stand with their foot inside Mesa de escritório (1x) (contract.py kind_suspects: small, not a seat, foot inside a table/counter/storage piece)",
+      "confidence": "high"
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-164.png",
+      "name": "Luminária de mesa 5",
+      "from": "stand",
+      "to": "top",
+      "evidence": "1 of 1 placements stand with their foot inside Mesa de escritório (1x) (contract.py kind_suspects: small, not a seat, foot inside a table/counter/storage piece)",
+      "confidence": "high"
+    },
+    {
+      "key": "escritorio-moderno/sprites/mo-320.png",
+      "name": "Maço de dinheiro",
+      "from": "stand",
+      "to": "top",
+      "evidence": "1 of 1 placements stand with their foot inside Mesa de escritório (1x) (contract.py kind_suspects: small, not a seat, foot inside a table/counter/storage piece)",
+      "confidence": "high"
+    },
+    {
+      "key": "lpc/sprites/lpc-interior-052.png",
+      "name": "Interior clássico 52",
+      "from": "stand",
+      "to": "top",
+      "evidence": "1 of 1 placements stand with their foot inside Armário de cozinha grande (1x) (contract.py kind_suspects: small, not a seat, foot inside a table/counter/storage piece)",
+      "confidence": "check",
+      "note": "LPC piece, licence on hold; the rule fires but nobody has looked at what it is"
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-0f6dc8d6-19ca-4090-bf7b-2036e4b3247d.png",
+      "name": "Documento avulso",
+      "from": "stand",
+      "to": "top",
+      "evidence": "1 of 1 placements stand with their foot inside Mesa de escritório (1x) (contract.py kind_suspects: small, not a seat, foot inside a table/counter/storage piece)",
+      "confidence": "high"
+    },
+    {
+      "key": "mobilia/sprites/roomdecor/mob-55789498-365a-442a-bf5c-ad6118e58e49.png",
+      "name": "Broto",
+      "from": "stand",
+      "to": "top",
+      "evidence": "2 of 2 placements stand with their foot inside Mesa de centro redonda (2x) (contract.py kind_suspects: small, not a seat, foot inside a table/counter/storage piece)",
+      "twin_top_key": "konclui/sprites/konclui-55789498-365a-442a-bf5c-ad6118e58e49.png",
+      "twin_note": "the same art already exists as a \"(sobre móvel)\" prefab: swap the placement to it, or fix the name",
+      "confidence": "high"
+    }
+  ],
+  "casters": {
+    "escritorio-moderno/sprites/mo-160.png": {
+      "h": 9,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor desk lamp 9 px at 21 px per metre is used",
+      "rows": 17
+    },
+    "escritorio-moderno/sprites/mo-164.png": {
+      "h": 9,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor desk lamp 9 px at 21 px per metre is used",
+      "rows": 17
+    },
+    "escritorio-moderno/sprites/mo-211.png": {
+      "h": 66,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 66 solid rows (alpha >= 200)",
+      "rows": 66
+    },
+    "escritorio-moderno/sprites/mo-212.png": {
+      "h": 44,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 44 solid rows (alpha >= 200)",
+      "rows": 44
+    },
+    "escritorio-moderno/sprites/mo-320.png": {
+      "h": 15,
+      "basis": "rows",
+      "source": "no height anchor for this kind of object: the rows, as today; 15 solid rows (alpha >= 200)",
+      "rows": 15
+    },
+    "estantes-e-livros/sprites/bookshelves-005.png": {
+      "h": 47,
+      "basis": "measured",
+      "source": "top face visible: 78 rows minus 1 tile(s) of footprint depth x 31 px = 47 px, within 0.6 to 1.4 of the anchor bookcase 38 px",
+      "rows": 78
+    },
+    "estantes-e-livros/sprites/bookshelves-011.png": {
+      "h": 35,
+      "basis": "measured",
+      "source": "top face visible: 63 rows minus 1 tile(s) of footprint depth x 28 px = 35 px, within 0.6 to 1.4 of the anchor bookcase 38 px",
+      "rows": 63
+    },
+    "konclui/sprites/konclui-knoll-couch-down-ds-petrol.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor sofa (back) 18 px at 21 px per metre is used",
+      "rows": 36
+    },
+    "konclui/sprites/konclui-knoll-couch-up-ds-petrol.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor sofa (back) 18 px at 21 px per metre is used",
+      "rows": 28
+    },
+    "konclui/sprites/konclui-konclui-air-hockey-navy.png": {
+      "h": 17,
+      "basis": "anchor",
+      "source": "top face visible: 53 rows minus 1 tile(s) of footprint depth x 23 px = 30 px; outside 0.6 to 1.4 of the anchor games table (plan: air hockey 17 px) 17 px at 21 px per metre, so the anchor is used",
+      "rows": 53
+    },
+    "konclui/sprites/konclui-konclui-aparador-teca.png": {
+      "h": 22,
+      "basis": "measured",
+      "source": "top face visible: 51 rows minus 1 tile(s) of footprint depth x 29 px = 22 px, within 0.6 to 1.4 of the anchor sideboard 17 px",
+      "rows": 51
+    },
+    "konclui/sprites/konclui-konclui-balc-o-de-bar-teca.png": {
+      "h": 22,
+      "basis": "anchor",
+      "source": "top face visible: 52 rows minus 1 tile(s) of footprint depth x 16 px = 36 px; outside 0.6 to 1.4 of the anchor counter (plan: bar counter 22 px) 22 px at 21 px per metre, so the anchor is used",
+      "rows": 52
+    },
+    "konclui/sprites/konclui-konclui-banco-de-plantas-teca.png": {
+      "h": 32,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 32 solid rows (alpha >= 200)",
+      "rows": 32
+    },
+    "konclui/sprites/konclui-konclui-banqueta-turquesa.png": {
+      "h": 16,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor bar stool (plan: seat 16 px) 16 px at 21 px per metre is used",
+      "rows": 30
+    },
+    "konclui/sprites/konclui-konclui-criado-mudo-alto.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 23 rows minus 1 tile(s) of footprint depth x 21 px = 2 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 23
+    },
+    "konclui/sprites/konclui-konclui-criado-mudo-baixo.png": {
+      "h": 9,
+      "basis": "measured",
+      "source": "top face visible: 30 rows minus 1 tile(s) of footprint depth x 21 px = 9 px, within 0.6 to 1.4 of the anchor low table 10 px",
+      "rows": 30
+    },
+    "konclui/sprites/konclui-konclui-fliperama-2048-cor.png": {
+      "h": 67,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 67 solid rows (alpha >= 200)",
+      "rows": 67
+    },
+    "konclui/sprites/konclui-konclui-fliperama-breakout-turquesa.png": {
+      "h": 67,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 67 solid rows (alpha >= 200)",
+      "rows": 67
+    },
+    "konclui/sprites/konclui-konclui-fliperama-tetris-cor.png": {
+      "h": 67,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 67 solid rows (alpha >= 200)",
+      "rows": 67
+    },
+    "konclui/sprites/konclui-konclui-led-wall-ink.png": {
+      "h": 58,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 58 solid rows (alpha >= 200)",
+      "rows": 58
+    },
+    "konclui/sprites/konclui-konclui-logo-totem-ink.png": {
+      "h": 42,
+      "basis": "anchor",
+      "source": "top face visible: 85 rows minus 1 tile(s) of footprint depth x 6 px = 79 px; outside 0.6 to 1.4 of the anchor sign totem 42 px at 21 px per metre, so the anchor is used",
+      "rows": 85
+    },
+    "konclui/sprites/konclui-konclui-lumin-ria-de-arco-preto.png": {
+      "h": 44,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor arc floor lamp (plan: apex 44 px) 44 px at 21 px per metre is used",
+      "rows": 63
+    },
+    "konclui/sprites/konclui-konclui-mesa-com-lig-4-clara.png": {
+      "h": 20,
+      "basis": "measured",
+      "source": "top face visible: 37 rows minus 1 tile(s) of footprint depth x 17 px = 20 px, within 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px",
+      "rows": 37
+    },
+    "konclui/sprites/konclui-konclui-mesa-de-centro-branca.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 34 rows minus 1 tile(s) of footprint depth x 10 px = 24 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 34
+    },
+    "konclui/sprites/konclui-konclui-mesinha-nogueira.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor low table 10 px at 21 px per metre is used",
+      "rows": 29
+    },
+    "konclui/sprites/konclui-konclui-pebolim-verde.png": {
+      "h": 22,
+      "basis": "measured",
+      "source": "top face visible: 54 rows minus 1 tile(s) of footprint depth x 32 px = 22 px, within 0.6 to 1.4 of the anchor foosball table 19 px",
+      "rows": 54
+    },
+    "konclui/sprites/konclui-konclui-planta-aglaonema-branco.png": {
+      "h": 52,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 52 solid rows (alpha >= 200)",
+      "rows": 52
+    },
+    "konclui/sprites/konclui-konclui-planta-ave-do-paraiso-alta.png": {
+      "h": 93,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 93 solid rows (alpha >= 200)",
+      "rows": 93
+    },
+    "konclui/sprites/konclui-konclui-planta-ave-do-paraiso-branco.png": {
+      "h": 77,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 77 solid rows (alpha >= 200)",
+      "rows": 77
+    },
+    "konclui/sprites/konclui-konclui-planta-costela-de-ad-o-branco.png": {
+      "h": 83,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 83 solid rows (alpha >= 200)",
+      "rows": 83
+    },
+    "konclui/sprites/konclui-konclui-planter-white.png": {
+      "h": 46,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 46 solid rows (alpha >= 200)",
+      "rows": 46
+    },
+    "konclui/sprites/konclui-konclui-pufe-par.png": {
+      "h": 8,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor pouf 8 px at 21 px per metre is used",
+      "rows": 60
+    },
+    "konclui/sprites/konclui-konclui-reception-desk-oak.png": {
+      "h": 22,
+      "basis": "anchor",
+      "source": "top face visible: 57 rows minus 1 tile(s) of footprint depth x 21 px = 36 px; outside 0.6 to 1.4 of the anchor counter (plan: bar counter 22 px) 22 px at 21 px per metre, so the anchor is used",
+      "rows": 57
+    },
+    "konclui/sprites/konclui-konclui-sino-da-venda-ouro.png": {
+      "h": 25,
+      "basis": "anchor",
+      "source": "top face visible: 48 rows minus 1 tile(s) of footprint depth x 7 px = 41 px; outside 0.6 to 1.4 of the anchor sales bell on a stand 25 px at 21 px per metre, so the anchor is used",
+      "rows": 48
+    },
+    "konclui/sprites/konclui-konclui-sof-almofadas.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor sofa (back) 18 px at 21 px per metre is used",
+      "rows": 37
+    },
+    "konclui/sprites/konclui-konclui-sof-manta.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor sofa (back) 18 px at 21 px per metre is used",
+      "rows": 37
+    },
+    "konclui/sprites/konclui-konclui-tacos-escuro.png": {
+      "h": 46,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 46 solid rows (alpha >= 200)",
+      "rows": 46
+    },
+    "konclui/sprites/konclui-office-chair-down-ds-petrol.png": {
+      "h": 19,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor chair (back) 19 px at 21 px per metre is used",
+      "rows": 33
+    },
+    "konclui/sprites/konclui-office-chair-up-ds-petrol.png": {
+      "h": 22,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): 22 solid rows, within 0.6 to 1.4 of the anchor chair (back) 19 px",
+      "rows": 22
+    },
+    "lpc/sprites/lpc-interior-052.png": {
+      "h": 31,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 31 solid rows (alpha >= 200)",
+      "rows": 31
+    },
+    "mobilia/sprites/cabinetsandshelves/mob-09792257-d9ca-41a3-8cf6-04c91c34764f.png": {
+      "h": 15,
+      "basis": "measured",
+      "source": "top face visible: 32 rows minus 1 tile(s) of footprint depth x 17 px = 15 px, within 0.6 to 1.4 of the anchor kitchen cabinet 19 px",
+      "rows": 32
+    },
+    "mobilia/sprites/cabinetsandshelves/mob-201a71f5-3652-4646-a347-098feeb12b27.png": {
+      "h": 11,
+      "basis": "measured",
+      "source": "top face visible: 42 rows minus 1 tile(s) of footprint depth x 31 px = 11 px, within 0.6 to 1.4 of the anchor filing cabinet 16 px",
+      "rows": 42
+    },
+    "mobilia/sprites/cabinetsandshelves/mob-3cd7296b-cc4c-40b5-96ac-53b6ea152e4d.png": {
+      "h": 20,
+      "basis": "measured",
+      "source": "top face visible: 48 rows minus 1 tile(s) of footprint depth x 28 px = 20 px, within 0.6 to 1.4 of the anchor medium bookcase 25 px",
+      "rows": 48
+    },
+    "mobilia/sprites/cabinetsandshelves/mob-f69631b3-6395-4b66-a609-0dde42feac73.png": {
+      "h": 52,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): 52 solid rows, within 0.6 to 1.4 of the anchor bookcase 38 px",
+      "rows": 52
+    },
+    "mobilia/sprites/nature/mob-03f657fd-a27e-4517-a4c4-e03bf5d96c87.png": {
+      "h": 46,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 46 solid rows (alpha >= 200)",
+      "rows": 46
+    },
+    "mobilia/sprites/nature/mob-619f3393-15b0-4884-a27c-90ebae88b2a6.png": {
+      "h": 113,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 113 solid rows (alpha >= 200)",
+      "rows": 113,
+      "tall": true
+    },
+    "mobilia/sprites/nature/mob-69d38f3e-27ac-4bcb-b963-f32f873dc367.png": {
+      "h": 25,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 25 solid rows (alpha >= 200)",
+      "rows": 25
+    },
+    "mobilia/sprites/nature/mob-70a53160-3a2e-43d4-b279-6a0a588072b4.png": {
+      "h": 25,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 25 solid rows (alpha >= 200)",
+      "rows": 25
+    },
+    "mobilia/sprites/nature/mob-743b0b9b-2916-4665-99e3-6526328f529d.png": {
+      "h": 20,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 20 solid rows (alpha >= 200)",
+      "rows": 20
+    },
+    "mobilia/sprites/nature/mob-7b58a2ed-20eb-499d-a5a5-6787951f2846.png": {
+      "h": 140,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 140 solid rows (alpha >= 200)",
+      "rows": 140,
+      "tall": true
+    },
+    "mobilia/sprites/nature/mob-8945d1c2-50b6-482b-bcd5-2804a0f95682.png": {
+      "h": 37,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 37 solid rows (alpha >= 200)",
+      "rows": 37
+    },
+    "mobilia/sprites/nature/mob-920b1507-1b94-4d7f-8c15-cac21f9da3a7.png": {
+      "h": 25,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 25 solid rows (alpha >= 200)",
+      "rows": 25
+    },
+    "mobilia/sprites/nature/mob-a2888f0e-b530-4bcc-9f82-78c8c428ad5d.png": {
+      "h": 82,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 82 solid rows (alpha >= 200)",
+      "rows": 82,
+      "tall": true
+    },
+    "mobilia/sprites/nature/mob-c55cc63f-8edf-422b-ad0c-6494e4098eac.png": {
+      "h": 20,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 20 solid rows (alpha >= 200)",
+      "rows": 20
+    },
+    "mobilia/sprites/nature/mob-d42a8630-9665-4afc-ab25-fbe99c299050.png": {
+      "h": 150,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 150 solid rows (alpha >= 200)",
+      "rows": 150,
+      "tall": true
+    },
+    "mobilia/sprites/roomdecor/mob-0092afb7-c02a-4ab9-930b-217394bc1522.png": {
+      "h": 44,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor arc floor lamp (plan: apex 44 px) 44 px at 21 px per metre is used",
+      "rows": 58
+    },
+    "mobilia/sprites/roomdecor/mob-0f6dc8d6-19ca-4090-bf7b-2036e4b3247d.png": {
+      "h": 13,
+      "basis": "rows",
+      "source": "no height anchor for this kind of object: the rows, as today; 13 solid rows (alpha >= 200)",
+      "rows": 13
+    },
+    "mobilia/sprites/roomdecor/mob-1e6e3d8d-eebc-4b6b-afc5-58e48f71794c.png": {
+      "h": 36,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 36 solid rows (alpha >= 200)",
+      "rows": 36
+    },
+    "mobilia/sprites/roomdecor/mob-22e4adfc-0737-4960-9171-7306a85bfb94.png": {
+      "h": 16,
+      "basis": "anchor",
+      "source": "top face visible: 67 rows minus 1 tile(s) of footprint depth x 21 px = 46 px; outside 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px at 21 px per metre, so the anchor is used",
+      "rows": 67
+    },
+    "mobilia/sprites/roomdecor/mob-36f3855e-5ace-439f-b0f6-5721ce48a7bb.png": {
+      "h": 17,
+      "basis": "anchor",
+      "source": "top face visible: 82 rows minus 2 tile(s) of footprint depth x 21 px = 40 px; outside 0.6 to 1.4 of the anchor games table (plan: air hockey 17 px) 17 px at 21 px per metre, so the anchor is used",
+      "rows": 82
+    },
+    "mobilia/sprites/roomdecor/mob-5037b0bd-c0c0-4bd0-a381-edd1c595aaf2.png": {
+      "h": 32,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor floor lamp 32 px at 21 px per metre is used",
+      "rows": 47
+    },
+    "mobilia/sprites/roomdecor/mob-540ec809-04c2-49b6-857d-72ada4b136be.png": {
+      "h": 33,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 33 solid rows (alpha >= 200)",
+      "rows": 33
+    },
+    "mobilia/sprites/roomdecor/mob-55789498-365a-442a-bf5c-ad6118e58e49.png": {
+      "h": 22,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 22 solid rows (alpha >= 200)",
+      "rows": 22
+    },
+    "mobilia/sprites/roomdecor/mob-61e7f940-5196-4883-9909-7d202cee6dd5.png": {
+      "h": 61,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 61 solid rows (alpha >= 200)",
+      "rows": 61
+    },
+    "mobilia/sprites/roomdecor/mob-63ff46c5-fb46-45b9-947d-d8ada4b12b82.png": {
+      "h": 46,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 46 solid rows (alpha >= 200)",
+      "rows": 46
+    },
+    "mobilia/sprites/roomdecor/mob-805bc9b5-8179-4376-81d8-099e96eca613.png": {
+      "h": 50,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 50 solid rows (alpha >= 200)",
+      "rows": 50
+    },
+    "mobilia/sprites/roomdecor/mob-86fcec6a-3b67-498d-be33-125a2c69a7ba.png": {
+      "h": 44,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor arc floor lamp (plan: apex 44 px) 44 px at 21 px per metre is used",
+      "rows": 58
+    },
+    "mobilia/sprites/roomdecor/mob-999b5849-deed-48f8-928d-a237c8b2bf6c.png": {
+      "h": 29,
+      "basis": "measured",
+      "source": "top face visible: 41 rows minus 1 tile(s) of footprint depth x 12 px = 29 px, within 0.6 to 1.4 of the anchor camera on a tripod 32 px",
+      "rows": 41
+    },
+    "mobilia/sprites/roomdecor/mob-a40ece75-7da2-4a57-8c29-1f32e317dce2.png": {
+      "h": 48,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 48 solid rows (alpha >= 200)",
+      "rows": 48
+    },
+    "mobilia/sprites/roomdecor/mob-b73eb771-f6d7-49bc-ae01-61cc60273ac7.png": {
+      "h": 39,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 39 solid rows (alpha >= 200)",
+      "rows": 39
+    },
+    "mobilia/sprites/roomdecor/mob-bc17706a-2e05-4006-ac74-7d1f1fd440b3.png": {
+      "h": 23,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor lectern 23 px at 21 px per metre is used",
+      "rows": 23
+    },
+    "mobilia/sprites/roomdecor/mob-c847382d-6646-4104-9966-e720579493ea.png": {
+      "h": 27,
+      "basis": "measured",
+      "source": "top face visible: 45 rows minus 1 tile(s) of footprint depth x 18 px = 27 px, within 0.6 to 1.4 of the anchor upright piano 26 px",
+      "rows": 45
+    },
+    "mobilia/sprites/roomdecor/mob-e6b64011-9e8e-45b8-81dc-cd8e4fdb173a.png": {
+      "h": 67,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 67 solid rows (alpha >= 200)",
+      "rows": 67
+    },
+    "mobilia/sprites/roomdecor/mob-e7e8fc78-4445-46ac-8520-af922cb5c050.png": {
+      "h": 42,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): the rows are the height; 42 solid rows (alpha >= 200)",
+      "rows": 42
+    },
+    "mobilia/sprites/roomdecor/mob-ed0d2801-ff4e-428d-9068-909933b24ece.png": {
+      "h": 53,
+      "basis": "rows",
+      "source": "a plant: the foliage is drawn in elevation and the pot's top ellipse is a few rows; 53 solid rows (alpha >= 200)",
+      "rows": 53
+    },
+    "mobilia/sprites/seating/mob-0120d5d7-3959-4e9a-9658-0692d255e7a7.png": {
+      "h": 20,
+      "basis": "anchor",
+      "source": "front elevation (audit topFaceVisible false): 36 solid rows; outside 0.6 to 1.4 of the anchor Adirondack chair (back) 20 px at 21 px per metre, so the anchor is used",
+      "rows": 36
+    },
+    "mobilia/sprites/seating/mob-0ad2677b-b361-45e9-8949-85185f01e3c7.png": {
+      "h": 19,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor chair (back) 19 px at 21 px per metre is used",
+      "rows": 34
+    },
+    "mobilia/sprites/seating/mob-23747e7d-72e1-46da-bcf8-2b3f138a94fa.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor armchair (back) 18 px at 21 px per metre is used",
+      "rows": 33
+    },
+    "mobilia/sprites/seating/mob-261cd100-5723-4390-b863-654920efbf0e.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor sofa (back) 18 px at 21 px per metre is used",
+      "rows": 33
+    },
+    "mobilia/sprites/seating/mob-3977c61e-b73e-47b3-9d81-61d764f326f4.png": {
+      "h": 19,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor chair (back) 19 px at 21 px per metre is used",
+      "rows": 34
+    },
+    "mobilia/sprites/seating/mob-3b86db60-e3ec-4e8d-81bd-4a335d334c5a.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "front elevation (audit topFaceVisible false): 38 solid rows; outside 0.6 to 1.4 of the anchor armchair (back) 18 px at 21 px per metre, so the anchor is used",
+      "rows": 38
+    },
+    "mobilia/sprites/seating/mob-4363342e-80d8-4fb3-9262-01e6242e5c81.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor sofa (back) 18 px at 21 px per metre is used",
+      "rows": 33
+    },
+    "mobilia/sprites/seating/mob-46c60b8c-48f5-4b5e-ad5c-93dc4406782e.png": {
+      "h": 20,
+      "basis": "anchor",
+      "source": "front elevation (audit topFaceVisible false): 36 solid rows; outside 0.6 to 1.4 of the anchor Adirondack chair (back) 20 px at 21 px per metre, so the anchor is used",
+      "rows": 36
+    },
+    "mobilia/sprites/seating/mob-5f9c87d7-d5fc-46c0-bedf-e3b369476803.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor armchair (back) 18 px at 21 px per metre is used",
+      "rows": 36
+    },
+    "mobilia/sprites/seating/mob-6cdb5db3-9ae2-46b4-8780-668de4c42474.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor park bench (back) 18 px at 21 px per metre is used",
+      "rows": 61
+    },
+    "mobilia/sprites/seating/mob-7910276d-10da-4380-b750-c91d6dc1df87.png": {
+      "h": 24,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): 24 solid rows, within 0.6 to 1.4 of the anchor chair (back) 19 px",
+      "rows": 24
+    },
+    "mobilia/sprites/seating/mob-a86c724c-1baf-4013-92be-4bb27abaf73c.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor armchair (back) 18 px at 21 px per metre is used",
+      "rows": 37
+    },
+    "mobilia/sprites/seating/mob-abaa90b0-ea32-43e2-be3d-beca6c9ff682.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "front elevation (audit topFaceVisible false): 38 solid rows; outside 0.6 to 1.4 of the anchor armchair (back) 18 px at 21 px per metre, so the anchor is used",
+      "rows": 38
+    },
+    "mobilia/sprites/seating/mob-c8bd62d0-8213-4009-9d4f-84b82fbdc4ef.png": {
+      "h": 19,
+      "basis": "anchor",
+      "source": "front elevation (audit topFaceVisible false): 27 solid rows; outside 0.6 to 1.4 of the anchor chair (back) 19 px at 21 px per metre, so the anchor is used",
+      "rows": 27
+    },
+    "mobilia/sprites/seating/mob-d57e51ef-a793-41b2-81f3-7d523299e0a2.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor armchair (back) 18 px at 21 px per metre is used",
+      "rows": 33
+    },
+    "mobilia/sprites/seating/mob-d6e557f1-1a63-4c72-92f3-8bd7bacab04f.png": {
+      "h": 24,
+      "basis": "rows",
+      "source": "front elevation (audit topFaceVisible false): 24 solid rows, within 0.6 to 1.4 of the anchor chair (back) 19 px",
+      "rows": 24
+    },
+    "mobilia/sprites/seating/mob-da5dc64e-f437-4d16-8955-d3146afc068e.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor park bench (back) 18 px at 21 px per metre is used",
+      "rows": 61
+    },
+    "mobilia/sprites/seating/mob-e8bedd99-174a-444c-9c1b-3047387be390.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "front elevation (audit topFaceVisible false): 27 solid rows; outside 0.6 to 1.4 of the anchor armchair (back) 18 px at 21 px per metre, so the anchor is used",
+      "rows": 27
+    },
+    "mobilia/sprites/seating/mob-f45fda4d-d8f4-4dab-92bc-6c0aacc84c62.png": {
+      "h": 19,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor chair (back) 19 px at 21 px per metre is used",
+      "rows": 36
+    },
+    "mobilia/sprites/seating/mob-fe2e3920-e493-4a75-a279-55f90dc93bc3.png": {
+      "h": 18,
+      "basis": "anchor",
+      "source": "top face visible, no collisionGrid or scale to measure the front face; the anchor armchair (back) 18 px at 21 px per metre is used",
+      "rows": 37
+    },
+    "mobilia/sprites/table/mob-20dc9cf0-19cc-4f59-ac6c-f0227fb987ce.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 24 rows minus 1 tile(s) of footprint depth x 21 px = 3 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 24
+    },
+    "mobilia/sprites/table/mob-27452e37-ffee-48dd-8c41-8ea22256049d.png": {
+      "h": 16,
+      "basis": "anchor",
+      "source": "top face visible: 83 rows minus 1 tile(s) of footprint depth x 32 px = 51 px; outside 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px at 21 px per metre, so the anchor is used",
+      "rows": 83
+    },
+    "mobilia/sprites/table/mob-28a54590-8b59-47c9-bcdc-ed5f13caada3.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 33 rows minus 1 tile(s) of footprint depth x 16 px = 17 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 33
+    },
+    "mobilia/sprites/table/mob-405abae6-562c-4812-8506-7abbae89e1cc.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 30 rows minus 1 tile(s) of footprint depth x 15 px = 15 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 30
+    },
+    "mobilia/sprites/table/mob-6ec15ffb-fc53-45f1-9c3f-4db5f6165062.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 24 rows minus 1 tile(s) of footprint depth x 21 px = 3 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 24
+    },
+    "mobilia/sprites/table/mob-84dc073e-3f0d-441b-a765-ab4cca62bfed.png": {
+      "h": 16,
+      "basis": "anchor",
+      "source": "top face visible: 65 rows minus 2 tile(s) of footprint depth x 30 px = 5 px; outside 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px at 21 px per metre, so the anchor is used",
+      "rows": 65
+    },
+    "mobilia/sprites/table/mob-903d4cf4-84b8-44d5-939a-4aaa586d674f.png": {
+      "h": 16,
+      "basis": "anchor",
+      "source": "top face visible: 72 rows minus 2 tile(s) of footprint depth x 31.5 px = 9 px; outside 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px at 21 px per metre, so the anchor is used",
+      "rows": 72
+    },
+    "mobilia/sprites/table/mob-bd44f4ea-b883-4503-97d1-42fe33071558.png": {
+      "h": 10,
+      "basis": "anchor",
+      "source": "top face visible: 33 rows minus 1 tile(s) of footprint depth x 16 px = 17 px; outside 0.6 to 1.4 of the anchor low table 10 px at 21 px per metre, so the anchor is used",
+      "rows": 33
+    },
+    "mobilia/sprites/table/mob-d52c77f7-6886-4b04-9eaf-1e8ce1c0226c.png": {
+      "h": 10,
+      "basis": "measured",
+      "source": "top face visible: 40 rows minus 1 tile(s) of footprint depth x 30 px = 10 px, within 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px",
+      "rows": 40
+    },
+    "mobilia/sprites/table/mob-e4bba280-ef68-4a53-8a1e-043b066f3732.png": {
+      "h": 10,
+      "basis": "measured",
+      "source": "top face visible: 40 rows minus 1 tile(s) of footprint depth x 30 px = 10 px, within 0.6 to 1.4 of the anchor table top (plan: desk 16 px) 16 px",
+      "rows": 40
+    }
+  },
+  "generic_rule": {
+    "for_pieces": "any stand piece placed from the catalogue that has no entry in casters",
+    "rule": "h = min(rows, TAG_CAPS[tag]) over the piece's tags; no capped tag: h = rows (today's behaviour)",
+    "tag_caps": {
+      "Mesas": 16,
+      "Cadeiras e bancos": 19,
+      "Sofás e poltronas": 18,
+      "Luminárias": 44
+    },
+    "runtime_fields_needed": "none new: the prefab's `tags` (casterKind.ts already reads them in KindInput) and the silhouette rows (shadeBake.ts already computes them). `tall` cannot be derived: a piece with no entry is never tall, so the 22 px cap stays for it.",
+    "measured_agreement": {
+      "curated": 105,
+      "basis": {
+        "anchor": 50,
+        "measured": 13,
+        "rows": 42
+      },
+      "all": {
+        "n": 105,
+        "mean_abs_error_px": {
+          "today_rows": 14.2,
+          "tag_cap": 6.2
+        },
+        "off_by_more_than_8_px": {
+          "today_rows": 59,
+          "tag_cap": 19
+        }
+      },
+      "anchor_only": {
+        "n": 50,
+        "mean_abs_error_px": {
+          "today_rows": 23.3,
+          "tag_cap": 7.6
+        },
+        "off_by_more_than_8_px": {
+          "today_rows": 46,
+          "tag_cap": 9
+        }
+      },
+      "with_collision_grid": {
+        "n": 41,
+        "mean_abs_error_px": {
+          "today_rows": 22.2,
+          "tag_cap": 14.3,
+          "grid_depth": 15.7,
+          "grid_depth_clamped_at_1": 14.9,
+          "grid_depth_or_rows": 15.9
+        },
+        "off_by_more_than_8_px": {
+          "today_rows": 30,
+          "tag_cap": 17,
+          "grid_depth": 27,
+          "grid_depth_clamped_at_1": 26,
+          "grid_depth_or_rows": 27
+        }
+      }
+    },
+    "measured_agreement_note": "rerun with `python3 -I tools/contract.py pieces-agreement DIST`; the curated entries are NOT independent of the rules (see pieces_agreement), `anchor_only` is the fair figure",
+    "rejected": "collisionGrid depth as the footprint depth (h = rows - blocking grid rows x 32 px) is not rejected for being less accurate: on the 41 of 105 curated stand entries that carry a grid its mean error is 15.7 px unclamped (14.9 clamped at 1, 15.9 falling back to rows under 1) against 14.3 for the tag caps and 22.2 for today's rows, so grid and tag caps are about equal and both better than rows. It is rejected on coverage and optionality: EntityRawPrefab.collisionGrid is optional (libs/map-editor/src/types.ts:305), only 41 of 105 entries have one, so a catalogue piece may have none and the rule would need the tag caps anyway; and the comparison is partly circular, since the 13 'measured' entries were derived from the grid. A grid says what blocks walking, not how deep the drawing is."
+  },
+  "runtime": {
+    "reads_today": "play/src/front/Konclui/Ambience/domain/shadeBake.ts:388 (keyOnFloor), :418 (keyOnSupport) and :516 (lamp shadows): `const height = shape.foot - shape.top + 1;` then `lengthScale(height, k.length, lo, hi)` (shadeShapes.ts:191): natural = max(1, height) * length, so the shadow is clamped to 3..22 px (stand), 2..3 (top), 5..36 (lamps).",
+    "proposed": "`height = casters[key]?.h ?? generic(tags, rows)` at those three sites, with `casters` optional in the manifest schema (effectsManifest.ts); fx.py writes `casters: {key: {h, tall?}}` from contract/pieces.json. A caster with `tall` may use a cap above 22 (a proposal: LAMP_CAP_PX, 36); that is the runtime lane's decision.",
+    "manifest_field": "fx/manifest.json \"casters\": { key: { \"h\": px, \"tall\": true? } }, version stays 1 (unknown keys are ignored)"
+  }
+}
