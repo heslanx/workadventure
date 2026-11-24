@@ -70,7 +70,7 @@ export const LIGHT_KINDS: Readonly<Partial<Record<string, LightKind>>> = {
         self: true,
         halo: true,
     },
-    led: { color: [170, 235, 255], pools: [["front", 0, 0, 130, 0.55, 0.8]], emissive: "screen", self: true },
+    led: { color: [170, 235, 255], pools: [["front", 0, 0, 100, 0.55, 0.36]], emissive: "screen", self: true },
     totem: {
         color: [40, 190, 180],
         pools: [["foot", 0, -6, 50, 0.45, 0.6]],
