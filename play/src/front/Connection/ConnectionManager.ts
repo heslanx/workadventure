@@ -21,6 +21,7 @@ import { locales } from "../../i18n/i18n-util";
 import type { Locales } from "../../i18n/i18n-types";
 import { setCurrentLocale } from "../Utils/locales";
 import { preventTabFreezing } from "../Utils/TabFreezing";
+import { onPageLeave, reloadWhenRestoredFromCache } from "../Utils/PageLeave";
 import { ABSOLUTE_PUSHER_URL } from "../Enum/ComputedConst";
 import { openChatRoom } from "../Chat/Utils";
 import LL from "../../i18n/i18n-svelte";
@@ -69,13 +70,14 @@ class ConnectionManager {
     }
 
     constructor() {
-        // The listener never needs to be removed, because we are in a singleton that is never destroyed.
+        // The listeners never need to be removed, because we are in a singleton that is never destroyed.
         // pagehide, not beforeunload: a navigation cancelled after beforeunload would leave the page never reconnecting.
-        // eslint-disable-next-line listeners/no-missing-remove-event-listener,listeners/no-inline-function-event-listener
-        window.addEventListener("pagehide", () => {
+        onPageLeave(window, () => {
             this._unloading = true;
             if (this.reconnectingTimeout) clearTimeout(this.reconnectingTimeout);
         });
+        // A page restored from the back/forward cache has left: its connections are closed and never reconnected.
+        reloadWhenRestoredFromCache(window);
         preventTabFreezing(this._tabId);
     }
 

@@ -12,6 +12,7 @@
     import { localUserStore } from "../../Connection/LocalUserStore";
     import {} from "./PictureInPicture/PictureInPictureWindow";
     import { gameManager } from "../../Phaser/Game/GameManager";
+    import { watchPageLeaving, type PageLeaving } from "../../Utils/PageLeave";
     import {
         hasPictureInPictureContent,
         isDocumentPictureInPictureSupported,
@@ -41,7 +42,8 @@
     let pipWindow: Window | undefined;
     let mapImage: string | undefined = $state(undefined);
     let pipRequested = false;
-    let unloading = false;
+    // Created by onMount, before anything can ask for the picture-in-picture window.
+    let pageLeaving: PageLeaving | undefined;
     let stopPictureInPictureEventDelegation: (() => void) | undefined;
     let miniWindow: DesktopChildWindow | undefined;
     let miniWindowProps: { videoHost?: HTMLDivElement } = $state({});
@@ -70,11 +72,6 @@
         destroyPictureInPictureComponent();
     }
 
-    function onBeforeUnload() {
-        // beforeunload fires before the page is hidden, unlike pagehide
-        unloading = true;
-    }
-
     function forgetPictureInPictureRequest() {
         askPictureInPictureActivatingStore.set(false);
     }
@@ -101,8 +98,10 @@
 
         if (pipWindow !== undefined || pipRequested) return;
 
-        // Closing the tab or the window hides the page, which would open a picture-in-picture window that outlives it
-        if (unloading) {
+        // Closing the tab or the window hides the page, which would open a picture-in-picture window that outlives it.
+        // The page can be hidden before its pagehide fires, so beforeunload counts as a hint. A cancelled navigation
+        // or a download fires it too, hence the hint expires (see watchPageLeaving).
+        if (pageLeaving?.isLeaving) {
             debug("Request Picture in Picture mode but the page is unloading");
             return;
         }
@@ -216,6 +215,8 @@
     }
 
     onMount(() => {
+        pageLeaving = watchPageLeaving(window);
+
         try {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
@@ -281,7 +282,6 @@
         };
 
         window.addEventListener("focus", onFocus);
-        window.addEventListener("beforeunload", onBeforeUnload);
 
         return () => {
             askPictureInPictureActivatingSubscriber();
@@ -297,7 +297,8 @@
                 debug("PictureInPicture enterpictureinpicture handler is not supported", e);
             }
             window.removeEventListener("focus", onFocus);
-            window.removeEventListener("beforeunload", onBeforeUnload);
+            pageLeaving?.stop();
+            pageLeaving = undefined;
             window.removeEventListener("click", forgetPictureInPictureRequest);
         };
     });
