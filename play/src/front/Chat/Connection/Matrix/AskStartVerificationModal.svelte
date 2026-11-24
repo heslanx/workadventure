@@ -175,8 +175,7 @@
                     {$LL.chat.askStartVerificationModal.accept()}
                 </Button>
             {:else}
-                <span class="flex-1"></span>
-                <Button variant="light" appearance="ghost" class="flex-1" onclick={() => modals.close()}>
+                <Button variant="light" appearance="ghost" class="mx-auto w-1/2" onclick={() => modals.close()}>
                     {$LL.chat.askStartVerificationModal.close()}
                 </Button>
             {/if}
