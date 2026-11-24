@@ -37,7 +37,17 @@ is an older build and every piece is domed as the profile says):
           --detail-strength 0 (it must not read the picture's painted wash as relief), and only the outer BEVEL_PX (4) px keep its
           normal: inside that edge the normal is flat. The tool's radius is a long fall-off and not a bevel, so a desk top folded
           into four triangles and the air hockey's playfield into a roof until the inside was forced flat
+  box     a piece with a soft-furnishing tag whose PICTURE is a box (kinds.box_evidence: a face painted in one colour as a big rectangle,
+          the white planter "Floreira branca"): the box's body takes the `bevel` treatment and what stands out of it (the reeds) the
+          `domed` one. A tag says what a piece is usually made of, the picture says what this one is
   domed   a soft furnishing (plants, sofas, chairs): the size classes below
+
+Relief only where a surface curves (audit rule R12). A flat face (the inside of a `bevel` piece, the body of a `box`) keeps the flat
+normal (128, 128, 255): the light reads it as a plane, with the same value from one end of the face to the other. Only the BEVEL_PX
+edge of the piece has a normal that leans, and never more than EDGE_LEAN (a chamfer of about 45 degrees, not a cliff); a piece that
+stands on the floor (its lowest row is as wide as the piece, `grounded`) has no bevel at its foot, where it meets the floor and
+nothing turns. A `domed` piece leans at most SOFT_LEAN, so a cushion or a leaf shades softly and its middle is not a bubble that the
+light cuts into wedges. `limit_lean` is the one soft clip (a smooth cap, not a clamp, so the order of the slopes is kept).
 
 Profiles (what the tool is told per sprite; the stamp `konclui-normals-profile` in the PNG says which one made the file)
   domed   a size class by the longest side of the sprite's opaque box: under 48 px --shape-radius 4, under 96 px 10, else
@@ -46,6 +56,10 @@ Profiles (what the tool is told per sprite; the stamp `konclui-normals-profile` 
           numbers (SIZE_CLASSES, SHAPE_STRENGTH, NORMAL_STRENGTH)
   plain   the tool's own defaults for every sprite: what the build wrote before this profile existed
 The legacy method has no profile.
+
+Volume pieces. KONCLUI_VOLUME_PIECES (hq-office/lounge.py) puts a recipe's baked normal image or a proxy volume's behind a sprite: fx.py hands
+`compose` {sprite path: normal image} and those sprites take `volume_map` of it (the tool is not run on them, whatever their kind says),
+still masked to the picture's fully opaque pixels, so office.normals (unit length, opaque-exact) judges them like any other.
 
 Characters and pets walk, so their atlas normals cannot be stamped into a map-space texture: `atlas` writes them as
 separate files and nothing in the runtime reads them (the shader has no per-sprite normal path). fx.py writes
@@ -79,6 +93,9 @@ NORMAL_STRENGTH = 2.0
 SMOOTH_PASSES = ((48, 1), (96, 2), (None, 3))        # a domed piece's normals are averaged this many times over the solid pixels, by size class
 BEVEL_RADIUS = 4.0                                     # a slab (kinds.relief_profile 'bevel'): the tool's --shape-radius for it
 BEVEL_PX = 4                                           # ... and the width of its edge: inside it the normal is flat, whatever the tool says
+EDGE_LEAN = 0.7                                        # the most a slab's edge normal leans sideways (|nx, ny|, 0.7 is about 45 degrees)
+SOFT_LEAN = 0.7                                        # ... and a domed piece's
+GROUND_SHARE = 0.6                                     # a piece whose lowest solid row is this share of its width stands on the floor
 
 
 def legacy_normal(rgba, strength=STRENGTH):
@@ -188,6 +205,53 @@ def inside(solid, depth):
     return kept
 
 
+def grounded(solid):
+    """True when the lowest row of the True pixels of a mask is at least GROUND_SHARE of the mask's width: the piece stands on the floor
+    (a counter, a cabinet, a planter), so its foot is where it meets the floor and not an edge. A desk's top is a slab on legs: its
+    lowest row is its legs, narrow, and its lower edge is an edge."""
+    ys, xs = np.nonzero(solid)
+    if not len(xs):
+        return False
+    foot = solid[ys.max()].sum()
+    return bool(foot >= GROUND_SHARE * (xs.max() - xs.min() + 1))
+
+
+def ground_foot(normals, solid):
+    """The normals of a `grounded` piece with its foot made square: the BEVEL_PX lowest rows of its solid pixels take, column by column,
+    the normal of the row just above them (a flat face's, with the side bevel running straight down to the floor). The tool bevels the
+    foot as it bevels any edge, and its long fall-off leaves a bright or dark L along the bottom of a counter or a planter, at the
+    corners and under the face, where the piece meets the floor and nothing turns. A column with no solid pixel in that row keeps
+    what it had. A piece that is not grounded is returned as it is."""
+    if not grounded(solid):
+        return normals
+    last = int(np.nonzero(solid.any(axis=1))[0].max())
+    source = last - BEVEL_PX
+    if source < 0:
+        return normals
+    out = normals.copy()
+    for y in range(source + 1, last + 1):
+        take = solid[y] & solid[source]
+        out[y][take] = normals[source][take]
+    return out
+
+
+def limit_lean(normals, mask, cap):
+    """The normals of a map with the lean of each pixel of `mask` (|nx, ny|, 0 flat, 1 edge-on) soft-clipped to under `cap`: cap * tanh(lean /
+    cap), which is the lean itself for a small one and never reaches `cap`, so the order of the slopes is kept and no plateau forms.
+    The direction is kept and the result is unit length again. A pixel outside `mask` is not read or written."""
+    v = normals[..., :3].astype(np.float64) / 255 * 2 - 1
+    lean = np.hypot(v[..., 0], v[..., 1])
+    new = cap * np.tanh(lean / cap)
+    scale = np.where(lean > 1e-9, new / np.maximum(lean, 1e-9), 1.0)
+    v[..., 0] *= scale
+    v[..., 1] *= scale
+    v[..., 2] = np.sqrt(np.maximum(1 - new * new, 0))
+    out = normals.copy()
+    rgb = np.clip(np.round((v + 1) / 2 * 255), 0, 255).astype(np.uint8)
+    out[..., :3] = np.where(mask[..., None], rgb, normals[..., :3])
+    return out
+
+
 def flat_normals(rgba):
     """The flat normal on every solid pixel of a sprite (alpha 255), nothing elsewhere: a lamp's relief."""
     out = np.empty(rgba.shape, np.uint8)
@@ -196,13 +260,15 @@ def flat_normals(rgba):
     return out
 
 
-def tool_normals(sprites, profile=DOMED, pieces=None):
+def tool_normals(sprites, profile=DOMED, pieces=None, standing=None):
     """{path: RGBA normal array} from the tool over the distinct sprites (silhouette-aware), one run per size class and 400
     files. The tool is fed the `geometry` of each sprite and the result is masked to it: alpha 255 on an opaque pixel, 0
     elsewhere. The profile picks the flags of each size class (see the module docstring); the file names are the sprites'
-    sorted order whatever the profile, so a run is deterministic. `pieces` is {path: 'flat' | 'bevel' | 'domed'} (kinds.relief_profile):
-    a flat piece does not run the tool at all, a bevel one has the radius of an edge, the rest the size class's; a path it does not
-    list is domed."""
+    sorted order whatever the profile, so a run is deterministic. `pieces` is {path: 'flat' | 'bevel' | 'box' | 'domed'}
+    (kinds.relief_profile): a flat piece does not run the tool at all, a bevel one has the radius of an edge, a box has both (its body
+    the edge's, the rest the size class's), the rest the size class's; a path it does not list is domed. A bevel piece or body that
+    stands on the floor (`grounded`) has a square foot (`ground_foot`), no bevel where it meets the floor: only a path in `standing` (the sprites of the manifest's
+    kind "stand", `standing_sprites`) is looked at, a picture frame's lower edge is an edge."""
     if profile not in PROFILES:
         raise SystemExit(f'unknown normals profile {profile!r}: one of {PROFILES}')
     binary = PG.tool_path(NORMALS_ENV, NORMALS_DEFAULT)
@@ -210,35 +276,67 @@ def tool_normals(sprites, profile=DOMED, pieces=None):
     with tempfile.TemporaryDirectory() as tmp:
         src, dst = Path(tmp) / 'in', Path(tmp) / 'out'
         src.mkdir()
-        names, solid, groups, flat = {}, {}, {}, {}
-        pieces = pieces or {}
+        names, solid, groups, flat, rows, body = {}, {}, {}, {}, {}, {}
+        pieces = dict(pieces or {})
+        standing = set(standing or ())
         for i, path in enumerate(sorted(sprites)):
             names[path] = f'{i:05d}'
             rgba = geometry(PG.load_rgba(path))
             solid[path] = rgba[..., 3] == 255
-            if pieces.get(path) == 'flat':
+            rows[path] = rgba.shape[0]
+            piece = pieces.get(path, 'domed')
+            if piece == 'flat':
                 flat[path] = flat_normals(rgba)
                 continue
-            Image.fromarray(rgba, 'RGBA').save(src / f'{i:05d}.png')
-            flags = tuple(tool_flags(profile, longest_side(solid[path]), pieces.get(path, 'domed')))
-            groups.setdefault(flags, []).append(src / f'{i:05d}.png')
+            if piece == 'box':
+                body[path] = KINDS.box_body(rgba)
+                if body[path] is None:
+                    piece = pieces[path] = 'bevel'
+            if piece in ('bevel', 'box'):
+                shown = rgba.copy()
+                if piece == 'box':
+                    shown[~body[path]] = 0
+                stem = f'{i:05d}' if piece == 'bevel' else f'{i:05d}b'
+                Image.fromarray(shown, 'RGBA').save(src / f'{stem}.png')
+                groups.setdefault(tuple(tool_flags(profile, longest_side(solid[path]), 'bevel')), []).append(src / f'{stem}.png')
+            if piece in ('domed', 'box'):
+                Image.fromarray(rgba, 'RGBA').save(src / f'{i:05d}.png')
+                groups.setdefault(tuple(tool_flags(profile, longest_side(solid[path]), 'domed')), []).append(src / f'{i:05d}.png')
         for flags, files in sorted(groups.items()):
             for start in range(0, len(files), 400):      # a batch per run keeps the command line short
                 run = subprocess.run([binary, *map(str, files[start:start + 400]), '--output-dir', str(dst), '--force',
                                       *flags], capture_output=True, text=True)
                 if run.returncode:
                     raise SystemExit(f'{binary} failed ({run.returncode}): {run.stderr[-2000:]}')
+
+        def made(stem, path):
+            with Image.open(dst / f'{stem}_n.png') as image:
+                n = np.array(image.convert('RGBA'))[:rows[path]]
+            return n
+
         for path, stem in names.items():
             if path in flat:
                 out[path] = flat[path]
                 continue
-            with Image.open(dst / f'{stem}_n.png') as made:
-                n = np.array(made.convert('RGBA'))
-            n[..., 3] = np.where(solid[path], 255, 0)
-            if profile == DOMED and pieces.get(path, 'domed') == 'domed':
-                n = smooth(n, solid[path], smooth_passes(longest_side(solid[path])))
-            if pieces.get(path) == 'bevel':
-                n[inside(solid[path], BEVEL_PX)] = FLAT[:3] + (255,)
+            piece = pieces.get(path, 'domed')
+            if piece in ('domed', 'box'):
+                n = made(stem, path)
+                n[..., 3] = np.where(solid[path], 255, 0)
+                if profile == DOMED:
+                    n = smooth(n, solid[path], smooth_passes(longest_side(solid[path])))
+                    n = limit_lean(n, solid[path], SOFT_LEAN)
+            if piece in ('bevel', 'box'):
+                mask = body[path] if piece == 'box' else solid[path]
+                edge = made(stem if piece == 'bevel' else stem + 'b', path)
+                edge[..., 3] = np.where(mask, 255, 0)
+                edge = limit_lean(edge, mask, EDGE_LEAN)
+                edge[inside(mask, BEVEL_PX)] = FLAT[:3] + (255,)
+                if path in standing:
+                    edge = ground_foot(edge, mask)
+                if piece == 'bevel':
+                    n = edge
+                else:
+                    n[mask] = edge[mask]
             out[path] = n
     return out
 
@@ -300,7 +398,7 @@ def floor_sprites(dist, manifest=None):
 
 
 def piece_profiles(dist, manifest=None):
-    """{str(path): 'flat' | 'bevel' | 'domed'} of the sprites that get a normal, spelled as `placed` spells them (kinds.relief_profile).
+    """{str(path): 'flat' | 'bevel' | 'box' | 'domed'} of the sprites that get a normal, spelled as `placed` spells them (kinds.relief_profile).
     Empty when the manifest has no "kinds" (an older build): every piece is domed as before."""
     dist = Path(dist)
     if manifest is None:
@@ -311,11 +409,25 @@ def piece_profiles(dist, manifest=None):
     out = {}
     for key, kind in kind_map.items():
         tags = [t for e in entries.get(key, []) for t in e.get('tags', [])]
-        profile = KINDS.relief_profile(kind, tags, (lights.get(key) or {}).get('kind'))
+        folder, image = key.split('/', 1)
+        path = dist / 'entities' / folder / image
+        soft = kind == 'stand' and any(t in KINDS.SOFT_TAGS for t in tags)
+        box = soft and any(KINDS.box_evidence(geometry(PG.load_rgba(path)), e.get('name')) for e in entries.get(key, []))
+        profile = KINDS.relief_profile(kind, tags, (lights.get(key) or {}).get('kind'), box)
         if profile != 'none':
-            folder, image = key.split('/', 1)
-            out[str(dist / 'entities' / folder / image)] = profile
+            out[str(path)] = profile
     return out
+
+
+def standing_sprites(dist, manifest=None):
+    """{str(path)} of the sprites the manifest's "kinds" calls "stand", spelled as `placed` spells them: the pieces that stand on the floor.
+    Empty when the manifest has no "kinds" (an older build)."""
+    dist = Path(dist)
+    if manifest is None:
+        manifest = json.loads((dist / 'fx' / 'manifest.json').read_text())
+    return {str(dist / 'entities' / folder / image)
+            for key, kind in (manifest.get('kinds') or {}).items() if kind == 'stand'
+            for folder, image in [key.split('/', 1)]}
 
 
 def resolve_method(method):
@@ -330,18 +442,41 @@ def resolve_method(method):
     return 'legacy'
 
 
-def compose(dist, method='auto', profile=DOMED):
+def volume_map(rgba, normal):
+    """The normal map of a sprite whose relief a recipe or a proxy volume supplies (hq-office/lounge.py, KONCLUI_VOLUME_PIECES): `normal`
+    is that volume's normal image at the picture's own size (the baker's convention, which is this file's: RGB = (n + 1) / 2 * 255, +Y up,
+    flat (128, 128, 255)). It is masked to the picture the way the tool's output is: alpha 255 on a fully opaque pixel and 0 elsewhere, and
+    a solid pixel the volume leaves without a normal takes the flat one. A size that is not the picture's is an error: it would be laid on
+    the wrong pixels."""
+    rgba = np.asarray(rgba)
+    normal = np.asarray(normal)
+    if normal.shape != rgba.shape:
+        raise ValueError(f'volume normal is {normal.shape[1]}x{normal.shape[0]} but the picture is {rgba.shape[1]}x{rgba.shape[0]}')
+    solid = rgba[..., 3] == 255
+    out = normal.copy()
+    out[~solid] = FLAT
+    flat = solid & (normal[..., 3] == 0)
+    out[flat] = FLAT[:3] + (255,)
+    out[..., 3] = np.where(solid, 255, 0)
+    return out
+
+
+def compose(dist, method='auto', profile=DOMED, volume=None):
     """The map-space normal texture of every placed sprite except the floor pieces (`floor_sprites`: a rug has no relief),
     and the method used ('tool' or 'legacy'). Sprites are stamped in the runtime's draw order (depth = y + height +
-    depthOffset), so where two overlap the one drawn on top owns the normal."""
+    depthOffset), so where two overlap the one drawn on top owns the normal. `volume` is {sprite path: normal image}: those sprites
+    take `volume_map` of it and the tool is not run on them (the path is spelled as `placed` spells it)."""
     manifest = json.loads((Path(dist) / 'fx' / 'manifest.json').read_text())
     width, height = manifest['map']
     floor = floor_sprites(dist, manifest)
     items = [i for i in placed(dist) if i[2] not in floor]
     method = resolve_method(method)
     sprites = {p for _, _, p, _ in items}
-    maps = tool_normals(sprites, profile, piece_profiles(dist, manifest)) if method == 'tool' else \
-        {p: legacy_normal(geometry(PG.load_rgba(p))) for p in sprites}
+    supplied = {str(k): v for k, v in (volume or {}).items()}
+    own = sprites & set(supplied)
+    maps = tool_normals(sprites - own, profile, piece_profiles(dist, manifest), standing_sprites(dist, manifest)) if method == 'tool' else \
+        {p: legacy_normal(geometry(PG.load_rgba(p))) for p in sprites - own}
+    maps.update({p: volume_map(PG.load_rgba(p), supplied[p]) for p in own})
     canvas = np.zeros((height, width, 4), np.uint8)
     canvas[...] = FLAT
     # Back to front by the runtime's depth, y + height + depthOffset (a tie goes to the larger x: the runtime's tie is
@@ -361,11 +496,11 @@ def compose(dist, method='auto', profile=DOMED):
 METHOD_KEY = 'konclui-normals-method'
 
 
-def write(dist, target, method='auto', profile=DOMED):
+def write(dist, target, method='auto', profile=DOMED, volume=None):
     """Compose and save the texture (deterministic: the same inputs give the same bytes). The method that made it is
     stamped in a PNG text chunk (`METHOD_KEY`: 'tool' or 'legacy'), so a served file says whether it is silhouette-aware,
-    and the profile in `PROFILE_KEY`. Returns the method used."""
-    image, used = compose(dist, method, profile)
+    and the profile in `PROFILE_KEY`. `volume` is as in `compose`. Returns the method used."""
+    image, used = compose(dist, method, profile, volume)
     info = PngImagePlugin.PngInfo()
     info.add_text(METHOD_KEY, used)
     info.add_text(PROFILE_KEY, profile if used == 'tool' else 'legacy')

@@ -299,7 +299,7 @@ class FloorNormals(unittest.TestCase):
         seen = []
         real = N.tool_normals
 
-        def spy(sprites, profile=N.DOMED, pieces=None):
+        def spy(sprites, profile=N.DOMED, pieces=None, standing=None):
             seen.extend(sorted(Path(p).name for p in sprites))
             return {p: N.legacy_normal(N.geometry(N.PG.load_rgba(p))) for p in sprites}
 
@@ -482,9 +482,15 @@ class Profiles(unittest.TestCase):
             plain = N.tool_normals({paths['canopy']}, N.PLAIN, {paths['canopy']: 'domed'})
         solid = np.ones((100, 100), bool)
         self.assertLess(self._largest_step(made[paths['canopy']], solid), self._largest_step(facets, solid) * 0.45)
-        # the slab keeps the tool's normal at its edge (only the inside is made flat) and the plain profile does not smooth at all
+        # the slab keeps the tool's direction at its edge (only the inside is made flat, and the lean is capped at N.EDGE_LEAN) and the
+        # plain profile does not smooth at all
         edge = made[paths['desk']][:4]
-        self.assertTrue((edge[..., :3] == facets[:4, :, :3]).all())
+        want = facets[:4, :, :3].astype(float) / 255 * 2 - 1
+        got = edge[..., :3].astype(float) / 255 * 2 - 1
+        lean_want, lean_got = np.hypot(want[..., 0], want[..., 1]), np.hypot(got[..., 0], got[..., 1])
+        self.assertTrue((lean_got <= N.EDGE_LEAN + 0.01).all())
+        leaning = lean_want > 0.05
+        self.assertTrue((np.sign(got[..., 0][leaning]) == np.sign(want[..., 0][leaning])).all())
         self.assertTrue((plain[paths['canopy']][..., :3] == facets[..., :3]).all())
 
     def test_a_slab_is_flat_inside_its_edge_and_the_tool_does_not_read_its_painted_wash(self):
@@ -530,7 +536,7 @@ class Profiles(unittest.TestCase):
         manifest = json.loads((dist / 'fx' / 'manifest.json').read_text())
         profiles = N.piece_profiles(dist, manifest)
         self.assertEqual(len(profiles), len([k for k, v in manifest['kinds'].items() if v != 'floor']))
-        self.assertTrue(set(profiles.values()) <= {'flat', 'bevel', 'domed'})
+        self.assertTrue(set(profiles.values()) <= {'flat', 'bevel', 'box', 'domed'})
         self.assertEqual(N.piece_profiles(dist, {'kinds': None}), {})          # an older build: every piece is domed, as before
 
 

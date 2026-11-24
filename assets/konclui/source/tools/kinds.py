@@ -93,18 +93,106 @@ def classify(name, tags=(), depth_offset=0, path=''):
 # lamp is the light and takes none. Only soft furnishings keep the dome, so a sofa still has a lit face and a turned one.
 SOFT_TAGS = ('Plantas', 'Exterior e jardim', 'Sofás e poltronas', 'Cadeiras e bancos')
 LAMP_LIGHTS = ('arc', 'floor', 'desk')                  # the manifest's light kinds of a lamp: it is the light, it takes none
-RELIEF_PROFILES = ('none', 'flat', 'bevel', 'domed')
+RELIEF_PROFILES = ('none', 'flat', 'bevel', 'box', 'domed')
+
+# Relief only where a surface curves (audit rule R12). A soft-furnishing TAG says what a piece is usually made of, not what this
+# picture is: the white planter "Floreira branca" is tagged Plantas and is a box with reeds on it, and a dome across its face lit
+# as a bright and a dark wedge. The picture says it: a box has a face painted in one colour, as a rectangle, and that rectangle is
+# a large share of the piece; a sofa's cushions, a chair, a tree and a bean bag have none (MEASURED on the build of HEAD: the planter
+# 1008 px, 56 x 18, 51% of its opaque pixels; the next soft piece is a sofa's cushion strip at 25% and 539 px, 77 x 7).
+FACE_TOL = 6                                            # a pixel is in a face's colour when every channel is within this
+BOX_MIN_AREA = 800                                      # px of the largest one-colour rectangle ...
+BOX_MIN_SIDE = 12                                       # ... its shorter side ...
+BOX_MIN_SHARE = 0.40                                    # ... and its share of the piece's opaque pixels
+BOX_WORDS = ('floreira', 'jardineira', 'caixote', 'cubo')   # a name that says a box lowers the bar (below) but never replaces the picture
+BOX_NAME_MIN_AREA = 300
+BOX_NAME_MIN_SHARE = 0.25
+BODY_MIN_WIDTH = 0.8                                    # a row belongs to a box's body while it is this share of the face's width
 
 
-def relief_profile(kind, tags=(), light_kind=None):
-    """'none' for a floor piece (no normal at all), 'flat' for a lamp (a flat normal: it is lit, it does not shade), 'domed' for
-    a stand piece with a soft-furnishing tag (the dome of its size class), else 'bevel' (flat inside, a 4 px bevel at the edge)."""
+def _largest_rectangle(mask):
+    """(area, x, y, w, h) of the largest axis-aligned rectangle of True in a boolean mask (the histogram-stack method)."""
+    height, width = mask.shape
+    heights = np.zeros(width, int)
+    best = (0, 0, 0, 0, 0)
+    for y in range(height):
+        heights = np.where(mask[y], heights + 1, 0)
+        stack = []
+        for x in range(width + 1):
+            current = int(heights[x]) if x < width else 0
+            start = x
+            while stack and stack[-1][1] >= current:
+                at, top = stack.pop()
+                if top * (x - at) > best[0]:
+                    best = (top * (x - at), at, y - top + 1, x - at, top)
+                start = at
+            stack.append((start, current))
+    return best
+
+
+def flat_face(rgba, tol=FACE_TOL):
+    """The largest rectangle of one colour in a picture's fully opaque pixels: (area, x, y, w, h), (0, 0, 0, 0, 0) when there is none.
+    Only the 12 commonest colours are tried, and only those that have the pixels for it, so it costs a few ms per sprite."""
+    rgba = np.asarray(rgba)
+    solid = rgba[..., 3] == 255
+    if not solid.any():
+        return (0, 0, 0, 0, 0)
+    rgb = rgba[..., :3].astype(int)
+    colours, counts = np.unique(rgb[solid], axis=0, return_counts=True)
+    best = (0, 0, 0, 0, 0)
+    for colour in colours[np.argsort(-counts, kind='stable')][:12]:
+        match = solid & (np.abs(rgb - colour).max(axis=-1) <= tol)
+        if match.sum() > best[0]:
+            found = _largest_rectangle(match)
+            if found[0] > best[0]:
+                best = found
+    return best
+
+
+def box_body(rgba, face=None):
+    """The boolean mask of a box's body: the opaque pixels of the rows around its flat face that are at least BODY_MIN_WIDTH of the face's
+    width (a planter's rim, soil and face, without the reeds that stand on it), or None when the picture has no opaque pixel. Whether the
+    picture IS a box is box_evidence's question; this finds the part of one that is."""
+    rgba = np.asarray(rgba)
+    face = face or flat_face(rgba)
+    area, fx, fy, fw, fh = face
+    solid = rgba[..., 3] == 255
+    if not area:
+        return None
+    rows = solid.sum(axis=1) >= BODY_MIN_WIDTH * fw
+    top, bottom = fy, fy + fh - 1
+    while top > 0 and rows[top - 1]:
+        top -= 1
+    while bottom < len(rows) - 1 and rows[bottom + 1]:
+        bottom += 1
+    body = np.zeros_like(solid)
+    body[top:bottom + 1] = solid[top:bottom + 1]
+    return body
+
+
+def box_evidence(rgba, name=''):
+    """True when the picture is a box: its largest one-colour rectangle is BOX_MIN_AREA px, BOX_MIN_SIDE on its shorter side and
+    BOX_MIN_SHARE of the opaque pixels; a name with a BOX_WORDS word asks only BOX_NAME_MIN_AREA and BOX_NAME_MIN_SHARE of it."""
+    rgba = np.asarray(rgba)
+    area, _, _, w, h = flat_face(rgba)
+    share = area / max(int((rgba[..., 3] == 255).sum()), 1)
+    if area >= BOX_MIN_AREA and min(w, h) >= BOX_MIN_SIDE and share >= BOX_MIN_SHARE:
+        return True
+    return bool(re.search('|'.join(rf'(?<!\w){w_}(?!\w)' for w_ in BOX_WORDS), name or '', re.IGNORECASE)) \
+        and area >= BOX_NAME_MIN_AREA and min(w, h) >= BOX_MIN_SIDE and share >= BOX_NAME_MIN_SHARE
+
+
+def relief_profile(kind, tags=(), light_kind=None, box=False):
+    """'none' for a floor piece (no normal at all), 'flat' for a lamp (a flat normal: it is lit, it does not shade), 'box' for a stand
+    piece with a soft-furnishing tag whose picture is a box (`box`, from box_evidence: a flat face with a bevel along its edge, and the
+    dome only on what stands out of it, a planter's reeds), 'domed' for any other stand piece with a soft-furnishing tag (the dome of
+    its size class), else 'bevel' (flat inside, a 4 px bevel at the edge)."""
     if kind == 'floor':
         return 'none'
     if light_kind in LAMP_LIGHTS:
         return 'flat'
     if kind == 'stand' and any(t in SOFT_TAGS for t in (tags or ())):
-        return 'domed'
+        return 'box' if box else 'domed'
     return 'bevel'
 
 
