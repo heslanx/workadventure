@@ -1,13 +1,18 @@
 """The Koru fountain of the main office at native resolution (one art pixel per map pixel, 32 per tile), drawn for pool.py:
 the niche in the facade, the official Koru lit from the upper left on a stone corbel, and the water it pours.
 
-  statue(koru, ...)   the layer that sits above the walls layer: niche, plinth, Koru, corbel, the shadows they cast
-  stream(k, ...)      frame k of 8 (220 ms): the stream, the splash where it lands, rings, bubbles, the stirred water
+  basin(...)          the round stone basin the stream lands in: a rim of real height round water, against the facade
+  statue(koru, ...)   the layer that sits above the walls layer: niche, plinth, Koru, the basin, the corbel
+  stream(k, ...)      frame k of 8 (220 ms): the stream, the splash where it lands, rings, the stirred water
   stirred(...)        the water the fountain animates itself: the water shader leaves it alone
 
 Light comes from the upper left, as everywhere in the map: lit edges are the top and left ones, shade and the outline
 the bottom and right ones. Palettes are small and fixed; nothing is dithered or blended (alpha only on water, where the
-fountain's own motion has to show the floor through it).
+fountain's own motion has to show the floor through it). Nothing carries a cast shadow: the runtime casts them (audit
+R1); a thing touching the water has a line of contact the same all round, drawn by pool.py.
+
+The ground is 1:1 (32 px a tile both ways, the projection's contract), so the basin, the splash and the rings are circles;
+height goes straight up, 21 px a metre: the basin's rim is BASIN['H'] px high.
 """
 import numpy as np
 from PIL import Image
@@ -15,7 +20,9 @@ from PIL import Image
 from palette import rgb
 
 FRAMES = 8
-SQUASH = 2.0                                                   # splash and rings are this much wider than tall (the oblique view)
+SQUASH = 1.0                                                   # splash and rings are circles on the 1:1 ground (was 2.0, audit I32)
+PLINTH = 5                                                     # rows of the facade's foot, at the water
+BASIN = dict(R=40, rim=5, H=8, water=3)                        # px: outer radius, rim top width, rim height, water this far under the rim top
 TEAL = [rgb(c) for c in ('#8BE3E5', '#5CC6CC', '#33AAB3', '#1F8E99', '#13707C', '#0B4C56')]   # the Koru's body, lit -> deep
 BEAK = dict(lit=rgb('#F7C979'), base=rgb('#F3AA50'), shade=rgb('#C8642E'), mouth=rgb('#B43D32'), tongue=rgb('#F57466'))
 OUTLINE = rgb('#08323A')
@@ -26,7 +33,6 @@ MOSS = [rgb(c) for c in ('#2C6E3F', '#4D8A2F', '#72AD35', '#99CD45')]
 FOAM = [rgb(c) for c in ('#FFFFFF', '#E9FBFC', '#BFEFF0')]
 JET = dict(lit=rgb('#F4FFFD'), hi=rgb('#BFF7F2'), body=rgb('#5FE4D9'), dash=rgb('#E9FBFC'), thin=rgb('#2FB9B8'), mid=rgb('#3FCBC6'), shade=rgb('#3AC4C2'))
 BOWL = rgb('#008087')
-MINT = rgb('#78DCCB')
 RING = [rgb('#8FEAE2'), rgb('#D4FBF6')]                                                          # ring crests: back arc, front arc
 
 
@@ -179,12 +185,13 @@ def koru(big, width=96):
 
 def _facade(width, height):
     """The niche in its own pixels (width x height): a thin cornice, plain limestone piers, pilasters with a capital and
-    a base either side of a slate recess, and a plinth. Returns the picture and (recess x0, x1, cornice, plinth row)."""
+    a base either side of a slate recess, and a plinth of PLINTH rows: a two-row coping and a three-row face, where the
+    water meets the facade. Returns the picture and (recess x0, x1, cornice, plinth row)."""
     rng = np.random.default_rng(3)
     img = np.empty((height, width, 3), np.uint8)
     pier, pilaster = 18, 8
     rec0, rec1 = pier + pilaster, width - pier - pilaster
-    cornice, bottom = 3, height - 3
+    cornice, bottom = 3, height - PLINTH
     img[:, :width // 2] = STONE[1]                                # light comes from the left: the right half is a step darker
     img[:, width // 2:] = STONE[2]
     speck = rng.random((height, width))                           # sparse flecks in the stone, never in a line
@@ -209,19 +216,18 @@ def _facade(width, height):
         img[cornice + 4, p0:p0 + pilaster] = STONE[3]             # the capital's shadow on the shaft
     for r, c in enumerate((STONE[0], STONE[2], STONE[4])):        # the cornice: lit, face, shaded underside
         img[r, :] = c
-    for r, c in enumerate((STONE[0], STONE[3], STONE[5])):        # the plinth
+    for r, c in enumerate((STONE[0], STONE[1], STONE[3], STONE[4], STONE[5])):    # the plinth: coping, then its face
         img[bottom + r, :] = c
     return img, (rec0, rec1, cornice, bottom)
 
 
-def statue(koru_big, x0, y0, w, h, canal_cx, facade, corbel_y, water):
+def statue(koru_big, x0, y0, w, h, canal_cx, facade, corbel_y, basin):
     """The layer that sits above the walls layer, in the region's map px (w x h at x0, y0): the niche over the facade
-    (facade = x0, y0, x1, y1 of the wall's face), the Koru on its corbel and the shadows they cast on the water.
-    The corbel's lip is drawn over the Koru's foot, so she ends on it. Returns the layer, the beak tip in map px and the water it shades
-    (a region mask: the pool darkens the still water with it, as with the deck's shadow, under the plants)."""
+    (facade = x0, y0, x1, y1 of the wall's face), the Koru, the basin (from basin()) and the corbel she stands on.
+    The corbel's lip is drawn over the Koru's foot, so she ends on it. Returns the layer and the beak tip in map px."""
     layer = np.zeros((h, w, 4), np.uint8)
     fx0, fy0, fx1, fy1 = facade
-    pic, rect = _facade(fx1 - fx0, fy1 - fy0 + 3)
+    pic, rect = _facade(fx1 - fx0, fy1 - fy0 + PLINTH)
     layer[fy0 - y0:fy0 - y0 + pic.shape[0], fx0 - x0:fx0 - x0 + pic.shape[1], :3] = pic
     layer[fy0 - y0:fy0 - y0 + pic.shape[0], fx0 - x0:fx0 - x0 + pic.shape[1], 3] = 255
     owl, tip = koru(koru_big)
@@ -234,6 +240,7 @@ def statue(koru_big, x0, y0, w, h, canal_cx, facade, corbel_y, water):
     layer[np.roll(np.roll(owl_a, 2, 0), 2, 1) & wall & ~owl_a, :3] = RECESS[0]
     layer_img = Image.fromarray(layer, 'RGBA')
     layer_img.alpha_composite(owl, (ox, oy))
+    layer_img.alpha_composite(Image.fromarray(basin['layer'], 'RGBA'))      # the basin in front of the niche's foot, under the corbel
     yy, xx = np.mgrid[0:h, 0:w]
     cx, cy = int(canal_cx - x0), int(corbel_y - y0)
     top = cy - 4
@@ -257,11 +264,7 @@ def statue(koru_big, x0, y0, w, h, canal_cx, facade, corbel_y, water):
                 bracket[top + r, cx + mx + dx_, :3] = MOSS[3] if r == 0 else MOSS[2] if r < 2 else MOSS[1] if r < 4 else MOSS[0]
                 bracket[top + r, cx + mx + dx_, 3] = 255
     layer_img.alpha_composite(Image.fromarray(bracket, 'RGBA'))
-    out = np.asarray(layer_img).copy()
-    shade = np.zeros((h, w), bool)                                  # shade on the water: under the plinth, and under and beside the corbel
-    shade[fy1 - y0 + 3:fy1 - y0 + 7, fx0 - x0:fx1 - x0] = True
-    shade |= (yy >= top + len(halves)) & (yy < top + len(halves) + 6 - np.abs(xx - cx) // 9) & (np.abs(xx - cx) < 24)
-    return Image.fromarray(out, 'RGBA'), (x0 + ox + tip[0], y0 + oy + tip[1] + 1), shade & water & (out[..., 3] == 0)
+    return layer_img, (x0 + ox + tip[0], y0 + oy + tip[1] + 1)
 
 
 def _hash(a, b):
@@ -269,22 +272,21 @@ def _hash(a, b):
 
 
 def _patches(dist, dx, dy):
-    """The water the stream stirs: a lumpy bowl around the landing with a paler halo, and a tail of bubbles down the canal."""
+    """The water the stream stirs: a lumpy round bowl around the landing with a paler halo."""
     ang = np.arctan2(dy, dx)
     core = 14 + 3.0 * np.sin(ang * 3 + 1.0) + 1.8 * np.sin(ang * 5 - 0.7) + 1.0 * np.sin(ang * 11)
     bowl, halo = dist < core, dist < core + 2.4 + 0.8 * np.sin(ang * 8 + 2.0)
-    tail = (dy > 2) & (dy < 60) & (np.abs(dx) < 7.5 * np.clip(1 - dy / 70, 0, 1) ** 0.9 + 1.2 * np.sin(dy * 0.31))
-    return bowl, halo, tail
+    return bowl, halo
 
 
 def _stirred(xs, ys, cx, cy1):
-    """Where the fountain animates the water, for arrays of region px: the bowl and its tail, the reach of the rings
-    and the column under the stream. Nothing is drawn outside it, so the water shader (which repaints open water) can
-    be told to leave exactly this alone."""
+    """Where the fountain animates the water, for arrays of region px: the bowl, the reach of the rings and the column
+    under the stream. Nothing is drawn outside it, so the water shader (which repaints open water) can be told to leave
+    exactly this alone (pool.py adds the whole basin)."""
     dx, dy = (xs - cx) / SQUASH, (ys - cy1).astype(float)
     dist = np.hypot(dx, dy)
-    bowl, halo, tail = _patches(dist, dx, dy)
-    return halo | tail | (dist < 22) | ((ys < cy1) & (np.abs(xs - cx) < 8))
+    bowl, halo = _patches(dist, dx, dy)
+    return halo | (dist < 22) | ((ys < cy1) & (np.abs(xs - cx) < 8))
 
 
 def stirred(x0, y0, w, h, bx, iy):
@@ -293,12 +295,75 @@ def stirred(x0, y0, w, h, bx, iy):
     return _stirred(xs, ys, int(bx - x0), int(iy - y0))
 
 
+def _disc(xx, yy, cx, cy, r):
+    return (xx - cx) ** 2 + (yy - cy) ** 2 <= (r + 0.5) ** 2
+
+
+def margin(mask, k):
+    """The mask grown by k px all round."""
+    out = mask.copy()
+    for dy in range(-k, k + 1):
+        for dx in range(-k, k + 1):
+            if dx * dx + dy * dy <= k * k + 1:
+                out |= np.roll(np.roll(mask, dy, 0), dx, 1)
+    return out
+
+
+def basin(x0, y0, w, h, canal_cx, canal_top, impact_y):
+    """The round stone basin the stream lands in, on the ground against the facade (region px, w x h at x0, y0).
+
+    In plan it is a circle of BASIN['R'] px, cut flat where it meets the facade (6 px in front of it); its rim is BASIN['H']
+    px high (0.38 m at 21 px/m) and BASIN['rim'] px wide on top, and the water stands BASIN['water'] px under the rim's
+    top. The oblique view lifts everything straight up: the rim's top is the circle lifted H px, its front face the
+    ground circle's south side between the two, and on the north side the inside face of the rim shows above the
+    water. Masonry: one tone for the top, one for each face, a lit edge on the top's outer rim, joints every 13 px on the
+    face and across the top. Returns a dict: layer (RGBA, the stone), footprint (the ground circle, rim included),
+    rim (the opaque stone) and interior (the visible water), masks of the region."""
+    R, rim, H, drop = (BASIN[k] for k in ('R', 'rim', 'H', 'water'))
+    r, hw = R - rim, H - BASIN['water']
+    cx, wall = int(canal_cx - x0), int(canal_top - y0) + 6
+    cy = int(impact_y - y0) + hw                    # the ground circle's centre: the landing is at the water's, hw above it
+    yy, xx = np.mgrid[0:h, 0:w]
+
+    def lifted(rad, up, back=0):                    # a disc of radius rad lifted `up` px and cut by the facade lifted the same
+        return _disc(xx, yy, cx, cy - up, rad) & (yy >= wall - up + back)
+
+    footprint = lifted(R, 0)
+    top_out, top_in = lifted(R, H), lifted(r, H, rim)
+    water = lifted(r, hw, rim)
+    sweep = np.zeros_like(footprint)
+    for t in range(H + 1):
+        sweep |= lifted(R, t)
+    face = sweep & ~top_out
+    top = top_out & ~top_in
+    inner = top_in & ~water
+    interior = water & top_in
+    pad = lambda m: np.pad(m, 1)
+    near = lambda m, dy, dx: pad(m)[1 + dy:1 + dy + m.shape[0], 1 + dx:1 + dx + m.shape[1]]
+    out_edge = top & ~(near(top_out, -1, 0) & near(top_out, 1, 0) & near(top_out, 0, -1) & near(top_out, 0, 1))
+    in_edge = top & (~near(top, -1, 0) | ~near(top, 1, 0) | ~near(top, 0, -1) | ~near(top, 0, 1)) & ~out_edge
+    art = np.zeros((h, w, 4), np.uint8)
+    art[face, :3] = STONE[3]
+    art[face & ((xx - cx) % 13 == 0), :3] = STONE[4]                              # joints between the blocks of the face
+    art[face & ~near(face, 1, 0), :3] = STONE[4]                                  # where it meets the ground
+    art[inner, :3] = STONE[4]                                                     # the rim's inside, away from the viewer
+    art[top, :3] = STONE[1]
+    arc = np.arctan2(yy - (cy - H), xx - cx) * (R - rim / 2.0)
+    art[top & (np.mod(arc, 14) < 1) & (yy > wall - H + rim), :3] = STONE[3]       # joints across the coping
+    art[top & (np.mod(xx - cx, 14) == 0) & (yy <= wall - H + rim + 1) & (yy >= wall - H), :3] = STONE[3]
+    art[out_edge, :3] = STONE[0]
+    art[in_edge, :3] = STONE[2]
+    art[face | top | inner, 3] = 255
+    return dict(layer=art, footprint=footprint, rim=face | top | inner, interior=interior)
+
+
 def stream(k, x0, y0, w, h, bx, by, iy, water):
     """Frame k of the stream that leaves the beak at (bx, by) and lands at (bx, iy), in the region's map px: a straight
     column widening from 3 to 8 px, a pixel at a time, as it falls (a white edge and a pale one on its left, a mid and a dark one on its
     right) with short dashes of light sliding down it, 4 px a frame; where it lands, curved arms of foam that rise and
-    fall with the loop, round droplets of three sizes, five full rings that move outward and fade, a dark bowl of
-    stirred water and bubbles trailing south. Returns an RGBA array of the region."""
+    fall with the loop, round droplets of three sizes, six rings (circles) that move outward and fade to nothing
+    where they started over again, a dark bowl of stirred water and bubbles. `water` is the basin's open water: nothing
+    is painted outside it, and the loop closes (frame 8 would be frame 0). Returns an RGBA array of the region."""
     s = np.zeros((h, w, 4), np.uint8)
     cx, cy0, cy1 = int(bx - x0), int(by - y0), int(iy - y0)
     length = cy1 - cy0
@@ -345,22 +410,21 @@ def stream(k, x0, y0, w, h, bx, by, iy, water):
                 s[py + ddy, px + ddx, :3] = col if size == 1 else FOAM[shade]
                 s[py + ddy, px + ddx, 3] = alpha
 
-    bowl, halo, tail = _patches(dist, dx, dy)
-    paint(tail & wm, MINT, 60)
+    bowl, halo = _patches(dist, dx, dy)
     paint(halo & wm, BOWL, 105)
     paint(bowl & wm, BOWL, 200)
     spacing = 2.7
     near = np.maximum(dist, 1e-6)
     slope = np.maximum(np.hypot(dx / (SQUASH * near), dy / near), 1e-3)   # how fast `dist` grows per pixel here: a ring 1 px thick all round, not 2 px at its sides
-    for i in range(6):                                           # rings: whole ellipses, the front (south) arc brighter; each takes the next one's place
-        r = 4 + (spacing * i + spacing * k / FRAMES) % (6 * spacing)    # after the 8 frames, so the loop has no seam
-        fade = min(1, (r - 4) / 2.5) * (1 - (r - 4) / 24) ** 0.5
-        ring = (np.abs(dist - r) / slope < 0.75) & wm & ~(_hash(np.floor((np.arctan2(dy, dx) + np.pi) / (2 * np.pi) * 24), i + 3) < 0.1)
+    for i in range(6):                                           # rings: whole circles, the front (south) arc brighter; each takes the next one's place
+        r = 4 + (spacing * i + spacing * k / FRAMES) % (6 * spacing)    # after the 8 frames, so the loop has no seam: a ring is born
+        fade = min(1, (r - 4) / 2.5) * (1 - (r - 4) / (6 * spacing)) ** 0.7   # invisible at r = 4 and fades to nothing at r = 4 + 6 * spacing, where it is born again
+        ring = (np.abs(dist - r) / slope < 0.75) & wm
         paint(ring & (dy > 0), RING[1], int(240 * fade))
         paint(ring & (dy <= 0), RING[0], int(235 * fade))
     for j in range(12):                                          # bubbles come up in the trail south of the splash
         if (k + 3 * j) % FRAMES < 3:
-            dot(cx + int(round((_hash(j, 7) - 0.5) * 2 * (9 - 5 * (j % 5) / 4))), cy1 + 8 + int(_hash(j, 11) * 52), FOAM[1], 220)
+            dot(cx + int(round((_hash(j, 7) - 0.5) * 2 * (9 - 5 * (j % 5) / 4))), cy1 + 8 + int(_hash(j, 11) * 16), FOAM[1], 220)
     base = cy1 + 1
     for x in range(-10, 11):                                     # the crown: ragged columns of foam that rise and fall with the loop, tallest by the
         edge = 1 - abs(x) / 11                                   # stream, the bottom row broken and a fringe below it

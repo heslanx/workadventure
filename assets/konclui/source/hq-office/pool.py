@@ -6,19 +6,22 @@ Everything is computed from signed distances at map-pixel resolution (numpy) and
 dither, so it stays crisp pixel art (the owner's references, 18/10/2026: a clear emerald lake over dark stones, a lily
 pond with reflections, grass and moss sheets):
   water    still, painted once: emerald turquoise in eight tones, deep where it is far from the shore, broken into broad
-           deep holes and lighter shallows by smooth noise; the bed's stones as darker shapes with a lit rim; the bank's
-           shade and the plants' reflection below the north banks; shadows of the deck, the bridge, the pads and the
-           leaves over the water; a broken waterline and sun speckles
+           deep holes and lighter shallows by smooth noise; the bed's stones as darker shapes with a lit rim; the
+           plants' reflection below the north banks; a scalloped, broken waterline and sun speckles. Nothing is shaded
+           on one side only: the runtime casts the shadows (this picture is a floor tile it does not shade), so what
+           touches the water gets a contact line the same all round, at most two px (audit I05, rule R1)
   surface  its motion lives in the map's decor layer (water_decor): sun glints that twinkle and ripples that open now and
            then, on tiles that do not depend on where they lie, so the water costs a few dozen tiles instead of eight
            frames of every water tile; the fountain alone keeps its 8 x 220 ms frames
   bank     dense planting from flora.py: stone groups at the waterline (moss caps, the part under the surface tinted),
            ferns leaning over the water, leafy clumps, grass with buttercups or clover, reeds and cattails in the shallows
-  deck     the official K (logo-konclui-icon.svg) in light oak planks, with its edge, 5 px thickness and shadow
-  bridge   oak planks across the canal where the north corridor crosses it, low ink rails, shadow on the water
+  deck     the official K (logo-konclui-icon.svg) in light oak planks of PLANK px, with its edge and 5 px front face
+  bridge   the boardwalk's own planks (signature.tile_pattern) across the canal where the north corridor crosses it,
+           raised 5 px over the water: a front face on the south edge only, a break at each abutment
   pads     clusters of lily pads (notch, rim light, veins), white or pink water lilies on some
   fountain Koru (the official vector, celebration pose) in a niche of the facade on a corbel at the canal head, a stream
-           from the beak and rings where it lands: all drawn by fountain.py
+           from the beak into a round stone basin with a rim of real height, rings where it lands: all drawn by
+           fountain.py
 
   build(plan_module) -> Pool with .frames (8 RGBA images of the region), .region (x, y) in map px, .blocked (tiles),
   .statue (RGBA, map px of the region, the part that must sit above the walls layer), .koi (scenes and masks),
@@ -35,7 +38,8 @@ from PIL import Image
 
 import flora as F
 import fountain as FOUNTAIN
-from palette import INK, rgb
+import signature as SIG
+from palette import rgb
 
 T = 32
 FRAMES = 8
@@ -47,8 +51,29 @@ KORU = Path(__file__).resolve().parent.parent / 'brand/koru-celebration.svg'
 WATER = [rgb(c) for c in ('#78dccb', '#49c8bb', '#28b2a9', '#1a9a96', '#13807f', '#0e676c', '#0a515c', '#073f4c')]
 REFLECT = [rgb(c) for c in ('#1a7f68', '#11665a', '#0b4f49', '#083c3c')]     # the bank's plants mirrored, light -> dark
 WATERLINE = rgb('#8fe6d2')
-GLINT = [rgb('#9cf0dc'), rgb('#e9fff7')]                                        # dim, bright
+GLINT = [rgb('#9cf0dc'), rgb('#e9fff7')]                                        # dim, bright: the shader's own sparkles (fx.py)
+# the water's ramp extended upwards with three lighter tones: a glint is drawn from the local step's neighbours in this
+# list (RISE steps and one more above the water), so it reads on the pale shallows as on the deep holes
+LIGHTER = [rgb(c) for c in ('#f4fffb', '#b9f5e6', '#8fe6d2')]
+RAMP = LIGHTER + WATER
 OAK = [rgb(c) for c in ('#8C6646', '#B88F66', '#CFAA80', '#DEBF98', '#E9D2B2')]
+DIAG = 8                                  # px of x + y between the seams of planks laid at 45 degrees (6 px across, 8.5 rounded down)
+PLANK = 6                                 # px across a plank: the K deck's and the bridge's, the boardwalk's (signature.py)
+FACE = 5                                  # px of a raised deck's front face (0.24 m at 21 px/m), south edges only
+CONTACT = (0.9, 0.5)                      # steps of the water ramp the first and the second px next to a thing are darker
+
+
+class WaterMask(np.ndarray):
+    """A 32 x 32 mask of open water that also says which step of WATER most of it is (.level): water_decor draws its
+    glints and ripples from the neighbours of that step, so they read on the pale shallows as on the deep holes."""
+
+    def __new__(cls, mask, level):
+        obj = np.asarray(mask).view(cls)
+        obj.level = level
+        return obj
+
+    def __array_finalize__(self, obj):
+        self.level = getattr(obj, 'level', 3)
 
 
 @dataclass
@@ -101,11 +126,78 @@ def dilate(mask, r=1):
     return out
 
 
+def contact(touching, water):
+    """The water px 1 and 2 px from whatever touches it, the same on every side: (ring1, ring2). The runtime casts the
+    shadows; this is only the line where a thing meets the water."""
+    ring1 = dilate(touching, 1) & water & ~touching
+    ring2 = dilate(touching, 2) & water & ~touching & ~ring1
+    return ring1, ring2
+
+
 def noise(X, Y, seed):
     """Smooth value in -1..1 from a few incommensurate waves (organic edges and mottling, no texture files)."""
     a = seed * 1.7
     return (np.sin(X * 0.13 + a) * np.sin(Y * 0.11 - a) + 0.6 * np.sin(X * 0.31 - Y * 0.23 + 2 * a)
             + 0.4 * np.sin(X * 0.57 + Y * 0.49 - a)) / 2.0
+
+
+def logo_limbs(logo):
+    """Which limb of the K each pixel of the logo's mask belongs to: 1 the stem and its foot (planks run down them), 2 the upper
+    arm (planks run along it, up to the right), 3 the lower leg (planks run down to the right). The logo is three separate
+    paths: the foot, the leg, and the stem with the upper arm, which is cut at the stem's right edge (x = 42.6 of 163)."""
+    h, w = logo.shape
+    label = np.zeros((h, w), int)
+    n = 0
+    for sy, sx in zip(*np.nonzero(logo)):
+        if label[sy, sx]:
+            continue
+        n += 1
+        label[sy, sx] = n
+        stack = [(sy, sx)]
+        while stack:
+            y, x = stack.pop()
+            for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                if 0 <= ny < h and 0 <= nx < w and logo[ny, nx] and not label[ny, nx]:
+                    label[ny, nx] = n
+                    stack.append((ny, nx))
+    sizes = {k: int((label == k).sum()) for k in range(1, n + 1)}
+    main = max(sizes, key=sizes.get)                       # the stem with the upper arm
+    limb = np.zeros((h, w), int)
+    xs = np.arange(w)[None, :] * np.ones((h, 1))
+    leg_ids = [k for k in sizes if k != main and np.nonzero(label == k)[1].mean() > w / 2]
+    limb[(label == main) & (xs <= 42.6 * w / 163)] = 1
+    limb[(label == main) & (xs > 42.6 * w / 163)] = 2
+    limb[np.isin(label, leg_ids)] = 3
+    limb[(limb == 0) & (label > 0)] = 1                    # the foot
+    return limb
+
+
+def deck_planks(lx, ly, limb, rng):
+    """RGB of the K deck's planks, PLANK px across (the boardwalk's pitch), laid along each limb as a carpenter would: down the stem
+    and its foot, along the upper arm and along the lower leg (at 45 degrees, so a seam is a one px diagonal and the pitch
+    across them is the plank's width, PLANK * sqrt(2) = 8.5, taken as 8 px of x + y). 30 to 70 px long, the butt joints a
+    different place in every row, one of the oak's two middle tones to a plank (the lightest is the edge's), a darker line
+    on the last px of each row and at every joint. lx, ly: px from the logo's top left."""
+    out = np.zeros(lx.shape + (3,))
+    for k, (across, along, pitch) in {1: (lx, ly, PLANK), 2: (lx + ly, lx - ly, DIAG), 3: (lx - ly, lx + ly, DIAG)}.items():
+        sel = limb == k
+        if not sel.any():
+            continue
+        row = across // pitch
+        for r in np.unique(row[sel]):
+            m = sel & (row == r)
+            t = along[m]
+            bounds = np.cumsum(rng.integers(30, 71, 12)) - int(rng.integers(0, 70)) + int(t.min())
+            plank = np.searchsorted(bounds, t, side='right')
+            tones = np.array(OAK[2:4], float)[rng.integers(0, 2, plank.max() + 1)]
+            colour = tones[plank]
+            joint = np.zeros(len(t), bool)
+            order = np.argsort(t, kind='stable')
+            joint[order[1:]] = plank[order][1:] != plank[order][:-1]
+            colour[joint] = OAK[1]
+            out[m] = colour
+        out[sel & (across % pitch == pitch - 1)] = OAK[1]
+    return out
 
 
 def build(P):
@@ -129,11 +221,17 @@ def build(P):
     canal = rounded_rect_sdf(X, Y, canal_cx, (canal_top + canal_bottom) / 2, (walls_r - walls_l) / 2 - RIM + 2,
                              (canal_bottom - canal_top) / 2, 0)
     d = smin(lake, canal, 18)                    # < 0 in the water, fillets where the canal meets the lake
+    srng = np.random.default_rng(31)             # a scalloped waterline: arcs about a dozen px wide (audit I33)
+    d = d + 3.0 * value_noise(X, Y, 12, srng) + 1.1 * value_noise(X, Y, 5, srng)
     water = d < 0
     depth = -d
-    in_slot = (X >= walls_l) & (X < walls_r) & (Y < slot_bottom)
+    # The bank also lies under the team rooms' glass walls (2 px either side of the slot): the glass is see-through, and
+    # over the bare floor it showed a white sliver down both banks (audit I14).
+    in_slot = (X >= walls_l - 2) & (X < walls_r + 2) & (Y < slot_bottom)
     top_ok = Y >= canal_top - 1                  # nothing of the bank on the facade above the canal head
-    bank_edge = RIM - 2 + 4 * noise(X * 0.45, Y * 0.45, 1) + 1.5 * noise(X, Y, 4)   # lumpy mounds
+    brng = np.random.default_rng(41)
+    bank_edge = RIM - 2 + 4.6 * value_noise(X, Y, 28, brng) + 2.0 * value_noise(X, Y, 11, brng) \
+        + 1.5 * noise(X, Y, 4)                    # lumpy mounds, a few to a tile (audit I33: no ruler-straight bank)
     bank = ~water & top_ok & ((d < bank_edge) | in_slot & (Y >= canal_top))
     core = ~water & (d < RIM) & top_ok            # what blocks walking
     # The K deck.
@@ -146,19 +244,25 @@ def build(P):
     deck[dy0:dy0 + logo.shape[0], dx0:dx0 + logo.shape[1]] = logo
     deck &= water
     side = np.zeros_like(deck)
-    for k in range(1, 6):
+    for k in range(1, FACE + 1):                  # the front face: the deck's thickness, below its south edges
         side |= np.roll(deck, k, 0)
     side &= ~deck & water
-    shadow = np.roll(np.roll(deck | side, 7, 0), 5, 1) & water & ~deck & ~side
     deck_zone = np.zeros_like(deck)               # deck and a margin: no stones, pads or reeds there
     for k in range(-6, 13, 3):
         deck_zone |= np.roll(np.roll(deck, k, 0), k // 2, 1) | np.roll(deck, k, 1)
-    # The bridge.
+    # The bridge: a deck raised FACE px over the canal, its planks the boardwalk's (signature.py), its south edge a front
+    # face, nothing on the north edge; the two abutments are a dark break across the planks.
     bx0, by0, bx1, by1 = P.POOL['bridge']
-    bridge = (X >= bx0 * T - 2) & (X < (bx1 + 1) * T + 2) & (Y >= by0 * T) & (Y < (by1 + 1) * T)
-    bridge_shadow = (X >= bx0 * T - 2) & (X < (bx1 + 1) * T + 2) & (Y >= (by1 + 1) * T) \
-        & (Y < (by1 + 1) * T + 6) & water
-    keep_clear = bridge | (Y < canal_top + 46) & (np.abs(X - canal_cx) < 26)   # the fountain's corbel and splash
+    span_x0, span_x1 = bx0 * T - 2, (bx1 + 1) * T + 2
+    in_span = (X >= span_x0) & (X < span_x1)
+    bridge = in_span & (Y >= by0 * T) & (Y < (by1 + 1) * T)
+    bridge_face = in_span & (Y >= (by1 + 1) * T) & (Y < (by1 + 1) * T + FACE)
+    keep_clear = bridge | bridge_face | in_span & (Y >= (by1 + 1) * T) & (Y < (by1 + 1) * T + 14) \
+        | (Y < canal_top + 46) & (np.abs(X - canal_cx) < 26)   # the fountain's corbel and splash
+    # The Koru's basin: a round stone basin on the ground against the facade, the stream landing in it (fountain.py).
+    impact_y = canal_top + 2 + 24
+    basin = FOUNTAIN.basin(x0, y0, w, h, canal_cx, canal_top, impact_y)
+    keep_clear |= basin['footprint'] | FOUNTAIN.margin(basin['footprint'], 6)
 
     nrng = np.random.default_rng(11)
     nlow, nmid, nfine = value_noise(X, Y, 58, nrng), value_noise(X, Y, 17, nrng), value_noise(X, Y, 2.2, nrng)
@@ -183,7 +287,7 @@ def build(P):
         cx, cy = xs[i], ys[i]
         if all((cx - ax) ** 2 + (cy - ay) ** 2 > 30 ** 2 for ax, ay in anchors):
             anchors.append((cx, cy))
-    anchors += [(canal_cx - 40 - x0, canal_top + 10 - y0), (canal_cx + 40 - x0, canal_top + 10 - y0)]
+    anchors += [(canal_cx - 54 - x0, canal_top + 8 - y0), (canal_cx + 54 - x0, canal_top + 8 - y0)]   # beside the basin
     placed = []
     for ax, ay in anchors:
         if rng.uniform() < 0.3:                   # a gap: ferns and grass meet the water here
@@ -204,10 +308,10 @@ def build(P):
                 stamps.append((gy, 'rock', gx, gy, r, rng.uniform() < 0.6))
     # ferns along the water between the stone groups, clumps and grass behind them
     ys, xs = np.nonzero(bank & (d > 5) & (d < 11) & may)
-    for i in rng.choice(len(ys), size=min(46, len(ys)), replace=False):
+    for i in rng.choice(len(ys), size=min(64, len(ys)), replace=False):
         stamps.append((ys[i], 'fern', xs[i], ys[i]))
     ys, xs = np.nonzero(bank & (d >= 11) & may)
-    for i in rng.choice(len(ys), size=min(150, len(ys)), replace=False):
+    for i in rng.choice(len(ys), size=min(210, len(ys)), replace=False):
         kind = rng.choice(['leafy', 'grass', 'grass'], p=[0.55, 0.3, 0.15])
         stamps.append((ys[i], kind, xs[i], ys[i]))
     ys, xs = np.nonzero(water & (depth > 3) & (depth < 9) & ~keep_clear & ~deck_zone)
@@ -235,9 +339,9 @@ def build(P):
     stone_mask = rocks_wet
 
     # ---------------------------------------------------------------- lily pads in clusters, a flower on some
-    ys, xs = np.nonzero(water & (depth > 14) & (depth < 70) & ~deck_zone & ~keep_clear & ~shadow)
+    ys, xs = np.nonzero(water & (depth > 14) & (depth < 70) & ~deck_zone & ~keep_clear)
     pads = np.zeros((h, w, 4), np.uint8)
-    float_ok = water & ~deck & ~side & ~bridge
+    float_ok = water & ~deck & ~side & ~bridge & ~bridge_face
     for i in rng.choice(len(ys), size=min(13, len(ys)), replace=False):
         ccx, ccy = int(xs[i]), int(ys[i])
         cluster = [(ccx + rng.uniform(-12, 12), ccy + rng.uniform(-9, 9), rng.uniform(3.5, 8))
@@ -250,43 +354,39 @@ def build(P):
     on_pads = pads[..., 3] > 0
     flora[on_pads & (flora[..., 3] == 0)] = pads[on_pads & (flora[..., 3] == 0)]
     pl = flora.astype(float)
-    pl[~top_ok | deck | side | bridge] = 0                # keep plants off the deck, the bridge and the facade
+    pl[~top_ok | deck | side | bridge | bridge_face] = 0   # keep plants off the deck, the bridge and the facade
     pad_mask = (pl[..., 3] > 0) & water
 
     # ---------------------------------------------------------------- the K deck and the bridge
-    plank = ((Y - y0 - dy0) // 8).astype(int)
-    tone = rng.uniform(-0.06, 0.06, plank.max() + 2)[np.clip(plank, 0, None)]
-    seam = ((Y - y0 - dy0) % 8) == 7
-    grain = (np.sin((X + plank * 37) * 0.21) * 0.5 + np.sin((X - plank * 11) * 0.083) * 0.5) * 0.035
-    t = np.clip(0.62 + tone + grain, 0, 1)
-    deck_rgb = np.array(OAK, float)[np.clip((t * (len(OAK) - 1)).round().astype(int), 0, len(OAK) - 1)]
-    deck_rgb[seam] = OAK[1]
+    ly_, lx_ = np.mgrid[0:h, 0:w]
+    limb = np.zeros((h, w), int)
+    limb[dy0:dy0 + logo.shape[0], dx0:dx0 + logo.shape[1]] = logo_limbs(logo)
+    deck_rgb = deck_planks(lx_ - dx0, ly_ - dy0, limb, np.random.default_rng(17))
     edge = deck & ~np.roll(deck, 1, 0) | deck & ~np.roll(deck, -1, 1) | deck & ~np.roll(deck, 1, 1)
     deck_rgb[edge] = OAK[4]
     deck_rgb[deck & ~np.roll(deck, -1, 0)] = OAK[1]
     base[deck, :3] = deck_rgb[deck]
     base[side, :3] = OAK[0]
     base[deck | side, 3] = 255
-    bt = np.clip(0.6 + rng.uniform(-0.05, 0.05, 64)[((X - bx0 * T) // 6).astype(int) % 64], 0, 1)
-    bridge_rgb = np.array(OAK, float)[np.clip((bt * (len(OAK) - 1)).round().astype(int), 0, len(OAK) - 1)]
-    bridge_rgb[((X - bx0 * T) % 6) == 5] = OAK[1]
-    rail = bridge & ((Y < by0 * T + 3) | (Y >= (by1 + 1) * T - 3))
-    bridge_rgb[rail] = rgb(INK)
-    bridge_rgb[rail & (((X - bx0 * T) % 24) < 3)] = rgb('#2B3A78')
+    boards = np.asarray(SIG.tile_pattern('boardwalk'))[..., :3].astype(float)      # the approaches' own planks, in step
+    bridge_rgb = boards[(Y % 64).astype(int), (X % 64).astype(int)]
+    bridge_rgb[bridge & ~np.roll(bridge, 1, 0)] = OAK[4]                             # the north edge catches the light
+    bridge_rgb[bridge & ~np.roll(bridge, -1, 0)] = OAK[1]                            # the south edge's last row
+    bridge_rgb[bridge & ((X < span_x0 + 2) | (X >= span_x1 - 2))] = OAK[0]           # the abutments: a break in the planks
     base[bridge, :3] = bridge_rgb[bridge]
-    base[bridge, 3] = 255
+    base[bridge_face, :3] = OAK[0]
+    base[bridge | bridge_face, 3] = 255
 
     # ---------------------------------------------------------------- fountain: Koru in its niche, on a corbel
     corbel_y = canal_top + 2
-    statue_layer, (beak_x, beak_y), fountain_shade = FOUNTAIN.statue(raster_svg(KORU, 96 * 8), x0, y0, w, h, canal_cx,
-                                                                      (walls_l, P.BY0 * T + 7, walls_r, canal_top), corbel_y, water)
-    shadow = shadow | fountain_shade                         # the plinth's and the corbel's shade darkens the water like the deck's
-    impact_y = corbel_y + 24
+    statue_layer, (beak_x, beak_y) = FOUNTAIN.statue(
+        raster_svg(KORU, 96 * 8), x0, y0, w, h, canal_cx, (walls_l, P.BY0 * T + 7, walls_r, canal_top), corbel_y, basin)
+    basin_water = water & basin['interior']
 
     # ---------------------------------------------------------------- the water: still, painted once
     # Depth from the shore with broad deep patches and lighter shallows (no dither: noise-edged clusters); the bed's
-    # stones as darker shapes with a lit rim; the bank's shade and the plants' reflection below the north banks; the
-    # shadows of the deck, the bridge, the pads and the leaves over the water; a broken waterline and sun speckles.
+    # stones as darker shapes with a lit rim; the plants' reflection below the north banks; a contact line round what
+    # touches the water (the same on every side: the runtime casts the shadows); a broken waterline and sun speckles.
     # The surface's motion is the decor layer's (glints and ripples, water_decor) and the koi's.
     v = 0.2 + np.clip(depth / 64, 0, 1) ** 0.7 * 4.8 + 1.9 * nlow + 0.7 * nmid + 0.16 * nfine
     for _ in range(26):                                                         # the bed's stones
@@ -299,21 +399,27 @@ def build(P):
         v[body] += 1.5
         v[body & (e > 0.55) & ((yy - sy_) * 0.8 + (xx - sx_) * 0.6 < 0)] -= 1.1    # its lit rim
     land = ~water | (flora[..., 3] > 0) & ~on_pads
-    v[(np.roll(land, 7, 0) | np.roll(land, 5, 1)) & water] += 0.9                    # shade of the bank
-    v[(np.roll(land, 3, 0) | np.roll(land, 2, 1)) & water] += 0.7
-    v[np.roll(np.roll(on_pads, 2, 0), 1, 1) & water & ~on_pads] += 1.1                # under the pads
-    v[shadow | bridge_shadow] += 1.6
-    above = np.zeros((h, w), int)                                               # px down from the land above
+    solids = deck | side | bridge | bridge_face
+    statue_solid = np.asarray(statue_layer)[..., 3] > 0
+    yb, xb = np.mgrid[0:h, 0:w]
+    inner = basin['interior'] & water                                            # the basin's own clean, shallow water
+    v[inner] = 2.0 + 1.0 * np.clip(1 - np.hypot(xb - (canal_cx - x0), yb - (impact_y - y0)) / 36, 0, 1)[inner]
+    touching = land | solids | on_pads | statue_solid
+    ring1, ring2 = contact(touching, water)
+    v[ring1] += CONTACT[0]                                                          # a contact line, the same all round
+    v[ring2] += CONTACT[1]
+    above = np.zeros((h, w), int)                                               # px down from the bank above
     run = np.zeros(w, int)
+    reflecting = ~water & top_ok                                                 # the bank's ground and plants, not what leans over
     for r_ in range(h):
-        run = np.where(land[r_], 0, run + 1)
+        run = np.where(reflecting[r_], 0, run + 1)
         above[r_] = run
-    reflect = water & (above >= 2) & (above < 10 + 5 * nmid) & ~(shadow | bridge_shadow)
+    reflect = water & (above >= 2) & (above < 10 + 5 * nmid) & ~touching & ~basin['footprint']
     idx = np.clip(np.round(v), 0, len(WATER) - 1).astype(int)
     col = np.array(WATER, float)[idx]
     ridx = np.clip(np.round(v[reflect] / 2.4), 0, len(REFLECT) - 1).astype(int)
     col[reflect] = np.array(REFLECT, float)[ridx]
-    speck = water & ~reflect & (nfine > 0.82) & (idx >= 2) & (idx <= 5) & ~shadow
+    speck = water & ~reflect & (nfine > 0.82) & (idx >= 2) & (idx <= 5) & ~ring1
     speck |= np.roll(speck, 1, 1) & water & (nmid > 0)
     col[speck] = np.array(WATER, float)[np.maximum(idx[speck] - 2, 0)]
     shore = water & dilate(land & ~on_pads, 1) & (nfine > 0.15) & (nmid > -0.3)
@@ -329,7 +435,7 @@ def build(P):
         img = Image.fromarray(frame.round().astype(np.uint8), 'RGBA')
         img.alpha_composite(Image.fromarray(np.clip(pl, 0, 255).astype(np.uint8), 'RGBA'))
         img.alpha_composite(statue_layer)
-        img.alpha_composite(Image.fromarray(FOUNTAIN.stream(k, x0, y0, w, h, beak_x, beak_y, impact_y, water), 'RGBA'))
+        img.alpha_composite(Image.fromarray(FOUNTAIN.stream(k, x0, y0, w, h, beak_x, beak_y, impact_y, basin_water), 'RGBA'))
         frames.append(img)
 
 
@@ -341,8 +447,8 @@ def build(P):
             if 0 <= cy < h and 0 <= cxp < w and (water[cy, cxp] or core[cy, cxp]) and not bridge[cy, cxp]:
                 blocked.add((tx, ty))
     # Koi: the lake and the canal run as two overlays (the canal one stays narrow so it never covers the rooms).
-    swim = water & ~(stone_mask & water)
-    open_water = swim & ~deck & ~side & ~bridge & ~pad_mask & ~(np.asarray(statue_layer)[..., 3] > 0)
+    swim = water & ~(stone_mask & water) & ~basin['footprint']
+    open_water = swim & ~deck & ~side & ~bridge & ~bridge_face & ~pad_mask & ~statue_solid
     koi = {}
     for name, (kx0, ky0, kx1, ky1), count in (
             ('lake', (lx0 * T, ly0 * T, (lx1 + 1) * T, (ly1 + 1) * T), P.POOL['koi'] - 3),
@@ -353,84 +459,122 @@ def build(P):
             swim_m = swim_m & (np.arange(ky1 - ky0)[:, None] < (P.POOL['canal'][3] + 1.6) * T - ky0)
         koi[name] = dict(origin=[kx0, ky0], size=[kx1 - kx0, ky1 - ky0], swim=swim_m, open=open_water[sl] & swim_m,
                          count=count)
-    calm = open_water & ~reflect & ~(shadow | bridge_shadow)
+    calm = open_water & ~reflect & ~ring1 & ~ring2
     surface = {}
     for ty in range(y0 // T, y1 // T):
         for tx in range(x0 // T, x1 // T):
             m = calm[ty * T - y0:ty * T - y0 + T, tx * T - x0:tx * T - x0 + T]
             if m.shape == (T, T) and m.mean() > 0.3:
-                surface[tx, ty] = m
+                surface[tx, ty] = WaterMask(m, level=int(np.median(idx[ty * T - y0:ty * T - y0 + T, tx * T - x0:tx * T - x0 + T][m])))
     floor = ~(bank | water) & top_ok
     edge = bank & dilate(floor, 1) & ~keep_clear
     ey, ex = np.nonzero(edge)
     # The water shader repaints only the open water the floor tiles show the same in every frame: not under the
     # fountain's stream and rings (animated tiles) nor under the plants, pads, deck and bridge drawn over it.
-    splash = FOUNTAIN.stirred(x0, y0, w, h, beak_x, impact_y)
+    splash = FOUNTAIN.stirred(x0, y0, w, h, beak_x, impact_y) | basin['footprint']
     fx = dict(open=open_water & ~splash, rgb=water_rgb.round().astype(np.uint8), index=idx, depth=depth,
-              reflect=reflect, shade=shadow | bridge_shadow, fountain=(beak_x, impact_y))
+              reflect=reflect, shade=ring1 | ring2, fountain=(beak_x, impact_y))
     return Pool(region=(x0, y0), frames=frames, blocked=blocked, statue=statue_layer, koi=koi, surface=surface,
                 bank_edge=(ex + x0, ey + y0), fx=fx)
 
 
 # ------------------------------------------------------------------------------------------------ the surface's motion
 
-LOOP = 32                                         # frames of FRAME_MS: 7.04 s, like the lawn's breeze
+LOOP = 32                                         # frames of FRAME_MS: 7.04 s (the lawn's breeze loops over 64)
+# glint shapes, (dx, dy) from its top left pixel: a 2 x 2 spark, a 3 x 2 and a 4 x 2 dash, a plus with a 2 x 2 heart.
+# None is smaller than 2 x 2 (the opening and the fading frames); the bright frames are never under 2 x 2.
+GLINT_SHAPES = {
+    'spark': [(0, 0), (1, 0), (0, 1), (1, 1)],
+    'dash3': [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)],
+    'dash4': [(0, 0), (1, 0), (2, 0), (3, 0), (0, 1), (1, 1), (2, 1), (3, 1)],
+    'plus': [(0, 0), (1, 0), (0, 1), (1, 1), (-1, 0), (-1, 1), (2, 0), (2, 1), (0, -1), (1, -1), (0, 2), (1, 2)],
+}
+RIPPLE_RADII = (3, 5, 7, 10, 12)                  # px: circles of 7, 11, 15, 21 and 25 px across, one centre pixel
+GLINTS, RIPPLES = 16, 4
+
+
+def _tone(level, rise):
+    """The colour `rise` steps lighter than WATER[level], from the water's ramp extended upwards (RAMP)."""
+    return RAMP[int(np.clip(level + len(LIGHTER) - rise, 0, len(RAMP) - 1))]
+
+
+def circle(r):
+    """The pixels of a circle of radius r (px) round the pixel (0, 0): 1 px wide, a pixel circle on the 1:1 ground."""
+    ys, xs = np.mgrid[-r:r + 1, -r:r + 1]
+    d = np.hypot(xs, ys)
+    return {(int(x), int(y)) for x, y in zip(xs[(d > r - 0.5) & (d <= r + 0.5)], ys[(d > r - 0.5) & (d <= r + 0.5)])}
 
 
 def _glint(rng):
-    """[RGBA tile per step] of one sun glint: a dim spark, a bright dash (a star on the longest), a dim fade."""
-    x, y, n = int(rng.integers(4, T - 7)), int(rng.integers(4, T - 5)), int(rng.integers(1, 4))
-    steps = []
-    for k in range(4):
-        a = np.zeros((T, T, 4), np.uint8)
-        dim, bright = (*GLINT[0], 255), (*GLINT[1], 255)
-        if k == 0:
-            a[y, x + n // 2] = dim
-        elif k in (1, 2):
-            a[y, x:x + n] = bright
-            if n == 3 and k == 2:
-                a[y - 1, x + 1] = a[y + 1, x + 1] = dim
-        else:
-            a[y, x:x + n] = dim
-        steps.append(Image.fromarray(a, 'RGBA'))
-    return steps
+    """The geometry of one sun glint: its shape and where its top left pixel is in the tile. The steps are drawn by
+    _glint_steps, in the colours of the water the tile lies on."""
+    shape = list(GLINT_SHAPES)[int(rng.integers(len(GLINT_SHAPES)))]
+    return dict(shape=shape, x=int(rng.integers(4, T - 8)), y=int(rng.integers(4, T - 8)))
+
+
+def _paint(pixels, x, y, colour):
+    a = np.zeros((T, T, 4), np.uint8)
+    for dx, dy in pixels:
+        a[y + dy, x + dx] = (*colour, 255)
+    return Image.fromarray(a, 'RGBA')
+
+
+def _glint_steps(g, level):
+    """[RGBA tile per step] of a glint on water of step `level`: a dim 2 x 1 spark, the whole shape bright (the plus
+    brightest at its heart: two frames), the whole shape dim. Bright is three steps lighter than the water, dim two."""
+    dim, bright = _tone(level, 2), _tone(level, 3)
+    px = GLINT_SHAPES[g['shape']]
+    heart = [p for p in px if 0 <= p[0] <= 1 and 0 <= p[1] <= 1]
+    return [_paint(heart[:2], g['x'], g['y'], dim), _paint(heart, g['x'], g['y'], bright),
+            _paint(px, g['x'], g['y'], bright), _paint(px, g['x'], g['y'], dim)]
 
 
 def _ripple(rng):
-    """[RGBA tile per step] of a ripple: a flattened ring opening and fading."""
-    cx, cy = T / 2 + rng.uniform(-3, 3), T / 2 + rng.uniform(-2, 2)
-    yy, xx = np.mgrid[0:T, 0:T] + 0.5
-    steps = []
-    for k, r in enumerate((2, 4, 6.5, 9, 11.5)):
-        a = np.zeros((T, T, 4), np.uint8)
-        ring = np.abs(np.hypot((xx - cx), (yy - cy) / 0.55) - r) < 0.75
-        a[ring] = (*(GLINT[1] if k < 2 else GLINT[0] if k < 4 else WATERLINE), 255)
-        steps.append(Image.fromarray(a, 'RGBA'))
-    return steps
+    """The geometry of a ripple: the pixel its rings are round (the same for every step), well inside the tile."""
+    return dict(cx=int(rng.integers(RIPPLE_RADII[-1], T - RIPPLE_RADII[-1])),
+                cy=int(rng.integers(RIPPLE_RADII[-1], T - RIPPLE_RADII[-1])))
+
+
+def _ripple_steps(g, level):
+    """[RGBA tile per step] of a ripple on water of step `level`: a circle opening from 7 to 25 px across, bright while
+    small, then dim, then one step lighter than the water only."""
+    out = []
+    for k, r in enumerate(RIPPLE_RADII):
+        colour = _tone(level, 3) if k < 2 else _tone(level, 2) if k < 4 else _tone(level, 1)
+        out.append(_paint([(g['cx'] + dx, g['cy'] + dy) for dx, dy in circle(r)], 0, 0, colour))
+    return out
+
+
+def _foot(steps):
+    return np.any([np.asarray(img)[..., 3] > 0 for img in steps], axis=0)
 
 
 def water_decor(surface):
-    """{(tx, ty): [RGBA 32 x 32 per frame of FRAME_MS]} for some of the water tiles: a glint twinkling once per loop,
-    or now and then a ripple, only where every pixel it lights is open water (surface: tile -> mask). Starts are spread
-    over the loop in steps of four frames, so a few dozen tiles serve the whole pool; the first frame is empty, which
-    is what people see with map animations off."""
+    """{(tx, ty): [RGBA 32 x 32 per frame of FRAME_MS]} for some of the water tiles: a glint twinkling once per loop, or
+    now and then a ripple, only where every pixel it lights is open water (surface: tile -> mask, see WaterMask) and
+    drawn in the tones that stand out from that water. Each tile has its own shape, place and start frame, so they do
+    not flash together; the first frame is empty, which is what people see with map animations off."""
     rng = np.random.default_rng(23)
-    glints = [_glint(rng) for _ in range(12)]
-    ripples = [_ripple(rng) for _ in range(3)]
-    reach = lambda steps: np.any([np.asarray(img)[..., 3] > 0 for img in steps], axis=0)
-    glints, ripples = [(g, reach(g)) for g in glints], [(r, reach(r)) for r in ripples]
+    glints, ripples = [_glint(rng) for _ in range(GLINTS)], [_ripple(rng) for _ in range(RIPPLES)]
     blank = Image.new('RGBA', (T, T))
-    out = {}
+    out, taken = {}, set()
     for cell, mask in sorted(surface.items()):
+        level = getattr(mask, 'level', 3)
         u = rng.uniform()
-        pool_ = glints if u < 0.5 else ripples if u < 0.58 else []
-        fits = [steps for steps, foot in pool_ if not (foot & ~mask).any()]
+        kind, pool_ = (_glint_steps, glints) if u < 0.5 else (_ripple_steps, ripples) if u < 0.58 else (None, [])
+        fits = [(g, steps) for g, steps in ((g, kind(g, level)) for g in pool_) if not (_foot(steps) & ~np.asarray(mask)).any()]
         if not fits:
             continue
-        steps = fits[int(rng.integers(len(fits)))]
-        start = 4 * int(rng.integers(1, (LOOP - len(steps)) // 4 + 1))       # ends before the loop wraps to frame 0
+        steps = fits[int(rng.integers(len(fits)))][1]
+        first = int(rng.integers(1, LOOP - len(steps) + 1))                      # ends before the loop wraps to frame 0
+        # no two tiles flash the same picture on the same frame: from the drawn start, the next start that is free
+        starts = [(first - 1 + k) % (LOOP - len(steps)) + 1 for k in range(LOOP - len(steps))]
+        start = next((s for s in starts if (s, steps[1].tobytes()) not in taken), None)
+        if start is None:
+            continue
+        taken.add((start, steps[1].tobytes()))
         frames = [blank] * LOOP
         for k, img in enumerate(steps):
-            frames[(start + k) % LOOP] = img
+            frames[start + k] = img
         out[cell] = frames
     return out
