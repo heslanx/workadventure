@@ -36,19 +36,22 @@ FLIP = {'Left': 'Right', 'Right': 'Left', 'Up': 'Up', 'Down': 'Down'}
 
 # Floors: a catalogue floor tile, recoloured to a design-system ramp when the entry is (tile, ramp) (palette.FLOOR_RAMPS).
 FLOORS = {
-    'lawn': '@lawn',                     # textured grass drawn by lawn.py, 384 px
-    'path': ('Stone_Tile', 'porcelain'),
+    'lawn': '@lawn',                     # whole-map ground drawn by lawn.py
+    'path': '@path',
     'hall': '@porcelain',                # this office's own patterns (signature.tile_pattern), 64 px
     'room': ('Wood_Slats_LightWood', 'oak'),
     'meeting': ('Wood_Herringbone_LightWood', 'oak'),
     'stage': ('Wood_Slats_Wood', 'oak'),
-    'audience': ('Carpet_Stripe_Gray', 'petrol'),
+    'audience': '@audience',
+    'riser': '@riser',                   # the stage's front face, 8 px
+    'audience-w': '@audience-w', 'audience-e': '@audience-e', 'audience-s': '@audience-s',   # the carpet's bound edges
+    'audience-sw': '@audience-sw', 'audience-se': '@audience-se',
     'booth': ('Wood_Slats_LightWood', 'oak'),
-    'pod': ('Carpet_Texture', 'mist'),
+    'pod': '@pod',
     'cafe': ('Wood_Herringbone_LightWood', 'oak'),
     'lounge': ('Wood_Slats_LightWood', 'oak'),
     'lounge-warm': ('Wood_Slats_LightWood', 'oak-warm'),       # the café's lounge and games, a step warmer
-    'cafe-warm': ('Wood_Herringbone_LightWood', 'oak-warm'),   # and the café's herringbone bands round it
+    'cafe-warm': '@cafe-sill',                                 # and the made threshold between the café and its lounge
     'reception': '@terrazzo',
     'boardwalk': '@boardwalk',
     'rug-tile': 'Tile_2tone_Orange',     # the lounges' terracotta tiles (the owner's Gather reference, 18/10/2026)
@@ -138,7 +141,9 @@ ZONES = [
     ('reception', 32, 40, mx(32), 47),
     ('lounge', 21, 41, 31, 47), ('lounge', mx(31), 41, mx(21), 47),
     ('stage', 7, 8, 18, 12), ('audience', 7, 13, 18, 29),
-    ('lounge-warm', 68, 31, 79, 47), ('cafe-warm', 68, 30, 80, 30), ('cafe-warm', 80, 31, 80, 47),
+    ('riser', 7, 13, 18, 13), ('audience-w', 6, 8, 6, 28), ('audience-sw', 6, 29, 6, 29),
+    ('audience-s', 7, 29, 17, 29), ('audience-se', 18, 29, 18, 29), ('audience-e', 18, 14, 18, 28),
+    ('lounge-warm', 68, 31, 80, 47), ('cafe-warm', 68, 30, 80, 30),
     ('rug-tile', 23, 41, 29, 47), ('rug-tile', mx(29), 41, mx(23), 47),
 ]
 

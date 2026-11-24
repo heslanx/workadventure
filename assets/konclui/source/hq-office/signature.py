@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from palette import INK, MINT, NAVY, PETROL, TURQUOISE, rgb
+from palette import INK, MINT, NAVY, PETROL, TURQUOISE, floor_tile, rgb
 
 T = 32
 ASSETS = Path(__file__).resolve().parent.parent / 'brand'
@@ -182,9 +182,165 @@ def rug(w_tiles, h_tiles):
     return img
 
 
+# ------------------------------------------------------------------------------------------------ floor patterns
+# tile_pattern(kind) is the picture build.paint() repeats over a floor zone from the map's origin, so its size is a
+# multiple of the 32 px tile: 64 x 64 for a set whose joints sit on a 64 px grid (the hall's porcelain, the pod carpet),
+# a 32 x 32 tile for an edge or a threshold that one row or column of the plan repeats, a wider picture for a material
+# that must not repeat on a short period (the terrazzo). Each kind is drawn from its own seed, so a rebuild is
+# byte-identical. Brick (the rooms' oak slats) and herringbone are the catalogue's single tiles: they repeat on
+# purpose and are not drawn here.
+
+CARPET_MIST = rgb('#E5EDF1')          # the pod carpet: one step under the hall's porcelain (#F2F6F8), no stripe, no seam
+AUD = dict(base=rgb('#295964'), mid=rgb('#23505A'), dark=rgb('#1E454D'), edge=rgb('#183B43'), line=rgb('#3B7480'))
+OAK = dict(lit=rgb('#EBDDC8'), mid=rgb('#D5BE9F'), line=rgb('#C6AB8B'), edge=rgb('#A98A65'))
+AUD_EDGES = ('audience-w', 'audience-e', 'audience-s', 'audience-sw', 'audience-se')
+FLOOR_PATTERNS = ('porcelain', 'boardwalk', 'terrazzo', 'terrazzo-pool', 'pod', 'audience', *AUD_EDGES, 'riser', 'cafe-sill', 'path')
+
+
+def _canvas(w, h, colour):
+    a = np.empty((h, w, 3))
+    a[:] = colour
+    return a
+
+
+def _image(a):
+    h, w = a.shape[:2]
+    return Image.fromarray(np.dstack([np.clip(a.round(), 0, 255), np.full((h, w), 255)]).astype(np.uint8), 'RGBA')
+
+
+def _pod_carpet():
+    """The pod carpet, 64 x 64: one flat mist tone with sparse flecks under 3 % contrast (a bouclé, not a stripe), and
+    modular carpet-tile seams on the same 64 px grid as the hall's porcelain, so the two floors speak one grid. No
+    joint on the 32 px tile boundary: every edge column and row of the four tiles is the body."""
+    rng = np.random.default_rng(31)
+    a = _canvas(64, 64, CARPET_MIST)
+    for colour, share in ((rgb('#DCE6EB'), 0.07), (rgb('#EEF4F7'), 0.05)):        # -7 and +7 levels
+        hit = rng.uniform(size=(64, 64)) < share
+        a[hit] = colour
+    a[0, :] = rgb('#DAE4E9')                                                       # the seams: one pixel, on the grid
+    a[:, 0] = rgb('#DAE4E9')
+    return _image(a)
+
+
+def _audience_field(w, h):
+    """The auditorium carpet, w x h: petrol with a 6 px dark stripe centred on every 32 px tile boundary (so on the gap
+    between two seats, never under one: a seat sits at the middle of its tile), a mid tone on each side and a one pixel
+    dither on that rim. No grain: the carpet is one 32 px tile (the stripes repeat by design, as the brick does)."""
+    a = _canvas(w, h, AUD['base'])
+    x = np.arange(w)[None, :] % 32
+    y = np.arange(h)[:, None]
+    core = (x <= 2) | (x >= 29)
+    rim = np.where(y % 2 == 0, x == 3, x == 28) | np.where(y % 2 == 0, x == 28, x == 4)
+    a[np.broadcast_to(core, (h, w))] = AUD['dark']
+    a[np.broadcast_to(rim & ~core, (h, w))] = AUD['mid']
+    return a
+
+
+def _audience(kind):
+    """'audience' is the carpet over the audience (one 32 x 32 tile); the edge tiles (32 x 32) are the same carpet
+    with a binding: a 4 px dark edge on the wall side and a pale pin line 2 px inside it ('audience-w', '-e' down the sides,
+    '-s' along the front, '-sw' and '-se' the corners). 'riser' is the front of the stage."""
+    a = _audience_field(32, 32)
+    if kind == 'audience':
+        return _image(a)
+    if kind == 'riser':
+        a[0:8] = AUD['base']
+        face = _canvas(32, 8, rgb('#A98563'))
+        face[0] = rgb('#E6D2B5')                                                   # the lip catches the light
+        face[7] = rgb('#7A5A3A')                                                   # the foot of the face
+        face[:, [15, 16]] = rgb('#96744F')                                         # a panel joint
+        a[0:8] = face
+        return _image(a)
+    sides = kind.split('-')[1]
+    lo, hi = (6 if 'w' in sides else 0), (25 if 'e' in sides else 31)
+    if 'w' in sides:
+        a[:25 + 1 if 's' in sides else 32, 6] = AUD['line']                       # the pin lines first, the bindings over them
+    if 'e' in sides:
+        a[:25 + 1 if 's' in sides else 32, 25] = AUD['line']
+    if 's' in sides:
+        a[25, lo:hi + 1] = AUD['line']
+    if 'w' in sides:
+        a[:, 0:4] = AUD['edge']
+    if 'e' in sides:
+        a[:, 28:32] = AUD['edge']
+    if 's' in sides:
+        a[28:32, :] = AUD['edge']
+    return _image(a)
+
+
+POOL = 16                              # the terrazzo's distinct tiles
+
+
+def _terrazzo_pool():
+    """The reception's terrazzo without the 64 px repeat, 13 x 8 tiles (416 x 256 px): a pale ground with grey, teal and sand chips, as before,
+    but laid from a pool of 16 distinct tiles so that no tile has a twin in the eight cells around it (nor, with 16 to
+    choose from, two cells away along a row or column) and no chip repeats every 64 px. A chip never crosses a tile edge and the grain is per pixel, so the joints do not show. The picture
+    repeats every 13 tiles, more than the 12 that a periodicity check looks for. It costs 12 more floor tiles than 'terrazzo',
+    which the palette ratchet counts (tools/palettesnap.py), so plan.FLOORS['reception'] flips to it together with that baseline."""
+    rng = np.random.default_rng(23)
+    pool = []
+    for _ in range(POOL):
+        a = _canvas(32, 32, rgb('#EEF2F3'))
+        a += rng.normal(0, 1.0, (32, 32, 1))
+        for colour, n in (('#C9D3D8', 17 + int(rng.integers(-1, 2))), ('#A9B6BD', 7), ('#7FD9C9', 2),
+                          ('#D8C2A3', 2 + int(rng.integers(0, 2)))):
+            for _ in range(n):
+                x, y = int(rng.integers(0, 31)), int(rng.integers(0, 32))
+                a[y, x] = rgb(colour)
+                if rng.uniform() < 0.35:
+                    a[y, x + 1] = rgb(colour)
+        pool.append(a)
+    cols, rows = 13, 8
+    laid = {}
+    for ty in range(rows):
+        for tx in range(cols):
+            # no twin in the eight cells around (cost 10), then as few as possible in the ring of 16 beyond them (cost 1)
+            cost = [sum(10 if max(abs(u - tx), abs(v - ty)) < 2 else 1
+                        for u in range(tx - 2, tx + 3) for v in range(ty - 2, ty + 3)
+                        if laid.get((u % cols, v % rows)) == k and (u, v) != (tx, ty)) for k in range(len(pool))]
+            best = min(cost)
+            laid[(tx, ty)] = int(rng.choice([k for k, c in enumerate(cost) if c == best]))
+    out = np.empty((rows * 32, cols * 32, 3))
+    for (tx, ty), k in laid.items():
+        out[ty * 32:ty * 32 + 32, tx * 32:tx * 32 + 32] = pool[k]
+    return _image(out)
+
+
+def _path():
+    """The entrance path, one 32 x 32 tile of porcelain slab: the hall's own joint (a dark pixel row and column, a pale one
+    beside it) but on a 32 px grid, so that every joint of the hall's 64 px grid continues into the path at the same column
+    and the doorway's last joint (y 1600) is the path's first. Replaces the catalogue's 16 px slabs, a grid the hall never
+    speaks."""
+    a = _canvas(32, 32, rgb('#F5F9FA'))
+    a[0, :] = rgb('#DCE5EA')                                                       # the same four lines, in the same order
+    a[:, 0] = rgb('#DCE5EA')
+    a[1, :] = rgb('#FAFCFD')
+    a[:, 1] = rgb('#FAFCFD')
+    return _image(a)
+
+
+def _cafe_sill():
+    """The threshold between the café's herringbone and the lounge's planks, 32 x 32: the café's herringbone with a 4 px
+    oak sill along its south edge (a lit top, two oak rows, a dark foot), so the change of floor is a made joint."""
+    a = np.asarray(floor_tile('Wood_Herringbone_LightWood', 'oak')).astype(float)[..., :3].copy()
+    for row, colour in zip(range(28, 32), (OAK['lit'], OAK['mid'], OAK['line'], OAK['edge'])):
+        a[row] = colour
+    return _image(a)
+
+
 def tile_pattern(kind):
-    """Floor patterns of this office (64 x 64, aligned to two tiles): large-format porcelain for the hall, terrazzo
-    for the reception."""
+    """Floor patterns of this office: large-format porcelain for the hall, terrazzo for the reception, oak planks for the
+    boardwalk, and the pod, auditorium and café floors listed in FLOOR_PATTERNS (see the notes above)."""
+    if kind == 'terrazzo-pool':
+        return _terrazzo_pool()
+    if kind == 'pod':
+        return _pod_carpet()
+    if kind == 'audience' or kind in AUD_EDGES or kind == 'riser':
+        return _audience(kind)
+    if kind == 'cafe-sill':
+        return _cafe_sill()
+    if kind == 'path':
+        return _path()
     rng = np.random.default_rng(11 if kind == 'porcelain' else 23)
     if kind == 'boardwalk':                    # the bridge's oak planks, across the walk, leading to it
         oak = np.array([rgb(c) for c in ('#B88F66', '#CFAA80', '#DEBF98', '#E9D2B2')], float)
@@ -203,7 +359,7 @@ def tile_pattern(kind):
         a[:, 0] = rgb('#DCE5EA')
         a[1, :] = rgb('#FAFCFD')
         a[:, 1] = rgb('#FAFCFD')
-    else:
+    elif kind == 'terrazzo':                   # unchanged: the 64 px terrazzo (see 'terrazzo-pool' for the one that does not repeat)
         a = np.empty((64, 64, 3))
         a[:] = rgb('#EEF2F3')
         a += rng.normal(0, 1.0, (64, 64, 1))
@@ -213,6 +369,8 @@ def tile_pattern(kind):
                 a[y, x] = rgb(colour)
                 if rng.uniform() < 0.35:
                     a[y, (x + 1) % 64] = rgb(colour)
+    else:
+        raise ValueError(f'no floor pattern {kind!r}; known: {", ".join(FLOOR_PATTERNS)}')
     out = np.dstack([np.clip(a, 0, 255), np.full((64, 64), 255)]).astype(np.uint8)
     return Image.fromarray(out, 'RGBA')
 
