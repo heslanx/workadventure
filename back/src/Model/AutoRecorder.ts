@@ -112,7 +112,10 @@ export class AutoRecorder {
     private session: OpenedSession | undefined;
     /** What each member's microphone is being recorded to, now. */
     private readonly recordings = new Map<string, TrackRecording>();
-    /** The LiveKit recordings bucket is set: only such a back asks whether a space is recorded, there is nowhere to write otherwise. */
+    /**
+     * The LiveKit recordings bucket is set: only such a back records a space, there is nowhere to write otherwise. The
+     * admin is asked either way, for the world's P2P threshold (see `CommunicationManager.askWorldSettings`).
+     */
     public readonly backRecords: boolean;
     private readonly writeManifest: ManifestWriter;
     private readonly nowMs: () => number;

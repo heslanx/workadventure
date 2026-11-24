@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/node";
+import { asError } from "catch-unknown";
 import {
     type HandleLivekitWebhookRequest,
     RecordingWebhookPhase,
@@ -9,7 +10,7 @@ import {
     type MicrophoneTrackPublishedMessage,
     FilterType,
 } from "@workadventure/messages";
-import { LIVEKIT_SWITCH_ON_CPU_LIMITATION, MAX_USERS_FOR_WEBRTC } from "../Enum/EnvironmentVariable";
+import { LIVEKIT_SWITCH_ON_CPU_LIMITATION, MAX_P2P_PEERS, MAX_USERS_FOR_WEBRTC } from "../Enum/EnvironmentVariable";
 import { adminApi, type RecordingEventPayload } from "../Services/AdminApi";
 import type { LivekitCredentialsResponse } from "../Services/Repository/LivekitCredentialsResponse";
 import type { ICommunicationSpace } from "./Interfaces/ICommunicationSpace";
@@ -96,6 +97,11 @@ export interface CommunicationManagerDependencies {
     autoRecorder?: AutoRecorder;
     /** Where recording lifecycle events go; the admin API by default. */
     recordingEventNotifier?: (payload: RecordingEventPayload) => Promise<void>;
+    /**
+     * The peer cap the transition policy holds the threshold to: MAX_P2P_PEERS by default, which the P2P states read
+     * on their own. Only a test that builds its own states needs to set it.
+     */
+    maxP2PPeers?: number;
 }
 
 /**
@@ -208,6 +214,7 @@ export class CommunicationManager implements ICommunicationManager {
                 LIVEKIT_SWITCH_ON_CPU_LIMITATION,
                 this.autoRecorder,
                 this.world,
+                dependencies.maxP2PPeers ?? MAX_P2P_PEERS,
             );
     }
 
@@ -304,13 +311,18 @@ export class CommunicationManager implements ICommunicationManager {
     private async decideWorldSettings(user: SpaceUser): Promise<void> {
         let credentials: LivekitCredentialsResponse | undefined;
         try {
-            credentials = await adminApi.fetchLivekitCredentials(this.space.getSpaceName(), user.playUri);
+            credentials = await adminApi.fetchWorldLivekitSettings(
+                this.space.world,
+                this.space.getSpaceName(),
+                user.playUri,
+            );
         } catch (error) {
+            // The admin API reports the failure, once for the world (see AdminApi.fetchWorldLivekitSettings): this
+            // space only says what it does about it. The message, not the error: it may carry the admin token.
             console.error(
                 `Could not get the LiveKit settings of ${this.space.getSpaceName()}; it is not recorded and uses the default P2P threshold:`,
-                error,
+                asError(error).message,
             );
-            Sentry.captureException(error);
         }
         this.autoRecorder.decide(credentials?.autoRecording ?? false);
         this.world.maxUsersForWebRTC = credentials?.maxUsersForWebrtc ?? undefined;

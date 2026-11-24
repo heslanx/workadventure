@@ -19,13 +19,27 @@ export class TransitionPolicy implements ITransitionPolicy {
         private readonly autoRecording: { readonly isEnabled: boolean } = { isEnabled: false },
         /** The world's own threshold, once the admin gave it (see CommunicationManager.askWorldSettings). */
         private readonly world: { readonly maxUsersForWebRTC?: number } = {},
+        /** MAX_P2P_PEERS: the most peers one user holds in a P2P space. Unset: no limit. */
+        private readonly maxP2PPeers?: number,
     ) {}
+
+    /**
+     * The user count above which a P2P space goes to LiveKit: the world's threshold, else the environment's, and never
+     * more than the peer cap lets a P2P space hold. A user of a space of n holds n - 1 peers and the cap refuses any
+     * pair past it for good (see WebRTCCommunicationStrategy.canPair), so from MAX_P2P_PEERS + 2 users on, a space
+     * would stay in P2P with users nobody connects to, and nothing would move it until it reached the threshold.
+     */
+    private effectiveMaxUsersForWebRTC(): number {
+        const threshold = this.world.maxUsersForWebRTC ?? this.maxUsersForWebRTC;
+        return this.maxP2PPeers === undefined ? threshold : Math.min(threshold, this.maxP2PPeers + 1);
+    }
 
     /**
      * Determines if a transition should occur based on current state and user count.
      *
      * Business rules:
-     * - maxUsersForWebRTC is the world's own when it has one, the environment's otherwise
+     * - maxUsersForWebRTC is the world's own when it has one, the environment's otherwise, and at most
+     *   MAX_P2P_PEERS + 1 when the peer cap is set (see effectiveMaxUsersForWebRTC)
      * - WebRTC -> LiveKit: when user count exceeds maxUsersForWebRTC AND LiveKit is available, or when a user
      *   raised its `cpuLimited` flag in a bubble of more than two (in P2P that user runs one encoder per peer;
      *   LiveKit brings it down to one, which is worth nothing for a pair)
@@ -43,7 +57,7 @@ export class TransitionPolicy implements ITransitionPolicy {
      */
     shouldTransition(currentType: CommunicationType, userCount: number, cpuLimitedUserCount = 0): boolean {
         const cpuLimited = this.switchOnCpuLimitation && cpuLimitedUserCount > 0;
-        const maxUsersForWebRTC = this.world.maxUsersForWebRTC ?? this.maxUsersForWebRTC;
+        const maxUsersForWebRTC = this.effectiveMaxUsersForWebRTC();
 
         if (currentType === CommunicationType.WEBRTC) {
             const shouldSwitch =

@@ -1,5 +1,6 @@
 // Disabled because test mocks use vi.fn() which are passed as object properties
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { AxiosError, AxiosHeaders } from "axios";
 import {
     HandleLivekitWebhookRequest,
     HandleRecordingWebhookRequest,
@@ -8,7 +9,7 @@ import {
     FilterType,
 } from "@workadventure/messages";
 import { emptySpaceState } from "@workadventure/shared-utils";
-import type { InitialStateFactory } from "../src/Model/CommunicationManager";
+import type { CommunicationManagerDependencies, InitialStateFactory } from "../src/Model/CommunicationManager";
 import { CommunicationManager, findRecording } from "../src/Model/CommunicationManager";
 import { CommunicationType } from "../src/Model/Types/CommunicationTypes";
 import type { ICommunicationSpace } from "../src/Model/Interfaces/ICommunicationSpace";
@@ -25,6 +26,7 @@ import type { IRecordingManager } from "../src/Model/RecordingManager";
 import { AutoRecorder } from "../src/Model/AutoRecorder";
 import { analyticsEventsQueue } from "../src/Services/AnalyticsEventsQueue";
 import { adminApi } from "../src/Services/AdminApi";
+import { MAX_USERS_FOR_WEBRTC } from "../src/Enum/EnvironmentVariable";
 import { setCapabilities } from "../src/Services/Capabilities";
 import type { LivekitCredentialsResponse } from "../src/Services/Repository/LivekitCredentialsResponse";
 
@@ -1496,13 +1498,23 @@ describe("CommunicationManager", () => {
             maxUsersForWebrtc,
         });
 
-        /** A space on a back that records, asking an admin whose answer the test gives when it wants. */
-        const recordingSpace = (users: SpaceUser[], backRecords = true) => {
+        /**
+         * A space on a back that records, asking an admin whose answer the test gives when it wants. The manager asks
+         * through `fetchWorldLivekitSettings`, which keeps the answer per world (AdminApi.test.ts): the spy stands
+         * for it, so that no test is served the answer of another.
+         */
+        const recordingSpace = (
+            users: SpaceUser[],
+            backRecords = true,
+            dependencies: CommunicationManagerDependencies = {},
+        ) => {
             setCapabilities({ "api/livekit/credentials": "v1" });
             let answer!: (credentials: LivekitCredentialsResponse) => void;
-            const fetchLivekitCredentials = vi.spyOn(adminApi, "fetchLivekitCredentials").mockReturnValue(
-                new Promise((resolve) => {
+            let fail!: (reason: Error) => void;
+            const fetchWorldLivekitSettings = vi.spyOn(adminApi, "fetchWorldLivekitSettings").mockReturnValue(
+                new Promise((resolve, reject) => {
                     answer = resolve;
+                    fail = reject;
                 }),
             );
             const space = createSpace(users);
@@ -1517,14 +1529,26 @@ describe("CommunicationManager", () => {
                     lifecycleManager.mocks.getCurrentState.mockReturnValue(state);
                 },
             );
+            const autoRecorder = new AutoRecorder(space, () => lifecycleManager.getCurrentState(), { backRecords });
             // The real policy, which reads the recorder
             const manager = new CommunicationManager(space, {
                 orchestrator,
                 lifecycleManager,
                 recordingManager: createRecordingManager(),
-                autoRecorder: new AutoRecorder(space, () => lifecycleManager.getCurrentState(), { backRecords }),
+                autoRecorder,
+                ...dependencies,
             });
-            return { manager, answer, fetchLivekitCredentials, oldState, newState, orchestrator, lifecycleManager };
+            return {
+                manager,
+                answer,
+                fail,
+                fetchWorldLivekitSettings,
+                autoRecorder,
+                oldState,
+                newState,
+                orchestrator,
+                lifecycleManager,
+            };
         };
 
         afterEach(() => {
@@ -1534,7 +1558,7 @@ describe("CommunicationManager", () => {
 
         it("makes the first joins wait for the world's answer, then starts a recorded space on LiveKit with it", async () => {
             const users = [createSpaceUser("user_1"), createSpaceUser("user_2")];
-            const { manager, answer, fetchLivekitCredentials, oldState, orchestrator, lifecycleManager } =
+            const { manager, answer, fetchWorldLivekitSettings, oldState, orchestrator, lifecycleManager } =
                 recordingSpace(users);
 
             // Two distinct back messages, both arriving before the admin answers
@@ -1547,7 +1571,7 @@ describe("CommunicationManager", () => {
             answer(credentials(true));
             await Promise.all([firstJoin, secondJoin]);
 
-            expect(fetchLivekitCredentials).toHaveBeenCalledOnce();
+            expect(fetchWorldLivekitSettings).toHaveBeenCalledOnce();
             // One LiveKit state, created from that same answer; nobody ever told to use P2P
             expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledOnce();
             expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledWith(
@@ -1576,40 +1600,40 @@ describe("CommunicationManager", () => {
 
         it("keeps a world that is not recorded in P2P, and asks once per space", async () => {
             const users = [createSpaceUser("user_1"), createSpaceUser("user_2")];
-            const { manager, answer, fetchLivekitCredentials, oldState, orchestrator } = recordingSpace(users);
+            const { manager, answer, fetchWorldLivekitSettings, oldState, orchestrator } = recordingSpace(users);
 
             const firstJoin = manager.handleUserAdded(users[0]);
             answer(credentials(false));
             await firstJoin;
             await manager.handleUserAdded(users[1]);
 
-            expect(fetchLivekitCredentials).toHaveBeenCalledOnce();
+            expect(fetchWorldLivekitSettings).toHaveBeenCalledOnce();
             expect(orchestrator.mocks.executeImmediateTransition).not.toHaveBeenCalled();
             expect(oldState.mocks.handleUserAdded).toHaveBeenCalledTimes(2);
         });
 
         it("neither asks nor records without an admin", async () => {
             const users = [createSpaceUser("user_1"), createSpaceUser("user_2")];
-            const { manager, fetchLivekitCredentials, oldState, orchestrator } = recordingSpace(users);
+            const { manager, fetchWorldLivekitSettings, oldState, orchestrator } = recordingSpace(users);
             setCapabilities({});
 
             await manager.handleUserAdded(users[0]);
             await manager.handleUserAdded(users[1]);
 
-            expect(fetchLivekitCredentials).not.toHaveBeenCalled();
+            expect(fetchWorldLivekitSettings).not.toHaveBeenCalled();
             expect(orchestrator.mocks.executeImmediateTransition).not.toHaveBeenCalled();
             expect(oldState.mocks.handleUserAdded).toHaveBeenCalledTimes(2);
         });
 
         it("asks a back that does not record, for the world's threshold, but never records there", async () => {
             const users = [createSpaceUser("user_1")];
-            const { manager, answer, fetchLivekitCredentials, oldState, orchestrator } = recordingSpace(users, false);
+            const { manager, answer, fetchWorldLivekitSettings, oldState, orchestrator } = recordingSpace(users, false);
 
             const join = manager.handleUserAdded(users[0]);
             answer(credentials(true));
             await join;
 
-            expect(fetchLivekitCredentials).toHaveBeenCalledOnce();
+            expect(fetchWorldLivekitSettings).toHaveBeenCalledOnce();
             expect(orchestrator.mocks.executeImmediateTransition).not.toHaveBeenCalled();
             expect(oldState.mocks.handleUserAdded).toHaveBeenCalledOnce();
         });
@@ -1637,6 +1661,122 @@ describe("CommunicationManager", () => {
             // The second joiner heard of LiveKit only, through the new state
             expect(oldState.mocks.handleUserAdded).toHaveBeenCalledOnce();
             expect(oldState.mocks.handleUserAdded).toHaveBeenCalledWith(users[0]);
+        });
+
+        it("asks the admin about the world the space belongs to, and the room of the user who joins", async () => {
+            const users = [createSpaceUser("user_1", "http://play.test/@/team/world/room")];
+            const { manager, answer, fetchWorldLivekitSettings } = recordingSpace(users);
+
+            const join = manager.handleUserAdded(users[0]);
+            answer(credentials(false));
+            await join;
+
+            expect(fetchWorldLivekitSettings).toHaveBeenCalledWith(
+                "world",
+                "test-space",
+                "http://play.test/@/team/world/room",
+            );
+        });
+
+        describe("when the admin does not answer", () => {
+            beforeEach(() => {
+                vi.spyOn(console, "error").mockImplementation(() => undefined);
+            });
+
+            it("lets the first join go on in P2P, not recorded, when the admin rejects", async () => {
+                const users = [createSpaceUser("user_1"), createSpaceUser("user_2")];
+                const { manager, fail, autoRecorder, oldState, orchestrator } = recordingSpace(users);
+
+                const firstJoin = manager.handleUserAdded(users[0]);
+                const secondJoin = manager.handleUserAdded(users[1]);
+                fail(new Error("admin is down"));
+                await Promise.all([firstJoin, secondJoin]);
+
+                expect(autoRecorder.isEnabled).toBe(false);
+                expect(orchestrator.mocks.executeImmediateTransition).not.toHaveBeenCalled();
+                expect(oldState.mocks.handleUserAdded).toHaveBeenCalledTimes(2);
+            });
+
+            it("falls back to the environment's threshold when the request timed out", async () => {
+                // One user too many for the environment's threshold, and an admin that never answered
+                const users = Array.from({ length: MAX_USERS_FOR_WEBRTC + 1 }, (_, n) => createSpaceUser(`user_${n}`));
+                const { manager, fail, oldState, orchestrator, lifecycleManager } = recordingSpace(users);
+
+                const joins = users.map((user) => manager.handleUserAdded(user));
+                fail(new AxiosError("timeout of 5000ms exceeded", "ECONNABORTED"));
+                await Promise.all(joins);
+
+                // No credentials came: the LiveKit state asks for them itself (StateFactory)
+                expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledOnce();
+                expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledWith(
+                    CommunicationType.LIVEKIT,
+                    expect.objectContaining({ livekitCredentials: undefined }),
+                );
+                expect(lifecycleManager.mocks.transitionTo).toHaveBeenCalledOnce();
+                expect(oldState.mocks.handleUserAdded).not.toHaveBeenCalled();
+            });
+
+            it("does not log the error, which may carry the admin token in its request config", async () => {
+                const users = [createSpaceUser("user_1")];
+                const { manager, fail } = recordingSpace(users);
+                const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+                const join = manager.handleUserAdded(users[0]);
+                const failure = new AxiosError("timeout of 5000ms exceeded", "ECONNABORTED");
+                failure.config = { headers: new AxiosHeaders({ Authorization: "admin-token" }) };
+                fail(failure);
+                await join;
+
+                expect(logged).toHaveBeenCalledOnce();
+                expect(JSON.stringify(logged.mock.calls)).not.toContain("admin-token");
+            });
+        });
+
+        it("uses the environment's threshold when the world's is null", async () => {
+            const users = Array.from({ length: MAX_USERS_FOR_WEBRTC }, (_, n) => createSpaceUser(`user_${n}`));
+            const { manager, answer, oldState, orchestrator } = recordingSpace(users);
+
+            const firstJoin = manager.handleUserAdded(users[0]);
+            answer({ ...credentials(false), maxUsersForWebrtc: null });
+            await firstJoin;
+            await Promise.all(users.slice(1).map((user) => manager.handleUserAdded(user)));
+            // As many users as the environment's threshold: still P2P, as for a world that gave none
+            expect(orchestrator.mocks.executeImmediateTransition).not.toHaveBeenCalled();
+            expect(oldState.mocks.handleUserAdded).toHaveBeenCalledTimes(users.length);
+
+            users.push(createSpaceUser("one_too_many"));
+            await manager.handleUserAdded(users[users.length - 1]);
+
+            expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledOnce();
+        });
+
+        describe("with a peer cap (MAX_P2P_PEERS)", () => {
+            it("moves a bubble to LiveKit at the first user the cap cannot connect, whatever the world's threshold", async () => {
+                // Three peers each connect four users at most; the world would wait for a ninth
+                const users = Array.from({ length: 4 }, (_, n) => createSpaceUser(`user_${n}`));
+                const { manager, answer, oldState, orchestrator, lifecycleManager } = recordingSpace(users, true, {
+                    maxP2PPeers: 3,
+                });
+
+                const firstJoin = manager.handleUserAdded(users[0]);
+                answer(credentials(false, 8));
+                await firstJoin;
+                await Promise.all(users.slice(1).map((user) => manager.handleUserAdded(user)));
+                expect(orchestrator.mocks.executeImmediateTransition).not.toHaveBeenCalled();
+                expect(oldState.mocks.handleUserAdded).toHaveBeenCalledTimes(4);
+
+                users.push(createSpaceUser("user_4"));
+                await manager.handleUserAdded(users[4]);
+
+                expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledOnce();
+                expect(orchestrator.mocks.executeImmediateTransition).toHaveBeenCalledWith(
+                    CommunicationType.LIVEKIT,
+                    expect.anything(),
+                );
+                expect(lifecycleManager.mocks.transitionTo).toHaveBeenCalledOnce();
+                // The fifth heard of LiveKit only, through the new state: no P2P start was left unanswered by the cap
+                expect(oldState.mocks.handleUserAdded).toHaveBeenCalledTimes(4);
+            });
         });
     });
 });

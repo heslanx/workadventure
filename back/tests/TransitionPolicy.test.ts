@@ -406,4 +406,93 @@ describe("TransitionPolicy", () => {
             expect(policy.shouldTransition(CommunicationType.WEBRTC, 2)).toBe(true);
         });
     });
+
+    describe("peer cap (MAX_P2P_PEERS)", () => {
+        // A user of a P2P space of n holds n - 1 peers, so a cap of P serves at most P + 1 users.
+        const MAX_P2P_PEERS = 3;
+        const capped = (
+            maxP2PPeers: number | undefined,
+            world: { maxUsersForWebRTC?: number },
+            options: { environmentThreshold?: number; livekitAvailable?: boolean } = {},
+        ) =>
+            new TransitionPolicy(
+                options.environmentThreshold ?? MAX_USERS_FOR_WEBRTC,
+                createLivekitChecker(options.livekitAvailable ?? true),
+                createRecordingManager(),
+                true,
+                { isEnabled: false },
+                world,
+                maxP2PPeers,
+            );
+
+        it("moves a space to LiveKit at the first user the cap cannot connect, when the world's threshold is higher", () => {
+            const policy = capped(MAX_P2P_PEERS, { maxUsersForWebRTC: 8 });
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 4)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 5)).toBe(true);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 8)).toBe(true);
+            // And brings it back by the same count, not at the world's 8
+            expect(policy.shouldTransition(CommunicationType.LIVEKIT, 4)).toBe(true);
+            expect(policy.shouldTransition(CommunicationType.LIVEKIT, 5)).toBe(false);
+        });
+
+        it("keeps a world's threshold that is lower than the cap allows", () => {
+            const policy = capped(MAX_P2P_PEERS, { maxUsersForWebRTC: 1 });
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 1)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 2)).toBe(true);
+            expect(policy.shouldTransition(CommunicationType.LIVEKIT, 2)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.LIVEKIT, 1)).toBe(true);
+        });
+
+        it("caps the environment's threshold too, when the world has none", () => {
+            const policy = capped(MAX_P2P_PEERS, {}, { environmentThreshold: 8 });
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 4)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 5)).toBe(true);
+        });
+
+        it("changes nothing when the threshold is already within the cap", () => {
+            // 4 is the cap's own limit, 3 is below it
+            for (const threshold of [MAX_P2P_PEERS + 1, MAX_P2P_PEERS]) {
+                const policy = capped(MAX_P2P_PEERS, { maxUsersForWebRTC: threshold });
+
+                expect(policy.shouldTransition(CommunicationType.WEBRTC, threshold)).toBe(false);
+                expect(policy.shouldTransition(CommunicationType.WEBRTC, threshold + 1)).toBe(true);
+            }
+        });
+
+        it("serves a pair and no more with a cap of 1", () => {
+            const policy = capped(1, { maxUsersForWebRTC: 8 });
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 2)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 3)).toBe(true);
+        });
+
+        it("leaves the threshold as it was when the cap is not set", () => {
+            const policy = capped(undefined, { maxUsersForWebRTC: 8 });
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 8)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 9)).toBe(true);
+            expect(policy.shouldTransition(CommunicationType.LIVEKIT, 8)).toBe(true);
+            expect(policy.shouldTransition(CommunicationType.LIVEKIT, 9)).toBe(false);
+        });
+
+        it("never moves to LiveKit when it is not available, whatever the cap: the cap alone stops the mesh", () => {
+            const policy = capped(MAX_P2P_PEERS, { maxUsersForWebRTC: 8 }, { livekitAvailable: false });
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 5)).toBe(false);
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 100)).toBe(false);
+        });
+
+        it("reads the world's threshold at each decision, under the cap", () => {
+            const world: { maxUsersForWebRTC?: number } = {};
+            const policy = capped(MAX_P2P_PEERS, world, { environmentThreshold: 8 });
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 3)).toBe(false);
+
+            world.maxUsersForWebRTC = 2;
+
+            expect(policy.shouldTransition(CommunicationType.WEBRTC, 3)).toBe(true);
+        });
+    });
 });

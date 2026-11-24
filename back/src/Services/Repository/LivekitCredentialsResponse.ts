@@ -15,10 +15,25 @@ export const LivekitCredentialsResponse = z.object({
         description:
             "Whether the world's spaces are recorded automatically: every microphone of a bubble or meeting area is recorded to its own file, by an egress on this LiveKit server. Asked once per space, at its first join; only a back with LIVEKIT_RECORDING_S3_BUCKET set records. Defaults to false.",
     }),
-    maxUsersForWebrtc: extendApi(z.number().int().positive().nullable().optional(), {
-        description:
-            "The world's own MAX_USERS_FOR_WEBRTC: a bubble or meeting area of more users goes from P2P to LiveKit (1 puts every conversation on LiveKit). Asked once per space, at its first join. Null or absent: the back's MAX_USERS_FOR_WEBRTC.",
-    }),
+    maxUsersForWebrtc: extendApi(
+        z
+            .number()
+            .int()
+            .positive()
+            .nullable()
+            .optional()
+            // The host and keys must survive a bad threshold: the LiveKit state is built from them.
+            .catch(({ input }) => {
+                console.warn(
+                    `The admin sent an invalid maxUsersForWebrtc (${JSON.stringify(input)?.slice(0, 80)}), it is ignored: the back's MAX_USERS_FOR_WEBRTC applies.`,
+                );
+                return undefined;
+            }),
+        {
+            description:
+                "The world's own MAX_USERS_FOR_WEBRTC: a bubble or meeting area of more users goes from P2P to LiveKit (1 puts every conversation on LiveKit). Asked once per space, at its first join. Null or absent: the back's MAX_USERS_FOR_WEBRTC. Anything but a positive integer (0, a decimal, a string) is ignored, as if absent.",
+        },
+    ),
 });
 
 export type LivekitCredentialsResponse = z.infer<typeof LivekitCredentialsResponse>;
