@@ -10,7 +10,9 @@ verify 67 (1 skipped). The one skip in each of pixelgrid, palettesnap and verify
 built map (`BuiltOffice`, `BuiltMap`; skipped with a note on stderr). Tests that run the normals or palette tool skip, with the
 install command, on a host without it. The tests that run the pixel snapper (`test_ingest.py`, and `SnapSucceeds` in
 `test_pixelgrid.py`) do not skip: they call `toolchain.require` and fail with the install command when the fixed build is missing
-or only the stock one is there.
+or only the stock one is there. The counts above were taken before art wave 1 (2026-11-23 and 24), which added seven Python test
+files and one Node test file and grew `test_pixelgrid.py` and `test_verify.py`: "The art tests" below lists them, with what each
+needs.
 
 ## The principles
 
@@ -50,7 +52,7 @@ All from `assets/konclui/source`, all `python3 -I`.
 |---|---|---|
 | tools | `tools/toolchain.py status [--json]` | table of the three tools: pin, version found, hash, status; exit 0 only when all resolve and match |
 | pixel snapper | `tools/build_pixel_snapper.py [--offline] [--repo URL_OR_PATH] [--force]` | builds the pinned commit plus `tools/patches/pixel-snapper-fix.patch`, installs `spritefusion-pixel-snapper-fixed` into `~/.cargo/bin`, prints its sha256; idempotent; run once per host (also `--build-dir`, `--bin-dir`) |
-| build | `hq-office/build.py --out /tmp/kv/dist --renders /tmp/kv/renders` | the office map; runs `sheetcheck.check_dist` (grid, alpha, translucent layers), `sheetcheck.check_palette`, writes `fx/normal.png` and the manifest (72 to 98 s on this Mac) |
+| build | `hq-office/build.py --out /tmp/kv/dist --renders /tmp/kv/renders` | the office map; runs `sheetcheck.check_dist` (grid, alpha, translucent layers), `sheetcheck.check_palette`, writes `fx/normal.png` and the manifest (72 to 98 s on this Mac). It needs `rsvg-convert` on `PATH`: `hq-office/pool.py` rasterises the brand's K and Koru from their SVGs with it, and the build fails without it. `KONCLUI_VOLUME_PIECES` (below) changes what it builds |
 | grid, alpha | `tools/pixelgrid.py check /tmp/kv/dist/entities /tmp/kv/dist/seats --no-grid` | `check`: alpha, 32 px size, optional palette lock, one line per failure with file, cell and pixel, exit 1. `report`, `binarize IN OUT`, `snap IN OUT` (runs the pinned FIXED pixel snapper, found by `pixelgrid.snapper_path()`, which refuses a stock build; for AI-upscaled art only; the result is re-checked for alpha, cell size and palette and is not judged by `gridguard`) |
 | palette | `tools/palettesnap.py check --family avatars art/out/wokas art/out/companions` | exit 1 on a picture off its palette. `--family avatars\|pets` use each picture's own lock; `--palette FILE` checks any palette; `snap`, `report`, `palettes [--write]` |
 | ingest | `tools/ingest.py run IN --family avatars --out /tmp/kv/staging --palette tools/palettes/avatars.hex --pixel-size 4` | quarantine lane, below |
@@ -145,7 +147,7 @@ their sources of truth (`hq-office/palette.py`, `avatars/sheet-palette.json`, `p
 |---|---|---|---|---|
 | avatars | wokas 19 colours, companions 13 | 6 of 6 pictures on their palette | any picture with a pixel off its palette | 2 pictures the tool would merge (809 px, largest 0.0244 OKLab): two palette colours closer than 0.03 |
 | pets | one `palette.json` key per species, 377 colours in `pets.hex` | 24 of 24 on their palette | the same | 19 pictures the tool would merge (14,272 px, largest 0.0290) |
-| office | `palettes/office.hex`, 51 colours | 12,540 of 12,542 pictures are off it (14,340,377 px; 116 declared translucent pictures are left out), largest move 0.2628 OKLab | the off-palette pictures or px GROWING past that baseline, or the office conforming while the declaration still says it does not | the counts, every build and every `verify.py` |
+| office | `palettes/office.hex`, 51 colours | 12,540 pictures are off it, and the baseline in `palettesnap.py` is 14,340,856 px (116 declared translucent pictures are left out). The baseline was 14,340,377 px until art wave 1; it moved by 479 px and by 0 pictures, the net of four changes: the facade floors, the water art and the floor patterns add off-palette px, and the new lawn removes 42,844 (the lawn lane's figure on its own build; no report measured the four on one final build). The 12,542 pictures checked and the largest move of 0.2628 OKLab were measured on 2026-11-22 and not measured again | the off-palette pictures or px GROWING past that baseline, or the office conforming while the declaration still says it does not | the counts, every build and every `verify.py` |
 
 The office is not repainted: it is drawn from imported catalogue art recoloured by luminance ramps whose stops are `palette.py`
 colours but whose pixels are interpolated between them, plus pieces with colours of their own (`lounge.py`, `signature.py`,
@@ -173,8 +175,10 @@ Contract with the runtime, read from `play/src/front/Konclui/Ambience/phaser/eff
 | `nm.a > 0.5` is "has a normal", else flat `(0, 0, 1)` | A = 255 under an opaque sprite pixel; elsewhere `(128, 128, 255, 0)` |
 
 Only fully opaque (255) sprite pixels are geometry (a translucent pixel of a declared layer gets no normal). Sprites are
-stamped back to front by `y + height + depthOffset`, a tie to the larger x. It covers 962,055 of 4,931,584 px (19.5%) and the
-file is 1,026,574 bytes with the tool, 522,601 with the fallback. Atlases of the pets, avatars and companions
+stamped back to front by `y + height + depthOffset`, a tie to the larger x. On 2026-11-23 `verify.py` counted 815,452 opaque px
+with a normal on HEAD's build and on the relief lane's (MEASURED by the relief lane; 16.5% of 4,931,584 px, DERIVED). Earlier text
+here said 962,055 px (19.5%), 1,026,574 bytes with the tool and 522,601 with the fallback, measured on 2026-11-21: they were not
+measured again, and why the pixel count differs was not traced. Atlases of the pets, avatars and companions
 (`normals.py atlas OUT_DIR`, `--frame-size 32x32`) have no consumer: pets and avatars walk, and the shader has no per-sprite
 normal path.
 
@@ -191,7 +195,8 @@ barely tilts. No GPU or browser number exists here.
 
 Written by `hq-office/fx.py` from the one rule in `tools/kinds.py`; read by `normals.py` (a floor piece is not stamped) and
 re-derived by `verify.py` (`office.kinds`). Both keys are optional and `version` stays 1: an older manifest has neither, the
-runtime then classifies by prefab and treats `painted` as empty, and `normals.py` stamps every piece as before.
+runtime then classifies by prefab and treats `painted` as empty, and `normals.py` stamps every piece as before. A build made with
+`KONCLUI_VOLUME_PIECES` set adds three more optional keys, `volume`, `volumePieces` and `casters`: see "Volume pieces".
 
 | Key | Layout | Rule |
 |---|---|---|
@@ -247,7 +252,8 @@ leaves no stale `ok: true`. The verdict `fit to publish` is printed only when th
 `verify.json` has `dist_examined: false` and `dist: null`.
 `toolchain` looks at the tools on THIS machine; `office.tools` reads back the tools that MADE the build (the manifest's `tools`
 record) and fails on another version, a tool listed missing, a tool not recorded, or no record at all (a build from before the
-record: rebuild). `NORMAL_TOLERANCE` is 0.0070 (the 8-bit rounding bound 0.0068 plus a hair; the measured worst is 0.0065). It took 32 s on an idle Mac and 118 s on a loaded one; with `--rebuild` (two builds) 9 min 24 s on a loaded one, and the two
+record: rebuild). `NORMAL_TOLERANCE` is 0.0070 (the 8-bit rounding bound 0.0068 plus a hair; the measured worst was 0.0065 on 2026-11-22 and 0.0057 on the
+relief lane's build of 2026-11-23). It took 32 s on an idle Mac and 118 s on a loaded one; with `--rebuild` (two builds) 9 min 24 s on a loaded one, and the two
 builds were byte-identical over 12,793 files and identical to the DIST given. The
 avatar and pet sheets are not in the office map: their families are checked where their gates check them, read only. Planted
 defects each fail their own check by name (`test_verify.py`): a partial-alpha sprite `office.alpha`, an off-palette pixel in
@@ -257,6 +263,131 @@ tool `toolchain` (and `<family>.palette`, which raises `ToolMissing`).
 The build manifest records which tools made it: `fx/manifest.json` has `tools` (`fx.tool_record()`: for each tool version,
 pin, commit, sha256, `matches`; missing tools by name). The runtime's schema ignores the key. `publish.py` copies it into
 the release ledger.
+
+## Volume pieces: the kit, the baker, proxies, touch-ups and `KONCLUI_VOLUME_PIECES`
+
+A piece of the office is drawn by hand (the catalogue's art, or code in `hq-office/lounge.py` and `hq-office/signature.py`) or, on this
+second path, described as solids and baked. Four terms. A *recipe* is a piece written as solids in metres. The *baker* turns a recipe
+into a sprite, a normal map and a height map. A *proxy volume* is a few solids laid over a hand-drawn sprite: the drawing stays and the
+lighting gets a relief and a shadow height. A *touch-up* is a function over a picture's pixels that fixes one audited defect and nothing
+else. None of this is in a default build: with `KONCLUI_VOLUME_PIECES` empty (the default) the lounge does not import the kit. MEASURED
+on 2026-11-23 by the lane that wired the switch and by its reviewer: a build with the switch empty, with the facade fill of `build.py`
+left out (it changes the default build on purpose) and with the relief change left out had the same sha256 list as the build before the
+hooks, over 12,793 files.
+
+### The kit and the baker (`tools/volume.py`, `tools/bake.py`, `tools/projection.json`)
+
+`volume.py` is the kit. The world is in metres: x right, y toward the viewer along the ground, z up, one tile is one metre. A recipe has
+solids (`box` with bevels and decals, `lathe`, `sphere`, `frustum`, `tube`, `ring`, `leaf`, `soft_box`), materials taken from
+`hq-office/palette.py`, a footprint in tiles and named anchors (`foot`, `seat`, `light_head`). `bake.bake(recipe)` samples the solids 4 by 4
+per pixel with an analytic normal, keeps what faces the camera, z-buffers it, tones it by the angle to a light straight above, calls a
+pixel opaque when at least half of its samples are covered, removes stray pixels and draws a 1 px outline inside the silhouette. It
+returns the sprite (alpha 0 or 255 only), a normal map (the encoding of `fx/normal.png`: RGB = (n + 1) / 2 * 255, +Y up, alpha 255
+exactly on the opaque pixels), a height map in px above the floor, the footprint, the sort line, the foot and the anchors in canvas px,
+and a list of violations (colour cap, foot gap, margin, footprint, height, outline, symmetry). No left or right highlight is baked: the
+runtime light gives direction. Both modules are deterministic, use numpy and Pillow only, and freeze their public API at version 1: a
+change is a new version, never an edit in place.
+
+`projection.json` says how metres become pixels. `oblique` is the default: ground 32 px per tile in both screen axes and height 21 px per
+metre drawn straight up, because the floor, the rugs and the collision grid already use that ground (the integrator's decision of
+2026-11-23). `camera75` (24 px per metre of depth) is kept to compare and is never what the build uses. Nothing else may type those
+scales: the baker and the drawing contract read this file, which also holds the colour cap (24) and the largest foot gap (1 row). What
+the baker cannot draw is finished by a hand patch, `hq-office/art/overrides/<piece>.<projection>.txt`, a character picture laid over the
+baked pixels. A patch is refused when it is stale (the baked pixels are no longer the ones it was drawn on) or when it changes more than
+8% of the opaque pixels (`override_budget`); `python3 -I tools/bake.py --restamp` re-stamps a patch's header. Run
+`python3 -I tools/bake.py <piece> --out DIR [--sheet] [--projection oblique|camera75]`; `--list` prints the names. The registry is
+`hq-office/props/`: one module per piece with a `RECIPE` (`air_hockey`, `arc_lamp`, `potted_plant`, `stool`).
+
+### Proxy volumes and touch-ups (`tools/proxy.py`, `hq-office/props/proxies/`, `hq-office/props/touchup.py`)
+
+A hand-drawn piece that reads well keeps its drawing: the baker would redraw it worse. A `ProxyRecipe` (solids in metres, an integer
+canvas origin, optional named anchors) is baked with the baker's own projection and z-buffer and laid over the sprite. It supplies a
+height and a normal for every pixel and the caster facts of the piece (height in px, foot row, foot span, where its light comes from).
+The picture is never touched. The proxy is lined up with the sprite by a search of 6 px and must cover the sprite's opaque pixels; a best
+offset of more than 1 px is an error, because the relief would sit on the wrong pixels. The runtime reads one height per piece (a
+shear), not the height of each pixel. A proxy cannot repaint a defect in the drawing: that is a touch-up. `touchup.py` has pure functions
+over an RGBA array (`strip_light_pool`, `strip_painted_shadow`, `unclip`, `darken_underside`, `curve_foot`) and one recipe per piece. The
+Koncluí arc lamp's recipe strips only the painted light pool and shadow: its orange underside stays, because the runtime paints the
+lamp's bulb rectangle (8 x 2 px at the head) over it at night and a dark dome leaves that rectangle as an olive smudge (seen in the
+shader lab, lounge preset, hours 15.5 and 22, by the touch-up lane). `touchup.enabled()` reads `KONCLUI_TOUCHUPS=1`, but the build
+does not call it: touch-ups run only through the switch names below.
+
+### The switch: `KONCLUI_VOLUME_PIECES`
+
+A comma list, case and spaces ignored, empty by default. An unknown name stops the build with a `ValueError`: a typo must not build the
+default quietly. `hq-office/translucent.py` owns the names.
+
+| Name | What it does to the build |
+|---|---|
+| `air-hockey` | The table's picture is baked from `props/air_hockey.py` in place of the drawn one, under the same sprite key and with its foot where the old foot was; its normals and its caster come with it. The collision grid becomes 4 x 2 (the footprint is in the middle two columns of the lower row, because the baked canvas has 32 px of empty pad on the left) and the games interaction rectangle moves by 1 to 3 px (both found by the prototype's judge; not measured again). Its two sides are the office palette's mint and steel-blue ramps: the palette has no red, and an earlier red and blue were off the palette |
+| `stool` | The bar stool is baked from `props/stool.py` and seats by the recipe's `sit` anchor. The art review scored it 6 of 10 and not better than today's drawing by eye, so it is taken only by this name |
+| `arc-lamp-proxy` | The Koncluí arc lamp and the two catalogue arc lamps keep their drawing and get a touch-up and a proxy volume |
+| `plant-proxy` | The two bird of paradise plants ("branco" and "alta") keep their drawing and get a touch-up and a proxy volume. The judge found that, lit, the tall plant's white pot turns into a flat grey bucket, so it is taken only by this name |
+| `casters-all` | Changes no picture and no declaration: adds the shadow height of every placed stand sprite to the manifest's `casters` (below) |
+| `all` | `air-hockey` and `arc-lamp-proxy`, the two whose piece read better lit than today's |
+
+The build records the value in `fx/manifest.json` as `volume` (the chosen names in the order of the table, so `all` is
+`air-hockey,arc-lamp-proxy`) and adds two keys. `volumePieces` is `{sprite key: "volume" | "proxy"}`: "volume" for a baked picture,
+"proxy" for a kept one. `casters` is `{sprite key: {h, foot, span}}`: `h` the height in px above the floor (21 px per metre), `foot` the
+last picture row of the ground contact, `span` the columns `[x0, x1)` of that contact with `x1` exclusive, as `effectsManifest.ts` reads
+it. The runtime throws a piece's shadow from `h` when the piece has an entry (`shadeBake.ts`, `placedCaster`) and from the rows of its
+picture when it has none. By default `casters` holds only the pieces the other names replace or touch, so turning on one name changes
+the shadow of its own piece and of no other. With `casters-all` every placed stand sprite has one: the legacy ones take `h` from
+`hq-office/contract/pieces.json` (a measured front face, an anchor or the rows), else from the generic rule (a cap per tag over the
+picture's rows), and their foot and span from their own pixels. A proxy's named anchors move a lamp's light only when they lie within
+2 px (`fx.ANCHOR_TOLERANCE`) of what the pixel heuristic found for the lamp's head and foot; the catalogue lamps' proxy head sits 6 px
+lower than their shade, so those lamps keep the heuristic. The file counts of the declared translucent layers follow the switch
+(`translucent.VOLUME_DROPS`): one picture each for `air-hockey` and `stool`, which also leave the declaration because a baked picture is
+new art judged by the palette and the drawing contract, and one for `arc-lamp-proxy` and two for `plant-proxy`, whose names stay declared.
+
+`verify.py` judges a build by the switch the build recorded, not by its own environment: `translucent.configure` points the declared
+layers and their counts at the recorded names for the pixel and palette checks (`built_with`) and puts the process's own back after.
+`office.contract.casters` checks the manifest: exactly the pieces `volumePieces` lists (exactly the stand sprites when the recorded value
+has `casters-all`), each with an integer `h` between 1 and the picture's height, a foot row inside the picture and a span inside its
+width. A manifest with no `casters` is REPORTED. `office.contract`, `office.contract.pieces` and `office.contract.review` come from
+`tools/contract.py`. What each name changes, MEASURED by the reviewer of the switch lane against the default build: `air-hockey`, 3,122
+px of the preview, all inside the table, and one caster; `casters-all`, 0 px (only the manifest changes, and it has 105 casters);
+`arc-lamp-proxy,plant-proxy`, 2,153 px (the lamp's pool and painted shadow, the plant's leaf tips). On four builds (default,
+`air-hockey`, `casters-all`, `arc-lamp-proxy,plant-proxy`) `verify.py` gave 16 pass, 0 fail and 3 reported (the default build 15 pass
+and 4 reported) in the lane's snapshots, with the palette baseline raised in the snapshot only; the integrated tree was not built once
+per value.
+
+### The acceptance board (`tools/pieceboard.py`)
+
+`python3 -I tools/pieceboard.py stool arc-lamp potted-plant air-hockey --dist DIST --floor PICTURE --out DIR` (also `--view X,Y,W,H`,
+`--projections oblique,camera75`, `--map FILE.json`, `--no-overrides`, `--strict`, `--list`) reads a finished build and a lit-lab floor
+picture (the unlit `off.png`) and writes only into `DIR`: `board.png` (today's sprite, the baked piece in each projection, its normal and
+height maps, aligned on the foot), `scene-<projection>.png` (the lounge at 1:1 and at 3x, the new piece on a clean floor strip beside
+today's with a 26 x 32 Woka stand-in for scale), `shadows.png` (the shadow swept from the height map beside the old way) and
+`measurements.json` (each measurement of the prototype plan that can be taken without the game, pass or fail with its method, and the
+list of what was not taken). It exits 1 only with `--strict` and a failed check.
+
+## The art tests: what each new file checks, how to run it, what it needs
+
+All from `assets/konclui/source`, each file as a script, `python3 -I tools/<file>` (`-m unittest` fails: `-I` drops the working
+directory from the import path). The counts are the lanes' runs and their reviewers' runs of 2026-11-23 and 24, MEASURED by them, not a
+run of the integrated tree. `KONCLUI_DIST` names a built map (`python3 hq-office/build.py --out DIR --renders DIR2`); a class that needs
+it is skipped, with a note on stderr, when it is unset. The tests of the volume kit, the baker, the proxies, the touch-ups, the board and
+the four recipes (`test_volume.py`, `test_bake.py`, `test_proxy.py`, `test_touchup.py`, `test_pieceboard.py`, `test_prop_air_hockey.py`,
+`test_prop_arc_lamp.py`, `test_prop_potted_plant.py`, `test_prop_stool.py`) run the same way and need no build.
+
+| File | What it checks | Needs | Their run |
+|---|---|---|---|
+| `test_normals_flat.py` | Relief only where a surface curves: `kinds.flat_face`, `box_body`, `box_evidence`, `relief_profile` and `normals.limit_lean`, `grounded`, `ground_foot`, `tool_normals` on synthetic sprites. `BuiltRelief` measures the placed set: under 2% of the opaque px of `fx/normal.png` lean more than 0.8, none inside a flat face | The pinned normals tool for the classes that run it (skipped with the install command without it); `KONCLUI_DIST` for `BuiltRelief` | 20 tests OK |
+| `test_glass.py` | `hq-office/glass.py`: every east-west face is 60 rows, no ground-shadow rows, the film on partitions only, mullion bays between anchors, door leaves, heads, jambs and threshold. `BuiltTilesets` reads the placed tiles of `Konclui_Walls` and `Konclui_Doors` | Nothing; `KONCLUI_DIST` for `BuiltTilesets` | 22 tests OK |
+| `test_lawn.py` | `hq-office/lawn.py`: the ground (no period, no seam, few tiles, only the lawn's colours, the same picture on every run), the decor, the gust's redraw budget, the path fringe. `LAWN_FILE=<path>` tests another copy of the module | Nothing, no build, about 10 s | 20 tests OK |
+| `test_floor_patterns.py` | `signature.tile_pattern`: the seam, pinstripe and period measures on each floor pattern and, as a control, on the picture it replaced (the measures must fail there); the patterns that must not move are pinned by hash | Nothing, no build | 26 tests OK |
+| `test_water_art.py` | The water zone: contact line, bridge, K deck, fountain and basin, banks, glints and ripples, and that the collision did not move | `rsvg-convert` on `PATH` (the file does not skip without it), no build, about 10 s | 22 tests OK |
+| `test_reactions_page.py` | `hq-office/reactions/index.html`, read without a browser (section "Reações" of `hq-office/README.md`) | Nothing; with `KONCLUI_DIST` one more test checks that the built page is the source byte for byte | 15 tests OK and 1 skipped, 16 of 16 with `KONCLUI_DIST` |
+| `test_volume_pieces.py` | The wiring of the switch: the names, the pieces it replaces or touches, the manifest keys, the light anchors, the normals. `BuiltVolume` needs a build made with the switch; its default-build half runs on a build made without it | Nothing for the pure part; `KONCLUI_DIST` for `BuiltVolume` | 61 tests OK |
+| `hq-office/pool/koi/size-and-pixels.test.mjs` | Koi length 10 to 20 px, a seed keeps its patterns, the painter writes only whole opaque 1 px cells closed by ink | Node: `cd hq-office/pool/koi && node --test`; `KOI_DIR=<copy of the module>` tests another copy | 4 tests OK |
+
+`test_pixelgrid.py` gained `FacadeFloors` (7 cases, counted in the file: it imports `build.py` and runs `draw_floors`, no build needed) and `BuiltFacadeDecor`
+(needs `KONCLUI_DIST`), which keep the floor under each glass facade and the tufts around it (section "Vidros, portas e pisos sob as
+fachadas" of `hq-office/README.md`). `test_verify.py` gained the cases of the recorded switch and of `office.contract.casters`. The tests
+differ in strength. The reviewer mutated `glass.py` ten ways and each mutation failed a test. The water tests pass when a constant of the
+module they test is changed, because they compare the art with that module's own constants (TODO T-273). The reactions tests are tied to the shipped wording of the
+page, so editing the page means updating the variants (the reviewer's note).
 
 ## ingest: art from a model or resized
 
@@ -430,7 +561,10 @@ flag's value. For a real publish the operator names the base; the dry run in the
   The `--public-base-url` is named by the operator; the tool never guesses it.
 - Installing a tool. The CI job and every step stop with the install command; a person runs it on the host. The fixed pixel
   snapper is built from source by `tools/build_pixel_snapper.py` (needs `git` and `cargo`), once per host.
-- Looking at the result in a browser: pan shimmer, shadows on and off, the normals' direction and GPU cost are unmeasured.
+- Looking at the result in a browser: pan shimmer, shadows on and off, the normals' direction and GPU cost are unmeasured. Art wave 1
+  added things that only unit tests and still pictures have seen: the painted water frames over the water shader by day and under it at
+  night, the fountain's rings, the reaction page's claps and confetti, the koi, and the entrance doors (the shader lab does not draw
+  water, glass or the doors layer).
 
 ## perfectPixel
 
@@ -443,7 +577,12 @@ copied. `ingest.py` asks it for a second opinion on the grid size only when the 
 `.github/workflows/konclui-assets.yml`, `workflow_dispatch` only, on `[self-hosted, ci-host]`. Steps: the numpy and Pillow
 import, `toolchain.py status`, optionally the office build, the test loop, optionally `verify.py` (`--rebuild` on request),
 whose `verify.json` goes to the job summary. The test loop runs `test_toolchain.py`, `test_pixelgrid.py`, `test_palettesnap.py`,
-`test_ingest.py`, `test_publish.py` and `test_verify.py`, and also `test_gridguard.py`, `test_kinds.py` and `test_fx_kinds.py`.
+`test_ingest.py`, `test_publish.py` and `test_verify.py`, and also `test_gridguard.py`, `test_kinds.py` and `test_fx_kinds.py`, and,
+since art wave 1, `test_volume.py`, `test_bake.py`, `test_contract.py`, `test_proxy.py`, `test_touchup.py`, `test_pieceboard.py`,
+`test_prop_air_hockey.py`, `test_prop_arc_lamp.py`, `test_prop_potted_plant.py`, `test_prop_stool.py`, `test_volume_pieces.py`,
+`test_lawn.py`, `test_glass.py`, `test_floor_patterns.py`, `test_water_art.py`, `test_normals_flat.py` and `test_reactions_page.py`
+(`KONCLUI_DIST` is exported only when the build step ran; the koi's Node test is not in the loop). **The runner also needs
+`rsvg-convert`** (the office build and `test_water_art.py` call it; the workflow does not check for it).
 **The runner needs `python3` with numpy and Pillow and the three tools** (on `PATH`, in `~/.cargo/bin`, or named by the override
 variables above), the pixel snapper being the FIXED build (`python3 -I tools/build_pixel_snapper.py` once; a stock one named by
 the override is a mismatch): the job installs nothing, and fails at `toolchain.py status` with the install command of each missing
@@ -496,6 +635,10 @@ dispatch).
 - Pan shimmer, shadows on and off, the normals' direction, and every GPU number: not measured here; the shader owner owns them.
 - `fx.py` writes `normal.png` once per build, so any later change of a prefab's `depthOffset` changes its bytes: expected.
 - `konclui-assets.yml` has not been dispatched; its first run on the pool is the test.
+- Art wave 1 left open work in `docs/TODO.md`: section 8b (T-285 to T-299: the unwired terrazzo, the entrance sign, the film alpha,
+  three wall items, floor transitions, round pieces without a soft tag, the leftovers of the water zone and the TV slide, the air hockey's
+  colours, the banks, the fountain's rings, the koi README and the reactions page's browser floor), section 8 (T-273 to T-275: the water
+  tests' literals, smaller test gaps, and byte comparisons across machines) and section 2 (T-267 to be seen in the game, T-268 under repair).
 
 
 ## Relief by piece, and what counts as the piece (2026-11-23)
@@ -506,7 +649,8 @@ is 0 or 255, and the layers a picture carries on purpose are not (a painted shad
 holds pictures both sides run (top, foot, painted). `relief_profile(kind, tags, light_kind)` says what `normals.py` stamps: nothing for a
 floor piece, the flat normal for a lamp (it is the light and takes no relief: a lit shade fell to 80% of its brightness), a 4 px bevel
 for a table, counter, shelf, picture, screen or piece on furniture (a 20 px dome folded a desk top into four triangles), and the dome of
-its size class only for soft furnishings (plants, sofas, chairs). The bevel is made, not asked of the tool: the tool's `--shape-radius` is a
+its size class only for soft furnishings (plants, sofas, chairs) whose picture is not a box (below, "Relief only where a surface
+curves"). The bevel is made, not asked of the tool: the tool's `--shape-radius` is a
 long fall-off (a 4 px radius left none of a plain rectangle flat) and its `--detail-strength` reads a picture's painted wash as relief (the air
 hockey's playfield became a four-faced roof), so a bevel piece runs with `--detail-strength 0` and keeps the tool's normal only on the outer
 `BEVEL_PX` (4) px; inside that edge the normal is the flat one. `test_kinds.py` pins it, and the lab's `flatPropChanged` is 0 for the relief. A manifest with no "kinds" is an older build: every piece is domed.
@@ -519,3 +663,33 @@ rule: a WHOLE-WORD match of `TOP_WORDS` (imac, notebook, laptop, macbook) in the
 a piece on furniture whether or not its name says "(sobre móvel)" (a picture named "Quadro: Koru no notebook" is still a `hang` by the
 rule above it). The runtime's `casterKind.ts` has the same rule and `placed-kinds.json` was written again with `fx.py --dump-kinds`: the
 iMac is the one piece whose kind changed on the placed map (stand to top).
+
+### Relief only where a surface curves (audit rule R12, 2026-11-23 and 24)
+
+A soft-furnishing tag says what a piece is usually made of, not what this picture is. The white planter "Floreira branca" is tagged
+Plantas and its picture is a box with reeds on it, so the dome across its face lit as a bright and a dark wedge. `kinds.relief_profile`
+therefore has a fifth profile, `box` (`RELIEF_PROFILES` is now none, flat, bevel, box and domed), and a `box=` argument. The picture, not
+the tag, says a piece is a box (`kinds.box_evidence`): its largest rectangle of one colour (`flat_face`, tolerance 6 per channel, over the
+fully opaque pixels) is at least 800 px, at least 12 px on its shorter side and at least 40% of the opaque pixels. A name with the whole
+word `floreira`, `jardineira`, `caixote` or `cubo` lowers the bar to 300 px and 25% but never replaces the picture. The body of a box
+(`kinds.box_body`: the rows around the face that are at least 80% as wide as the face) takes the `bevel` treatment, and what stands out
+of it, a planter's reeds, takes the dome. The rule is evidence-based and fires on exactly one piece today: `piece_profiles` on the relief
+lane's build gave bevel 154, domed 50, flat 9 and box 1 (MEASURED by its reviewer). The planter's face is 1,008 px, 56 x 18 and 51% of
+its opaque pixels; the next soft piece, a sofa's cushion strip, is 539 px, 77 x 7 and 25% (the figures in the comment of `kinds.py`,
+MEASURED on HEAD's build). The 800 px, 12 px and 40% were chosen on this one map: a box-shaped piece with a soft tag, a small or broken
+face and no box word in its name would stay domed.
+
+A flat face keeps the flat normal (128, 128, 255). Only the 4 px edge (`BEVEL_PX`) leans, never more than `EDGE_LEAN` (0.7, a chamfer of
+about 45 degrees and not a cliff). A piece that stands on the floor has no bevel at its foot, because there it meets the floor and
+nothing turns: the manifest calls it `stand` and its lowest solid row is at least `GROUND_SHARE` (0.6) of its width (`normals.grounded`,
+`ground_foot`); a desk's top on legs is not grounded, so its lower edge stays an edge. A `domed` piece leans at most `SOFT_LEAN` (0.7).
+`normals.limit_lean` is the one soft clip, cap * tanh(lean / cap): it is the lean itself when the lean is small and never reaches the
+cap, so the order of the slopes is kept and no plateau forms. MEASURED by the relief lane on the placed set: the pixels of
+`fx/normal.png` that lean more than 0.8 went from 364,946 of 815,452 to 0, and those that lean more than 0.5 from 509,330 to 475,606.
+Its reviewer measured the mean lean of the opaque px going from 0.523 to 0.365, with 530,974 px changed and none outside an opaque
+pixel. By eye only the white planter is clearly better (its wedges are gone); the desks, the Eames table and the cabinet were already
+flat inside and show no difference at 1:1, and the sofas keep a soft relief. `test_normals_flat.py` pins all of it (section "The art
+tests").
+
+Not done: a round or curved piece without a soft tag (an oval coffee table, a round walnut table, a guitar, a piano) stays on the
+`bevel` profile, as it did before, so the other half of the rule, curved things curve, is done only through the soft tags (TODO T-292).

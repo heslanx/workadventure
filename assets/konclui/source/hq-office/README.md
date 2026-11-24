@@ -63,21 +63,22 @@ a página carrega `fx.mjs`, e o `GameManager` traz o `x-konclui-scene-fx`. Uploa
 | `taxonomy.py`, `test_taxonomy.py` | Leitura do contrato pelos módulos que montam as coleções, relatório da lista do editor (`python3 hq-office/taxonomy.py [--memory]`) e o teste do contrato, sem build |
 | `GLOSSARY.md` | Os termos das peças e do editor (peça, coleção, entrada, variante de cor, categoria, peça da marca, peça apoiada…) |
 | `palette.py` | Cores do design system e recoloração de pisos, paredes e tecido dos móveis (`ds-petrol`, `ds-ink`, `ds-mint`, `ds-turquoise`) |
-| `glass.py` | Vidros sem caixilho na geometria das paredes, montantes e portas de correr animadas |
-| `lawn.py` | Gramado em resolução nativa: textura do piso, camada `decor` de tufos (com brisa), trevos, flores e pedrinhas, grama sobre a borda do caminho e o montinho de grama ao pé das árvores do catálogo nas cores do gramado |
+| `glass.py`, `test_glass.py` (em `tools/`) | Vidros sem caixilho na geometria das paredes: toda face leste-oeste com 60 linhas, vãos entre âncoras (portas e divisórias), montantes e portas de correr animadas com viga de cabeceira e soleira (seção Vidros, portas e pisos sob as fachadas) |
+| `lawn.py` | Gramado em resolução nativa: o chão do mapa inteiro (86 × 56 tiles, sem período), camada `decor` de tufos (com brisa), trevos, flores e pedrinhas, grama sobre a borda do caminho e o montinho de grama ao pé das árvores do catálogo nas cores do gramado |
 | `flora.py` | Plantas e pedras em pixel art desenhadas por código (pedra com capa de musgo, samambaia, touceira de folhas, grama com ranúnculos ou trevo, juncos e taboas, vitória-régia, ninfeia), usadas na margem da piscina, num sistema óptico só (traço, tamanho, âncora) |
 | `frames.py` | Quadros da marca, da Koru e do ICP: conversão das imagens geradas para pixel art no tamanho nativo, moldura única da série e um tipo por quadro na coleção "Koncluí" |
 | `sheets.py` | Peças das folhas trazidas pelo dono (`sources/sheets/`): o Modern Office recortado pelo escritório principal, e o recorte automático e a curadoria das outras folhas |
 | `flora_optics.py` | Mede traço, tamanho óptico e âncora de cada sprite de `flora.py` e reprova o que fugir das regras; o build roda |
 | `fx.py` | Dados dos shaders (`dist/fx/`): água parada e profundidade, máscaras do vidro e do mapa, slide da TV, luzes por sprite (seção Shaders) |
-| `pool.py` | Piscina em resolução nativa: água, margem de pedras e musgo, canal, ponte, deck do K oficial e máscaras das carpas; chama `fountain.py` para a fonte |
+| `pool.py` | Piscina em resolução nativa: água com linha de contato, margem de pedras e musgo, canal, ponte, deck do K oficial, brilhos e ondinhas da camada `decor` e máscaras das carpas; chama `fountain.py` para a fonte |
 | `continuity_review.py` | Revisão de continuidade pelo Gemini (`klaude --model gemini-3.8-flash`, Gemini 3.8 Flash pelo proxy): recebe capturas do motor, os fatos medidos com elas e as regras da área, e devolve os erros em JSON (seção Espelho no vidro, Aprendizados) |
-| `fountain.py`, `test_fountain.py` | Fonte da Koru: nicho de pedra na fachada, a Koru oficial com luz do alto à esquerda, consolo, jato, respingo, anéis e a água que a fonte agita; o teste guarda o contrato com o shader da água e com a moldura da parede (seção Piscina, fonte e carpas) |
-| `signature.py` | Peças da marca: telão de LED, balcão, parede de destaque, totem, tapetes, floreira, porta-retratos, porcelanato, granilite e passarela de carvalho |
+| `fountain.py`, `test_fountain.py` | Fonte da Koru: nicho de pedra na fachada, a Koru oficial com luz do alto à esquerda, consolo, a bacia redonda de pedra, jato, respingo, anéis e a água que a fonte agita; o teste guarda o contrato com o shader da água e com a moldura da parede (seção Piscina, fonte e carpas) |
+| `signature.py` | Peças da marca: telão de LED, balcão, parede de destaque, totem, tapetes, floreira, porta-retratos, porcelanato, granilite e passarela de carvalho; e os padrões de piso (`tile_pattern`: pod, auditório, soleira do café, caminho; seção Padrões de piso) |
 | `lounge.py` | Peças do lounge e da sala de jogos do café: painel com neon e quadros, aparador, bar, banquetas, sofás, pufes, carpete de jogos, pendente, terminais (air hockey, xadrez, Lig 4, fliperama de Breakout) e plantas grandes |
 | `runtime/` | `seating.mjs` (sentar automático), `interactions.mjs` (portas, jogos, acenar), `social.mjs` (mesas, salas trancadas, reações, som ambiente), `bell.mjs` (sino da venda), `hud.mjs` e `hud-core.mjs` (presença, lugar e momento da interface), `page.mjs` (o que os scripts da página assumem), com testes das partes puras |
-| `pool/koi/` | Carpas: simulação, campo de distância, pintura, prévia, testes e README próprio |
-| `reactions/`, `map-script.js`, `qa.py`, `qa_hud.py`, `qa_sound.py` | Animação das reações, script do mapa, verificação no motor, da interface e do som e do sino |
+| `pool/koi/` | Carpas: simulação, campo de distância, pintura (em pixels inteiros), um arquivo de teste (`size-and-pixels.test.mjs`) e README próprio. O README lista também `preview.html`, `fixtures/` e `simulation.test.mjs`, que não existem no repositório |
+| `reactions/`, `map-script.js`, `qa.py`, `qa_hud.py`, `qa_sound.py` | A página das reações (aplauso e confete, em pixels inteiros; seção Reações), script do mapa, verificação no motor, da interface e do som e do sino |
+| `../tools/test_*.py` | Testes da arte do escritório que não precisam do motor: gramado, vidro, padrões de piso, água, relevo, reações e peças de volume (`tools/README.md`, seção "The art tests") |
 | `seat_sheet.py` | Folha de contato do avatar sentado: um quadro por tipo de assento e direção, ou por assento com `--all` |
 | `dist/` | O que o WorkAdventure carrega (regenerado, fora do Git) |
 | `renders/`, `reviews/engine/`, `reviews/seats/`, `reviews/hud/`, `reviews/lawn/`, `reviews/fountain/` | Prévia, resumo do build, capturas do motor, folhas de contato dos assentos, capturas da interface, o antes e depois do gramado e o da fonte da Koru |
@@ -96,7 +97,13 @@ node --test hq-office/runtime/*.test.mjs
 node --test theme/hud-audio.test.mjs                # curva do som ambiente e leitura do contrato de volume
 python3 -m unittest discover -s hq-office -p 'test_taxonomy.py'   # categorias do editor, sem build (~30 s)
 python3 -m unittest discover -s hq-office -p 'test_fountain.py'   # fonte: contrato com o shader da água e com a parede, sem build (~3 s)
-(cd hq-office/pool/koi && node --test)
+(cd hq-office/pool/koi && node --test)               # hoje só `size-and-pixels.test.mjs` (4 testes); o README das carpas lista outros que não existem
+python3 -I tools/test_lawn.py                       # gramado: chão sem período, enfeites, orçamento de redesenho; sem build (~10 s)
+python3 -I tools/test_glass.py                      # vidros e portas; com KONCLUI_DIST também os tiles colocados do build
+python3 -I tools/test_floor_patterns.py             # padrões de piso (`signature.tile_pattern`); sem build
+python3 -I tools/test_water_art.py                  # água, ponte, deck, fonte e margens; precisa de rsvg-convert, sem build (~10 s)
+python3 -I tools/test_reactions_page.py             # a página das reações, lida sem navegador
+python3 -I tools/test_normals_flat.py               # relevo só onde a superfície curva (KONCLUI_DIST: o conjunto colocado)
 node --test local-wa/hot-reload/*.test.mjs          # patches do gateway local (paredes finas, pose sentada, cena dos shaders)
 node --test theme/fx/*.test.mjs                     # shaders: luz da hora, luzes, rastro, nuvens, GLSL sem palavra reservada
 python3 hq-office/perf.py --gpu --check [--hour 13]  # custo de desenho com os efeitos (a hora muda os efeitos)
@@ -223,7 +230,8 @@ móveis"…): 49 no editor, e a mesma função em até três lugares. Os termos 
 - **Pisos em três famílias:** pedra clara na circulação e no lobby, carvalho natural nos ambientes de estar e
   trabalho, carpete no auditório e nas ilhas.
 - **Paredes:** brancas, com o topo em tinta `#0A0A3D`.
-- **Vidros:** grandes, sem caixilho, com película turquesa.
+- **Vidros:** grandes, sem caixilho; a película turquesa fica só nas divisórias e nas portas das salas (seção Vidros, portas e pisos
+  sob as fachadas).
 - **Móveis:** mesas brancas com iMac, cadeiras em petróleo, madeira nas reuniões e no café.
 - **Recepção:** parede de destaque com o logo, balcão com o K, tapete de entrada, porta automática, totens e salas de
   espera com tapete.
@@ -243,6 +251,123 @@ móveis"…): 49 no editor, e a mesma função em até três lugares. Os termos 
 - **Plantas não colidem.** Por decisão do dono, as 470 variantes de planta (vasos, árvores, arbustos, suportes) perdem
   a colisão na coleção desta sede, inclusive quando postas pelo editor. A floreira da marca também.
 
+## Padrões de piso
+
+O `plan.FLOORS` dá uma entrada a cada tipo de piso. Uma tupla `(peça do catálogo, rampa)` é um piso do catálogo recolorido
+(`palette.floor_tile`). Uma string que começa com `@` é um padrão desenhado por código: `@lawn` é o chão do gramado
+(`lawn.texture()`, seção Gramado) e qualquer outro nome vai para `signature.tile_pattern(nome)`. Um nome desconhecido levanta
+`ValueError` com a lista de `signature.FLOOR_PATTERNS`; antes ele caía, sem aviso, no granilite. O `build.py` repete cada padrão a partir
+da origem do mapa, então o tamanho de cada um é múltiplo do tile de 32 px, e cada padrão sai da própria semente: um build novo dá os
+mesmos pixels (e, na mesma máquina, os mesmos bytes).
+
+| `plan.FLOORS` | Onde | O que é |
+|---|---|---|
+| `@porcelain` | hall | Porcelanato de grande formato, 64 × 64 px (já existia). |
+| `@boardwalk` | passarela e ponte | Tábuas de carvalho de 6 px (já existia; a ponte da piscina usa o mesmo passo). |
+| `@terrazzo` | recepção | Granilite de 64 × 64 px (já existia). |
+| `@pod` | salas pod | Carpete cor de névoa, 64 × 64 px: um tom, com flocos de cerca de 3% de contraste, e juntas só na grade de 64 px, nenhuma na divisa de 32 px. Substitui o `Carpet_Texture` do catálogo, que tinha juntas de 32 px e listras finas. |
+| `@audience`, `@audience-w`, `@audience-e`, `@audience-s`, `@audience-sw`, `@audience-se` | auditório | Carpete de petróleo com uma listra escura de 6 px centrada em cada divisa de tile de 32 px, ou seja, no vão entre duas cadeiras e nunca sob uma (a cadeira fica no meio do tile). As cinco variantes com sufixo são as bordas: uma barra de 4 px no lado da parede e uma linha clara a 2 px dentro dela (oeste, leste, sul e os dois cantos do sul), que dão ao auditório a borda leste que ele não tinha. Substituem o `Carpet_Stripe_Gray`, que tinha listra sob a cadeira. |
+| `@riser` | frente do palco | A frente do degrau do palco, 8 px em tom de madeira no alto do tile, sobre o carpete, na linha 13 do plano. |
+| `@cafe-sill` | café, linha 30 | A espinha-de-peixe do café com uma soleira de carvalho de 4 px na borda sul: a linha dura em y = 960 vira uma soleira feita. As tábuas do lounge vão até a parede leste. A linha 30 passa da rampa `oak-warm` para a `oak`: um efeito que o revisor achou e que a faixa não tinha relatado. |
+| `@path` | caminho de entrada | Lajes de porcelanato de 32 px nas cores das juntas do hall, de modo que toda junta da grade de 64 px do hall continua no caminho, na mesma coluna, e a última junta da porta (y = 1600) é a primeira do caminho. Substitui as lajes de 16 px do catálogo. |
+
+`@terrazzo-pool` existe em `signature.py` e **não está ligado** ao plano (decisão de integração de 24/11/2026). É o granilite sem a
+repetição de 64 px: 416 × 256 px (13 × 8 tiles), montado de 16 tiles diferentes, de modo que nenhum tem gêmeo nas oito células em volta, e
+repete só a cada 13 tiles. Ligá-lo, trocando `plan.FLOORS['reception']`, não deu mudança visível a 1:1 nem a 2x (o revisor: a repetição de
+64 px nunca foi visível nesse piso) e custa 12 tiles de piso a mais e uma parte, nunca medida sozinha, dos +27.928 px que a faixa dos pisos mediu no baseline da paleta para todas as suas trocas juntas.
+O padrão e os testes dele seguem no código (`docs/TODO.md`, T-285).
+
+**Como se mede.** `tools/test_floor_patterns.py` aplica a cada padrão três medidas da regra R7 da auditoria: a emenda (a luminância média
+da coluna ou da linha da borda do tile contra o corpo, até `SEAM_LEVELS`, salvo nas juntas declaradas de uma grade de 64 px), a listra
+fina (a parcela de pares de linhas vizinhas que diferem mais de 10 níveis, até 0,6) e o período (a parcela de células cujo tile é igual ao
+tile `p` células a leste, para `p` de 2 a 12, abaixo de 0,9). O carvalho dos ambientes e a espinha-de-peixe do café são tiles únicos que
+repetem de propósito: estão isentos de forma explícita, e um teste prende o porquê. Cada medida roda também sobre o desenho que o padrão
+substituiu e tem de falhar ali: o `Carpet_Texture` dá borda de 12 níveis e parcela de listra fina de 1,00 (medido pela faixa dos pisos).
+O porcelanato, a passarela e o granilite de 64 px não mudaram e estão presos por hash. Foram 26 testes, sem build, na faixa e no revisor.
+Pelo olho (o revisor, a 1:1 e a 2x), o pod, o auditório, o café e o caminho ficaram melhores.
+
+**Não feito (N19).** As transições entre materiais (carpete para tijolo nas salas, granilite para porcelanato para tijolo num degrau de um
+tile, a borda norte do lounge, a espinha-de-peixe só na parede leste) seguem cortes retos, sem acabamento. Uma faixa de acabamento é
+geometria de zona (`plan.ZONES`) e mexe nas máscaras de piso do `fx.py`; ver `docs/TODO.md`, T-291.
+
+## Vidros, portas e pisos sob as fachadas
+
+Rodada de 23 e 24/11/2026 da auditoria de arte (itens `I09`, `N08`, `I18`, `I36`, `I39`, `N12`, `I01`, `N10` e `N21`). O vidro é de
+`glass.py`; o piso que se vê por ele é do `build.py` (`draw_floors`).
+
+- **Uma altura para toda face leste-oeste (`SPAN` = 60 linhas).** Do primeiro traço à última linha opaca, um pedaço de parede maciça `n`
+  mede 60 (linhas 4 a 63 dos seus 64 px), e toda face de vidro e toda folha de porta têm a mesma conta: capa de 3 linhas (`CAP`), vidro de
+  55 (`FACE`) e base de 2 (`BASE`), nas linhas 4 a 63 no norte e 0 a 59 no sul. Nada abaixo da base: nem sombra nem poça de luz, que o
+  runtime desenha. O vidro sul tinha 62 linhas e o norte 58 (medido pela faixa); no build, a coluna da fachada sul em x = 266 mede 60.
+- **Sem sombra de chão pintada.** As linhas com alfa 34 saíram: 158 células colocadas antes, 0 depois (medido pela faixa). O alfa parcial
+  que resta é vidro de propósito (o revisor contou os níveis das células de paredes e portas, e todos são declarados): painéis (64),
+  reflexos (52 e 70), juntas (170), vidro fino e montantes (200, 210 e 230) e a película (235). As 13 células com alfa 40 são o muro do
+  logotipo, de `signature.py`, e ficaram.
+- **Vãos entre âncoras (`bays`, `anchors`).** O `glass.anchors(P, row, a, b)` devolve onde algo encosta no vidro de uma parede do plano,
+  em px a partir da borda esquerda da face: os dois lados de cada vão de porta e cada parede fina (divisória ou parede do prédio) que
+  encontra a face. Os montantes das fachadas e as juntas das divisórias cortam cada trecho entre duas âncoras, ou entre uma ponta e uma
+  âncora, em vãos iguais de cerca de 96 px nas fachadas (passo de três tiles) e de 64 px nas divisórias, nenhum abaixo de 64 px
+  (`BAY_MIN`), salvo o trecho que já é menor. Há uma junta em cada âncora, inclusive nos batentes das portas, onde o poste e o vão a
+  escondem. O `build.py` passa `anchors=GL.anchors(P, row, a, b)` para `GL.face`, então os vãos alinham com os vãos de porta e com as
+  divisórias: o item N12 está entregue no build real (decisão de integração de 24/11/2026). Já não sobra um pedaço de 32 px na ponta de
+  cada trecho.
+- **Película só nas divisórias.** A película turquesa (alfa 235, tracejada na altura dos olhos) fica no vidro das divisórias e nas portas
+  das salas; as fachadas e a porta de entrada não a têm.
+- **Portas (`door_h`, `door_v`).** Cinco quadros, de 0 (fechada) a 4 (aberta). A viga de cabeceira (a mesma capa de 3 linhas da face) e
+  a soleira neutra (uma linha na cor do rodapé da parede maciça) cruzam o vão em todos os quadros. As folhas são o vidro da própria face,
+  com capa, painel, base e 60 linhas. Aberta, cada folha deixa um batente de 4 px (`REMNANT`) colado ao poste, em vez de sumir. A porta
+  vertical tem tampas de poste alinhadas com a parede e uma soleira de 2 px. Os postes (`post`) são simétricos e acabam nas mesmas 60 linhas.
+- **A capa é a da parede maciça:** realce e duas linhas de tinta no norte, a cor do bisel por cima no sul.
+
+**O piso que se vê pelo vidro.**
+
+- **Fachada sul** (vista de fora: por trás está a sala). O piso sob o vidro é o piso do que está por trás e desce até a última linha da
+  face (`facade_base`); o gramado começa ali, sob o trilho, onde cai a sombra do próprio vidro. O piso de trás é lido por `behind`: em cada
+  trecho de tiles, o tipo de piso da linha logo acima da fachada, atravessando os tapetes (`RUG_KINDS`), porque o desenho de um tapete
+  acaba onde o tapete acaba e o piso sob ele segue até a parede. O gramado não põe tufos nem flores nessas duas linhas de tiles, nas
+  colunas da fachada (`lawn._under_facade`). Medido pela faixa: 0 px de gramado dentro do vidro, e as 138 células de parede mostram o
+  piso do hall, da sala e do lounge. A primeira tentativa, que acabava o piso na borda da célula, deixou uma tira bege de 2 px sob o
+  trilho. (Antes desta rodada era o contrário: o piso sob o vidro sul era o gramado, e o vidro lia como um barranco verde, nas palavras do
+  revisor.)
+- **Fachada norte** (vista de dentro: por trás está o gramado). O gramado acaba na última linha da face (`facade_base`) e o piso da sala
+  corre sob o resto da célula; antes o gramado passava 2 px do trilho e dava uma faixa verde (item N10). Com o vidro de hoje não sobra
+  resto: a face norte acaba no fim da sua célula (base 64), então o gramado ocupa a célula toda e o N10 se cumpre porque a face agora
+  tem 60 linhas e acaba no fim da célula, sem faixa verde sob o trilho (isto é conta do código, não uma medida do build integrado).
+- **Como a base é lida.** `facade_base(south)` desenha a face (`GL.face(3 * 32, facade=True, south=...)`) e devolve a última linha com
+  alfa 200 ou mais (`FACE_OPAQUE`) mais 1; a sombra suave sob o trilho, de alfa menor, não conta. O piso segue o vidro: se o vidro for
+  desenhado mais alto ou mais baixo, a base se move. Com o vidro de hoje a base é 64 no norte (a face acaba no fim da sua célula de dois
+  tiles) e 60 no sul (linhas 0 a 59). Por isso `north_facade_tail()` hoje devolve vazio: ele só vale se a face norte acabar antes do fim da
+  célula, caso em que o gramado ocupa as primeiras `base - 32` linhas da célula, a célula continua sendo de gramado e guarda os tufos, e o
+  `build.py` confere que nenhum enfeite desenha abaixo disso. No sul, a linha de tiles sob o trilho é piso nas linhas 32 a 59 da célula e
+  gramado nas linhas 60 a 63; essas linhas mistas criam tiles novos no piso.
+- **Enfeites.** Em tufos, trevos, flores e pedrinhas, o build da faixa do vidro sul contou 327 para 299 células com enfeite, 179 para 164
+  com brisa e 1.730 para 1.586 células de gramado: todas as 28 células de enfeite perdidas estão nas linhas 48 e 49 sob o vidro sul, e a
+  fachada norte não perdeu nenhuma (medido pela faixa, no `office.tmj`, num build com o `lawn.py` antigo). O revisor da faixa do gramado
+  contou de outro jeito, 407 para 379 colocações na camada `decor`, as mesmas 28 a menos. O build integrado não foi contado de novo.
+- **Máscara do gramado (N21, `fx.py`).** O gramado atrás do vidro norte é visto, não andado, então a máscara tira o bit de gramado dessas
+  duas linhas de tiles, agora só nas colunas do prédio (`P.vb(P.BX0)` a `P.vb(P.BX1)`) e não no mapa todo. Antes, cerca de 52,9 mil px de
+  grama a oeste do canto do prédio ficavam marcados como "não gramado" (medido pelo revisor do gramado: 52.874 px, nas linhas de tiles 6 e 7).
+- **Paleta.** As linhas de trilho misturam piso e gramado e criam tiles novos. O baseline da paleta do escritório passou de 14.340.377 para
+  14.340.856 px (mais 479 px e 0 imagens): é a soma líquida dos pisos das fachadas, da arte da água e dos padrões de piso, que somam,
+  menos o gramado novo, que tira 42.844 px (`tools/README.md`, seção palette).
+
+**O que não está feito.**
+
+- **N08, a entrada, é parcial.** Há viga, batentes, soleira neutra e folhas de 60 linhas sem película, mas a viga é a mesma capa de 3 linhas
+  da fachada, sem profundidade a mais, e o letreiro do K ainda fica uns 5 px acima dela, sem apoio. O letreiro é de `signature.py`. O
+  laboratório de luz e a prévia padrão não desenham a camada das portas, então o vão aparece vazio ali: só a porta fechada mostra a melhora
+  (o revisor). `docs/TODO.md`, T-286.
+- **I39:** a película continua em alfa 235; a auditoria pede 120 a 150, e o nível está declarado em `translucent.py` (T-287).
+- **N07, N11 e N13:** a cor da face da divisória (`palette.py`; o tampo do balcão é um sprite de móvel), o entalhe do canto NE e os furos
+  nos encontros em T (`palette.py` e `build.py`; o `post()` agora acaba nas 60 linhas, o que só tira o desencontro do lado do vidro) e o
+  bisel da parede maciça, branco a oeste e azul a leste (`palette.wall_piece`; os postes de vidro já são simétricos) não foram feitos
+  (T-288, T-289 e T-290).
+- **O tamanho do tileset de paredes** cresceu de 128 para 160 tiles pelas variantes novas de montante (medido pelo revisor num build ainda
+  sem as âncoras; o total do build integrado não foi medido).
+- **A verificação.** `tools/test_glass.py` (22 testes) e, no `test_pixelgrid.py`, `FacadeFloors` e `BuiltFacadeDecor`. O revisor mutou o
+  `glass.py` de dez jeitos e cada mutação derrubou um teste. A docstring de `FacadeFloors` ainda diz que o gramado do sul começa na borda
+  de baixo da célula; o código e os testes começam na base da face.
+
 ## Piscina, fonte e carpas
 
 Tudo é desenhado em um pixel de arte por pixel do mapa (32 por tile), sem o serrilhado da arte 2× do escritório
@@ -253,15 +378,18 @@ principal.
     manchas grandes em poços fundos e bancos claros.
   - **Detalhes:**
     - Pedras do fundo escuras, com borda iluminada.
-    - Sombra da margem e reflexo das plantas abaixo das margens do norte.
-    - Sombra do deck, da ponte, das vitórias-régias e das folhas sobre a água.
-    - Linha d'água quebrada e pontos de sol.
+    - Reflexo das plantas abaixo das margens do norte.
+    - Uma linha de contato igual dos quatro lados, de no máximo 2 px, em tudo que toca a água (margem, plantas, deck, ponte,
+      vitórias-régias), e nenhuma sombra pintada: quem projeta sombra é o runtime (a sombra da margem e a do deck, da ponte e das
+      folhas, que estavam aqui até 23/11/2026, saíram; ver "Arte da água" abaixo).
+    - Linha d'água em arcos, quebrada, e pontos de sol.
   - **A água fica parada nos tiles do piso.** O movimento está na camada `decor`: brilhos de sol que piscam e ondinhas
     que se abrem de vez em quando, em tiles que não dependem do lugar. Só o chafariz continua com 8 quadros.
   - **Peso:**
     - Piso de 1.408 para 544 tiles (PNG de 379 para 193 KB).
     - Tiles animados no piso de 120 para 7.
-    - 83 tiles de brilho e ondinha na camada `decor`.
+    - 83 tiles de brilho e ondinha na camada `decor` (75, e 320 tiles no `Konclui_Decor` inteiro, depois da arte da água de 23/11/2026,
+      medido pelo revisor).
 - **Margem, refeita com `flora.py`:**
   - Grupos de pedras na linha d'água, com capa de musgo e a parte de baixo tingida pela água.
   - Samambaias debruçadas sobre a água.
@@ -293,7 +421,7 @@ principal.
     regras. Com a flora anterior, ele aponta 11 problemas.
 - **Canal:** mesma largura do trecho entre as salas 02 e 03, da fonte ao lago.
 - **Ponte:** no meio do trecho entre o corredor e o lago, ligada por uma passarela de carvalho.
-- **Deck do K oficial** com espessura e sombra.
+- **Deck do K oficial** com tábuas de 6 px, borda e uma face frontal de 5 px na borda sul (e a linha de contato com a água, sem sombra).
 - **Fonte da Koru, refeita em 20/10/2026** (dono: "Como podemos melhorar essa Koru aqui? Na sua aparência, elementos
   do fundo, shaders, água caindo"). Toda em `fountain.py`; o `pool.py` só a chama.
   - **Nicho na fachada:** calcário quente, cornija fina, pilastras com capitel e base, fundo azul-ardósia que destaca o
@@ -319,14 +447,15 @@ principal.
     - Jato que alarga de 3 a 8 px, um pixel por vez, com traços de luz descendo 4 px por quadro. O período é de 16 px,
       então o ciclo de 8 quadros fecha.
     - Coroa de espuma que sobe e desce com o ciclo, gotas de três tamanhos e seis anéis de 1 px que se afastam e
-      esmaecem.
-    - Tigela de água agitada com halo, e cauda de bolhas canal abaixo.
+      esmaecem até sumir (círculos, desde 23/11/2026).
+    - Tigela de água agitada com halo e bolhas que sobem perto do pouso. A cauda de bolhas canal abaixo saiu em 23/11/2026.
   - **Contrato com o shader da água:** o `fx.py` repinta toda água aberta que o piso mostra igual em todos os quadros.
     - Tudo que a fonte anima fica dentro de `fountain.stirred`, e ela só desenha ali.
     - O `test_fountain.py` reprova se um pixel animado sair da máscara ou se o nicho tocar a moldura da parede. Os dois
       casos foram provocados de propósito, e o teste falhou nos dois.
-  - **Sombra na água:** a sombra do rodapé e do consolo entra em `shadow`, como a do deck, e escurece a água parada
-    debaixo das plantas.
+  - **Sombra na água:** até 23/11/2026 a sombra do rodapé e do consolo entrava em `shadow`, como a do deck, e escurecia a água parada
+    debaixo das plantas. Saiu: o runtime projeta as sombras, `fountain.statue()` devolve só a camada e a ponta do bico, e o que toca a
+    água leva a linha de contato de `pool.py`.
   - **Peso:** 8 tiles animados no piso (eram 7) e 576 tiles de piso (eram 544).
     - Draw calls e vértices iguais aos do `pool.py` anterior no mesmo build: `reviews/perf/koru-fountain-12h.json`
       contra `koru-fountain-base-12h.json`.
@@ -341,7 +470,8 @@ principal.
   - **Aprendizados:**
     - Linhas de "penas" partindo dos entalhes da silhueta viraram hachurado. Foram descartadas.
     - Um anel em elipse achatada 2:1, com o limiar na distância, sai com 1 px em cima e 2,6 px nas laterais. A
-      espessura tem de ser dividida pelo gradiente da distância.
+      espessura tem de ser dividida pelo gradiente da distância. (Hoje os anéis são círculos, `SQUASH` = 1,0, mas a conta com o
+      gradiente continua no código.)
     - Um xadrez `(y + c + k) % 2` no pé do jato é pontilhado e ainda pisca. Foi tirado.
     - A sombra desenhada por cima da água, na camada da estátua, escurecia só a parte de cada pedra que está na água.
       Isso só apareceu no motor; no composto não se via.
@@ -350,9 +480,63 @@ principal.
       esperou 3 valores que o módulo ainda não devolvia.
     - O `build.py` põe `hq-office/` no começo do `sys.path` ao ser importado. Para testar uma cópia de `pool.py`,
       importe a cópia antes; o cache de módulos a mantém.
+- **Arte da água, rodada de 23 e 24/11/2026** (itens `I05`, `I14`, `I17`, `I32`, `I33`, `N16`, `N17`, `N53` e `N54` da auditoria;
+  `pool.py` e `fountain.py`). A regra de base: nada leva sombra pintada de um lado só, porque o piso de água é um tile que o runtime não
+  escurece e o runtime projeta as sombras; o que toca a água leva uma linha de contato.
+  - **Linha de contato (I05).** A faixa escura de 7 px sob o deck, as pedras e os juncos saiu. A água a 1 e a 2 px de qualquer coisa que a
+    toca (`contact`: margem, plantas, deck, ponte, vitórias-régias, estátua) fica 0,9 e 0,5 degrau da rampa de água mais escura
+    (`CONTACT`), igual dos quatro lados. Medido pela faixa: a diferença entre o sul e o norte sob o deck, de 1,16 degrau com o `pool.py`
+    antigo, ficou abaixo de 0,35.
+  - **Ponte e deck (I17, N16).** A ponte usa as tábuas da própria passarela (`signature.tile_pattern('boardwalk')`, passo de 6 px), fica
+    levantada 5 px (`FACE`) e tem uma face frontal de 5 px só na borda sul, sem barras de tinta e com uma quebra escura em cada encontro
+    com a margem. No deck do K as tábuas correm ao longo de cada braço, no mesmo passo. O pé do K continua cortado pela taça do braço de
+    cima: é a geometria do SVG oficial da marca, então mudar isso é decisão de marca, e não foi feita.
+  - **Margem (I14, I33).** A margem fica 2 px sob o vidro das salas de equipe, nos dois lados, e a faixa branca ao lado do vidro saiu
+    (`in_slot`). A linha d'água ganhou arcos de cerca de uma dúzia de px e as margens ficaram irregulares, com plantas e pedras mais
+    densas. Os anéis de pedra facetados e os degraus da boca do canal, de `flora.py`, não foram mexidos. O revisor achou dois efeitos
+    que a faixa não relatou: há menos pedras cinzentas ao longo do canal e do lago (mais capas de musgo), e a margem sul do lago avança 4
+    linhas (y 1184 a 1187) sobre a praça. Ver `docs/TODO.md`, T-296.
+  - **Bacia da fonte (N17).** A fonte tem uma bacia redonda de pedra sobre o plano do chão (`fountain.BASIN`): raio externo de 40 px,
+    aro de 5 px no alto, 8 px de altura e a água 3 px abaixo do alto do aro, cortada reta contra a fachada. A fachada ganhou um soco de 5
+    linhas (`PLINTH`), com remate, e o jato cai dentro da bacia. As plantas do pé foram para os lados e a faixa escura sob o consolo saiu.
+  - **Anéis da fonte (I32, N54).** O chão é 1:1, então o respingo e os anéis são círculos (`SQUASH` foi de 2,0 para 1,0). Os seis anéis
+    nascem com raio 4 e somem por completo em 4 + 6 × 2,7, onde nascem de novo, então o quadro 8 é o quadro 0 (a diferença de fechamento
+    ficou abaixo de 2% do passo médio, medido pela faixa). O revisor mediu o movimento visível da fonte em cerca da metade: 504 px mudam
+    entre os quadros 0 e 2 na cabeça da fonte, contra 1.021 antes. Se ficar quieta demais, `docs/TODO.md`, T-297.
+  - **Brilhos e ondinhas (I32, N53).** São 16 brilhos (quatro desenhos: a faísca de 2 × 2, os traços de 3 × 2 e de 4 × 2 e um sinal de
+    mais) e 4 ondinhas (círculos de raio 3, 5, 7, 10 e 12 px em volta de um pixel central), nunca menores que 2 × 2 quando claros, nos tons
+    2 a 3 degraus acima do nível local da água. O ciclo é de 32 quadros de 220 ms (7,04 s) e o quadro 0 é vazio, que é o que se vê sem
+    animações. Cada tile tem forma, lugar e quadro de início próprios, e dois tiles não piscam a mesma imagem no mesmo quadro. O tileset
+    `Konclui_Decor` foi de 160 para 320 tiles, porque cada brilho e cada ondinha têm tons próprios por nível de água (medido pelo revisor:
+    320 tiles, 75 de brilho e ondinha e 131 de superfície).
+  - **Paleta e colisão.** A arte da água soma 4.387 px fora da paleta e 0 imagens (medido pelo revisor: 2.834 no tileset do piso e 1.553 no
+    `Konclui_Decor`). A faixa não alinhou a arte à paleta, porque isso é decisão visual: os tons da água, do carvalho e do calcário ficam a
+    0,01 a 0,13 OKLab da entrada mais próxima, e alinhar o calcário o deixa cor de areia. A colisão não mudou: 235 tiles bloqueados, o
+    mesmo sha1 (medido pela faixa).
+  - **Camadas no runtime nativo (N51, N52).** Os brilhos e as ondinhas da camada `decor` ficavam sob o quad opaco do shader da água, e 78
+    de 80 colocações não apareciam (a auditoria). Hoje o runtime desenha a camada `decor` acima da água de dia e abaixo dela de noite
+    (`waterLayers.ts`, `SceneEffects.ts`): os dois têm a mesma profundidade e só muda o lugar na lista de exibição. A virada está no
+    `sunny` do próprio shader (`uSun` acima de 0,3, o maior entre sol e nuvens), com uma folga de 0,02 para cada lado, para um sol parado
+    nesse nível não fazer a ordem piscar; à noite os brilhos pintados somem, para não dobrar os do shader. **Isso só foi testado por teste
+    de unidade**: ninguém viu no jogo, e o laboratório de luz não desenha água. O que olhar: `docs/TODO.md`, T-267.
+  - **Descartados.** `N20` (corte horizontal na borda dos tiles): nem o `pool.py` antigo nem o novo têm; a maior sequência de salto de 2 ou
+    mais degraus de água numa linha de borda é de 2 px no antigo e de 1 px no novo, contra 26 px dentro dos tiles do antigo (medido pela
+    faixa). `N14` (a parede de painéis de sebe) não é de `fountain.py`.
 - **Carpas** ([`pool/koi/README.md`](pool/koi/README.md)): navegam pelo campo de distância, formam grupos soltos e
   nadam em impulso e deslize. Disputam a comida, vêm até quem para na margem e somem sob o deck. São duas sobreposições,
   lago e canal.
+- **Carpas em pixels (N57, 23/11/2026).** `simulation.mjs` dá a cada carpa 10 a 20 px de comprimento (0,5 a 0,95 m a 21 px por metro; a
+  maioria de 12 a 17), contra 18 a 44 px antes; os sorteios mantêm a ordem, então a mesma semente dá os mesmos padrões e papéis.
+  `draw.mjs` rasteriza cada carpa numa grade de 48 × 48 e a escreve com `fillRect` de 1 px: corpo, nadadeira de tom mais claro, manchas
+  chapadas, 1 px de tinta azul-escura em volta e olhos só quando a cabeça comporta dois, sem sombra pintada, sem alfa e sem serrilhado. No
+  fundo (profundidade acima de 0,6) a carpa usa uma paleta mais fria, no lugar do véu translúcido, e a comida são quadrados de 3 × 3. Os
+  círculos de comida seguem traçados com alfa, como efeito de água. Medido pela faixa: 240 s de simulação nas máscaras reais do lago e do
+  canal deram 0 amostras fora de `swim.png` e nenhum salto (máximo de 1,0 px por 0,1 s), e a pintura custou p50 0,2 ms e p95 0,4 ms (0,1 e
+  0,3 antes) no Chrome sem GPU. O `pool.py` ainda grava 8 carpas no lago e 3 no canal (`koi=11`), e a 10 a 20 px o lago fica ralo. A
+  auditoria dizia que o shader da água dá a sombra das carpas, mas elas são um iframe sobre o canvas e o shader não desenha sombra de
+  peixe: hoje elas não têm sombra, e dá-la pede mudança no runtime. O revisor notou que as de 10 a 12 px ficam sem olhos e que a paleta
+  funda deixa a carpa de ouro cor de oliva (estético). Teste: `size-and-pixels.test.mjs`, 4 testes (`cd hq-office/pool/koi && node --test`).
+  Pendências: `docs/TODO.md`, T-298.
 - **Som ambiente:** água perto da piscina e cafeteria no café, com botão para ligar e desligar.
 
 ## Folhas trazidas pelo dono
@@ -533,26 +717,59 @@ Desenhado em `lawn.py`, um pixel de arte por pixel do mapa, como a piscina. O ca
 (`NewStyle_Grass_Green`, um verde-menta chapado), que era o piso de fora.
 
 - **Duas camadas, poucos tiles:**
-  - **Piso:** textura sem emenda de 12 × 12 tiles (384 px). Leva um verde de base, marcas de lâmina (ponta clara
-    sobre raiz escura, uma por célula de 6 px, sem aglomerar) e manchas de sol e sombra com borda quebrada em
-    traços de lâmina.
+  - **Piso:** o chão do mapa inteiro, 86 × 56 tiles (2.752 × 1.792 px), sem período. Até 23/11/2026 era um carimbo sem emenda de
+    12 × 12 tiles (384 px), e as manchas escuras voltavam a cada 384 px. Hoje o chão sai de uma biblioteca pequena de tiles de 32 px que
+    se encaixam: a borda de cada tile depende só dos tons dos seus quatro cantos (mais sombra, base ou mais sol), tirados de um campo
+    suave e não periódico sobre o mapa, então vizinhos têm a mesma borda e não há emenda. Dentro do tile o tom é interpolado e quebrado em
+    traços de lâmina, e as marcas de lâmina (ponta clara sobre raiz escura, uma por célula de 6 px, sem aglomerar) ficam dentro do tile.
+    A variante de cada tile sai de um hash da célula e nunca é igual à da esquerda nem à de cima, então nenhum desenho volta a uma
+    distância fixa. As manchas de sol e de sombra ficaram em 5,4% e 2,6% dos pixels (eram 12% de sombra no carimbo). `lawn.texture()`
+    devolve o mapa todo, `lawn.ground_tiles()` conta os tiles diferentes, e `PERIOD` saiu. O `build.py` usa a textura a partir da origem
+    (`tx % n`, com `n` = 86, devolve a própria célula).
   - **Camada `decor`, logo acima do piso (a mesma dos brilhos da piscina):** tufos, trevos, flores e pedrinhas. Cada um é um tile transparente que
     não depende de onde está, então poucos tiles cobrem o gramado inteiro sem repetir o desenho. As flores se
     juntam em alguns prados.
 - **Paleta:** 7 verdes com variação de matiz (sombras mais frias, luzes mais quentes). Ficam entre os verdes das
   árvores do catálogo, um pouco mais quentes que as copas, para as árvores se destacarem. As flores usam as cores
   da margem do lago.
-- **Brisa:** os tufos se inclinam quando uma frente de vento atravessa o gramado na diagonal.
-  - Ciclo de 32 quadros de 220 ms, o mesmo quadro da água, então o mapa não redesenha mais vezes.
-  - Ida até 2 px, volta com um pequeno recuo, chegada com ±1 quadro de folga por tufo.
+- **Brisa:** os tufos se inclinam numa rajada só, a cada 64 quadros de 220 ms (14,08 s; o quadro é o mesmo da água, então o mapa não
+  redesenha mais vezes). (Este texto dizia 32 quadros e folga de ±1 quadro por tufo; o código já era de 64 quadros e de rajadas juntas,
+  desde 19/10/2026.)
+  - Todo tufo troca de imagem nos mesmos 5 quadros da rajada (`GUST_TICKS`), a partir do quadro 8 do ciclo: o motor só redesenha quando
+    um tile animado visível troca de imagem, então uma sala parada que vê o gramado pelo vidro redesenha 5 vezes por ciclo (dono,
+    19/10/2026: "Rajadas juntas e espaçadas").
+  - As formas da rajada (`GUST_SHAPES`) diferem só no quanto cada passo inclina, de 0 a 2 px, e não em quando o tufo troca de imagem.
+    Um teste exige no máximo 5 quadros de troca na união dos tufos e ao menos 5 padrões diferentes.
   - O primeiro quadro é a pose parada, que é o que vê quem desliga "Disable map animations".
 - **Acabamento:**
-  - A grama passa 1 a 3 px por cima das pedras do caminho de entrada.
+  - A grama passa 1 a 3 px por cima das pedras do caminho de entrada, no tom do gramado ao lado (uma mancha de sombra não ganha mais
+    franja verde de base).
   - O montinho ao pé das árvores do catálogo (aro e contorno, pintados para a grama clara) usa as cores do gramado
     em todas as 60 variantes de árvore desta coleção.
 - **Peso medido na entrega do gramado:** piso de 1.216 para 1.408 tiles (PNG de 338 para 379 KB) e a camada de enfeites
   com 160 tiles (PNG de 8,5 KB). São 277 tiles de enfeite em 1.498 de gramado, 157 deles com brisa. A camada ocupa
   menos de 10% das células, então fica no caminho de CPU do motor, que só desenha o que está na tela.
+- **Rodada de 23 e 24/11/2026** (itens `I02`, `N29` e `I35`, de `lawn.py`; `I01`, `N10` e `N21` são do `build.py` e do `fx.py`, na seção
+  Vidros, portas e pisos sob as fachadas):
+  - **Sem repetição (I02).** Medido pela faixa e confirmado pelo revisor: 102 tiles diferentes no chão do mapa. A autocorrelação do chão
+    em deslocamentos de 192 px ou mais tem pico de 0,047 a 1:1 e de 0,081 a 0,5x, contra 0,86 a 384 px no carimbo (a faixa); o revisor mediu
+    deslocamentos de 6 a 96 px e a queda é contínua, de 0,19 a 0,08, sem pico em 32 px. Menos de 5% dos blocos de 2 × 2 tiles se repetem
+    em qualquer deslocamento até 40 tiles (a faixa). Os ids de tile diferentes na camada do piso foram de 491 para 450 e a folha do piso de
+    1024 × 576 para 1024 × 512 px, ou 512 tiles (a faixa escreveu 544, e o revisor corrigiu), sem tile novo.
+  - **Flores (N29).** Cada touceira tem 5 a 7 cabeças de 2 a 3 px, sem buraco no meio, cada uma num talo de 3 px com uma folha e algumas
+    lâminas no pé. De perto leem como flores com talo, onde as antigas eram faíscas soltas (o revisor). A moita de rosas, de `flora.py`, não
+    foi mexida.
+  - **Tufos e pedrinhas (I35).** Perderam a linha escura de contato: ela é agora um passo mais escura que a grama, sem pixels `deep`, e as
+    pedrinhas têm dois tons iguais dos quatro lados.
+  - **Sob o vidro sul não nasce nada** (`lawn._under_facade`). Das 32 células de enfeite que a auditoria contou nas linhas 48 e 49, 28
+    saíram; as 4 que ficam estão fora das colunas do vidro (o revisor).
+  - **Enfeites no build:** ver a contagem na seção Vidros, portas e pisos sob as fachadas (299 células com enfeite e 164 com brisa, na
+    faixa do vidro sul; o build integrado não foi contado de novo).
+  - **Testes:** `tools/test_lawn.py`, 20 testes, cerca de 10 s, sem build; `LAWN_FILE=<cópia do módulo>` testa outro `lawn.py` (11 dos 20
+    falham no `lawn.py` antigo). O teste de autocorrelação só olha deslocamentos acima de 256 px, então não pegaria um reticulado de 32 px
+    (o revisor mediu e não há pico; `docs/TODO.md`, T-274).
+  - **Sem imagem iluminada:** o laboratório de luz mostra só o interior do mapa, então não há par iluminado do gramado (o gramado não tem
+    luz pintada, então o risco é baixo, disse o revisor).
 - **Pacotes Mana Seed (estação, amostras):** ficaram só como referência de técnica (base, tufos, flores, manchas). São
   arte de 16 px, que aqui precisaria de 2× e voltaria o serrilhado que a sede evita. A paleta oliva e terrosa
   também briga com os verdes do catálogo e do design system. A amostra não traz grama lisa em variantes
@@ -734,6 +951,43 @@ paleta da arte; os efeitos se verificam pelos testes de `theme/fx/`, pelo `perf.
 **Personagens e roupas:** as 3.145 peças coletadas não foram importadas. São quadros de 32×64 com outra anatomia, e o
 Woka usa 32×32 em 3 colunas × 4 linhas. Converter exigiria uma família nova de avatar, estimada em 1 a 3 semanas, e
 uma decisão de licença antes de publicar. A pesquisa está em `.scratch/avatar-research/`.
+
+## Reações (aplauso e confete)
+
+`reactions/index.html` é a página que o `social.mjs` abre sobre o avatar (`?kind=palmas` ou `?kind=confete`), numa caixa de 96 px, e
+remove 1.800 ms depois. É desenhada como o resto do mapa: só pixels inteiros. Rodada de 23 e 24/11/2026 (itens `N55` e `N56` da
+auditoria).
+
+- **Sem clarão antes do atraso (N55).** A página antiga tinha `fill-mode` só `forwards` e opacidade-base 1, e cada palma tem atraso de
+  `i * 70` ms: as palmas 2 a 5 ficavam em plena opacidade na origem, de 70 a 280 ms, antes de voar. Com as animações pausadas e
+  percorridas quadro a quadro no Chrome, a página antiga tinha em t = 0 304 px visíveis, 136 deles de alfa parcial (medido pela faixa).
+  Hoje `.p` tem opacidade-base 0, toda animação preenche `both` e a de opacidade (`fade`) começa e termina em 0: em t = 0 há 0 px
+  visíveis e a palma 1 aparece exatamente aos 70 ms. Vale também sob `prefers-reduced-motion`.
+- **Arte (N56).** A palma é um sprite de 16 × 16 px (duas mãos juntas), desenhado no código da página num canvas e usado como imagem de
+  fundo; sobe 54 px em 27 passos de 2 px (`steps(27, end)`), sem escala nem rotação. O confete são quadrados de 4 × 4 px, sem rotação:
+  um conjunto de quadros `burst` segura cada posição (`steps(1, end)`) e `round()` a prende em unidades de 2 px, então o confete
+  desacelera sempre em pixels inteiros. O desvanecimento é opacidade cheia por 40% do tempo e depois uma reta até 0. A posição-base é em
+  pixels inteiros (era `top: 70%`, 67,2 px) e as palmas se centram com 12 px de espaço (o grupo antigo pendia 9 px para a esquerda). Com
+  movimento reduzido a reação ficava invisível (duração de 0,01 s, terminando em opacidade 0); agora só aparece e some, com as palmas no
+  lugar e o confete onde pousaria.
+- **Medido pela faixa** (Chrome por Playwright, animações pausadas e percorridas): em 1.290 amostras de palma e 6.708 de confete,
+  `getBoundingClientRect` deu 0 posições não inteiras; a página antiga deu 1.290 de 1.290 nas palmas. A vida mais longa é de 1,68 s (a
+  palma 5, com 4 × 70 ms de atraso e 1,4 s de duração), menos que os 1.800 ms do `social.mjs`.
+- **Teste.** `tools/test_reactions_page.py` lê a folha de estilo sem navegador: todo elemento animado começa invisível, toda animação com
+  atraso preenche `both`, a opacidade começa e termina em 0 (também sob movimento reduzido), o movimento é em pixels inteiros (sem
+  rotação, sem escala fracionária, sem px fracionário, e os quadros em `steps(...)` ou presos por `round()`) e a vida mais longa é menor
+  que a espera do `social.mjs`. O verificador é testado contra a folha antiga (`OLD_STYLE`, que ele reprova com 12 problemas) e contra
+  seis variantes de uma linha da nova, cada uma reprovada pela checagem que a nomeia. Foram 15 testes, e 16 com `KONCLUI_DIST` (a página
+  construída é igual à fonte byte a byte). Os testes das variantes dependem do texto da página como está: editar a página pede atualizar
+  as variantes.
+- **O que não está feito ou visto.**
+  - A página precisa de CSS `round()` e da propriedade individual `translate`. O revisor listou Chrome 125, Safari 15.4 e Firefox 118 como
+    pisos (a lista dele, não conferida aqui). Num navegador mais velho o confete ignora o `translate` dos quadros e fica na origem, e a
+    página não tem recuo nem aviso. A decisão do navegador mínimo é de `docs/TODO.md`, T-299.
+  - Com movimento reduzido, as cinco palmas ficam empilhadas no mesmo ponto e só aparecem uma de cada vez (o `--x` não é usado ali).
+  - Ninguém viu no jogo: a faixa e o revisor olharam quadros capturados e a folha de estilo. O que olhar: apertar "Aplaudir" e "Confete"
+    (nada na origem antes de cada palma; tudo sumido cerca de 1,7 s depois) e ligar o movimento reduzido.
+  - A palma é um desenho da faixa, e não uma arte do dono; para trocar, edite o array `CLAP`.
 
 ## Som ambiente e sino da venda
 
@@ -1051,6 +1305,25 @@ bloqueados):
     navegador do QA agora fala português ("Compartilhar"); o resto dela passou, inclusive o botão do som.
   - `tests/theme_preview.py --check`: uma falha de contraste no ícone do chat do `theme.css`, que esta mudança não toca.
 
+**Arte, onda 1 da auditoria (relevo, vidro, gramado, água, pisos e reações), verificada em 23 e 24/11/2026.** Cada faixa construiu um
+snapshot próprio do `hq-office/build.py`, com os arquivos dela e os do `build.py` de então, e cada revisor refez o snapshot. Nenhum build
+único da árvore integrada foi medido para este texto, então os números abaixo são das faixas e dos revisores, e não do build de hoje.
+- **Veredictos dos revisores independentes:** aceitos o relevo, o vidro, o gramado, os pisos e as reações. A faixa do interruptor e a da
+  água foram reprovadas só pelo baseline da paleta (o integrador o moveu para 14.340.856 px), e a da luz por duas regressões de sombra de
+  lâmpada à noite, em reparo (`docs/TODO.md`, T-268).
+- **`verify`:** os snapshots do relevo, do vidro, do gramado, da água, dos pisos, das reações e da luz terminaram em
+  `verify: 14 pass, 0 fail, 1 reported: fit to publish` (o reportado é `office.palette`); os da faixa do interruptor e das fachadas, que
+  roda também as checagens do contrato, em 15 ou 16 pass e 0 fail. As faixas da água, dos pisos (com as trocas do plano) e das fachadas só
+  passaram com o baseline da paleta levantado no próprio snapshot.
+- **Determinismo:** os revisores do relevo, do vidro, do gramado e dos pisos refizeram o snapshot e acharam todos os arquivos iguais byte
+  a byte aos da faixa. O da água achou a prévia igual pixel a pixel e o mesmo sha1 de `pool.build` e `water_decor` em dois processos; o
+  das reações não construiu duas vezes (os arquivos copiados são iguais à fonte).
+- **Diferença de imagem no mapa, por faixa (revisores):** o vidro mudou 45.530 px, todos em faixas de vidro; o gramado, 616.918 px (12,5%
+  da prévia), 564.021 deles dentro da máscara do gramado e 52.874 na faixa do N21; a água, 115.281 px, todos nos tiles x 36 a 50, y 7 a 37; as
+  reações e o relevo não mudam a prévia (o relevo muda só o `fx/normal.png`, 530.974 px).
+- **Falta ver no jogo:** os brilhos e as ondinhas da água, de dia e de noite (T-267), os anéis da fonte (T-297), a página das reações, as
+  carpas, a entrada com as portas (T-286) e o gramado iluminado. O laboratório de luz não desenha água, vidro nem a camada das portas.
+
 ## Aprendizados
 
 | Problema | Causa | Solução |
@@ -1067,7 +1340,7 @@ bloqueados):
 | Lounge somando 4 chamadas de desenho por quadro (20/10/2026) | Cada objeto sobre um móvel vira uma textura (e uma cópia "sobre móvel" por profundidade); o motor desenha todos os objetos em todo quadro | Peças vestidas: o móvel leva o que está sobre ele na própria imagem; medir contra uma base construída do mesmo código sem a mudança, porque a base muda com as outras frentes |
 | Mapa preto possível em GPUs com menos de 233 vetores de uniform (20/10/2026, plano `plans/decor/001`) | O filtro da câmera declarava 233 vetores; o teste só compilava cada shader, e um estouro só aparece ao ligar | O teste compila e liga com um vertex shader de prova; rastro com 32 passos de 9 px; tons emissivos numa tabela de 4: 197 vetores, guardados em até 212 por `shaders.test.mjs` |
 | Configurações vazias no navegador do dono (20/10/2026) | O HUD achava os itens do menu do WA pelo rótulo em inglês; num navegador em português o WA fala português, e o QA rodava em inglês | Itens pelo rótulo em inglês ou português (`WA_LABELS`) e o `qa_hud` com o navegador em pt-BR |
-| Vidro da fachada sul opaco (20/10/2026) | Só a fachada norte tinha gramado sob o vidro; na sul, o piso claro do saguão tingido virava uma faixa azul lisa | As duas fachadas de vidro levam o gramado por baixo; a porta continua com o piso do saguão |
+| Vidro da fachada sul opaco (20/10/2026) | Só a fachada norte tinha gramado sob o vidro; na sul, o piso claro do saguão tingido virava uma faixa azul lisa | As duas fachadas de vidro levam o gramado por baixo; a porta continua com o piso do saguão. Superado em 24/11/2026: a fachada sul passou a mostrar o piso da sala por trás (seção Vidros, portas e pisos sob as fachadas) |
 | Câmera crescendo sozinha ao andar (20/10/2026) | A linha de câmeras do WA tem tamanho próprio e ignora o arrasto da grade | O arrasto que encolhe vira limite da linha até a conversa acabar |
 | Computador "caindo" da mesa | Alinhava o recorte; o catálogo posiciona pela origem e trata objetos apoiados como filhos | `on()` com base na faixa do tampo, calibrada no layout real |
 | Item apoiado por baixo do móvel | O motor só ordena pela linha de base + `depthOffset` | Variante "sobre móvel" com a linha logo acima da do pai |
@@ -1133,6 +1406,9 @@ bloqueados):
 | O cartão do sino cobria os avisos de área do WA (20/10/2026) | O WA empilha "Recepção" e "Sino da venda" (`.notification-playing`) no mesmo canto, justamente quando alguém chega para tocar | O cartão fica logo abaixo dos avisos visíveis (opacidade acima de 0,1) e sobe quando eles saem; o `qa_sound` mede sobreposição 0 |
 | Uma "venda" poderia ser forjada por qualquer visitante | `WA.event.broadcast('venda-nova')` está aberto a todo jogador | Só vale o evento sem `senderId` (Room API). O `qa_sound` prova as duas rotas de forja (broadcast de outro visitante e `senderId` na borda do iframe) e a venda sem remetente |
 | Em teste, a venda sem remetente precisa da Room API, e o WA local não tem chave | A Room API exige a autorização da admin-api | O `qa_sound` põe o evento na borda da API do iframe (`{type: 'receiveEvent', data}` vindo de `window.parent`), o mesmo caminho que o WA usa ao repassar um evento do servidor |
+| A faixa do vidro disse que o build não mudava até o `build.py` passar as âncoras; mudava (24/11/2026) | `glass.face()` passou a cortar os trechos em vãos iguais mesmo sem âncoras, então todo montante do build padrão se moveu: o passo da fachada foi de 96 para 94 a 101 px (medido pelo revisor, com o `build.py` antigo) | Uma mudança num módulo que o build chama com um argumento opcional muda o build mesmo sem o argumento: medir o build inteiro contra o anterior, e não só o módulo. O `build.py` passa `anchors=` desde 24/11/2026 |
+| Uma linha de tiles com piso e gramado subiu o baseline da paleta (23/11/2026) | O trilho de uma fachada cria tiles que misturam as duas coisas (hoje só o da sul: a face norte acaba no fim da célula), e o baseline da paleta do escritório é uma catraca: tile novo fora da paleta conta | O baseline foi movido uma vez, para 14.340.856 px (mais 479 px, 0 imagens, a soma líquida das mudanças da onda 1; `tools/README.md`, seção palette), e não por faixa |
+| Um build feito em outra máquina reprovou uma checagem que comparava bytes (23/11/2026) | O PNG que uma máquina Linux escreve tem outros bytes que o do macOS, com os mesmos pixels | Comparar pixels decodificados quando a máquina difere; comparar bytes só entre dois builds da mesma máquina (`verify.py --rebuild`). Os pontos que ainda comparam bytes entre máquinas: `docs/TODO.md`, T-275 |
 
 ## Limites
 
@@ -1143,7 +1419,12 @@ bloqueados):
   não foi compilado nem validado no navegador, e não representa um corte para fora do gateway. A paridade e os hashes
   estão em [native-wall-seat-parity.md](../docs/performance/native-wall-seat-parity.md).
 - **Carpas e reações:** são páginas por cima do canvas; os efeitos só escurecem as carpas à noite (filtro de brilho no
-  iframe) e não as alcançam com refração nem luz.
+  iframe) e não as alcançam com refração nem luz. Por isso as carpas não têm sombra desde 23/11/2026: o shader da água não desenha
+  sombra de peixe.
+- **O que a onda 1 da arte deixou aberto** (`docs/TODO.md`): a entrada ainda tem o letreiro do K sem apoio e a película do vidro em alfa
+  235; três itens de parede (N07, N11, N13) e as transições de piso (N19) não foram feitos; o granilite sem repetição existe e não está
+  ligado; as peças redondas sem etiqueta macia seguem no bisel; e os brilhos, as ondinhas, os anéis da fonte, a página das reações e as
+  carpas só passaram por teste e por quadros parados, sem ninguém ver no jogo.
 - **Quadro branco:** abre o Excalidraw externo, só quando alguém aperta Espaço.
 - **Jogos:** o Escape fica dentro do jogo e não fecha a janela; para voltar a andar, feche pelo X. Os jogos são os do
   campus, compartilhados com o escritório principal.
