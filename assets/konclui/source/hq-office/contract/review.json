@@ -1,5 +1,6 @@
 {
-  "schema": 1,
+  "schema": 2,
+  "identity": "a picture is identified by the pixel hash: the sha256 of 'WxH:' and the RGBA bytes of the decoded picture (bake.pixels_sha256); the bytes of the PNG file are never hashed (they differ between hosts for the same pixels)",
   "reviewer": "audit-2026-11-22",
   "repairs": [
     {
@@ -32,7 +33,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c09eb9f21497d670295536173481fab49c43b0b83546725afb3439fe56c7fd20",
+      "pixel_hash": "5468f04fe064fd0bb6fdc1f07fa073dad7f8ef9d3cdbc4b51cd9d13d6912e4ca",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -55,7 +56,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "59a4377e90f0a1bc2b7aec1394f358a67db229b8bfdd2943b38820c094f04969",
+      "pixel_hash": "fac4b75a62c4e53d7c324e4443a58124d7595d5726164adab385b3852599ba5b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -80,7 +81,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "21b1417342454e9b8bb90d50aeac0dad67027dbac40a6763ecba678c2eec67fd",
+      "pixel_hash": "6cf685ca85253c4b172bd53d48de7e190caa89c66f4a9ea2347337b1ab119a34",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -105,7 +106,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "14ad87a54c58041d3aad29c1a05e3b45e4f97f56ad5c071d40d49b92be7027be",
+      "pixel_hash": "20311afa3923f8f190fa0f82552e513e21e39b41fbdf685b66cd9da7bb0ae163",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -130,7 +131,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "1bbf27923cd5f18258cbbae95f9f6b8d4b8904306b6791a113e377efcde55d0a",
+      "pixel_hash": "743016b20fc4e47ec369d659285b77edad1992b9f75a654822487661949e6756",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -154,7 +155,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "223c7ec60c3188a93fdbe6983ac874cbf18d3194603ca38a40e30a56197ab705",
+      "pixel_hash": "3e7eb245f973a49da50a5283651e5f5dc4720d180f601af9feab824321d33677",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -177,7 +178,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "a6e2bb3f85f299852339bb451d8b3bc4489a20f837c636df015b50a346e0ae7a",
+      "pixel_hash": "3a5f03798a62c0c070cd63ec704fd3ef342e75189610fef905f1b45bb0f15295",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -200,7 +201,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "19058d29fb5e4c652fd3d4bb9eaf64c646d87814212470225231e0f282122904",
+      "pixel_hash": "67724050ab7ac3fa24e0d470492fe699fb4cd43b83480bf7e5c2c7c11e02e00c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -223,7 +224,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "a48e632b1971081136bebb4a6508ed9a36c0762d28f8c4a7d277af55c74af85d",
+      "pixel_hash": "441c33954cd881ffcb2ac9518da46ce4f3e8b9d59dfd4a161fb78714ba2718ff",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -246,7 +247,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "4865b519bd8634659189d061e07156e42f28edb4e23010f62090b78e2b7bd77a",
+      "pixel_hash": "f93df299a45dd24ed59f2babfb5a9b16805bfe055ead1f95296f3f2197df6b0b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -270,7 +271,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "522baf18ecf05de702744cd4f3b8f9508f5f6389ac1cf5a951de58bfdabd9a31",
+      "pixel_hash": "55c0390f6466ce1197ceb2ed2c9e2b6a02aa0882bd6bb8fd936cf1df5c2e441b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -293,7 +294,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "b4369619e04c712922831e74ed188ded4196806c8087a9577c3eac727877909f",
+      "pixel_hash": "570588eaf1edf5add1b3af426330edac17261c61e6fbbfc2e862926bdec4e3f3",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -315,7 +316,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "e687972f740f84d57107a31d4442ca5573b4dea95fd52751445cc699aa17de54",
+      "pixel_hash": "b1be9b2f675b1bf9f1094ee58f8ae87e857b23fd36df87941f99299732b0fd5c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -337,7 +338,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "361c035823b028ccde225898849b4742134b7f515ac10887c180d4e4c387a164",
+      "pixel_hash": "b0bc9a4103e26a7bb851da7c16e6a3161b6583bbe6a575417d8b3b5714d7396d",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -361,7 +362,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "1e56d85a058efcf94d037d22953e451d2678c1b6d4bdaee50c5154912c680977",
+      "pixel_hash": "a372576e2e8228973d9b38b384eaf1ed1233530bad51c59f83df4f2bcb778f27",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -384,7 +385,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "415f3e873ef0dfd455d3b2a9988e2aa245119b12598f1822b2170c4894c35fdc",
+      "pixel_hash": "8248687fc6abb99d7894e953df86da0e7e20b2ae955ae0d516c29c3c3a3f7c95",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -408,7 +409,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "4badfeda23fd1befea0654027cac060dee1e5648d5d70222e632f0a109e05cb5",
+      "pixel_hash": "720d835f38711fbc9749bbbe9a2149d2de070f5eff8347d094b1e46c35164417",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -432,7 +433,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "51ce47962e500f2d4c8dd5b30119923687066ea0ade734dda62c6e27b4b10819",
+      "pixel_hash": "5ae9ea769781396e080ea4e03ea2ecc6f3df830bb6ea581bc5904a5af66a95d9",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -456,7 +457,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "e806db2ab3fc70fdf538bd446db35ec7445377702b303c9867cc0be0ec07a662",
+      "pixel_hash": "9e501989eaa950d525b40e1bf0f9fbafcea92b3d80859e27d3373af736601d60",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -480,7 +481,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "85c269235d3078ef13f8733d09af18a2dbf631a5ad75524c1e2f4e293579c6f6",
+      "pixel_hash": "f157e79c6648ccf76837b8693a8ed821110c723dbc1328da71fc87fefee36f23",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -502,7 +503,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "26820da08da48f878230b288450dfc05782a885c57a7e8abd65b667b37c44341",
+      "pixel_hash": "0eaab22b0591d89d236dbb1785f58d4ecf361e5b5439a6e23e73bf2ce99aea04",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -525,7 +526,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "b9d9070d32073ca3e20b7f7919f7f3d2cedd64c71361afcb12473f25b4b0e8f2",
+      "pixel_hash": "3b0a200cb9380feac1c373503384f098fc403e6d77f58464abb1585673f91235",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -547,7 +548,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c80f5335e5921aa66e3aafd71e890ffcbf8913068ce2ca8e274ad4147e2b7ceb",
+      "pixel_hash": "62b289820392b3a5b720e04952d885632ba9bc20cbebe87facf4c3da513d5d96",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -571,7 +572,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "fa65abbedc92038a2f5525b6aa6abaf53e8bb3b284764aa2ffcace7e32d700d4",
+      "pixel_hash": "f623ae8432aef337a726a73c1ca76983714401d5227901b9b865809eaee857c0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -594,7 +595,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "142cbf7359f7a3f24661c0feea68785dd648423769b5a27d35822abe72c8df4a",
+      "pixel_hash": "5dbee4c46bfc59ccbaa34c3ee28e7f331c489f6739bf9c9765ddafaa56d43680",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -616,7 +617,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "55c4a43a5b26ab64a30e322e10dd37c44466ccb47fb5fd8eabdc83e6fbc18724",
+      "pixel_hash": "9240ad7c8004f3ec51810de3062cd5cd2c92278cab13135d18313ab1c5feaa43",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -640,7 +641,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c8ff284306dc4563d55eec8194c1428c26e2e9c0f97117d402fa4c627b69ee72",
+      "pixel_hash": "b07f4107e8eadc54e51d3a25f4321ef9a3c6a901417e545f1946f137b238d3fd",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -665,7 +666,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "f91c882a58087b8bad03e3ab92cb4d6cdcc2e9079a44821b57cb7b24f2851c4d",
+      "pixel_hash": "80732102ae3e18f92ffa2acea68d0ccc351a637be30dd889c31865272f8d062d",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22",
       "key_repaired_from": "konclui/sprites/konclui-461ede90-00b8-4bc0-932d-3f36e574fbfb.png"
@@ -690,7 +691,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "3aca90eac2fce0ed6d3ac88d4f27b334d8f806f20099dfe6eb65df05d350ede1",
+      "pixel_hash": "6e2fc2c92cbe4c474570bc50d2e68a089b9302ea7f138c62da6cfb97dfd8816c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -713,7 +714,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "d3c122599b7a1a93cc15b581e9d06f396cb3724279efb5fbe8810fecbb031bdd",
+      "pixel_hash": "0ba4407e93ccf3ac6f9ae043576d022f2e92cd003702da57ef807f76e4201019",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -736,7 +737,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "15f183783bf3232abe17fd27938d83a68d676efa71b2abc18c941d9de3681ccd",
+      "pixel_hash": "4ff5f61b41a6f9da43ba33d9ed64199ad34db477039be95a7ea9c82e38b4c044",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -761,7 +762,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "db03db717f8e7efae2077ff7e3d17f683cb1c463a1259f51e6aa8545ea708821",
+      "pixel_hash": "b08b24c263832643400c93a5399622c2668fbd4206b61b5ca678ae5f12de1b67",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -784,7 +785,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "9ab1b3feb079f8d11fa8b13b0133f593f531464a20ebf9e12f51778abd169746",
+      "pixel_hash": "23a60534d8fa965acf2b00f74803d811382b787fcd5b7a8e2767061c056e401c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -806,7 +807,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "472c4ea5604c1ed5b9ad43c41e634de200106892cedb76ec619c44aa2d0e4584",
+      "pixel_hash": "2c05e9b55742c0f0787ba6f6a1a3befdb2d77b39322c33213258a34e53d55a93",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -829,7 +830,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "b382a58aea28dea1c84731357a16bacc8d11bfe02e1d97f060c030e65dab460e",
+      "pixel_hash": "32af112e99da51d38197a86b50677897b2e6d6901a885ba9616a5ee74d1a8d6f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -851,7 +852,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "fadfb2021dc7d39362395e3454d569008db22ecc7c201978502158091d589b50",
+      "pixel_hash": "2e1fb14970d9ec3f96942f9db57cff51e32aecc015f9ee2b0b458611a52a7d64",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -872,7 +873,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "636ee98c7b835847d00d6b5351936215887c4c053f691fd8de91f626688912ce",
+      "pixel_hash": "f5253b35ae809a6ab6e0fc629ce5223f7d1232ebd35181ca765ba3543343357c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -895,7 +896,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "6b565f755247ea8c3c21598a680bcf5951f4fc1328545a9bc6bc574f490005b3",
+      "pixel_hash": "c1b0fe6fd5129569c514c5cd1d6ddf8617ab0e6269da47a2d42f101330a2cec6",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -917,7 +918,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "2587d6c78ac5a9b314a9e627543c41821b3b6739637e593cf5052d462abc48ca",
+      "pixel_hash": "91d01a7bc3564e951fccdfea7202bf94956a10c557930186d1d31786137ffa01",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -940,7 +941,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "4666b8cd0a51ce5e348a65eae482bf45382a9b05acec8e6daf58b48b9f01c5d9",
+      "pixel_hash": "bf4d7645764c37f1a755479624a5850f8fab6faa96e0e9e99eaa474f9981a017",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -964,7 +965,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "75fda851fc2ea2ed5411d7116cb2967d561ad9b4ff928dd4dd6eab01bd772c8e",
+      "pixel_hash": "c068aa0d996868c03a95541ae9a1dc850bb48902121d7bfd236c274cacdeccba",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -986,7 +987,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "f2ae980b2c1e4d7942528568b30f8f98ca63e3300d38787024e1b8f08587d538",
+      "pixel_hash": "9a81b5c3ffca62afcaf6e38f7cc4a017ffdd72c469aa418f0c004d1575ff45da",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1010,7 +1011,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c3be57a8f4adf1d012f8d082477bd00f2dfda03631aedb1a28aa2516f682917b",
+      "pixel_hash": "ab76b585e2f83b2b13267a13877407271783e49d847631880be86ca41a682819",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1031,7 +1032,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "9250af749a3479b628f7f17a0e5377541284359516ddf64073dcdcc9af50c636",
+      "pixel_hash": "038c696e49b6c4411e85313deec2ca8f38af2beadc52665b92ff8cf5a1719b5e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1056,7 +1057,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "a44418ed74f3eb34cab3063ac34ea77f80dba4feb02f1f16efd02c1f33c9ec46",
+      "pixel_hash": "0d55e7b049c10f646e430b4db163f38f1b022d34af54df3068b38cde78c13098",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1077,7 +1078,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "4c6eb3fb7483d670138d98e78082ad7f736f74da0137009d546cf70f0e5e2ef0",
+      "pixel_hash": "0734c7669676da2296172e11a817acbea6cecd017dee5ac2e613f6bd0b2df950",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1099,7 +1100,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "7cecaa038d86c7e4ce1cafaf7e6b2178dfc6a69f03e670faf9be37c07ca5eb3a",
+      "pixel_hash": "f8d389dc453f03a65e118b7f81e95d2355407bf74327c681e47219b4dc05123e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1121,7 +1122,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "a8b1a751ecdf5aee00d44deb248f79db262a90abc3e659bbcb5796e33376e867",
+      "pixel_hash": "7eca919f3be0fa65397ec743e8f2e7a8d010ce6d539db0de936146506d2685cc",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1144,7 +1145,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "5d8c37831a8e8e48471cf78039e89459b54cfe940a526454413c8ed9f37da358",
+      "pixel_hash": "41cd91b13724974c3e2c717eb87174cfb4c15a4e529aa50ec04ec124014af0dc",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1167,7 +1168,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "d6b05eb2b741026e767d25f7f0f9d266f8a7b7872fbc2cc4b136d427205e684f",
+      "pixel_hash": "9229245e94c79aaaa1dd4d48066b65e1b7e48219579af349d9b5970de251fc76",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1189,7 +1190,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c1ea03cc87b117830ae0ff1078ddcee95f89afb8a5c802571af7bba8f2d3a02b",
+      "pixel_hash": "10ab349f42e37a2ccb53f17d7a67b61b70e2fa53a2d91ba882cb5470168c88a3",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1212,7 +1213,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "daee3e2d9e66dbd6079216e2213153f6cf6b7e32f6c2f3b3e4c3b0c64f19508c",
+      "pixel_hash": "f97433d527ea9f9800c7c1a6b9a5042738c07ee35b431fdac47b9d62d598b1a1",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1234,7 +1235,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "481fc26263e32b3da3123fe68afbfaf4aa861e8d43ad45b77cd7baf21c5330f2",
+      "pixel_hash": "956e601d0dd5a64418e2ad109dc160c487b8f1cf070399f8b8f9e2b24da4b55b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1256,7 +1257,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "ffddfed2af65adcb8246b406dca033ef38e63d7802a3ee44896a3790d35d7e9e",
+      "pixel_hash": "ab1abb31ab3d052b37b113fe1ff90eed5bb02108da125f400a39ec133da6ea4c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1278,7 +1279,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "3bcea9ff29f5ab3a7d6ed76b02704e04f5378d06493b3a4409176caf6a049d58",
+      "pixel_hash": "b8f9d9a76c3bd3d3ed203dc11dbe89ce5d035e074d312ea41fd37da7e86a5434",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1301,7 +1302,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "db639c0626cf6ecefd319b4a6c725264690b02ddccde68e2c97357db96a996cb",
+      "pixel_hash": "f63d1d5003aa4755e9b581c24f432f7902ee696a9d12cd5d0a25fdec405e2074",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1323,7 +1324,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "f2865bde355f9f1e7830d5478f99709b4dbe64c5809c9337f29073dbe2bc7764",
+      "pixel_hash": "d577a221b5eddd202fafa9ad755c35f81b3acb072ac1efaba6e0ce505a5e6be5",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1346,7 +1347,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "4a6389debd3dba3bb9bd591bafdefcf987614bcb6b0c3ed3872f3b752599d3a9",
+      "pixel_hash": "84da9aff07bde7bd941bb9d8aa1dc67e314c415c73a0cf96eca7d8205cf6e164",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1370,7 +1371,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "b5f5647e4477b7e1024cce7caefa0a1a9839f1190efaa492bf41bd6f939c6a59",
+      "pixel_hash": "c8b10433e51ace7cf141bbffbd9fe1fe73e3f6d6bec695f73c00bfeee8ad723a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1393,7 +1394,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "d4105db4221aaf88ef0abae307a7bbf2de662be4468e9d3c226ee526f3b4f5ab",
+      "pixel_hash": "60bfa3246167c3e4e53549ffc6f7d2fae7292e3a0e7bbbcba7e5c1d02dd71e07",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1416,7 +1417,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "3388612da0f265527ec0e9adef702f04be9bdf46443301d611ba6fd70b108ef3",
+      "pixel_hash": "5f344a9d4ffa752e75b76a81ac10c1e0d1024c41456a9eec2549b2886510495c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1438,7 +1439,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "77939fb229ff7e1d2e66298857890fbfed8f46447ecdd47dcaad21545ac90416",
+      "pixel_hash": "be35467f0aeb5e5a1e74fab0f5022190906048fb9d0d11c806a060cffa1a074e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1462,7 +1463,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "af9a132635d5b50b6ae8accb0b62dfb83c22d63eb25801016f9079635c750a33",
+      "pixel_hash": "d9be26643cd476cfe4bf4b427b52c27258a284aba23407b4514d5255e3466a20",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1486,7 +1487,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "1cbe315110ae9e88028a55f59a12796d818a4977b46085475cf8570934b08797",
+      "pixel_hash": "183e9e562e9ceaa748b3b78f2c2d964e6734ab96732dece17a9fd1c064b9cae3",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1509,7 +1510,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c4ed504d44fd688a3854cd52e1ee9b23370efac69d2706a0c1d4583a2081543b",
+      "pixel_hash": "7babbb64a849145f579183466ef92ee9bcc667a4d1a3397450c3d186d5ebccc4",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1530,7 +1531,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "77939fb229ff7e1d2e66298857890fbfed8f46447ecdd47dcaad21545ac90416",
+      "pixel_hash": "be35467f0aeb5e5a1e74fab0f5022190906048fb9d0d11c806a060cffa1a074e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1553,7 +1554,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "148bee6711011794ef1c87095136a92a20f1059562b4d01300ae6c951cb24e70",
+      "pixel_hash": "ec8d2b4195dd947e0bc2b44276b2dc5c6f79fba2a3444d78824821c80a4672b7",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1575,7 +1576,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "6379a077a48b06da78e4a34d609f280ee8ba89f37b02801241600e48090cdbc6",
+      "pixel_hash": "6637ef497ee6f2ffa3b5096c80da0833848a68a73ecc127c4c73a0b8da04abe0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1597,7 +1598,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "149f05800f8d11ee4eedfe79c75f73e99b755c6ff7b24996309a8e4536523e80",
+      "pixel_hash": "520a5fa5b3ae6395d796b2076a2423070635655b893e028761ea0b9de5a0fefa",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1619,7 +1620,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "deef3b267e6b64b63e1cce18a3c4a0c7f0bba36430bead867f3ee8f6307bbded",
+      "pixel_hash": "1f113c33cd04448619416aacb767e4f2a9a7225218e9bb992e4cca6c8f6d4028",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1640,7 +1641,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "5b9ec01e40c7340321c8610416b0beb969110985a785b7d147982918b93cd24c",
+      "pixel_hash": "e69ae317c5b3c803ad34b01a5412c5b070a25be03ca663f7fbc1d44ac9d5afdc",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1664,7 +1665,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "7e9e0353b6333b74b60bc1eba829966edc24791fec39e7f437504b8394e4d48b",
+      "pixel_hash": "a998d7ce75abe067b9a099d301e2dbc8b6203cf32e19965a0542a65f94132114",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1686,7 +1687,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "8585f71c020eaf1091f4b6fca4de54939c56c1ba48fc4c2ac2e73564263780e6",
+      "pixel_hash": "4662582ed120e0f0ff9221bb67f7bbd836de575788024e708ee839f2ce115650",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1709,7 +1710,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "d5471a884a25fbba2e4f85d70bd5d6eac6328b14e67b7231e51fd449cd196ba7",
+      "pixel_hash": "0c0c9af1e26637862c72cab54cfd7fdab06e473dfeb59ad9d0715afd47b91237",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22",
       "key_repaired_from": "konclui/sprites/konclui-d110bd2a-a862-48f4-bb67-fa45b109 9bd1b-aloe-placeholder"
@@ -1733,7 +1734,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "b4051a90ded7b8fa6a662fbf35ef70fdce2f3df23478012f5b4dd2ef982d286a",
+      "pixel_hash": "67d9ace52d71e4e97280df02f1d5dc155c5a27f10c54a7909b14f1aa5df812cd",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1756,7 +1757,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "98c1fc7cdeee7aca8950e4f144109adfa71be8875f85d9ecbc6b6fd4c58fa7af",
+      "pixel_hash": "cdd29773a6dcf8d623475234974c0df4b562a697245a299211d1f17ff44b658f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1778,7 +1779,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "51343e6fcf92aab303f77195a39413955824b0dd414e5a4c123024f9d6d0059b",
+      "pixel_hash": "ad7652a14a68dfd1c63cb402e1848d854c32e3bf68aa65875c6c503151db5e23",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1802,7 +1803,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "34c79ff8d72bf28a0a1fe25abc137e68db0979efafb3040f2b928f4555d14d67",
+      "pixel_hash": "6f7936d5a71e25fa252a1e7aab603e03cd76a30f9ad4b47c22a44d4b64d6316a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1823,7 +1824,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "04d402a71920a947d9fa0a006004b8c9cc64df24e14fc4fce26f00bc10717c3c",
+      "pixel_hash": "3b0187d2648059956b6146fc0382a943c1a8644e495070808b9444fecdfa5136",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1846,7 +1847,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "a3c2db162a74899040b081205bbe5c117dba37de0bff45385f47ea4b4c9543fb",
+      "pixel_hash": "90edcdb1132b73208b285cf20b5ef28747ad429a23429ea7df7b38982ad6866a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22",
       "second_opinion": {
@@ -1876,7 +1877,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "7bda41a23f11558bad4565bf11578f61868075c8c17453bd1b9ecbbaf3e43171",
+      "pixel_hash": "0e06cd717ed7c2750a7558dd8b26553668067169473ee3c9b512c9846f7efaf7",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1899,7 +1900,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "f7d5470d88bec4b60d37297a2d5f8f7814f540a0d94572a68abfb142aaaee8ac",
+      "pixel_hash": "e4a393d184a74f410eee63b7a8d038fc7dec2981d1ad43aa326d62f613b9df6a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1922,7 +1923,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "2a7b612e3676e1e0992495514db2bdfd0d99c8495e5cf19a8f693944f4c16ebc",
+      "pixel_hash": "a6c56d14482d2cb98122855602754d600c523a54fe3a2714de882f344355a461",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1946,7 +1947,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "dcf22a0d80a1e0985bd5de31a76b70d0f437cb21a74b53356f31c5f2d21e5a59",
+      "pixel_hash": "ca0b7029955a4e109d4be8c41aea6f36e1551a906becb0726bc7a2e4163735e2",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1968,7 +1969,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "60433abcb9669b306ba034458b6623c43da3294e90de3ad756c74991ce7e4d2a",
+      "pixel_hash": "38e02d44d751d8b1045d5f9731386974b911a9e13dd63171bcbc11eaf9cf915e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -1992,7 +1993,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "6e445e100fcf473f044520b84ab464a51f370c201367a9c7af103e93601c95b4",
+      "pixel_hash": "7e3ddd6d0c4a90c057c4bf6c730c33a79e439d526146d035bf52d41b45cf99f1",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2016,7 +2017,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "824ad5768dc2d9e77de40745826ed99661ebc0befe92b8c9675526c9aef37ff8",
+      "pixel_hash": "669b28099528210efaf6feecc7cdf2cad688414769a958a1ac9dc70a6b7f9bc0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2041,7 +2042,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "53d5c249e2b5ad9a2c584f16fc0c4ee6309e4b66bbfe8677214d011096ee8354",
+      "pixel_hash": "b9016d497aa40c7fe4de1a67293fc83b56c9d1508572d00c3e916722695730dd",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2066,7 +2067,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "d551e858056ccf802c401768c35d99bb2122a711de5d99bd11aeac67e5c38d62",
+      "pixel_hash": "6c7aaba99b4b6f26273f95f3bc3be9f589331d0e71521a101a49a687fd39d744",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2092,7 +2093,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "490499f8fcb3cea73933c4c3ff436a0e39f3364413f46d6208ab1642cd6bafbb",
+      "pixel_hash": "150949c66e73013f8fbd21503cb75b8599fbb33a84dcbda002a9c8d1bfcc6757",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2116,7 +2117,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": false
       },
-      "sha256": "9710094678c9b90dd5409cbeff32808406a4c13ff80023e7684d7c715096feb2",
+      "pixel_hash": "d1ddf8e8d6cdd0771743fd6b823451464b040cb2d4d58a1383d612c55a685349",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2141,7 +2142,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": false
       },
-      "sha256": "fbbaa890ed1052ca4e2c1926f85eb6de69ac223e7f15b422fa6aaebf759c0ad4",
+      "pixel_hash": "6142b57355f8896ac8cfe67f262e9fcf35d2c900ed054a776d989471ae5de849",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2168,7 +2169,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "4e856d5915eb61ca59afe2bc79213fb3c5fab60238a0c91a54499013fd7e0a7e",
+      "pixel_hash": "bd5d4e93f4d9ddc1eba2f377bbffb8860d5d07fdeee8b0e0ef496609ec15d561",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2193,7 +2194,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "6b4ae2417ace1c2e6cfaffe06759321a1ad6a8cdd41039ccd496b9c746a0269d",
+      "pixel_hash": "0709513fbdab07935ae7da2236d7d97442bcfcd93a6e849872c133608da2b1fd",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2218,7 +2219,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "035012f9703eec8e5354f584e57342df0f6490c59eaed8ca0068c0469a157118",
+      "pixel_hash": "96a9543bf54e6781548f00214785b567233751bdcbbfc1e1a7413795674791e2",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2244,7 +2245,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "86bf6bf1a2c4328a49c55fceb05a856965c11d47fd4be835d9b146785be34fa1",
+      "pixel_hash": "72c6b8137bdf025dd62b71cd6b20c03a99b2402816c72b829f63f7457bb71478",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2266,7 +2267,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "e4a8d3d733060e40c09e2cb3b7aad159019c818df187e02b4498bdf87ecfc286",
+      "pixel_hash": "57757173298b5881aec1294154dbd78d8cd49094fd98f8d2631547d53517a3a5",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2289,7 +2290,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "cce4e179eea81239af53ff9a72637e38eef43294ba734cd474f80e7bec25371b",
+      "pixel_hash": "c0889f12dfcc835328fdc8d26d47320e15b371ecdf60d5aa2b855e3006ab959f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2312,7 +2313,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "3f421b54996ca0a71191ce736d5e365405659bbab2273719523ee14f88abd317",
+      "pixel_hash": "e06f56388c9691dce3efc292ce1017e3f2821ddf8f1cfa1fcfd7d39c290d5010",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2337,7 +2338,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "fc14086fe30fbd583852dc76f2a04f82dceb4eae8d09159fa87c5e62d933b90e",
+      "pixel_hash": "79472fcb9f7963936ce1e6c205c8681c7aae801e4243bd2a51f46f3c1f7144f1",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2362,7 +2363,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "1b3c27e7ba1a80f5cb7182e86471491cc2521081d5367cab943c3d1a796ae35b",
+      "pixel_hash": "bf9991abbf998a86afbb81eb214ad26e928aaa4a916065ed0d84980983d11e5f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2387,7 +2388,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "aaefd281d7c6b90c858fcfcca7971becb75001dbd33d1a12814633c843488490",
+      "pixel_hash": "d640f9a5676b19a8c01db8365392882409945160289721a7049fbf6b9c069cd3",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2411,7 +2412,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "98715a3715a3b6dc7c1474956a3bd14ae837a8eeb20b9037284001d66fe63cfa",
+      "pixel_hash": "8be566823fb51f8682aa250bb2caf6be17811c022b642de0627d5f6f6cab5676",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2435,7 +2436,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "e1c3e6a1a170eb7646f8470936b5cc38a6416101cd1e63eca4b0a8f9a78d0f14",
+      "pixel_hash": "a7a6f428d6b250ccaf4e3562b314800807486f069f9f3b372ef22f1d5b1dc382",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2460,7 +2461,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "3ae2cc2cb47625685e90f8bfaefcd0e157e383be74bf228de08b8968057d8ab4",
+      "pixel_hash": "752c59d5a180a70ad9a5af1ab7cad720eb5f271cf463e61c4a442a1db20ee17e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2485,7 +2486,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": false
       },
-      "sha256": "d1def6917fb405eb28ad91d497e1f56ce6db10f6f96d9c87c7b821652b558178",
+      "pixel_hash": "6d8e245a885a42c55a9012cd38ffb58f1e9fae81730c88e13e9de82d24fe9add",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2509,7 +2510,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "14804e474613a23a7d0b4b14878ef79a2c719bc8f0d5e6e1da472842ba5e8d0d",
+      "pixel_hash": "f9ad9c51f047e94d236a0d8aa6fb51662d38033ec11d068be9f46f34ab4151fe",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2537,7 +2538,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c023b36e22f652eac3a9f51ee8f23100ca13e3e028516017ab6a41c28767e9d1",
+      "pixel_hash": "ca4f3c052f36e94d9330c6666fe82ea7f01420e84f8601fb5e7b508cf2d6022c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2561,7 +2562,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "d6f8f236c919ba1780445c1d7148889e5ba5adca14cd660bba495e75a4f242f5",
+      "pixel_hash": "ad1e42a38f03f9b465b7fff296463a294eca08a292fd5a8927414f5f9350255b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2586,7 +2587,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "9f8f37917ab06bafdc48ce21f7fc1cdd4d9b0380cf8c9c30b475d61b880b965d",
+      "pixel_hash": "29fec780d31e4e356a21f0a3adf717c22dc47800bd295be915bf1d0358a39749",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2609,7 +2610,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "faa8455352a0f8289bf6f2d1683a62b2c4eb2e332451c0cded507d64bcda61ae",
+      "pixel_hash": "d8ad48df63e7b575751432ed2d7d54949a2b680ce9cf1e6274f6eea841e9ecba",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2631,7 +2632,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "19f8a881c4017855f10e3ae34790ffede59b14c1801c97a19a0b5bd61d6954ef",
+      "pixel_hash": "57e859e576e1ba4abe98c6d0f1f50b3966a32f121cbd8450e581093c11bca0c0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2653,7 +2654,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "3aa3830838e92e3eb2fbe2c676b08b34b1be33beddf36b7dd83c92e812ee6b0e",
+      "pixel_hash": "1c7f7993e395b7ebd409f808ff3e99022027f78353d4c1660cd1dbe6579a5904",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2678,7 +2679,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "b61fb7945e6f8a6077c056ba34425c2b86aa4e863e4151fec749797069bfed39",
+      "pixel_hash": "d2ec6c895592c436f2c3ef9c7ff2ad18aab5eea40b7e1acf816d34f6035bc338",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2706,7 +2707,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "1384058b6d4a55afe1c85c65507f3e3072bf520597c6b63a9319999ba25ea6ed",
+      "pixel_hash": "c5570a476449f02f0729a2c00e8c4b7d0724e2eb812d85cb224f351a342aa602",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2732,7 +2733,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "0c770a5afdecef09c66d5a6147393ae1e4a4ba5d438060b1a9072ef7f0344720",
+      "pixel_hash": "6aed8e26e153a947208db56bc8b33acbce0ab988a1a9b38d0aef094e2a482d0e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2759,7 +2760,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "b56a5e4026bfdf6a4edcb8480d91fe4417fa4269c015f85c68479de67102cd56",
+      "pixel_hash": "95b6fc2ebe778352036e487264c914d1fc6dbea1db1c2944c996a9f9e9f88e8f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2785,7 +2786,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "b6467c98f43522b50e217b638cdbeee8b50311f0bacdbe772c63d6b51cf08e90",
+      "pixel_hash": "e34632653e8616fc0294d9f339fdc9a7cc618a157cc7ebdad3d908a6a3ab9a9c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2810,7 +2811,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "2ad3d903b0ac55d64f107f2912084434501ac47fa94e0ff3b4b3816639d81566",
+      "pixel_hash": "8355e283ed0d9cec27e717540a18a4b7a8856d08014fb3e0142f511bc5721d63",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2831,7 +2832,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "711b4b208a598bbfa465ede1810f27caa6d42ae2b821dad17dfd090ddf95b74a",
+      "pixel_hash": "fd2547cdd944718a16f907dd1a90b6e741291ad1144aef2729e790ac592757d8",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2853,7 +2854,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "1fd462f6fe5e1e3d463159e2fa605ede4bce867c2c13f3e1117030fc64bb59bf",
+      "pixel_hash": "cfb1a6c72c7db49328d77a14a0ae9200c3d591738891af70841649e4fc5bd7f1",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2875,7 +2876,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "06e06bb2bd88b2f78b9c45f144708c3d746c49e787e5d72b1b60a69df7d431c8",
+      "pixel_hash": "f242e2c9db4e8d134079cdd912557472323407d68f760f23f4d08a620abd0560",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2897,7 +2898,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "8ac28660c9597f6f6d8fc044c55285acfa112e18fc3a12ed1c2dfa4bfbaae80f",
+      "pixel_hash": "cd8c3fd40d2ed7c4d435a01e3994a71d46977683907d0f905f2196f852158842",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2920,7 +2921,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "51fd516dd881a285bae68d3f04787c895db38cc57fac978f75da1ace276e73a0",
+      "pixel_hash": "7f43a5df08717bd3b8eeae269a13bf3794350170a5e629cd0700b10a70249c30",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2941,7 +2942,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "3e631fc852fd6f3fc61e89419807f0174a3f8f79d559f7a9cdfe3469520fbc07",
+      "pixel_hash": "e44c0ccf4d7a12725907e627abdd43c1a8e8aaa34c815e9be199f04f5419fa59",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2963,7 +2964,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "898577c524d5db47a7af02b33491fe223aa7b6756c345a921ed209f4b6b5fd76",
+      "pixel_hash": "6c2cbaf85f7e3d5c5b3f7319e52b8458c9c3fdd97e563e1234d65aad6554b79e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -2985,7 +2986,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "607d220763364e18c612f65b254877a4848d3ccec7777091d78768ccf02fa930",
+      "pixel_hash": "30be0057ef4f554713cc6bc187e8a58d6ee0c39f6a90ec2ad8b63b1faa7d98ce",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3007,7 +3008,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "be8187e9ba13655fea51e8ec3c0c6cc03c053a0d385d0808929a8c490992e963",
+      "pixel_hash": "9817a28047d285705076a3962046bc87862639f4927eed7356d2a3887c13d5e4",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3028,7 +3029,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "6495e1460cc958b1529986cefaf90817b96ead4df18a48bb40a225daca21212f",
+      "pixel_hash": "bfa2dcb0652786b653e09b95c1ce3a9a613b8dd1a298e1cb097f3ae8069b1ebd",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3049,7 +3050,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "368e291a4d5b2a95602991c91591379409bd594ecab23b8b112aa978974328e5",
+      "pixel_hash": "96339f206dde963a414dea1988113083d0d2bafdd7f1e43ec73f490ea0d12d3f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3070,7 +3071,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "341330695b7ce3477a3af2a23531702ee13d541d847bc30e85aa52a91786d503",
+      "pixel_hash": "1292ab0c8afedc3e13c8c2ec0501daa6cddcde787d69b17015469bd8901af302",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3091,7 +3092,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "ce78441a193e6c4d20d5aa2cff43eb9a1fc3348704cd150432e93a642d1c7e71",
+      "pixel_hash": "2f5dee00b6963fc77158740ac94c7238e012f84a5ac538ab7eeecd382f91b3ae",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3113,7 +3114,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "fa0c5e762181bd13f46815bef4598408c9d7fe7bdbb71eac7e288cc0e8a7d482",
+      "pixel_hash": "38b875bece46b9770e27874b89e0896d8b8734480a2e747fe9e4a28870f3172b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3135,7 +3136,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "b7fee3283bd156a40b2310ecb26a894ebaa0b0737398535959f8eaa76871d2d6",
+      "pixel_hash": "f61cfab68baf46cab63cd127012db7aea0f9bfab0691ec59e2ef7b51c9b0b3eb",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3157,7 +3158,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "995f9c9772fceaf161dd6587c8bafe1c3b3374940671cebc84a135140aac8d76",
+      "pixel_hash": "11128711373eca67669b8ce8ee747557ebf376a406fdfdbad7b030eefa0c4717",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3183,7 +3184,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "7987d8672c6e470d4404f2a8d5830f19b6a5d89d0c2ec2e88e4f1ffbf80fcfc5",
+      "pixel_hash": "14d06f8353d36ba2249ea7bc9670dc87b1ab0f91ceb10e667cfa874784122354",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3210,7 +3211,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "f8fcfca38529033b3b3dc9d65e87d298ad500c586f2193d1db8c959bc7cf571a",
+      "pixel_hash": "e9ffc875e51736b5e679030c4714ec9fedd6e80540f8cd169f3de7d7d69017fa",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3235,7 +3236,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "016fcf14bcd436535506cedb37ca31b593ccaf86fe651e96d963765cc387f36a",
+      "pixel_hash": "dbda96148997e7b94e1ec1c1d80b5fcc8c1dc851aa791f76ec908ab84a1e8d53",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3259,7 +3260,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "3e6d60b6e1a41e77ced417f7774404ab4788bf81fa050842743518ee7bc0d83b",
+      "pixel_hash": "e5f31aee58fd41bb7136e54bf8370314bef55eb2081a27e4d3fbb4bc31c0bef9",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3285,7 +3286,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": false
       },
-      "sha256": "5484c2a43c0c0c6f8f735999847f6deb24c9b31e0d695556eb0f69c6d6d2089b",
+      "pixel_hash": "429f874f62cec4b2ea2b1ce23277d7611991c69423eda1c88aefa6191c306ff7",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3311,7 +3312,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": false
       },
-      "sha256": "cf44afe81a7ed6959824684a6e64160f9e0448d18d86d478cc10fb69aea32dba",
+      "pixel_hash": "bf57d639ed54d267803876f54c1ee546fe0b74ceea3dacde96df271dde1032c1",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3335,7 +3336,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": false
       },
-      "sha256": "75a38c838e50a6eef0b941606becd4d68e066baed24f13240667081189598a21",
+      "pixel_hash": "bf7314a9f88e4b5c65563921872c991a7328f71077b7a9633d815abed9e28763",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3363,7 +3364,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "bad5ff3cf6630ef38f5e683542afb2ef49370fbe575f7f41089a1215e7bb18df",
+      "pixel_hash": "9ff67ee25d6146be87f9a858bf4ea0b6c0b1b7dd53f23426dda6decf26c06dcb",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3384,7 +3385,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "6bf3141ed710edaf3ae620afba7f36b7a14f086f83647a122b65eba8879cafc1",
+      "pixel_hash": "76db04d75cdeb2a5e2a29f391867f02486190d95f659f37b5cd2d2615dd937ba",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3405,7 +3406,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "5d8a96314c8f7356da8a1b861663d7ed3261004dfeab8b374f3bd52b9a9b0881",
+      "pixel_hash": "a82347460d0c7e04dc9155eac7e913dd325cb1221a33e0d2272bb8dea16eeaa0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22",
       "second_opinion": {
@@ -3436,7 +3437,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "ca59cb41eb21eda27244f2c8e8ef259e74db362abe711cf4a81b08a19d9658d2",
+      "pixel_hash": "818abbd608a03385507813b36f144a0b0face72c383be383d5316e8fc129d610",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3461,7 +3462,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "d6ba076cdf793c20dfe6daec1dff190082dd0c0abbc77cd90daf9a5a615dac4e",
+      "pixel_hash": "097b227c0e9691fcce75cbe945a5825255f20c2fd3b93258e1209e71928ae252",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3484,7 +3485,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "4d38498141de9cbb936440937472a90515b9914f1be10ded3ac71c25fd390f94",
+      "pixel_hash": "f82591b1f616d26101e89dc6620537a3c1e18c2ad559dd90882bff16787beed5",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3507,7 +3508,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c768674d4e6bec358a81027f9fa3ac1ce82f71cd2648fec4f857049318157e7a",
+      "pixel_hash": "d0a5657eb0c5b787e8b84652b1455971dccb531a9bd7313b9024869dcb6c8062",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3531,7 +3532,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "9b9b2456aa49491b09e29c0d5940c9c765cfb694ac5183aedfdc91d58434ea8e",
+      "pixel_hash": "157fa767e26e1fe394617f002f4930a5acc2e1b668b46cd76b20d639a67e82e0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3556,7 +3557,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "eac42c2be16917fecba8119ac0fcef31b779296bfa8890ff63835f920cddbc52",
+      "pixel_hash": "66b80cf77a9eef315fffb1d3decd5f74ae5a97913b5b061ce1d11e6f38c8e265",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3580,7 +3581,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "d6b05eb2b741026e767d25f7f0f9d266f8a7b7872fbc2cc4b136d427205e684f",
+      "pixel_hash": "9229245e94c79aaaa1dd4d48066b65e1b7e48219579af349d9b5970de251fc76",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3604,7 +3605,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "cc37638adfe643c286841800dc45b813f479d066defb09e1b3449074b7b7d3de",
+      "pixel_hash": "e11167214a7c7ce39e4b89f2c75bb580aa6118e4419d4056ff4d903d61fdf0df",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3628,7 +3629,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c2af2171ef4e356de64642406aafc261ae629169611da91b749ecb330fbb1fbf",
+      "pixel_hash": "23e011839cd9f23e8f709ed73312a3b4b33ef59efd373b17690dadcd0ba123c4",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3651,7 +3652,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "47ef074c820373dc3357bea6d43741f8e736793e8b2d0c873b83abdf333d7647",
+      "pixel_hash": "f29fcc032a15956e5f70890f3b3154bb509fec332d30dbf7f66938221c0daa0d",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3675,7 +3676,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "4c4e8743962174ee157fd99cb8ef311b8ed58a3a81751af4348649ed393f2f71",
+      "pixel_hash": "c53ef2e58cc595b9620f0f2197935b8f2a726bf7d450a28f53f5b3f0e0eece94",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3699,7 +3700,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "df9ec857b0213cbafa15e05e362ccc41a3ba01c08c1a0ff230577c027371a534",
+      "pixel_hash": "a3bfe5342f15ddc5fc28a30ac04ed5524067d7ba0199e4b04a14b2660d4a5fb0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3723,7 +3724,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "ff7b245764b14a6b2d88a9b289b580fe3a105efc448b5490d0ec11a3405906b6",
+      "pixel_hash": "e2fbceb968bca59bbba34fa44e6cbd2bcd6517557bb34fe721887322c2e604c7",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3746,7 +3747,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "cf379bbf19d70df58eacfc38a444a828b700af26a1a85059958818ef007e1c80",
+      "pixel_hash": "ec7d84227f546250291d2e2c3be40285fd75fb845745b2fdb6e7de3bd96be008",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3769,7 +3770,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "867287240e97ad7ce96f82113c2a2e77fb01165617e5fb5a93599b61ae2f3a40",
+      "pixel_hash": "b98405f83863ca0ab088573d7a4b3a9d8590f4ad5d7f46e5733e3f96d0087a6b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3793,7 +3794,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "493fb2041cdf93b895d7eafc70ea47a0f2cd19a9faaefca85d3a1d4fe391afee",
+      "pixel_hash": "901d49cf3e2e1ffc9e953e49baf33e76887c1acd9127a6902771c682498a8a2c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3816,7 +3817,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "1a29772d77f23fb8624b20c293e01c0ebe24da1b43b8747846c9e6e4705f6c25",
+      "pixel_hash": "b439a0427cb4fa8d13924ab3ed3722027a1f6483432452c32374a4be29986c12",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3841,7 +3842,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "beda2663eb9783785c6d3cb9f2ed83a556e390da3488652baaaeb4787f40b4ab",
+      "pixel_hash": "54b5e4e519f86172d86947b758a739a6563bf8e70a46992539084b4cdc79bd2f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3866,7 +3867,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "602f2c595d675bc37811a92e7797e355e58c0041fa7e824d34c2d9dc0f1a92c1",
+      "pixel_hash": "07570aa7f6f5c343a7183428c22c186f56697c36061e8f0de6fefd66906e67bb",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3890,7 +3891,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "06ed449411d70db1d308e9ab7be462df1e0bb7c048a90a3e333016bffe09e67d",
+      "pixel_hash": "3e8ec6c954232b2193beebf1bc5541924af625ee91d94a5e12bbf067fb8f9e15",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3913,7 +3914,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "951e49468a2c2e47948c318e9235c1149057941b04699179f92dd3ec5cc5a174",
+      "pixel_hash": "b046ede63924af355f0eea09b2f06640e2a3080499130fc19655b5ad007a132e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3938,7 +3939,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "00773c345510d5a7c9bfbba5ba3295da93337a4768c4756cd3ed5968bd98270a",
+      "pixel_hash": "318790d3ee2f6b2d5ca9876a99682abf963fd99703db9d554ef09473312343ad",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3963,7 +3964,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "2d9b4c35378d2159a87bf14a75f4d0c71bb05d0d7251e5b71598cd44123eb68a",
+      "pixel_hash": "033070fee9d6ce17f246ee13eb7226ad525c4a1212488e2cc39118797305b968",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -3987,7 +3988,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c8bb994b9872b4711eff8561bf94c3a4384645c484b7923684f715f863694994",
+      "pixel_hash": "b5af2a0c1249e47b4ac9907188ff978b1af691fb535b1971f5978764387fa8c3",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4011,7 +4012,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "77dbded4a9588db687d475008717a8e271d2d7df77ef939ee0da3b5fd9f835d5",
+      "pixel_hash": "b0045358b187c9e38a54b01feca0289042c1a3a81c7e64962c523abee50c50d9",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4034,7 +4035,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "b382a58aea28dea1c84731357a16bacc8d11bfe02e1d97f060c030e65dab460e",
+      "pixel_hash": "32af112e99da51d38197a86b50677897b2e6d6901a885ba9616a5ee74d1a8d6f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4058,7 +4059,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "6ff41ab80d3645dc53e296071b1ca6d36b590b93c25bf4b3ce14bb2cbd94e4e6",
+      "pixel_hash": "dc6137ba59e2c91c67efbe68dbf1b91cd5feb51552458263c4a89b29ba27ce30",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4081,7 +4082,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "0b65b8cb1734f558ce51a2f870b22577172c31a72a63cf7f636be6fa029caaa1",
+      "pixel_hash": "4bad74bec48e6291ec18452355e00dd58ec534be0eec1296242040619a458733",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4105,7 +4106,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "7f196afd2581872a66020658bda9bd800d9b31340de731082695ea48c4767e35",
+      "pixel_hash": "7eb8c3bb04b370d75518c5d61fe7d9d87380fc1edae81db4dec845c1e5341af7",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4128,7 +4129,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "3521c3b0032fc83bdb160ed8ff4929bf38adeb19267d28b890d710f8e7b506f3",
+      "pixel_hash": "d5d155b2e71dd11474dd67fd349ecda6d44aa9d0ce67163a479eae49575b9180",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4152,7 +4153,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "129cacd72054afb07284bd8a1500c13b2d669c6a428a7f5bc8c369ec3aaa805b",
+      "pixel_hash": "2f06aad1fc716038e65923f207c0ae6dd2df93297c27158e0e6e6ad6b3bfc352",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4176,7 +4177,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "0c721bef8bea3b9b24800fe71e867a38f8fbddf4631d0cd377ce84e6c78c6899",
+      "pixel_hash": "e5a3bd748645cf8e7271bf14481b46df4f9e411e590f75d9ca2a666f9a6a3cc0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4199,7 +4200,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "2dca4a0351fc96fffe846f6cf378d6c7f1ce9f29357107bce9bbf714df816407",
+      "pixel_hash": "7e9e00402156a1994470540974bcef524f5ca78d98732e7120817996c8ee4ac5",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4223,7 +4224,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "c6cd2362bfe65779acdef738e60988a6a67351c62f7164e7a353d69a47b94499",
+      "pixel_hash": "c8f351fb3500e84942e48aee984082959bfac4f16c302c1ab99f4590a86fc9bc",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4247,7 +4248,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "151413c00ebfbf726762efa72d9f3cbeb2855c22c760ae20139f39f66b8049e6",
+      "pixel_hash": "1c28d1a871d4e81aac49cb86bc7fd7c79f307eaec5747d926f8a40221c8ffd12",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4272,7 +4273,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "4b537d39ef8d5adf60273d08328977f26e83e76f9e3ace18821105d14f195fbb",
+      "pixel_hash": "e6ec36b80ad651ddb13b179b9bc65e725cea368a3dfa3c4fff3236f772023d2c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4296,7 +4297,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c1262a1d56d70e5b6ca8d617a796161f99fce1c7b7b9645e1379ad9259e73be6",
+      "pixel_hash": "717f4ca2d44b69219a1c83bec918f9c2b9da6feb352d3bb6ba28de9e0912aaaf",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4319,7 +4320,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "97d82b1f6c1c1b6297a5d9e7c7f371b0ce6256598fcede83c15b4003c1f82139",
+      "pixel_hash": "227ceb9260897f03825fa11efdb0f8194336239d019fd584750f5f6602ae4915",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4343,7 +4344,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "025912eae5f53ceacb2f31e71b4d2fd4edf74fa5fe4e08a76f4f2779c14dae42",
+      "pixel_hash": "d373e017786a751daa3fc30f16184d73e21f21ffb836005fee7d3a4d4326a52d",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4364,7 +4365,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "68dabe4ca0742769352d0d4b81f44de6db6940e13f73ebd19ce625d64c672a5d",
+      "pixel_hash": "c6c7d5b32fdbab69fd6a1de64acfc63d6c92a45086151d70625aa35f0bb83125",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4388,7 +4389,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "b5966a6adbccc97b3ddeb39f026e7c35a8faa5fd39ef22a2183a5e5ad1fc2cb7",
+      "pixel_hash": "338dbfdfe7ebe9d40b092e165d72c710ba3e30fc9f649f8d7648b0a718bcace6",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4411,7 +4412,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "28991ec319dc60da455496389a0dce2181b901b4834ffb457933654981857c36",
+      "pixel_hash": "659f31ad00ac9d96d465a88430500721e659f2d76f813a199b36d1b61e86245a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4432,7 +4433,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "69fe5e85edc4b5bb2e1d88b4d30461be72ce4711be479b0875c01c16eab43aaa",
+      "pixel_hash": "606431aad90001d9adde18131f83af598285f840608bafaaae985fce1fb2d822",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4458,7 +4459,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "cf726777ea75fe6c53e58453cba3ae6453e8d42cfc516c72cb8a6a4457640215",
+      "pixel_hash": "b144664d3375c0384ea59d4e3e599bdd5d2127557c04e8741d2097447744c09f",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4481,7 +4482,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "b26091a2bf75f34523ab5d2a46be5f7bc39da8b7d378d6d28126b9607b77e176",
+      "pixel_hash": "d802c4f9bbfafab52e36c043b086408748a1f445679770dcf3d8748645bb351e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4503,7 +4504,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "7beb83464614a0ae860504a128fd64fd44c9e63f82ba7f3ab74a3090305c5367",
+      "pixel_hash": "5541725c12ee509db3e88abc07006e65449abf5075adc1ac639b484d9393919e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4524,7 +4525,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "46eee1f6d870c08be444c166f249527c181a5de8b63d70563951500dbe4f0e77",
+      "pixel_hash": "6edd28ba32836ef1b7592635db50c1040678779a545fb63a9fb62adeaa8e8208",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4548,7 +4549,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "6cd9d57065f64756e8bb6bd1bdca8b62f1f680e74d66c51ef492c05bd307f2e1",
+      "pixel_hash": "5b70dd5b582b74fb1599c915fd8183d4eab5a7b01f8d134f0e491fa241a3d4d6",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4569,7 +4570,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "0ee682267442accd10e812a4119a277ca7847e1c490198c866cd4287803e8ca0",
+      "pixel_hash": "c5c561869db7f6286feafd426d3bd9b105735ada723012b0fa31fea94f5e2d5c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4590,7 +4591,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "aadae20387b6b5ac83834b89dd7b270c8134b824087993b517c520e55e476db8",
+      "pixel_hash": "7efd396c960e6297bb774c0008c4bf16aebc30065303dd478055746b1f4b6cb7",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4615,7 +4616,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "0172e11c9a42b82965b1b3f9755303d985b0eef83345cef121d2907542d76d8a",
+      "pixel_hash": "1b52e93cd981bfa85d492c4342edf18451317eb980711f729351a20925c312db",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4638,7 +4639,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "af837583e3d481fe6d967387118b3a978152b0f44498a27da9174e809b33e1aa",
+      "pixel_hash": "b9287cadd3cfe3350ddeebedc6b34ae98cbeaebe680c99836cf6e3a65c8e6ed2",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4661,7 +4662,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "ccb459a04aecee122bf9e91cc3daf021da442261bdb1b0bd2a516c91bd43207c",
+      "pixel_hash": "6a408ac3c700d086e1222d333bd80607a320af1dafa0a798663d263b488264f2",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4682,7 +4683,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "5c364be9566a4728f7f16e93b337f9d70d6c2f193096997cba31c220dc0a5a95",
+      "pixel_hash": "e3d8ab4971ade3af94fb366fa378906347223de599cd2eab8c9f319a7e72681a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4704,7 +4705,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "f176d04397655c30d4a56fc50c92c981293a1784fe29c97ce43e7a3f38280959",
+      "pixel_hash": "ba3bfed6b456b1afb3e8be4b7ab012f2a8fbb06410e8ac61d3679c4e78299d81",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4725,7 +4726,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "12774992e8ec94a16f1626b982524875854c03983abdf34003c7cb1a9019e249",
+      "pixel_hash": "2556d0d51fee085f70858b2945f88eddcac1a433b0ca21f299ef0eb54e54e57a",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22",
       "second_opinion": {
@@ -4754,7 +4755,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "1b8bdc275380226d3ce6b2b8b480cd2c7d1e64be385f3e51287e0a8b9a1d5d10",
+      "pixel_hash": "dc7f9b01b9404680e3b6ee7db46cd94c080fc8fb217e94729ffcc64d348c10cd",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4775,7 +4776,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": false
       },
-      "sha256": "2eadd8a827a7acf7b08d07b95d94a65534b9b5424e6d66950e991dedb340de01",
+      "pixel_hash": "31f470c6f2af749c604d2ffaf2306fa4c4374a2b1b5afbbe941f8b38d666e848",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4800,7 +4801,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "66974bdec047a17e6e13311cb2877d8012f9de3fd880ced024b5d41711bdaaa5",
+      "pixel_hash": "6001e9d754a5adec410aaf69bdeee3283a91a56669023d087769a1b34e644806",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4824,7 +4825,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "96a74d188494041b24bb22c73ea0088e85d10e2754d3a7a4051b93deaaa2d251",
+      "pixel_hash": "1e7b9016e0c5fb2a468dc04cbc0fbd9ca006239ae489990a4fc2075a721d16f0",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4848,7 +4849,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c286b766109c3e12d5782fdbf1fa3c266a5ca294fec9e7b6f8126c17fd3e3b74",
+      "pixel_hash": "6eafd634f9cc1c7d21816d86a7fddf3b217c805212fe19c77f81f70a5adb48f1",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4872,7 +4873,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "9db76fe9e53e6e1db8462fc41c5bf1c3b3124972cbf8dd87fc36cf40f4b38576",
+      "pixel_hash": "5184494db34e851358bdc6b0ab54bdee2552d5febf4c896d6a300cf19056e06e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4896,7 +4897,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "65645fb3c4ca9ffc94faa3b7bb3d0a99b885c89cc7866d6f7524d52b98d690da",
+      "pixel_hash": "23d02a5ec2ba21f3cdf0035f6ad9ae07d4751a9838057031bf9be93e85341f40",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4919,7 +4920,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "c18ccda0fb540eedde789ec70af8f8768799b517aa35114ce3d8c1435ee0fdbb",
+      "pixel_hash": "663723f19774cd0556f651cd72b72ee5a20ccb56a656a4058ab79087fc3273d5",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4943,7 +4944,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "3e1a9dedada8ecad49396f70ade09cc8e3c16548d651b750716f6c0ddde60471",
+      "pixel_hash": "203fe69330ee74319a52e287dbd7657e82d91ff6b037e595e3c66ed07b641511",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4966,7 +4967,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "877f058979927b57b41ca1b79746965f6d7f8e22987e1c0506794d9a47de31c5",
+      "pixel_hash": "f813251130259149f8b57fb959b99870247404d38b9c3dcbf8a88216d3dfb83b",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -4990,7 +4991,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "6c294c618dcf3f3cb864e626d043ca85e1767847d37d8d52e3e05a3deeb195e7",
+      "pixel_hash": "2ae9c78d636174630cf961b7f900c0627757aff8596ae5e1794ada533e6dbf95",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22",
       "second_opinion": {
@@ -5018,7 +5019,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "2b6ed1a9573621975a23b1112c277f58ccf28c91a4fcf20607f96938a638a02a",
+      "pixel_hash": "6ba702431cd591c0c64b511617377cbde098ab90225d97f27f90272fd116f4ec",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -5043,7 +5044,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "bb67956a3e0c469d8632b008761a144c441c9cf78ddbbac4dd9064f6ec89fbe3",
+      "pixel_hash": "68b31a07dee08b16f436375d8cea671d74e23f81d9821e800ebf38a9a153dbe8",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -5068,7 +5069,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "5121bfacd7d382013ee6f5e8a53f22e4fc9b33ce4e96fcba77f7c50b3fa600a2",
+      "pixel_hash": "8dd01ddcc9a0c4699265b619ac0b948ffc4416f5d10a8445cd929ed4b8aeaad6",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -5094,7 +5095,7 @@
         "bakedShadow": true,
         "castShadowWillLookWrong": true
       },
-      "sha256": "254f4472e28a357b1b15ce9ef63a878577776d948236b893e0b0169fa53bdbde",
+      "pixel_hash": "1f5db1fd39c10b8573b78339d5716e853db8e06475e4b46776885d44f74b6a8c",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -5120,7 +5121,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "743919ca5b536c87f702fa8b626954963bba6707b4460305482429c020f4edc3",
+      "pixel_hash": "42c14695d805592e85a213f857f72aa46c07f59249e545f9a6750118d2154238",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -5146,7 +5147,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "84a650842160190de6fb8a68d48a93b77b3e24cdea132c3482ea6d0d366e8f80",
+      "pixel_hash": "98cee02d9e0f8de7bcd623cbf8b37fe769e95686a37e615a87fee3a8dd6c631e",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     },
@@ -5169,7 +5170,7 @@
         "bakedShadow": false,
         "castShadowWillLookWrong": true
       },
-      "sha256": "569730fad0c378987a12b63dc8d4a99d47de26954fcf7e10852a623ee20c2641",
+      "pixel_hash": "7ae35dddbf726f2202b9bf2e8808ae9574e3abbc2945be52b6cb9efcac6dca9d",
       "reviewer": "audit-2026-11-22",
       "date": "2026-11-22"
     }

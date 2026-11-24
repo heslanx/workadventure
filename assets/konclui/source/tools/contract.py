@@ -29,7 +29,7 @@ THE RULES. Seven are pixel rules, each measured on the picture alone (the kinds 
   colours         at most COLOURS_MAX distinct colours in the solid pixels                       stand, top, hang
   symmetry        a piece declared symmetric differs from its mirror by MIRROR_MAX or less        declared only
 
-HOW EACH ONE GATES. Every pixel rule is a per-sprite ratchet: the baseline lists today's offenders with the sha256 of the picture
+HOW EACH ONE GATES. Every pixel rule is a per-sprite ratchet: the baseline lists today's offenders with the pixel hash of the picture
 they were measured on. An offender that still has that picture keeps its pass (the art is legacy); a sprite that is not listed, or
 whose picture changed, is held to the full limit. So a redrawn piece is a gate from its first build, and nobody can swap one
 offender for another (the counts alone could not tell). A rule whose count falls tells you to lower the baseline. The rules that
@@ -37,10 +37,15 @@ no pixel can see (the projection class, the light side, "reads right", the footp
 in review.json, and a changed picture marks its entry stale. The model rules (projection, footprint, sort line, recipe
 determinism) belong to the baker's own tests, not to this file.
 
+WHAT "THE SAME PICTURE" MEANS. A picture is identified by its PIXELS, never by its file: the pixel hash is the sha256 of the size
+("WxH:") and the RGBA bytes of the decoded picture (bake.pixels_sha256 over Pillow's convert('RGBA')). The bytes of a PNG file are
+not an identity: the same pixels written on Linux and on macOS differ in the file (zlib), so a hash of the file made every
+baselined sprite "changed" on a build from another host. baseline.json and review.json are schema 2 for that reason; a schema 1 file
+(file hashes) is refused with a message that says how to write it again.
+
 Result, PASS, FAIL and REPORTED repeat the shapes of tools/verify.py without importing it (verify will import this file): the
 dataclass has the same five fields, `to_verify(Result)` converts. Python standard library, numpy and Pillow only."""
 import argparse
-import hashlib
 import json
 import math
 import re
@@ -59,7 +64,10 @@ import bake as B  # noqa: E402   the ONE outline definition (boundary, inks, sha
 
 DATA_DIR = SOURCE / 'hq-office' / 'contract'
 PASS, FAIL, REPORTED = 'pass', 'fail', 'reported'
-SCHEMA = 1
+SCHEMA = 1                       # pieces.json and ranking.json: they hold no picture identity
+IDENTITY_SCHEMA = 2              # baseline.json and review.json: they identify a picture by the hash of its pixels (schema 1: of its file)
+IDENTITY = ("a picture is identified by the pixel hash: the sha256 of 'WxH:' and the RGBA bytes of the decoded picture "
+            "(bake.pixels_sha256); the bytes of the PNG file are never hashed (they differ between hosts for the same pixels)")
 PROJECTION_FILE = HERE / 'projection.json'
 
 
@@ -126,8 +134,15 @@ def load_rgba(path):
         return np.asarray(picture.convert('RGBA')).copy()
 
 
-def sha256_file(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def pixel_hash(rgba):
+    """The identity of a picture: the sha256 of its size and its RGBA bytes (bake.pixels_sha256, the one definition the baker's override
+    patches use too). The same pixels give the same hash on every host and under every PNG encoder."""
+    return B.pixels_sha256(rgba)
+
+
+def picture_hash(path):
+    """pixel_hash of the picture in the PNG file at `path`, decoded to RGBA (never a hash of the file's bytes)."""
+    return pixel_hash(load_rgba(path))
 
 
 def solid_mask(rgba):
@@ -363,7 +378,7 @@ def placed_keys(dist):
 
 
 def measure(dist, pieces=None):
-    """{key: {'kind', 'sha256', 'placements', 'problems': {rule: [..]}, 'facts': {..}}} for every placed sprite of DIST."""
+    """{key: {'kind', 'pixel_hash', 'placements', 'problems': {rule: [..]}, 'facts': {..}}} for every placed sprite of DIST."""
     dist = Path(dist)
     kinds = K.kinds_of(dist)
     placed = placed_keys(dist)
@@ -374,7 +389,7 @@ def measure(dist, pieces=None):
         declared = declared_for(key, pieces)
         share, ink = outline_share(rgba)
         out[key] = dict(
-            kind=kinds[key], sha256=sha256_file(path), placements=placed.get(key, {}).get('placements', 0),
+            kind=kinds[key], pixel_hash=pixel_hash(rgba), placements=placed.get(key, {}).get('placements', 0),
             problems=sprite_problems(rgba, kinds[key], declared),
             facts=dict(rows=solid_rows(rgba), foot_gap=foot_gap(rgba), colours=colour_count(rgba), outline_share=round(share, 3),
                        mirror=round(mirror_difference(rgba), 4), mirror_colour=round(mirror_difference(rgba, colours=True), 4),
@@ -386,14 +401,15 @@ def measure(dist, pieces=None):
 # ------------------------------------------------------------------------------------------------------------------ baseline
 
 def make_baseline(measured):
-    """The ratchet document: per rule the offenders (sorted keys), the scope size and the count; per sprite the sha256 the
-    offenders were measured on. Deterministic: no date, no path."""
+    """The ratchet document: per rule the offenders (sorted keys), the scope size and the count; per sprite the pixel hash of the
+    picture the offenders were measured on. Deterministic: no date, no path, nothing of the host that built the pictures."""
     rules = {}
     for rule in RULES:
         scope = [k for k, m in measured.items() if m['kind'] in CATEGORY_KINDS[rule]]
         offenders = sorted(k for k in scope if rule in measured[k]['problems'])
         rules[rule] = dict(scope_kinds=list(CATEGORY_KINDS[rule]), in_scope=len(scope), count=len(offenders), offenders=offenders)
-    return dict(schema=SCHEMA, limits=limits(), rules=rules, sprites={k: measured[k]['sha256'] for k in measured})
+    return dict(schema=IDENTITY_SCHEMA, identity=IDENTITY, limits=limits(), rules=rules,
+                sprites={k: measured[k]['pixel_hash'] for k in measured})
 
 
 def limits():
@@ -404,7 +420,7 @@ def limits():
 def compare(measured, baseline):
     """{rule: {'count', 'baseline', 'regressions': [(key, why, problem)], 'improved': [key], 'fixed': n}}.
     A regression is an offender that is not an exempt legacy offender: not listed in the baseline's offenders for the rule, or
-    listed but its picture changed since (the sha256 differs), or a sprite the baseline never saw. An improvement is a listed
+    listed but its picture changed since (the pixel hash differs), or a sprite the baseline never saw. An improvement is a listed
     offender that is gone from the build or no longer offends."""
     out = {}
     for rule in RULES:
@@ -416,7 +432,7 @@ def compare(measured, baseline):
             if rule not in m['problems']:
                 continue
             count += 1
-            if key in listed and seen.get(key) == m['sha256']:
+            if key in listed and seen.get(key) == m['pixel_hash']:
                 continue
             if key not in seen:
                 why = 'new sprite'
@@ -432,7 +448,27 @@ def compare(measured, baseline):
 
 # ------------------------------------------------------------------------------------------------------------------ results
 
+def identity_problem(document, name, how):
+    """None when `document` (baseline.json or review.json) identifies pictures by their pixels (IDENTITY_SCHEMA), else the message
+    that refuses it. A schema 1 file holds hashes of PNG file bytes: they can never match a build made on another host, so reading
+    them would call every picture changed. `how` says how to write the file again."""
+    schema = (document or {}).get('schema')
+    if schema == IDENTITY_SCHEMA:
+        return None
+    return (f'contract/{name} is schema {schema!r}, this tool reads schema {IDENTITY_SCHEMA}: schema 1 identified a picture by the hash of its '
+            f'PNG file, which differs between hosts for the same pixels, schema {IDENTITY_SCHEMA} by the hash of its pixels; {how}')
+
+
+BASELINE_HOW = 'write it again with `python3 -I tools/contract.py baseline DIST --write` over a build of the art it was measured on'
+REVIEW_HOW = ('take the repository\'s schema 2 file, or seed it again with '
+              '`python3 -I tools/contract.py review-seed DIST --verdicts FILE --write`')
+
+
 def baseline_result(measured, baseline, enforce=True):
+    refused = identity_problem(baseline, 'baseline.json', BASELINE_HOW)
+    if refused:                         # not comparable: a gate that cannot read its baseline must not pass
+        return Result('office.contract', FAIL if enforce else REPORTED, refused, [refused],
+                      dict(sprites=len(measured), schema=baseline.get('schema')))
     compared = compare(measured, baseline)
     regressions = [(rule, *r) for rule, c in compared.items() for r in c['regressions']]
     improved = {rule: c['improved'] for rule, c in compared.items() if c['improved']}
@@ -516,7 +552,7 @@ def review_status(review, measured):
         entry = entries.get(key)
         if entry is None:
             out['missing'].append(key)
-        elif entry.get('sha256') != m['sha256']:
+        elif entry.get('pixel_hash') != m['pixel_hash']:
             out['stale'].append(key)
         else:
             out['current'].append(key)
@@ -527,6 +563,9 @@ def review_result(review, measured):
     """REPORTED only: the reviewed list is a human judgement, so a stale entry asks for a new look and never fails a build."""
     if review is None:
         return Result('office.contract.review', REPORTED, 'contract/review.json is missing: no reviewed verdicts')
+    refused = identity_problem(review, 'review.json', REVIEW_HOW)
+    if refused:
+        return Result('office.contract.review', REPORTED, refused, [refused])
     status = review_status(review, measured)
     entries = review.get('entries') or {}
     open_work = {v: sum(1 for k in status['current'] if entries[k].get('verdict') == v) for v in SEVERITY}
@@ -630,7 +669,7 @@ def scrub_document(value):
 
 
 def seed_review(dist, verdicts, reviewer=AUDIT_REVIEWER, date=AUDIT_DATE, previous=None):
-    """The reviewed list from the audit's verdict records (a list of dicts with `key`, `verdict`, `problems`, ...). The sha256 is
+    """The reviewed list from the audit's verdict records (a list of dicts with `key`, `verdict`, `problems`, ...). The pixel hash is
     that of the picture in DIST, so a changed picture invalidates its entry. A verdict whose key is not a placed sprite is
     matched to the one placed sprite that has the same editor name and no verdict of its own (the audit's transcription of two
     long ids was wrong); the repair is recorded in the entry. An entry that has a `second_opinion` in `previous` keeps it."""
@@ -654,7 +693,7 @@ def seed_review(dist, verdicts, reviewer=AUDIT_REVIEWER, date=AUDIT_DATE, previo
                      name=verdict.get('name'), audit={k: verdict.get(k) for k in (
                          'projection', 'topFaceVisible', 'depthPxPerTile', 'lightFrom', 'outline', 'scaleVsAvatar', 'bakedShadow',
                          'castShadowWillLookWrong')},
-                     sha256=sha256_file(dist / 'entities' / key), reviewer=reviewer, date=date)
+                     pixel_hash=picture_hash(dist / 'entities' / key), reviewer=reviewer, date=date)
         entry = scrub_document(entry)
         if original:
             entry['key_repaired_from'] = original
@@ -665,7 +704,7 @@ def seed_review(dist, verdicts, reviewer=AUDIT_REVIEWER, date=AUDIT_DATE, previo
     missing = sorted(set(placed) - set(entries))
     if missing:
         raise ValueError(f'{len(missing)} placed sprites have no verdict, first {missing[0]!r}')
-    return dict(schema=SCHEMA, reviewer=reviewer, repairs=repairs, entries={k: entries[k] for k in sorted(entries)})
+    return dict(schema=IDENTITY_SCHEMA, identity=IDENTITY, reviewer=reviewer, repairs=repairs, entries={k: entries[k] for k in sorted(entries)})
 
 
 # --------------------------------------------------------------------------------------------------------------------- pieces

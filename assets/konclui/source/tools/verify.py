@@ -523,7 +523,7 @@ def contract_baseline(dist, manifest=None):
         baseline = json.loads(json.dumps(baseline))
         for key, kind in (manifest.get('volumePieces') or {}).items():
             if kind == 'proxy' and key in (baseline.get('sprites') or {}) and (dist / 'entities' / key).is_file():
-                baseline['sprites'][key] = C.sha256_file(dist / 'entities' / key)
+                baseline['sprites'][key] = C.picture_hash(dist / 'entities' / key)
     return baseline
 
 

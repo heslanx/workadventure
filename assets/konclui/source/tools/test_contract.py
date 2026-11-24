@@ -10,6 +10,7 @@ import dataclasses
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -22,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import contract as C  # noqa: E402
 
+PINNED_CLEAN_HASH = '7a733ada7940e774dd96be17d926ac4f85c8cba3faca224f7cfad586f969ad4b'   # sha256 of b'20x20:' + clean()'s 1600 RGBA bytes
 INK = (16, 16, 48)
 FILL = (96, 128, 160)
 
@@ -50,9 +52,9 @@ def clean():
     return inked_box(20, 20, 2, 2, 17, 18)
 
 
-def save(path, rgba):
+def save(path, rgba, **options):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(np.asarray(rgba, dtype=np.uint8), 'RGBA').save(path)
+    Image.fromarray(np.asarray(rgba, dtype=np.uint8), 'RGBA').save(path, **options)
 
 
 def make_dist(root, pieces):
@@ -322,6 +324,143 @@ class Ratchet(Tmp):
         self.assertNotIn('height_cap', declared['konclui/sprites/t.png']['problems'])
 
 
+# ------------------------------------------------------------------------------------------------------- the picture identity
+
+def noisy(w=48, h=40, seed=7):
+    """A picture with many colours: a PNG of it is long enough that two zlib levels write different bytes."""
+    rng = np.random.default_rng(seed)
+    img = rng.integers(0, 256, size=(h, w, 4), dtype=np.uint8)
+    img[..., 3] = 255
+    return img
+
+
+class PixelIdentity(Tmp):
+    """A picture is identified by its pixels, not by the bytes of its file: the same pixels written on Linux and on macOS give files
+    that differ (zlib), and a build from either host has to be judged by the same baseline."""
+
+    def two_files(self, rgba, **second):
+        a, b = self.tmp / 'a.png', self.tmp / 'b.png'
+        save(a, rgba, compress_level=1)
+        save(b, rgba, compress_level=9, **second)
+        return a, b
+
+    def test_two_files_with_the_same_pixels_and_different_bytes_have_the_same_identity(self):
+        a, b = self.two_files(noisy())
+        self.assertNotEqual(a.read_bytes(), b.read_bytes(), 'the test needs two encodings of one picture')
+        self.assertEqual(np.array_equal(C.load_rgba(a), C.load_rgba(b)), True)
+        self.assertEqual(C.picture_hash(a), C.picture_hash(b))
+
+    def test_the_identity_is_of_the_decoded_pixels_not_of_the_way_the_png_stores_them(self):
+        rgba = noisy(8, 8)
+        rgba[..., :3] = rgba[..., :3] // 64 * 64                     # few colours: a palette PNG can hold them
+        palette, direct = self.tmp / 'palette.png', self.tmp / 'direct.png'
+        save(direct, rgba)
+        Image.fromarray(rgba, 'RGBA').convert('P', palette=Image.Palette.ADAPTIVE, colors=256).save(palette)
+        self.assertNotEqual(palette.read_bytes(), direct.read_bytes())
+        self.assertTrue(np.array_equal(C.load_rgba(palette), C.load_rgba(direct)), 'the palette picture decodes to the same RGBA')
+        self.assertEqual(C.picture_hash(palette), C.picture_hash(direct))
+
+    def test_one_changed_pixel_changes_the_identity(self):
+        rgba = noisy()
+        a, b = self.tmp / 'a.png', self.tmp / 'b.png'
+        save(a, rgba)
+        for x, y, channel in ((0, 0, 0), (47, 39, 2), (5, 6, 3)):
+            changed = rgba.copy()
+            changed[y, x, channel] ^= 1
+            save(b, changed)
+            self.assertNotEqual(C.picture_hash(a), C.picture_hash(b), (x, y, channel))
+
+    def test_a_reshaped_picture_cannot_collide_with_the_original(self):
+        flat = noisy(8, 4)
+        tall = flat.reshape(8, 4, 4)                                 # the same RGBA bytes in the same order, another size
+        self.assertEqual(flat.tobytes(), tall.tobytes())
+        self.assertNotEqual(C.pixel_hash(flat), C.pixel_hash(tall))
+
+    def test_the_identity_is_the_baker_s_pixel_hash_and_is_pinned(self):
+        import bake
+        rgba = clean()
+        self.assertEqual(C.pixel_hash(rgba), bake.pixels_sha256(rgba))
+        self.assertEqual(C.pixel_hash(rgba), PINNED_CLEAN_HASH, 'the definition of the identity changed: every stored hash is stale')
+
+    def test_a_build_with_other_png_bytes_and_the_same_pixels_passes_the_ratchet_and_the_review(self):
+        pieces = [piece('a.png', 'Piece A', offender(), tags=['Mesas']), piece('b.png', 'Piece B', noisy(20, 20)),
+                  piece('c.png', 'Piece C', clean())]
+        mac = self.dist(pieces, name='mac')
+        baseline = C.make_baseline(C.measure(mac))
+        review = C.seed_review(mac, [dict(key=f'konclui/sprites/{n}.png', name=f'Piece {n.upper()}', verdict='keep') for n in 'abc'])
+        linux = make_dist(self.tmp / 'linux', pieces)                # the same art, every PNG written at another zlib level
+        for path in (linux / 'entities' / 'konclui' / 'sprites').glob('*.png'):
+            save(path, C.load_rgba(path), compress_level=9, optimize=True)
+        differing = [p.name for p in (mac / 'entities' / 'konclui' / 'sprites').glob('*.png')
+                     if p.read_bytes() != (linux / 'entities' / 'konclui' / 'sprites' / p.name).read_bytes()]
+        self.assertIn('b.png', differing, 'the test needs a build whose files differ in bytes')
+        result = C.check(linux, baseline, pieces={}, review=review)
+        self.assertEqual((result[0].status, result[0].detail.split(' (')[0]), (C.PASS, 'no regression over 3 placed sprites'), result[0].detail)
+        self.assertEqual(result[2].data, dict(current=3, stale=0, missing=0, orphan=0))
+        self.assertEqual(C.make_baseline(C.measure(linux)), baseline, 'the baseline written from either build is the same document')
+
+    def test_a_redrawn_picture_is_still_a_changed_picture(self):
+        pieces = [piece('a.png', 'Piece A', offender(), tags=['Mesas'])]
+        mac = self.dist(pieces, name='mac')
+        baseline = C.make_baseline(C.measure(mac))
+        save(mac / 'entities' / 'konclui' / 'sprites' / 'a.png', inked_box(20, 20, 2, 2, 17, 16), compress_level=9)
+        result = C.check(mac, baseline, pieces={}, review={})[0]
+        self.assertEqual(result.status, C.FAIL)
+        self.assertIn('picture changed since the baseline', result.lines[0])
+
+
+class IdentitySchema(Tmp):
+    """baseline.json and review.json are schema 2 (pixel hashes); a schema 1 file holds hashes of PNG files and is refused by name."""
+
+    def setUp(self):
+        super().setUp()
+        self.dist_path = self.dist([piece('a.png', 'Piece A', offender(), tags=['Mesas']), piece('b.png', 'Piece B', clean())])
+        self.measured = C.measure(self.dist_path)
+
+    def test_the_documents_written_say_what_their_hashes_are(self):
+        baseline = C.make_baseline(self.measured)
+        review = C.seed_review(self.dist_path, [dict(key=f'konclui/sprites/{n}.png', name=n, verdict='keep') for n in 'ab'])
+        for document in (baseline, review):
+            self.assertEqual(document['schema'], C.IDENTITY_SCHEMA)
+            self.assertEqual(document['identity'], C.IDENTITY)
+        self.assertIn('pixel hash', C.IDENTITY)
+        self.assertIn('never hashed', C.IDENTITY)
+        self.assertTrue(all(len(h) == 64 for h in baseline['sprites'].values()))
+
+    def test_an_old_baseline_is_refused_with_the_reason_and_the_way_to_write_it_again(self):
+        old = C.make_baseline(self.measured)
+        old['schema'] = 1
+        del old['identity']
+        for enforce, status in ((True, C.FAIL), (False, C.REPORTED)):
+            result = C.check(self.dist_path, old, pieces={}, review={}, enforce=enforce)[0]
+            self.assertEqual((result.name, result.status), ('office.contract', status), result.detail)
+            self.assertIn('baseline.json is schema 1', result.detail)
+            self.assertIn('PNG file', result.detail)
+            self.assertIn('baseline DIST --write', result.detail)
+            self.assertEqual(result.lines, [result.detail])
+
+    def test_an_old_baseline_cannot_pass_by_having_no_regressions_to_report(self):
+        old = dict(C.make_baseline(self.measured), schema=1)
+        old['rules'] = {rule: dict(entry, offenders=[], count=0) for rule, entry in old['rules'].items()}
+        self.assertEqual(C.check(self.dist_path, old, pieces={}, review={})[0].status, C.FAIL)
+
+    def test_an_old_review_is_reported_not_read(self):
+        review = C.seed_review(self.dist_path, [dict(key=f'konclui/sprites/{n}.png', name=n, verdict='keep') for n in 'ab'])
+        review['schema'] = 1
+        result = C.check(self.dist_path, C.make_baseline(self.measured), pieces={}, review=review)[2]
+        self.assertEqual((result.name, result.status), ('office.contract.review', C.REPORTED))
+        self.assertIn('review.json is schema 1', result.detail)
+        self.assertIn('review-seed', result.detail)
+
+    def test_the_committed_files_are_schema_2_with_a_pixel_hash_for_every_picture(self):
+        baseline, review = load_committed('baseline.json'), load_committed('review.json')
+        for name, document in (('baseline.json', baseline), ('review.json', review)):
+            self.assertEqual((document['schema'], document['identity']), (C.IDENTITY_SCHEMA, C.IDENTITY), name)
+        hashes = list(baseline['sprites'].values()) + [e['pixel_hash'] for e in review['entries'].values()]
+        self.assertTrue(hashes and all(re.fullmatch('[0-9a-f]{64}', h) for h in hashes))
+        self.assertFalse(any('sha256' in e for e in review['entries'].values()), 'review entries name their hash a pixel_hash')
+
+
 class ReviewedList(Tmp):
     def verdicts(self, names):
         return [dict(key=f'konclui/sprites/{n}.png', name=f'Piece {n.upper()}', verdict=v, problems=['p'], fix=None, projection='front-elevation',
@@ -336,7 +475,7 @@ class ReviewedList(Tmp):
     def test_the_seed_carries_the_verdict_the_audit_fields_the_reviewer_and_the_hash_of_the_picture(self):
         entry = self.review['entries']['konclui/sprites/b.png']
         self.assertEqual((entry['verdict'], entry['reviewer'], entry['problems']), ('redraw', C.AUDIT_REVIEWER, ['p']))
-        self.assertEqual(entry['sha256'], C.sha256_file(self.dist_path / 'entities/konclui/sprites/b.png'))
+        self.assertEqual(entry['pixel_hash'], C.picture_hash(self.dist_path / 'entities/konclui/sprites/b.png'))
         self.assertEqual(entry['audit']['projection'], 'front-elevation')
 
     def test_a_changed_picture_makes_its_entry_stale_and_only_its_entry(self):
@@ -1033,7 +1172,7 @@ class ScratchPaths(Tmp):
         dist = self.dist([piece('a.png', 'Mesa A', clean())])
         verdicts = [dict(key='konclui/sprites/a.png', name='Mesa A', verdict='redraw', problems=[f'x {SCRATCH}/asset-audit/y'])]
         review = C.seed_review(dist, verdicts)
-        self.assertEqual(review['entries']['konclui/sprites/a.png']['sha256'], C.sha256_file(dist / 'entities/konclui/sprites/a.png'))
+        self.assertEqual(review['entries']['konclui/sprites/a.png']['pixel_hash'], C.picture_hash(dist / 'entities/konclui/sprites/a.png'))
         measured = C.measure(dist)
         self.assertEqual(C.review_status(review, measured)['current'], ['konclui/sprites/a.png'])
 
@@ -1049,14 +1188,35 @@ class ScratchPaths(Tmp):
                 self.assertNotIn(needle, source.read_text(), f'{source.name} spells {needle}: build it in parts')
 
 
+def built_switch(dist):
+    """The KONCLUI_VOLUME_PIECES names the build at `dist` records in fx/manifest.json "volume" (empty: the default build)."""
+    manifest = Path(dist) / 'fx' / 'manifest.json'
+    value = json.loads(manifest.read_text()).get('volume') if manifest.is_file() else ''
+    return {n for n in (value or '').split(',') if n}
+
+
 @unittest.skipUnless(os.environ.get('KONCLUI_DIST'), 'set KONCLUI_DIST to a built map (hq-office/build.py --out DIR)')
 class BuiltContract(unittest.TestCase):
+    """The committed baseline over the build in $KONCLUI_DIST. A default build is judged by the committed baseline as it is. A build
+    made with KONCLUI_VOLUME_PIECES is judged by what it was made with (its manifest's "volume"): a piece baked from a recipe is a new
+    picture and is held to the whole contract, a hand-drawn piece the switch touched up ("proxy") by its standing (verify.contract_baseline)."""
+
     def test_the_committed_baseline_holds_on_the_build_it_was_measured_on_or_on_an_improvement_of_it(self):
-        results = C.check(os.environ['KONCLUI_DIST'])
+        import verify
+        dist = os.environ['KONCLUI_DIST']
+        switch = built_switch(dist)
+        results = C.check(dist, baseline=verify.contract_baseline(dist))
         for r in results:
             print(f'  {r.status:<9} {r.name}  {r.detail}', file=sys.stderr)
         self.assertEqual(results[0].status, C.PASS, results[0].lines[:3])
         self.assertEqual(results[1].status, C.PASS, results[1].lines[:3])
+        if switch & {'air-hockey', 'stool'}:       # a baked piece is a new picture: the baseline's hash for its key no longer matches
+            manifest = json.loads((Path(dist) / 'fx' / 'manifest.json').read_text())
+            baked = {k for k, v in manifest['volumePieces'].items() if v == 'volume'}
+            self.assertTrue(baked, switch)
+            baseline = C.load_json('baseline.json')
+            for key in baked & set(baseline['sprites']):
+                self.assertNotEqual(baseline['sprites'][key], C.picture_hash(Path(dist) / 'entities' / key), key)
 
     def test_the_committed_agreement_figures_are_what_the_build_gives(self):
         pieces = load_committed('pieces.json')
