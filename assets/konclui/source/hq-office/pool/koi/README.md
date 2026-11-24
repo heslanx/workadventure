@@ -4,7 +4,7 @@ Sobreposição animada de carpas para o lago e o canal do escritório `hq-office
 Substitui, **só neste mapa**, o módulo `office/koi/` do escritório principal. Em relação a ele:
 
 - **Resolução nativa:** 1 pixel do canvas = 1 pixel do mapa (32 px por tile). Sem os blocos 2x
-  do módulo antigo; o corpo é um caminho suave com leve anti-aliasing nas bordas.
+  do módulo antigo; cada carpa é rasterizada em pixels inteiros (sem anti-aliasing, sem translucidez, sem sombra própria).
 - **Comportamento novo:** campo de distância da margem, campos de fluxo geodésicos (o canal
   estreito funciona nos dois sentidos), boids leves, personalidade por peixe, nado de impulso e
   deslize, descanso no fundo, disputa por comida e curiosidade por quem para na margem.
@@ -68,7 +68,7 @@ teleporte. Coluna de 7 juntas que seguem a cabeça.
 
 | Parâmetro | Valor |
 |---|---|
-| Comprimento / largura | 18–44 px / 25–30% do comprimento; pretas tendem a ser grandes |
+| Comprimento / largura | 10–20 px (0,5 a 0,95 m a 21 px por metro; a maioria 12–17 px) / 25–30% do comprimento; pretas tendem a ser grandes |
 | Cruzeiro | 6,5–11,5 px/s por peixe; impulso até 1,3× e deslize até 0,78× |
 | Velocidade máxima | 20–28 px/s (ousadia e tamanho), teto absoluto 28 |
 | Propulsão | empuxo 15·esforço·(0,3 + 0,7·sen²(fase)), arrasto 0,3/s; batida 0,45–3 Hz |
@@ -109,14 +109,17 @@ a aba oculta (`visibilitychange`).
 ## Desenho
 
 Canvas 2D em 1:1, `image-rendering: pixelated` (o zoom do WA amplia como o resto do mapa).
-Por quadro: sombras suaves deslocadas conforme a profundidade, nadadeiras translúcidas, corpo
-com onda que cresce com o empuxo, manchas recortadas no corpo (kohaku, sanke, gold, shiro e
-preta), linha dorsal, contorno fino azul-escuro, olhos e véu de água pela profundidade; depois
-comida e círculos; por fim tudo é recortado por `open.png`. Cores levemente apagadas.
-Sem alocação por quadro nos laços quentes (arrays tipados e cores constantes).
+Por quadro: cada carpa é rasterizada numa grade pequena (48×48) a partir da coluna simulada: cauda, corpo
+(discos ao longo da coluna, com a onda que cresce com o empuxo), manchas (kohaku, sanke, gold, shiro e preta,
+elipses que seguem o corpo), nadadeiras peitorais, olhos (só se a cabeça comporta dois) e 1 px de tinta azul-escura
+em volta de tudo; a grade vai ao canvas com `fillRect` de 1 px, cores chapadas. Sem sombra pintada (a sombra é do
+tempo de execução, não da figura) e sem véu translúcido: a carpa no fundo (profundidade > 0,6) usa uma paleta mais
+fria. Depois vêm a comida (quadrado de 3×3) e os círculos (ainda traçados com anti-aliasing e alfa, como efeito de
+água); por fim tudo é recortado por `open.png`. Cores levemente apagadas.
+Sem alocação por quadro nos laços quentes (grade e arrays tipados, cores constantes).
 
-Custo medido: simulação ~10–16 µs por passo com 10–16 carpas no Node; desenho p50 ~0,2 ms
-por quadro no Chromium headless (sem GPU/compositor e sem o motor do WA).
+Custo medido: simulação ~10–16 µs por passo com 10–16 carpas no Node; desenho p50 ~0,2 ms (p95 ~0,4 ms)
+por quadro com 8 carpas no Chrome headless (sem GPU/compositor e sem o motor do WA).
 
 ## Prévia
 
@@ -148,6 +151,11 @@ saltos, com limites de velocidade e giro; cruzeiro lento com impulso e deslize; 
 sobreposição longa; toda carpa visita canal e lago em 240 s; comida só em água aberta, disputada,
 comida em menos de 25 s com círculo e dispersão; `dt` limitado e inválido rejeitado;
 movimento reduzido mais lento e sem círculos; curiosidade e perda de interesse; custo de CPU.
+
+`size-and-pixels.test.mjs` (também em `node --test`): toda carpa tem 10–20 px (mediana 12–17), a mesma semente
+mantém os padrões, e o pintor, com um contexto 2D que só tem `fillRect`, escreve apenas células opacas de 1 px,
+inteiras, fechadas por 1 px de tinta. `KOI_DIR=<outra cópia do módulo> node --test size-and-pixels.test.mjs` roda contra
+outra cópia (contra a versão anterior falha em 3 de 4).
 
 ## Pendências
 

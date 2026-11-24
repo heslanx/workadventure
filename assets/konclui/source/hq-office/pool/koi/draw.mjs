@@ -1,23 +1,39 @@
-/** Koi painter: canvas 2D at native resolution (1 canvas px = 1 map px). Bodies are smooth
- * anti-aliased paths along the simulated spine, with a travelling wave whose amplitude rises
- * with thrust; patterns are clipped to the body so they bend with it. Every frame starts
- * from a cleared canvas and ends clipped to the open-water mask, so fish under the deck
- * stay hidden. No allocation per frame: geometry lives in preallocated typed arrays and
- * every colour is a constant string. */
+/** Koi painter: canvas 2D at native resolution (1 canvas px = 1 map px), drawn in whole pixels like the rest of the
+ * map. Each fish is rasterised from the simulated spine into a small grid (body, fins, pattern, one pixel of ink round
+ * it, eyes) and written with fillRect: no anti-aliasing, no translucency and no shadow of its own (a painted shadow is
+ * what the office art leaves to the runtime). A fish in deep water uses a second, cooler palette instead of a see-through
+ * veil. Every frame starts from a cleared canvas and ends clipped to the open-water mask, so fish under the deck stay
+ * hidden. No allocation per frame: the grid and the geometry are preallocated and every colour is a constant string. */
 
 const TAU = Math.PI * 2;
 const ST = 12;                                   // stations along the body, snout to tail root
-const SUN_X = 0.55, SUN_Y = 0.83;                // light from the top-left: shadows fall down-right
 
 // A touch muted so they sit in pixel art.
 const IVORY = '#ded4bd', RED = '#b04a33', SUMI = '#2b3134', GOLD = '#c79a4e', GOLD_DEEP = '#9f7a3e';
 const BLACK = '#262b2f', SHEEN = '#4a545c';
 const BASE = { kohaku: IVORY, sanke: IVORY, gold: GOLD, shiro: IVORY, black: BLACK };
-const FIN = { kohaku: '#e6ddc9', sanke: '#e6ddc9', gold: '#d6b46e', shiro: '#d8d1c1', black: '#3b4247' };
-const HIGHLIGHT = { kohaku: 0.1, sanke: 0.1, gold: 0.24, shiro: 0.1, black: 0.08 };
+const FIN = { kohaku: '#eee6d4', sanke: '#eee6d4', gold: '#dfc080', shiro: '#e4ddcd', black: '#3b4247' };
 const BLOB_COLORS = [RED, SUMI, GOLD_DEEP, SHEEN];
-const OUTLINE = '#123e47', VEIL = '#1c5a63', SHADOW = '#03141a', EYE = '#15191b', RING = '#e2f4f1';
+const OUTLINE = '#123e47', VEIL = '#1c5a63', EYE = '#15191b', RING = '#e2f4f1';
 const PELLET = '#c48a4b', PELLET_EDGE = '#3a2615';
+
+// Grid cell values: 1 body, 2 fin, 3..6 the four pattern colours, 7 ink, 8 eye. PALETTE[pattern][deep] maps them to colours.
+const CELL_FIN = 2, CELL_BLOB = 3, CELL_INK = 7, CELL_EYE = 8;
+const GW = 48;                                   // grid side: a fish is at most 20 px long, with its fins well inside
+const DEEP_FROM = 0.6;                           // depth at which a fish takes the deep palette
+const mixHex = (a, b, t) => {
+  let out = '#';
+  for (let i = 1; i < 7; i += 2) {
+    const v = Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t);
+    out += v.toString(16).padStart(2, '0');
+  }
+  return out;
+};
+const PALETTE = {};
+for (const pattern of Object.keys(BASE)) {
+  const plain = ['', BASE[pattern], FIN[pattern], ...BLOB_COLORS, OUTLINE, EYE];
+  PALETTE[pattern] = [plain, plain.map((c, i) => (i && i !== CELL_INK && i !== CELL_EYE ? mixHex(c, VEIL, 0.24) : c))];
+}
 
 function hashRandom(seed) {
   let state = seed >>> 0;
@@ -117,20 +133,20 @@ export function createPainter({ canvas, clip }) {
     tipX = cx[0] + tx[0] * hw[0] * 1.45; tipY = cy[0] + ty[0] * hw[0] * 1.45;
   }
 
-  function bodyPath(ox, oy) {
-    ctx.beginPath();
-    ctx.moveTo(rx[0] + ox, ry[0] + oy);
-    ctx.quadraticCurveTo(tipX + ox, tipY + oy, lx[0] + ox, ly[0] + oy);
-    for (let k = 1; k < ST - 1; k++) {
-      ctx.quadraticCurveTo(lx[k] + ox, ly[k] + oy, (lx[k] + lx[k + 1]) / 2 + ox, (ly[k] + ly[k + 1]) / 2 + oy);
+  const grid = new Uint8Array(GW * GW);
+  let gx = 0, gy = 0;                                    // map position of grid cell (0, 0)
+
+  /** Marks the cells whose centre is within r of (x, y) map px with value v; `only` limits it to cells holding that value
+   * (0 = any empty or any). */
+  function disc(x, y, r, v, only) {
+    const x0 = Math.max(0, Math.floor(x - r - gx)), x1 = Math.min(GW - 1, Math.floor(x + r - gx));
+    const y0 = Math.max(0, Math.floor(y - r - gy)), y1 = Math.min(GW - 1, Math.floor(y + r - gy));
+    for (let j = y0; j <= y1; j++) {
+      for (let i = x0; i <= x1; i++) {
+        const dx = gx + i + 0.5 - x, dy = gy + j + 0.5 - y;
+        if (dx * dx + dy * dy <= r * r && (only === undefined || grid[j * GW + i] === only)) grid[j * GW + i] = v;
+      }
     }
-    ctx.lineTo(lx[ST - 1] + ox, ly[ST - 1] + oy);
-    ctx.lineTo(rx[ST - 1] + ox, ry[ST - 1] + oy);
-    for (let k = ST - 2; k > 0; k--) {
-      ctx.quadraticCurveTo(rx[k] + ox, ry[k] + oy, (rx[k] + rx[k - 1]) / 2 + ox, (ry[k] + ry[k - 1]) / 2 + oy);
-    }
-    ctx.lineTo(rx[0] + ox, ry[0] + oy);
-    ctx.closePath();
   }
 
   // Interpolated station at body parameter u: writes into at[0..4] = x, y, tx, ty, half width.
@@ -142,126 +158,109 @@ export function createPainter({ canvas, clip }) {
     at[4] = hw[k] + (hw[k + 1] - hw[k]) * t;
   }
 
-  function fin(u, side, angle, length, breadth) {
+  // A pectoral or pelvic fin: a nub just outside the body, swinging with the stroke.
+  function fin(u, side, angle, length) {
     station(u);
-    const bx = -at[2], by = -at[3];                       // backward
-    const nx = -at[3] * side, ny = at[2] * side;          // outward on this side
+    const bx = -at[2], by = -at[3], nx = -at[3] * side, ny = at[2] * side;
     const dx = bx * Math.cos(angle) + nx * Math.sin(angle), dy = by * Math.cos(angle) + ny * Math.sin(angle);
-    const ox = at[0] + nx * at[4] * 0.8 + dx * length * 0.75, oy = at[1] + ny * at[4] * 0.8 + dy * length * 0.75;
-    ctx.beginPath();
-    ctx.ellipse(ox, oy, length, breadth, Math.atan2(dy, dx), 0, TAU);
-    ctx.fill();
+    disc(at[0] + nx * at[4] * 0.8 + dx * length * 0.75, at[1] + ny * at[4] * 0.8 + dy * length * 0.75, 0.6, CELL_FIN);
   }
 
-  function drawFish(f, reduced) {
+  function rasterise(f, reduced) {
     const L = f.length;
-    const finWave = Math.sin(f.finPhase);
-    ctx.fillStyle = FIN[f.pattern];
-    // Caudal fin: two lobes swinging with the last part of the wave.
+    // The grid sits on the whole-pixel corner just before the fish's extent.
+    let minX = Infinity, minY = Infinity;
+    for (let k = 0; k < ST; k++) { minX = Math.min(minX, cx[k]); minY = Math.min(minY, cy[k]); }
+    gx = Math.floor(minX - 0.35 * L) - 2; gy = Math.floor(minY - 0.35 * L) - 2;
+    grid.fill(0);
+
+    // Caudal fin first (the body is drawn over its root): a centre line and two lobes swinging with the wave.
     const e = ST - 1;
     const swing = 0.45 * Math.sin(f.phase - 6.1) * (0.25 + 0.75 * Math.min(1, f.effort)) * (reduced ? 0.5 : 1);
     const back = Math.atan2(-ty[e], -tx[e]) + swing;
     const fx = Math.cos(back), fy = Math.sin(back), sx = -fy, sy = fx;
-    const fl = 0.24 * L, fs = 0.13 * L * (1 - 0.2 * Math.abs(Math.sin(f.phase))), bw = hw[e] * 1.1;
-    ctx.globalAlpha = 0.62;
-    ctx.beginPath();
-    ctx.moveTo(cx[e] + sx * bw, cy[e] + sy * bw);
-    ctx.quadraticCurveTo(cx[e] + fx * fl * 0.45 + sx * fs * 1.1, cy[e] + fy * fl * 0.45 + sy * fs * 1.1,
-      cx[e] + fx * fl + sx * fs, cy[e] + fy * fl + sy * fs);
-    ctx.lineTo(cx[e] + fx * fl * 0.55, cy[e] + fy * fl * 0.55);
-    ctx.lineTo(cx[e] + fx * fl - sx * fs, cy[e] + fy * fl - sy * fs);
-    ctx.quadraticCurveTo(cx[e] + fx * fl * 0.45 - sx * fs * 1.1, cy[e] + fy * fl * 0.45 - sy * fs * 1.1,
-      cx[e] - sx * bw, cy[e] - sy * bw);
-    ctx.closePath();
-    ctx.fill();
-    // Pectoral and pelvic fins fan out and flex.
-    ctx.globalAlpha = 0.55;
-    const flap = reduced ? 0.12 : 0.28;
-    fin(0.26, 1, 0.95 + flap * finWave, 0.1 * L, 0.045 * L);
-    fin(0.26, -1, 0.95 - flap * finWave, 0.1 * L, 0.045 * L);
-    fin(0.6, 1, 0.75 + flap * 0.5 * finWave, 0.055 * L, 0.025 * L);
-    fin(0.6, -1, 0.75 - flap * 0.5 * finWave, 0.055 * L, 0.025 * L);
+    const fl = 0.24 * L, fs = 0.13 * L * (1 - 0.2 * Math.abs(Math.sin(f.phase)));
+    for (let s = 0.3; s <= 0.8; s += 0.25) disc(cx[e] + fx * fl * s, cy[e] + fy * fl * s, 0.6, CELL_FIN);
+    for (const side of [-1, 1]) {
+      disc(cx[e] + fx * fl * 0.6 + sx * fs * 0.45 * side, cy[e] + fy * fl * 0.6 + sy * fs * 0.45 * side, 0.55, CELL_FIN);
+      disc(cx[e] + fx * fl + sx * fs * 0.8 * side, cy[e] + fy * fl + sy * fs * 0.8 * side, 0.55, CELL_FIN);
+    }
+    const finWave = Math.sin(f.finPhase), flap = reduced ? 0.12 : 0.28;
+    fin(0.26, 1, 0.95 + flap * finWave, 0.1 * L * 1.6);
+    fin(0.26, -1, 0.95 - flap * finWave, 0.1 * L * 1.6);
 
-    // Body, then patterns and a dorsal highlight clipped to it.
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = BASE[f.pattern];
-    bodyPath(0, 0);
-    ctx.fill();
+    // Body: discs along the spine, as wide as the half width at each station, plus the snout.
+    for (let k = 0; k < ST - 1; k++) {
+      const span = Math.hypot(cx[k + 1] - cx[k], cy[k + 1] - cy[k]), n = Math.max(1, Math.ceil(span / 0.5));
+      for (let s = 0; s <= n; s++) {
+        const t = s / n;
+        disc(cx[k] + (cx[k + 1] - cx[k]) * t, cy[k] + (cy[k + 1] - cy[k]) * t, Math.max(0.6, hw[k] + (hw[k + 1] - hw[k]) * t), 1);
+      }
+    }
+    disc(tipX, tipY, Math.max(0.6, hw[0] * 0.85), 1);
+
+    // Pattern: each blob is an ellipse that follows the body; only body cells take it.
     let layout = layouts.get(f.id);
     if (!layout || layout.variant !== f.variant) {
       layout = { variant: f.variant, blobs: makeLayout(f.pattern, f.variant) };
       layouts.set(f.id, layout);
     }
-    ctx.save();
-    ctx.clip();
     const blobs = layout.blobs;
-    for (let i = 0; i < blobs.length; i += 5) {
-      station(blobs[i]);
-      ctx.fillStyle = BLOB_COLORS[blobs[i + 4]];
-      ctx.beginPath();
-      ctx.ellipse(at[0] - at[3] * blobs[i + 1] * at[4], at[1] + at[2] * blobs[i + 1] * at[4],
-        blobs[i + 2] * L, Math.max(0.6, blobs[i + 3] * at[4]), Math.atan2(at[3], at[2]), 0, TAU);
-      ctx.fill();
+    for (let b = 0; b < blobs.length; b += 5) {
+      station(blobs[b]);
+      const ox = at[0] - at[3] * blobs[b + 1] * at[4], oy = at[1] + at[2] * blobs[b + 1] * at[4];
+      const ra = Math.max(0.75, blobs[b + 2] * L), rb = Math.max(0.75, blobs[b + 3] * at[4]);
+      const colour = CELL_BLOB + blobs[b + 4], reach = Math.max(ra, rb);
+      const x0 = Math.max(0, Math.floor(ox - reach - gx)), x1 = Math.min(GW - 1, Math.floor(ox + reach - gx));
+      const y0 = Math.max(0, Math.floor(oy - reach - gy)), y1 = Math.min(GW - 1, Math.floor(oy + reach - gy));
+      for (let j = y0; j <= y1; j++) {
+        for (let i = x0; i <= x1; i++) {
+          if (grid[j * GW + i] !== 1) continue;
+          const dx = gx + i + 0.5 - ox, dy = gy + j + 0.5 - oy;
+          const u = dx * at[2] + dy * at[3], v = -dx * at[3] + dy * at[2];
+          if ((u * u) / (ra * ra) + (v * v) / (rb * rb) <= 1) grid[j * GW + i] = colour;
+        }
+      }
     }
-    ctx.globalAlpha = HIGHLIGHT[f.pattern];
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = Math.max(0.8, f.width * 0.32);
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    station(0.1); ctx.moveTo(at[0], at[1]);
-    for (let u = 0.2; u <= 0.71; u += 0.1) { station(u); ctx.lineTo(at[0], at[1]); }
-    ctx.stroke();
-    ctx.globalAlpha = 0.22;                              // dorsal fin seen from above: a dark ridge
-    ctx.strokeStyle = SUMI;
-    ctx.lineWidth = Math.max(0.7, f.width * 0.1);
-    ctx.beginPath();
-    station(0.32); ctx.moveTo(at[0], at[1]);
-    for (let u = 0.42; u <= 0.73; u += 0.1) { station(u); ctx.lineTo(at[0], at[1]); }
-    ctx.stroke();
-    ctx.restore();
 
-    // Thin dark outline (deep-water blue, the map's outline rule), eyes, then the water veil.
-    ctx.globalAlpha = 0.5;
-    ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = 0.8;
-    bodyPath(0, 0);
-    ctx.stroke();
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = EYE;
+    // Eyes (only where the head is wide enough to hold two) and the mouth while it opens.
     station(0.11);
-    const eyeR = 0.45 + L * 0.012;
-    for (let side = -1; side <= 1; side += 2) {
-      ctx.beginPath();
-      ctx.arc(at[0] - at[3] * at[4] * 0.62 * side, at[1] + at[2] * at[4] * 0.62 * side, eyeR, 0, TAU);
-      ctx.fill();
+    if (f.width >= 3.6) {
+      for (let side = -1; side <= 1; side += 2) {
+        const ex = Math.floor(at[0] - at[3] * at[4] * 0.62 * side - gx), ey = Math.floor(at[1] + at[2] * at[4] * 0.62 * side - gy);
+        if (ex >= 0 && ey >= 0 && ex < GW && ey < GW && grid[ey * GW + ex] >= 1 && grid[ey * GW + ex] !== CELL_FIN) grid[ey * GW + ex] = CELL_EYE;
+      }
     }
-    ctx.globalAlpha = 0.06 + Math.min(1, Math.max(0, f.depth)) * 0.36;
-    ctx.fillStyle = VEIL;
-    bodyPath(0, 0);
-    ctx.fill();
-    if (f.gulp > 0) {                                    // the mouth opens as it takes the pellet
-      ctx.globalAlpha = 0.75 * Math.sin(Math.PI * Math.min(1, f.gulp));
-      ctx.fillStyle = EYE;
-      ctx.beginPath();
-      ctx.ellipse(cx[0] + tx[0] * hw[0] * 0.55, cy[0] + ty[0] * hw[0] * 0.55, hw[0] * 0.45, hw[0] * 0.3,
-        Math.atan2(ty[0], tx[0]) + Math.PI / 2, 0, TAU);
-      ctx.fill();
+    if (f.gulp > 0.25 && f.gulp < 0.75) {
+      const mx = Math.floor(cx[0] + tx[0] * hw[0] * 0.9 - gx), my = Math.floor(cy[0] + ty[0] * hw[0] * 0.9 - gy);
+      if (mx >= 0 && my >= 0 && mx < GW && my < GW && grid[my * GW + mx]) grid[my * GW + mx] = CELL_EYE;
     }
-    ctx.globalAlpha = 1;
+
+    // One pixel of ink round the whole fish (fins included).
+    for (let j = 0; j < GW; j++) {
+      for (let i = 0; i < GW; i++) {
+        if (grid[j * GW + i]) continue;
+        const up = j > 0 ? grid[(j - 1) * GW + i] : 0, down = j < GW - 1 ? grid[(j + 1) * GW + i] : 0;
+        const left = i > 0 ? grid[j * GW + i - 1] : 0, right = i < GW - 1 ? grid[j * GW + i + 1] : 0;
+        if ((up && up !== CELL_INK) || (down && down !== CELL_INK) || (left && left !== CELL_INK) || (right && right !== CELL_INK)) {
+          grid[j * GW + i] = CELL_INK;
+        }
+      }
+    }
   }
 
-  function drawShadow(f) {
-    // Soft shadow on the pond floor: nearer the floor (deeper) means closer and darker.
-    const depth = Math.min(1, Math.max(0, f.depth));
-    const off = 1.2 + 3.6 * (1 - depth);
-    const alpha = 0.14 + 0.12 * depth;
-    ctx.fillStyle = SHADOW;
-    ctx.globalAlpha = alpha * 0.55;
-    bodyPath(SUN_X * (off + 0.9), SUN_Y * (off + 0.9));
-    ctx.fill();
-    ctx.globalAlpha = alpha;
-    bodyPath(SUN_X * off, SUN_Y * off);
-    ctx.fill();
+  function drawFish(f, reduced) {
+    rasterise(f, reduced);
+    const colours = PALETTE[f.pattern][f.depth > DEEP_FROM ? 1 : 0];
+    let current = 0;
+    for (let j = 0; j < GW; j++) {
+      for (let i = 0; i < GW; i++) {
+        const v = grid[j * GW + i];
+        if (!v) continue;
+        if (v !== current) { ctx.fillStyle = colours[v]; current = v; }
+        ctx.fillRect(gx + i, gy + j, 1, 1);
+      }
+    }
   }
 
   function drawRipples(snapshot) {
@@ -284,17 +283,18 @@ export function createPainter({ canvas, clip }) {
     ctx.globalAlpha = 1;
   }
 
+  // A pellet is a 3x3 square with a lighter pixel; it bobs by whole pixels.
   function drawFood(snapshot) {
     for (let i = 0; i < snapshot.foodCount; i++) {
       const p = snapshot.food[i];
-      const bob = snapshot.reducedMotion ? 0 : Math.sin(p.age * 3 + i) * 0.3;
-      ctx.globalAlpha = Math.min(1, p.age * 6);
+      if (p.age < 0.1) continue;
+      const bob = snapshot.reducedMotion ? 0 : Math.round(Math.sin(p.age * 3 + i) * 0.5 + 0.1);
+      const x = Math.round(p.x) - 1, y = Math.round(p.y) + bob - 1;
       ctx.fillStyle = PELLET_EDGE;
-      ctx.beginPath(); ctx.arc(p.x, p.y + bob, 1.9, 0, TAU); ctx.fill();
+      ctx.fillRect(x, y, 3, 3);
       ctx.fillStyle = PELLET;
-      ctx.beginPath(); ctx.arc(p.x - 0.2, p.y + bob - 0.2, 1.25, 0, TAU); ctx.fill();
+      ctx.fillRect(x, y, 2, 2);
     }
-    ctx.globalAlpha = 1;
   }
 
   return {
@@ -311,7 +311,6 @@ export function createPainter({ canvas, clip }) {
         while (j > 0 && fish[order[j - 1]].depth < fish[i].depth) { order[j] = order[j - 1]; j--; }
         order[j] = i;
       }
-      for (let i = 0; i < n; i++) { buildBody(fish[order[i]], reduced); drawShadow(fish[order[i]]); }
       for (let i = 0; i < n; i++) { buildBody(fish[order[i]], reduced); drawFish(fish[order[i]], reduced); }
       drawFood(snapshot);
       drawRipples(snapshot);

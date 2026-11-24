@@ -13,6 +13,7 @@ import { createField, createGeodesic } from './field.mjs';
 export const FIXED_DT = 1 / 60;
 export const MAX_DT = 0.05;
 export const MAX_FISH = 16;
+export const MIN_LENGTH = 10, MAX_LENGTH = 20;   // px of a fish: 0.5 to 0.95 m at 21 px per metre
 export const TOP_SPEED = 28;
 export const SEGMENTS = 7;
 export const MAX_FOOD = 12;
@@ -127,17 +128,19 @@ export function createSchool(options) {
   function makeFish(id, patternOffset) {
     const pattern = PATTERNS[(id + patternOffset) % PATTERNS.length];
     const roll = rng();
-    let length = roll < 0.22 ? 18 + rng() * 5 : roll < 0.75 ? 24 + rng() * 10 : 35 + rng() * 9;
-    if (pattern === 'black') length = Math.max(length, 31 + rng() * 11);
-    length = Math.min(44, length);
+    // Real koi are 0.3 to 0.9 m, 6 to 19 px at the map's 21 px per metre; the school runs 10 to 20 px (0.5 to 0.95 m),
+    // most of it 12 to 17 px. The draws are in the same order as before, so a seed keeps its pattern and its roles.
+    let length = roll < 0.22 ? 10 + rng() * 2 : roll < 0.75 ? 12.5 + rng() * 4 : 16.5 + rng() * 3.5;
+    if (pattern === 'black') length = Math.max(length, 15.5 + rng() * 4.5);
+    length = Math.min(MAX_LENGTH, length);
     const boldness = rng();
     const f = {
       id, pattern, variant: Math.floor(rng() * 0xffffffff) >>> 0, length,
       width: length * (0.25 + rng() * 0.05),
       hardClear: 0.3 * length + 2, comfort: 0.4 * length + 8,
       boldness,
-      cruise: 6.5 + rng() * 4 + (length - 18) * 0.04,
-      top: Math.min(TOP_SPEED, 20 + boldness * 5 + (length - 18) * 0.12),
+      cruise: 6.5 + rng() * 4 + (length - MIN_LENGTH) * 0.1,
+      top: Math.min(TOP_SPEED, 20 + boldness * 5 + (length - MIN_LENGTH) * 0.3),
       sociability: 0.2 + rng() * 0.7,
       curiosity: clamp(0.25 + boldness * 0.6 + (rng() - 0.5) * 0.3, 0.1, 1),
       restiness: 0.12 + rng() * 0.38,
