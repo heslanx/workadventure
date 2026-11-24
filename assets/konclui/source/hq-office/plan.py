@@ -339,9 +339,9 @@ for (x, y), kind, colour in POOL_PLANTS:
 
 # Reception: the feature wall with the logo, the desk facing the entrance, the K mat, totems outside, planters by the
 # glass and a lounge with a rug on each side of the desk (plus the waiting lounges further out).
-put('reception/desk', 'Koncluí: reception desk', 'oak', 'Down', AXIS - 2, 42, mirror=False)
-on('reception/desk', 'reception/pc', *PC, 'Up', dx=-28, mirror=False)
-on('reception/desk', 'reception/orchid', 'Ceramic Planter', 'white', 'Down', dx=50, mirror=False)
+put('reception/desk', 'Koncluí: reception desk', 'oak', 'Down', AXIS - 2, 41, mirror=False)
+on('reception/desk', 'reception/pc', *PC, 'Up', dx=-48, mirror=False)
+on('reception/desk', 'reception/orchid', 'Ceramic Planter', 'white', 'Down', dx=54, s=38, mirror=False)
 sit('reception/chair', *CHAIR, 'Down', AXIS, 41, mirror=False)
 put('reception/mat', 'Koncluí: entrance mat', 'ink', 'Down', AXIS - 1, 46, mirror=False)
 put('reception/totem', 'Koncluí: logo totem', 'ink', 'Down', AXIS - 3, BY1 + 1)
@@ -503,6 +503,7 @@ BOOTH_ART = {'booth_a4': 'marca-k', 'booth_b4': 'koru-checklist', 'booth_a5': 'm
              'booth_a6': 'koru-notebook', 'booth_b6': 'marca-k-menta'}
 for key, art in BOOTH_ART.items():                       # the bottom booths' wall, one picture each
     put(f'{key}/art', FRAMED(art), 'ink', 'Down', BOOTHS[key][0] + 1, 24, mirror=False)
+put('reception/screen', 'Koncluí: telão da recepção', 'ink', 'Down', 40, 38, px=23, mirror=False)
 put('reception/frame-w', FRAMED('koru-acenando'), 'ink', 'Down', 38, 38, px=4, mirror=False)
 put('reception/frame-e', FRAMED('icp-fachada'), 'ink', 'Down', 46, 38, px=26, mirror=False)
 put('cafe/frame-w', FRAMED('koru-cafe'), 'ink', 'Down', 70, BY0 - 1, px=6, py=20, mirror=False)

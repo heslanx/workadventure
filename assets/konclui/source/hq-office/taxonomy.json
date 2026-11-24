@@ -198,6 +198,7 @@
       "key": "The piece's type in the plan ('Koncluí: ...', signature.py and the modules it imports). Exactly one rule must match; '*' stands for any text.",
       "rules": {
         "Koncluí: LED wall": "marca",
+        "Koncluí: telão da recepção": "marca",
         "Koncluí: air hockey": "jogos",
         "Koncluí: aparador": "armazenamento",
         "Koncluí: balcão de bar": "cozinha",

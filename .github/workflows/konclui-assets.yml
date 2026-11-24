@@ -74,7 +74,8 @@ jobs:
                       tools/test_proxy.py tools/test_touchup.py tools/test_pieceboard.py tools/test_prop_air_hockey.py \
                       tools/test_prop_arc_lamp.py tools/test_prop_potted_plant.py tools/test_prop_stool.py \
                       tools/test_volume_pieces.py tools/test_lawn.py tools/test_glass.py tools/test_floor_patterns.py \
-                      tools/test_water_art.py tools/test_normals_flat.py tools/test_reactions_page.py; do
+                      tools/test_water_art.py tools/test_normals_flat.py tools/test_reactions_page.py \
+                      tools/test_kmark.py tools/test_prop_reception_counter.py; do
             echo "::group::$test"
             python3 -I "$test" || { echo "::error::$test failed"; failed=1; }
             echo "::endgroup::"

@@ -3,10 +3,10 @@ top left, two or three tones per material and an outline in the material's own d
 
   pieces() -> {type: {colour: dict(image, collisionGrid, depthOffset, surface, seat)}}
     'Koncluí: LED wall'         7 x 2 tiles, hung on a face: ink bezel, navy-to-petrol screen, the white wordmark
-    'Koncluí: reception desk'   5 x 2 tiles: oak top, ink front with the white K and a mint light line
+    'Koncluí: reception desk'   5 x 2 tiles: an oak ledge with a desk set back behind it (a box: top and front face), a 22 px reeded face with a brass-framed navy panel and the white K
     'Koncluí: logo totem'       1 x 3 tiles: an ink totem with the turquoise K, at the entrance
     'Koncluí: planter'          2 x 2 tiles: a white planter box with grasses, for the glass fronts
-    'Koncluí: sino da venda'    1 x 2 tiles: the sales bell, brass on an oak yoke over a reception-style plinth
+    'Koncluí: sino da venda'    1 x 2 tiles: the sales bell, brass in a honey-oak frame on a plinth with the white K
     'Koncluí: quadro <id>'      framed pictures of the brand, of Koru and of restaurants (frames.py)
     the café lounge and games room's pieces (lounge.py): panel, neon, credenza, bar, stools, cushions, rugs, pendant...
 """
@@ -18,7 +18,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
+import kmark
 from palette import INK, MINT, NAVY, PETROL, TURQUOISE, floor_tile, rgb
+from props import reception_counter as _reception_counter
 
 T = 32
 ASSETS = Path(__file__).resolve().parent.parent / 'brand'
@@ -58,23 +60,19 @@ def led_wall():
     return img
 
 
+RECEPTION_SURFACE = _reception_counter.SURFACE_ROW   # the working desk's top: the computer stands with its foot on this row of the counter's picture (24)
+
+
 def reception_desk():
-    w = 5 * T
-    img = Image.new('RGBA', (w, 64))
-    d = ImageDraw.Draw(img)
-    oak = [rgb(c) for c in ('#8C6646', '#C29B74', '#D4B28C', '#E0C29E', '#EAD4B6')]
-    d.rectangle((0, 2, w - 1, 22), fill=oak[3])                       # top
-    for y in range(6, 22, 5):
-        d.line((2, y, w - 3, y), fill=oak[2])
-    d.line((1, 2, w - 2, 2), fill=oak[4])
-    d.rectangle((0, 2, w - 1, 22), outline=oak[0])
-    d.rectangle((2, 23, w - 3, 58), fill=rgb(INK))                   # front
-    d.line((2, 23, w - 3, 23), fill=rgb(MINT))                       # light line under the top
-    d.line((2, 24, w - 3, 24), fill=rgb('#1C7F70'))
-    k = crisp(svg('logo-konclui-icon.svg', height=22), '#FFFFFF')
-    img.alpha_composite(k, ((w - k.width) // 2, 30))
-    d.rectangle((2, 23, w - 3, 58), outline=rgb('#05061A'))
-    d.rectangle((1, 59, w - 2, 62), fill=(10, 10, 61, 60))           # shadow
+    """The reception counter, 5 x 2 tiles, baked from its recipe (props/reception_counter.py: true dimensions in metres, two
+    levels, a 22 px face): the base front edge is the picture's last row, so its footprint is the lower tile row. The
+    computer stands on the working desk (RECEPTION_SURFACE), the orchid on the ledge (plan.py's s)."""
+    import bake
+    from props import reception_counter
+    baked = bake.bake(reception_counter.recipe(), overrides=False)
+    art = Image.fromarray(baked.rgba, 'RGBA').crop((1, 0, 1 + 5 * T, baked.rgba.shape[0]))   # without the 1 px margins
+    img = Image.new('RGBA', (5 * T, 2 * T))
+    img.alpha_composite(art, (0, 2 * T - art.height))
     return img
 
 
@@ -112,48 +110,164 @@ def planter():
 def pieces():
     return {**reception_pieces(), **desk_pieces(), **FRAMES.pieces(), **LOUNGE.pieces(),
         'Koncluí: LED wall': {'ink': dict(image=led_wall(), collisionGrid=None, depthOffset=-1)},
-        'Koncluí: reception desk': {'oak': dict(image=reception_desk(), collisionGrid=[[1] * 5, [0] * 5],
-                                                depthOffset=-53, surface=20)},
+        'Koncluí: telão da recepção': {'ink': dict(image=reception_screen(), collisionGrid=None, depthOffset=-1)},
+        'Koncluí: reception desk': {'oak': dict(image=reception_desk(), collisionGrid=[[0] * 5, [1] * 5],
+                                                depthOffset=0, surface=RECEPTION_SURFACE)},
         'Koncluí: logo totem': {'ink': dict(image=logo_totem(), collisionGrid=[[0], [0], [1]], depthOffset=-6)},
         'Koncluí: planter': {'white': dict(image=planter(), collisionGrid=None, depthOffset=-5)},
     }
 
 
-NAMES = {'Koncluí: LED wall': 'Telão de LED Koncluí', 'Koncluí: reception desk': 'Balcão de recepção Koncluí',
+NAMES = {'Koncluí: LED wall': 'Telão de LED Koncluí', 'Koncluí: telão da recepção': 'Telão de LED Koncluí, painel da recepção', 'Koncluí: reception desk': 'Balcão de recepção Koncluí',
          'Koncluí: logo totem': 'Totem com o K', 'Koncluí: planter': 'Floreira branca'}
 
 
 # ------------------------------------------------------------------------------------------------ reception set
 
+def _wordmark(width):
+    """The white wordmark as crisp pixel art, a little bolder than the plain threshold: rendered at 4x, averaged down and
+    cut at 38 % coverage, so the thin strokes keep a whole pixel. The K is not the threshold's: the vector's K has three
+    parts (the stem fused with the arm, the leg, the foot) set off by thin gaps that a plain threshold turns into a wobble
+    or fills, so the K's pixels are replaced by kmark.K_WALL, the logo's K drawn for this size (30 x 31), in the place the
+    vector gives it. Returns (mask, k_mask)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / 'r.png'
+        subprocess.run(['rsvg-convert', '-w', str(width * 4), str(ASSETS / 'logo-konclui-white.svg'), '-o', str(out)],
+                       check=True)
+        big = Image.open(out).convert('RGBA')
+    big = big.crop(big.getbbox())
+    w, h = big.width // 4, big.height // 4
+    cover = np.asarray(big)[..., 3].astype(float)[:h * 4, :w * 4].reshape(h, 4, w, 4).mean((1, 3)) / 255
+    m = cover > 0.38
+    p = np.pad(m, 1).astype(int)                                           # then no spur or pit one pixel wide
+    n4 = (p[:-2, 1:-1] + p[2:, 1:-1] + p[1:-1, :-2] + p[1:-1, 2:])
+    m = (m & (n4 > 1)) | (~m & (n4 >= 3))
+    lab = np.zeros(m.shape, int)                                           # the K's parts: the pieces that start left of the 'o'
+    n = 0
+    for y0, x0 in zip(*np.nonzero(m)):
+        if lab[y0, x0]:
+            continue
+        n += 1
+        todo = [(y0, x0)]
+        while todo:
+            y, x = todo.pop()
+            if 0 <= y < h and 0 <= x < w and m[y, x] and not lab[y, x]:
+                lab[y, x] = n
+                todo += [(y + dy, x + dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1)]
+    for i in range(1, n + 1):
+        if np.nonzero((lab == i).any(0))[0][0] < KMARK_COLS:
+            m[lab == i] = False
+    k = np.zeros_like(m)
+    kb = kmark.mask(kmark.K_WALL)
+    k[:kb.shape[0], :kb.shape[1]] = kb
+    kp = np.pad(k, 1)                                                      # the K and the o must not touch (8 neighbours)
+    near = sum(kp[1 + dy:1 + dy + h, 1 + dx:1 + dx + w] for dy in (-1, 0, 1) for dx in (-1, 0, 1)) > 0
+    assert not (near & m).any(), 'the K touches the o'
+    return m | k, k
+
+
+KMARK_COLS = 26                                                            # the o's first column is further right; the K's pieces start left of this
+
+
+BRASS = dict(line='#6B430F', dark='#A36A17', base='#E8B53F')               # the sales bell's own brass tones
+WALL_OAK = ('#8C6646', '#B88F66', '#CFAA80', '#DEBF98', '#E9D2B2')
+BOARD = 8                                                                  # one oak board; the runs are whole pairs
+SCREEN_W, SCREEN_Y0, SCREEN_Y1 = 178, 8, 57                                # the screen's canvas width and its rows
+BAYS = (5, 283)                                                            # the picture bays' x on the face (356 wide)
+GLASS = dict(top='#0F1E58', mid='#14296E', foot='#165586', sheen='#1F3A8C', seam='#0A1442')   # four flat tones, and the seam's
+
+
+def _boards(d, x0, x1, oak, rng):
+    """Oak boards 8 px wide from x0 to x1 (inclusive), rows 8 to 56: a lit edge, a body that alternates with its
+    neighbour, a shade, a dark groove; one grain streak a board."""
+    for n, bx in enumerate(range(x0, x1 + 1, BOARD)):
+        body = oak[3] if n % 2 == 0 else oak[2]
+        shade = oak[2] if n % 2 == 0 else oak[1]
+        for k, col in enumerate((oak[4], body, body, body, body, shade, shade, oak[0])):
+            if bx + k <= x1:
+                d.line((bx + k, 8, bx + k, 56), fill=col)
+        gy, gl = int(rng.integers(12, 44)), int(rng.integers(4, 8))
+        if bx + 3 <= x1:
+            d.line((bx + 3, gy, bx + 3, gy + gl), fill=shade)
+
+
 def feature_wall(width):
-    """The reception's feature wall, as a two-row face `width` px wide: oak slats, a central ink panel with the white
-    wordmark and a mint line, five spotlights washing the slats from the top."""
+    """The reception's feature wall, a two-row face `width` px wide: oak boards under the wall's ink cap, a brass-lined
+    plinth, two bays for the pictures that hang at x 6 and width - 72 (plan.py) and, between them, the LED screen
+    (reception_screen: a sprite hung on the wall, so that it can shine at night). The oak between a bay and the screen is
+    two whole boards, 16 px."""
     img = Image.new('RGBA', (width, 2 * T))
     d = ImageDraw.Draw(img)
-    oak = [rgb(c) for c in ('#8C6646', '#B88F66', '#CFAA80', '#DEBF98', '#E9D2B2')]
+    oak = [rgb(c) for c in WALL_OAK]
+    brass = {k: rgb(v) for k, v in BRASS.items()}
     d.rectangle((0, 4, width - 1, 5), fill=rgb(INK))                       # cap line, like the walls
     d.line((0, 6, width - 1, 6), fill=rgb('#2B3A78'))
-    for x in range(0, width):                                              # slats 4 px, 1 px shadow gap
-        col = oak[0] if x % 5 == 4 else oak[2 + (x // 5) % 2]
-        d.line((x, 7, x, 59), fill=col)
-    for i in range(5):                                                     # light wash from the spots
-        cx = int(width * (i + 0.5) / 5)
-        for y in range(7, 30):
-            half = 3 + (y - 7) // 3
-            for x in range(cx - half, cx + half + 1):
-                if 0 <= x < width and x % 5 != 4:
-                    d.point((x, y), fill=oak[4] if y < 20 else oak[3])
-        d.rectangle((cx - 1, 7, cx + 1, 8), fill=(255, 255, 255))
-    pw = int(width * 0.56)
-    px0 = (width - pw) // 2
-    d.rectangle((px0, 12, px0 + pw - 1, 54), fill=rgb(INK))
-    d.rectangle((px0, 12, px0 + pw - 1, 54), outline=rgb('#05061A'))
-    d.line((px0 + 1, 13, px0 + pw - 2, 13), fill=rgb('#1B2A6B'))
-    mark = crisp(svg('logo-konclui-white.svg', width=int(pw * 0.72)), '#FFFFFF')
-    img.alpha_composite(mark, ((width - mark.width) // 2, 33 - mark.height // 2 - 2))
-    d.line(((width - 70) // 2, 47, (width + 70) // 2, 47), fill=rgb(MINT))
-    d.line((0, 60, width - 1, 60), fill=rgb(INK))                          # floor channel, as the glass
-    d.rectangle((0, 61, width - 1, 63), fill=(10, 10, 61, 40))
+    d.line((0, 7, width - 1, 7), fill=oak[0])                              # the shade under the cap's lip
+    rng = np.random.default_rng(5)
+    bay0, bay1 = BAYS[0] + 68, BAYS[1] - 1                                 # the oak between the bays: the screen's run
+    _boards(d, 0, BAYS[0] - 1, oak, rng)
+    _boards(d, bay0, bay0 + 2 * BOARD - 1, oak, rng)                       # west of the screen: 2 boards
+    _boards(d, bay0 + 2 * BOARD, bay1 - 2 * BOARD, oak, rng)               # behind the screen
+    _boards(d, bay1 - 2 * BOARD + 1, bay1, oak, rng)                       # east of the screen: 2 boards
+    _boards(d, BAYS[1] + 68, width - 1, oak, rng)
+    d.line((0, 57, width - 1, 57), fill=oak[2])                            # a plain ledge under the boards
+    d.line((0, 58, width - 1, 58), fill=brass['base'])                     # a brass inlay along the plinth's top
+    d.line((0, 59, width - 1, 59), fill=brass['dark'])
+    d.line((0, 60, width - 1, 60), fill=oak[0])                            # the face's foot
+    for bx in BAYS:                                                        # a bay round each picture
+        d.rectangle((bx, 7, bx + 67, 58), fill=rgb('#6B4A31'))
+        d.rectangle((bx + 1, 8, bx + 66, 57), fill=oak[1])
+        d.rectangle((bx + 2, 9, bx + 65, 56), fill=rgb('#6B4A31'))
+    return img
+
+
+def reception_screen():
+    """The LED screen on the feature wall, SCREEN_W x 64 px, hung with its x at the east edge of the oak's west run: an ink
+    outline round the whole (the picture's own edge is ink, as every hung piece's is: the screen is flush with the wall's run,
+    so its edge is the canvas edge), a thin brass edge inside it (the bell's brass: the line, then one dark tone), an ink
+    bezel, and a navy glass of four flat tones: a top, a mid, a 3 px foot band and a sheen at the top-left corner. A cabinet
+    header bar closes the glass's top. The white wordmark is the brand white in one flat tone, its K the logo's
+    (kmark.K_WALL), with a mint LED line under it."""
+    img = Image.new('RGBA', (SCREEN_W, 2 * T))
+    d = ImageDraw.Draw(img)
+    brass = {k: rgb(v) for k, v in BRASS.items()}
+    x0, x1, y0, y1 = 0, SCREEN_W - 1, SCREEN_Y0, SCREEN_Y1
+    d.rectangle((x0, y0, x1, y1), fill=rgb('#05061A'))                     # the outline: an ink, darker than the glass (tools/contract.py)
+    d.rectangle((x0 + 1, y0 + 1, x1 - 1, y1 - 1), fill=brass['line'])      # the brass edge: line, then one dark tone
+    bx0, bx1, by0, by1 = x0 + 2, x1 - 2, y0 + 2, y1 - 2
+    d.rectangle((bx0, by0, bx1, by1), fill=brass['dark'])
+    d.rectangle((bx0 + 1, by0 + 1, bx1 - 1, by1 - 1), fill=rgb(INK))
+    d.line((bx0 + 1, by0 + 1, bx1 - 1, by0 + 1), fill=rgb('#2B3A78'))
+    d.line((bx0 + 1, by0 + 1, bx0 + 1, by1 - 1), fill=rgb('#2B3A78'))
+    sx0, sy0, sx1, sy1 = bx0 + 3, by0 + 3, bx1 - 3, by1 - 3                # the glass: rows 13 to 52
+    g = {k: rgb(v) for k, v in GLASS.items()}
+    hdr = 2                                                                # the header bar's rows
+    d.rectangle((sx0, sy0 + hdr, sx1, sy1 - 3), fill=g['mid'])
+    d.rectangle((sx0, sy0 + hdr, sx1, sy0 + hdr + 10), fill=g['top'])
+    d.rectangle((sx0, sy1 - 2, sx1, sy1), fill=g['foot'])                  # the foot band, 3 px
+    for y in range(sy0 + hdr, sy1 - 2):                                    # the sheen: two bars at the top-left corner
+        for x in range(sx0, sx1 + 1):
+            t = (x - sx0) + (y - sy0 - hdr)
+            if 12 <= t <= 20 or 24 <= t <= 26:
+                d.point((x, y), fill=g['sheen'])
+    gw = (sx1 - sx0 + 1) / 6
+    for k in range(1, 6):                                                  # the cabinets' seams: six modules, a dark line
+        sx = sx0 + int(gw * k)
+        d.line((sx, sy0 + hdr, sx, sy1 - 3), fill=rgb(GLASS['seam']))
+    d.line((sx0 - 1, sy0 - 1, sx1 + 1, sy0 - 1), fill=rgb('#05061A'))      # the glass sits in the bezel: shade top/left
+    d.line((sx0 - 1, sy0 - 1, sx0 - 1, sy1 + 1), fill=rgb('#05061A'))
+    d.line((sx0 - 1, sy1 + 1, sx1 + 1, sy1 + 1), fill=rgb('#1B2A6B'))
+    d.line((sx1 + 1, sy0 - 1, sx1 + 1, sy1 + 1), fill=rgb('#1B2A6B'))
+    d.rectangle((sx0, sy0, sx1, sy0 + hdr - 1), fill=rgb('#1B2A6B'))       # the cabinet's header bar, with its status pips
+    d.line((sx0, sy0 + hdr - 1, sx1, sy0 + hdr - 1), fill=rgb('#101A4C'))
+    for px in (sx0 + 4, sx1 - 4):
+        d.point((px, sy0 + 0), fill=rgb(MINT))
+    mask, _ = _wordmark(136)
+    mh, mw = mask.shape
+    mx, my = (SCREEN_W - mw) // 2, sy0 + hdr + 2
+    for yy, xx in zip(*np.nonzero(mask)):                                  # the brand white, the K as the logo draws it
+        d.point((mx + xx, my + yy), fill=rgb(kmark.WHITE))
+    d.line((mx, sy1 - 3, mx + mw - 1, sy1 - 3), fill=rgb(MINT))            # a mint LED line along the top of the foot band
     return img
 
 
@@ -376,56 +490,143 @@ def tile_pattern(kind):
 
 
 def sales_bell():
-    """The sales bell (runtime/bell.mjs), 1 x 2 tiles: a brass bell with its clapper and a red rope, hung from an oak
-    yoke on a plinth dressed as the reception desk (oak top, ink front, mint light line). The brass is lit from the top
-    left: a pale rim on the left, a highlight streak, the body, then two shade tones to the right."""
+    """The sales bell (runtime/bell.mjs), 1 x 2 tiles, the first thing a visitor rings: a brass bell with a shoulder, a
+    waist and a flared lip, hung from a honey-oak frame (posts, a beam with brass finials and a brass hanger, brass
+    corner plates) over a low oak plinth dressed as the reception desk (the counter's own oak ramp, an ink plate with
+    the white K set in an oak border, a cyan reveal at the foot), a single cyan pull cord ending in a brass ball. Nothing
+    is painted as shadow or glow: the runtime lights it; the K and the reveal are bright in their own pixels."""
     img = Image.new('RGBA', (T, 2 * T))
-    d = ImageDraw.Draw(img)
-    oak = [rgb(c) for c in ('#7A5636', '#B88F66', '#CFAA80', '#E0C29E')]          # line, shade, mid, lit
-    brass = dict(line=rgb('#6B430F'), dark=rgb('#A36A17'), mid=rgb('#D69A2A'), base=rgb('#E8B53F'),
-                 light=rgb('#F5D271'), spec=rgb('#FFF0BF'))
-    d.rectangle((1, 61, 30, 62), fill=(10, 10, 61, 50))                             # contact shadow
-    d.rectangle((1, 49, 30, 55), fill=oak[3], outline=oak[0])                       # plinth: oak top
-    d.line((2, 52, 29, 52), fill=oak[2])
-    d.line((2, 50, 29, 50), fill=rgb('#EAD4B6'))
-    d.rectangle((1, 56, 30, 60), fill=rgb(INK), outline=rgb('#05061A'))             # ink front
-    d.line((2, 56, 29, 56), fill=rgb(MINT))
-    d.line((2, 57, 29, 57), fill=rgb('#1C7F70'))
-    for x0 in (2, 26):                                                              # the yoke's uprights
-        d.rectangle((x0, 17, x0 + 3, 51), fill=oak[2], outline=oak[0])
-        d.line((x0 + 1, 18, x0 + 1, 50), fill=oak[3])
-    d.rectangle((1, 13, 30, 17), fill=oak[2], outline=oak[0])                       # crossbar: lit top, front
-    d.line((2, 14, 29, 14), fill=oak[3])
-    d.line((2, 16, 29, 16), fill=oak[1])
-    d.rectangle((15, 18, 16, 20), fill=rgb('#3A3A4E'))                             # iron hanger
-    d.point((15, 18), fill=rgb('#6A6A80'))
-    rows = {21: (13, 18), 22: (12, 19), 23: (11, 20), 24: (11, 20), 25: (11, 20), 26: (10, 21), 27: (10, 21),
-            28: (10, 21), 29: (10, 21), 30: (9, 22), 31: (9, 22), 32: (9, 22), 33: (8, 23), 34: (7, 24), 35: (7, 24),
-            36: (8, 23)}
-    for y, (x0, x1) in rows.items():
-        for x in range(x0, x1 + 1):
-            f = (x - x0) / (x1 - x0)
-            tone = ('line' if x in (x0, x1) or y == 21 and 0 < f < 1 and x in (x0 + 1, x1 - 1) else
-                    'light' if f < 0.2 else 'spec' if f < 0.3 else 'base' if f < 0.6 else 'mid' if f < 0.8 else 'dark')
-            if y == 21 and tone != 'line':
-                tone = 'mid'
-            if y == 34 and tone not in ('line', 'dark'):
-                tone = 'light'                                                     # the lip's lit rim
-            if y == 36 and tone != 'line':
-                tone = 'dark'                                                      # under the lip
-            d.point((x, y), fill=brass[tone])
-    d.rectangle((14, 37, 17, 38), fill=brass['dark'], outline=brass['line'])       # clapper
-    rope_light, rope_dark = rgb('#D9454B'), rgb('#8E222A')
-    for x, y in ((18, 38), (18, 39), (19, 40)):                                     # rope from the clapper
-        d.point((x, y), fill=rope_dark)
-    d.line((19, 41, 19, 44), fill=rope_light)
-    d.line((20, 41, 20, 44), fill=rope_dark)
-    d.line((19, 45, 20, 45), fill=brass['base'])                                    # tassel: a brass ring, red fringe
-    d.rectangle((18, 46, 21, 47), fill=rope_light)
-    d.line((21, 46, 21, 47), fill=rope_dark)
-    for x in (18, 20):
-        d.point((x, 48), fill=rope_dark)
-    return img
+    px = img.load()
+
+    def put(x, y, c):
+        if 0 <= x < T and 0 <= y < 2 * T:
+            px[x, y] = (*c, 255)
+
+    def rect(x0, y0, x1, y1, c):
+        for yy in range(y0, y1 + 1):
+            for xx in range(x0, x1 + 1):
+                put(xx, yy, c)
+
+    # the plinth is on the office palette's warm oak ramp, a step from the counter's own oak (reception_desk): one
+    # family; only its outline is darker
+    oak = {k: rgb(c) for k, c in dict(line='#8C6646', dark='#C6AB8B', shade='#D9BA95', mid='#E0C29F', lit='#E8CCA8',
+                                      hi='#F0D6B2').items()}
+    # the frame's wood: honey oak, one step darker and warmer than the plinth's, well above the lounge's teak
+    wd = {k: rgb(c) for k, c in dict(line='#6F4B2F', dark='#8F6844', shade='#A97F57', mid='#BC9168', light='#D9BA95',
+                                     hi='#E8CCA8').items()}
+    br = {k: rgb(c) for k, c in dict(line='#6B430F', dark='#C4851F', mid='#E8AC33', base='#F7CA4F', light='#FFE38C',
+                                     spec='#FFF8DA').items()}
+    ink, ink_line, ink_lit = rgb(INK), rgb('#05061A'), rgb('#142160')
+    cyan, cyan_dark, cyan_lit = rgb(TURQUOISE), rgb('#04706F'), rgb('#7FF0EE')
+
+    CX = 16                                                                         # symmetric about x = 16
+    X0, X1 = 1, 31
+
+    # ---- the plinth: outline row 43, deck (top face) 44-47, lip 48, front 49-59, foot line 60
+    rect(X0, 43, X1, 60, oak['line'])
+    rect(X0 + 1, 44, X1 - 1, 47, oak['lit'])
+    rect(X0 + 1, 44, X1 - 1, 44, oak['hi'])
+    rect(X0 + 1, 46, X1 - 1, 46, oak['mid'])
+    rect(X0 + 1, 48, X1 - 1, 48, oak['hi'])
+    rect(X0 + 1, 49, X1 - 1, 59, oak['shade'])
+    rect(X0 + 1, 49, X0 + 2, 59, oak['mid'])
+    rect(X1 - 2, 49, X1 - 1, 59, oak['dark'])
+    rect(X0 + 1, 49, X1 - 1, 49, oak['lit'])
+    rect(5, 50, 27, 58, oak['line'])                                                # the plate's oak border...
+    rect(6, 51, 26, 57, ink_line)                                                   # ...an ink plate inset in it
+    rect(7, 52, 25, 56, ink)
+    rect(6, 51, 26, 51, ink)
+    for j, row in enumerate(kmark.K_BELL):                                          # the logo's K, white, 7 x 7 (the plate's height)
+        for i, ch in enumerate(row):
+            if ch == '#':
+                put(CX - 3 + i, 51 + j, rgb(kmark.WHITE))
+    rect(X0 + 1, 59, X1 - 1, 59, cyan)                                              # the light reveal at the foot
+    rect(X0 + 1, 48, X1 - 1, 48, br['base'])                                        # a brass edge round the deck
+    rect(X0 + 1, 49, X1 - 1, 49, br['dark'])
+    for x in (X0, X1):                                                              # the plinth's two ends: the frame's own wood line (X1 is
+        rect(x, 43, x, 60, wd['line'])                                              # the picture's right edge: an ink there, not the mid oak)
+
+    # ---- the frame: posts to the deck, a beam with a lit top, brass finials, brass corner plates
+    for x0 in (2, 27):
+        rect(x0, 14, x0 + 3, 46, wd['line'])
+        rect(x0 + 1, 15, x0 + 1, 45, wd['light'])
+        rect(x0 + 2, 15, x0 + 2, 45, wd['mid'])
+    rect(X0, 11, X1, 16, wd['line'])
+    rect(X0 + 1, 12, X1 - 1, 15, wd['mid'])
+    rect(X0 + 1, 12, X1 - 1, 12, wd['hi'])
+    rect(X0 + 1, 13, X1 - 1, 13, wd['light'])
+    rect(X0 + 1, 15, X1 - 1, 15, wd['shade'])
+    for x0 in (2, 27):                                                              # finials
+        for (y, a, b) in ((7, 1, 2), (8, 0, 3), (9, 0, 3), (10, 1, 2)):
+            rect(x0 + a, y, x0 + b, y, br['line'])
+        rect(x0 + 1, 8, x0 + 2, 9, br['mid'])
+        put(x0 + 1, 8, br['spec'])
+        put(x0 + 2, 9, br['dark'])
+    rect(CX - 4, 12, CX + 4, 15, br['line'])                                        # the hanger plate on the beam
+    rect(CX - 3, 13, CX + 3, 14, br['mid'])
+    rect(CX - 3, 13, CX - 2, 13, br['light'])
+    put(CX - 3, 13, br['spec'])
+    put(CX + 3, 14, br['dark'])
+    for sgn, xa in ((1, 6), (-1, 26)):                                              # brass corner plates
+        for r, w in enumerate((4, 3, 2, 1)):
+            for i in range(w):
+                put(xa + sgn * i, 17 + r, br['line'] if (i == w - 1 or r == 3) else br['mid'])
+
+    for x0 in (2, 27):                                                              # brass straps round the posts' feet
+        rect(x0, 39, x0 + 3, 41, br['line'])
+        rect(x0 + 1, 40, x0 + 2, 40, br['mid'])
+        put(x0 + 1, 40, br['light'])
+
+    # ---- the bell: shoulder, waist, flared lip with one band; 17 px wide at the lip
+    prof = [3, 5, 7, 9, 11, 11, 9, 9, 9, 11, 11, 13, 13, 15, 15, 17, 17, 17]
+    top = 18
+    rect(CX - 1, 16, CX + 1, 17, br['line'])
+    put(CX, 16, br['mid']); put(CX, 17, br['mid'])
+    n = len(prof)
+    for r, w in enumerate(prof):
+        y = top + r
+        a = CX - w // 2
+        b = CX + w // 2
+        for x in range(a, b + 1):
+            f = (x - a) / (b - a)
+            if x in (a, b) or r == 0 or r == n - 1:
+                t = 'line'
+            else:
+                t = 'light' if f < 0.22 else 'base' if f < 0.55 else 'mid' if f < 0.80 else 'dark'
+                if x == b - 1 and 2 <= r <= n - 4:                                   # light bounced up from the floor
+                    t = 'mid'
+                if r == n - 2:                                                       # the lip band
+                    t = 'light' if f < 0.5 else 'base' if f < 0.8 else 'mid'
+                elif r == n - 3:
+                    t = 'dark' if f > 0.25 else 'mid'
+            put(x, y, br[t])
+    for r in range(3, 14):                                                          # the highlight streak, unbroken
+        put(CX - prof[r] // 2 + 2, top + r, br['spec'])
+        if r in (5, 6, 7, 8, 9, 10, 11, 12):
+            put(CX - prof[r] // 2 + 3, top + r, br['light'])
+    # clapper ball, cord, brass ball
+    rect(CX - 1, top + n, CX + 1, top + n + 2, br['line'])
+    put(CX, top + n, br['mid']); put(CX - 1, top + n + 1, br['mid']); put(CX, top + n + 1, br['spec'])
+    for yy in range(top + n + 3, top + n + 6):
+        put(CX, yy, cyan)
+    by = top + n + 6
+    for (dy, a, b) in ((0, 1, 2), (1, 0, 3), (2, 0, 3), (3, 1, 2)):
+        rect(CX - 2 + a, by + dy, CX - 2 + b, by + dy, br['line'])
+    rect(CX - 1, by + 1, CX, by + 2, br['base'])
+    put(CX - 1, by + 1, br['spec'])
+    put(CX, by + 2, br['dark'])
+    return _on_the_footprint(img)
+
+
+BELL_DROP = 3                       # rows the drawing is moved down: the plinth's front edge (drawn on row 60) is the picture's last row
+
+
+def _on_the_footprint(img):
+    """The bell's drawing moved down BELL_DROP rows, the three empty rows of its foot taken from under it: a standing piece's front
+    edge is the last row of its picture (the foot gap rule of tools/contract.py, and the shadow the runtime casts starts there)."""
+    out = Image.new('RGBA', img.size)
+    out.paste(img.crop((0, 0, img.width, img.height - BELL_DROP)), (0, BELL_DROP))
+    return out
 
 
 @lru_cache(maxsize=None)
@@ -434,8 +635,8 @@ def reception_pieces():
         'Koncluí: entrance mat': {'ink': dict(image=entrance_mat(), collisionGrid=None, depthOffset=-(64 + 96))},
         'Koncluí: rug 5x3': {'mist': dict(image=rug(5, 3), collisionGrid=None, depthOffset=-(96 + 96))},
         'Koncluí: rug 10x5': {'mist': dict(image=rug(10, 5), collisionGrid=None, depthOffset=-(160 + 96))},
-        # the plinth's front edge (row 60) sorts it: people in front of the bell pass over it, behind it under
-        'Koncluí: sino da venda': {'ouro': dict(image=sales_bell(), collisionGrid=[[0], [1]], depthOffset=-4)},
+        # the plinth's front edge (the last row, 63) sorts it: people in front of the bell pass over it, behind it under
+        'Koncluí: sino da venda': {'ouro': dict(image=sales_bell(), collisionGrid=[[0], [1]], depthOffset=-1)},
     }
 
 

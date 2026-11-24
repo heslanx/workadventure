@@ -14,6 +14,7 @@ lists, places and duplicates it like any other piece. No collision; depthOffset 
 
 Pictures:
   brand   drawn from the official vectors (konclui-platform assets): the K, the wordmark
+  hand    drawn in code at the picture's own size (wallart.py): the reception's two pictures
   Koru    generated with the official Koru as reference (any pose: owner, 18/10/2026); 'comemorando' is the official
           celebration vector itself
   ICP     generated restaurant scenes, one subject on a flat ground, as the catalogue's pictures are
@@ -45,7 +46,7 @@ ART = {
     'marca-k': ('P', 'brand:k-navy', 'Quadro: o K da Koncluí'),
     'marca-k-menta': ('P', 'brand:k-mint', 'Quadro: o K em menta'),
     'marca-palavra': ('L', 'brand:wordmark', 'Quadro: Koncluí'),
-    'koru-acenando': ('XL', 'gen', 'Quadro: Koru acenando'),
+    'koru-acenando': ('XL', 'hand:koru_greeting', 'Quadro: Koru acenando'),
     'koru-apresentando': ('P', 'gen', 'Quadro: Koru apresentando'),
     'koru-comemorando': ('P', 'gen', 'Quadro: Koru comemorando'),
     'koru-notebook': ('P', 'gen', 'Quadro: Koru no notebook'),
@@ -56,7 +57,7 @@ ART = {
     'icp-gestor': ('XL', 'gen', 'Quadro: a gestora e o checklist'),
     'icp-equipe': ('XL', 'gen', 'Quadro: a equipe'),
     'icp-prato': ('L', 'gen', 'Quadro: o prato'),
-    'icp-fachada': ('XL', 'gen', 'Quadro: o restaurante'),
+    'icp-fachada': ('XL', 'hand:restaurant', 'Quadro: o restaurante'),
     'icp-cafe': ('L', 'gen', 'Quadro: o café'),
 }
 FOCUS = {'icp-salao': (0.2, 0.22, 0.84, 0.94),               # the waiter between two tables
@@ -136,6 +137,9 @@ def picture(art_id):
     w, h = SIZES[size][0]
     if source.startswith('brand:'):
         return _brand(source[6:], w, h)
+    if source.startswith('hand:'):                             # drawn pixel by pixel in wallart.py, at the picture's size
+        import wallart
+        return getattr(wallart, source[5:])(w, h)
     if source.startswith('svg:'):                              # an official vector on the pale mint of the series
         art = Image.open(SOURCES / 'refs' / source[4:]).convert('RGBA')
         art = art.crop(art.getbbox())

@@ -582,9 +582,14 @@ def check_family(family, paths, mode='nearest', exempt=None, stats=None):
 FAMILY_DECLARATION = {
     'office': dict(
         conforming=False,
-        # MEASURED 2026-11-22 on a real `hq-office/build.py --out /tmp/ps-dist` (12542 pictures checked, 116 declared left out):
-        # 12540 pictures off the palette, 14,340,377 px; 14,340,856 px after art wave 1 (2026-11-24). Fewer is progress; more fails the build.
-        baseline=dict(pictures=12540, px=14340856),
+        # MEASURED 2026-11-24 on a real `hq-office/build.py` of the tree with art wave 1 and the reception's redrawn pieces
+        # (12543 pictures checked, 116 declared left out): 12541 pictures off the palette (the reception's LED screen is one
+        # more picture of its own). Fewer is progress; more fails the build. 14,346,478 px after the drawing contract's fixes of
+        # the reception pieces (lane rcfix1; 14,346,494 before): the LED screen's outer ring is now the palette's ink #05061A
+        # where it was the off-palette brass line, and its brass moved one pixel in, over the old bezel outline (the outer ring
+        # has 452 px, the ring the brass took has 436: 16 px fewer off the palette). The bell, the counter and the two pictures
+        # changed no pixel's membership.
+        baseline=dict(pictures=12541, px=14346478),
         reason=('the office is drawn from imported catalogue art, recoloured by luminance ramps whose stops are the '
                 'palette.py colours but whose pixels are interpolated between them, and from pieces painted by '
                 'lounge.py, signature.py, flora.py and fountain.py with colours of their own; palette.py lists far '
