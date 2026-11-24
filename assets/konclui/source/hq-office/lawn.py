@@ -2,20 +2,27 @@
 catalogue's flat pale green, which is the only grass the catalogue has.
 
 Pixel-art grass in two layers, so the detail costs few tiles:
-  ground   the floor layer: a seamless texture of PERIOD x PERIOD tiles. A base green and small blade marks (lit tip
-           over a dark root, placed on a jittered grid so they never clump), with broad sunnier and shadier patches
-           from a smooth periodic field. Low contrast on purpose: avatars and furniture stand on it.
-  decor    the tile layer "lawn" above the floor: tufts, clover, flower clusters and pebbles, each a transparent tile
+  ground   the floor layer, one picture of the whole map (W x H tiles) that never repeats. It is composed of a small
+           library of 32 px tiles that fit edge to edge: each tile's four corners carry a tone (shadier, base, sunnier)
+           taken from a smooth non-periodic field over the map, the tone between the corners is interpolated and broken
+           into blade-shaped streaks inside the tile, and a tile's border pixels depend on the corner tones only, so a
+           tile never meets a neighbour with a seam. Blade marks (lit tip over a dark root) stay inside a tile, one per
+           jittered 6 px cell. A few variants of every kind of tile are picked by a hash of the cell, never the same as the
+           one to its left or above, so the same picture comes back only at no fixed distance. Low contrast on purpose:
+           avatars and furniture stand on it.
+  decor    the tile layer "lawn" above the floor: tufts, clover, flower clumps and pebbles, each a transparent tile
            that does not depend on where it lies, so a few dozen tiles cover the whole lawn without repeating.
-           Tufts sway together in one gust every LOOP frames of FRAME_MS (the pool's frame), both sway shapes changing
-           picture on the same frames: the engine redraws only when a visible animated tile changes picture, so an idle
-           room that sees the lawn through its glass redraws 5 times per 14 s instead of 2-3 times a second (owner,
-           19/10/2026: "Rajadas juntas e espaçadas", for the idle budget in perf.py). The first frame is the rest pose,
-           which is what people see with "Disable map animations".
+           Tufts sway together in one gust every LOOP frames of FRAME_MS (the pool's frame): every tuft picture changes on
+           the same few frames (GUST_TICKS), the engine redraws only when a visible animated tile changes picture, so an
+           idle room that sees the lawn through its glass redraws 5 times per 14 s instead of 2-3 times a second (owner,
+           19/10/2026: "Rajadas juntas e espaçadas", for the idle budget in perf.py). Inside those ticks a tuft starts
+           and ends its lean in its own way (GUST_SHAPES), so the lawn does not move as one block. The first frame is the
+           rest pose, which is what people see with "Disable map animations".
 Colours: greens hue-shifted (shadows cooler, lights warmer), between the catalogue's tree greens; the flowers are the
 pool bank's.
 
-  texture()             RGBA, PERIOD * 32 px square, seamless
+  texture()             RGBA, W x H tiles of the plan (86 x 56, 2752 x 1792 px), seamless, no period
+  ground_tiles()        the number of different 32 px tiles texture() holds (what the floor sheet gets from the lawn)
   decor(cells)          {(tx, ty): [RGBA 32 x 32 per frame]} for the lawn cells given (one frame when static)
   fringe(canvas, ...)   grass spilling 1-3 px over the edge of a path, painted on the floor canvas
   ground_ring(img)      a catalogue tree with the grass mound at its foot (drawn for the flat lawn) in this lawn's colours
@@ -29,7 +36,6 @@ from PIL import Image
 from palette import rgb
 
 T = 32
-PERIOD = 12                              # tiles: the ground repeats every 384 px
 FRAME_MS = 220                           # the pool's frame
 LOOP = 64                                # frames of the breeze loop (14.08 s)
 GUST_AT = 8                              # the frame every tuft starts its gust on: frames 0-7 stay the rest pose
@@ -59,44 +65,152 @@ MARKS = [
     [(0, 0, 't'), (2, 0, 't'), (1, 1, 't'), (1, 2, 'r')],                     # y
     [(1, 0, 't'), (0, 1, 't'), (0, 2, 'r')],                                  # a blade leaning right
 ]
+TONE = {-1: GRASS['shade'], 0: GRASS['base'], 1: GRASS['sun']}
+CELL = 6                                 # a blade mark per 6 px cell at most
+JITTER = 0.45                            # how far the streaks push a patch edge, in tone units (below 0.5, so a tile whose corners agree stays one tone)
+EDGE_FADE = 6                            # px from a tile's border over which the streaks fade to nothing
+# How many pictures of each kind of tile: plain base grass is most of the lawn, so it has most variants.
+VARIANTS = dict(base=32, sun=12, shade=10, mixed=2)
+SUN_SHARE, SHADE_SHARE = 0.07, 0.04      # of the corners, as sunnier / shadier than base
+FIELD_BROAD, FIELD_FINE = (8, 5), (5, 3.5)  # the tone field's two scales, in tiles (wide patches, wider than tall)
+MIN_PATCH = 10                           # corners: a smaller patch of one tone is dropped
 
 
-def _field(n, rng, freqs=((1, 0), (0, 1), (1, 1), (1, -1), (2, 1), (1, 2), (2, -1), (3, 0))):
-    """A smooth field on the n x n torus in [-1, 1]: cosines of whole periods, so it tiles."""
-    y, x = np.mgrid[0:n, 0:n] / n * 2 * np.pi
-    f = sum(rng.uniform(0.4, 1) / np.hypot(a, b) * np.cos(a * x + b * y + rng.uniform(0, 2 * np.pi)) for a, b in freqs)
-    return f / np.abs(f).max()
+def _smooth(w, h, sx, sy, rng):
+    """Value noise on a w x h grid in [0, 1]: random values on a lattice sx x sy cells apart, smoothstepped between."""
+    gx, gy = int(np.ceil(w / sx)) + 2, int(np.ceil(h / sy)) + 2
+    lat = rng.uniform(size=(gy, gx))
+    x, y = np.arange(w) / sx, np.arange(h) / sy
+    x0, y0 = np.floor(x).astype(int), np.floor(y).astype(int)
+    fx, fy = x - x0, y - y0
+    fx, fy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+    a, b = lat[y0][:, x0], lat[y0][:, x0 + 1]
+    c, d = lat[y0 + 1][:, x0], lat[y0 + 1][:, x0 + 1]
+    top, bottom = a + (b - a) * fx[None, :], c + (d - c) * fx[None, :]
+    return top + (bottom - top) * fy[:, None]
+
+
+def _levels(w, h):
+    """The tone (-1 shadier, 0 base, 1 sunnier) of each of the (h + 1) x (w + 1) tile corners of the map. A smooth field
+    of broad patches, wider than tall; two tones never meet at a corner of one tile (the step between them is one), and a
+    patch of a single corner is dropped."""
+    rng = _rng('tone')
+    (bx, by), (sx, sy) = FIELD_BROAD, FIELD_FINE
+    f = 0.65 * _smooth(w + 1, h + 1, bx, by, rng) + 0.35 * _smooth(w + 1, h + 1, sx, sy, rng)
+    lv = np.zeros(f.shape, int)
+    lv[f >= np.quantile(f, 1 - SUN_SHARE)] = 1
+    lv[f <= np.quantile(f, SHADE_SHARE)] = -1
+    pad = np.pad(lv, 1)
+    near = np.stack([pad[1 + dy:pad.shape[0] - 1 + dy, 1 + dx:pad.shape[1] - 1 + dx]
+                     for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx])
+    clash = (near == -lv[None]) & (lv[None] != 0)                         # a neighbour of the opposite tone
+    lv[clash.any(0)] = 0
+    for k in (-1, 1):                                                     # patches of fewer than MIN_PATCH corners
+        seen = np.zeros(lv.shape, bool)
+        for y, x in zip(*np.where(lv == k)):
+            if seen[y, x]:
+                continue
+            todo, patch = [(y, x)], []
+            seen[y, x] = True
+            while todo:
+                cy, cx = todo.pop()
+                patch.append((cy, cx))
+                for ny, nx in ((cy - 1, cx), (cy + 1, cx), (cy, cx - 1), (cy, cx + 1)):
+                    if 0 <= ny < lv.shape[0] and 0 <= nx < lv.shape[1] and lv[ny, nx] == k and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        todo.append((ny, nx))
+            if len(patch) < MIN_PATCH:
+                for cy, cx in patch:
+                    lv[cy, cx] = 0
+    return lv
 
 
 @lru_cache(maxsize=None)
-def texture():
-    n, cell = PERIOD * T, 6              # one mark per 6 px cell at most: 64 cells per period, so it tiles
-    rng = _rng('ground')
-    sun = _field(n, rng)
-    # patch edges broken by blade-shaped streaks (3 px tall, staggered per column) instead of a smooth contour
-    streak = rng.uniform(-1, 1, (n // 3, n))
-    stagger = rng.integers(0, 3, n)
-    ys = (np.arange(n)[:, None] + stagger[None, :]) // 3 % (n // 3)
-    edge = sun + 0.22 * streak[ys, np.arange(n)[None, :]]
-    out = np.empty((n, n, 3), np.uint8)
-    out[:] = GRASS['base']
-    out[edge > 0.42] = GRASS['sun']
-    out[edge < -0.42] = GRASS['shade']
-    for cy in range(0, n, cell):
-        for cx in range(0, n, cell):
+def _tile(corners, variant):
+    """One 32 x 32 RGB tile. Its border pixels are a function of the corners alone (the tone is interpolated along each
+    border and the streaks fade to nothing there; blade marks keep one pixel clear of it), so two tiles that share two
+    corners share a border pixel for pixel."""
+    tl, tr, bl, br = corners
+    rng = _rng('tile', tl, tr, bl, br, variant)
+    t = np.arange(T) / (T - 1)
+    top, bottom = tl + (tr - tl) * t, bl + (br - bl) * t
+    u = top[None, :] + (bottom - top)[None, :] * t[:, None]               # the tone between the corners
+    if len(set(corners)) > 1:                                             # a patch's edge crosses this tile
+        stagger = rng.integers(0, 3, T)
+        rows = (np.arange(T)[:, None] + stagger[None, :]) // 3            # blade-shaped streaks, 3 px tall
+        streak = rng.uniform(-1, 1, (T // 3 + 2, T))[rows, np.arange(T)[None, :]]
+        d = np.minimum(np.minimum(np.arange(T), T - 1 - np.arange(T))[None, :],
+                       np.minimum(np.arange(T), T - 1 - np.arange(T))[:, None])
+        u = u + JITTER * np.clip(d / EDGE_FADE, 0, 1) * streak
+    level = np.where(u > 0.5, 1, np.where(u < -0.5, -1, 0))
+    out = np.empty((T, T, 3), np.uint8)
+    for k, colour in TONE.items():
+        out[level == k] = colour
+    for cy in range(1, T - 1, CELL):
+        for cx in range(1, T - 1, CELL):
             if rng.uniform() < 0.22:
                 continue
             mark = MARKS[rng.integers(len(MARKS))]
-            x0, y0 = cx + rng.integers(0, cell - 1), cy + rng.integers(0, cell - 1)
-            s = sun[y0 % n, x0 % n]
+            w, h = max(m[0] for m in mark) + 1, max(m[1] for m in mark) + 1
+            xs, ys = min(cx + CELL - 2, T - 1 - w), min(cy + CELL - 2, T - 1 - h)    # the mark stays off the border
+            if xs < cx or ys < cy:
+                continue
+            x0, y0 = int(rng.integers(cx, xs + 1)), int(rng.integers(cy, ys + 1))
+            s = 0.6 * level[y0, x0]
             # sunny patches: tips catch the light; shady ones: tips in shadow, roots deeper
             if rng.uniform() < 0.5 + 0.45 * s:
                 tip, root = (GRASS['tip'] if s > 0.45 and rng.uniform() < 0.6 else GRASS['light']), GRASS['dark']
             else:
                 tip, root = GRASS['dark'], (GRASS['deep'] if s < -0.3 else GRASS['dark'])
             for dx, dy, part in mark:
-                out[(y0 + dy) % n, (x0 + dx) % n] = tip if part == 't' else root
-    return Image.fromarray(np.dstack([out, np.full((n, n), 255, np.uint8)]), 'RGBA')
+                out[y0 + dy, x0 + dx] = tip if part == 't' else root
+    return out
+
+
+def _kind(corners):
+    flat = len(set(corners)) == 1
+    return 'mixed' if not flat else ('base', 'sun', 'shade')[corners[0]]    # -1 indexes 'shade', the last
+
+
+def _plan(w, h):
+    """[[(corners, variant)]] per tile of the w x h map: the corner tones, and a variant picked by a hash of the cell
+    that differs from the left and upper neighbour's when it is the same kind of tile."""
+    lv = _levels(w, h)
+    plan = [[None] * w for _ in range(h)]
+    for ty in range(h):
+        for tx in range(w):
+            corners = (int(lv[ty, tx]), int(lv[ty, tx + 1]), int(lv[ty + 1, tx]), int(lv[ty + 1, tx + 1]))
+            count = VARIANTS[_kind(corners)]
+            v = int(_rng('variant', tx, ty).integers(count))
+            near = {plan[ty][tx - 1] if tx else None, plan[ty - 1][tx] if ty else None} if count > 2 else \
+                {plan[ty][tx - 1] if tx else None}
+            while (corners, v) in near:
+                v = (v + 1) % count
+            plan[ty][tx] = (corners, v)
+    return plan
+
+
+@lru_cache(maxsize=None)
+def _ground():
+    import plan as P
+    w, h = P.W, P.H
+    tiles = _plan(w, h)
+    out = np.empty((h * T, w * T, 4), np.uint8)
+    out[..., 3] = 255
+    for ty in range(h):
+        for tx in range(w):
+            out[ty * T:(ty + 1) * T, tx * T:(tx + 1) * T, :3] = _tile(*tiles[ty][tx])
+    return out, len({c for row in tiles for c in row})
+
+
+@lru_cache(maxsize=None)
+def texture():
+    """The ground of the whole map, W x H tiles, painted at its origin (build.paint aligns a tile to its own grid)."""
+    return Image.fromarray(_ground()[0], 'RGBA')
+
+
+def ground_tiles():
+    return _ground()[1]
 
 
 # ------------------------------------------------------------------------------------------------ decor
@@ -129,42 +243,69 @@ def _draw_tuft(tuft, sway):
     blades, x0, y0, _ = tuft
     a = np.zeros((T, T, 4), np.uint8)
     width = max(b[0] for b in blades) + 1
-    for dx in range(-1, width + 1):                                           # contact shadow under the tuft
-        _put(a, x0 + dx, y0 + 1, GRASS['deep'] if 0 <= dx < width else GRASS['dark'])
+    for dx in range(-1, width + 1):                                           # contact shadow under the tuft, one step
+        _put(a, x0 + dx, y0 + 1, GRASS['dark'])                               # darker than the grass, not a dark line
     for dx, h, bend, back in blades:
         for k in range(h):
             u = k / max(1, h - 1)
             x = x0 + dx + int(round(bend * u * u + sway * u * u))
             if back:
-                colour = GRASS['deep'] if k == 0 else GRASS['dark'] if k < h - 1 else GRASS['shade']
+                colour = GRASS['dark'] if k < h - 1 else GRASS['shade']
             else:
                 colour = (GRASS['dark'] if u < 0.3 else GRASS['tip'] if k == h - 1 else GRASS['light'])
             _put(a, x, y0 - k, colour)
     return Image.fromarray(a, 'RGBA')
 
 
-# the gust: how far a tuft's tips lean, frame by frame from GUST_AT (then at rest)
-GUST = {1: [1, 1, 1, 0, -1, 0], 2: [1, 2, 2, 1, -1, 0]}   # both change picture on frames 0, 1, 3, 4, 5 of the gust
+# The gust: how far a tuft's tips lean, frame by frame from GUST_AT (then at rest). Every tuft picture changes on the same
+# frames, GUST_TICKS of the gust (the owner's idle redraw budget, see the header): the shapes below differ in how far each
+# step leans, never in when it changes picture, so a tuft may start one step late or skip the recoil and the lawn still
+# redraws 5 times per cycle. A shape is the lean on steps 0, 1-2, 3 and 4 (step 5 is the rest pose).
+GUST_TICKS = (0, 1, 3, 4, 5)
+GUST_SHAPES = {1: [(1, 1, 0, -1), (0, 1, 1, -1), (1, 1, 1, 0), (1, 1, -1, -1)],
+               2: [(1, 2, 1, -1), (2, 2, 1, -1), (1, 2, 2, -1), (0, 2, 1, 0)]}
+
+
+def gust(reach, i):
+    """The lean of tuft variant i for steps 0-5 of the gust."""
+    a, b, c, d = GUST_SHAPES[reach][i % len(GUST_SHAPES[reach])]
+    return [a, b, b, c, d, 0]
 
 
 def _flowers(rng):
+    """A clump of 5-7 flowers: heads of 2-3 px on stems 3 px tall, each with a leaf, over a few blades. The heads have no
+    hole (a plus whose middle is the flower's centre, or a 2 x 2 bud), so they read as flowers at 1:1, not as sparkles, and
+    stand in elevation like the tufts, on the same stroke."""
     a = np.zeros((T, T, 4), np.uint8)
     petals, centre = FLOWERS[int(rng.integers(len(FLOWERS)))]
-    spots = []
-    for _ in range(int(rng.integers(3, 6))):
-        for _ in range(20):
-            x, y = int(rng.integers(3, T - 4)), int(rng.integers(5, T - 4))
-            if all(abs(x - u) > 3 or abs(y - v) > 3 for u, v in spots):
-                spots.append((x, y))
-                break
-    for x, y in sorted(spots, key=lambda p: p[1]):
-        _put(a, x, y + 2, GRASS['deep'])                                      # stem and a leaf
-        _put(a, x + 1, y + 2, GRASS['dark'])
-        _put(a, x - 1, y + 2, GRASS['dark'])
-        for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)):
-            _put(a, x + dx, y + dy, petals)
-        _put(a, x, y, centre)
-        _put(a, x + 1, y + 1, GRASS['deep'])                                  # shade under the petals
+    cx, cy = int(rng.integers(12, T - 12)), int(rng.integers(14, T - 8))        # the clump's foot
+    count = int(rng.integers(5, 8))
+    heads = []
+    for _ in range(400):
+        if len(heads) == count:
+            break
+        x, y = cx + int(rng.integers(-9, 10)), cy - int(rng.integers(3, 13))      # the head's middle
+        if all(abs(x - u) >= 4 or abs(y - v) >= 6 for u, v, _ in heads):
+            heads.append((x, y, bool(rng.uniform() < 0.35)))                    # the last: a bud
+    for dx in range(-10, 11):                                                   # blades at the foot, with gaps, behind the stems
+        if rng.uniform() < 0.55:
+            h = int(rng.integers(1, 3))
+            for k in range(h):
+                _put(a, cx + dx, cy + 1 - k, GRASS['light'] if k == h - 1 and rng.uniform() < 0.5 else GRASS['dark'])
+    for x, y, bud in sorted(heads, key=lambda p: p[1]):                         # the ones further up the lawn first
+        top = y + 2                                                             # right under the head's last row
+        for k in range(3):                                                      # the stem
+            _put(a, x, top + k, GRASS['deep'])
+        _put(a, x - 1, top + 2, GRASS['dark'])                                  # a leaf each side, at different heights
+        _put(a, x + 1, top + 1, GRASS['dark'])
+        if bud:
+            for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+                _put(a, x + dx, y + dy, petals)
+            _put(a, x, y, centre)
+        else:
+            for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)):
+                _put(a, x + dx, y + dy, petals)
+            _put(a, x, y, centre)
     return Image.fromarray(a, 'RGBA')
 
 
@@ -182,15 +323,17 @@ def _clover(rng):
 
 
 def _pebbles(rng):
+    """One or two pebbles in two flat tones: the lit top row and the body, the same on every side, and a row of grass
+    one step darker right under it. The sun's side is the runtime's, so nothing is painted on one end."""
     a = np.zeros((T, T, 4), np.uint8)
     for _ in range(int(rng.integers(1, 3))):
         x, y = int(rng.integers(5, T - 8)), int(rng.integers(8, T - 6))
         w = int(rng.integers(3, 5))
         for dx in range(w):
-            _put(a, x + dx, y, STONE['light'] if dx < w - 1 else STONE['base'])
-            _put(a, x + dx, y + 1, STONE['base'] if dx < w - 1 else STONE['shadow'])
-        for dx in range(1, w + 1):
-            _put(a, x + dx, y + 2, GRASS['deep'])                             # shadow on the grass
+            _put(a, x + dx, y, STONE['light'])
+            _put(a, x + dx, y + 1, STONE['base'])
+        for dx in range(w):
+            _put(a, x + dx, y + 2, GRASS['dark'])                             # on the grass, under the stone
     return Image.fromarray(a, 'RGBA')
 
 
@@ -214,18 +357,27 @@ def _noise(tx, ty, scale, key):
     return (v[0][0] * (1 - fx) + v[0][1] * fx) * (1 - fy) + (v[1][0] * (1 - fx) + v[1][1] * fx) * fy
 
 
+def _under_facade(tx, ty):
+    """The two rows of the south facade's face, and the columns it spans: seen through its glass is the room, not the lawn,
+    so no tuft or flower grows there (audit round 2, I01)."""
+    import plan as P
+    return P.BY1 <= ty < P.BY1 + 2 and P.vb(P.BX0) <= tx < P.vb(P.BX1)
+
+
 def decor(cells):
     v = _variants()
     out = {}
     for tx, ty in sorted(cells):
+        if _under_facade(tx, ty):
+            continue
         rng = _rng('cell', tx, ty)
         u = rng.uniform()
         meadow = _noise(tx, ty, 7, 'meadow')                                  # flowers gather in a few meadows
         if u < 0.11:
             i = int(rng.integers(len(v['tuft'])))
-            frames, gust = v['tuft'][i], GUST[v['reach'][i]]
+            frames = v['tuft'][i]
             lean = [0] * LOOP
-            for k, s in enumerate(gust):
+            for k, s in enumerate(gust(v['reach'][i], i)):
                 lean[GUST_AT + k] = s
             out[tx, ty] = [frames[s + 1] for s in lean]
         elif u < 0.11 + 0.14 * max(0, meadow - 0.45) / 0.55:
@@ -258,11 +410,14 @@ def fringe(canvas, x, y0, y1, side):
     -1 west). An uneven border and single blades leaning onto the stone, lit at the tip, from row y0 to y1."""
     a = np.asarray(canvas).copy()
     rng = _rng('fringe', x, y0)
+    tones = {tuple(c) for c in TONE.values()}
     depth = 0
     for y in range(y0, y1):
         depth = int(np.clip(depth + rng.integers(-1, 2), 0, 2))
+        inside = tuple(a[y, x - 1 if side > 0 else x, :3])                     # the lawn's own tone here (patches vary)
+        tone = inside if inside in tones else GRASS['base']
         for d in range(depth):
-            a[y, x + side * d if side > 0 else x - 1 - d] = (*GRASS['base' if d < depth - 1 else 'dark'], 255)
+            a[y, x + side * d if side > 0 else x - 1 - d] = (*(tone if d < depth - 1 else GRASS['dark']), 255)
     for y in range(y0 + 2, y1, 3):
         if rng.uniform() < 0.5:
             continue
