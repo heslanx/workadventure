@@ -18,10 +18,14 @@
 </script>
 
 {#if $content.url !== undefined}
+    <!-- The save link opens in its own tab: for a URL of another origin (the homeserver's) the browser ignores download
+         and navigates the page, which fires beforeunload (see the recording download links). -->
     <svelte:element
         this={canSave ? "a" : "div"}
         href={canSave ? $content.url : undefined}
         download={canSave ? $content.body : undefined}
+        target={canSave ? "_blank" : undefined}
+        rel={canSave ? "noopener noreferrer" : undefined}
         class="block min-w-[200px] max-w-full overflow-hidden rounded-t-[inherit] bg-white/5 last:rounded-b-[inherit] text-white hover:text-white hover:no-underline"
     >
         <div class="px-2.5 py-2">
