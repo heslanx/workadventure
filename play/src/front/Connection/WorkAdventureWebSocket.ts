@@ -291,7 +291,6 @@ export class WorkAdventureWebSocket {
         socket.addEventListener("error", this.handleErrorEvent);
         socket.addEventListener("message", this.handleMessageEvent);
 
-        window.addEventListener("beforeunload", this.closeForPageUnload);
         window.addEventListener("pagehide", this.closeForPageUnload);
     }
 
@@ -301,7 +300,6 @@ export class WorkAdventureWebSocket {
         socket.removeEventListener("error", this.handleErrorEvent);
         socket.removeEventListener("message", this.handleMessageEvent);
 
-        window.removeEventListener("beforeunload", this.closeForPageUnload);
         window.removeEventListener("pagehide", this.closeForPageUnload);
     }
 

@@ -127,9 +127,13 @@
     {#snippet action()}
         <div class="flex w-full items-center gap-3">
             {#if current.status === "done"}
-                <span class="flex-1"></span>
-                <Button dataTestId="understoodButton" variant="secondary" class="flex-1" onclick={() => modals.close()}
-                    >{$LL.chat.verificationEmojiDialog.understood()}
+                <Button
+                    dataTestId="understoodButton"
+                    variant="secondary"
+                    class="mx-auto w-1/2"
+                    onclick={() => modals.close()}
+                >
+                    {$LL.chat.verificationEmojiDialog.understood()}
                 </Button>
             {:else if current.status === "error" || current.status === "cancelled"}
                 <Button variant="light" appearance="ghost" class="flex-1" onclick={() => modals.close()}>
@@ -145,7 +149,8 @@
                     class="flex-1"
                     dataTestId="mismatchButton"
                     onclick={mismatchAndCloseModal}
-                    >{$LL.chat.verificationEmojiDialog.mismatch()}
+                >
+                    {$LL.chat.verificationEmojiDialog.mismatch()}
                 </Button>
                 <Button dataTestId="matchButton" variant="secondary" class="flex-1" onclick={confirmEmoji}>
                     {#snippet icon()}
