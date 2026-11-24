@@ -50,6 +50,19 @@ Add the package's own checks when a
 batch touches `libs/`, `messages/` or `desktop/`; `.github/workflows/continuous_integration.yml` is
 the source of truth.
 
+## Merging the original repository
+
+- Merge `upstream/master` or one named feature branch, never `upstream/*` by pattern. Some upstream
+  branches are not code: `upstream/pr-assets/megaphone-world-settings` (2026-11-24) holds six
+  screenshots and nothing else, so merging it would delete every other file.
+- Merge with `git merge --no-commit --no-ff`, then read `git diff --cached --stat HEAD` before
+  committing: a merge that deletes files nobody asked to delete is aborted.
+- A merge without text conflicts can still be wrong where both sides changed the same behaviour.
+  List the files both changed since the merge base and have each such area read against our own
+  history before the commit.
+- Upstream files can arrive unformatted. Run the formatter on the files the merge brings and stage
+  the result in the merge commit, and say so in its message.
+
 ## Environment facts
 
 - Host `node_modules` must hold darwin native bindings (`@rolldown/binding-darwin-arm64`). A
