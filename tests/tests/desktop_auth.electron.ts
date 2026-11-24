@@ -14,7 +14,7 @@ test("signs in and out through the system browser, which never enters the world 
     await logIn(world, "Alice");
 
     await test.step("sign in", async () => {
-        await world.getByRole("button", { name: "Login" }).click();
+        await world.getByRole("button", { name: "Log in" }).click();
         const signIn = await app.waitForSystemBrowserPage();
         await signIn.fill("#Input_Username", "User1");
         await signIn.fill("#Input_Password", "pwd");
@@ -36,7 +36,7 @@ test("signs in and out through the system browser, which never enters the world 
         await expect(signOut).toHaveURL(loopbackCallback("logout"));
 
         // Back in the world in the app, as a guest. The browser stays on the "signed out" page.
-        await expect(world.getByRole("button", { name: "Login" })).toBeVisible({ timeout: 60_000 });
+        await expect(world.getByRole("button", { name: "Log in" })).toBeVisible({ timeout: 60_000 });
         await expect(world).toHaveURL(inWorld);
         await expect(signOut).toHaveURL(loopbackCallback("logout"));
     });

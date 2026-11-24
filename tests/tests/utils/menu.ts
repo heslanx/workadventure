@@ -30,7 +30,9 @@ class Menu {
 
     async openMenu(page: Page) {
         await page.getByTestId("action-user").click({ timeout: 30_000 });
-        await expect(page.getByTestId("profile-menu")).toHaveClass(/backdrop-blur/);
+        // Not a class: the office menu is a "k-chrome" surface, with no backdrop blur of upstream's (konclui.css sets
+        // --k-chrome-backdrop to none).
+        await expect(page.getByTestId("profile-menu")).toBeVisible();
     }
 
     async openMenuIfMobile(page: Page) {
@@ -53,7 +55,7 @@ class Menu {
     async openMapMenu(page: Page) {
         // await page.pause();
         await page.getByTestId("map-menu").click();
-        await expect(page.getByTestId("map-sub-menu")).toHaveClass(/backdrop-blur/);
+        await expect(page.getByTestId("map-sub-menu")).toBeVisible();
     }
 
     async closeMenu(page: Page) {
