@@ -232,6 +232,275 @@ describe("the lamps' shadows", () => {
     });
 });
 
+describe("a lamp's shadow of a box (a piece lower than its rows)", () => {
+    // a bell stand: 30 wide, 48 rows, 25 px high: its top 23 rows are its upper picture, not 23 rows of floor
+    const BELL = Array.from({ length: 48 }, () => "#".repeat(30));
+    const BELL_X = 50;
+    const BELL_Y = 30;
+    const FOOT = BELL_Y + 47;
+    const pool: Light = {
+        x: 20,
+        y: 70,
+        reach: 60,
+        color: [1, 0.737, 0.314],
+        power: 0.95,
+        squash: 0.6,
+        clip: null,
+        kind: "arc",
+        self: false,
+        night: false,
+        halo: true,
+    };
+    const lamp: CasterLamp = { piece: 0, x: 20, y: 30, z: 42, gx: 20, gy: 70, reach: 60, squash: 0.6, pools: [pool] };
+    const lampPiece = piece(["##", "##"], 19, 28, null, "lamp");
+    const lit = (caster: BakeCaster | null): Uint8Array =>
+        bake(input([lampPiece, piece(BELL, BELL_X, BELL_Y, caster)], { lamps: [lamp] }), {
+            solid: true,
+            contact: false,
+            key: false,
+            surface: false,
+        });
+    /** The cells the lamp's shadow marks outside every picture, as [x, y] map pixels. */
+    const shadow = (out: Uint8Array): [number, number][] => {
+        const cells: [number, number][] = [];
+        for (let y = 0; y < H; y++)
+            for (let x = 0; x < W; x++) if (px(out, x, y, 0) > 0 && px(out, x, y, 3) !== 255) cells.push([x, y]);
+        return cells;
+    };
+    const casters: BakeCaster = { h: 25, foot: null, span: null };
+
+    it("starts at the foot: no pixel of it lies higher up the screen than the footprint's depth over the foot line", () => {
+        const cells = shadow(lit(casters));
+        expect(cells.length).toBeGreaterThan(30);
+        // the lamp is to the west and a little north of the piece's foot, so its shadow leans east and a little south
+        const top = Math.min(...cells.map(([, y]) => y));
+        expect(top).toBeGreaterThanOrEqual(FOOT - 10);
+    });
+
+    it("leans away from the lamp, out of the picture's right edge, and never to its left", () => {
+        const cells = shadow(lit(casters));
+        expect(Math.max(...cells.map(([x]) => x))).toBeGreaterThan(BELL_X + 30 + 8);
+        expect(Math.min(...cells.map(([x]) => x))).toBeGreaterThanOrEqual(BELL_X);
+    });
+
+    it("is one piece: every pixel of it is joined to the picture's edge, none is a block lying apart from it", () => {
+        const cells = shadow(lit(casters));
+        const key = (x: number, y: number): number => y * W + x;
+        const todo = new Set(cells.map(([x, y]) => key(x, y)));
+        const seen = new Set<number>();
+        const queue: [number, number][] = [];
+        // the seeds: its pixels touching the picture's box (any side)
+        for (const [x, y] of cells)
+            if (x <= BELL_X + 30 && x >= BELL_X - 1 && y >= BELL_Y && y <= BELL_Y + 48) {
+                seen.add(key(x, y));
+                queue.push([x, y]);
+            }
+        expect(queue.length).toBeGreaterThan(0);
+        while (queue.length > 0) {
+            const [x, y] = queue.pop() as [number, number];
+            for (let dy = -1; dy <= 1; dy++)
+                for (let dx = -1; dx <= 1; dx++) {
+                    const k = key(x + dx, y + dy);
+                    if (todo.has(k) && !seen.has(k)) {
+                        seen.add(k);
+                        queue.push([x + dx, y + dy]);
+                    }
+                }
+        }
+        expect(seen.size).toBe(todo.size);
+    });
+
+    it("is shorter than the same piece's shadow as a wall, which has the length of its rows", () => {
+        expect(shadow(lit(casters)).length).toBeLessThan(shadow(lit(null)).length);
+    });
+});
+
+describe("a lamp's shadow of a thin piece on a wide base", () => {
+    // an arc lamp: a 3 px pole over a 20 px disc, 56 rows, 22 px high
+    const POLE_ON_DISC = [
+        ...Array.from({ length: 48 }, () => " ".repeat(8) + "###" + " ".repeat(9)),
+        ...Array.from({ length: 8 }, () => "#".repeat(20)),
+    ];
+    const X = 60;
+    const Y = 20;
+    const pool: Light = {
+        x: 20,
+        y: 70,
+        reach: 80,
+        color: [1, 0.737, 0.314],
+        power: 0.95,
+        squash: 0.6,
+        clip: null,
+        kind: "arc",
+        self: false,
+        night: false,
+        halo: true,
+    };
+    const lamp: CasterLamp = { piece: 0, x: 20, y: 30, z: 42, gx: 20, gy: 70, reach: 80, squash: 0.6, pools: [pool] };
+    const out = bake(
+        input(
+            [piece(["##", "##"], 19, 28, null, "lamp"), piece(POLE_ON_DISC, X, Y, { h: 22, foot: null, span: null })],
+            {
+                lamps: [lamp],
+            },
+        ),
+        { solid: true, contact: false, key: false, surface: false },
+    );
+
+    it("keeps a thin shadow past the base: no more than a few px thick where the disc does not reach", () => {
+        const columns = new Map<number, number>();
+        for (let y = 0; y < H; y++)
+            for (let x = X + 20; x < W; x++)
+                if (px(out, x, y, 0) > 0 && px(out, x, y, 3) !== 255) columns.set(x, (columns.get(x) ?? 0) + 1);
+        // the disc's own rows may throw a stub just past its edge: the farthest third of what is cast there is the pole's line
+        const xs = [...columns.keys()].sort((a, b) => a - b);
+        const far = xs.slice(Math.floor((xs.length * 2) / 3));
+        expect(far.length).toBeGreaterThan(2);
+        expect(Math.max(...far.map((x) => columns.get(x) ?? 0))).toBeLessThanOrEqual(5);
+    });
+});
+
+describe("a lamp's shadow of its own picture, an arc lamp (a pole on a disc under a hanging shade)", () => {
+    // 24 wide, 54 rows, 44 px high: 16 rows of shade, 30 of a 3 px pole, 8 of a disc. The row `h` over the base is the shade's.
+    const ARC = [
+        ...Array.from({ length: 16 }, () => "#".repeat(24)),
+        ...Array.from({ length: 30 }, () => " ".repeat(10) + "###" + " ".repeat(11)),
+        ...Array.from({ length: 8 }, () => "#".repeat(24)),
+    ];
+    const X = 40;
+    const Y = 20;
+    const pool: Light = {
+        x: 10,
+        y: 70,
+        reach: 80,
+        color: [1, 0.737, 0.314],
+        power: 0.95,
+        squash: 0.6,
+        clip: null,
+        kind: "arc",
+        self: false,
+        night: false,
+        halo: true,
+    };
+    // the arc lamp is its own lamp: its light lands to the west of its foot, so its base throws a shadow to the east
+    const lamp: CasterLamp = { piece: 0, x: 10, y: 30, z: 42, gx: 10, gy: 70, reach: 80, squash: 0.6, pools: [pool] };
+    const out = bake(input([piece(ARC, X, Y, { h: 44, foot: null, span: null }, "arc")], { lamps: [lamp] }), {
+        solid: true,
+        contact: false,
+        key: false,
+        surface: false,
+    });
+
+    it("keeps a thin shadow past its base: the pole's width, not the disc's or the shade's", () => {
+        const columns = new Map<number, number>();
+        for (let y = 0; y < H; y++)
+            for (let x = X + 24; x < W; x++)
+                if (px(out, x, y, 0) > 0 && px(out, x, y, 3) !== 255) columns.set(x, (columns.get(x) ?? 0) + 1);
+        // the disc's own rows may throw a stub just past its edge: the farthest third of what is cast there is the pole's line
+        const xs = [...columns.keys()].sort((a, b) => a - b);
+        const far = xs.slice(Math.floor((xs.length * 2) / 3));
+        expect(far.length).toBeGreaterThan(5);
+        expect(Math.max(...far.map((x) => columns.get(x) ?? 0))).toBeLessThanOrEqual(5);
+    });
+});
+
+describe("a lamp's shadow of a piece on legs (an armchair: a body on two legs)", () => {
+    // 30 wide, 28 rows, 18 px high: 24 rows of body over 4 rows of two legs 4 px wide at its ends, the lamp to its west
+    const CHAIR = [
+        ...Array.from({ length: 24 }, () => "#".repeat(30)),
+        ...Array.from({ length: 4 }, () => "####" + " ".repeat(22) + "####"),
+    ];
+    const X = 60;
+    const Y = 20;
+    const FOOT = Y + 27;
+    const pool: Light = {
+        x: 20,
+        y: 70,
+        reach: 80,
+        color: [1, 0.737, 0.314],
+        power: 0.95,
+        squash: 0.6,
+        clip: null,
+        kind: "arc",
+        self: false,
+        night: false,
+        halo: true,
+    };
+    const lamp: CasterLamp = { piece: 0, x: 20, y: 30, z: 42, gx: 20, gy: 70, reach: 80, squash: 0.6, pools: [pool] };
+    const out = bake(
+        input(
+            [piece(["##", "##"], 19, 28, null, "lamp"), piece(CHAIR, X, Y, { h: 18, foot: null, span: null }, "chair")],
+            { lamps: [lamp] },
+        ),
+        { solid: true, contact: false, key: false, surface: false },
+    );
+    const cells = (): [number, number][] => {
+        const found: [number, number][] = [];
+        for (let y = 0; y < H; y++)
+            for (let x = X + 30; x < W; x++) if (px(out, x, y, 0) > 0 && px(out, x, y, 3) !== 255) found.push([x, y]);
+        return found;
+    };
+
+    it("casts its body as well as its legs: under the seat the shadow runs unbroken from one leg to the other", () => {
+        // the lamp is south of the chair, so the shadow of the body rises up the screen: two rows over the foot it is a whole
+        // row between the legs. Cast from the legs alone it was two stripes with a gap where the body is.
+        const row = FOOT - 3;
+        for (let x = X + 4; x < X + 26; x++) expect(px(out, x, row, 0) > 0, `column ${x - X}`).toBe(true);
+        // and it comes out past the chair's east edge as a band
+        expect(cells().length).toBeGreaterThan(40);
+    });
+
+    it("leaves the foot row bare between its legs: the picture has nothing there and the body is off the ground", () => {
+        for (let y = FOOT - 1; y <= FOOT; y++)
+            for (let x = X + 8; x < X + 24; x++) expect(px(out, x, y, 0) > 0 && px(out, x, y, 3) !== 255).toBe(false);
+    });
+});
+
+describe("a lamp level with a box that stands against a wall", () => {
+    // a bookshelf 40 wide and 50 rows, 20 px high, with a wall along its west side and the lamp to its east, level with its foot
+    const SHELF = Array.from({ length: 50 }, () => "#".repeat(40));
+    const SX = 60;
+    const SY = 20;
+    const FOOT = SY + 49;
+    const pool: Light = {
+        x: 108,
+        y: 70,
+        reach: 80,
+        color: [1, 0.737, 0.314],
+        power: 0.95,
+        squash: 0.6,
+        clip: null,
+        kind: "arc",
+        self: false,
+        night: false,
+        halo: true,
+    };
+    const lamp: CasterLamp = { piece: 0, x: 108, y: 30, z: 42, gx: 108, gy: 70, reach: 80, squash: 0.6, pools: [pool] };
+    const lampPiece = piece(["##", "##"], 107, 62, null, "lamp");
+    const night = (extra: Partial<BakeInput>): Uint8Array =>
+        bake(
+            input([lampPiece, piece(SHELF, SX, SY, { h: 20, foot: null, span: null }, "shelf")], {
+                lamps: [lamp],
+                key: keyAt(22),
+                ...extra,
+            }),
+            { solid: true, contact: false, lamp: false, surface: false },
+        );
+    /** The key's shadow of the shelf outside its picture, in the shelf's own columns or to its west. */
+    const ofShelf = (out: Uint8Array): [number, number][] => shadowCells(out).filter(([x]) => x < SX + 40);
+
+    it("has a shadow to its west when nothing is there, away from the lamp", () => {
+        const cells = ofShelf(night({}));
+        expect(cells.length).toBeGreaterThan(20);
+        expect(Math.min(...cells.map(([x]) => x))).toBeLessThan(SX);
+    });
+
+    it("throws none down the screen when the wall takes it: a lamp that is not above it does not light it from there", () => {
+        const cells = ofShelf(night({ isWall: (x) => x < SX }));
+        expect(cells.filter(([, y]) => y > FOOT + 1)).toEqual([]);
+    });
+});
+
 describe("determinism with entries", () => {
     const entries = [
         piece(FLAT, 10, 10, { h: 6, foot: null, span: [2, 20] }),

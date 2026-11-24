@@ -258,7 +258,21 @@ export interface Shear {
     readonly foot?: number;
     readonly rise?: number;
     readonly cap?: number;
+    /**
+     * With `cap`: the piece's footprint (the runs of its base, in the picture's columns, up to `depth` rows deep up the screen
+     * from the foot) is swept along the light from the foot to the full length, in slices of about a px, each slice a step of
+     * the shadow's two bands; the picture's rows over `cap` are not cast. A lamp's shadow of a box is cast so: the rows over `cap`
+     * set down once at the far end came out as the picture's whole upper half, a flat block up the screen with no near band.
+     * A slice, like each row of the front face, is what the picture has at its height, cut to the columns the footprint spans
+     * (`sectionsOverHeights`): a pole standing on a disc sweeps the pole's width above the disc, not the disc's, and is as deep as
+     * it is wide (a slice is never deeper than half its width).
+     */
+    readonly sweep?: { readonly runs: readonly (readonly [number, number])[]; readonly depth: number };
 }
+
+/** How much of a swept footprint's width is gone at the far end when the light falls straight down the screen, and how much shorter it is. */
+export const SWEEP_TAPER = 0.8;
+export const SWEEP_UPRIGHT_SHORTEN = 0.4;
 
 /** The scale that keeps a shadow of `length` x height at least `lo` and at most `hi` px long (never below 1 when it fits). */
 export function lengthScale(height: number, length: number, lo: number, hi: number): number {
@@ -280,19 +294,27 @@ export function shearRuns(
     shear: Shear,
     visit: (y: number, x0: number, x1: number, heightShare: number) => void,
 ): void {
-    const { sx, sy, m } = shear;
+    const { sx, sy } = shear;
     const foot = shear.foot ?? sil.foot;
     const rise = shear.rise ?? 1;
     const cap = shear.cap ?? Number.POSITIVE_INFINITY;
     const boxed = cap !== Number.POSITIVE_INFINITY;
+    const sweep = boxed ? shear.sweep : undefined;
+    // a light that falls (nearly) straight down the screen would drag the footprint and the front face into an upright
+    // rectangle: a swept piece's shadow narrows and shortens as the light stops leaning, so what is left is a wedge, never a slab
+    const upright = sweep ? Math.max(0, 1 - 2 * (Math.abs(sx) / Math.max(Math.abs(sx) + Math.abs(sy), 1e-6))) : 0;
+    const taper = upright * SWEEP_TAPER;
+    const m = shear.m * (1 - upright * SWEEP_UPRIGHT_SHORTEN);
     const q = Math.max(1, Math.ceil(Math.max(Math.abs(sx * m * rise), Math.abs(sy * m * rise), 1)));
     const height = Math.max(1, foot - sil.top + 1);
     const last = Math.min(sil.foot, foot);
+    const sections = sweep ? sectionsOverHeights(sil, foot, cap, sweep.runs) : [];
     for (let r = sil.top; r <= last; r++) {
         const first = sil.starts[r];
         const end = sil.starts[r + 1];
         if (first === end) continue;
         const z = foot - r;
+        if (sweep && z * rise > cap) continue; // the footprint is swept below
         for (let j = 0; j < q; j++) {
             const zj = z - j / q;
             if (zj < 0) break;
@@ -300,9 +322,79 @@ export function shearRuns(
             const ox = Math.round(sx * m * up);
             const oy = Math.round(sy * m * up - (boxed ? zj - up : 0));
             const share = boxed ? up / cap : zj / height;
-            for (let k = first; k < end; k++) {
+            if (sweep) {
+                for (const [a, b] of sections[Math.min(z, sections.length - 1)]) {
+                    const inset = narrowing(a, b, share * taper);
+                    visit(y0 + foot + oy, x0 + a + ox + inset, x0 + b + ox - inset, share);
+                }
+                continue;
+            }
+            for (let k = first; k < end; k++)
                 visit(y0 + foot + oy, x0 + sil.runs[k * 2] + ox, x0 + sil.runs[k * 2 + 1] + ox, share);
+        }
+    }
+    if (sweep) {
+        const slices = Math.max(1, Math.ceil(Math.max(Math.abs(sx * m * cap), Math.abs(sy * m * cap))));
+        for (let i = 0; i <= slices; i++) {
+            const t = i / slices;
+            const ox = Math.round(sx * m * cap * t);
+            const oy = Math.round(sy * m * cap * t);
+            const section = sections[Math.min(Math.round(cap * t), sections.length - 1)];
+            let width = 0;
+            for (const [a, b] of section) width += b - a;
+            const deep = Math.min(sweep.depth, Math.ceil(width / 2));
+            for (let f = 0; f <= deep; f++) {
+                for (const [a, b] of section) {
+                    const inset = narrowing(a, b, t * taper);
+                    visit(y0 + foot + oy - f, x0 + a + ox + inset, x0 + b + ox - inset, t);
+                }
             }
         }
     }
+}
+
+/**
+ * What a swept piece is made of at each height `z` (px over its foot, 0 to `cap` or the highest row it has): the picture's row
+ * there, cut to the columns the footprint `base` spans (its first column to its last, legs and all). A box is as wide at every
+ * height as its base; a pole standing on a disc is the pole's width wherever the picture is the pole's; the body of a chair on two
+ * legs is cast between its legs, since that is where the picture has it, and the gap between the legs stays bare at their height,
+ * since there it has nothing. A top wider than the legs' span is cut to it. A row with nothing on the footprint (a stem that
+ * leans out of its base) is the nearest row under it that has some.
+ */
+function sectionsOverHeights(
+    sil: Silhouette,
+    foot: number,
+    cap: number,
+    base: readonly (readonly [number, number])[],
+): [number, number][][] {
+    // the columns the base spans, legs and all: what the picture has between two legs at a height is its body, and it is cast
+    let c = Number.POSITIVE_INFINITY;
+    let d = Number.NEGATIVE_INFINITY;
+    for (const [a, b] of base) {
+        c = Math.min(c, a);
+        d = Math.max(d, b);
+    }
+    const onBase = (r: number): [number, number][] => {
+        const out: [number, number][] = [];
+        if (r < sil.top || r > sil.foot) return out;
+        for (let k = sil.starts[r]; k < sil.starts[r + 1]; k++) {
+            const lo = Math.max(sil.runs[k * 2], c);
+            const hi = Math.min(sil.runs[k * 2 + 1], d);
+            if (hi > lo) out.push([lo, hi]);
+        }
+        return out;
+    };
+    const zMax = Math.max(0, Math.min(Math.floor(cap), foot - sil.top));
+    const out: [number, number][][] = [];
+    for (let z = 0; z <= zMax; z++) {
+        let section: [number, number][] = [];
+        for (let r = foot - z; r <= foot && section.length === 0; r++) section = onBase(r);
+        out.push(section.length > 0 ? section : base.map(([a, b]): [number, number] => [a, b]));
+    }
+    return out;
+}
+
+/** How many px come off each end of the run [a, b) when `share` of its width is gone (never the last px). */
+function narrowing(a: number, b: number, share: number): number {
+    return share <= 0 ? 0 : Math.min(Math.round(share * ((b - a) / 2)), Math.floor((b - a - 1) / 2));
 }

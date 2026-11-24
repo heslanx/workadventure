@@ -125,13 +125,16 @@ function lampShadowOf(input: BakeInput, piece: BakePiece, lamp: CasterLamp): Lam
     const direction = lampDirection(ddx, ddy);
     const dir = LAMP_DIRECTIONS[direction];
     const k = lampShadowLength(ground, lamp.z);
+    const deepFor = (width: number): number =>
+        Math.min(LAMP_DEPTH_MAX_PX, Math.max(LAMP_DEPTH_MIN_PX, width * LAMP_DEPTH_SHARE));
     const footWidth = baseRuns(piece, sil).reduce((sum, [a, b]) => sum + b - a, 0);
+    const shear = standShear(piece, sil, dir[0] * k, dir[1] * k, k, LAMP_FLOOR_PX, LAMP_CAP_PX, (w) =>
+        Math.round(deepFor(w)),
+    );
     return {
-        shear: standShear(piece, sil, dir[0] * k, dir[1] * k, k, LAMP_FLOOR_PX, LAMP_CAP_PX),
-        depth: Math.round(
-            Math.min(LAMP_DEPTH_MAX_PX, Math.max(LAMP_DEPTH_MIN_PX, footWidth * LAMP_DEPTH_SHARE)) *
-                (1 - Math.abs(dir[1])),
-        ),
+        shear,
+        // a box's footprint is swept by the shear itself (`Shear.sweep`): no fill up the screen over it
+        depth: shear.sweep ? 0 : Math.round(deepFor(footWidth) * (1 - Math.abs(dir[1]))),
         direction,
         nearness: ground / lamp.reach,
         light: lampLight(lamp, fx + 0.5, fy + 0.5),
@@ -228,6 +231,22 @@ function baseRuns(piece: BakePiece, sil: Silhouette): [number, number][] {
 }
 
 /**
+ * What a lamp sweeps of a box: the runs of its base, and how deep they are (a base `w` px wide is `depthOf(w)` deep, but not more
+ * than half as deep as wide, and never into the part of the picture that is its front face). How wide the sweep is at each height,
+ * a pole on a disc being the pole, is `shearRuns`' to say: it reads the picture it casts.
+ */
+function sweptFootprint(
+    piece: BakePiece,
+    sil: Silhouette,
+    rows: number,
+    depthOf: (width: number) => number,
+): Pick<Shear, "sweep"> {
+    const runs = baseRuns(piece, sil);
+    const width = runs.reduce((sum, [a, b]) => sum + b - a, 0);
+    return { sweep: { runs, depth: Math.min(depthOf(width), Math.ceil(width / 2), rows - (piece.caster?.h ?? 0)) } };
+}
+
+/**
  * The shear of a standing piece's shadow along (sx, sy) per px of height, `length` being the light's shadow per px of height.
  * Without a caster entry the piece's rows are its height. With one the length comes from its `h` (kept between `lo` and `hi`),
  * the shadow starts at the piece's base row, and a piece lower than its rows is a box: its first `h` rows are its front face and
@@ -242,6 +261,7 @@ function standShear(
     length: number,
     lo: number,
     hi: number,
+    sweepDepthOf?: (width: number) => number,
 ): Shear {
     const c = piece.caster;
     if (!c) return { sx, sy, m: lengthScale(sil.foot - sil.top + 1, length, lo, hi) };
@@ -250,7 +270,14 @@ function standShear(
     // a piece at least as tall as its rows is a wall; a lower one is a box: `h` rows of front face, the rest of its rows a top face
     return c.h >= rows
         ? { sx, sy, m: lengthScale(c.h, length, lo, hi), foot, rise: c.h / rows }
-        : { sx, sy, m: lengthScale(c.h, length, lo, hi), foot, cap: c.h };
+        : {
+              sx,
+              sy,
+              m: lengthScale(c.h, length, lo, hi),
+              foot,
+              cap: c.h,
+              ...(sweepDepthOf === undefined ? {} : sweptFootprint(piece, sil, rows, sweepDepthOf)),
+          };
 }
 
 export interface BakeInput {
@@ -645,7 +672,15 @@ export class CastBake {
         };
         let best = first;
         let counted = this.castOnFloor(piece, sil, first.shear, first.depth, region, false);
-        if (counted.total >= LANDING_MIN_PX && counted.landed < counted.total * LANDING_MIN_SHARE) {
+        // a box's lamp shadow is its footprint swept along the lamp's own direction and is not cast again elsewhere: where the
+        // lamp is level with a piece that stands against a wall, the shadow goes into the wall and is not there, and cast "down the
+        // screen" it came out as a slab of the footprint's width under a light that is nowhere above it. The pieces without a height
+        // entry keep their second chances as they were: their depth fill counted each pixel of the first try several times over.
+        if (
+            first.shear.sweep === undefined &&
+            counted.total >= LANDING_MIN_PX &&
+            counted.landed < counted.total * LANDING_MIN_SHARE
+        ) {
             // most of it fell on a wall or a picture: down the screen, then to the other side, and the best of the three is kept
             const mx = first.shear.sx;
             const my = first.shear.sy;

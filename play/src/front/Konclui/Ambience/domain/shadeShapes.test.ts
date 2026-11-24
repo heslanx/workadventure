@@ -11,6 +11,7 @@ import {
     shearRuns,
     silhouetteOf,
     SOLID_ALPHA,
+    type Shear,
     type Silhouette,
 } from "./shadeShapes";
 import cases from "./__fixtures__/shade-shapes-cases.json";
@@ -299,5 +300,176 @@ describe("shearRuns", () => {
         expect(c.has("1,3")).toBe(false);
         expect(c.has("1,4")).toBe(true);
         expect(c.has("0,3")).toBe(true);
+    });
+});
+
+describe("shearRuns of a box with a swept footprint", () => {
+    const rows = Array.from({ length: 40 }, () => "#".repeat(20));
+    const sil = silhouetteOf(
+        {
+            data: Uint8ClampedArray.from(
+                rows.flatMap((row) => [...row].flatMap((c) => [0, 0, 0, c === "#" ? 255 : 0])),
+            ),
+        },
+        20,
+        40,
+    ) as Silhouette;
+    const base = { sx: 1, sy: 0.5, m: 1, foot: 39, cap: 20 } as const;
+    const cells = (shear: Shear): { y: number; x0: number; x1: number; share: number }[] => {
+        const out: { y: number; x0: number; x1: number; share: number }[] = [];
+        shearRuns(sil, 0, 0, shear, (y, x0, x1, share) => out.push({ y, x0, x1, share }));
+        return out;
+    };
+
+    it("without `sweep` sets the top face down once at the far end (as it always did)", () => {
+        const far = cells(base).filter((c) => c.y < 39);
+        expect(far.length).toBeGreaterThan(0);
+        expect(Math.min(...far.map((c) => c.y))).toBeLessThan(39 - 6);
+    });
+
+    it("with `sweep` stays within the footprint's depth over the foot line and gives both bands of the stepped edge", () => {
+        const all = cells({ ...base, sweep: { runs: [[0, 20]], depth: 6 } });
+        // the sheared line goes down the screen (sy > 0): nothing is higher than `depth` over the foot row
+        expect(Math.min(...all.map((c) => c.y))).toBeGreaterThanOrEqual(39 - 6);
+        expect(all.some((c) => c.share < 0.5)).toBe(true);
+        expect(all.some((c) => c.share >= 0.5)).toBe(true);
+        // slices follow the shear: the far end is `cap` px along it
+        expect(Math.max(...all.map((c) => c.x1))).toBe(20 + 20);
+    });
+    it("a light that falls straight down the screen leaves a wedge: narrower and shorter at the far end, not a rectangle", () => {
+        const down = {
+            sx: 0,
+            sy: 1,
+            m: 1,
+            foot: 39,
+            cap: 20,
+            sweep: { runs: [[0, 20]] as [number, number][], depth: 6 },
+        };
+        const all = cells(down);
+        const width = (rows: typeof all): number =>
+            Math.max(...rows.map((c) => c.x1)) - Math.min(...rows.map((c) => c.x0));
+        const near = all.filter((c) => c.y >= 39 - 6 && c.y <= 39 && c.share < 0.15);
+        const far = all.filter((c) => c.share > 0.85);
+        expect(near.length).toBeGreaterThan(0);
+        expect(far.length).toBeGreaterThan(0);
+        expect(width(far)).toBeLessThan(width(near) * 0.5);
+        // shorter than the same light would drag it if it leaned: the far end is not `cap` px down
+        expect(Math.max(...all.map((c) => c.y))).toBeLessThan(39 + 20);
+        // and it never leaves the footprint's columns
+        expect(Math.min(...all.map((c) => c.x0))).toBeGreaterThanOrEqual(0);
+        expect(Math.max(...all.map((c) => c.x1))).toBeLessThanOrEqual(20);
+    });
+
+    it("a light that leans keeps the full width and length of the sweep (no taper)", () => {
+        const all = cells({ ...base, sweep: { runs: [[0, 20]], depth: 6 } });
+        const far = all.filter((c) => c.share > 0.85);
+        expect(Math.max(...far.map((c) => c.x1)) - Math.min(...far.map((c) => c.x0))).toBeGreaterThanOrEqual(20);
+    });
+
+    it("never casts a row wider than the swept footprint (a disc under a pole throws the pole's shadow)", () => {
+        const all = cells({ ...base, sweep: { runs: [[8, 11]], depth: 2 } });
+        expect(all.length).toBeGreaterThan(0);
+        expect(Math.max(...all.map((c) => c.x1 - c.x0))).toBeLessThanOrEqual(3);
+    });
+});
+
+describe("shearRuns of a swept footprint under a picture that is not as wide as it", () => {
+    const silOf = (rows: string[]): Silhouette =>
+        silhouetteOf(
+            {
+                data: Uint8ClampedArray.from(
+                    rows.flatMap((row) => [...row].flatMap((c) => [0, 0, 0, c === "#" ? 255 : 0])),
+                ),
+            },
+            rows[0].length,
+            rows.length,
+        ) as Silhouette;
+    const cells = (
+        sil: Silhouette,
+        shear: Shear,
+    ): { y: number; x0: number; x1: number; share: number; ox: number }[] => {
+        const out: { y: number; x0: number; x1: number; share: number; ox: number }[] = [];
+        // the shear moves a row by round(sx * m * height): what is left of a cell once that is taken off is a column of the picture
+        shearRuns(sil, 0, 0, shear, (y, x0, x1, share) =>
+            out.push({ y, x0, x1, share, ox: Math.round(shear.sx * shear.m * share * (shear.cap ?? 0)) }),
+        );
+        return out;
+    };
+
+    it("a pole on a disc sweeps the pole's width above the disc, not the disc's (a thin pole keeps a thin shadow)", () => {
+        // 3 px pole over 30 rows, on a disc 20 wide and 8 rows deep: the base row is the disc's
+        const sil = silOf([
+            ...Array.from({ length: 30 }, () => " ".repeat(8) + "###" + " ".repeat(9)),
+            ...Array.from({ length: 8 }, () => "#".repeat(20)),
+        ]);
+        const shear: Shear = { sx: 1, sy: 0.5, m: 1, foot: 37, cap: 24, sweep: { runs: [[0, 20]], depth: 6 } };
+        const all = cells(sil, shear);
+        // over the disc's own 8 rows the slices may be the disc's; past them (a third of the way and more) only the pole is left
+        const past = all.filter((c) => c.share > 0.4);
+        expect(past.length).toBeGreaterThan(20);
+        expect(Math.max(...past.map((c) => c.x1 - c.x0))).toBeLessThanOrEqual(3);
+        // and it reaches the end of the sweep: the shadow is a thin line out to `cap` px along the light
+        expect(Math.max(...all.map((c) => c.x1))).toBeGreaterThanOrEqual(8 + 24);
+    });
+
+    it("a table on two legs casts its legs as two stripes, then its top as one band: nothing is cast where the picture has nothing", () => {
+        // 20 rows of top over 6 rows of two legs, 4 wide each, at the ends: the top is the body the legs carry
+        const sil = silOf([
+            ...Array.from({ length: 20 }, () => "#".repeat(30)),
+            ...Array.from({ length: 6 }, () => "####" + " ".repeat(22) + "####"),
+        ]);
+        const shear: Shear = {
+            sx: 1,
+            sy: 0.3,
+            m: 1,
+            foot: 25,
+            cap: 16,
+            sweep: {
+                runs: [
+                    [0, 4],
+                    [26, 30],
+                ],
+                depth: 2,
+            },
+        };
+        const all = cells(sil, shear);
+        expect(all.length).toBeGreaterThan(0);
+        // the legs are 6 of the 16 px of height: what is cast at their heights is on a leg, with the gap between them left bare
+        const onALeg = (from: number, to: number): boolean => (from >= -1 && to <= 5) || (from >= 25 && to <= 31);
+        const low = all.filter((c) => c.share < 0.3);
+        expect(low.length).toBeGreaterThan(0);
+        for (const c of low) expect(onALeg(c.x0 - c.ox, c.x1 - c.ox)).toBe(true);
+        // and over them the top is cast whole, between the legs too: it is the picture's body, not a ghost
+        const high = all.filter((c) => c.share > 0.45);
+        expect(high.length).toBeGreaterThan(0);
+        expect(Math.max(...high.map((c) => c.x1 - c.x0))).toBe(30);
+    });
+
+    it("never casts a body wider than the base it stands on: a top that overhangs its legs is cut to their span", () => {
+        // a top 36 wide over legs that span columns 3 to 33
+        const sil = silOf([
+            ...Array.from({ length: 20 }, () => "#".repeat(36)),
+            ...Array.from({ length: 6 }, () => " ".repeat(3) + "####" + " ".repeat(22) + "####" + " ".repeat(3)),
+        ]);
+        const shear: Shear = {
+            sx: 1,
+            sy: 0.3,
+            m: 1,
+            foot: 25,
+            cap: 16,
+            sweep: {
+                runs: [
+                    [3, 7],
+                    [29, 33],
+                ],
+                depth: 2,
+            },
+        };
+        const all = cells(sil, shear);
+        expect(all.length).toBeGreaterThan(0);
+        for (const c of all) {
+            expect(c.x0 - c.ox).toBeGreaterThanOrEqual(3 - 1);
+            expect(c.x1 - c.ox).toBeLessThanOrEqual(33 + 1);
+        }
     });
 });
