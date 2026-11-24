@@ -32,6 +32,17 @@ the lines only groups them):
                      "painted" lists only stand or top pieces, and every stand or top picture that draws a dark soft shadow of
                      its own (kinds.painted_shadow) is listed. A manifest with neither key is REPORTED (an older build: the
                      runtime classifies by prefab)
+  office.contract    tools/contract.py over the placed sprites (the drawing contract: alpha, foot gap, edge touch, height cap, painted
+                     shadow, outline, colours, symmetry), as a ratchet over hq-office/contract/baseline.json. The legacy pieces behind
+                     the baseline are REPORTED with their counts and never fail; a sprite the baseline does not list, or whose picture
+                     changed, is held to the full limit and a rule it breaks FAILS. A "volume" piece of a KONCLUI_VOLUME_PIECES build
+                     (a picture baked from a recipe) is such a sprite; a "proxy" piece (a hand-drawn picture touched up by code) keeps the
+                     standing of its legacy art: it stays behind the baseline for the rules it offended, and fails on a new one.
+                     office.contract.pieces (pieces.json against the build) and office.contract.review (stale or missing reviews,
+                     REPORTED) come with it
+  office.contract.casters   the manifest's "casters" (a build made with KONCLUI_VOLUME_PIECES): exactly the pieces "volumePieces" lists (the
+                     recorded switch has no "casters-all") or exactly the placed "stand" sprites (it has), each with
+                     an integer h, a foot row inside its picture and a span [x0, x1) inside its width. A manifest with no "casters" is REPORTED
   determinism        only with --rebuild: hq-office/build.py runs twice into temporary directories and every file of the two
                      dist directories is compared by sha256
 
@@ -43,6 +54,10 @@ run that dies cannot leave a stale ok:true behind); it is written beside DIST (n
 $TMPDIR/konclui-verify/<dist name>-<hash>/verify.json instead, and an explicit --out inside the source tree is refused (exit 2).
 The verdict "fit to publish" is printed only for a run that examined DIST (the office family); `--family avatars` or `pets`
 reads art/out and species/ and says so ("DIST not examined").
+
+A build made with KONCLUI_VOLUME_PIECES records the switch in fx/manifest.json ("volume"). The office checks judge it by that
+record, not by this process's environment: translucent.configure points the declared translucent layers and their file counts at the
+switch the build was made with (an empty record, or none, is the default build), and puts the process's own back afterwards.
 
 The stamp of fx/normal.png is a label, not a signature: this check trusts the text chunk to say which method wrote the file
 and proves the pixels (size, alpha, unit length, coverage) by reading them. Not checked here: that the normals point the
@@ -71,11 +86,13 @@ HERE = Path(__file__).resolve().parent
 SOURCE = HERE.parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(SOURCE / 'hq-office'))
+import contract as C  # noqa: E402
 import kinds as K  # noqa: E402
 import normals as N  # noqa: E402
 import palettesnap as PS  # noqa: E402
 import pixelgrid as PG  # noqa: E402
 import toolchain  # noqa: E402
+import translucent as TL  # noqa: E402
 
 
 def _load(name, path):
@@ -468,6 +485,125 @@ def kinds_result(dist):
                   + f'; {len(painted)} painted (their own contact shadow); kinds equal the rule on the build\'s prefabs', data=data)
 
 
+# ------------------------------------------------------------------------------------------------------------- contract
+
+def recorded_switch(dist):
+    """The KONCLUI_VOLUME_PIECES set the build at `dist` was made with, from fx/manifest.json "volume" (empty when there is no manifest
+    or no record: the default build). A value that is not a switch is a ValueError."""
+    path = Path(dist) / 'fx' / 'manifest.json'
+    if not path.is_file():
+        return frozenset()
+    return TL.volume_pieces({TL.VOLUME_ENV: json.loads(path.read_text()).get('volume') or ''})
+
+
+@contextlib.contextmanager
+def built_with(dist):
+    """The declared translucent layers and their counts (translucent.configure) pointed at the switch DIST was made with, and the
+    process's own put back after: the pixel and palette checks of the office judge a build by what made it."""
+    before, recorded = TL.configured(), recorded_switch(dist)
+    if recorded == before:                 # the process already is configured for this build: leave its declarations as they are
+        yield
+        return
+    TL.configure(recorded)
+    try:
+        yield
+    finally:
+        TL.configure(before)
+
+
+def contract_baseline(dist, manifest=None):
+    """tools/contract.py's committed baseline as it applies to the build at `dist`: a piece the manifest lists as "proxy" (a hand-drawn
+    picture touched up by code) is looked up by its standing, not by its picture hash, so its legacy offenders stay legacy and a rule it
+    did not offend before FAILS. The same as the committed baseline for a build with no proxy piece. None when there is no baseline."""
+    dist = Path(dist)
+    if manifest is None:
+        manifest = json.loads((dist / 'fx' / 'manifest.json').read_text()) if (dist / 'fx' / 'manifest.json').is_file() else {}
+    baseline = C.load_json('baseline.json')
+    if baseline is not None:
+        baseline = json.loads(json.dumps(baseline))
+        for key, kind in (manifest.get('volumePieces') or {}).items():
+            if kind == 'proxy' and key in (baseline.get('sprites') or {}) and (dist / 'entities' / key).is_file():
+                baseline['sprites'][key] = C.sha256_file(dist / 'entities' / key)
+    return baseline
+
+
+def contract_results(dist):
+    """office.contract, office.contract.pieces and office.contract.review from tools/contract.py, as verify Results. The ratchet's
+    PASS with legacy offenders behind the baseline is REPORTED (counted, never failing); contract_baseline says how a proxy piece
+    is judged."""
+    dist = Path(dist)
+    manifest = json.loads((dist / 'fx' / 'manifest.json').read_text()) if (dist / 'fx' / 'manifest.json').is_file() else {}
+    baseline = contract_baseline(dist, manifest)
+    results = [C.to_verify(Result, r) for r in C.check(dist, baseline=baseline)]
+    first = results[0]
+    rules = (first.data or {}).get('rules') or {}
+    offenders = sum(r['count'] for r in rules.values())
+    if first.status == PASS and offenders:
+        first.status = REPORTED
+        first.detail = f'{offenders} legacy offenders behind the baseline; ' + first.detail
+    manifest_volume = manifest.get('volumePieces') or {}
+    if manifest_volume:
+        first.data['volume_pieces'] = dict(manifest_volume)
+    return results
+
+
+def casters_result(dist):
+    """office.contract.casters: the manifest's "casters" against the placed stand sprites."""
+    dist = Path(dist)
+    path = dist / 'fx' / 'manifest.json'
+    if not path.is_file():
+        return Result('office.contract.casters', FAIL, 'fx/manifest.json is missing', [f'{path}: missing'])
+    manifest = json.loads(path.read_text())
+    if 'casters' not in manifest:
+        return Result('office.contract.casters', REPORTED, 'the manifest has no "casters": the runtime takes a sprite\'s rows as its '
+                      'height (a build made without KONCLUI_VOLUME_PIECES)', data=dict(present=False))
+    casters = manifest['casters']
+    kinds = manifest.get('kinds') or {}
+    fails = []
+    if not isinstance(casters, dict):
+        return Result('office.contract.casters', FAIL, '"casters" is not an object', ['"casters" is not an object'], dict(present=True))
+    stand = {k for k, v in kinds.items() if v == 'stand'}
+    pieces = manifest.get('volumePieces') or {}
+    try:
+        everything = TL.VOLUME_CASTERS_ALL in recorded_switch(dist)    # "casters-all": the legacy heights too (fx.casters)
+    except ValueError as error:
+        return Result('office.contract.casters', FAIL, f'the manifest\'s "volume" is not a switch: {error}', [str(error)])
+    expected = stand if everything else stand & set(pieces)             # else only the pieces the switch replaced or touched
+    missing, extra = sorted(expected - set(casters)), sorted(set(casters) - expected)
+    if missing:
+        fails.append(f'{len(missing)} {"placed stand sprites" if everything else "volume pieces"} have no caster, first {missing[0]!r}')
+    if extra:
+        fails.append(f'{len(extra)} casters are not {"placed stand sprites" if everything else "volume pieces"}, first {extra[0]!r}')
+    for key in sorted(set(casters) & stand):
+        entry = casters[key]
+        if not (isinstance(entry, dict) and set(entry) == {'h', 'foot', 'span'}):
+            fails.append(f'caster {key!r} is not {{h, foot, span}}')
+            continue
+        h, foot, span = entry['h'], entry['foot'], entry['span']
+        ints = lambda *vs: all(isinstance(v, int) and not isinstance(v, bool) for v in vs)
+        if not (ints(h, foot) and isinstance(span, list) and len(span) == 2 and ints(*span)):
+            fails.append(f'caster {key!r}: h, foot and span must be integers: {entry!r}')
+            continue
+        with Image.open(dist / 'entities' / key) as picture:
+            width, height = picture.size
+        if h < 1 or h > height:
+            fails.append(f'caster {key!r}: h {h} is not between 1 and the picture\'s {height} rows')
+        if not 0 <= foot < height:
+            fails.append(f'caster {key!r}: foot row {foot} is outside the picture ({height} rows)')
+        if not 0 <= span[0] < span[1] <= width:
+            fails.append(f'caster {key!r}: span {span} is outside the picture ({width} columns)')
+    for key, kind in pieces.items():
+        if kind not in ('volume', 'proxy') or key not in kinds:
+            fails.append(f'volumePieces {key!r}: {kind!r} is not "volume" or "proxy" on a placed sprite')
+    data = dict(present=True, casters=len(casters), stand=len(stand), volume_pieces=len(pieces), switch=manifest.get('volume'),
+                scope='all' if everything else 'volume pieces')
+    if fails:
+        return Result('office.contract.casters', FAIL, f'{len(fails)} problems: ' + fails[0], fails, data)
+    what = 'exactly the placed stand sprites' if everything else f'exactly the {len(expected)} volume pieces (the others keep the runtime\'s own shadow)'
+    return Result('office.contract.casters', PASS, f'{len(casters)} casters, {what}'
+                  + (f'; switch {manifest.get("volume")!r}, {len(pieces)} volume pieces' if pieces else ''), data=data)
+
+
 # --------------------------------------------------------------------------------------------------------- determinism
 
 def tree_hashes(root):
@@ -517,10 +653,16 @@ def run(dist, families=FAMILIES, allow_legacy_normals=False, rebuild=False, avat
     if 'office' in families:
         results.append(guarded('office.dist', lambda: [office_dist_result(dist)])[0])
         results.append(guarded('office.tools', lambda: [manifest_tools_result(dist)])[0])
-        for name, function in (('office.pixels', office_pixels), ('office.palette', office_palette)):
-            results += guarded(name, function, dist)
+        try:
+            with built_with(dist):          # the build's own switch decides which pictures may carry partial alpha
+                for name, function in (('office.pixels', office_pixels), ('office.palette', office_palette)):
+                    results += guarded(name, function, dist)
+        except ValueError as error:
+            results.append(Result('office.pixels', FAIL, f'the manifest\'s "volume" is not a switch: {error}', [str(error)]))
         results += guarded('office.normals', lambda: [normals_result(dist, allow_legacy_normals)])
         results += guarded('office.kinds', lambda: [kinds_result(dist)])
+        results += guarded('office.contract', contract_results, dist)
+        results += guarded('office.contract.casters', lambda: [casters_result(dist)])
     if 'avatars' in families:
         results += guarded('avatars.pixels', avatar_pixels, avatars_root)
         results += guarded('avatars.palette', avatar_palette, avatars_root)

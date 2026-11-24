@@ -28,6 +28,19 @@ an older build has neither and the runtime classifies by prefab):
             with PAINTED_MIN_PX or more partial-alpha pixels in the bottom quarter of its silhouette (tools/kinds.py
             painted_shadow). The runtime draws no contact shadow over these; KONCLUI_PAINTED_SHADOWS=0 builds the lounge
             pieces without their shade rows and the list shrinks to what is still drawn
+Three more optional keys exist only in a build made with KONCLUI_VOLUME_PIECES set (lounge.py; empty by default, and then the
+manifest is byte for byte what it was). The manifest stays version 1 and the runtime ignores keys it does not know:
+  volume        the switch as the build read it: "air-hockey,arc-lamp-proxy,plant-proxy" (translucent.volume_value); verify.py judges
+                the build by it, not by its own environment
+  volumePieces  {"<key>": "volume" | "proxy"}: the sprites the switch replaced ("volume": the picture is baked from a recipe, held to the
+                whole drawing contract) or touched up ("proxy": the hand-drawn picture kept, a proxy volume behind it)
+  casters       {"<key>": {"h": px, "foot": row, "span": [x0, x1]}}: h the height of the piece in px above the floor (21 px per
+                metre), foot the last picture row of its ground contact, span the columns [x0, x1) of that contact (x1 EXCLUSIVE, as
+                effectsManifest.ts casterSpec reads it). For the pieces "volumePieces" lists, from their recipe or proxy volume, and
+                for no other piece: turning on one piece changes the shadow of that piece only. With the switch value "casters-all"
+                (alone or beside the others) EVERY placed "stand" sprite has one: the others take tools/contract.py's curated caster
+                (hq-office/contract/pieces.json), else its generic rule, so the legacy shadows can be judged alone. The runtime reads it
+                (effectsManifest.ts casterSpec, shadeBake.ts placedCaster, since f8a9f93a7): a piece with an entry throws its shadow from `h`, not from its rows, for the key shadow and the lamp shadows
   python3 hq-office/fx.py --dump-kinds DIST OUT.json   the shared classifier fixture [{key, name, tags, depthOffset, kind}]
 Lights follow the objects as placed: the runtime lights every scene image whose sprite is listed under "lights", so
 a lamp moved in the editor moves its light.
@@ -212,7 +225,7 @@ def kinds(dist):
 
 def painted(dist, kind_map):
     """The sorted keys of the stand and top pieces whose picture carries its own contact shadow (see the module docstring)."""
-    declared = set(TRANSLUCENT.ENTITY_LAYERS['baked-shadow'][1])
+    declared = set(TRANSLUCENT.ENTITY_LAYERS['baked-shadow'][1]) - TRANSLUCENT.unpainted_names(TRANSLUCENT.configured())
     entries = placed_entries(dist)
     out = []
     for key, kind in kind_map.items():
@@ -225,19 +238,77 @@ def painted(dist, kind_map):
     return sorted(out)
 
 
-def shadows(dist):
+def shadows(dist, volume=None):
     """{'<collection folder>/<image path>': footprint, or None for flat things} for the placed sprites. Flat ones are
-    listed too, so the runtime does not measure them as if they stood on the floor."""
+    listed too, so the runtime does not measure them as if they stood on the floor. `volume` is the build's switch and records
+    (write): a piece whose picture no longer paints its own shadow (translucent.VOLUME_UNPAINTED) is not FLAT, and one with a
+    volume record takes the footprint of its recipe (the ground rectangle it stands on) over the bottom quarter of its picture."""
     out = {}
+    switch = (volume or {}).get('switch') or frozenset()
+    records = (volume or {}).get('records') or {}
+    unpainted = TRANSLUCENT.unpainted_names(switch)
     for key, entry in sorted(placed_sprites(dist).items()):
         folder, image = key.split('/', 1)
         name = entry.get('name', '')
-        if FLAT.search(name) or any(f in '/' + image for f in FLAT_FOLDERS):
+        if (FLAT.search(name) and name not in unpainted) or any(f in '/' + image for f in FLAT_FOLDERS):
             out[key] = None
+            continue
+        if key in records and records[key].get('footprint'):
+            out[key] = [int(v) for v in records[key]['footprint']]
             continue
         f = footprint(dist / 'entities' / folder / image)
         if f:
             out[key] = f
+    return out
+
+
+FOOT_ROWS = 4                       # the rows at the bottom of a picture that count as its feet when a caster has no recipe
+
+
+def feet_of(rgba):
+    """(foot row, [x0, x1]) of a picture: its last solid row (alpha 200 or more, tools/kinds.py SOLID_ALPHA) and the columns of the
+    solid pixels in that row and the FOOT_ROWS - 1 above it. None for a picture with no solid pixel."""
+    solid = rgba[..., 3] >= KINDS.SOLID_ALPHA
+    rows = np.nonzero(solid.any(1))[0]
+    if not len(rows):
+        return None
+    foot = int(rows[-1])
+    cols = np.nonzero(solid[max(0, foot - FOOT_ROWS + 1):foot + 1].any(0))[0]
+    return foot, [int(cols.min()), int(cols.max())]
+
+
+def casters(dist, kind_map, records=None, legacy=False):
+    """{key: {h, foot, span}} for the placed `stand` sprites (kind_map: kinds()): h the piece's height in px above the floor, foot
+    the last picture row of its ground contact, span the columns [x0, x1) there (the runtime's casterSpec).
+    By default only the pieces with a volume record (a recipe or a proxy) get one, and take all three from it: a build with one switch
+    name changes the shadow of that piece and of no other. With `legacy` (the switch value "casters-all", translucent.VOLUME_CASTERS_ALL)
+    every other stand piece gets one too: h from tools/contract.py's curated caster (hq-office/contract/pieces.json: a measured front
+    face, an anchor or the rows), else from its generic rule (tag caps over the rows), foot and span from its own pixels."""
+    import contract
+    records = records or {}
+    pieces = contract.load_json('pieces.json') or {}
+    curated = pieces.get('casters') or {}
+    entries = placed_entries(dist)
+    out = {}
+    for key, kind in sorted(kind_map.items()):
+        if kind != 'stand':
+            continue
+        record = (records.get(key) or {}).get('caster')
+        if record:                                          # a record's span is inclusive (tools/proxy.py foot_span)
+            out[key] = dict(h=int(record['h']), foot=int(record['foot']), span=[int(record['span'][0]), int(record['span'][1]) + 1])
+            continue
+        if not legacy:
+            continue
+        folder, image = key.split('/', 1)
+        rgba = np.asarray(Image.open(dist / 'entities' / folder / image).convert('RGBA'))
+        feet = feet_of(rgba)
+        rows = int((rgba[..., 3] >= KINDS.SOLID_ALPHA).any(1).sum())
+        if key in curated:
+            h = int(curated[key]['h'])
+        else:
+            h = contract.generic_height([t for e in entries[key] for t in e.get('tags', [])], rows)
+        if feet:
+            out[key] = dict(h=max(1, h), foot=feet[0], span=[feet[1][0], feet[1][1] + 1])
     return out
 
 
@@ -250,9 +321,24 @@ def occluders(wall_art, P):
     return Image.fromarray((q * 255).astype(np.uint8), 'L')
 
 
-def lights(dist):
-    """{'<collection folder>/<image path>': spec} for every sprite of the room's collections that gives light."""
+ANCHOR_TOLERANCE = 2.0              # px: how far a proxy volume's named anchor may move a lamp's light from where the pixels put it
+
+
+def anchors_agree(spec, named, tolerance=ANCHOR_TOLERANCE):
+    """True when the proxy's named anchors ({'light_head': [x, y], 'foot': [x, y]}) lie within `tolerance` px, on both axes, of the head and
+    the foot the pixel heuristic measured (`spec`, sprite_light). The proxy refines the heuristic; it does not overrule it: a recipe
+    whose head sits 6 px lower than the lamp's shade (MEASURED on the Mobilia arc lamps: head y 17.99 against 24.0) would leave the
+    runtime's bulb glow (lights.ts, [hx - 4, hy + 3, 8, 2]) off the shade at night, so that lamp keeps the heuristic."""
+    return all(abs(a - b) <= tolerance for want, got in ((spec['head'], named['light_head']), (spec['foot'], named['foot']))
+               for a, b in zip(want, got))
+
+
+def lights(dist, anchors=None):
+    """{'<collection folder>/<image path>': spec} for every sprite of the room's collections that gives light. `anchors` is
+    {key: {'light_head': [x, y], 'foot': [x, y]}}, the named anchors of a proxy volume: a lamp that has them AND whose heuristic head and
+    foot are within ANCHOR_TOLERANCE of them (anchors_agree) takes them instead of the pixel heuristic (sprite_light)."""
     out = {}
+    anchors = anchors or {}
     for path in sorted((dist / 'entities').glob('*/collection.json')):
         doc = json.loads(path.read_text())
         for entry in doc.get('collection', []):
@@ -261,7 +347,11 @@ def lights(dist):
                 continue
             spec = sprite_light(path.parent / entry['imagePath'], kind)
             if spec:
-                out[f"{path.parent.name}/{entry['imagePath']}"] = spec
+                key = f"{path.parent.name}/{entry['imagePath']}"
+                named = anchors.get(key)
+                if named and 'head' in spec and 'light_head' in named and 'foot' in named and anchors_agree(spec, named):
+                    spec['head'], spec['foot'] = list(named['light_head']), list(named['foot'])
+                out[key] = spec
     return out
 
 
@@ -301,7 +391,7 @@ def masks(kind_map, pool, P, glass, wall_art):
     out = np.zeros((h, w, 4), np.uint8)
     outside = np.isin(kind_map, ['lawn', 'path'])
     lawn = kind_map == 'lawn'
-    lawn[P.BY0 * T:(P.BY0 + 2) * T] = False                 # the lawn behind the north glass is seen, not walked
+    lawn[P.BY0 * T:(P.BY0 + 2) * T, P.vb(P.BX0) * T:P.vb(P.BX1) * T] = False   # the lawn behind the north glass is seen, not walked
     out[..., 0] = outside * 255
     walls = (np.asarray(wall_art)[..., 3] > 150) & ~glass & ~outside   # wall faces and caps: no sun shafts, own light
     out[walls, 0] = 96
@@ -405,7 +495,13 @@ def tool_record():
                 missing=sorted(found['missing']))
 
 
-def write(dist, *, pool, kind_map, wall_art, P, lockable):
+def write(dist, *, pool, kind_map, wall_art, P, lockable, volume=None):
+    """Write dist/fx/. `volume` is {'switch': set of switch names, 'records': {sprite key: record}} (build.py, lounge.py): with a
+    non-empty switch the manifest gains "volume", "volumePieces" and "casters" (module docstring), the lamps of a proxy take their
+    anchors from it, and normal.png takes its normals; with none the files are what they were."""
+    volume = dict(volume or {})
+    volume.setdefault('switch', frozenset())
+    volume.setdefault('records', {})
     out = dist / 'fx'
     out.mkdir(parents=True, exist_ok=True)
     colour, data = water(pool)
@@ -415,7 +511,8 @@ def write(dist, *, pool, kind_map, wall_art, P, lockable):
     glass.save(out / 'glass.png', optimize=True)
     masks(kind_map, pool, P, np.asarray(glass) > 0, wall_art).save(out / 'masks.png', optimize=True)
     occluders(wall_art, P).save(out / 'occluders.png', optimize=True)
-    found = lights(dist)
+    proxied = volume['switch'] & {'arc-lamp-proxy'}
+    found = lights(dist, {k: r['anchors'] for k, r in volume['records'].items() if proxied and r.get('anchors')})
     tv = next((v['screen'] for v in found.values() if v['kind'] == 'tv'), [0, 0, 43, 23])
     tv_slide(tv[2] - tv[0], tv[3] - tv[1]).save(out / 'tv-slide.png', optimize=True)
     rx, ry = pool.region
@@ -427,22 +524,29 @@ def write(dist, *, pool, kind_map, wall_art, P, lockable):
                    waterline=list(POOL.WATERLINE), depthCap=DEPTH_CAP),
         building=[P.vb(P.BX0) * T, P.BY0 * T, (P.vb(P.BX1) - P.vb(P.BX0)) * T, (P.BY1 + 2 - P.BY0) * T],
         lawn={k: list(v) for k, v in LAWN.GRASS.items()},
-        lights=found, shadows=shadows(dist), staticLights=static_lights(P, pool), rooms=rooms(P, lockable),
+        lights=found, shadows=shadows(dist, volume), staticLights=static_lights(P, pool), rooms=rooms(P, lockable),
         spaces=spaces(P), glassFaces=glass_faces(P),
         kinds=kind_map, painted=painted(dist, kind_map),
         ink=list(rgb('#0A0A3D')), tools=tool_record())
+    records = {k: r for k, r in volume['records'].items() if k in kind_map}       # a record of a sprite nothing places says nothing
+    if volume['switch']:
+        manifest['volume'] = TRANSLUCENT.volume_value(volume['switch'])
+        manifest['volumePieces'] = {k: records[k]['kind'] for k in sorted(records)}
+        manifest['casters'] = casters(dist, kind_map, records, legacy=TRANSLUCENT.VOLUME_CASTERS_ALL in volume['switch'])
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
-    add_normals(dist, out, manifest)
+    add_normals(dist, out, manifest, volume={dist / 'entities' / k.split('/', 1)[0] / k.split('/', 1)[1]: r['normal']
+                                             for k, r in records.items() if r.get('normal') is not None})
     return manifest
 
 
-def add_normals(dist, out, manifest, environ=os.environ):
+def add_normals(dist, out, manifest, environ=os.environ, volume=None):
     """Write fx/normal.png and advertise it in the manifest ("normal": true), unless KONCLUI_FX_NORMALS=0. Runs after
     the manifest is on disk: the composer reads the map size from it. Prints which method made the texture. Returns
-    True when it wrote the file."""
+    True when it wrote the file. `volume` is {sprite path: normal image}: the pieces whose normals a recipe or a proxy volume
+    supplies (tools/normals.py), which the normals tool is not run on."""
     if environ.get('KONCLUI_FX_NORMALS') == '0':
         return False
-    print(f"fx/normal.png: method {NORMALS.describe(NORMALS.write(dist, out / 'normal.png', 'auto'))}")
+    print(f"fx/normal.png: method {NORMALS.describe(NORMALS.write(dist, out / 'normal.png', 'auto', volume=volume))}")
     manifest['normal'] = True
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, separators=(',', ':')))
     return True

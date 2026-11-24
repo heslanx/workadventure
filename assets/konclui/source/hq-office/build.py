@@ -48,6 +48,7 @@ sys.path.insert(0, str(HERE))
 import catalogue as CAT  # noqa: E402
 import flora_optics as FLORA_OPTICS  # noqa: E402
 import fx as FX  # noqa: E402
+import lounge as LOUNGE  # noqa: E402
 import glass as GL  # noqa: E402
 import lawn as LAWN  # noqa: E402
 import palette as PL  # noqa: E402
@@ -220,6 +221,19 @@ def seat_pose(pid, seat):
 SOURCES = {CAT.variant_id(f): f for f in CATALOG['furniture']}
 MOB = {pid: (sit_between(pid, p, img, seat, SOURCES.get(pid)), img, seat) for pid, (p, img, seat) in MOB.items()}
 
+# KONCLUI_VOLUME_PIECES (lounge.py): the volume record of every placed sprite the switch touches, by sprite key, for fx.py (its manifest
+# keys, its caster facts, its light anchors) and normals.py (the normals of a picture that has a volume behind it). Empty by default.
+VOLUME = LOUNGE.volume_pieces()
+VOLUME_RECORDS = {}
+if 'arc-lamp-proxy' in VOLUME:      # the catalogue's arc lamps the plan places: a touch-up and a proxy volume, the pictures kept
+    for _name in LOUNGE.CATALOGUE_PROXIES:
+        _pid = Path(LOUNGE._kit()[2].get(_name).keys[0]).stem
+        _prefab, _img, _seat = MOB[_pid]
+        _picture, _shift, _record = LOUNGE.touch_up(_name, _img)
+        assert _shift == (0, 0), f'{_pid}: a touch-up that moves the canvas is not wired for catalogue pieces'
+        MOB[_pid] = (_prefab, _picture, _seat)
+        VOLUME_RECORDS[LOUNGE._kit()[2].get(_name).keys[0]] = _record
+
 
 def resolve(type_, colour, direction):
     """dict(type, collection, id, prefab, image, seat, box, surface) of a plan piece."""
@@ -248,7 +262,9 @@ def resolve(type_, colour, direction):
             prefab['depthOffset'] = seat['anchorOffset']['y'] - 1 - img.height
         KONCLUI[pid] = (prefab, img, seat)
         d = dict(collection=KCOLL, id=pid, prefab=prefab, image=img, seat=seat, box=(0, 0, img.width, img.height),
-                 surface=sig.get('surface'))
+                 surface=sig.get('surface'), shift=sig.get('shift'))
+        if sig.get('volume'):                            # a volume piece or a touched-up one (lounge.py, KONCLUI_VOLUME_PIECES)
+            VOLUME_RECORDS[f'konclui/sprites/{pid}.png'] = sig['volume']
     elif colour.startswith('ds-'):
         colours = sorted({f['color'] for f in CATALOG['furniture']
                           if f['type'] == type_ and f['orientation'] == direction and f['published']})
@@ -312,6 +328,8 @@ def place_pieces():
                 x = (2 * P.AXIS + 1) * T - x - d['image'].width
         if piece['key'] in EDITS:                 # the owner's editor placement wins over the plan
             x, y = EDITS[piece['key']]['x'], EDITS[piece['key']]['y']
+        if d.get('shift'):                        # a volume piece's canvas moved so that its foot stays (lounge.py `shift`)
+            x, y = x + d['shift'][0], y + d['shift'][1]
         placed[piece['key']] = (d, x, y)
     sort_line = lambda dd, yy: yy + dd['image'].height + dd['prefab'].get('depthOffset', 0)
     for piece, d in pending:
@@ -435,12 +453,67 @@ def interior(l, t, r, b):
     return P.vb(l), t + 2, P.vb(r) - 1, b - 1
 
 
+FACE_OPAQUE = 200                   # the alpha from which a pixel of a glass face is its frame (rails, posts), not a pane or a shadow
+
+
+def facade_base(south):
+    """The row, counted from the top of a facade's two-tile cell, where its glass face ends (the face's last opaque row + 1, a soft shadow
+    under the rail does not count): the ground under it is the face's footprint and the lawn outside starts there. Read from the face
+    itself, so a glass drawn taller or shorter moves the floor with it."""
+    alpha = np.asarray(GL.face(3 * T, facade=True, south=south))[..., 3]
+    return int(np.nonzero((alpha >= FACE_OPAQUE).any(1))[0].max()) + 1
+
+
+# What shows through a pane of the south facade is the floor of the room behind it, not a rug laid on it: a rug's pattern ends where the
+# rug does, and the floor under it is what runs on to the wall.
+RUG_KINDS = ('rug-tile',)
+
+
+def behind(laid, x0, x1, y):
+    """[(kind, x0, x1)] runs of the floor kind that lies at pixel row `y` between columns x0 and x1, from `laid` (draw_floors' fills in the
+    order painted; the last one that covers a pixel wins, a rug (RUG_KINDS) is looked through). Runs are whole tiles and neighbours of
+    one kind are one run."""
+    runs = []
+    for x in range(x0, x1, T):
+        kind = next(k for k, kx0, ky0, kx1, ky1 in reversed(laid) if k not in RUG_KINDS and kx0 <= x < kx1 and ky0 <= y < ky1)
+        if runs and runs[-1][0] == kind:
+            runs[-1][2] = x + T
+        else:
+            runs.append([kind, x, x + T])
+    return [(k, a, min(b, x1)) for k, a, b in runs]
+
+
+def north_facade_tail():
+    """{(tx, ty): rows} of the cells where the lawn behind the NORTH facade's glass stops short of the cell's end (`facade_base`, audit
+    item N10): the lawn is the first `rows` pixel rows of those cells and the room's floor the rest. Their tufts and flowers stay, as
+    they stood when the lawn ran to the end of the cell, and may not draw below `rows`."""
+    tail = {}
+    base = facade_base(south=False)
+    for row, a, b, _, material in P.H_WALLS:
+        if row == P.BY0 and material == 'glass' and base < 2 * T:
+            for tx in range(P.vb(a), P.vb(b)):
+                tail[tx, row + 1] = base - T
+    return tail
+
+
+def lawn_rows(floors, grass, n, tx, ty, tail):
+    """How many pixel rows of the cell (tx, ty) of the floor picture are the lawn tile's: T when the whole cell is, the leading rows
+    of a cell in `tail` (a mixed cell is not a lawn cell in any other case), else 0."""
+    rows = tail.get((tx, ty), T)
+    cell = np.asarray(floors.crop((tx * T, ty * T, tx * T + T, ty * T + T)))[:rows]
+    lawn = np.asarray(grass.crop((tx % n * T, ty % n * T, tx % n * T + T, ty % n * T + T)))[:rows]
+    return rows if np.array_equal(cell, lawn) else 0
+
+
 def draw_floors(kind_map=None):
     """The floor picture; with kind_map (an H*T x W*T array of '' strings) also the floor kind of each pixel."""
     canvas = Image.new('RGBA', (W * T, H * T))
     tile = {k: floor_tile(k) for k in P.FLOORS}
 
+    laid = []                      # (kind, x0, y0, x1, y1) in the order painted: what stands behind a facade pane is read back from it
+
     def fill(kind, x0, y0, x1, y1):
+        laid.append((kind, x0, y0, x1, y1))
         paint(canvas, tile[kind], x0, y0, x1, y1)
         if kind_map is not None:
             kind_map[int(max(0, y0)):int(max(0, y1)), int(max(0, x0)):int(max(0, x1))] = kind
@@ -457,12 +530,26 @@ def draw_floors(kind_map=None):
         fill('booth', x0 * T, y0 * T if top else 24 * T + 4, (x1 + 1) * T, (y1 + 1) * T + 4 if top else (y1 + 1) * T)
     for kind, x0, y0, x1, y1 in P.ZONES:
         fill(kind, x0 * T, y0 * T, (x1 + 1) * T, (y1 + 1) * T)
-    # Facade glass is seen through, so it shows the lawn outside, not the floor under its face (owner, 18/10/2026: "esse
-    # vidro é transparente ou um espelho? ... por trás é a grama de fora"; 20/10/2026, of the south facade: "só os vidros
-    # de cima ficaram transparentes"). The entrance's door, filled below, keeps the hall's floor.
+    # Facade glass is seen through. The NORTH facade is seen from inside, so behind it is the lawn outside (owner, 18/10/2026: "esse
+    # vidro é transparente ou um espelho? ... por trás é a grama de fora"); the lawn stops at the face's last row (`facade_base`) and the
+    # floor of the room runs under the rest (audit item N10: the lawn used to run 2 px past the rail, a green sliver). The SOUTH facade
+    # is seen from outside, so behind it is the room: the floor of what stands behind it (`behind`) runs down to the face's last row and
+    # the lawn starts there, under the rail where the glass's own soft shadow falls (audit item I01; the owner, 20/10/2026, of the south
+    # facade: "só os vidros de cima ficaram transparentes"). Ending the floor at the cell's bottom edge instead leaves a 2 px beige
+    # strip under the rail (MEASURED in the first try), the mirror of N10. The rail row cuts one tile row of each facade half floor, half
+    # lawn: new pictures in the floor tileset, which the palette's baseline (a ratchet) counts. The entrance's door,
+    # filled below, keeps the hall's floor.
     for row, a, b, _, material in P.H_WALLS:
         if row in (P.BY0, P.BY1) and material == 'glass':
-            fill('lawn', P.vb(a) * T, row * T, P.vb(b) * T, (row + 2) * T)
+            x0, x1 = P.vb(a) * T, P.vb(b) * T
+            south = row == P.BY1
+            base = facade_base(south)
+            if south:
+                for kind, kx0, kx1 in behind(laid, x0, x1, row * T - 1):
+                    fill(kind, kx0, row * T, kx1, row * T + base)
+                fill('lawn', x0, row * T + base, x1, (row + 2) * T)
+            else:
+                fill('lawn', x0, row * T, x1, row * T + base)
     # and a room's glass seen from the corridor shows the room behind it, as its doors do (owner, 20/10/2026, of the team
     # rooms' glass: it read as a flat pale panel over the corridor's floor)
     for row, a, b, _, material in P.H_WALLS:
@@ -493,7 +580,8 @@ def draw_walls(vrows):
         if material == 'feature':
             face = SIG.feature_wall(right - left)
         elif material == 'glass':
-            face = GL.face(right - left, facade=row in (P.BY0, P.BY1), south=kind == 's')
+            face = GL.face(right - left, facade=row in (P.BY0, P.BY1), south=kind == 's',
+                           anchors=GL.anchors(P, row, a, b))
             post = GL.post(top=0 if kind == 's' else 4)
             for g0, g1 in gaps:
                 face.paste((0, 0, 0, 0), (g0, 0, g1, 2 * T))
@@ -800,10 +888,13 @@ def main(out, render_out=None, whiteboard_namespace=NS):
     # The lawn's decor, on the cells nothing else is painted over (not the path, the building or its walls).
     grass = floor_tile('lawn')
     n = grass.width // T
+    tail = north_facade_tail()          # the north facade's lower cells keep their tufts: the lawn behind the glass ends 2 rows above the cell's end
     lawn_cells = [(tx, ty) for ty in range(H) for tx in range(W)
-                  if floors.crop((tx * T, ty * T, tx * T + T, ty * T + T)).tobytes()
-                  == grass.crop((tx % n * T, ty % n * T, tx % n * T + T, ty % n * T + T)).tobytes()]
+                  if lawn_rows(floors, grass, n, tx, ty, tail) == tail.get((tx, ty), T)]
     lawn_decor = LAWN.decor(lawn_cells)
+    for at, pictures in lawn_decor.items():
+        keep = tail.get(at, T)
+        assert all(not np.asarray(p)[keep:, :, 3].any() for p in pictures), f'lawn decor at {at} draws below the lawn ({keep} rows)'
     water_decor = POOL.water_decor(pool.surface)
     assert not any(f[0].getbbox() for f in water_decor.values()), 'water decor: frame 0 (animations off) must be empty'
     decor = {**lawn_decor, **water_decor}
@@ -1001,7 +1092,8 @@ def main(out, render_out=None, whiteboard_namespace=NS):
     quiet += [rect_px(*box) for box in P.BOOTHS.values()]
     (dist / 'bell.json').write_text(json.dumps(dict(area=BELL_AREA_NAME, sound='sale.mp3', quiet=quiet),
                                                ensure_ascii=False))
-    fx = FX.write(dist, pool=pool, kind_map=kind_map, wall_art=wall_art, P=P, lockable=lockable)  # theme/fx/
+    fx = FX.write(dist, pool=pool, kind_map=kind_map, wall_art=wall_art, P=P, lockable=lockable,  # theme/fx/
+                  volume=dict(switch=VOLUME, records=VOLUME_RECORDS))
     shutil.copytree(HERE / 'reactions', dist / 'reactions')
     (dist / 'sounds').mkdir(exist_ok=True)
     for name in ('lake.mp3', 'coffee.mp3', 'sale.mp3'):

@@ -26,10 +26,12 @@ accents (navy, turquoise, mint, lime); no letters anywhere.
 """
 import os
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
+import translucent as TRANSLUCENT
 from palette import rgb
 
 T = 32
@@ -1553,6 +1555,173 @@ BEANBAG_PAIR_SEAT = dict(anchorOffset=dict(x=24, y=26), direction='down', more=[
 
 # ------------------------------------------------------------------------------------------------ collection
 
+# ------------------------------------------------------------------------------------------------ volume pieces
+# KONCLUI_VOLUME_PIECES (translucent.py: the names; empty by default, and then nothing below runs and `pieces()` is what it was):
+#   air-hockey, stool        the picture is baked from a volume recipe (hq-office/props, tools/bake.py) and replaces the drawn one
+#                            under the same sprite key; its normal image and caster facts come with it
+#   arc-lamp-proxy,          the hand-drawn picture stays; a code touch-up (props/touchup.py) fixes the audited defects and a proxy
+#   plant-proxy              volume (props/proxies, tools/proxy.py) supplies the normal image, the caster facts and the light anchors
+# A piece entry of `pieces()` then carries three optional keys, read by build.py:
+#   shift   (dx, dy) px the entity moves from the plan's placement so the foot stays where it was (a multiple of 32 for a piece
+#           that collides: build.collision_of asserts the grid)
+#   volume  {kind: 'volume' | 'proxy', normal: (h, w, 4) uint8 in the picture's own size, caster: {h, foot, span}, footprint:
+#           [x0, y0, x1, y1] px of the ground contact, anchors: {name: [x, y]} or None}; fx.py and normals.py consume it
+# `pieces()` is cached: set the switch before the first call.
+
+def volume_pieces(environ=os.environ):
+    """The switch names KONCLUI_VOLUME_PIECES asks for (translucent.volume_pieces), a frozenset; empty by default."""
+    return TRANSLUCENT.volume_pieces(environ)
+
+
+def _kit():
+    """(bake, props, proxies, proxy, touchup, pieceboard): the kit of tools/ and hq-office/props, imported on first use only, so
+    a default build never loads it."""
+    import bake
+    import pieceboard
+    import proxy
+    import props
+    from props import proxies, touchup
+    return bake, props, proxies, proxy, touchup, pieceboard
+
+
+def _depth_keeping(old_h, old_depth, top, new_h):
+    """The depthOffset that keeps a picture's sort line (its height plus its depthOffset, below the entity's y) where it was when
+    the new canvas starts `top` px lower than the old one and is `new_h` px tall."""
+    return old_h + old_depth - top - new_h
+
+
+def _on_tiles(rgba, normal, height, dx, dy, grid=None):
+    """The baked arrays on a canvas whose top-left is a tile corner of the old placement and whose right and bottom edges are the
+    baked picture's own: the baker's picture starts at (dx, dy) from the old top-left, which is not a multiple of 32, and a piece with
+    a collision grid must sit on the 32 px grid (build.collision_of); the foot must stay the last row of the picture (the contract's
+    foot gap), so the canvas is padded on the left and the top only. Returns (rgba, normal, height, (left, top), grid, (x0, y0)):
+    `left` and `top` are the canvas's offset from the old placement, multiples of 32, the grid is the old one re-indexed onto the new
+    canvas, (x0, y0) is where the baked picture starts in it."""
+    h, w = rgba.shape[:2]
+    left, top = (dx // T) * T, (dy // T) * T
+    cw, ch = dx + w - left, dy + h - top
+    x0, y0 = dx - left, dy - top
+    out_rgba = np.zeros((ch, cw, 4), np.uint8)
+    out_normal = np.zeros((ch, cw, 4), np.uint8)
+    out_normal[..., :3] = (128, 128, 255)
+    out_height = np.zeros((ch, cw), np.uint8)
+    out_rgba[y0:y0 + h, x0:x0 + w] = rgba
+    out_normal[y0:y0 + h, x0:x0 + w] = normal
+    out_height[y0:y0 + h, x0:x0 + w] = height
+    new_grid = None
+    if grid:
+        new_grid = [[0] * -(-cw // T) for _ in range(-(-ch // T))]
+        for r, row in enumerate(grid):
+            for c, solid in enumerate(row):
+                if solid:
+                    new_grid[r - top // T][c - left // T] = 1
+    return out_rgba, out_normal, out_height, (left, top), new_grid, (x0, y0)
+
+
+def _baked(name, old, grid=None, tiles=False):
+    """Bake the registry piece `name` (hq-office/props) so its foot lands where the foot of `old` (today's PIL picture) was. Returns
+    (entry dict without a seat, the baked Piece, the canvas's top-left (x0, y0) of the baked picture). With `tiles` the picture is put
+    on a canvas of whole tiles (see _on_tiles); else the entity moves by the baker's shift."""
+    bake, props, proxies, proxy, touchup, pieceboard = _kit()
+    today = np.asarray(old)
+    piece = bake.bake(props.get(name), None, old_canvas=old.size, old_foot=pieceboard.measure_foot(today))
+    if not piece.ok:
+        raise AssertionError(f'volume piece {name}: {"; ".join(piece.violations)}')
+    dx, dy = piece.shift['dx'], piece.shift['dy']
+    if tiles:
+        rgba, normal, height, shift, new_grid, (ox, oy) = _on_tiles(piece.rgba, piece.normal, piece.height, dx, dy, grid)
+    else:
+        rgba, normal, height, shift, new_grid, (ox, oy) = piece.rgba, piece.normal, piece.height, (dx, dy), grid, (0, 0)
+    fp = piece.footprint['px']
+    record = dict(kind='volume', normal=normal,
+                  caster=dict(h=int(height.max()), foot=int(oy + fp['y'] + fp['h'] - 1), span=[int(ox + fp['x']), int(ox + fp['x'] + fp['w'] - 1)]),
+                  footprint=[int(ox + fp['x']), int(oy + fp['y']), int(ox + fp['x'] + fp['w']), int(oy + fp['y'] + fp['h'])],
+                  anchors={k: [float(v[0] + ox), float(v[1] + oy)] for k, v in piece.anchors.items()})
+    return dict(image=image(rgba), collisionGrid=new_grid, shift=shift, volume=record), piece, (ox, oy)
+
+
+def air_hockey_volume():
+    """The air hockey table baked from props/air_hockey.py in place of air_hockey(): same sprite key, same sort line, its foot where
+    the drawn table's was, on a canvas whose top-left is on the tile grid (the table has a collision grid)."""
+    old = air_hockey()
+    entry, piece, (ox, oy) = _baked('air_hockey', old, grid=[[0, 0], [1, 1]], tiles=True)
+    left, top = entry['shift']
+    entry['depthOffset'] = _depth_keeping(old.height, -6, top, entry['image'].height)
+    return entry
+
+
+def stool_volume():
+    """The stool baked from props/stool.py (taken by name only: its art review did not pass). The seat follows the seating rule:
+    the anchor is the recipe's `sit` anchor (props.stool.seat_numbers), so build.py gives it the depthOffset `anchor.y - 1 - height`
+    and the pose; the feet stay on today's row because the anchor is a fixed 14 rows above them."""
+    from props import stool as recipe
+    old = stool()
+    entry, piece, _ = _baked('stool', old)
+    numbers = recipe.seat_numbers(piece)
+    entry.pop('shift')                                  # a seat is placed by its anchor, not by the plan's px
+    entry['seat'] = dict(anchorOffset=numbers['anchorOffset'], direction=numbers['direction'])
+    return entry
+
+
+# Touch-ups by code over a hand-drawn picture, with the proxy volume that supplies its normals and caster: (type, colour) of a lounge
+# piece, or the sprite key of a catalogue one -> (proxy recipe name, touch-up recipe name)
+LOUNGE_PROXIES = {('Koncluí: luminária de arco', 'preto'): ('arc_lamp.konclui', 'arc_lamp.konclui'),
+                  ('Koncluí: planta ave-do-paraíso', 'branco'): ('bird_of_paradise.branco', 'bird_of_paradise.branco'),
+                  ('Koncluí: planta ave-do-paraíso', 'alta'): ('bird_of_paradise.alta', 'bird_of_paradise.alta')}
+CATALOGUE_PROXIES = {'arc_lamp.mobilia_right': 'arc_lamp.mobilia_right', 'arc_lamp.mobilia_left': 'arc_lamp.mobilia_left'}
+
+
+def touch_up(name, picture):
+    """(picture, shift, record) of the hand-drawn `picture` (PIL image or RGBA array) after the touch-up recipe and the proxy volume
+    of `name` (a key of touchup.RECIPES that is also a proxy recipe). `shift` is the entity's placement shift in px (0, 0 unless the
+    canvas grew); `record` is the volume record fx.py and normals.py read (kind 'proxy'). A proxy that does not line up with the
+    touched-up picture (best offset more than 1 px) is an error: the relief would be on the wrong pixels."""
+    bake, props, proxies, proxy, touchup, pieceboard = _kit()
+    tu = touchup.RECIPES[name](np.asarray(picture, np.uint8))
+    recipe = proxies.get(name)
+    moved = recipe.moved(*tu.shift) if tu.shift != (0, 0) else recipe
+    key = recipe.keys[0]
+    res = proxy.build(moved, tu.rgba, Path(key).stem)
+    if not res.ok:
+        raise AssertionError(f'proxy {name}: best offset {res.alignment["best_offset"]} is more than 1 px from the picture')
+    ox, oy = res.origin
+    sx, sy = res.piece.footprint['tile_px']
+    gx0, gy0, gx1, gy1 = res.ground
+    record = dict(kind='proxy', normal=res.normal, caster=dict(h=res.caster['height_px'], foot=res.caster['foot_row'],
+                                                              span=list(res.caster['foot_span'])),
+                  footprint=[int(round(ox + sx * gx0)), int(round(oy + sy * gy0)), int(round(ox + sx * gx1)), int(round(oy + sy * gy1))],
+                  anchors=res.anchors)
+    return Image.fromarray(tu.rgba, 'RGBA'), tu.placement_shift, record
+
+
+def _touched(entry, name):
+    """`entry` (a hand-drawn piece) with its touch-up, its normals and its sort line kept where it was."""
+    old_h, old_depth = entry['image'].height, entry.get('depthOffset', 0)
+    picture, shift, record = touch_up(name, entry['image'])
+    out = dict(entry, image=picture, volume=record)
+    if shift != (0, 0):
+        out['shift'] = shift
+        out['depthOffset'] = old_depth + old_h - picture.height - shift[1]
+    return out
+
+
+def _volume_overrides(out, volume):
+    """`pieces()`'s dict with the pieces the switch names replaced or touched up (in place; the default is untouched)."""
+    if 'air-hockey' in volume:
+        out['Koncluí: air hockey']['navy'] = air_hockey_volume()
+    if 'stool' in volume:
+        out['Koncluí: banqueta']['turquesa'] = stool_volume()
+    if 'arc-lamp-proxy' in volume:
+        for (type_, colour), (_, recipe) in LOUNGE_PROXIES.items():
+            if recipe.startswith('arc_lamp'):
+                out[type_][colour] = _touched(out[type_][colour], recipe)
+    if 'plant-proxy' in volume:
+        for (type_, colour), (_, recipe) in LOUNGE_PROXIES.items():
+            if recipe.startswith('bird_of_paradise'):
+                out[type_][colour] = _touched(out[type_][colour], recipe)
+    return out
+
+
 @lru_cache(maxsize=None)
 def pieces():
     flat = lambda img: -(img.height + 96)                     # rugs sort under everything, as the other rugs
@@ -1561,7 +1730,7 @@ def pieces():
     lamp_pool = light_pool([(34, 20), (22, 13)], [80, 130], '#FFF0A0')
     carpet = lit_carpet(pendant_pool)
     plant = lambda leaves, **kw: dict(image=bird_of_paradise(leaves, **kw), collisionGrid=None, depthOffset=-4)
-    return {
+    out = {
         'Koncluí: painel': {'navy': dict(image=dressed_panel(), collisionGrid=[[0] * 8, [0] + [1] * 6 + [0]],
                                          depthOffset=-8)},
         # its picture ends higher than the panel's: sorted just after the panel's line, so it hangs in front of it
@@ -1607,6 +1776,7 @@ def pieces():
         **{f'Koncluí: fliperama {k}': {'cor': dict(image=f(), collisionGrid=[[0], [0], [1]], depthOffset=-16)}
            for k, f in (('tetris', arcade_tetris), ('2048', arcade_2048))},
     }
+    return _volume_overrides(out, volume_pieces())
 
 
 NAMES = {'Koncluí: painel': 'Painel de destaque navy com quadros', 'Koncluí: neon': 'Letreiro neon de ondas',

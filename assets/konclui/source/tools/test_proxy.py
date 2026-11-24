@@ -595,10 +595,22 @@ class RealRecipes(unittest.TestCase):
         self.assertEqual(a.alignment['covered_share'], b.alignment['covered_share'])
         np.testing.assert_array_equal(a.height[:, ::-1], b.height)
 
-    def test_the_dist_pictures_equal_the_drawn_ones(self):
+    def test_the_dist_pictures_equal_the_drawn_ones_or_their_touch_up_when_the_switch_asks_for_it(self):
+        """A default build writes the drawn pictures. A build whose recorded switch names the piece (arc-lamp-proxy for the lamp,
+        plant-proxy for the plants) writes its touch-up (props/touchup.py) instead, and the record says so."""
+        from props import touchup
+        manifest = json.loads((DIST / 'fx' / 'manifest.json').read_text()) if DIST and (DIST / 'fx' / 'manifest.json').is_file() else {}
+        switch = {n for n in (manifest.get('volume') or '').split(',') if n}
         for name in ('arc_lamp.konclui', 'bird_of_paradise.alta', 'bird_of_paradise.branco'):
-            built = dist_sprite(REG.get(name).keys[0])
-            np.testing.assert_array_equal(built, sprite_of(name), name)
+            key = REG.get(name).keys[0]
+            built = dist_sprite(key)
+            touched = 'arc-lamp-proxy' in switch if name.startswith('arc_lamp') else 'plant-proxy' in switch
+            if touched:
+                np.testing.assert_array_equal(built, touchup.RECIPES[name](sprite_of(name)).rgba, name)
+                self.assertEqual(manifest['volumePieces'][key], 'proxy', name)
+            else:
+                np.testing.assert_array_equal(built, sprite_of(name), name)
+                self.assertNotIn(key, manifest.get('volumePieces') or {}, name)
 
     def test_a_leaf_has_its_own_normal(self):
         res = P.build(REG.get('bird_of_paradise.alta'), sprite_of('bird_of_paradise.alta'), 'k')

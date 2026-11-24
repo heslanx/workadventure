@@ -5,6 +5,7 @@ Each touch-up is tested on a synthetic picture first; the recipes are then run o
 Konclui lamp, the two bird-of-paradise plants; MEASURED byte-identical to the built ones) and, when KONCLUI_DIST names a build,
 on the two Mobilia lamps.
 """
+import json
 import os
 import sys
 import unittest
@@ -409,16 +410,28 @@ class Dome(unittest.TestCase):
         self.assertGreaterEqual(ys.min(), 27)                              # the glow is the dome's rows 27..31 only
         self.assertLessEqual(ys.max(), 31)
 
+    def built_switch(self):
+        manifest = DIST / 'fx' / 'manifest.json' if DIST else None
+        value = json.loads(manifest.read_text()).get('volume') if manifest and manifest.is_file() else ''
+        return {n for n in (value or '').split(',') if n}
+
     def test_the_mobilia_lamps_lose_their_white_rim(self):
+        """On a default build the picture in the dist is the drawn one (15 px of pure white, which the touch-up repaints navy). On a
+        build made with arc-lamp-proxy it already is the touched-up one: no white left, and the touch-up changes nothing more."""
+        touched = 'arc-lamp-proxy' in self.built_switch()
         for key in (REG.get('arc_lamp.mobilia_right').keys[0], REG.get('arc_lamp.mobilia_left').keys[0]):
             a = dist_sprite(key)
-            self.assertEqual(int(T.white_mask(a).sum()), 15)               # the audit: 15 px of pure white
             out = T.lamp_mobilia(a).rgba
             self.assertEqual(int(T.white_mask(out).sum()), 0)
             self.assertEqual(solid_count(out), solid_count(a))
             changed = (out != a).any(-1)
-            self.assertEqual(int(changed.sum()), 15)
-            self.assertTrue((out[changed][:, :3] == T.RIM_NAVY).all())
+            if touched:
+                self.assertEqual(int(T.white_mask(a).sum()), 0)
+                self.assertEqual(int(changed.sum()), 0)                    # idempotent: the build already carries it
+            else:
+                self.assertEqual(int(T.white_mask(a).sum()), 15)           # the audit: 15 px of pure white
+                self.assertEqual(int(changed.sum()), 15)
+                self.assertTrue((out[changed][:, :3] == T.RIM_NAVY).all())
 
 
 # -------------------------------------------------------------------------------------------------------------- foot

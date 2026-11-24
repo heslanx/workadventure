@@ -69,20 +69,105 @@ def painted_shadows(environ=os.environ):
     return environ.get('KONCLUI_PAINTED_SHADOWS', '1') != '0'
 
 
-def entity_layers(painted=True):
-    """ENTITY_LAYERS for a build that keeps (`painted`) or drops the lounge's painted shadow rows."""
-    if painted:
-        return {layer: (why, tuple(names)) for layer, (why, names) in _DECLARED_LAYERS.items()}
-    return {layer: (why, tuple(n for n in names if layer != 'baked-shadow' or n not in LOUNGE_ROW_SHADOWS))
+# The volume pieces (KONCLUI_VOLUME_PIECES, a comma list; empty by default, and then the build is byte for byte what it was). A
+# switch name replaces or touches up one piece; "all" is every name whose piece reads better lit than today's (air-hockey and
+# arc-lamp-proxy). The stool (the art review judged it worse in charm) and plant-proxy (lit, the tall bird of paradise's white pot
+# turns into a flat grey bucket) have not passed: they are taken only by name. Each name lists what its pictures STOP carrying: the layer whose partial alpha goes (a painted contact shadow,
+# a baked pool of light), the prefab names and how many pictures, so the file counts follow. A piece BAKED from a recipe is new art:
+# its name leaves the declaration and its picture is judged by the palette and the drawing contract like any other. A piece whose
+# hand-drawn picture is KEPT (VOLUME_LEGACY: a touch-up and a proxy volume) keeps its name declared, so it keeps its standing
+# (the palette check leaves it out as it always did); only fx.py's "painted" list and the runtime's shadow stop treating it as
+# painted (VOLUME_UNPAINTED).
+VOLUME_ENV = 'KONCLUI_VOLUME_PIECES'
+# "casters-all" changes no picture and no declaration: it only adds the legacy pieces' shadow heights (contract/pieces.json) to the
+# manifest's "casters", so the owner can judge them alone. Without it "casters" holds only the pieces the other names replace or touch.
+VOLUME_CASTERS_ALL = 'casters-all'
+VOLUME_NAMES = ('air-hockey', 'stool', 'arc-lamp-proxy', 'plant-proxy', VOLUME_CASTERS_ALL)
+VOLUME_ALL = ('air-hockey', 'arc-lamp-proxy')
+VOLUME_LEGACY = ('arc-lamp-proxy', 'plant-proxy')
+VOLUME_DROPS = {
+    'air-hockey': {'baked-shadow': (('Mesa de air hockey',), 1)},
+    'stool': {'baked-shadow': (('Banqueta de bar turquesa',), 1)},
+    'arc-lamp-proxy': {'lamp-light-pool': (('Luminária de arco com cúpula',), 1)},
+    'plant-proxy': {'baked-shadow': (('Ave-do-paraíso grande',), 2)},
+}
+# Prefab names whose picture paints no shadow of its own once the switch name is on: fx.py stops treating them as FLAT, so the
+# runtime draws their footprint shadow (the lamp's name matches FLAT through "cúpula", the others through their own pattern).
+VOLUME_UNPAINTED = {
+    'air-hockey': ('Mesa de air hockey',), 'stool': ('Banqueta de bar turquesa',),
+    'arc-lamp-proxy': ('Luminária de arco com cúpula',), 'plant-proxy': ('Ave-do-paraíso grande',),
+}
+
+
+def volume_pieces(environ=os.environ):
+    """The set of switch names KONCLUI_VOLUME_PIECES asks for: a comma list of VOLUME_NAMES and "all" (VOLUME_ALL), case and
+    spaces ignored, empty (the default) for none. An unknown name is a ValueError: a typo must not build the default silently."""
+    chosen = set()
+    for token in str(environ.get(VOLUME_ENV, '')).split(','):
+        token = token.strip().lower()
+        if not token:
+            continue
+        if token == 'all':
+            chosen |= set(VOLUME_ALL)
+        elif token in VOLUME_NAMES:
+            chosen.add(token)
+        else:
+            raise ValueError(f'{VOLUME_ENV}: unknown piece {token!r}; one of {", ".join(VOLUME_NAMES)} or all')
+    return frozenset(chosen)
+
+
+def volume_value(volume):
+    """The switch as the build records it (fx/manifest.json "volume"): the chosen names in VOLUME_NAMES order, comma separated."""
+    return ','.join(n for n in VOLUME_NAMES if n in volume)
+
+
+def entity_layers(painted=True, volume=frozenset()):
+    """ENTITY_LAYERS for a build that keeps (`painted`) or drops the lounge's painted shadow rows, and whose baked `volume` pieces
+    (not VOLUME_LEGACY ones) no longer carry the partial alpha their names were declared for."""
+    drop = {layer: {n for name in volume if name not in VOLUME_LEGACY for n in VOLUME_DROPS.get(name, {}).get(layer, ((), 0))[0]}
+            for layer in _DECLARED_LAYERS}
+    return {layer: (why, tuple(n for n in names if n not in drop[layer]
+                               and (painted or layer != 'baked-shadow' or n not in LOUNGE_ROW_SHADOWS)))
             for layer, (why, names) in _DECLARED_LAYERS.items()}
 
 
-def expected_entity_files(painted=True):
-    return dict(BASE_ENTITY_FILES) if painted else {
-        **BASE_ENTITY_FILES, 'baked-shadow': BASE_ENTITY_FILES['baked-shadow'] - LOUNGE_ROW_SHADOW_FILES}
+def expected_entity_files(painted=True, volume=frozenset()):
+    out = dict(BASE_ENTITY_FILES)
+    if not painted:
+        out['baked-shadow'] -= LOUNGE_ROW_SHADOW_FILES
+    for name in volume:
+        for layer, (names, files) in VOLUME_DROPS.get(name, {}).items():
+            # a picture the lounge rows already took out of the count (painted off) has no partial alpha left to lose
+            counted = painted or layer != 'baked-shadow' or not any(n in LOUNGE_ROW_SHADOWS for n in names)
+            out[layer] -= files if counted else 0
+    return out
 
 
-ENTITY_LAYERS = entity_layers(painted_shadows())
+def configure(volume=frozenset(), painted=None):
+    """Point this module's declarations at a build made with `volume` (a set of switch names) and, optionally, `painted`
+    (True or False; None keeps the process's own). verify.py calls it with the build's recorded switch, so a build is judged
+    by what it was made with whatever the environment says now. Returns nothing; `configured()` reads it back."""
+    global ENTITY_LAYERS, EXPECTED_ENTITY_FILES, _BY_NAME, _VOLUME
+    painted = painted_shadows() if painted is None else painted
+    _VOLUME = frozenset(volume)
+    ENTITY_LAYERS = entity_layers(painted, _VOLUME)
+    EXPECTED_ENTITY_FILES = expected_entity_files(painted, _VOLUME)
+    _BY_NAME = {name: layer for layer, (_, names) in ENTITY_LAYERS.items() for name in names}
+
+
+def configured():
+    """The volume set the declarations below were built for."""
+    return _VOLUME
+
+
+def unpainted_names(volume):
+    """The prefab names whose picture, with `volume` on, paints no shadow of its own (VOLUME_UNPAINTED): fx.py leaves them out of
+    "painted" and of FLAT, so the runtime draws their shadow."""
+    return {n for name in volume for n in VOLUME_UNPAINTED.get(name, ())}
+
+
+_VOLUME = volume_pieces()
+ENTITY_LAYERS = entity_layers(painted_shadows(), _VOLUME)
 
 # The partial levels a declared entity layer may use, None for any (the lamp's glow is a gradient). MEASURED over the build.
 ENTITY_LEVELS = {
@@ -93,7 +178,7 @@ ENTITY_LEVELS = {
 # The count asserted by the check: how many pictures of each layer carry partial alpha (MEASURED, tools/README.md).
 # Enforced by build.py (check_dist), by BuiltOffice over $KONCLUI_DIST and by DeclaredBudget (tools/test_pixelgrid.py),
 # NOT by the mocked DeclaredLayers tests: change a number here and DeclaredBudget says so until it is changed on purpose.
-EXPECTED_ENTITY_FILES = expected_entity_files(painted_shadows())
+EXPECTED_ENTITY_FILES = expected_entity_files(painted_shadows(), _VOLUME)
 
 # Tileset layers: file name -> (layer, the only partial levels it may use, None for any).
 TILESET_LAYERS = {

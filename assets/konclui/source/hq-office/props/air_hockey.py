@@ -14,7 +14,7 @@ What stands where (x right, y toward the viewer, z up; the playfield is z = 0.75
     goal slots  a dark 0.36 m notch in the top of each end rim, on the same screen rows as the centre circle
     legs        four 0.125 m posts one tone below the apron. The near pair ends on the footprint's front edge; the far pair is
                 hidden behind the top in both projections (the tabletop covers every row they could occupy)
-    game        a red and a blue mallet and one near-black 5 px puck, all on the playfield. A mallet is a 7 px disc in a four
+    game        a mint and a blue mallet and one near-black 5 px puck, all on the playfield. A mallet is a 7 px disc in a four
                 step ramp: the rim in the second tone, the body in the third, a 3 px lighter cap that stands one height px up,
                 and the darkest tone only as the lip under the disc. Mallet 7 px = 0.22 m against a real 0.10 m and puck 5 px =
                 0.16 m against 0.08 m: a legibility trade-off (a 4 px disc cannot hold a rim, a body and a cap)
@@ -29,9 +29,9 @@ of height). Two small hand patches finish what the model cannot give (each far b
                               disc (5-7-7-7-7-5: rim, a 3 x 2 cap, a body row, the lip), the puck as a 5 row octagon, and the same
                               8 leg-join outline pixels. camera75's rows are 3/4 of a pixel, so the model alone cannot hold these
 
-Colours: every structural tone is a palette stop (tools/palettes/office.hex). The game pieces (red, blue) are not in the palette,
-because the palette has no red; they are accents derived from one red and one blue (4 tones each; the red body is the red of the
-centre line) and are the only off-palette tones.
+Colours: every tone is a palette stop (tools/palettes/office.hex), the game pieces too. The palette has no red, so the two sides are
+the palette's own mint and steel-blue ramps (4 tones each; the mint body is also the colour of the centre line and circle). An earlier
+version drew them in a red and a blue that were not in the palette (E5484D and seven more) and failed office.palette.
 """
 import sys
 from pathlib import Path
@@ -62,7 +62,7 @@ CX = W / 2
 # game pieces sit on the pixel grid. Oblique: row = 21 + 32 y - 21 z, column = 1 + 32 x; camera75: row = 20 + 24 y - 21 z. A mallet's
 # disc top (z = 0.75 + ZP) is centred on a pixel centre in oblique and within 0.06 row of one in camera75 (no stray pixel in either).
 MALLET_X = 19.5 * X
-MALLET_Y_RED, MALLET_Y_BLUE = 16.25 * X, 12.25 * X
+MALLET_Y_MINT, MALLET_Y_STEEL = 16.25 * X, 12.25 * X
 PUCK_X, PUCK_Y = 24.5 * X, (12.5 - 4.25 - 0.1) * X     # a 5 px puck is centred on a pixel column; 0.1 px up keeps both projections off a coverage tie
 # the goal slots: 0.36 m wide notches in the end rims' tops, placed so that on screen they span the same rows as the centre circle
 # (oblique rows 14..25 = 12 rows, camera75 rows 11..19 = 9 rows) and so sit level with the creases. y 0.32..0.68 is centred on 0.50, not
@@ -75,12 +75,12 @@ SLOT_Y0, SLOT_Y1 = 0.32, 0.68
 ICE = ('#C2CFD7', '#DDE9EE', '#E8F1F5', '#F5FAFC')
 RIM_TOP = V.MATERIALS['ds-petrol']                      # dark blue-teal
 BODY = V.MATERIALS['ds-ink']                            # the navy apron, the legs, the slots
-# the game accents: one red, one blue, each a 4-tone ramp. A mallet is drawn in three flat tones: the darkest as its rim (the outline),
-# the second as its body, the lightest as the cap of its knob. The body is one step below the red of the centre line and circle (RED[2]),
+# the two sides: one mint, one steel-blue, each a 4-tone ramp of the office palette. A mallet is drawn in three flat tones: the darkest as its rim (the outline),
+# the second as its body, the lightest as the cap of its knob. The body is one step below the mint of the centre line and circle (MINT[2]),
 # so a mallet that stands on the circle does not merge with it.
-RED = ('#6B1A24', '#B8343A', '#E5484D', '#FF9A9C')
-BLUE = ('#14306E', '#2457B8', '#4A86E8', '#9CC3FF')
-PUCK = ('#05061A', '#0F262C')                            # ink and top: near-black, and not a second blue beside the blue mallet
+MINT = ('#04706F', '#0E7F66', '#00D7A1', '#B6FFE7')
+STEEL = ('#0A0F33', '#162461', '#2B3A78', '#8A9FBA')
+PUCK = ('#05061A', '#0F262C')                            # ink and top: near-black, and not a second blue beside the steel mallet
 RIM_RAMP = ('#0F262C', '#1E454D', '#2C626C')            # the rim top is the middle teal, the inner face one step down
 RIM_EDGE = '#3F7C86'                                     # the 1 px edge of the rim top, lighter on all four sides (no direction)
 LEG = '#0B1441'                                          # one ramp step below the apron: the legs separate from it
@@ -105,12 +105,12 @@ def materials():
         'slot': V.flat_material('slot', BODY.ramp[0], ink=BODY.ramp[0]),
         'stripe': V.flat_material('stripe', '#02D1CE', ink=BODY.ramp[0]),
         'crease': V.flat_material('crease', '#02A8A6', ink='#04706F'),
-        'line': V.flat_material('line', RED[2], ink=RED[1]),
+        'line': V.flat_material('line', MINT[2], ink=MINT[1]),
         'puck-side': V.flat_material('puck-side', PUCK[0], ink=PUCK[0], detail=True),
         'puck-top': V.flat_material('puck-top', PUCK[1], ink=PUCK[0], detail=True),
     }
-    out.update(_mallet_materials('red', RED))
-    out.update(_mallet_materials('blue', BLUE))
+    out.update(_mallet_materials('mint', MINT))
+    out.update(_mallet_materials('steel', STEEL))
     return out
 
 
@@ -216,7 +216,7 @@ def recipe():
     for x in (2 * X, W - 6 * X):                                           # legs, 4 px wide: near pair, far pair
         solids.append(V.box(x, 0.84, 0.0, x + 4 * X, 0.97, Z_APRON, 'leg'))
         solids.append(V.box(x, Y_FAR + 0.04, 0.0, x + 4 * X, Y_FAR + 0.17, Z_APRON, 'leg'))
-    solids += [_mallet(MALLET_X, MALLET_Y_RED, 'red'), _mallet(W - MALLET_X, MALLET_Y_BLUE, 'blue'), _puck(PUCK_X, PUCK_Y)]
+    solids += [_mallet(MALLET_X, MALLET_Y_MINT, 'mint'), _mallet(W - MALLET_X, MALLET_Y_STEEL, 'steel'), _puck(PUCK_X, PUCK_Y)]
     return V.Recipe(NAME, solids, (2, 1), anchors={'top': (CX, CY, H)}, overhangs={'north': 0.10}, materials=materials(),
                     kind='stand', symmetric=False,
                     notes='Air hockey table 2.0 x 1.1 x 0.8 m, footprint 2 x 1 tiles, the extra 0.1 m of depth on the far side.')

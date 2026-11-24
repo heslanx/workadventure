@@ -1,9 +1,9 @@
 # piece: air_hockey
 # projection: oblique
-# recipe: 67f27fe7f119214b
+# recipe: 3657cedc4f8e7df6
 # canvas: 66x53
-# base: 55330b192d01f7a42a4a8a1785169a7fc5b0caf42e1569535ce57afb65411628
-# legend: a=#F5FAFC b=#142160 c=#2C626C d=#05061A e=#3F7C86 f=#0F262C g=#E5484D h=#02D1CE i=#1E454D j=#02A8A6 k=#0B1441 l=#2457B8 m=#B8343A n=#4A86E8 o=#14306E p=#6B1A24 q=#9CC3FF r=#FF9A9C
+# base: a0ec5ac642fcafcc3c864e9f02584dd3e574154fb05168b4c42d997afa28da26
+# legend: a=#F5FAFC b=#142160 c=#2C626C d=#05061A e=#3F7C86 f=#0F262C g=#00D7A1 h=#02D1CE i=#1E454D j=#02A8A6 k=#0B1441 l=#162461 m=#0E7F66 n=#2B3A78 o=#0A0F33 p=#04706F q=#8A9FBA r=#B6FFE7
 ..................................................................
 ..................................................................
 ..................................................................

@@ -25,6 +25,7 @@ import normals as N  # noqa: E402
 import palettesnap as PS  # noqa: E402
 import pixelgrid as PG  # noqa: E402
 import toolchain as TC  # noqa: E402
+import translucent as TL  # noqa: E402
 import verify as V  # noqa: E402
 import publish  # noqa: E402
 
@@ -136,6 +137,9 @@ def no_declared_counts():
 
 class Case(unittest.TestCase):
     def setUp(self):
+        before = TL.configured()                       # the fixtures are default builds: judge them whatever KONCLUI_VOLUME_PIECES says
+        TL.configure(frozenset())
+        self.addCleanup(TL.configure, before)
         tmp = tempfile.TemporaryDirectory(prefix='test-verify-')
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)
@@ -743,6 +747,197 @@ class BuildManifest(Case):
         self.assertEqual(publish.read_tools(self.tmp / 'dist'), record)
 
 
+def set_manifest(dist, **keys):
+    """Add keys to the manifest of a small map (a value None removes the key)."""
+    path = Path(dist) / 'fx' / 'manifest.json'
+    manifest = json.loads(path.read_text())
+    for key, value in keys.items():
+        manifest.pop(key, None)
+        if value is not None:
+            manifest[key] = value
+    path.write_text(json.dumps(manifest))
+
+
+class Volume(Case):
+    """The checks of a build made with KONCLUI_VOLUME_PIECES: the recorded switch, office.contract and the casters."""
+
+    def contract(self, dist, baseline=None):
+        with mock.patch.object(V.C, 'load_json', side_effect=lambda name, data_dir=None: baseline if name == 'baseline.json' else None):
+            return by_name(V.contract_results(dist))
+
+    def baseline_of(self, dist):
+        return V.C.make_baseline(V.C.measure(dist))
+
+    def test_the_recorded_switch_is_read_from_the_manifest(self):
+        dist = make_dist(self.tmp)
+        self.assertEqual(V.recorded_switch(dist), frozenset())
+        set_manifest(dist, volume='air-hockey,plant-proxy')
+        self.assertEqual(V.recorded_switch(dist), {'air-hockey', 'plant-proxy'})
+        self.assertEqual(V.recorded_switch(self.tmp / 'nowhere'), frozenset())
+
+    def test_a_build_is_judged_by_its_own_switch_and_the_process_is_put_back(self):
+        dist = make_dist(self.tmp)
+        set_manifest(dist, volume='air-hockey')
+        TL.configure(frozenset({'plant-proxy'}))
+        with V.built_with(dist):
+            self.assertEqual(TL.configured(), {'air-hockey'})
+            self.assertEqual(TL.EXPECTED_ENTITY_FILES['baked-shadow'], 31)
+        self.assertEqual(TL.configured(), {'plant-proxy'})
+        set_manifest(dist, volume=None)
+        with V.built_with(dist):                     # a default build in a process that has the switch on: the default
+            self.assertEqual(TL.configured(), frozenset())
+            self.assertEqual(TL.EXPECTED_ENTITY_FILES['baked-shadow'], 32)
+        self.assertEqual(TL.configured(), {'plant-proxy'})
+
+    def test_the_process_is_put_back_when_a_check_raises(self):
+        dist = make_dist(self.tmp)
+        set_manifest(dist, volume='air-hockey')
+        with self.assertRaises(RuntimeError):
+            with V.built_with(dist):
+                raise RuntimeError('x')
+        self.assertEqual(TL.configured(), frozenset())
+
+    @NEEDS_TOOLS
+    def test_a_manifest_value_that_is_not_a_switch_fails_the_pixel_checks_by_name(self):
+        dist = make_dist(self.tmp)
+        set_manifest(dist, volume='airhockey')
+        results = self.office(dist)
+        self.assertEqual(results['office.pixels'].status, V.FAIL)
+        self.assertIn("'airhockey'", results['office.pixels'].detail)
+
+    @NEEDS_TOOLS
+    def test_the_office_run_registers_the_contract_and_the_casters(self):
+        names = list(self.office(make_dist(self.tmp)))
+        for name in ('office.contract', 'office.contract.pieces', 'office.contract.review', 'office.contract.casters'):
+            self.assertIn(name, names)
+        self.assertLess(names.index('office.kinds'), names.index('office.contract'))
+
+    # ---- office.contract
+    def test_legacy_offenders_behind_the_baseline_are_reported_and_never_fail(self):
+        dist = make_dist(self.tmp)
+        result = self.contract(dist, self.baseline_of(dist))['office.contract']
+        self.assertEqual(result.status, V.REPORTED, result.detail)
+        self.assertIn('legacy offenders behind the baseline', result.detail)
+
+    def test_a_clean_map_is_a_pass(self):
+        dist = make_dist(self.tmp)
+        sprite = block(12, 12, (200, 120, 60), (2, 2, 10, 11))                                  # a foot gap of 1
+        sprite[2:11, 2:10][np.pad(np.zeros((7, 6), bool), 1, constant_values=True)] = (20, 10, 5, 255)    # a 1 px ink outline
+        png(dist / 'entities' / 'col' / 'a.png', sprite)
+        baseline = self.baseline_of(dist)
+        self.assertEqual({rule: e['offenders'] for rule, e in baseline['rules'].items() if e['offenders']}, {})
+        self.assertEqual(self.contract(dist, baseline)['office.contract'].status, V.PASS)
+
+    def test_a_volume_piece_that_breaks_a_gate_rule_fails_even_when_the_baseline_lists_the_sprite(self):
+        dist = make_dist(self.tmp)
+        baseline = self.baseline_of(dist)                            # the sprite offends foot_gap (2 empty rows): legacy
+        png(dist / 'entities' / 'col' / 'a.png', block(12, 12, SPRITE, (2, 2, 10, 10)) + 0)
+        px = np.asarray(Image.open(dist / 'entities' / 'col' / 'a.png')).copy()
+        px[3, 3, 0] += 1                                             # the picture changed since the baseline
+        png(dist / 'entities' / 'col' / 'a.png', px)
+        set_manifest(dist, volumePieces={'col/a.png': 'volume'}, volume='air-hockey')
+        result = self.contract(dist, baseline)['office.contract']
+        self.assertEqual(result.status, V.FAIL, result.detail)
+        self.assertIn('picture changed since the baseline', result.lines[0])
+        self.assertIn('foot_gap', result.lines[0])
+
+    def test_a_touched_up_legacy_piece_keeps_its_standing_for_the_rules_it_already_offended(self):
+        dist = make_dist(self.tmp)
+        baseline = self.baseline_of(dist)
+        px = np.asarray(Image.open(dist / 'entities' / 'col' / 'a.png')).copy()
+        px[3, 3, 0] += 1
+        png(dist / 'entities' / 'col' / 'a.png', px)
+        set_manifest(dist, volumePieces={'col/a.png': 'proxy'}, volume='arc-lamp-proxy')
+        result = self.contract(dist, baseline)['office.contract']
+        self.assertEqual(result.status, V.REPORTED, result.detail)
+        self.assertEqual(result.data['volume_pieces'], {'col/a.png': 'proxy'})
+
+    def test_a_touched_up_piece_that_breaks_a_rule_it_did_not_offend_before_fails(self):
+        dist = make_dist(self.tmp)
+        baseline = self.baseline_of(dist)
+        baseline['rules']['foot_gap']['offenders'] = []              # it was clean for this rule when the baseline was written
+        set_manifest(dist, volumePieces={'col/a.png': 'proxy'}, volume='arc-lamp-proxy')
+        result = self.contract(dist, baseline)['office.contract']
+        self.assertEqual(result.status, V.FAIL, result.detail)
+        self.assertIn('not an offender in the baseline', result.lines[0])
+
+    def test_without_the_proxy_standing_the_same_touched_up_piece_is_a_regression(self):
+        dist = make_dist(self.tmp)
+        baseline = self.baseline_of(dist)
+        px = np.asarray(Image.open(dist / 'entities' / 'col' / 'a.png')).copy()
+        px[3, 3, 0] += 1
+        png(dist / 'entities' / 'col' / 'a.png', px)
+        self.assertEqual(self.contract(dist, baseline)['office.contract'].status, V.FAIL)
+
+    def test_a_missing_baseline_is_reported_not_failed(self):
+        self.assertEqual(self.contract(make_dist(self.tmp), None)['office.contract'].status, V.REPORTED)
+
+    # ---- office.contract.casters
+    def casters(self, **manifest):
+        dist = make_dist(Path(tempfile.mkdtemp(dir=self.tmp)))
+        set_manifest(dist, kinds={'col/a.png': 'stand'}, **manifest)
+        return V.casters_result(dist)
+
+    def test_a_manifest_without_casters_is_reported(self):
+        result = self.casters()
+        self.assertEqual(result.status, V.REPORTED)
+        self.assertFalse(result.data['present'])
+
+    ONE = {'col/a.png': {'h': 8, 'foot': 9, 'span': [2, 10]}}
+
+    def test_casters_that_are_exactly_the_stand_sprites_pass_with_casters_all(self):
+        result = self.casters(casters=self.ONE, volume='casters-all')
+        self.assertEqual(result.status, V.PASS, result.detail)
+        self.assertEqual(result.data['scope'], 'all')
+
+    def test_with_casters_all_a_stand_sprite_with_no_caster_and_a_caster_for_a_sprite_that_does_not_stand_fail(self):
+        result = self.casters(casters={}, volume='casters-all')
+        self.assertEqual(result.status, V.FAIL)
+        self.assertIn('no caster', result.lines[0])
+        result = self.casters(casters={**self.ONE, 'col/b.png': self.ONE['col/a.png']}, volume='casters-all')
+        self.assertEqual(result.status, V.FAIL)
+        self.assertIn('not placed stand sprites', result.lines[0])
+
+    def test_without_casters_all_the_casters_are_exactly_the_volume_pieces(self):
+        """One piece on changes the shadow of that piece only: a stand sprite the switch did not touch has no caster."""
+        result = self.casters(casters=self.ONE, volume='air-hockey', volumePieces={'col/a.png': 'volume'})
+        self.assertEqual((result.status, result.data['scope']), (V.PASS, 'volume pieces'), result.detail)
+        self.assertEqual(self.casters(casters={}, volume='air-hockey', volumePieces={}).status, V.PASS)   # a piece the build did not place
+
+    def test_without_casters_all_a_caster_for_another_stand_sprite_fails_and_so_does_a_missing_one(self):
+        result = self.casters(casters=self.ONE, volume='air-hockey', volumePieces={})
+        self.assertEqual(result.status, V.FAIL)
+        self.assertIn('are not volume pieces', result.lines[0])
+        result = self.casters(casters={}, volume='arc-lamp-proxy', volumePieces={'col/a.png': 'proxy'})
+        self.assertEqual(result.status, V.FAIL)
+        self.assertIn('have no caster', result.lines[0])
+
+    def test_casters_all_beside_a_piece_is_every_stand_sprite_and_the_scope_is_read_from_the_recorded_value(self):
+        self.assertEqual(self.casters(casters=self.ONE, volume='air-hockey,casters-all', volumePieces={'col/a.png': 'volume'}).status, V.PASS)
+        self.assertEqual(self.casters(casters={}, volume='air-hockey,casters-all', volumePieces={}).status, V.FAIL)
+        # the process's own environment says nothing: only the manifest's record does
+        with mock.patch.dict(os.environ, {'KONCLUI_VOLUME_PIECES': 'casters-all'}):
+            self.assertEqual(self.casters(casters={}, volume='air-hockey', volumePieces={}).status, V.PASS)
+
+    def test_a_manifest_value_that_is_not_a_switch_fails_the_casters(self):
+        self.assertEqual(self.casters(casters=self.ONE, volume='caster-all').status, V.FAIL)
+
+    def test_a_caster_outside_its_picture_or_not_made_of_integers_fails(self):
+        for entry, why in (({'h': 8, 'foot': 12, 'span': [2, 10]}, 'foot row 12'), ({'h': 8, 'foot': 9, 'span': [2, 13]}, 'span'), ({'h': 8, 'foot': 9, 'span': [4, 4]}, 'span'),
+                           ({'h': 0, 'foot': 9, 'span': [2, 10]}, 'h 0'), ({'h': 13, 'foot': 9, 'span': [2, 10]}, 'h 13'),
+                           ({'h': 8.5, 'foot': 9, 'span': [2, 10]}, 'integers'), ({'h': 8, 'foot': 9, 'span': [9, 2]}, 'span'),
+                           ({'h': 8, 'foot': 9}, '{h, foot, span}'), ({'h': 8, 'foot': True, 'span': [2, 10]}, 'integers')):
+            result = self.casters(casters={'col/a.png': entry}, volume='casters-all')
+            self.assertEqual(result.status, V.FAIL, entry)
+            self.assertIn(why, ' '.join(result.lines), entry)
+
+    def test_a_volume_piece_of_an_unknown_kind_or_on_a_sprite_that_is_not_placed_fails(self):
+        entry = {'col/a.png': {'h': 8, 'foot': 9, 'span': [2, 10]}}
+        self.assertEqual(self.casters(casters=entry, volume='air-hockey', volumePieces={'col/a.png': 'baked'}).status, V.FAIL)
+        self.assertEqual(self.casters(casters=entry, volume='casters-all', volumePieces={'col/zzz.png': 'volume'}).status, V.FAIL)
+        self.assertEqual(self.casters(casters=entry, volume='air-hockey', volumePieces={'col/a.png': 'volume'}).status, V.PASS)
+
+
 @unittest.skipUnless(os.environ.get('KONCLUI_DIST'), 'KONCLUI_DIST unset (a built map: hq-office/build.py --out DIR)')
 class BuiltMap(Case):
     def test_the_real_build_records_its_tools_and_verifies_clean(self):
@@ -750,7 +945,9 @@ class BuiltMap(Case):
         manifest = json.loads((dist / 'fx' / 'manifest.json').read_text())
         self.assertEqual(sorted(manifest['tools']['tools']), sorted(TC.NAMES))
         results = V.run(dist, ['office'])
-        self.assertEqual([r.name for r in results if r.status == V.FAIL], [], [(r.name, r.detail) for r in results])
+        # A build made with any KONCLUI_VOLUME_PIECES value verifies clean too: the baked pieces are drawn in palette tones, the casters
+        # are the ones the recorded value asks for, and the declared layers follow the switch.
+        self.assertEqual({r.name for r in results if r.status == V.FAIL}, set(), [(r.name, r.detail) for r in results])
 
 
 if __name__ == '__main__':

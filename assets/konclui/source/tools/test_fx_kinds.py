@@ -32,7 +32,9 @@ LOUNGE_DEFAULT_SHA256 = '4fe216401f2c704fbaac21ab738fe8da170d3938a1a063ae303f824
 
 def lounge_pictures(painted):
     """{(group, variant): RGBA array} of lounge.pieces() built with the painted rows on or off (the cache is bypassed)."""
-    with mock.patch.dict(os.environ, {'KONCLUI_PAINTED_SHADOWS': '1' if painted else '0'}):
+    env = {k: v for k, v in os.environ.items() if k != 'KONCLUI_VOLUME_PIECES'}      # the volume pieces are test_volume_pieces.py's
+    env['KONCLUI_PAINTED_SHADOWS'] = '1' if painted else '0'
+    with mock.patch.dict(os.environ, env, clear=True):
         pieces = LOUNGE.pieces.__wrapped__()
     return {(g, v): np.asarray(pieces[g][v]['image']) for g in sorted(pieces) for v in sorted(pieces[g])}
 
@@ -120,7 +122,7 @@ class PaintedShadowsSwitch(unittest.TestCase):
         on, off = lounge_pictures(True), lounge_pictures(False)
         changed = {k for k in on if on[k].shape != off[k].shape or (on[k] != off[k]).any()}
         names = {LOUNGE.NAMES[g] for g, _ in changed}
-        declared = {n for n in names if TL.layer_of(n) == 'baked-shadow'}
+        declared = {n for n in names if n in TL.entity_layers(True)['baked-shadow'][1]}      # the default declarations, whatever the switch
         self.assertEqual(declared, set(TL.LOUNGE_ROW_SHADOWS))
         # the rest: the arc lamp and the nightstands (declared lamp-light-pool: they keep their glow) and Aglaonema (not declared:
         # the default build's alpha repair already drops its rows)
@@ -147,8 +149,10 @@ class PaintedShadowsSwitch(unittest.TestCase):
         self.assertEqual(len(off['baked-shadow'][1]), 19)
         self.assertEqual(on['glass'], off['glass'])
         self.assertEqual(on['lamp-light-pool'], off['lamp-light-pool'])
-        self.assertEqual(TL.ENTITY_LAYERS, on)                   # this process runs with the default
-        self.assertEqual(TL.EXPECTED_ENTITY_FILES, TL.expected_entity_files(True))
+        self.assertEqual(TL.ENTITY_LAYERS, TL.entity_layers(True, TL.configured()))     # the default painted rows, this process's switch
+        self.assertEqual(TL.EXPECTED_ENTITY_FILES, TL.expected_entity_files(True, TL.configured()))
+        if not TL.configured():
+            self.assertEqual(TL.ENTITY_LAYERS, on)
 
 
 @unittest.skipUnless(os.environ.get('KONCLUI_DIST'), 'KONCLUI_DIST is unset')

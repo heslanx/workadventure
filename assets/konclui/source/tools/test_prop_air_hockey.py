@@ -109,8 +109,8 @@ def bbox(cells):
 
 
 def mallet_tones(which):
-    """The four flat tones of a mallet: underside lip, rim, body, cap. The red body is the red of the centre line and circle."""
-    ramp = AH.RED if which == 'red' else AH.BLUE
+    """The four flat tones of a mallet: underside lip, rim, body, cap. The mint body is the mint of the centre line and circle."""
+    ramp = AH.MINT if which == 'mint' else AH.STEEL
     return set(ramp)
 
 
@@ -126,7 +126,7 @@ def outer_cells(cells):
 
 
 def mallet_cells(piece, which):
-    """The mask of the red (left) or the blue (right) mallet: flood-filled from the disc centre the recipe put it at."""
+    """The mask of the mint (left) or the steel (right) mallet: flood-filled from the disc centre the recipe put it at."""
     proj = B.load_projection(piece.projection)
     x = A_X[which]
     y = A_Y[which]
@@ -136,8 +136,8 @@ def mallet_cells(piece, which):
     return component(piece, (row, col), mallet_tones(which))
 
 
-A_X = {'red': AH.MALLET_X, 'blue': AH.W - AH.MALLET_X}
-A_Y = {'red': AH.MALLET_Y_RED, 'blue': AH.MALLET_Y_BLUE}
+A_X = {'mint': AH.MALLET_X, 'steel': AH.W - AH.MALLET_X}
+A_Y = {'mint': AH.MALLET_Y_MINT, 'steel': AH.MALLET_Y_STEEL}
 
 
 def sha(piece):
@@ -297,9 +297,16 @@ class Audit(unittest.TestCase):
             with self.subTest(p):
                 self.assertLessEqual(bake(p).metrics['colours'], 20)
 
-    def test_only_the_game_accents_are_off_the_office_palette(self):
-        off = V.off_palette(AH.RECIPE().materials)
-        self.assertEqual(set(off), {'red-wall', 'red-side', 'red-body', 'red-cap', 'blue-wall', 'blue-side', 'blue-body', 'blue-cap', 'line'})
+    def test_every_material_is_on_the_office_palette_the_game_pieces_too(self):
+        """A build with the table on failed office.palette (+1 picture, +192 px) while its red and blue were off the palette."""
+        self.assertEqual(V.off_palette(AH.RECIPE().materials), {})
+
+    def test_every_pixel_of_the_baked_pictures_is_a_palette_stop(self):
+        palette = {line.strip().upper() for line in (HERE / 'palettes' / 'office.hex').read_text().split() if line.strip()}
+        for p in PROJECTIONS:
+            with self.subTest(p):
+                got = {V.rgb_hex(tuple(c)).lstrip('#').upper() for c in {tuple(px[:3]) for px in bake(p).rgba.reshape(-1, 4) if px[3]}}
+                self.assertEqual(got - palette, set())
 
 
 # --------------------------------------------------------------------------------------------------- the game pieces
@@ -311,7 +318,7 @@ class GamePieces(unittest.TestCase):
     def test_each_mallet_is_a_symmetric_disc_whose_rows_never_taper_into_a_chin(self):
         """The audit's earlier look at the oblique bake: a base row 3 px wide under rows of 7 (a pear), and a camera75 base of 5."""
         for p in PROJECTIONS:
-            for which in ('red', 'blue'):
+            for which in ('mint', 'steel'):
                 with self.subTest(f'{p} {which}'):
                     cells = mallet_cells(bake(p), which)
                     w = profile(cells)
@@ -326,10 +333,10 @@ class GamePieces(unittest.TestCase):
         from black to pink. Now: the rim is the ramp's second tone, the body the third (a mid-step between rim and cap), the
         cap the lightest, and only the lip under the disc is the darkest tone."""
         for p in PROJECTIONS:
-            for which in ('red', 'blue'):
+            for which in ('mint', 'steel'):
                 with self.subTest(f'{p} {which}'):
                     piece = bake(p)
-                    ramp = AH.RED if which == 'red' else AH.BLUE
+                    ramp = AH.MINT if which == 'mint' else AH.STEEL
                     cells = mallet_cells(piece, which)
                     hx = hexes(piece)
                     r0, c0, r1, c1 = bbox(cells)
@@ -349,22 +356,35 @@ class GamePieces(unittest.TestCase):
                     self.assertEqual(below, {ramp[2]})                                               # the cap steps down to the body, then the rim
 
     def test_a_mallet_stands_clear_of_the_decal_red_it_shares_a_tone_with(self):
-        """The red mallet's body is the red of the centre line and circle (the palette has no red to spare); the two never touch."""
+        """The mint mallet's body is the mint of the centre line and circle (the palette has no mint to spare); the two never touch."""
         piece = bake('oblique')
-        r0, c0, r1, c1 = bbox(mallet_cells(piece, 'red'))
+        r0, c0, r1, c1 = bbox(mallet_cells(piece, 'mint'))
         hx = hexes(piece)
         near = [(r, c) for r in range(r0 - 2, r1 + 3) for c in range(c0 - 2, c1 + 3)]
-        mallet = mallet_cells(piece, 'red')
-        self.assertEqual([x for x in near if x not in mallet and hx[x[0]][x[1]] == AH.RED[2]], [])
-        body, rim = AH.RED[2].lstrip('#'), AH.RED[1].lstrip('#')
+        mallet = mallet_cells(piece, 'mint')
+        self.assertEqual([x for x in near if x not in mallet and hx[x[0]][x[1]] == AH.MINT[2]], [])
+        body, rim = AH.MINT[2].lstrip('#'), AH.MINT[1].lstrip('#')
         self.assertGreaterEqual(max(abs(int(body[i:i + 2], 16) - int(rim[i:i + 2], 16)) for i in (0, 2, 4)), 20)
 
     def test_the_mallets_are_two_different_colours_left_and_right(self):
         piece = bake('oblique')
-        red, blue = mallet_cells(piece, 'red'), mallet_cells(piece, 'blue')
-        self.assertTrue(red and blue)
-        self.assertLess(max(c for _, c in red), min(c for _, c in blue))
-        self.assertTrue(red.isdisjoint(blue))
+        mint, steel = mallet_cells(piece, 'mint'), mallet_cells(piece, 'steel')
+        self.assertTrue(mint and steel)
+        self.assertLess(max(c for _, c in mint), min(c for _, c in steel))
+        self.assertTrue(mint.isdisjoint(steel))
+
+    def test_the_two_sides_read_as_a_green_and_a_blue_not_as_a_grey(self):
+        """The palette has no red, so the sides are its mint and its blue. A first pick gave the second mallet a 6F83A0 body (saturation
+        0.18: a grey disc with a blue cast, no colour beside the mint one); the body of each side must be a colour of its own hue."""
+        import colorsys
+        def hls(hex_):
+            r, g, b = (int(hex_.lstrip('#')[i:i + 2], 16) / 255 for i in (0, 2, 4))
+            h, l, s = colorsys.rgb_to_hls(r, g, b)
+            return h * 360, l, s
+        mint, blue = hls(AH.MINT[2]), hls(AH.STEEL[2])
+        self.assertTrue(140 <= mint[0] <= 175 and mint[2] >= 0.6, mint)
+        self.assertTrue(215 <= blue[0] <= 245 and blue[2] >= 0.4, blue)
+        self.assertGreaterEqual(blue[0] - mint[0], 60)                      # two hues, far apart, however the lightness falls
 
     def test_the_puck_is_a_near_black_5_px_disc_with_no_stray_pixel(self):
         for p in PROJECTIONS:
@@ -380,7 +400,7 @@ class GamePieces(unittest.TestCase):
                 r0, c0, r1, c1 = bbox(puck)
                 self.assertEqual(c1 - c0 + 1, 5)
                 self.assertEqual({(r, c0 + c1 - c) for r, c in puck}, puck)
-                for r, c in puck:                                                           # near black, and not a second blue
+                for r, c in puck:                                                           # near black, and not a second steel
                     self.assertLessEqual(max(int(hx[r][c][i:i + 2], 16) for i in (1, 3, 5)), 0x30, hx[r][c])
                 self.assertEqual({hx[r][c] for r, c in outer_cells(puck)}, {AH.PUCK[0]})     # a clean rim in the darkest tone
                 for r, c in puck:                                                           # no pixel without a same-tone neighbour
@@ -394,18 +414,18 @@ class GamePieces(unittest.TestCase):
                 proj = B.load_projection(p)
                 row = int(piece.footprint['px']['y'] + proj.sy * AH.PUCK_Y - proj.sz * (AH.Z_FIELD + AH.ZP))
                 puck = component(piece, (row, int(1 + proj.sx * AH.PUCK_X)), set(AH.PUCK))
-                mallet = mallet_cells(piece, 'red')
+                mallet = mallet_cells(piece, 'mint')
                 width = lambda cells: bbox(cells)[3] - bbox(cells)[1] + 1
                 self.assertGreaterEqual(width(puck) / width(mallet), 0.7)
 
     def test_there_is_one_puck_and_two_mallets_and_nothing_else_in_those_colours(self):
         piece = bake('oblique')
         hx = hexes(piece)
-        total = sum(1 for row in hx for v in row if v in mallet_tones('blue'))
-        self.assertEqual(total, len(mallet_cells(piece, 'blue')))
-        own = mallet_tones('red') - {AH.RED[2]}                                    # the body tone is also the decal red
-        reds = {(r, c) for r, row in enumerate(hx) for c, v in enumerate(row) if v in own}
-        self.assertEqual(reds, {(r, c) for r, c in mallet_cells(piece, 'red') if hx[r][c] in own})
+        total = sum(1 for row in hx for v in row if v in mallet_tones('steel'))
+        self.assertEqual(total, len(mallet_cells(piece, 'steel')))
+        own = mallet_tones('mint') - {AH.MINT[2]}                                    # the body tone is also the decal mint
+        mints = {(r, c) for r, row in enumerate(hx) for c, v in enumerate(row) if v in own}
+        self.assertEqual(mints, {(r, c) for r, c in mallet_cells(piece, 'mint') if hx[r][c] in own})
 
 
 class Markings(unittest.TestCase):
@@ -414,9 +434,9 @@ class Markings(unittest.TestCase):
         hx = hexes(piece)
         field = [r for r in range(piece.size[1]) if hx[r][14] in set(AH.ICE)]
         mid = (field[0] + field[-1]) // 2
-        line = [c for c in range(piece.size[0]) if hx[field[0] + 1][c] == AH.RED[2]]
+        line = [c for c in range(piece.size[0]) if hx[field[0] + 1][c] == AH.MINT[2]]
         self.assertEqual(line, [32, 33])
-        ring = [(r, c) for r in field for c in range(24, 42) if hx[r][c] == AH.RED[2] and c not in (32, 33)]
+        ring = [(r, c) for r in field for c in range(24, 42) if hx[r][c] == AH.MINT[2] and c not in (32, 33)]
         rows = {r for r, _ in ring}
         self.assertGreaterEqual(len(rows), 9)                                # a circle about 11 rows tall
         self.assertEqual({(r, 65 - c) for r, c in ring}, set(ring))          # symmetric about the table's long axis
@@ -435,7 +455,7 @@ class Markings(unittest.TestCase):
                 right = [r for r in field if hx[r][piece.size[0] - 3] == slot]
                 self.assertEqual(left, right)
                 self.assertEqual(left, list(range(left[0], left[0] + tall)))
-                ring = sorted({r for r in field for c in range(24, 32) if hx[r][c] == AH.RED[2]})
+                ring = sorted({r for r in field for c in range(24, 32) if hx[r][c] == AH.MINT[2]})
                 arcs = sorted({r for r in field for c in range(3, 16) if hx[r][c] == '#02A8A6'})
                 self.assertEqual((left[0] + left[-1]), (ring[0] + ring[-1]))               # centred on the circle's rows
                 self.assertEqual((left[0] + left[-1]), (arcs[0] + arcs[-1]))                 # and on the creases'
@@ -448,7 +468,7 @@ class Markings(unittest.TestCase):
                 hx = hexes(piece)
                 W = piece.size[0]
                 field = [r for r in range(piece.size[1]) if hx[r][14] in set(AH.ICE)]
-                for colour, cols in ((AH.RED[2], [c for c in range(24, 42) if c not in (32, 33)]), ('#02A8A6', list(range(3, 31)) + list(range(35, 63)))):
+                for colour, cols in ((AH.MINT[2], [c for c in range(24, 42) if c not in (32, 33)]), ('#02A8A6', list(range(3, 31)) + list(range(35, 63)))):
                     pts = {(r, c) for r in field for c in cols if hx[r][c] == colour}
                     lo, hi = min(r for r, _ in pts), max(r for r, _ in pts)
                     self.assertEqual(pts, {(r, W - 1 - c) for r, c in pts})                   # left-right
@@ -582,7 +602,7 @@ class OverridePatch(unittest.TestCase):
             W = piece.size[0]
             field = [r for r in range(piece.size[1]) if hx[r][14] in set(AH.ICE)]
             bad = 0
-            for colour, cols in ((AH.RED[2], [c for c in range(24, 42) if c not in (32, 33)]), ('#02A8A6', list(range(3, 31)) + list(range(35, 63)))):
+            for colour, cols in ((AH.MINT[2], [c for c in range(24, 42) if c not in (32, 33)]), ('#02A8A6', list(range(3, 31)) + list(range(35, 63)))):
                 pts = {(r, c) for r in field for c in cols if hx[r][c] == colour}
                 lo, hi = min(r for r, _ in pts), max(r for r, _ in pts)
                 bad += len(pts ^ {(r, W - 1 - c) for r, c in pts}) + len(pts ^ {(lo + hi - r, c) for r, c in pts})
@@ -598,8 +618,8 @@ class OverridePatch(unittest.TestCase):
         def shapes(piece):
             hx = hexes(piece)
             out = {}
-            for which in ('red', 'blue'):
-                ramp = AH.RED if which == 'red' else AH.BLUE
+            for which in ('mint', 'steel'):
+                ramp = AH.MINT if which == 'mint' else AH.STEEL
                 cells = mallet_cells(piece, which)
                 cap = {(r, c) for r, c in cells if hx[r][c] == ramp[3]}
                 rect = {(r, c) for r in range(min(r for r, _ in cap), max(r for r, _ in cap) + 1)
@@ -610,7 +630,7 @@ class OverridePatch(unittest.TestCase):
             puck = component(piece, (row, int(1 + proj.sx * AH.PUCK_X)), set(AH.PUCK))
             out['puck top px'] = sum(1 for r, c in puck if hx[r][c] == AH.PUCK[1])
             return out
-        clean = {'red cap is a rectangle': True, 'blue cap is a rectangle': True, 'puck top px': 6}    # the camera75 puck top is 3 + 3 px
+        clean = {'mint cap is a rectangle': True, 'steel cap is a rectangle': True, 'puck top px': 6}    # the camera75 puck top is 3 + 3 px
         self.assertEqual(shapes(bake('camera75')), clean)
         self.assertEqual(shapes(bake('oblique', overrides=False)), dict(clean, **{'puck top px': 9}))   # 3 x 3 in oblique
         raw = shapes(bake('camera75', overrides=False))

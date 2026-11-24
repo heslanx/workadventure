@@ -335,11 +335,26 @@ class BuiltOffice(unittest.TestCase):
     the entity and seat-front pictures, the declared layers' levels and file counts, and the tilesets."""
 
     def test_the_real_budgets_hold_over_the_built_map(self):
-        out = io.StringIO()
-        failed = OFFICE_CHECK.check_dist(os.environ['KONCLUI_DIST'], out)
-        self.assertEqual(failed, 0, out.getvalue()[-3000:])
-        for layer, files in TL.EXPECTED_ENTITY_FILES.items():
-            self.assertIn(f'declared translucent layer {layer}: {files} files', out.getvalue())
+        """The budgets of the switch the build was made with (fx/manifest.json "volume"; none for a default build): the declared layers
+        lose the pictures a baked piece stops carrying (translucent.VOLUME_DROPS), and nothing else."""
+        import verify
+        dist = os.environ['KONCLUI_DIST']
+        switch = verify.recorded_switch(dist)
+        with verify.built_with(dist):
+            out = io.StringIO()
+            failed = OFFICE_CHECK.check_dist(dist, out)
+            self.assertEqual(failed, 0, out.getvalue()[-3000:])
+            want = TL.expected_entity_files(TL.painted_shadows(), switch)
+            self.assertEqual(TL.EXPECTED_ENTITY_FILES, want)
+            for layer, files in want.items():
+                self.assertIn(f'declared translucent layer {layer}: {files} files', out.getvalue())
+        today = TL.expected_entity_files(TL.painted_shadows())
+        if not switch:
+            self.assertEqual(want, today)
+        elif TL.painted_shadows():                    # each name takes exactly the files VOLUME_DROPS says out of its layer
+            for layer in today:
+                dropped = sum(files for n in switch for lay, (_, files) in TL.VOLUME_DROPS.get(n, {}).items() if lay == layer)
+                self.assertEqual(today[layer] - want[layer], dropped, layer)
 
 
 class LostShadow(unittest.TestCase):
@@ -874,6 +889,139 @@ class LegacyNormals(unittest.TestCase):
                     [143, 146, 253, 255], [110, 102, 251, 255], [95, 135, 251, 255],
                     [109, 115, 253, 255], [139, 149, 253, 255], [155, 88, 245, 0]]
         self.assertEqual(N.legacy_normal(src).reshape(-1, 4).tolist(), expected)
+
+
+@unittest.skipUnless(os.environ.get('KONCLUI_DIST'), 'KONCLUI_DIST unset (a built map: hq-office/build.py --out DIR)')
+class BuiltFacadeDecor(unittest.TestCase):
+    """The lawn decor of the built map around the two glass facades: the lawn behind the NORTH glass keeps its tufts and flower clumps
+    (HEAD has 12 of them on the facade's lower row; the first try of N10 left none), and nothing grows on the room's floor behind the
+    SOUTH glass (HEAD drew 28 on it, over the glass)."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(SOURCE / 'hq-office'))
+        import plan as P
+        cls.P = P
+        cls.map = json.loads((Path(os.environ['KONCLUI_DIST']) / 'office.tmj').read_text())
+        layer = next(l for l in cls.map['layers'] if l['name'] == 'decor')
+        cls.W = cls.map['width']
+        cls.decor = {(i % cls.W, i // cls.W) for i, v in enumerate(layer['data']) if v}
+
+    def columns(self, row):
+        return {x for r, a, b, _, m in self.P.H_WALLS if r == row and m == 'glass' for x in range(self.P.vb(a), self.P.vb(b))}
+
+    def test_the_lawn_behind_the_north_glass_keeps_its_tufts_on_the_lower_row(self):
+        cells = [(x, self.P.BY0 + 1) for x in sorted(self.columns(self.P.BY0)) if (x, self.P.BY0 + 1) in self.decor]
+        self.assertGreaterEqual(len(cells), 6, cells)
+
+    def test_nothing_grows_on_the_room_floor_behind_the_south_glass(self):
+        cols = self.columns(self.P.BY1)
+        over = [(x, y) for x, y in self.decor if y in (self.P.BY1, self.P.BY1 + 1) and x in cols]
+        self.assertEqual(over, [])
+
+
+class FacadeFloors(unittest.TestCase):
+    """The ground under the two facades of glass (hq-office/build.py draw_floors; audit items I01 and N10). The south facade is seen from
+    outside: behind it stands the room, so the floor under its glass is the floor of what stands behind it, down to the face's last row
+    (build.facade_base), and the lawn starts there. The north facade is seen from inside: behind it is the lawn, which stops at the face's
+    last row, and the room's floor runs under the rest of the cell when the face ends before the cell does (it used to run 2 px past the
+    rail: a green sliver under it)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.B = load_module('office_build_facade', SOURCE / 'hq-office' / 'build.py')
+        cls.floors = cls.B.draw_floors()
+        cls.px = np.asarray(cls.floors)
+        grass = np.asarray(cls.B.floor_tile('lawn'))
+        cls.lawn = lambda self, x, y: tuple(grass[y % grass.shape[0], x % grass.shape[1]])
+
+    def glass_spans(self, row):
+        return [(self.B.P.vb(a) * 32, self.B.P.vb(b) * 32) for r, a, b, _, m in self.B.P.H_WALLS if r == row and m == 'glass']
+
+    def test_facade_base_is_the_last_opaque_row_of_the_face_and_a_soft_shadow_under_it_does_not_count(self):
+        face = np.zeros((64, 96, 4), np.uint8)
+        face[4:8, :, 3] = 255                      # a rail
+        face[8:60, :, 3] = 64                      # the panes
+        face[60:62, :, 3] = 255                    # the base rail
+        face[62:64, :, 3] = 34                     # the soft shadow under it
+        with mock.patch.object(self.B.GL, 'face', lambda *a, **k: Image.fromarray(face, 'RGBA')):
+            self.assertEqual(self.B.facade_base(south=False), 62)
+
+    def test_facade_base_follows_the_real_glass(self):
+        for south in (False, True):
+            face = np.asarray(self.B.GL.face(96, facade=True, south=south))
+            base = self.B.facade_base(south)
+            self.assertTrue((face[base - 1, :, 3] >= self.B.FACE_OPAQUE).any(), south)
+            self.assertFalse((face[base:, :, 3] >= self.B.FACE_OPAQUE).any(), south)
+
+    def test_behind_reads_the_floor_that_lies_at_a_row_and_looks_through_a_rug(self):
+        laid = [('hall', 0, 0, 256, 100), ('room', 64, 0, 160, 100), ('rug-tile', 96, 0, 128, 100), ('cafe', 160, 0, 192, 40)]
+        runs = self.B.behind(laid, 32, 224, 50)
+        self.assertEqual(runs, [('hall', 32, 64), ('room', 64, 160), ('hall', 160, 224)])
+        self.assertEqual(self.B.behind(laid, 32, 224, 20), [('hall', 32, 64), ('room', 64, 160), ('cafe', 160, 192), ('hall', 192, 224)])
+        self.assertEqual(self.B.behind(laid, 40, 70, 50)[0][1], 40)           # the first run starts where the glass does
+
+    def test_the_south_facade_shows_no_lawn_down_to_the_face_base_and_the_lawn_starts_there(self):
+        T = 32
+        row = self.B.P.BY1
+        base = row * T + self.B.facade_base(south=True)
+        for x0, x1 in self.glass_spans(row):
+            region = self.px[row * T:base, x0:x1]
+            on_lawn = np.array([[tuple(region[y, x]) == self.lawn(x0 + x, row * T + y) for x in range(0, x1 - x0, 7)]
+                                for y in range(0, base - row * T, 5)])
+            self.assertFalse(on_lawn.any(), (x0, x1))
+            for y in range(base, (row + 2) * T + 2):                 # the rail's own soft shadow falls on lawn, not on a beige strip
+                self.assertEqual(tuple(self.px[y, x0 + 3]), self.lawn(x0 + 3, y), (x0, y))
+
+    def test_the_south_facade_continues_the_floor_of_the_row_above_it(self):
+        """A floor pattern repeats every 64 px or less, so a pixel of the facade's cell equals the pixel 64 px above it when the same floor
+        lies there; a rug (its pattern ends where the rug does) is looked through and left out of the comparison."""
+        T = 32
+        P = self.B.P
+        row = P.BY1
+        rugs = [(l * T, (r + 1) * T) for kind, l, t, r, b in P.ZONES if kind == 'rug-tile']
+        checked = 0
+        for x0, x1 in self.glass_spans(row):
+            for x in range(x0 + 5, x1, 13):
+                if any(a <= x < b for a, b in rugs) or abs(x - (P.AXIS + 0.5) * T) < 3 * T:    # a rug; the entrance (the hall's)
+                    continue
+                for y in (row * T + 1, row * T + 20, row * T + self.B.facade_base(south=True) - 1):
+                    self.assertEqual(tuple(self.px[y, x]), tuple(self.px[y - 64, x]), (x, y))
+                    checked += 1
+        self.assertGreater(checked, 100)
+
+    def test_a_north_facade_cell_that_is_lawn_down_to_the_face_base_is_a_lawn_cell_and_keeps_its_tufts(self):
+        """The first try of N10 made the lower cells of the north facade half lawn, half floor, and lawn decor is placed on cells that equal
+        the lawn tile: 12 tufts and flower clumps behind the north glass vanished, and with them 19 of the lawn's 179 swaying tufts."""
+        T = 32
+        row, B = self.B.P.BY0, self.B
+        tail = B.north_facade_tail()
+        base = B.facade_base(south=False)
+        cells = {(x // T + k, row + 1) for x0, x1 in self.glass_spans(row) for x in (x0,) for k in range((x1 - x0) // T)}
+        grass = B.floor_tile('lawn')
+        n = grass.width // T
+        if base == 2 * T:                # the glass face runs to the end of its cell (glass.py today): whole lawn cells, no tail to keep
+            self.assertEqual(tail, {})
+            for tx, ty in cells:
+                self.assertEqual(B.lawn_rows(self.floors, grass, n, tx, ty, tail), T, (tx, ty))
+        else:                            # a shorter face: the lawn is the cell's leading rows and the room's floor the rest
+            self.assertEqual(set(tail), cells)
+            self.assertEqual(set(tail.values()), {base - T})
+            for tx, ty in cells:
+                self.assertEqual(B.lawn_rows(self.floors, grass, n, tx, ty, tail), base - T, (tx, ty))     # a lawn cell, as before the change
+                self.assertNotEqual(B.lawn_rows(self.floors, grass, n, tx, ty, {}), T, (tx, ty))           # and a mixed cell to the old rule
+        tx = next(iter(cells))[0]
+        self.assertEqual(B.lawn_rows(self.floors, grass, n, tx, row + 3, tail), 0)                     # the room's floor under the facade never is
+
+    def test_the_north_facade_shows_the_lawn_behind_it_and_the_room_floor_from_its_base(self):
+        T = 32
+        row = self.B.P.BY0
+        base = row * T + self.B.facade_base(south=False)
+        for x0, x1 in self.glass_spans(row):
+            for x in range(x0 + 3, x1, 11):
+                self.assertEqual(tuple(self.px[base - 1, x]), self.lawn(x, base - 1), (x, base - 1))
+                for y in range(base, (row + 2) * T):
+                    self.assertNotEqual(tuple(self.px[y, x]), self.lawn(x, y), (x, y))
 
 
 if __name__ == '__main__':
