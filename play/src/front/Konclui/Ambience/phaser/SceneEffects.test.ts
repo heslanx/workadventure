@@ -1018,6 +1018,31 @@ describe("the effects of a scene, while they run", () => {
             expect((at ?? Number.POSITIVE_INFINITY) - setAt).toBeLessThan(1000);
         });
 
+        it("draw the decor layer's painted glints over the water by day and under it at night, on the same level, nothing else moved", () => {
+            const order = (scene: TestScene): string[] =>
+                scene.list.map((o) => (o instanceof TestLayer ? o.layer.name : (o as TestObject).label));
+            const at = (scene: TestScene, name: string): number => order(scene).indexOf(name);
+
+            let hour: number | undefined = 12;
+            const scene = new TestScene();
+            const { effects } = construct(scene, { hourNow: () => hour });
+            const water = (): number => at(scene, "shader kfxWater");
+            const decor = (): number => at(scene, "decor");
+            const ground = (): number => at(scene, "shader kfxGround");
+            expect(water(), "noon: the water is right under the layer").toBe(decor() - 1);
+            expect(ground(), "the ground stays above both").toBeGreaterThan(decor());
+            const others = order(scene).filter((n) => n !== "shader kfxWater");
+
+            hour = NIGHT_HOUR;
+            runFrames(effects, FRAME, QA_POLL_MS + FRAME);
+            expect(water(), "night: the water is right over the layer, as it was built").toBe(decor() + 1);
+            expect(order(scene).filter((n) => n !== "shader kfxWater")).toEqual(others);
+
+            hour = 12;
+            runFrames(effects, QA_POLL_MS + 2 * FRAME, 2 * QA_POLL_MS + FRAME);
+            expect(water()).toBe(decor() - 1);
+        });
+
         it("go from night back to day, and from a fixed hour to the clock, the same way", () => {
             let hour: number | undefined = NIGHT_HOUR;
             const scene = new TestScene();

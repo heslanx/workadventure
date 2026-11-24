@@ -2,6 +2,8 @@
 // position) and in palette steps or a few bands, so it stays pixel art at any zoom: no smooth gradients, no dither.
 // Images are uploaded with Y flipped (Phaser 4 TextureSource flipY), hence `1.0 - v` when sampling them.
 
+import { WATER_SUNNY_ABOVE } from "./waterLayers";
+
 const HEAD = `#pragma phaserTemplate(shaderName)
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -86,7 +88,7 @@ void main() {
   bool shade = flags >= 4.0;
   bool tone = stepIdx < 8.0;
   if (tone) c = pal(stepIdx);
-  bool sunny = uSun > 0.3;                             // caustics, glitter and stars are the sun's: none at night
+  bool sunny = uSun > ${WATER_SUNNY_ABOVE.toFixed(1)};                             // caustics, glitter and stars are the sun's: none at night
   if (sunny && (calm || shade) && tone && depth > 1.5) {
     // caustics: a 44 px web drawn as light and a 72 px web drawn as glow, both bent by a smooth warp; brightness by
     // depth: in the shallows a pale core here and there, a one-step halo and a half-step glow; mid depth a one-step

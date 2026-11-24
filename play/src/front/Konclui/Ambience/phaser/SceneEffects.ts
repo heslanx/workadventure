@@ -88,6 +88,7 @@ import {
     type MaskBits,
 } from "../domain/pixelMaps";
 import { GLASS, GROUND, WATER } from "../domain/shaders";
+import { orderWater, paintedFramesShow, waterSun } from "../domain/waterLayers";
 import {
     newPersonShadow,
     personShadowFrames,
@@ -471,6 +472,8 @@ export class SceneEffects {
     private animating = false;
 
     private readonly water: Phaser.GameObjects.Shader;
+    // whether the decor layer's painted glints and ripples are drawn over the water (by day) or under it (at night)
+    private framesOverWater = false;
     private readonly ground: Phaser.GameObjects.Shader;
     private readonly glass: Phaser.GameObjects.Shader;
     private readonly post: Phaser.Filters.Controller;
@@ -702,6 +705,8 @@ export class SceneEffects {
             this.pools = this.statics;
             this.water = this.buildWater();
             this.ground = this.buildGround();
+            this.framesOverWater = paintedFramesShow(false, this.look.sun, this.look.clouds);
+            this.orderWaterLayers();
             const mirror = this.buildMirror(images.glass);
             this.mirror = mirror.container;
             this.mirrorRows = mirror.rows;
@@ -852,7 +857,7 @@ export class SceneEffects {
                     set("uData", 1);
                     set("uRect", waterRect);
                     set("uTick", this.waterTick);
-                    set("uSun", Math.max(this.look.sun, this.look.clouds));
+                    set("uSun", waterSun(this.look.sun, this.look.clouds));
                     set("uPal[0]", WATER_GRADE_FLAT);
                     set("uHalf[0]", WATER_HALF_FLAT);
                     set("uRing[0]", KOI_RING_FLAT);
@@ -884,6 +889,16 @@ export class SceneEffects {
             [this.key("water"), this.key("water-data")],
         );
         return this.placeAbove(water, "decor");
+    }
+
+    /**
+     * The water shader is opaque over the pool: above the decor layer it hides the painted glints and ripples that layer holds over
+     * the pool (`domain/waterLayers.ts`). By day the layer is drawn over the water, at night under it; both have the same depth, so
+     * only their places in the display list move, and the ground (right above them) and everything else stay where they are.
+     */
+    private orderWaterLayers(): boolean {
+        const decor = this.layers.get("decor");
+        return decor ? orderWater(this.scene.children.list, this.water, decor, this.framesOverWater) : false;
     }
 
     private buildGround(): Phaser.GameObjects.Shader {
@@ -1340,6 +1355,11 @@ export class SceneEffects {
         if (sun && Math.abs(sun.alpha - look.sun) > 0.01) {
             sun.setAlpha(look.sun);
             changed = true;
+        }
+        const framesOver = paintedFramesShow(this.framesOverWater, look.sun, look.clouds);
+        if (framesOver !== this.framesOverWater) {
+            this.framesOverWater = framesOver;
+            if (this.orderWaterLayers()) changed = true;
         }
         const water = this.motion() && this.features.water;
         if (this.water.visible !== water) {
