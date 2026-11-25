@@ -70,6 +70,7 @@ const warning: DeepPartial<Translation["warning"]> = {
     otherMeetingMuted: "Bạn hiện đang họp ở đây. Micrô, camera và chia sẻ màn hình của bạn trong {world} đã bị tắt.",
     desktopAppOutdated: "Đã có phiên bản mới của ứng dụng WorkAdventure: {url}",
     connectionLostDetail: "Đang tự động thử lại. Nội dung bạn đã nhập vẫn được giữ nguyên.",
+    uplinkCapped: "Kết nối yếu: người khác thấy camera của bạn ở chất lượng thấp hơn. Chất lượng sẽ tự phục hồi.",
     reconnectNow: "Thử lại ngay",
     limitMap: "Bản đồ này khả dụng trong 2 ngày.",
     registerDomain: "Đăng ký tên miền của bạn để giữ bản đồ",

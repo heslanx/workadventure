@@ -66,6 +66,7 @@ const warning: DeepPartial<Translation["warning"]> = {
     otherMeetingMuted: "你現在正在這裡開會。你在 {world} 中的麥克風、攝影機和螢幕分享已關閉。",
     desktopAppOutdated: "WorkAdventure 應用程式有新版本可用：{url}",
     connectionLostDetail: "正在自動重試。你輸入的內容會保留。",
+    uplinkCapped: "連線較弱：其他人看到的你的攝影機畫質較低，畫質會自動恢復。",
     reconnectNow: "立即重試",
     limitMap: "此地圖可使用 2 天。",
     registerDomain: "註冊你的網域以保留它",

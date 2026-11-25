@@ -69,6 +69,7 @@ const warning: DeepPartial<Translation["warning"]> = {
     otherMeetingMuted: "이제 여기에서 회의 중입니다. {world}에서 마이크, 카메라, 화면 공유가 꺼졌습니다.",
     desktopAppOutdated: "WorkAdventure 앱의 새 버전을 사용할 수 있습니다: {url}",
     connectionLostDetail: "자동으로 다시 시도하는 중입니다. 입력한 내용은 그대로 유지됩니다.",
+    uplinkCapped: "연결이 약합니다. 다른 사람에게는 카메라가 낮은 화질로 보입니다. 자동으로 원래대로 돌아옵니다.",
     reconnectNow: "지금 다시 시도",
     limitMap: "이 맵은 2일 동안 사용할 수 있습니다.",
     registerDomain: "맵을 유지하려면 도메인을 등록하세요",

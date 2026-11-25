@@ -29,6 +29,7 @@
         voiceIsolationSupportedStore,
     } from "../../../Stores/NoiseSuppressionStore";
     import { screenShareQualityStore } from "../../../Stores/ScreenSharingStore";
+    import { uplinkCapStore } from "../../../WebRtc/UplinkCap";
     import {
         isBandwidthPreference,
         isQualityName,
@@ -144,8 +145,10 @@
                 aria-label={t.testSpeaker()}
                 title={t.testSpeaker()}
                 data-testid="speaker-test-button"
-                onclick={testSpeaker}><IconUnMute font-size="16" aria-hidden="true" /></button
+                onclick={testSpeaker}
             >
+                <IconUnMute font-size="16" aria-hidden="true" />
+            </button>
         </PrefSelect>
     {/if}
 </PrefSection>
@@ -156,7 +159,7 @@
 <PrefSection title={t.video()}>
     <PrefChoice
         title={t.videoQuality()}
-        hint={t.videoQualityHint()}
+        hint={$uplinkCapStore ? t.videoQualityCapped() : t.videoQualityHint()}
         options={qualities}
         value={$videoQualityStore}
         onchange={(value) => {

@@ -12,6 +12,7 @@ const warning: BaseTranslation = {
     connectionLost: "Connection lost. Reconnecting...",
     connectionLostTitle: "Connection lost",
     connectionLostDetail: "Trying again automatically. What you typed stays in place.",
+    uplinkCapped: "Weak connection: others see your camera in lower quality. It comes back on its own.",
     reconnectNow: "Try again now",
     limitMap: "This map is available for 2 days.",
     registerDomain: "Register your domain to keep it",

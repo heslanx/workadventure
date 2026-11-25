@@ -5,6 +5,7 @@ import { flushSync, mount, unmount, type Component } from "svelte";
 import { get, type Readable, type Writable } from "svelte/store";
 import { localUserStore } from "../../../Connection/LocalUserStore";
 import { playOnSelectedOutput } from "../../../WebRtc/AudioOutputManager";
+import { uplinkCapStore } from "../../../WebRtc/UplinkCap";
 import { bandwidthConstrainedPreferenceStore } from "../../../Stores/BandwidthConstrainedPreferenceStore";
 import {
     cameraListStore,
@@ -244,6 +245,7 @@ describe("the preference sections", () => {
         writableMock(voiceIsolationSupportedStore).set(false);
         browserNoiseSuppressionSupportedStore.set(false);
         writableMock(noiseSuppressionProviderStore).set("workadventure");
+        uplinkCapStore.set(false);
         vi.clearAllMocks();
         vi.unstubAllGlobals();
     });
@@ -438,6 +440,28 @@ describe("the preference sections", () => {
         choose(`${media}.screenQuality`, `${media}.qualityLow`);
         expect(screenShareQualityStore.setQuality).toHaveBeenCalledWith("low");
         expect(videoQualityStore.setQuality).toHaveBeenCalledTimes(1);
+    });
+
+    it("says the camera quality is lowered for now while the uplink cap is on, and keeps the saved choice selected", () => {
+        show(MediaPane);
+        const selected = () =>
+            [...labelledBy("[role=radiogroup]", `${media}.videoQuality`).querySelectorAll("[role=radio]")]
+                .filter((radio) => radio.getAttribute("aria-checked") === "true")
+                .map((radio) => radio.textContent);
+        expect(target.textContent).toContain(`${media}.videoQualityHint`);
+
+        uplinkCapStore.set(true);
+        flushSync();
+
+        expect(target.textContent).toContain(`${media}.videoQualityCapped`);
+        expect(target.textContent).not.toContain(`${media}.videoQualityHint`);
+        expect(selected()).toEqual([`${media}.qualityRecommended`]);
+
+        uplinkCapStore.set(false);
+        flushSync();
+
+        expect(target.textContent).toContain(`${media}.videoQualityHint`);
+        expect(target.textContent).not.toContain(`${media}.videoQualityCapped`);
     });
 
     it("sends the bandwidth preference to its store", () => {

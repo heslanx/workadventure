@@ -72,6 +72,8 @@ const warning: DeepPartial<Translation["warning"]> = {
         "Vous êtes maintenant en réunion ici. Votre microphone, votre caméra et votre partage d'écran ont été désactivés dans {world}.",
     desktopAppOutdated: "Une nouvelle version de l'appli WorkAdventure est disponible : {url}",
     connectionLostDetail: "Nouvelle tentative automatique. Ce que vous avez saisi reste en place.",
+    uplinkCapped:
+        "Connexion faible : les autres voient votre caméra en qualité réduite. La qualité revient d'elle-même.",
     reconnectNow: "Réessayer maintenant",
     limitMap: "Cette carte est disponible pendant 2 jours.",
     registerDomain: "Enregistrez votre domaine pour la conserver",

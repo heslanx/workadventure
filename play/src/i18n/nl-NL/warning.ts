@@ -71,6 +71,7 @@ const warning: DeepPartial<Translation["warning"]> = {
         "Je zit nu hier in een vergadering. Je microfoon, camera en schermdeling zijn uitgeschakeld in {world}.",
     desktopAppOutdated: "Er is een nieuwe versie van de WorkAdventure-app beschikbaar: {url}",
     connectionLostDetail: "Automatisch opnieuw proberen. Wat je hebt getypt, blijft staan.",
+    uplinkCapped: "Zwakke verbinding: anderen zien je camera in lagere kwaliteit. Dat herstelt zich vanzelf.",
     reconnectNow: "Nu opnieuw proberen",
     limitMap: "Deze kaart is 2 dagen beschikbaar.",
     registerDomain: "Registreer je domein om hem te behouden",

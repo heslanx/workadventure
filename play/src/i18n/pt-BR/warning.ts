@@ -12,6 +12,7 @@ const warning: BaseTranslation = {
     connectionLost: "Conexão perdida. Reconectando...",
     connectionLostTitle: "Conexão perdida",
     connectionLostDetail: "Tentando de novo automaticamente. O que você digitou continua no lugar.",
+    uplinkCapped: "Conexão fraca: os outros veem sua câmera com menos qualidade. Ela volta sozinha.",
     reconnectNow: "Tentar agora",
     limitMap: "Este mapa fica disponível por 2 dias.",
     registerDomain: "Registre seu domínio para mantê-lo",

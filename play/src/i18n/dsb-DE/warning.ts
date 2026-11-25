@@ -71,6 +71,7 @@ const warning: DeepPartial<Translation["warning"]> = {
         "Sćo něnto how na zmakanju. Waš mikrofon, kamera a źělenje wobrazowki su se w {world} wótšaltowali.",
     desktopAppOutdated: "Nowa wersija aplikacije WorkAdventure jo k dispoziciji: {url}",
     connectionLostDetail: "Awtomatiski se znowego wopytujo. Což sy zapisał, wóstanjo.",
+    uplinkCapped: "Słabe zwězanje: drugi wiźe twoju kameru w mjeńšej kwaliśe. Wóna pśiźo sama slědk.",
     reconnectNow: "Něnto znowego wopytaś",
     limitMap: "Toś ta karta jo 2 dnja k dispoziciji.",
     registerDomain: "Registrěruj swóju domenu, aby ju wobchował",
