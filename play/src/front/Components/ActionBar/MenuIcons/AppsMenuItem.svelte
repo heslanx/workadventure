@@ -11,6 +11,7 @@
     import { gameManager } from "../../../Phaser/Game/GameManager";
     import { externalSvelteComponentService } from "../../../Stores/Utils/externalSvelteComponentService";
     import { createFloatingUiActions } from "../../../Utils/svelte-floatingui";
+    import { surface } from "../../../Utils/surfaceTransition";
     import { getAdditionalMenuItemStore } from "../../../Stores/AdditionalItemsMenuStore";
     import AppsMenuContent from "./AppsMenuContent.svelte";
     import HeaderMenuItem from "./HeaderMenuItem.svelte";
@@ -68,8 +69,10 @@
     </ActionBarButton>
 
     {#if $openedMenuStore === "appMenu"}
+        <!-- It opens above the dock, from the button's left: it grows from its bottom-left corner. -->
         <nav
-            class="absolute"
+            class="absolute origin-bottom-left"
+            transition:surface
             use:floatingUiContent
             use:clickOutside={() => {
                 openedMenuStore.close("appMenu");

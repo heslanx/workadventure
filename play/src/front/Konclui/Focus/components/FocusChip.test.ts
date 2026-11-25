@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { flushSync, mount, unmount } from "svelte";
 import type { Writable } from "svelte/store";
 import { isInActiveConversationStore } from "../../../Stores/StreamableCollectionStore";
+import { stubWebAnimations, type WebAnimationsStub } from "../../../Utils/webAnimationsStub";
 import { endFocus, publishSeat, startFocus } from "../stores/focusStore";
 import FocusChip from "./FocusChip.svelte";
 
@@ -215,6 +216,127 @@ describe("FocusChip", () => {
         });
     });
 
+    describe("its entrance and its exit", () => {
+        let animations: WebAnimationsStub;
+
+        beforeEach(() => {
+            animations = stubWebAnimations();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+        });
+
+        afterEach(() => {
+            animations.restore();
+            vi.unstubAllGlobals();
+        });
+
+        const chipElement = () => target.querySelector<HTMLElement>('[data-testid="konclui-focus-chip"]');
+        const durations = () => animations.moving().map((animation) => animation.options.duration);
+
+        it("rises in on the surface transition, 6 px from below, not on a keyframe of its own", async () => {
+            show();
+
+            publishSeat(true);
+            flushSync();
+            await animations.settle();
+
+            expect(chipElement()?.classList.contains("k-enter")).toBe(false);
+            expect(durations()).toEqual([290]);
+        });
+
+        it("stays in the page for the length of its exit, inert and with the words it had, and is then taken away", async () => {
+            publishSeat(true);
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+
+            publishSeat(false);
+            flushSync();
+            await animations.settle();
+
+            expect(chipElement()).not.toBeNull();
+            expect(chipElement()?.inert).toBe(true);
+            expect(chipText()).toContain("konclui.focus.title");
+            expect(durations()).toEqual([200]);
+
+            await animations.finishMoving();
+
+            expect(chipElement()).toBeNull();
+        });
+
+        it("has handed the key focus back before it goes inert, so the focus never falls to the page", async () => {
+            publishSeat(true);
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+            button().focus();
+            let inertWhenHandedBack: boolean | undefined;
+            returnFocus.mockImplementation(() => {
+                inertWhenHandedBack = chipElement()?.inert === true;
+            });
+
+            publishSeat(false);
+            flushSync();
+
+            // The hand-back runs before the page is updated, and the browser takes the focus off a chip that is inert.
+            expect(returnFocus).toHaveBeenCalledTimes(1);
+            expect(inertWhenHandedBack).toBe(false);
+            expect(chipElement()?.inert).toBe(true);
+        });
+
+        it("is the same chip when the player sits again during its exit, and is not inert", async () => {
+            publishSeat(true);
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+            const before = chipElement();
+            publishSeat(false);
+            flushSync();
+            await animations.settle();
+
+            publishSeat(true);
+            flushSync();
+            await animations.settle();
+            await animations.finishMoving();
+
+            expect(chipElement()).toBe(before);
+            expect(chipElement()?.inert).not.toBe(true);
+        });
+
+        it("leaves in the same flush, with nothing to hold, for a viewer who reduces motion", async () => {
+            publishSeat(true);
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+            const before = animations.animations.length;
+
+            publishSeat(false);
+            flushSync();
+
+            expect(chipElement()).toBeNull();
+            expect(animations.animations.length).toBe(before);
+        });
+
+        it("appears at its final state, with no animation, for a viewer who reduces motion", async () => {
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+            show();
+
+            publishSeat(true);
+            flushSync();
+            await animations.settle();
+
+            expect(chipElement()).not.toBeNull();
+            expect(animations.animations).toHaveLength(0);
+        });
+
+        it("gives under the press of its button, like every control that is clicked often", () => {
+            publishSeat(true);
+            show();
+
+            expect(button().classList.contains("k-press")).toBe(true);
+        });
+    });
+
     describe("keys and pointer", () => {
         function press(key: string): { reachedPage: boolean } {
             const seen = { reachedPage: false };
@@ -289,8 +411,12 @@ describe("FocusChip layout", () => {
         expect(source).not.toMatch(/backdrop-filter|filter:\s*blur/);
     });
 
-    it("removes the rise under reduced motion", () => {
-        expect(source).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.chip \{\s*animation: none;/);
+    it("has no keyframes of its own: it rises through the surface transition, which reads reduced motion itself", () => {
+        expect(source).not.toContain("@keyframes");
+        expect(source).not.toMatch(/animation:/);
+        expect(source).toMatch(
+            /\{#if chip\.kind !== "hidden"\}\s*<div\s[^>]*class="chip k-chrome"[^>]*\btransition:surface\b/,
+        );
     });
 
     it("drops the hint on a phone and keeps a 44 px hit area on the button", () => {

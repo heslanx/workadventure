@@ -1,6 +1,7 @@
 <script lang="ts">
     import { untrack } from "svelte";
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { surface } from "../../../Utils/surfaceTransition";
     import type { Elapsed } from "../domain/focus";
     import { endFocus, focusChipStore, startFocus } from "../stores/focusStore";
 
@@ -58,7 +59,7 @@
 <div class="focus" data-testid="konclui-focus">
     <div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
     {#if chip.kind !== "hidden"}
-        <div class="chip k-chrome" bind:this={chipElement} data-testid="konclui-focus-chip">
+        <div class="chip k-chrome" bind:this={chipElement} data-testid="konclui-focus-chip" transition:surface>
             <span class="icon" aria-hidden="true">
                 <svg
                     width="18"
@@ -75,9 +76,9 @@
             </span>
             <span class="text">
                 {#if chip.kind === "active"}
-                    <b class="title"
-                        >{text.active()} · <span role="timer" aria-live="off">{timeText(chip.elapsed)}</span></b
-                    >
+                    <b class="title">
+                        {text.active()} · <span role="timer" aria-live="off">{timeText(chip.elapsed)}</span>
+                    </b>
                     <small class="hint">{text.activeHint()}</small>
                 {:else if chip.kind === "ended"}
                     <b class="title">{text.ended()}</b>
@@ -87,7 +88,7 @@
                     <small class="hint">{text.offerHint()}</small>
                 {/if}
             </span>
-            <button class="action" type="button" onclick={press} onkeydown={keepKeyForButton}>
+            <button class="action k-press" type="button" onclick={press} onkeydown={keepKeyForButton}>
                 {chip.kind === "active" ? text.end() : chip.kind === "ended" ? text.resume() : text.start()}
             </button>
         </div>
@@ -126,8 +127,6 @@
         border-radius: 22px;
         color: var(--k-fg);
         pointer-events: auto;
-        /* The tokens are 0.01 ms under reduced motion (konclui.css), and the rule below removes the rise as well. */
-        animation: rise var(--k-dur-normal) var(--k-ease-out-expo) backwards;
     }
     .icon {
         display: flex;
@@ -181,12 +180,6 @@
         position: absolute;
         inset: -4px -2px;
     }
-    @keyframes rise {
-        from {
-            opacity: 0;
-            translate: 0 6px;
-        }
-    }
     /* On a phone the chip keeps the title and the button, so it stays on a line or two. */
     @media (max-width: 767px) {
         .hint {
@@ -195,11 +188,6 @@
         .chip {
             gap: 8px;
             padding: 6px 6px 6px 12px;
-        }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .chip {
-            animation: none;
         }
     }
 </style>

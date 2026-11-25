@@ -3,12 +3,13 @@ import { arrow, autoUpdate, computePosition, flip, limitShift, offset, shift } f
 import { writable } from "svelte/store";
 import { v4 } from "uuid";
 import type { WorkAdventureComponent, WorkAdventureComponentProps } from "../../types/component";
+import { popupTransformOrigin, type PopupMotionEntry } from "./floatingUiSurface";
 import type { ArrowAction, ContentAction } from "./svelte-floatingui";
 
 export const floatingUiComponents = writable(
     new Map<
         string,
-        {
+        PopupMotionEntry & {
             componentType: WorkAdventureComponent;
             props?: WorkAdventureComponentProps;
             action: ContentAction;
@@ -27,6 +28,8 @@ export const floatingUiComponents = writable(
  * @param closeOnClickOutside - when true, the popup closes when the user clicks outside the reference element and the popup content
  * @param onClose - called when the popup is closed (by click outside or by calling the returned close function)
  * @param zIndex - overrides the default global floating layer when the popup must stay below higher-priority overlays
+ * @param motion - the popup is a menu or a picker the user opened: it arrives and leaves on the surface transition,
+ * and grows from the side that faces its trigger. A hover tooltip leaves it off and is gone as it closes.
  */
 export function showFloatingUi(
     referenceNode: Element,
@@ -38,6 +41,7 @@ export function showFloatingUi(
     closeOnClickOutside = false,
     onClose?: () => void,
     zIndex = 3000,
+    motion = false,
 ): () => void {
     let arrowNode: HTMLElement | undefined;
     let contentNode: HTMLElement | undefined;
@@ -110,6 +114,7 @@ export function showFloatingUi(
             arrowAction: withArrow ? arrowAction : undefined,
             zIndex,
             ownerDocument: referenceNode.ownerDocument,
+            motion,
         });
         return components;
     });
@@ -136,6 +141,11 @@ export function showFloatingUi(
                             left: `${x}px`,
                             top: `${y}px`,
                         });
+                        if (motion) {
+                            // After the flip: the side that has room is the side the popup grows from.
+                            const rtl = contentNode.ownerDocument.defaultView?.getComputedStyle(contentNode).direction;
+                            contentNode.style.transformOrigin = popupTransformOrigin(placement, rtl === "rtl");
+                        }
 
                         if (arrowNode) {
                             const arrowX = middlewareData.arrow?.x;

@@ -176,55 +176,66 @@
         aria-controls="konclui-people-list"
         onclick={() => (sectionOpen = !sectionOpen)}
     >
-        <span
-            >{panel.count > 0
+        <span>
+            {panel.count > 0
                 ? $LL.konclui.peopleList.online({ count: panel.count })
-                : $LL.konclui.peopleList.onlineUnknown()}</span
-        >
-        <IconChevronDown class="chevron" font-size="16" aria-hidden="true" />
+                : $LL.konclui.peopleList.onlineUnknown()}
+        </span>
+        <IconChevronDown class="k-turn" font-size="16" aria-hidden="true" />
     </button>
 
-    <!-- The arrow keys move among the rows, which are the buttons: the list is a container for them, not a control. -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-        id="konclui-people-list"
-        class="list k-scroll-y"
-        tabindex="-1"
-        hidden={!sectionOpen}
-        bind:this={list}
-        onkeydown={onListKeydown}
-    >
-        {#if panel.mode === "nearby" && panel.phase === "ready"}
-            <p class="title">{$LL.konclui.peopleList.nearYou()}</p>
-        {/if}
+    <!-- The rows stay on the page while the section is shut: the disclosure shuts its row and, once it has shut, hides
+         the list from the keys and from assistive technology, so nothing in it is reached while it is closed. -->
+    <div class="reveal k-disclosure" class:is-open={sectionOpen}>
+        <div class="k-disclosure-body reveal-body">
+            <!-- The arrow keys move among the rows, which are the buttons: the list is a container for them, not a control. -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+                id="konclui-people-list"
+                class="list k-scroll-y"
+                tabindex="-1"
+                bind:this={list}
+                onkeydown={onListKeydown}
+            >
+                {#if panel.mode === "nearby" && panel.phase === "ready"}
+                    <p class="title">{$LL.konclui.peopleList.nearYou()}</p>
+                {/if}
 
-        {#if youRow !== undefined && youShown}
-            <div class="rows"><PersonRow row={youRow} you /></div>
-        {/if}
+                {#if youRow !== undefined && youShown}
+                    <div class="rows"><PersonRow row={youRow} you /></div>
+                {/if}
 
-        {#if panel.phase === "loading"}
-            <p class="notice" role="status">{$LL.konclui.peopleList.loading()}</p>
-        {:else if panel.phase === "unavailable"}
-            <p class="notice" role="status">{$LL.konclui.peopleList.unavailable()}</p>
-        {:else}
-            <div class="rows">
-                {#each panel.rows as row (row.key)}
-                    <PersonRow {row} liveStatus={panel.users.get(row.key)?.reactiveUser.availabilityStatus} onGo={go} />
-                {/each}
+                {#if panel.phase === "loading"}
+                    <p class="notice" role="status">{$LL.konclui.peopleList.loading()}</p>
+                {:else if panel.phase === "unavailable"}
+                    <p class="notice" role="status">{$LL.konclui.peopleList.unavailable()}</p>
+                {:else}
+                    <div class="rows">
+                        {#each panel.rows as row (row.key)}
+                            <PersonRow
+                                {row}
+                                liveStatus={panel.users.get(row.key)?.reactiveUser.availabilityStatus}
+                                onGo={go}
+                            />
+                        {/each}
+                    </div>
+                    {#if emptyText !== undefined}
+                        <p class="empty">{emptyText}</p>
+                    {/if}
+                    {#if cutTotal !== undefined}
+                        <p class="cut">
+                            {$LL.konclui.peopleList.showingFirst({ shown: panel.rows.length, total: cutTotal })}
+                        </p>
+                    {/if}
+                    {#if panel.canChooseEveryone}
+                        <button type="button" class="everyone" onclick={onChooseEveryone}>
+                            <b>{$LL.konclui.peopleList.showEveryone()}</b>
+                            <small>{$LL.konclui.peopleList.showEveryoneHint({ limit: EVERYONE_ROWS })}</small>
+                        </button>
+                    {/if}
+                {/if}
             </div>
-            {#if emptyText !== undefined}
-                <p class="empty">{emptyText}</p>
-            {/if}
-            {#if cutTotal !== undefined}
-                <p class="cut">{$LL.konclui.peopleList.showingFirst({ shown: panel.rows.length, total: cutTotal })}</p>
-            {/if}
-            {#if panel.canChooseEveryone}
-                <button type="button" class="everyone" onclick={onChooseEveryone}>
-                    <b>{$LL.konclui.peopleList.showEveryone()}</b>
-                    <small>{$LL.konclui.peopleList.showEveryoneHint({ limit: EVERYONE_ROWS })}</small>
-                </button>
-            {/if}
-        {/if}
+        </div>
     </div>
 
     <WalkNotice />
@@ -354,12 +365,15 @@
         font-weight: 600;
         cursor: pointer;
     }
-    .section :global(.chevron) {
-        transform: rotate(-90deg);
-        transition: transform var(--k-dur-normal) var(--k-ease-out-expo);
+    /* The list is what takes the height the panel has left, so the disclosure around it takes that height, and the row it
+       grows runs from nothing to all of it. The walk notice below keeps its place whether the section is open or shut. */
+    .reveal {
+        flex: 1;
+        min-height: 0;
     }
-    .section[aria-expanded="true"] :global(.chevron) {
-        transform: none;
+    .reveal-body {
+        display: flex;
+        flex-direction: column;
     }
     .list {
         flex: 1;

@@ -137,7 +137,7 @@
                     <MicrophoneMenuItem />
                 {/if}
                 <button
-                    class="media-settings"
+                    class="media-settings k-press"
                     type="button"
                     aria-label={$LL.konclui.mediaSettings()}
                     aria-expanded={$mediaSettingsOpenStore}
@@ -147,8 +147,10 @@
                         event.stopPropagation();
                         event.preventDefault();
                         mediaSettingsOpenStore.set(!$mediaSettingsOpenStore);
-                    }}><IconChevronUp font-size="16" /></button
+                    }}
                 >
+                    <IconChevronUp font-size="16" />
+                </button>
                 {#if !$inExternalServiceStore && $myCameraStore}
                     <CameraMenuItem />
                 {/if}
@@ -350,6 +352,8 @@
         top: auto;
         bottom: calc(100% + 10px);
         z-index: 50;
+        /* It grows from the edge that faces the chevron it opens from. */
+        transform-origin: bottom center;
         width: min(264px, calc(100vw - 16px));
         max-height: min(560px, calc(100dvh - var(--konclui-dock-stack-height, 76px) - 84px));
     }

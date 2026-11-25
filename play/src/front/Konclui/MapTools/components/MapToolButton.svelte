@@ -1,11 +1,13 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
+    import { surface } from "../../../Utils/surfaceTransition";
 
     // One control of the zoom column, drawn as upstream's own (`ExplorerMenu.svelte`): the shared 36 px control and the
     // label that slides in on hover and on keyboard focus. A tool that cannot act at all is left out of the column by
     // its owner. One that cannot act right now gets a `reason`: it stays on the column and focusable, dimmed
     // (`aria-disabled`, never `disabled`), the label becomes the reason, and a press shows the reason where a screen
-    // reader and a touch screen can see it, since neither hovers.
+    // reader and a touch screen can see it, since neither hovers. The tool comes and goes on the surface transition: its
+    // owner draws it in an {#if}, directly around this component, so the button is held, inert, for the exit.
     let {
         label,
         testid,
@@ -51,7 +53,8 @@
     aria-disabled={blocked ? "true" : undefined}
     aria-describedby={blocked ? reasonId : undefined}
     data-testid={testid}
-    class="group k-control"
+    class="group k-control k-press"
+    transition:surface
     onclick={press}
     onfocus={() => (requested = blocked)}
     onblur={() => (requested = false)}

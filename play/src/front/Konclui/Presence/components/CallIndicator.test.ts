@@ -2,10 +2,11 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { flushSync, mount, unmount } from "svelte";
 import type { Writable } from "svelte/store";
 import type { Conversation } from "../domain/conversation";
+import { stubWebAnimations, type WebAnimationsStub } from "../../../Utils/webAnimationsStub";
 import { callChipStore } from "../stores/conversationStore";
 import CallIndicator from "./CallIndicator.svelte";
 
@@ -102,6 +103,96 @@ describe("CallIndicator", () => {
 
         expect(region().querySelector(".icon")?.getAttribute("aria-hidden")).toBe("true");
         expect(region().querySelector("button, a, input, [tabindex]")).toBeNull();
+    });
+});
+
+describe("CallIndicator motion", () => {
+    const target = document.createElement("div");
+    let indicator: ReturnType<typeof mount> | undefined;
+    let animations: WebAnimationsStub;
+
+    beforeEach(() => {
+        animations = stubWebAnimations();
+        vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+    });
+
+    afterEach(async () => {
+        const mounted = indicator;
+        indicator = undefined;
+        if (mounted) await unmount(mounted);
+        target.replaceChildren();
+        call.set(undefined);
+        animations.restore();
+        vi.unstubAllGlobals();
+    });
+
+    function show() {
+        document.body.append(target);
+        indicator = mount(CallIndicator, { target });
+        flushSync();
+    }
+
+    const chip = () => target.querySelector<HTMLElement>(".chip");
+    const region = () => target.querySelector<HTMLElement>('[role="status"]');
+    const durations = () => animations.moving().map((animation) => animation.options.duration);
+
+    it("rises in on the surface transition when a conversation starts", async () => {
+        show();
+
+        call.set({ kind: "bubble", count: 2 });
+        flushSync();
+        await animations.settle();
+
+        expect(chip()).not.toBeNull();
+        expect(durations()).toEqual([290]);
+    });
+
+    it("stays in the page for the length of its exit, inert and with the sentence it had, and is then taken away", async () => {
+        call.set({ kind: "bubble", count: 2 });
+        show();
+        await animations.settle();
+        await animations.finishMoving();
+
+        call.set(undefined);
+        flushSync();
+        await animations.settle();
+
+        expect(chip()).not.toBeNull();
+        expect(chip()?.inert).toBe(true);
+        expect(chip()?.textContent).toContain('konclui.call.conversation{"count":2}');
+        expect(durations()).toEqual([200]);
+        // The region around it never leaves, so the next conversation is announced when it fills.
+        expect(region()).not.toBeNull();
+
+        await animations.finishMoving();
+
+        expect(chip()).toBeNull();
+        expect(region()).not.toBeNull();
+    });
+
+    it("leaves in the same flush, with nothing to hold, for a viewer who reduces motion", async () => {
+        call.set({ kind: "bubble", count: 2 });
+        show();
+        await animations.settle();
+        await animations.finishMoving();
+        vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+        const before = animations.animations.length;
+
+        call.set(undefined);
+        flushSync();
+
+        expect(chip()).toBeNull();
+        expect(animations.animations.length).toBe(before);
+    });
+
+    it("has no keyframes of its own", () => {
+        const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "CallIndicator.svelte"), "utf8");
+
+        expect(source).not.toContain("@keyframes");
+        expect(source).not.toMatch(/animation:/);
+        expect(source).toMatch(
+            /\{#if conversation !== undefined\}\s*<div\s[^>]*class="chip k-chrome"[^>]*\btransition:surface\b/,
+        );
     });
 });
 

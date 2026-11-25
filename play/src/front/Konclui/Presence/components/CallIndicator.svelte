@@ -1,5 +1,6 @@
 <script lang="ts">
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { surface } from "../../../Utils/surfaceTransition";
     import { callChipStore } from "../stores/conversationStore";
     import { IconMessageCircle2 } from "@wa-icons";
 
@@ -7,6 +8,8 @@
     // whose camera is off and who would not otherwise know. The region is always mounted and empty while idle: a
     // status that appears already filled is often not announced, one that is filled while mounted is. The store
     // behind it changes at most every two seconds, so people joining a bubble one after the other are read out once.
+    // The chip rises in and leaves on the surface transition, directly under its {#if}: the region around it stays, and
+    // an exit holds the chip, inert, with the sentence it had, for the length of the exit.
     let conversation = $derived($callChipStore);
     let sentence = $derived(
         conversation === undefined
@@ -20,7 +23,7 @@
 
 <div class="call" role="status" aria-live="polite" aria-atomic="true" data-testid="konclui-call">
     {#if conversation !== undefined}
-        <div class="chip k-chrome">
+        <div class="chip k-chrome" transition:surface>
             <span class="icon" aria-hidden="true"><IconMessageCircle2 font-size="18" /></span>
             <span class="text">{sentence}<span class="hint">{` · ${hint}`}</span></span>
         </div>
@@ -53,8 +56,6 @@
         font-size: 13px;
         font-weight: 600;
         line-height: 1.4;
-        /* The tokens are 0.01 ms under reduced motion (konclui.css), and the rule below removes the rise as well. */
-        animation: rise var(--k-dur-normal) var(--k-ease-out-expo) backwards;
     }
     .icon {
         display: flex;
@@ -71,21 +72,10 @@
         color: var(--k-fg-muted);
         font-weight: 500;
     }
-    @keyframes rise {
-        from {
-            opacity: 0;
-            translate: 0 6px;
-        }
-    }
     /* On a phone the chip keeps the fact and drops the advice, so it stays on a line or two. */
     @media (max-width: 480px) {
         .hint {
             display: none;
-        }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .chip {
-            animation: none;
         }
     }
 </style>

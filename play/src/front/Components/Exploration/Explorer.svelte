@@ -25,7 +25,7 @@
     import { analyticsClient } from "../../Administration/AnalyticsClient";
     import { warningMessageStore } from "../../Stores/ErrorStore";
     import { WOKA_SPEED } from "../../Enum/EnvironmentVariable";
-    import { IconChevronDown, IconEye, IconLamp, IconTexture, IconWalk } from "@wa-icons";
+    import { IconChevronUp, IconEye, IconLamp, IconTexture, IconWalk } from "@wa-icons";
 
     // The property filters, in the order their chips are shown.
     const propertyFilters: ReadonlyArray<AreaDataPropertiesKeys | EntityDataPropertiesKeys> = [
@@ -156,6 +156,17 @@
     }
     let entityListActive = $state(false);
     let areaListActive = $state(false);
+    // A list is drawn from the first time it opens and stays, hidden, while it is shut: it has to be in the page for
+    // the length of its closing, and a room can hold hundreds of rows that nobody has asked to see yet. The latch is
+    // set before the page is updated, so the rows of a list that opens are there for its first frame.
+    let entityListSeen = $state(false);
+    let areaListSeen = $state(false);
+    $effect.pre(() => {
+        if (entityListActive) entityListSeen = true;
+    });
+    $effect.pre(() => {
+        if (areaListActive) areaListSeen = true;
+    });
     function toggleEntityList() {
         entityListActive = !entityListActive;
     }
@@ -355,80 +366,85 @@
                         toggleEntityList();
                     }}
                 >
-                    <IconChevronDown
-                        class={`transition-transform motion-reduce:transition-none ${entityListActive ? "rotate-180" : ""}`}
-                        aria-hidden="true"
-                    />
+                    <!-- The up chevron, turned over while the list is shut: it turns to upright as the list opens. -->
+                    <IconChevronUp class="k-turn [--k-turn-closed:180deg]" aria-hidden="true" />
                 </button>
             </div>
 
-            {#if entityListActive && $entitiesListFiltered.size > 0}
-                <div class="entity-items flex flex-col gap-0.5">
-                    {#each sortByName($entitiesListFiltered, getEntityDisplayName) as [key, entity] (key)}
-                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div
-                            id={entity.entityId}
-                            onmouseenter={() => highlightEntity(entity)}
-                            onmouseleave={() => unhighlightEntity(entity)}
-                            onfocusin={() => highlightEntity(entity)}
-                            onfocusout={() => unhighlightEntity(entity)}
-                            onclick={() => handlerToSelectEntity(entity)}
-                            role="button"
-                            tabindex="0"
-                            onkeydown={(event) => activateOnEnterOrSpace(event, () => handlerToSelectEntity(entity))}
-                            class="item k-menu-row"
-                            class:is-selected={$mapExplorationObjectSelectedStore === entity}
-                            title={getEntityDisplayName(entity)}
-                        >
-                            <span class="k-menu-lead" aria-hidden="true"
-                                ><img
-                                    draggable="false"
-                                    class="pointer-events-none"
-                                    src={entity.getPrefab().imagePath}
-                                    alt=""
-                                /></span
-                            >
-                            <span class="k-menu-label"
-                                >{entity.getEntityData().name && entity.getEntityData().name !== ""
-                                    ? entity.getEntityData().name
-                                    : entity.getPrefab().name}</span
-                            >
-                            <span class="flex flex-none items-center gap-1.5">
-                                <button
-                                    type="button"
-                                    aria-label={$LL.mapEditor.explorer.details.moveToEntity({
-                                        name: getEntityDisplayName(entity),
-                                    })}
-                                    class="k-control"
-                                    onclick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        goTo(entity);
-                                    }}
+            <!-- The list opens and shuts as a disclosure: its rows stay in the page while it is shut, hidden from the
+                 keys and from a screen reader, and the box grows to what they hold. Its 2 px of margin and of padding
+                 stand for the gap above it, so a shut list leaves the column as it was. -->
+            <div class="k-disclosure -mt-0.5" class:is-open={entityListActive && $entitiesListFiltered.size > 0}>
+                <div class="k-disclosure-body">
+                    {#if entityListSeen}
+                        <div class="entity-items flex flex-col gap-0.5 pt-0.5">
+                            {#each sortByName($entitiesListFiltered, getEntityDisplayName) as [key, entity] (key)}
+                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div
+                                    id={entity.entityId}
+                                    onmouseenter={() => highlightEntity(entity)}
+                                    onmouseleave={() => unhighlightEntity(entity)}
+                                    onfocusin={() => highlightEntity(entity)}
+                                    onfocusout={() => unhighlightEntity(entity)}
+                                    onclick={() => handlerToSelectEntity(entity)}
+                                    role="button"
+                                    tabindex="0"
+                                    onkeydown={(event) =>
+                                        activateOnEnterOrSpace(event, () => handlerToSelectEntity(entity))}
+                                    class="item k-menu-row"
+                                    class:is-selected={$mapExplorationObjectSelectedStore === entity}
+                                    title={getEntityDisplayName(entity)}
                                 >
-                                    <IconWalk aria-hidden="true" />
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label={$LL.mapEditor.explorer.details.show({
-                                        name: getEntityDisplayName(entity),
-                                    })}
-                                    class="k-control"
-                                    onclick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handlerToSelectEntity(entity);
-                                    }}
-                                >
-                                    <IconEye aria-hidden="true" />
-                                </button>
-                            </span>
+                                    <span class="k-menu-lead" aria-hidden="true">
+                                        <img
+                                            draggable="false"
+                                            class="pointer-events-none"
+                                            src={entity.getPrefab().imagePath}
+                                            alt=""
+                                        />
+                                    </span>
+                                    <span class="k-menu-label">
+                                        {entity.getEntityData().name && entity.getEntityData().name !== ""
+                                            ? entity.getEntityData().name
+                                            : entity.getPrefab().name}
+                                    </span>
+                                    <span class="flex flex-none items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            aria-label={$LL.mapEditor.explorer.details.moveToEntity({
+                                                name: getEntityDisplayName(entity),
+                                            })}
+                                            class="k-control"
+                                            onclick={(event) => {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                                goTo(entity);
+                                            }}
+                                        >
+                                            <IconWalk aria-hidden="true" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label={$LL.mapEditor.explorer.details.show({
+                                                name: getEntityDisplayName(entity),
+                                            })}
+                                            class="k-control"
+                                            onclick={(event) => {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                                handlerToSelectEntity(entity);
+                                            }}
+                                        >
+                                            <IconEye aria-hidden="true" />
+                                        </button>
+                                    </span>
+                                </div>
+                            {/each}
                         </div>
-                    {/each}
+                    {/if}
                 </div>
-            {/if}
-
+            </div>
             <!-- svelte-ignore a11y_click_events_have_key_events -->
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
@@ -460,75 +476,77 @@
                         toggleAreaList();
                     }}
                 >
-                    <IconChevronDown
-                        class={`transition-transform motion-reduce:transition-none ${areaListActive ? "rotate-180" : ""}`}
-                        aria-hidden="true"
-                    />
+                    <IconChevronUp class="k-turn [--k-turn-closed:180deg]" aria-hidden="true" />
                 </button>
             </div>
-            {#if areaListActive && $areasListFiltered.size > 0}
-                <div class="area-items flex flex-col gap-0.5">
-                    {#if $areasListFiltered.size > 0}
-                        {#each sortByName($areasListFiltered, getAreaDisplayName) as [key, area] (key)}
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div
-                                id={key}
-                                onmouseenter={() => highlightArea(area)}
-                                onmouseleave={() => unhighlightArea(area)}
-                                onfocusin={() => highlightArea(area)}
-                                onfocusout={() => unhighlightArea(area)}
-                                onclick={() => handlerToSelectArea(area)}
-                                role="button"
-                                tabindex="0"
-                                onkeydown={(event) => activateOnEnterOrSpace(event, () => handlerToSelectArea(area))}
-                                class="item k-menu-row"
-                                class:is-selected={$mapExplorationObjectSelectedStore === area}
-                                title={area.getAreaData().name || "No name"}
-                            >
-                                <span class="k-menu-lead" aria-hidden="true"><IconTexture /></span>
-                                <span
-                                    class="k-menu-label"
-                                    class:italic={!area.getAreaData().name || area.getAreaData().name == ""}
-                                    class:font-bold={area.getAreaData().name && area.getAreaData().name != ""}
-                                >
-                                    {area.getAreaData().name || "No name"}
-                                </span>
-                                <span class="flex flex-none items-center gap-1.5">
-                                    <button
-                                        type="button"
-                                        aria-label={$LL.mapEditor.explorer.details.moveToArea({
-                                            name: area.getAreaData().name || "No name",
-                                        })}
-                                        class="k-control"
-                                        onclick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            goTo(area);
-                                        }}
+            <div class="k-disclosure -mt-0.5" class:is-open={areaListActive && $areasListFiltered.size > 0}>
+                <div class="k-disclosure-body">
+                    {#if areaListSeen}
+                        <div class="area-items flex flex-col gap-0.5 pt-0.5">
+                            {#if $areasListFiltered.size > 0}
+                                {#each sortByName($areasListFiltered, getAreaDisplayName) as [key, area] (key)}
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div
+                                        id={key}
+                                        onmouseenter={() => highlightArea(area)}
+                                        onmouseleave={() => unhighlightArea(area)}
+                                        onfocusin={() => highlightArea(area)}
+                                        onfocusout={() => unhighlightArea(area)}
+                                        onclick={() => handlerToSelectArea(area)}
+                                        role="button"
+                                        tabindex="0"
+                                        onkeydown={(event) =>
+                                            activateOnEnterOrSpace(event, () => handlerToSelectArea(area))}
+                                        class="item k-menu-row"
+                                        class:is-selected={$mapExplorationObjectSelectedStore === area}
+                                        title={area.getAreaData().name || "No name"}
                                     >
-                                        <IconWalk aria-hidden="true" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        aria-label={$LL.mapEditor.explorer.details.show({
-                                            name: area.getAreaData().name || "No name",
-                                        })}
-                                        class="k-control"
-                                        onclick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            handlerToSelectArea(area);
-                                        }}
-                                    >
-                                        <IconEye aria-hidden="true" />
-                                    </button>
-                                </span>
-                            </div>
-                        {/each}
+                                        <span class="k-menu-lead" aria-hidden="true"><IconTexture /></span>
+                                        <span
+                                            class="k-menu-label"
+                                            class:italic={!area.getAreaData().name || area.getAreaData().name == ""}
+                                            class:font-bold={area.getAreaData().name && area.getAreaData().name != ""}
+                                        >
+                                            {area.getAreaData().name || "No name"}
+                                        </span>
+                                        <span class="flex flex-none items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                aria-label={$LL.mapEditor.explorer.details.moveToArea({
+                                                    name: area.getAreaData().name || "No name",
+                                                })}
+                                                class="k-control"
+                                                onclick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    goTo(area);
+                                                }}
+                                            >
+                                                <IconWalk aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                aria-label={$LL.mapEditor.explorer.details.show({
+                                                    name: area.getAreaData().name || "No name",
+                                                })}
+                                                class="k-control"
+                                                onclick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    handlerToSelectArea(area);
+                                                }}
+                                            >
+                                                <IconEye aria-hidden="true" />
+                                            </button>
+                                        </span>
+                                    </div>
+                                {/each}
+                            {/if}
+                        </div>
                     {/if}
                 </div>
-            {/if}
+            </div>
         </div>
     </div>
 </div>

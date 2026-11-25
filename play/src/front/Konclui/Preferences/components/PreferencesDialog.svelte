@@ -1,9 +1,12 @@
 <script lang="ts">
     import { onMount, type Component } from "svelte";
     import { MediaQuery } from "svelte/reactivity";
+    import { get } from "svelte/store";
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { glide } from "../../../Utils/glide";
+    import { surface } from "../../../Utils/surfaceTransition";
     import { paneAfter, PANES, type PaneId } from "../domain/panes";
-    import { closePreferences, showPane } from "../stores/preferencesStore";
+    import { closePreferences, preferencesStore, showPane } from "../stores/preferencesStore";
     import GeneralPane from "./GeneralPane.svelte";
     import MediaPane from "./MediaPane.svelte";
     import MiniPane from "./MiniPane.svelte";
@@ -63,9 +66,16 @@
         profile: t.panes.profile(),
     });
 
-    onMount(() => {
+    onMount(focusTab);
+
+    /**
+     * Puts the focus on the tab of the section that is shown. The dialog does it when it is mounted, and the host does
+     * it when the dialog is opened again during its exit: the dialog is then the same one, still mounted, and its own
+     * effects are paused for the length of the exit, so it cannot see the store say "open" again.
+     */
+    export function focusTab(): void {
         tabs[pane]?.focus();
-    });
+    }
 
     function tabKeydown(event: KeyboardEvent, current: PaneId): void {
         const next = paneAfter(current, event.key);
@@ -109,8 +119,13 @@
         }
     }
 
-    /** Esc and Tab while the focus is outside the box, such as on the page after a focused control vanished. */
+    /**
+     * Esc and Tab while the focus is outside the box, such as on the page after a focused control vanished. The
+     * dialog stays on the page for the length of its exit, and the keys of that time are the page's again: the focus
+     * went back to the control that opened it, and a Tab there must not be taken to enter an inert box.
+     */
     function pageKeydown(event: KeyboardEvent): void {
+        if (!get(preferencesStore).open) return;
         if (event.target instanceof Node && box?.contains(event.target)) return;
         keydown(event);
     }
@@ -118,6 +133,9 @@
 
 <svelte:window onkeydown={pageKeydown} />
 
+<!-- The scrim is what takes the press outside the dialog, and it carries no transition: while the dialog leaves, its
+     box and its dimming are inert (Svelte sets that on an element that is leaving), and a press on them would fall
+     through to the game. The scrim stays under them, whole and not inert, until both have gone. -->
 <div
     class="k-prefs-scrim"
     role="presentation"
@@ -125,6 +143,7 @@
         if (event.target === event.currentTarget) closePreferences();
     }}
 >
+    <div class="k-prefs-dim" aria-hidden="true" transition:surface={{ x: 0, y: 0, scale: 1 }}></div>
     <div
         bind:this={box}
         class="k-prefs block-user-action"
@@ -132,14 +151,16 @@
         aria-modal="true"
         aria-label={t.dialog()}
         tabindex="-1"
+        transition:surface
         onkeydown={keydown}
     >
         <nav class="k-prefs-nav" aria-label={t.sections()}>
             <div
-                class="k-prefs-tabs"
+                class="k-prefs-tabs k-glide"
                 role="tablist"
                 aria-orientation={narrow.current ? "horizontal" : "vertical"}
                 aria-label={t.sections()}
+                {@attach glide({ item: '[role="tab"]' })}
             >
                 {#each PANES as entry, index (entry.id)}
                     {@const Icon = icons[entry.id]}
@@ -152,6 +173,7 @@
                         bind:this={tabs[entry.id]}
                         id="{id}-tab-{entry.id}"
                         type="button"
+                        class="k-press"
                         role="tab"
                         aria-selected={entry.id === pane}
                         aria-controls="{id}-panel"
@@ -170,11 +192,13 @@
                 <h2>{titles[pane]}</h2>
                 <button
                     type="button"
-                    class="k-prefs-close"
+                    class="k-prefs-close k-press"
                     aria-label={t.close()}
                     title={t.close()}
-                    onclick={closePreferences}><IconX font-size="20" aria-hidden="true" /></button
+                    onclick={closePreferences}
                 >
+                    <IconX font-size="20" aria-hidden="true" />
+                </button>
             </header>
             <div class="k-prefs-pane" id="{id}-panel" role="tabpanel" aria-labelledby="{id}-tab-{pane}">
                 {#if pane === "general"}
@@ -208,10 +232,18 @@
         display: grid;
         place-items: center;
         padding: 24px;
-        background: rgb(3 5 26 / 0.62); /* dimmed, never blurred: the theme bans blur over the map */
         font-family: Urbanist, system-ui, sans-serif;
         color: var(--k-fg);
-        animation: k-prefs-fade var(--k-dur-normal) var(--k-ease-out-expo) backwards;
+    }
+    /* Dimmed, never blurred: the theme bans blur over the map. It is its own element so that it can fade on its own
+       transition while the scrim around it stays; under the box, in the scrim's own stacking context. */
+    .k-prefs-dim {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        /* A press on it is a press on the scrim, which closes the dialog: the scrim must be what the pointer reaches. */
+        pointer-events: none;
+        background: rgb(3 5 26 / 0.62);
     }
     .k-prefs {
         display: grid;
@@ -224,24 +256,6 @@
         background: var(--k-card);
         box-shadow: var(--k-shadow);
         outline: none;
-        animation: k-prefs-in var(--k-dur-moderate) var(--k-ease-out-expo) backwards;
-    }
-    @keyframes k-prefs-in {
-        from {
-            opacity: 0;
-            scale: 0.95;
-        }
-    }
-    @keyframes k-prefs-fade {
-        from {
-            opacity: 0;
-        }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .k-prefs-scrim,
-        .k-prefs {
-            animation: none;
-        }
     }
     .k-prefs-nav {
         overflow: auto;
@@ -288,6 +302,13 @@
     [role="tab"]:hover {
         background: var(--k-hover);
         color: var(--k-fg);
+    }
+    /* While the pill exists (`.k-glide-on`, set by the attachment) it is the hover fill of the tabs that are not the
+       selected one, which keeps its own. Without it (a touch screen) every tab keeps the fill above. */
+    @media (hover: hover) {
+        .k-prefs-tabs:global(.k-glide-on) [role="tab"]:hover:not([aria-selected="true"]) {
+            background: transparent;
+        }
     }
     [role="tab"][aria-selected="true"] {
         background: var(--k-elevated);

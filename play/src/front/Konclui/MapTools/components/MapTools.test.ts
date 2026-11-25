@@ -4,6 +4,7 @@ import { get, writable } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cameraDetachedStore } from "../../../Stores/CameraStore";
 import { mapEditorModeStore } from "../../../Stores/MapEditorStore";
+import { stubWebAnimations, type WebAnimationsStub } from "../../../Utils/webAnimationsStub";
 import { DESK_ACTION_ID, parseDesks } from "../domain/desk";
 import { NOT_WALKING } from "../domain/walk";
 import { installMapToolsCommands } from "../stores/mapToolsCommands";
@@ -360,5 +361,118 @@ describe("MapTools", () => {
         expect(report).toHaveBeenCalledTimes(1);
         expect(String(report.mock.calls[0]?.[0])).toContain("a tool failed");
         expect(get(cameraDetachedStore)).toBe(false);
+    });
+
+    describe("its entrance and its exit", () => {
+        let animations: WebAnimationsStub;
+
+        beforeEach(() => {
+            animations = stubWebAnimations();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+        });
+
+        afterEach(() => {
+            animations.restore();
+            vi.unstubAllGlobals();
+        });
+
+        const durations = () => animations.moving().map((animation) => animation.options.duration);
+        const showAndSettle = async () => {
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+        };
+
+        it("rises in on the surface transition when a tool can act", async () => {
+            show();
+            await animations.settle();
+            expect(tool("map-tool-cancel-walk")).toBeNull();
+
+            publishWalk({ walking: true, walkStatus: "going" });
+            flushSync();
+            await animations.settle();
+
+            expect(tool("map-tool-cancel-walk")).not.toBeNull();
+            expect(durations()).toEqual([290]);
+        });
+
+        it("stays in the column for the length of its exit, inert, and is then taken away", async () => {
+            publishWalk({ walking: true, walkStatus: "going" });
+            await showAndSettle();
+
+            publishWalk(NOT_WALKING);
+            flushSync();
+            await animations.settle();
+
+            expect(tool("map-tool-cancel-walk")).not.toBeNull();
+            expect(tool("map-tool-cancel-walk")?.inert).toBe(true);
+            expect(durations()).toEqual([200]);
+
+            await animations.finishMoving();
+
+            expect(tool("map-tool-cancel-walk")).toBeNull();
+        });
+
+        it("hands the focus to the next control as soon as the tool that had it is leaving, not once it is gone", async () => {
+            publishWalk({ walking: true, walkStatus: "going" });
+            commands.cancelWalk.mockImplementation(() => publishWalk(NOT_WALKING));
+            await showAndSettle();
+            tool("map-tool-cancel-walk")?.focus();
+
+            tool("map-tool-cancel-walk")?.click();
+            flushSync();
+            await animations.settle();
+
+            // The tool is still in the page, held for its exit: the focus must already be on its neighbour.
+            expect(tool("map-tool-cancel-walk")).not.toBeNull();
+            expect(document.activeElement).toBe(tool("zoom-in"));
+
+            await animations.finishMoving();
+            expect(tool("map-tool-cancel-walk")).toBeNull();
+            expect(document.activeElement).toBe(tool("zoom-in"));
+        });
+
+        it("does not hand the focus to a neighbour that is already leaving", async () => {
+            publishWalk({ walking: true, walkStatus: "going" });
+            commands.cancelWalk.mockImplementation(() => publishWalk(NOT_WALKING));
+            ownDesk();
+            await showAndSettle();
+            // The desk tool, next to the cancel control, goes first and is held for its exit.
+            publishDesks({ kind: "absent" });
+            flushSync();
+            await animations.settle();
+            expect(tool("map-tool-go-to-desk")?.inert).toBe(true);
+            tool("map-tool-cancel-walk")?.focus();
+
+            tool("map-tool-cancel-walk")?.click();
+            flushSync();
+            await animations.settle();
+
+            expect(document.activeElement).toBe(tool("zoom-in"));
+        });
+
+        it("leaves in the same flush, with nothing to hold, for a viewer who reduces motion", async () => {
+            publishWalk({ walking: true, walkStatus: "going" });
+            commands.cancelWalk.mockImplementation(() => publishWalk(NOT_WALKING));
+            await showAndSettle();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+            tool("map-tool-cancel-walk")?.focus();
+            const before = animations.animations.length;
+
+            tool("map-tool-cancel-walk")?.click();
+            flushSync();
+            await tick();
+
+            expect(tool("map-tool-cancel-walk")).toBeNull();
+            expect(animations.animations.length).toBe(before);
+            expect(document.activeElement).toBe(tool("zoom-in"));
+        });
+
+        it("gives under a press, as the other controls that are clicked often do", async () => {
+            ownDesk();
+            await showAndSettle();
+
+            expect(tool("map-tool-go-to-desk")?.classList.contains("k-press")).toBe(true);
+        });
     });
 });

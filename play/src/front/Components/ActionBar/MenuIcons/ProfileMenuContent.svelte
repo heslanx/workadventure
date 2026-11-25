@@ -29,6 +29,7 @@
     import { selectCharacterSceneVisibleStore } from "../../../Stores/SelectCharacterStore";
     import { selectCompanionSceneVisibleStore } from "../../../Stores/SelectCompanionStore";
     import { getStatusInformation } from "../../../Utils/AvailabilityStatus";
+    import { glide } from "../../../Utils/glide";
     import { LL } from "../../../../i18n/i18n-svelte";
     import ActionBarButton from "../ActionBarButton.svelte";
     import AvailabilityStatusList from "../AvailabilityStatus/AvailabilityStatusList.svelte";
@@ -161,14 +162,17 @@
 
 <!-- The office menu's surface and width. The list scrolls inside it, never the surface: its edge fade would fade the
      rim. The list keeps 28px free: the 8px offset from the avatar, the surface's 12px of padding and 8px at the top
-     edge. Without the dock (upstream's action bar), 68px gives upstream's former 100vh - 96px. -->
+     edge. Without the dock (upstream's action bar), 68px gives upstream's former 100vh - 96px. It arrives and leaves
+     on the surface transition of the floating host that holds it (FloatingUiPopupList), not on a class of its own,
+     and one pill follows the pointer from row to row. -->
 <div
-    class="k-chrome rounded-lg p-1.5 w-66 max-w-[calc(100vw_-_16px)] text-white select-none k-enter"
+    class="k-chrome rounded-lg p-1.5 w-66 max-w-[calc(100vw_-_16px)] text-white select-none"
     data-testid="profile-menu"
 >
     <div
-        class="k-scroll-y flex min-h-0 flex-col gap-0.5 m-0 p-0 list-none max-h-[calc(100dvh_-_var(--konclui-dock-stack-height,68px)_-_28px)]"
+        class="k-scroll-y k-glide flex min-h-0 flex-col gap-0.5 m-0 p-0 list-none max-h-[calc(100dvh_-_var(--konclui-dock-stack-height,68px)_-_28px)]"
         data-testid="profile-menu-list"
+        {@attach glide({ item: ".k-menu-row" })}
     >
         <ExternalComponents zone="menuTop" />
         <AvailabilityStatusList statusInformation={getStatusInformation(statusToShow)} />
@@ -258,7 +262,7 @@
                 disabled={$pwaInstallProfileMenuEligibleStore !== true}
                 onclick={openPwaInstallPrompt}
                 type="button"
-                class="k-menu-row pointer-events-auto"
+                class="k-menu-row k-press pointer-events-auto"
             >
                 <span class="k-menu-lead" aria-hidden="true"><IconFileDownload /></span>
                 <span class="k-menu-label">{$LL.actionbar.installPwa()}</span>
@@ -271,7 +275,7 @@
                 openedMenuStore.close("profileMenu");
             }}
             type="button"
-            class="k-menu-row pointer-events-auto"
+            class="k-menu-row k-press pointer-events-auto"
         >
             <span class="k-menu-lead" aria-hidden="true"><IconHelpCircle /></span>
             <span class="k-menu-label">{$LL.menu.profile.helpAndTips()}</span>
@@ -284,7 +288,7 @@
                     connectionManager.logout();
                 }}
                 type="button"
-                class="k-menu-row group pointer-events-auto hover:bg-danger-600"
+                class="k-menu-row k-press logout group pointer-events-auto hover:bg-danger-600"
             >
                 <span class="k-menu-lead" aria-hidden="true">
                     <IconLogout class="text-danger-400 group-hover:text-contrast-900" />
@@ -296,3 +300,14 @@
         {/if}
     </div>
 </div>
+
+<style>
+    /* The pill under the rows is the neutral hover, and while it exists the rows' own hover fill goes. The logout row is
+       red under the pointer by design (`hover:bg-danger-600`, drawn as the dark danger step with white ink in
+       konclui.css): it keeps that fill over the pill. */
+    @media (hover: hover) {
+        .logout:hover {
+            background-color: hsl(var(--danger-800));
+        }
+    }
+</style>

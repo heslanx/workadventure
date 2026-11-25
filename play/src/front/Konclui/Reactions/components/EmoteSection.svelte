@@ -78,7 +78,7 @@
             {@const label = $LL.konclui.reactions.emote[emote.id]()}
             <button
                 type="button"
-                class="k-control emote"
+                class="k-control k-lift emote"
                 data-testid={`konclui-emote-${emote.id}`}
                 data-sent={$coolingEmoteStore === emote.id ? "true" : undefined}
                 aria-label={label}
@@ -125,6 +125,9 @@
         width: 40px;
         height: 40px;
         min-width: 40px;
+        /* An emote is a picture to pick: under the pointer it rises 8 %, not the 2 % of a card (`.k-lift`, konclui.css).
+           The owner gave no number for a hover lift; a 32 px picture needs about 3 px to be seen to move. */
+        --k-lift-scale: 1.08;
     }
 
     /*

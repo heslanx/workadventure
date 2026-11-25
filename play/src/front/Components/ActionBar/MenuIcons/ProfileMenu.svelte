@@ -56,6 +56,7 @@
                 openedMenuStore.close("profileMenu");
             },
             PROFILE_MENU_Z_INDEX,
+            true,
         );
     }
 

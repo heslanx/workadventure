@@ -111,18 +111,131 @@ describe("Explorer", () => {
         }
     });
 
-    it("points the chevron down while the list is closed and up once it is open", () => {
+    it("turns the chevron on the theme's spring: over while the list is shut, upright once it is open", () => {
         render(2, 1);
         const toggle = target.querySelector<HTMLButtonElement>('[data-testid="toggleFolderArea"]');
-        const chevron = () => toggle?.querySelector("svg");
+        const chevron = () => toggle?.querySelector(":scope > svg");
 
-        // Upstream's glyph is the down chevron, turned over while the list is open.
-        expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+        // The glyph is the up chevron. `.k-turn` (konclui.css) turns it upright while its button is `aria-expanded`, and
+        // `--k-turn-closed` says how far over it lies while the list is shut: 180 degrees, so it points down.
+        expect(chevron()?.classList.contains("k-turn")).toBe(true);
+        expect(chevron()?.getAttribute("class")).toContain("[--k-turn-closed:180deg]");
         expect(chevron()?.classList.contains("rotate-180")).toBe(false);
+        expect(toggle?.getAttribute("aria-expanded")).toBe("false");
         toggle?.click();
         flushSync();
         expect(toggle?.getAttribute("aria-expanded")).toBe("true");
-        expect(chevron()?.classList.contains("rotate-180")).toBe(true);
+        expect(chevron()?.parentElement).toBe(toggle);
+    });
+
+    describe("a list's rows", () => {
+        // The entity list is the first disclosure of the card and the area list the second, shut or open.
+        const disclosure = (kind: "entity" | "area"): HTMLElement | undefined =>
+            target.querySelectorAll<HTMLElement>(".k-disclosure")[kind === "entity" ? 0 : 1];
+        const rows = (kind: "entity" | "area") => target.querySelectorAll(`.${kind}-items .item`);
+        const toggle = (kind: "entity" | "area") =>
+            target.querySelector<HTMLButtonElement>(
+                `[data-testid="toggleFolder${kind === "entity" ? "Entity" : "Area"}"]`,
+            );
+        const type = (value: string) => {
+            const input = target.querySelector("input");
+            if (input === null) throw new Error("The search field was not rendered");
+            input.value = value;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            flushSync();
+        };
+
+        it("open and shut as a disclosure, a box that holds its rows and grows to them", () => {
+            render(2, 1);
+
+            const lists = [...target.querySelectorAll(".k-disclosure")];
+            expect(lists).toHaveLength(2);
+            for (const list of lists) {
+                expect(list.querySelector(":scope > .k-disclosure-body")).not.toBeNull();
+                expect(list.classList.contains("is-open")).toBe(false);
+            }
+        });
+
+        it("are not drawn until a list is first opened: a room can hold hundreds that nobody asked to see", () => {
+            render(3, 2);
+
+            expect(rows("entity")).toHaveLength(0);
+            expect(rows("area")).toHaveLength(0);
+
+            toggle("entity")?.click();
+            flushSync();
+
+            expect(rows("entity")).toHaveLength(3);
+            expect(rows("area")).toHaveLength(0);
+        });
+
+        it("are in the disclosure that opens with the list, in the same flush", () => {
+            render(3, 2);
+
+            toggle("entity")?.click();
+            flushSync();
+
+            expect(disclosure("entity")?.classList.contains("is-open")).toBe(true);
+            expect(
+                disclosure("entity")?.querySelectorAll(":scope > .k-disclosure-body .entity-items .item"),
+            ).toHaveLength(3);
+            expect(disclosure("area")?.classList.contains("is-open")).toBe(false);
+        });
+
+        it("stay in the page while the list is shut again, so that the box can close on them", () => {
+            render(3, 2);
+            toggle("entity")?.click();
+            flushSync();
+
+            toggle("entity")?.click();
+            flushSync();
+
+            expect(disclosure("entity")?.classList.contains("is-open")).toBe(false);
+            expect(rows("entity")).toHaveLength(3);
+            expect(toggle("entity")?.getAttribute("aria-expanded")).toBe("false");
+        });
+
+        it("take no room while a list that has none is open: it stays shut", () => {
+            render(0, 0);
+
+            toggle("entity")?.click();
+            flushSync();
+
+            expect(toggle("entity")?.getAttribute("aria-expanded")).toBe("true");
+            expect(target.querySelector(".k-disclosure.is-open")).toBeNull();
+        });
+
+        it("change while the list is open, and the box follows what is in it", () => {
+            render(3, 1);
+            toggle("entity")?.click();
+            flushSync();
+            const list = () => disclosure("entity");
+            expect(rows("entity")).toHaveLength(3);
+
+            // Typing finds fewer rows and the same list holds them; clearing it brings them all back, the list open.
+            type("Object 1");
+            type("Object 1");
+            expect(rows("entity")).toHaveLength(1);
+            expect(list()?.classList.contains("is-open")).toBe(true);
+
+            type("");
+            type("");
+            expect(rows("entity")).toHaveLength(3);
+            expect(list()?.classList.contains("is-open")).toBe(true);
+        });
+
+        it("keep their 2 px gap above them through the disclosure, so a shut list leaves the column as it was", () => {
+            render(1, 1);
+            toggle("entity")?.click();
+            flushSync();
+
+            // The box takes 2 px back from the column's gap and the rows give it again inside the box: shut, the box is
+            // as high as nothing, and open, the rows start where they always did.
+            for (const list of [disclosure("entity"), disclosure("area")]) {
+                expect(list?.classList.contains("-mt-0.5")).toBe(true);
+            }
+            expect(target.querySelector(".entity-items")?.classList.contains("pt-0.5")).toBe(true);
+        });
     });
 
     it("lays the item rows out as menu rows whose controls are dock controls", () => {

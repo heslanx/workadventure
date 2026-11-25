@@ -142,6 +142,11 @@
                     { placement: "bottom" },
                     8,
                     true,
+                    false,
+                    undefined,
+                    undefined,
+                    // A picker the user opened: it arrives and leaves on the surface transition.
+                    true,
                 );
                 return;
             }

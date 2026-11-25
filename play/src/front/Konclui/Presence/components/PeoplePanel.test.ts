@@ -119,6 +119,11 @@ describe("PeoplePanel", () => {
         if (!button) throw new Error("no section button");
         return button;
     };
+    const disclosure = () => {
+        const element = target.querySelector<HTMLElement>(".k-disclosure");
+        if (!element) throw new Error("no disclosure");
+        return element;
+    };
     const text = () => target.textContent ?? "";
     const press = (element: Element, key: string) => {
         const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
@@ -171,16 +176,70 @@ describe("PeoplePanel", () => {
             const list = target.querySelector<HTMLElement>("#konclui-people-list");
             expect(sectionButton().getAttribute("aria-controls")).toBe("konclui-people-list");
             expect(sectionButton().getAttribute("aria-expanded")).toBe("true");
-            expect(list?.hidden).toBe(false);
+            expect(disclosure().classList.contains("is-open")).toBe(true);
 
             sectionButton().click();
             flushSync();
             expect(sectionButton().getAttribute("aria-expanded")).toBe("false");
-            expect(list?.hidden).toBe(true);
+            expect(disclosure().classList.contains("is-open")).toBe(false);
+            // What `aria-controls` names is still on the page, shut or open.
+            expect(target.querySelector("#konclui-people-list")).toBe(list);
 
             sectionButton().click();
             flushSync();
-            expect(list?.hidden).toBe(false);
+            expect(disclosure().classList.contains("is-open")).toBe(true);
+        });
+    });
+
+    describe("the Online section, as a disclosure", () => {
+        // jsdom applies no stylesheet, so what the disclosure does with its row and its visibility is run by the browser
+        // from konclui.css (pinned in tests/front/Style). What can be checked here is what the markup says: the state, the
+        // rows, and which element turns.
+        const chevron = () => sectionButton().querySelector(":scope > svg");
+
+        it("starts open, and the list sits in the body of the disclosure", () => {
+            show({ rows: [person(2, "Ana")] });
+
+            expect(disclosure().classList.contains("is-open")).toBe(true);
+            expect(disclosure().querySelector(":scope > .k-disclosure-body #konclui-people-list")).not.toBeNull();
+            // The list is not hidden: shutting it is the disclosure's, so that it can be seen to shut.
+            expect(target.querySelector<HTMLElement>("#konclui-people-list")?.hidden).toBe(false);
+        });
+
+        it("keeps its rows on the page while it is shut, the same ones when it opens again", () => {
+            show({ rows: [person(2, "Ana"), person(3, "Bia")] });
+            const before = rows();
+
+            sectionButton().click();
+            flushSync();
+            expect(rows()).toEqual(before);
+            expect(rowNames()).toEqual(["Ana", "Bia"]);
+
+            sectionButton().click();
+            flushSync();
+            expect(rows()).toEqual(before);
+        });
+
+        it("follows the state in the same flush, as the final state needs under reduced motion", () => {
+            show({ rows: [person(2, "Ana")] });
+
+            sectionButton().click();
+            // No wait, no timer, no event: the markup is at its final state when the click returns to the flush.
+            flushSync();
+            expect(disclosure().classList.contains("is-open")).toBe(false);
+            expect(sectionButton().getAttribute("aria-expanded")).toBe("false");
+        });
+
+        it("turns its chevron on the theme's turn: the mark is the button's own child, with no turn of its own", () => {
+            show({ rows: [person(2, "Ana")] });
+
+            const mark = chevron();
+            expect(mark?.classList.contains("k-turn")).toBe(true);
+            // `.k-turn` turns a mark closed at -90 degrees upright while the parent button is `aria-expanded`: the way this
+            // section's chevron always read, pointing right shut and down open.
+            expect(mark?.getAttribute("class")).not.toContain("--k-turn-closed");
+            expect(mark?.classList.contains("chevron")).toBe(false);
+            expect(mark?.getAttribute("aria-hidden")).toBe("true");
         });
     });
 

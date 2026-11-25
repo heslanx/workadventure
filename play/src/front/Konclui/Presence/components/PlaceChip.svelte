@@ -1,5 +1,6 @@
 <script lang="ts">
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { surface } from "../../../Utils/surfaceTransition";
     import { placeName } from "../domain/place";
     import { callChipStore } from "../stores/conversationStore";
     import { placeStore } from "../stores/placeStore";
@@ -8,7 +9,8 @@
 
     // Where the current player stands, and how many people are near. Only the place name is a live region, and the
     // store behind it changes at most every two seconds: the near count changes as people walk by, and read out each
-    // time it would be a storm.
+    // time it would be a storm. The chip comes and goes on the surface transition, with the whole chip held for its
+    // exit; the name and the count inside it change in place, with no motion of their own.
 
     let name = $derived(
         $placeStore === undefined
@@ -25,11 +27,11 @@
 </script>
 
 {#if name !== undefined && !inConversation}
-    <div class="place k-chrome">
+    <div class="place k-chrome" transition:surface>
         <span class="icon" aria-hidden="true"><IconMapPin font-size="18" /></span>
-        <b role="status" aria-live="polite" aria-atomic="true"
-            ><span class="visually-hidden">{`${$LL.konclui.place.here()} `}</span>{name}</b
-        >
+        <b role="status" aria-live="polite" aria-atomic="true">
+            <span class="visually-hidden">{`${$LL.konclui.place.here()} `}</span>{name}
+        </b>
         {#if nearCount > 0}
             <span class="separator" aria-hidden="true"></span>
             <span class="near">{$LL.konclui.nearby({ count: nearCount })}</span>

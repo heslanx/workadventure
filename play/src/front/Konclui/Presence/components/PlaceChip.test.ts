@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { flushSync, mount, unmount } from "svelte";
 import type { Writable } from "svelte/store";
 import type { Conversation } from "../domain/conversation";
 import type { Place } from "../domain/place";
 import type { PresenceReading } from "../domain/presence";
+import { stubWebAnimations, type WebAnimationsStub } from "../../../Utils/webAnimationsStub";
 import { callChipStore } from "../stores/conversationStore";
 import { placeStore } from "../stores/placeStore";
 import { presenceStore } from "../stores/presenceStore";
@@ -142,5 +143,56 @@ describe("PlaceChip", () => {
         show();
 
         expect(target.querySelector("button, a, input, [tabindex]")).toBeNull();
+    });
+
+    describe("its entrance and its exit", () => {
+        let animations: WebAnimationsStub;
+
+        beforeEach(() => {
+            animations = stubWebAnimations();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+        });
+
+        afterEach(() => {
+            animations.restore();
+            vi.unstubAllGlobals();
+        });
+
+        const element = () => target.querySelector<HTMLElement>(".place");
+        const durations = () => animations.moving().map((animation) => animation.options.duration);
+
+        it("stays in the page for the length of its exit when a conversation takes its place, and is then taken away", async () => {
+            place.set({ kind: "area", name: "Sala 01" });
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+
+            call.set({ kind: "bubble", count: 2 });
+            flushSync();
+            await animations.settle();
+
+            expect(element()).not.toBeNull();
+            expect(element()?.inert).toBe(true);
+            expect(durations()).toEqual([200]);
+
+            await animations.finishMoving();
+
+            expect(element()).toBeNull();
+        });
+
+        it("goes in the same flush, with nothing to hold, for a viewer who reduces motion", async () => {
+            place.set({ kind: "area", name: "Sala 01" });
+            show();
+            await animations.settle();
+            await animations.finishMoving();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+            const before = animations.animations.length;
+
+            call.set({ kind: "bubble", count: 2 });
+            flushSync();
+
+            expect(element()).toBeNull();
+            expect(animations.animations.length).toBe(before);
+        });
     });
 });

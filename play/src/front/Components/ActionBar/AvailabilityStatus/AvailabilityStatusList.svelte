@@ -38,7 +38,7 @@
     <HeaderMenuItem label={$LL.actionbar.listStatusTitle.enable()} separated={false} />
     <!-- Some status (silent, in a meeting...) are locking the status bar to only one option -->
     {#if [AvailabilityStatus.LISTENER, AvailabilityStatus.SPEAKER, AvailabilityStatus.JITSI, AvailabilityStatus.LIVEKIT, AvailabilityStatus.BBB, AvailabilityStatus.DENY_PROXIMITY_MEETING, AvailabilityStatus.SILENT, AvailabilityStatus.SOUND_BLOCKED].includes($availabilityStatusStore)}
-        <button type="button" class="status-button k-menu-row pointer-events-auto" aria-current="true">
+        <button type="button" class="status-button k-menu-row k-press pointer-events-auto" aria-current="true">
             <span class="k-menu-lead" aria-hidden="true">
                 <span
                     class="size-2.5 rounded-full"
@@ -54,7 +54,7 @@
             <!-- The current status is shown as the office menu shows it: mint ink and the check mark. -->
             <button
                 type="button"
-                class="status-button k-menu-row pointer-events-auto"
+                class="status-button k-menu-row k-press pointer-events-auto"
                 class:justify-end={align === "end"}
                 aria-current={current ? "true" : undefined}
                 onkeyup={(e) => {

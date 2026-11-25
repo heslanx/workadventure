@@ -157,7 +157,7 @@
     >
         <button
             type="button"
-            class="{compact ? 'h-9' : 'h-12 @sm/actions:h-10 @xl/actions:h-12'} p-1 m-0 rounded relative
+            class="k-press {compact ? 'h-9' : 'h-12 @sm/actions:h-10 @xl/actions:h-12'} p-1 m-0 rounded relative
                     {buttonState === 'disabled' ? `opacity-50 ${blockedCursor}` : ''}
                     {buttonState === 'disabledForbidden' ? `bg-danger opacity-70 ${blockedCursor}` : ''}
                     {heldOff ? blockedCursor : ''}
@@ -242,7 +242,7 @@
     <!-- The menu row of the office menu (`.k-menu-row`). Its state is drawn by the classes of the style block below. -->
     <button
         type="button"
-        class="k-menu-row group pointer-events-auto select-none"
+        class="k-menu-row k-press group pointer-events-auto select-none"
         class:opacity-50={Boolean(statusDot) && !blocked}
         class:row-on={buttonState === "active" && !isGradient}
         class:row-danger={buttonState === "forbidden" || buttonState === "disabledForbidden"}

@@ -31,16 +31,23 @@
               : deskNotice,
     );
 
-    /** The control that follows the one that will leave, else the one before it, in the order of the column. */
+    /**
+     * The control that follows the one that will leave, else the one before it, in the order of the column. A tool
+     * that is already leaving (inert, held for its exit) is not one to hand the focus to.
+     */
     function neighbourOf(button: HTMLElement): HTMLElement | undefined {
-        const controls = [...(button.parentElement?.querySelectorAll<HTMLElement>("button.k-control") ?? [])];
+        const controls = [...(button.parentElement?.querySelectorAll<HTMLElement>("button.k-control") ?? [])].filter(
+            (control) => !control.inert,
+        );
         const index = controls.indexOf(button);
         return controls[index + 1] ?? controls[index - 1];
     }
 
     /**
      * Runs a tool. A tool that leaves because it was used (the walk ends, the view is back) takes the focus with it, so
-     * the focus goes to the next control of the column and a keyboard user keeps their place.
+     * the focus goes to the next control of the column and a keyboard user keeps their place. The tool is still in the
+     * page for the length of its exit, and the browser has taken the focus off it the moment it became inert: it has
+     * left as soon as it is inert, not once it is gone.
      */
     function use(action: () => void, event: MouseEvent): void {
         const button = event.currentTarget;
@@ -55,7 +62,7 @@
         if (!hadFocus || !(button instanceof HTMLElement)) return;
         tick()
             .then(() => {
-                if (!button.isConnected) next?.focus();
+                if (!button.isConnected || button.inert) next?.focus();
             })
             .catch((error: unknown) => console.error("[konclui] map tools: could not move the focus", asError(error)));
     }

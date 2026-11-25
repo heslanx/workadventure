@@ -3,7 +3,7 @@
     import * as Sentry from "@sentry/svelte";
     import { clickOutside } from "svelte-outside";
     import { onDestroy } from "svelte";
-    import { fly } from "../../Utils/reducedMotion";
+    import { surface } from "../../Utils/surfaceTransition";
     import { LL } from "../../../i18n/i18n-svelte";
     import {
         emoteDataStore,
@@ -102,6 +102,11 @@
                 },
                 12,
                 true,
+                false,
+                undefined,
+                undefined,
+                // The picker the user opened to edit the favourites: it arrives and leaves on the surface transition.
+                true,
             );
         }
     }
@@ -175,10 +180,12 @@
 </script>
 
 <svelte:window onkeydown={onKeyDown} />
+<!-- It grows from the bottom-left, the side that faces the button it opens from, on the same transition as every
+     surface over the map. -->
 <div
-    class="flex justify-center m-auto w-auto z-[500]"
+    class="flex justify-center m-auto w-auto z-[500] origin-bottom-left"
     bind:this={menuElement}
-    transition:fly={{ y: 20, duration: 150 }}
+    transition:surface
     use:clickOutside={() => {
         if (!$emoteMenuStore) {
             activeSecondaryZoneActionBarStore.set(undefined);
