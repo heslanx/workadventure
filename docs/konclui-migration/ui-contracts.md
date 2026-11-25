@@ -52,13 +52,13 @@ Matrix items U05 and U06 depend on U03, E04, E05, E06, and E09. [Room roster, vi
 | Identifiers | Native session/player ID for a person, entity ID for a desk, room generation for all asynchronous requests. World pixels remain distinct from viewport pixels and tile indices. |
 | State | Map closed/open; camera following/exploring; selection absent/present; walk idle/going/arrived/cancelled/blocked. These states do not redefine membership. |
 | Invalid or unavailable | A missing/offscreen coordinate is unavailable, not zero. An unreachable destination reports blocked. A disappeared person or desk invalidates its target without moving to a stale room. |
-| Native destination | Svelte map/tools in `play/src/front/Konclui/<Domain>/components/`; native geometry from `gameViewportBounds` in `ExternalModule/ClientExtensionPoints.ts`; Phaser input, camera, and pathfinding in `GameScene` and the E05/E06 controller. |
+| Native destination | Svelte map/tools in `play/src/front/Konclui/<Domain>/components/`; native geometry from `gameViewportBounds` in `ExternalModule/ClientExtensionPoints.ts` (the map's cell: the side panel floats over it and is not subtracted) and, for the strip that panel covers, `gameViewportCoveredStart` in the same file; Phaser input, camera, and pathfinding in `GameScene` and the E05/E06 controller. |
 
 Single-click selection, double-click movement, right-click movement, and drag-pan remain distinct actions. Dragging the camera must not issue a walk. Walking or recentering restores camera follow. A real touch event needs its own proof; a mouse test does not certify the native joystick.
 
 Mount binds to the current scene and geometry once. ResizeObserver is appropriate for the painted dock's actual bounds; replacing a dock unobserves the old element. Teardown cancels a pending walk owned by this view, removes input and resize listeners, and prevents old projections from writing into the next room. It does not stop unrelated native navigation.
 
-Acceptance evidence must cover root/direct entry, map open/close with focus return, selection after zoom/pan, blocked/cancelled/replaced walks, moving targets, desk deletion, and panel/chat/control changes at all required widths. At 768 pixels the minimap must not cover the painted dock or avatar, including reduced motion. Reference `tests/test_moment_hud_layout.py` characterizes clearance. Offscreen markers remain an open design dependency because native world membership has no coordinates; adding room-wide per-tick movement is prohibited.
+Acceptance evidence must cover root/direct entry, map open/close with focus return, selection after zoom/pan, blocked/cancelled/replaced walks, moving targets, desk deletion, and panel/chat/control changes at all required widths. At 768 pixels the minimap must not cover the painted dock or avatar, including reduced motion. From 768 pixels the side panel floats over the map's start edge (see [Motion of surfaces over the map](#motion-of-surfaces-over-the-map)), so the minimap must also stay clear of the strip it covers. Reference `tests/test_moment_hud_layout.py` characterizes clearance. Offscreen markers remain an open design dependency because native world membership has no coordinates; adding room-wide per-tick movement is prohibited.
 
 ## Media and lightweight preferences
 
@@ -145,7 +145,7 @@ Acceptance covers map entry/reentry, missing/malformed manifest, compile failure
 
 ## Menus and controls over the map
 
-Every menu, popover, and control that floats over the map follows the bottom dock and the office menu. The utilities in `libs/tailwind/style/konclui.css` are the single source of these values. Upstream and Konclui markup applies them as plain classes, as with `.k-chrome`. `Konclui/OfficeMenu/components/OfficeMenu.svelte` still carries the same values in its scoped styles; it is to move to the utilities.
+Every menu, popover, and control that floats over the map follows the bottom dock and the office menu. The utilities in `libs/tailwind/style/konclui.css` are the single source of these values. Upstream and Konclui markup applies them as plain classes, as with `.k-chrome`. `Konclui/OfficeMenu/components/OfficeMenu.svelte` takes its edge from them (`.k-chrome rounded-lg p-1.5`) and its rows from `Konclui/Controls/components/MenuRow.svelte` (`.k-menu-row`); its scoped styles keep what is its own: its place, its size, its entrance origin, the locked-status reason inside the list and the copied-link notice under it. The press, the hover pill and the entrance of these surfaces are in [Motion of surfaces over the map](#motion-of-surfaces-over-the-map).
 
 | Aspect | Standard | Utility |
 |---|---|---|
@@ -162,37 +162,346 @@ Every menu, popover, and control that floats over the map follows the bottom doc
 
 ## Motion of surfaces over the map
 
-Owner: `.k-enter` in `libs/tailwind/style/konclui.css`. Benefit named (MOT-01): orientation. A panel or menu that
-appears in one frame gives no hint of where it came from; a short move from its origin does.
+Owner: `libs/tailwind/style/konclui.css` (the tokens and the utilities) and `play/src/front/Utils/` (`spring.ts`,
+`surfaceTransition.ts`, `glide.ts`, `floatingUiSurface.ts`). Benefit named (MOT-01): orientation and continuity. A panel
+or menu that appears in one frame gives no hint of where it came from, and one that vanishes in one frame gives no hint
+of where it went; a short move from its origin, and a shorter one back toward it, does. Under the side panel the canvas
+is not resized, so the picture keeps its size and its zoom while the panel comes and goes; the camera glides the view to
+the part of the map the card leaves free.
 
-- **One entrance, one owner (MOT-02).** A surface that opens over the map carries `k-enter`. It animates only
-  `opacity` and `transform` (`from` keyframe), so it stays on the compositor. Per surface it sets `--k-enter-x`,
-  `--k-enter-y`, `--k-enter-dur` and `--k-enter-ease`; the defaults are 0 px, 6 px, `--k-dur-fast` and
-  `--k-ease-out-expo`. No other keyframes for entrances: the office menu's own were removed.
-- **Reduced motion (MOT-04).** `prefers-reduced-motion: reduce` sets `animation: none`, so the surface is in place at
-  its final state from the first frame. Nothing waits for `animationend`.
-- **Where each one comes from.**
+This section describes the code at `526dd5400`, `568d0c735` and `916b78bca` (2026-11-24). The tests named under
+"Verification" run in jsdom. After the lanes, the integrator ran the play checks on the tree that was then committed (`.local/konclui/bin/wa-playgate-remote.sh`, on the build host, 2026-11-24): i18n, typecheck, `svelte-check`, eslint and prettier on the 69 changed files all exited 0, and Vitest passed 546 files and 5,598 tests with 14 skipped. The measurements come from one browser probe the integrator ran that day.
 
-  | Surface | From | Duration, curve |
+### Override of MOT-02, 2026-11-24
+
+- **What this contract said before.** MOT-02 meant one entrance with one owner, `.k-enter`, on the durations
+  `--k-dur-fast` (150 ms) and `--k-dur-settle` (280 ms), and every exit was instant.
+- **What the owner decided.** On 2026-11-24 the owner asked that every sheet, menu and popover open and close with the
+  feel of three React and framer-motion examples he supplied: springs of stiffness 420, damping 32 and mass 0.6, and of
+  350, 25 and 1; an entry scale of 0.98; a press scale; a highlight that slides from row to row; and height
+  disclosures with a turning chevron. His numbers are the contract. That departs from MOT-02 of the motion policy,
+  which says not to take another product's numeric presets: the owner chose it, and this paragraph is the record.
+- **Two deliberate differences from his examples.** Each surface keeps its own origin (the side panel comes from the
+  rail, the office menu from the logo, a popup from its trigger), where the examples make every surface rise 10 px. The
+  theme keeps two springs, where the examples used four.
+- **What stays of MOT-02.** One owner per transition. `.k-enter` owns an entrance that is CSS alone (today only the map
+  explorer). `transition:surface` owns every surface that an `{#if}` removes, entrance and exit. A surface never
+  carries both.
+
+### The springs and the tokens
+
+- **Two springs.**
+  - `--k-ease-spring` over `--k-dur-spring` (290 ms): stiffness 420, damping 32, mass 0.6. It is for a surface that
+    opens over the map, a disclosure and the sliding pill. Damping is just above critical (1.008), so it settles
+    without bouncing.
+  - `--k-ease-spring-turn` over `--k-dur-spring-turn` (360 ms): stiffness 350, damping 25, mass 1. It is for a mark
+    that turns, a chevron. It is the one place a spring overshoots, by about 5 % of the turn: the generated curve peaks
+    at 1.0526 (the point at 61.2 % in `konclui.css`). The comment above `.k-turn` in `konclui.css` and `SPRING_TURN` in
+    `spring.ts` say 6 %, which is the overshoot of the spring before `springEasing` divides it by where the spring is at
+    360 ms.
+  - Each duration is within 10 ms of the time its spring takes to come within 0.5 % of its travel (286 ms and 365 ms,
+    `settleMs` in `spring.ts`).
+- **Generated, not typed.** `linearCss` in `play/src/front/Utils/spring.ts` samples the closed-form spring 4,000 times,
+  divides it by where the spring is at the end of the duration so that it lands exactly on 1, and keeps the points that
+  a straight line would miss by more than 0.2 % of the travel. The result is about twenty points, inputs to 0.1 % and
+  outputs to four decimals. The stylesheet holds the text it produced.
+  `tests/front/Style/KoncluiMotionTokens.test.ts` compares each token's `linear()` text with the generator's output and
+  fails when only one of them is edited. To change a spring, change it in `spring.ts`, regenerate the text, and change
+  the duration constant (`SPRING_SURFACE_MS`, `SPRING_TURN_MS`) and the token together. The same test pins the JS
+  constants to the CSS tokens.
+- **Fallback.** Chrome and Edge 111 to 112 and Safari 16.4 to 17.1 do not know `linear()` and would drop the whole
+  `transition` that uses a spring token (the comment in `konclui.css`). Inside
+  `@supports not (transition-timing-function: linear(0, 1))` the two tokens hold a cubic-bezier that follows the same
+  spring within 0.9 % (surface) and 1.9 % (turn) of the travel. `transition:surface` does not use the token: it runs
+  the spring as a JS easing function from `spring.ts`.
+- **`--k-motion-scale`.** It is 1 on the root. `transition:surface` reads it from its element and multiplies both of its
+  durations by it, so `document.documentElement.style.setProperty("--k-motion-scale", "10")` slows every surface ten
+  times for a look frame by frame, and 0 makes it instant. A value that is not a number counts as 1, a negative value
+  as 0. The CSS utilities (press, lift, turn, disclosure, pill) do not read it. Reduced motion needs no value: that
+  transition is instant for that viewer.
+- **Reduced motion (MOT-04).** Every `--k-dur-*` token, the two new ones included, is 0.01 ms under
+  `prefers-reduced-motion: reduce`. Each utility and `transition:surface` has its own rule below.
+
+### transition:surface
+
+- **Where it is written.** `surface` in `play/src/front/Utils/surfaceTransition.ts`. The directive sits on the element
+  directly under the `{#if}`, never as an `in:` and `out:` pair (a pair cannot be reversed half way) and never together
+  with `.k-enter` (the surface would arrive twice). It is local: it plays when its own block changes and not when a
+  parent block appears, so nothing springs in at room entry while the loader fades.
+- **What it reads from the element.** `--k-enter-x` and `--k-enter-y` in pixels and `--k-enter-scale` as a number, with
+  the defaults of `.k-enter`: 0 px, 6 px and 0.98 (a value written as a `calc()` or in `rem` is not read, and the
+  default stands). A parameter object `{ x, y, scale }` overrides them. It also reads `direction` (on a page that reads
+  right to left, x changes sign), `--k-motion-scale`, and the element's own `opacity`.
+- **Entrance.** 290 ms (`SPRING_SURFACE_MS`) on the surface spring: opacity from 0 to the resting opacity, translation
+  from the origin to 0, scale from the origin's to 1.
+- **Exit.** 200 ms (`SURFACE_EXIT_MS`, the value of `--k-dur-normal`) on the curve of `--k-ease-sheet`,
+  `cubic-bezier(0.22, 1, 0.36, 1)`. The surface goes half as far as it came (`SURFACE_EXIT_TRAVEL`): 6 px become 3,
+  24 px become 12, and the scale ends at 0.99. A dismissed surface has been seen, so it needs the cue that says where it
+  goes and not the whole distance; the curve starts fast, and opacity does the leaving. A test keeps the exit's length
+  and curve equal to the two tokens.
+- **Held content.** Svelte keeps the element in the page for the whole exit, with what is inside it frozen (read in
+  Svelte 5.59.1 by the review of the lane that wrote it). A card whose content an inner `{#if}` would remove does not
+  slide away blank.
+- **Reversal half way.** Opening during an exit keeps the same element and plays the rest of the entrance from where it
+  is, and the other way round. The exit does not go as far as the entrance came, so `surface` starts each run from the
+  pose the last run had reached, and the picture does not jump. Measured on the side panel: reopened 90 ms into an
+  exit, it continued from opacity 0.08 and x of -11.1 px over 268 ms.
+- **Inert during the exit.** Svelte sets `inert` on a leaving element. It takes no focus and no press, and it leaves
+  the accessibility tree at once. The owners of the surfaces hand the focus on before the exit starts: the office menu
+  and the dialog to the control that opened them, the side panel to its button on the rail, a map tool to the next
+  tool. A press on a surface that is still painted falls through to what is under it, which is the map (T-304).
+- **Reduced motion and no animation.** The duration is 0 where `prefers-reduced-motion: reduce` matches, read as each
+  run starts, and where the browser has no `Element.animate` (jsdom). Svelte then removes the element in the same
+  flush, with no animation and no event, so nothing waits for `animationend`.
+- **Rest opacity.** Opacity runs between 0 and the opacity the element rests at, not between 0 and 1. A map tool that
+  cannot act now rests at 0.5: it arrives at 0.5, leaves from 0.5 and does not jump when the run ends. The integrator
+  fixed this on 2026-11-24 after the review of the surfaces lane found it, and `surfaceTransition.test.ts` pins it.
+- Only `opacity` and `transform` move, so the map is not re-fitted frame by frame. Svelte samples the keyframes at
+  60 Hz whatever the display (T-316).
+- **Popups of the shared floating host.** `Components/Util/FloatingUiPopupList.svelte` carries one
+  `transition:popupSurface={value}` on the wrapper of each popup. `popupSurface` in `Utils/floatingUiSurface.ts` gives
+  `surface` to an entry that `showFloatingUi` registered with its last parameter, `motion`, set to true, and a
+  transition of 0 ms to every other entry, so a tooltip is gone as it closes and does not spring in each time the
+  pointer crosses a reaction. After Floating UI settles the placement, `showFloatingUi` writes the `transform-origin`
+  from the placement it settled on, flip and right-to-left included (`popupTransformOrigin`). The callers that pass
+  `motion` are the profile menu, the recording, lock and raise-hand pickers and the favourites emoji picker.
+
+### Where each one comes from
+
+Each row that names `transition:surface` or `transition:popupSurface` enters on the surface spring over 290 ms and
+leaves over 200 ms at half the travel, as above. The last two rows are the exceptions.
+
+| Surface | From | Written in |
+| --- | --- | --- |
+| People/chat panel, wide (768 px and up) | 24 px left, from the rail | `transition:surface` on the card in `Konclui/Shell/components/Frame.svelte`, `--k-enter-x: -24px` |
+| People/chat panel, phone (767 px and down) | 16 px below, a sheet over the map | the same card, `--k-enter-y: 16px` in the phone rule |
+| Office menu | 6 px left, from the logo | `Konclui/OfficeMenu/components/OfficeMenu.svelte`, `--k-enter-x: -6px` |
+| Profile menu (dock avatar), recording, lock and raise-hand pickers, favourites emoji picker | 6 px below, growing from the side that faces the trigger | `transition:popupSurface` in the floating host, `motion` set by each caller |
+| Reactions menu (the emoji bar), apps menu | 6 px below, from the bottom left corner | `EmojiSubMenu.svelte` and `AppsMenuItem.svelte`, `transition:surface` and `origin-bottom-left` (T-308) |
+| Camera and microphone popover | 6 px below, from the bottom centre | `MediaSettingsList.svelte`, `transition:surface`; the origin is in `Konclui/Shell/components/Dock.svelte` |
+| Preferences dialog | 6 px below | `PreferencesDialog.svelte`, `transition:surface` on the box (it was 0.95 over 300 ms) |
+| Preferences dimming | a fade, no travel and no scale | `transition:surface={{ x: 0, y: 0, scale: 1 }}` on `.k-prefs-dim`; the scrim around it has none |
+| Call chip, focus chip, place chip | 6 px below | `CallIndicator.svelte`, `FocusChip.svelte`, `PlaceChip.svelte` |
+| Tools of the map column that come and go | 6 px below | `MapToolButton.svelte`, on the button itself |
+| People/chat content when the card swaps its view | a fade of 150 ms on `--k-ease-out-expo`, opacity only | `in:swap` on `.content` in `Frame.svelte`; it plays on a swap and not when the card opens |
+| Map explorer | 16 px right, 200 ms (`--k-dur-normal`), no exit | `.k-enter` in `Components/Exploration/Explorer.svelte` (T-310) |
+
+- **Still on `.k-enter`.** Only the map explorer. `.k-enter` now starts at the scale `--k-enter-scale` (0.98) too.
+- **Still on nothing.** The surfaces left out on purpose: the in-call video grid, the loader, the onboarding overlay,
+  the desktop mini window, the co-website tabs, the phone message sheet, the native `<select>` and the camera's own pan
+  easing (T-311). The chat's chevrons and section bodies are on their old motion (T-309). Every other caller of
+  `showFloatingUi` (the invite item, the video box, the chat's pickers and menus, the reaction tooltips) passes no
+  `motion` and appears and goes at once.
+
+### The side panel over the map
+
+- **It floats from 768 px up and is a sheet on a phone.** `.konclui` has two grid columns, the rail and the map's cell,
+  whether the panel is open or not. From 768 px the card is `position: absolute` beside the rail: 6 px from the top and
+  the bottom (`--frame-gap`), 60 px from the start edge (`--rail-width`), 290 px wide (`--panel-width`, 296 px, less
+  the gap), over the canvas. At 767 px and below the frame is a block and the card is a sheet over the map: 58 px from
+  the top, 8 px from each side, standing 6 px above the whole dock stack, 144 px high at least, at `z-index` 35.
+- **The canvas is not resized by it** (the co-website case is below). The bounds that `Frame.svelte` publishes as `gameViewportBounds` are the map
+  cell's, and they are the same with the panel open, closed, leaving and open again. The panel is not subtracted from
+  them. A third grid column exists only beside a co-website (below).
+- **The grid column never animates.** Measured 2026-11-20 on the QA stack: animating `grid-template-columns` re-fitted
+  the canvas 13 times per open and the map was black mid-transition. `KoncluiEntrance.test.ts` guards that no rule
+  transitions or animates the grid columns, and `Frame.test.ts` that the panel changes no grid column.
+- **Measured before and after, 2026-11-24.** In the owner's pane, 1057 by 1005 px, opening the panel used to take the
+  canvas from 661 by 662 buffer pixels at 1.4992 CSS px per buffer pixel to 695 by 993 at 1.0: the zoom step fell from
+  1.5 to 1.0 and the drawing buffer grew by 58 % (`s0-evidence.md`, device pixel ratio 1). With the change, the
+  acceptance probe read the same canvas with the panel closed and open, with 0 resizes over an open and a close
+  (`acceptance.md`, device pixel ratio 2 in the pane that day). Canvas as buffer size, then CSS size, then offset from
+  the left:
+
+  | Window | Canvas, panel closed and open | Resizes | Card |
+  | --- | --- | --- | --- |
+  | 1057x1005 | 661x662 at 991x993, 60 px | 0 | 290x993 at x 60, z-index 5 |
+  | 1440x900 | 916x592 at 1374x888, 60 px | 0 | 290x888 at x 60 |
+  | 1000x900 | 623x592 at 934x888, 60 px | 0 | 290x888 at x 60 |
+  | 768x900 | 702x888 at 702x888, 60 px | 0 | 290x888 at x 60 |
+  | 360x800, phone sheet | 480x1067 at 360x800, 0 px | 0 | 344x672 at x 8, y 58 |
+
+- **The strip under the card.** `.panel-reserve` in `Frame.svelte` is a box of its own, outside the card and never
+  animated: 296 px wide (`--panel-width`), as high as the card, `pointer-events: none`. It is mounted by the panel's
+  state, as the card starts to enter, and goes as the card starts to leave. It is not drawn (`display: none`) on a phone
+  and beside a co-website. It carries the camera's blocker and publishes its measured width as
+  `gameViewportCoveredStart` in `ExternalModule/ClientExtensionPoints.ts`, which is 0 by default and when the frame is
+  taken down. `Components/MainLayout.svelte` adds it to the start padding of `#main-layout`, so the dock and the in-call
+  video layout stand beside the card. A blocker measures its element again only on a CSS transition or animation of
+  that element, which a Svelte transition never starts: that is why the strip is not the card.
+- **How the camera keeps the avatar and the map's edge clear.** `CameraManager.updateGameBounds` extends the camera's
+  bounds along the start edge (the right edge in right-to-left) by the strip, in map pixels at the current zoom. The
+  map's edge can scroll out from under the card, and an avatar at the map's edge stands beside the card. A map is
+  centred only when it fits beside the strip too (`displayWidth > mapWidth + covered`): a map narrower than the window
+  but wider than the part the card leaves scrolls. With the port at 0 the camera is as upstream. A strip that arrives
+  is given to the bounds at once; a strip that goes is given back along the camera's offset glide, so the view does not
+  jump.
+- **The glide is matched to the card.** The camera's offset glide takes the card's own timing when the strip is what
+  changed: 200 ms on the exit curve when the strip goes, so that the void under the leaving card narrows in step with the
+  card's fading (296 px times one minus the curve, against an opacity of one minus the curve), and 290 ms on the
+  surface spring when it comes. Any other blocker (a video box) keeps 500 ms on `QuadEaseOut`. All of them go through
+  `motionDuration`, which is 0 under reduced motion. Tests: `tests/front/Phaser/Game/CameraManualPan.test.ts`.
+- **Stacking.** The wide card is at `z-index` 5. It is over the canvas and over Phaser's name tags (their DOM layer is a
+  stacking context at level 0) and under `#main-layout`, whose `z-index` is 10. What the HUD draws over the whole window
+  (a fullscreen video, a modal with its scrim, a popup centred on the window) covers the card as it covers the map. At
+  the phone sheet's level, 35, the card would have painted over a fullscreen video and over an iframe modal (the review
+  of the panel lane read this from the CSS; it was never seen). A click on the card is a click on the card: `#main-layout` takes none where it draws nothing,
+  and Phaser takes a press whose target is not the canvas as outside the game (`PointerOnOverlay.test.ts`).
+- **Beside a co-website.** The frame has `.shares-map` while a co-website is open. From 768 px the card then keeps its
+  own grid column (three columns), the published bounds leave it out and the strip is not drawn: the page and the game
+  split the cell, and the split is not made under the card. When the exit starts the frame is no longer `panel-open`,
+  the grid re-fits to two columns at once, and the card leaves floating where its column was (the rule is
+  `.konclui:not(.shares-map.panel-open) .side-panel`), so it does not move. The re-fit at the start of the exit is
+  T-305. Who gets the space between 768 and 1023 px is the owner's question (T-327): today the panel keeps its column.
+- **Entrance and exit, measured.** One run of 290 ms on `aside.side-panel`: opacity 0 to 1, x from -24 px to 0, scale
+  0.98 to 1 (at 203 ms: opacity 0.93, x -1.6 px). The exit is one run of 200 ms with the card `inert`: opacity 1 to 0,
+  x 0 to -12 px, scale to 0.99, and the node was gone between 204 and 230 ms (209 to 224 ms across the five windows).
+  Seven presses 60 ms apart ended closed, with no card and no animation left.
+- **People and chat.** The card stays at opacity 1 when its view swaps and `.content` fades from 0 to 1 over 150 ms (the
+  card's label changes in the first frame). The first time the chat opens in a session the page stalls for about one
+  second while the chat code loads: a load cost, not motion (T-325).
+- **Focus and keys.** `aria-controls` on the rail's two buttons and on the people pill points at `konclui-side-panel`
+  only while the panel is open. As the panel closes, the focus goes to the rail's button (to the pill on a phone) while
+  the card is still in the page, `chatInputFocusStore` is reset at that moment so the game's keys are not blocked until
+  the card is removed, and Escape and Ctrl+K keep working during the exit.
+- **The rail.** Every rail button carries `k-press`, and the rail is `k-glide` with one pill (40x40 px in the probe).
+  The hover fill is drawn only inside `@media (hover: hover)` and only while the pill is absent. The pressed button
+  keeps its fill and its colour, and has a 2 px `Highlight` outline under forced colours when it is not focused.
+
+### The utilities
+
+All of them are in `libs/tailwind/style/konclui.css`, in `@layer utilities`.
+
+- **`.k-press`.** While pressed, the control scales to 0.985 (`--k-press-scale`) with `transition: scale` over
+  `--k-dur-press` (160 ms) on `--k-ease-out-expo`. It uses the individual `scale` property, so it never clashes with
+  the `transform` that `.k-enter` and `transition:surface` write. A control with `aria-disabled="true"` does not give.
+  A press is not a hover, so it plays on a touch screen too. Under reduced motion there is no transition and no scale,
+  and the fill change stays. It is on the rail's buttons, the dock's buttons and menu rows (`ActionBarButton.svelte`),
+  `MenuRow.svelte`, the status rows, the profile menu's raw rows, the dock's chevron, the focus chip's button, the
+  preferences tabs and close button, and the tools of the map column.
+- **`.k-lift`.** It has the press, and a card or tile that the pointer is over also scales to 1.02 (`--k-lift-scale`).
+  The hover rule is inside `@media (hover: hover)` and skips `aria-disabled="true"`, so a tap does not leave the tile
+  grown. The emote tiles set 1.08 locally in `EmoteSection.svelte` (T-312). Under reduced motion it does not scale.
+- **`.k-turn`.** A mark that rotates from `--k-turn-closed` (default -90deg) to 0deg when it has `.is-open` or its
+  parent has `aria-expanded="true"`, on the turn spring over 360 ms. Under reduced motion it is upright at once.
+- **`.k-disclosure` and `.k-disclosure-body`.** A reveal of unknown height: the one-row grid goes from `0fr` to `1fr` on
+  the surface spring over 290 ms, so the body grows to what it holds, even while its content grows. `.is-open` comes
+  from state. The body clips (`overflow: hidden`, `min-height: 0`), so a focus ring inside it needs room within its own
+  box. Once shut, the body is `visibility: hidden` after the row has closed, so nothing in it takes the focus or is read
+  out; open, it is visible at once. It animates a layout property, so it belongs inside a surface whose own box may
+  change (a menu over the map, a fixed-height panel) and never to a grid column of the frame. Under reduced motion it is
+  open or shut at once. Its users are the office menu's notice line, the explorer's two lists and the people panel's
+  Online section.
+- **`.k-glide`, `.k-glide-pill` and the `glide` attachment.** One pill under the rows of a list that follows the
+  pointer, or the keyboard focus, from row to row. The container carries `.k-glide`, which isolates a stacking context
+  so the pill, at `z-index` -1, is under the rows' text and over the surface behind. `{@attach glide({ item })}` in
+  `Utils/glide.ts` creates the pill and adds `.k-glide-on` to the container, and from then on the rows' own hover fill
+  is gone (the rule skips `aria-disabled` and `aria-pressed` rows), or the fill would arrive at once and the pill's
+  travel would not be seen. Users: the office menu, the profile menu, the preferences tabs and the rail.
+  - The pill is drawn only inside `@media (hover: hover)`. On a device without hover, or where the browser cannot say,
+    the attachment does nothing: no pill, no listener, no `.k-glide-on`, so every row keeps its own hover. A touch
+    pointer is not a hover either.
+  - It listens to `pointerover` and `focusin` on the container, not to each row. The keyboard counts only where
+    `:focus-visible` matches, so a menu opened with the mouse shows no pill on its first row.
+  - It moves by `translate`, `width` and `height` on the surface spring (290 ms) and fades on `--k-dur-fast`. The first
+    place after it was hidden is taken at once with the transition off, and the pill fades in there; only the move from
+    one row to the next glides.
+  - Over a gap, a title or a divider it stays where it is, so a pointer crossing from row to row glides and does not
+    fade out and in. It hides on `pointerleave`, when the focus leaves the container, and over a row that cannot act.
+  - It reads `offsetLeft`, `offsetTop`, `offsetWidth` and `offsetHeight`, which a press's scale and a surface's
+    transform do not change, and writes them as `--k-glide-x`, `--k-glide-y`, `--k-glide-w` and `--k-glide-h`. They are
+    physical, so the pill is placed by `top` and `left`. A scrolling container scrolls the pill with its rows.
+  - Under reduced motion the pill jumps. Under forced colours it is a 2 px `Highlight` outline with an offset of -2 px.
+  - When the rows change under a resting pointer the pill stays where it was (T-306).
+
+### What stays still on purpose
+
+- Typing in a search: the people rows (`PersonRow.svelte`) and the walk notice get none of the new motion, and neither
+  does the chat's mention typeahead (`MentionSuggestions.svelte`), which changes per keystroke.
+- Hover tooltips: the reaction and its tooltip, `InfoButton.svelte` and `HelpTooltip.svelte` get none of the new motion,
+  and a floating popup registered without `motion` is gone in the same flush.
+- Keyboard navigation: no utility transitions an outline or a shadow, so the focus ring is drawn at once on the focused
+  row and does not glide. The pill follows the keyboard focus only as a hover fill, and only for `:focus-visible`.
+- `KoncluiMotionSurfaces.test.ts` pins the same seven files against `transition:surface`, `popupSurface`, `.k-glide`,
+  `.k-disclosure` and `.k-turn`.
+
+### Known gaps
+
+Closed by this change: exits are no longer instant for any surface that uses `transition:surface`; the map no longer
+re-fits when the side panel opens or closes, except beside a co-website; "Link copiado" in the office menu has its
+transition (a disclosure, the text kept while the line shuts). Open, each in `docs/TODO.md`:
+
+- The top row of the HUD, the dock and the in-call video layout jump in one frame when the card starts to move (T-303).
+- A press on a leaving surface falls through to the map for up to 200 ms, because the surface is inert; only the
+  preferences dialog has a guard, its scrim (T-304).
+- Beside a co-website the grid re-fits at the start of the card's exit, and the 768 to 1023 px band is the owner's
+  question (T-305, T-327).
+- The glide pill stays at its old offset when rows change under a resting pointer (T-306).
+- The logout row's scoped style block in `ProfileMenuContent.svelte` should move to `konclui.css` (T-307).
+- The reactions menu and the apps menu have a fixed `origin-bottom-left`, and every popup rises from 6 px below even
+  when it flips (T-308).
+- The chat's chevrons and section bodies are still on the old motion (T-309).
+- The map explorer has a `.k-enter` entrance that its parent's `fly` probably hides, and no exit (T-310).
+- The surfaces left out on purpose, and the camera's pan easing, are not decided (T-311, T-329).
+- The hover lift of 1.08 on the emote tiles and 1.02 by default is a number the owner never gave (T-312, T-328).
+- On a phone the sheet registers no camera blocker, so the view stays centred under it (T-324).
+- Resizing across 768 px with the card open keeps the same card and replays nothing; an exit that crosses 768 px ends
+  with the pose it started with, a wobble of 12 px or less for under 200 ms (T-323).
+- Not seen in a browser, each a row of its own: reduced motion (T-313), right to left (T-314), forced colours (T-315),
+  a frame trace at 120 Hz (T-316), a screen reader on the people disclosure and the notice (T-317), the card under a
+  fullscreen video and a modal (T-318), the avatar at the map's left edge and the void band on close (T-319), the
+  people disclosure's scrolling (T-320), focus and `inert` order (T-321), the surfaces the probe did not open (T-322),
+  and the CSS springs, the press, the turn, the disclosure and the pill's glide playing (T-330).
+
+### Verification (MOT-06)
+
+- **Tests, by file.** Under `play/`: `src/front/Utils/spring.test.ts`, `surfaceTransition.test.ts`, `glide.test.ts`,
+  `floatingUiSurface.test.ts` and `svelte-floatingui-show.test.ts`;
+  `src/front/Components/Util/FloatingUiPopupList.test.ts`;
+  `src/front/Konclui/Shell/components/Frame.test.ts`, `FrameBounds.test.ts`, `FramePanelMotion.test.ts` and
+  `FramePhone.test.ts`; `src/front/Konclui/OfficeMenu/components/OfficeMenu.test.ts`;
+  `src/front/Konclui/Preferences/components/PreferencesHost.test.ts`;
+  `src/front/Konclui/Focus/components/FocusChip.test.ts`;
+  `src/front/Konclui/Presence/components/CallIndicator.test.ts`, `PlaceChip.test.ts`, `PeoplePanel.test.ts` and
+  `PeoplePill.test.ts`; `src/front/Konclui/MapTools/components/MapTools.test.ts`; `src/front/Chat/ChatSidebar.test.ts`;
+  `src/front/ExternalModule/ClientExtensionPoints.test.ts`; `tests/front/Components/Exploration/Explorer.test.ts`;
+  `tests/front/Components/MainLayoutCoveredStrip.test.ts`; `tests/front/Phaser/Game/CameraManualPan.test.ts` and
+  `PointerOnOverlay.test.ts`; `tests/front/Style/KoncluiMotionTokens.test.ts`, `KoncluiMotionSurfaces.test.ts`,
+  `KoncluiEntrance.test.ts`, `KoncluiMenuUtilities.test.ts` and `KoncluiThemeContrast.test.ts`.
+- **What they prove.** They run in jsdom with `Element.animate` stubbed (`src/front/Utils/webAnimationsStub.ts`, and
+  `SurfaceTransitionFixture.svelte` and `FloatingUiPopupFixture.svelte` as hosts). They prove the lifecycle (the held
+  node, `inert`, removal, reversal half way, reduced motion, the focus hand-off), the geometry the CSS and the camera
+  code give, and source pins on which directive sits on which element. They do not prove rendering, feel or
+  hit-testing, and jsdom does not apply `inert` (no hit-testing and no blur).
+- **Browser probe, 2026-11-24.** `.local/konclui/motion-2026-11-24/acceptance.md` (git-ignored, on this Mac only,
+  T-070). The front of the working tree that the three commits then took whole (the lanes plus the rest-opacity fix;
+  nothing under `play/` or `libs/` changed between the probe and the commits), built with `.local/konclui/bin/qa-front-swap.sh` (bundle
+  `main-CNlc9193.js`), in the QA play container of `candidate-6c6a38b2d53b`; the Claude desktop browser pane, device
+  pixel ratio 2, frames about every 17 ms. Each number was read in the page with `requestAnimationFrame`, a
+  `ResizeObserver` on the canvas and `Element.getAnimations()`. Read: the canvas table and the side panel's entrance,
+  exit, reversal and rapid presses above. Other surfaces:
+
+  | Surface | Entrance | Exit |
   | --- | --- | --- |
-  | People/chat panel, wide | 24 px left, from the rail | `--k-dur-settle` (280 ms), `--k-ease-sheet` |
-  | People/chat panel, phone (≤767 px) | 16 px below, a card over the map | same |
-  | Office menu | 6 px left, from the logo | `--k-dur-fast`, `--k-ease-out-expo` |
-  | Profile menu (dock avatar) | 6 px below | same |
-  | Map explorer | 16 px right | `--k-dur-normal` (200 ms) |
+  | Office menu (logo) | 290 ms, from 6 px left and scale 0.98; 13 rows, pill present | 200 ms, `inert`, to 3 px left and 0.99, gone at about 215 ms |
+  | Camera and microphone settings (dock) | 290 ms | 200 ms, `inert`, removed |
+  | Emoji bar (the reactions menu, dock) | 290 ms | 200 ms, `inert`, removed |
+  | Preferences dialog and its dimming | 290 ms on both | 200 ms on both, `inert`, removed (closed with Escape) |
 
-- **The grid column never animates.** `.konclui` switches its columns at once when the panel opens or closes; only the
-  card inside moves. Measured 2026-11-20 on the QA stack: animating `grid-template-columns` re-fitted the canvas 13
-  times per open and the map was black mid-transition. With the entrance on the card the canvas re-fits once (1 resize
-  recorded in a 2 s slow-motion open) and the map stays drawn. `KoncluiEntrance.test.ts` guards that no rule
-  transitions or animates the grid columns.
-- **Known gaps (recorded, not started).**
-  - Exits are still instant for every surface. The side panel's content is unmounted by the upstream `ChatSidebar`
-    while `$chatVisibilityStore` is false, so an exit needs either a lifecycle change there or a clone of the card;
-    a blank card sliding away would read worse than closing at once.
-  - The map still re-fits in one step when the column changes width.
-  - "Link copiado" in the office menu still appears without a transition.
-- **Verification (MOT-06).** Browser probes in the ledger evidence
-  (`evidence/ui-feedback-2026-11-19/motion/verify-motion.mjs`): slow-motion frames, reduced motion, 9 and 6 rapid
-  toggles, keyboard open with focus kept on the rail button, phone 375 and 768 px. Run against
-  `candidate-7be83ab59ade`: 16 of 16 passed. A frame-rate trace was not taken.
+- **Not seen in the browser.** Reduced motion (the pane cannot emulate it); the avatar at the map's left edge with the
+  card open, and the camera's glide against the card (unit tests only; in the screenshots the view re-centres on the
+  part of the map beside the card); right-to-left pages; forced colours; a 120 Hz trace; a screen reader on the people
+  disclosure; a co-website beside the panel; the card under a fullscreen video or a modal; and the profile menu, the
+  status list, the map tools, the focus chip, the call and place chips, the apps menu and the favourites emoji picker,
+  which were not probed one by one.
+- **The CSS springs and the pill, never seen to play (T-330).** The probe measured the JS runs of `transition:surface`
+  through `Element.getAnimations()` and saw the rail's and the office menu's pill present. It did not see these play:
+  the `linear()` easings and the spring's feel (the owner asked for exactly this feel), `.k-press` on a pressed row,
+  `.k-turn`, `.k-disclosure`, the pill gliding across the 2 px gaps between rows (`gap-0.5` in `MenuGroup.svelte`) and
+  over the dividers (`glide.ts` is unit-tested only), and the office menu's padding (`p-1.5`) and its position on a
+  phone.
+- **Console errors.** The two during the probe were the ones the QA stack already had (the service worker script and
+  the missing `entities.json`); none came from the motion code. A frame-rate trace was not taken.
+- **The earlier probe.** `evidence/ui-feedback-2026-11-19/motion/verify-motion.mjs` (16 of 16 against
+  `candidate-7be83ab59ade`) measured the `.k-enter` design that this section replaces. It is not evidence for the
+  present one.

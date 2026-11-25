@@ -17,7 +17,7 @@ export interface PopupMotionEntry {
 }
 
 /**
- * `transition:popupSurface={entry}` on the popup's wrapper. A popup that asked for motion gets `surface`, with the
+ * `transition:popupSurface={value}` on the popup's wrapper. A popup that asked for motion gets `surface`, with the
  * origin the theme declares (6 px below, 2 % small: a popup stands above its trigger, which rises it from the
  * trigger). A tooltip gets a transition of no duration: Svelte removes it in the same flush, with no animation and
  * nothing held, as if the directive were not there.
