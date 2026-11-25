@@ -6,12 +6,15 @@ import type { WebRtcSenderStats } from "../Components/Video/WebRtcStats";
 import { registerLocalEncoderStats, type LocalEncoderStats } from "./LocalEncoderStats";
 import { uplinkCapNoticeStore, uplinkCapStore } from "./UplinkCap";
 import {
+    CAP_ESTIMATE_LINE,
     HEALTHY_MAX_LIMITED,
     HEALTHY_MAX_LOSS,
     HEALTHY_MIN_AVAILABLE_BITRATE,
     HOLD_MS,
     IDLE_CONFIRM_MS,
     LIMITED_SAMPLES,
+    LOWER_LAYERS_BITRATE,
+    LOWER_LAYERS_SHARE,
     SAMPLE_INTERVAL_MS,
     startUplinkLimitationDetector,
     SURVIVAL_MS,
@@ -49,9 +52,13 @@ function stats(extra: Partial<WebRtcSenderStats> = {}, encoders?: WebRtcSenderSt
     return { ...single, encoders: encoders ?? [single] };
 }
 
-// The allocator cannot fund the largest layer for most of the second
+// What a reading must show to count toward a cap: the allocator could not fund the largest layer for most of the second,
+// and the estimate is under CAP_ESTIMATE_LINE (the trial of the 600 kbps run of the first two batches measured 369 to
+// 518 kbps). The estimate is above HEALTHY_MIN_AVAILABLE_BITRATE: a lift test that ends on limited samples is about
+// their number, not the estimate.
+const limitedReading: Partial<WebRtcSenderStats> = { bandwidthLimitedRatio: 0.8, availableOutgoingBitrate: 500_000 };
 const limited = (count: number, extra: Partial<WebRtcSenderStats> = {}) =>
-    Array<LocalEncoderStats>(count).fill(stats({ bandwidthLimitedRatio: 0.8, ...extra }));
+    Array<LocalEncoderStats>(count).fill(stats({ ...limitedReading, ...extra }));
 const fine = (count: number, extra: Partial<WebRtcSenderStats> = {}) =>
     Array<LocalEncoderStats>(count).fill(stats(extra));
 
@@ -109,11 +116,17 @@ describe("UplinkLimitationDetector thresholds", () => {
         expect(HEALTHY_MAX_LOSS).toBe(0.02);
         expect(HEALTHY_MIN_AVAILABLE_BITRATE).toBe(400_000);
         expect(IDLE_CONFIRM_MS).toBe(15_000);
+        // 360p (450 kbps) + 180p (160 kbps): UplinkLimitationDetector.livekit.test.ts checks them against livekit-client
+        expect(LOWER_LAYERS_BITRATE).toBe(610_000);
+        // 90 % of it: a choice inside the bracket the shaped links gave (the cap helped under 518 kbps, not from a median
+        // of 583 kbps up; first two batches, one run per rate, the 700 and 800 kbps runs noisy), not a measured threshold
+        expect(LOWER_LAYERS_SHARE).toBe(0.9);
+        expect(CAP_ESTIMATE_LINE).toBe(549_000);
     });
 });
 
 describe("UplinkLimitationDetector, capping", () => {
-    it("caps at the 45th second of a link that cannot carry the full ladder, and only once however long it stays weak", () => {
+    it("caps at the 45th second of a link that cannot carry the 360p + 180p layers, and only once however long it stays weak", () => {
         const sc = scenario();
 
         sc.seconds(limited(WARMUP_SAMPLES + 10 * WINDOW_SAMPLES));
@@ -214,10 +227,7 @@ describe("UplinkLimitationDetector, capping", () => {
 
     it("does not cap when two encoders are running", () => {
         const sc = scenario();
-        const two = stats({ bandwidthLimitedRatio: 0.8 }, [
-            encoder({ bandwidthLimitedRatio: 0.8 }),
-            encoder({ bandwidthLimitedRatio: 0.8 }),
-        ]);
+        const two = stats(limitedReading, [encoder(limitedReading), encoder(limitedReading)]);
 
         sc.seconds(Array<LocalEncoderStats>(WARMUP_SAMPLES + 2 * WINDOW_SAMPLES).fill(two));
 
@@ -251,11 +261,11 @@ describe("UplinkLimitationDetector, capping", () => {
         };
 
         expect(after(undefined)).toEqual([]);
-        expect(after(stats({ activeLayers: 1, bandwidthLimitedRatio: 0.8 }))).toEqual([]);
-        expect(after(stats({ source: "P2P", bandwidthLimitedRatio: 0.8 }))).toEqual([]);
-        expect(after(stats({ mimeType: "video/VP8", bandwidthLimitedRatio: 0.8 }))).toEqual([]);
+        expect(after(stats({ ...limitedReading, activeLayers: 1 }))).toEqual([]);
+        expect(after(stats({ ...limitedReading, source: "P2P" }))).toEqual([]);
+        expect(after(stats({ ...limitedReading, mimeType: "video/VP8" }))).toEqual([]);
         // The control: the same samples with a limited reading in the middle do make the cap
-        expect(after(stats({ bandwidthLimitedRatio: 0.8 }))).toHaveLength(1);
+        expect(after(stats(limitedReading))).toHaveLength(1);
     });
 
     it("starts a new warm-up when a layer that was off resumes, whose ramp-up looks like a weak link", () => {
@@ -290,7 +300,7 @@ describe("UplinkLimitationDetector, capping", () => {
 
         // A reading every 250 ms for a little more than the 45 s a cap needs
         for (let now = 0; now <= 50_000; now += 250) {
-            if (detector.sample(stats({ bandwidthLimitedRatio: 0.8 }), context, now)) {
+            if (detector.sample(stats(limitedReading), context, now)) {
                 capTimes.push(now);
             }
         }
@@ -306,12 +316,180 @@ describe("UplinkLimitationDetector, capping", () => {
         // The poll is a setInterval and an async getStats(): readings 994 and 1006 ms apart, never exactly 1000
         for (let reading = 0; reading <= 50; reading++) {
             const now = reading * 1000 + (reading % 2 === 0 ? 3 : -3);
-            if (detector.sample(stats({ bandwidthLimitedRatio: 0.8 }), context, now)) {
+            if (detector.sample(stats(limitedReading), context, now)) {
                 capTimes.push(now);
             }
         }
 
         expect(capTimes).toEqual([44_003]);
+    });
+});
+
+describe("UplinkLimitationDetector, what counts toward a cap", () => {
+    // The largest layer is limited in every reading, and the estimate follows `estimates`, one value a second
+    const limitedWith = (estimates: (number | undefined)[]) =>
+        estimates.map((availableOutgoingBitrate) => stats({ ...limitedReading, availableOutgoingBitrate }));
+    // The estimate moves between the two ends of the range a shaped link gave
+    const between = (low: number, high: number, count: number) =>
+        limitedWith(Array.from({ length: count }, (_, second) => (second % 2 === 0 ? low : high)));
+
+    it.each([
+        ["1 Mbps", 717_000, 947_000],
+        ["1.3 Mbps", 917_000, 1_244_000],
+    ])(
+        "never caps a camera whose largest layer is limited all the time on a %s uplink: the estimate funds the 360p layer",
+        (_, low, high) => {
+            const sc = scenario();
+
+            sc.seconds(between(low, high, WARMUP_SAMPLES + 4 * WINDOW_SAMPLES));
+
+            expect(sc.decisions).toEqual([]);
+        },
+    );
+
+    it("caps the same camera at the same second on a 600 kbps uplink: the estimate cannot fund the 360p layer", () => {
+        const sc = scenario();
+
+        sc.seconds(between(369_000, 518_000, WARMUP_SAMPLES + WINDOW_SAMPLES));
+
+        expect(sc.decisions).toEqual([[FIRST_CAP_SECOND, "cap:0"]]);
+    });
+
+    it("does not count a reading with no estimate, however long the largest layer stays limited", () => {
+        const sc = scenario();
+
+        sc.seconds(limited(WARMUP_SAMPLES + 4 * WINDOW_SAMPLES, { availableOutgoingBitrate: undefined }));
+
+        expect(sc.decisions).toEqual([]);
+    });
+
+    it.each([
+        ["does not cap with one reading under the line fewer than a cap asks for", LIMITED_SAMPLES - 1, []],
+        ["caps with as many readings under the line as a cap asks for", LIMITED_SAMPLES, [[FIRST_CAP_SECOND, "cap:0"]]],
+    ])("%s, the rest of the window having no estimate", (_, withEstimate, decisions) => {
+        const sc = scenario();
+
+        sc.seconds([
+            ...fine(WARMUP_SAMPLES),
+            ...limited(WINDOW_SAMPLES - withEstimate, { availableOutgoingBitrate: undefined }),
+            ...limited(withEstimate),
+        ]);
+
+        expect(sc.decisions).toEqual(decisions);
+    });
+
+    // The trials of the first two batches of 2026-11-25 on a shaped link (one run per rate, a loaded host, the 700 and
+    // 800 kbps runs noisy): the range and the median of the estimate are measured, the readings in between are not kept
+    // here. Each window below is built to match them, 30 readings in kbps from the lowest to the highest, and is played
+    // in a fixed shuffled order (7 is coprime with 30, so every stretch of 30 seconds holds each reading once) so that the
+    // estimate moves as it did. They show how the rule treats such a window, not what those runs would have done: the
+    // median alone leaves the count under the line open.
+    describe("on the estimates a shaped link gave, the largest layer limited in every reading", () => {
+        const trial = {
+            // 418 to 713 kbps, median 583: 12 readings under the line, 7 more between the line and what the two lower
+            // layers ask for. The median alone allows at most 15 under the line, short of the 18 a cap asks for. A line at
+            // LOWER_LAYERS_BITRATE would have counted 19 of this window's 30 readings and capped it, where the viewer got
+            // 360p all the time in the trial of the real link, without a cap
+            "800 kbps": [
+                418, 430, 445, 458, 470, 485, 497, 510, 522, 531, 540, 546, 560, 575, 583, 583, 590, 598, 606, 615, 624,
+                633, 642, 651, 660, 672, 683, 694, 704, 713,
+            ],
+            // 225 to 602 kbps, median 433: 22 readings under the line, 8 over it. The median alone puts at least 15 under
+            // the line, and the range allows up to 29: this is one window the same figures allow, with enough under the
+            // line to cap
+            "700 kbps": [
+                225, 250, 275, 300, 325, 350, 370, 390, 405, 415, 422, 427, 430, 432, 433, 433, 460, 480, 500, 520, 535,
+                545, 552, 560, 568, 575, 582, 590, 596, 602,
+            ],
+        };
+        const median = (sorted: number[]) => (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+        const underTheLine = (sorted: number[]) => sorted.filter((kbps) => kbps * 1000 < CAP_ESTIMATE_LINE).length;
+        const played = (sorted: number[], seconds: number) =>
+            limitedWith(Array.from({ length: seconds }, (_, second) => sorted[(second * 7) % sorted.length] * 1000));
+
+        it("builds the windows the readings describe", () => {
+            for (const sorted of Object.values(trial)) {
+                expect(sorted).toHaveLength(WINDOW_SAMPLES);
+                expect(sorted).toEqual([...sorted].sort((a, b) => a - b));
+            }
+            expect([trial["800 kbps"][0], median(trial["800 kbps"]), trial["800 kbps"][29]]).toEqual([418, 583, 713]);
+            expect([trial["700 kbps"][0], median(trial["700 kbps"]), trial["700 kbps"][29]]).toEqual([225, 433, 602]);
+            expect(underTheLine(trial["800 kbps"])).toBe(12);
+            expect(underTheLine(trial["700 kbps"])).toBe(22);
+        });
+
+        it("never caps an estimate like the 800 kbps trial: fewer than a cap asks for are under the line", () => {
+            const sc = scenario();
+
+            sc.seconds([...fine(WARMUP_SAMPLES), ...played(trial["800 kbps"], 4 * WINDOW_SAMPLES)]);
+
+            expect(underTheLine(trial["800 kbps"])).toBeLessThan(LIMITED_SAMPLES);
+            expect(sc.decisions).toEqual([]);
+        });
+
+        it("caps an estimate like the 700 kbps trial, at the first full window", () => {
+            const sc = scenario();
+
+            sc.seconds([...fine(WARMUP_SAMPLES), ...played(trial["700 kbps"], 4 * WINDOW_SAMPLES)]);
+
+            expect(underTheLine(trial["700 kbps"])).toBeGreaterThanOrEqual(LIMITED_SAMPLES);
+            expect(sc.decisions).toEqual([[FIRST_CAP_SECOND, "cap:0"]]);
+        });
+    });
+
+    describe("on a link that hovers around the line", () => {
+        const under = CAP_ESTIMATE_LINE - 10_000;
+        const over = CAP_ESTIMATE_LINE + 10_000;
+        // Under the line three seconds in five: 18 of a window of 30. The same with its first second over: 17.
+        const eighteenOfThirty = Array.from({ length: WINDOW_SAMPLES }, (_, second) => second % 5 < 3);
+        const seventeenOfThirty = eighteenOfThirty.map((isUnder, second) => isUnder && second !== 0);
+        const hover = (isUnder: boolean[]) => limitedWith(isUnder.map((below) => (below ? under : over)));
+
+        it.each([
+            ["17 of the last 30 readings under the line: no cap", seventeenOfThirty, []],
+            ["18 of the last 30 readings under the line: a cap", eighteenOfThirty, [[FIRST_CAP_SECOND, "cap:0"]]],
+            [
+                "17 of the last 30, then a reading under the line that pushes an over one out of the window: a cap",
+                [...seventeenOfThirty, true],
+                [[FIRST_CAP_SECOND + 1, "cap:0"]],
+            ],
+        ])("%s", (_, isUnder, decisions) => {
+            const sc = scenario();
+
+            sc.seconds([...fine(WARMUP_SAMPLES), ...hover(isUnder)]);
+
+            expect(sc.decisions).toEqual(decisions);
+        });
+    });
+
+    it.each([
+        ["an estimate exactly at the line does not count", CAP_ESTIMATE_LINE, []],
+        ["an estimate one bit per second under the line counts", CAP_ESTIMATE_LINE - 1, [[FIRST_CAP_SECOND, "cap:0"]]],
+        // The same two rows with the figure written out, so that the boundary is pinned apart from the exported line
+        ["an estimate of 549 000 bits per second does not count", 549_000, []],
+        ["an estimate of 548 999 bits per second counts", 548_999, [[FIRST_CAP_SECOND, "cap:0"]]],
+        // The median of the 800 kbps trial: the browser's estimate funds the 360p layer there, and the viewer got 360p all
+        // the time in that trial, without a cap
+        ["an estimate between the line and what the two lower layers ask for does not count (583 kbps)", 583_000, []],
+        [
+            "an estimate one bit per second under what the two lower layers ask for does not count: that was the line once",
+            LOWER_LAYERS_BITRATE - 1,
+            [],
+        ],
+    ])("%s", (_, availableOutgoingBitrate, decisions) => {
+        const sc = scenario();
+
+        sc.seconds(limited(WARMUP_SAMPLES + WINDOW_SAMPLES, { availableOutgoingBitrate }));
+
+        expect(sc.decisions).toEqual(decisions);
+    });
+
+    it("does not count an estimate under the line while the largest layer is not limited", () => {
+        const sc = scenario();
+
+        sc.seconds(fine(WARMUP_SAMPLES + 2 * WINDOW_SAMPLES, { availableOutgoingBitrate: CAP_ESTIMATE_LINE - 1 }));
+
+        expect(sc.decisions).toEqual([]);
     });
 });
 
@@ -527,6 +705,19 @@ describe("UplinkLimitationDetector, lifting", () => {
     it("does not lift with more than the limited samples a healthy window may hold", () => {
         const lifts = (count: number) =>
             cappedLinkWithTheHoldEndingOn([...fine(WINDOW_SAMPLES - count), ...limited(count)]).decisions.slice(1);
+
+        expect(lifts(HEALTHY_MAX_LIMITED + 1)).toEqual([]);
+        expect(lifts(HEALTHY_MAX_LIMITED)).toEqual([[HOLD_OVER, "lift:recovered"]]);
+    });
+
+    it("counts a limited sample against the lift whatever the estimate says", () => {
+        // The estimate only decides the cap: while capped it is frozen, and a limited second is a limited second
+        const aboveTheLine = { availableOutgoingBitrate: CAP_ESTIMATE_LINE + 1 };
+        const lifts = (count: number) =>
+            cappedLinkWithTheHoldEndingOn([
+                ...fine(WINDOW_SAMPLES - count),
+                ...limited(count, aboveTheLine),
+            ]).decisions.slice(1);
 
         expect(lifts(HEALTHY_MAX_LIMITED + 1)).toEqual([]);
         expect(lifts(HEALTHY_MAX_LIMITED)).toEqual([[HOLD_OVER, "lift:recovered"]]);
@@ -867,7 +1058,7 @@ describe("startUplinkLimitationDetector", () => {
         vi.restoreAllMocks();
     });
 
-    const weak = () => encoder({ bandwidthLimitedRatio: 0.8 });
+    const weak = () => encoder(limitedReading);
 
     it("caps the camera, tells the user and reports the cap once the link is weak", () => {
         tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES - 1);
@@ -881,6 +1072,14 @@ describe("startUplinkLimitationDetector", () => {
             action: "capped",
             level: 0,
         });
+    });
+
+    it("says in the console which line the estimate stayed under when it caps", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+
+        expect(console.info).toHaveBeenCalledExactlyOnceWith(
+            expect.stringContaining("stayed under 549 kbps (90 % of what the 360p and 180p layers ask for)"),
+        );
     });
 
     it("never caps while a screen share is running", () => {
