@@ -1,4 +1,6 @@
+import crypto from "crypto";
 import {
+    MAX_EVENT_ID_LENGTH,
     VideoQualityLevel,
     VideoQualityLimitationReason,
     VideoQualityRelayProtocol,
@@ -254,7 +256,12 @@ export class AnalyticsEventsQueue extends SharedAnalyticsEventsQueue {
             // arrival.
             source: "pusher",
             clientEventTimeMs: clientEventDate.getTime(),
-            eventId: `${socketData.userUuid}:${sample.streamId}:${sample.sampleSeq ?? clientEventDate.getTime()}`,
+            eventId: videoQualitySampleEventId(
+                socketData.userUuid,
+                sample.streamId,
+                sample.sampleSeq,
+                clientEventDate.getTime(),
+            ),
             properties: {
                 streamId: sample.streamId,
                 connectionId: sample.connectionId ?? null,
@@ -290,6 +297,32 @@ export class AnalyticsEventsQueue extends SharedAnalyticsEventsQueue {
             },
         };
     }
+}
+
+/**
+ * The id of a video quality sample: `<userUuid>:<streamId>:<sampleSeq>:<clientEventTimeMs>`, or the SHA-256 of
+ * that text when it is longer than the admin accepts.
+ *
+ * The id is the admin's idempotency key: the same when one sample is sent again, different for any other sample,
+ * except one case. `sampleSeq` alone does not do that. The front restarts it at 0 for every subscription, a stream
+ * id does not change when the stream is published again, and two tabs of one user report an inbound stream under
+ * the same id. The client time of the sample tells those apart. The id has no tab part, so two tabs of one user
+ * that sample one stream at the same sequence in the same millisecond still share an id.
+ *
+ * A peer to peer stream id carries the room URL, so the readable form can pass MAX_EVENT_ID_LENGTH and the admin
+ * would answer 422 for it. The fallback is a hash, as `eventIdOf` does in the back (SessionAnalytics.ts, which the
+ * pusher cannot import). A hash is deterministic, so a retry keeps its id.
+ */
+function videoQualitySampleEventId(
+    userUuid: string,
+    streamId: string,
+    sampleSeq: number | undefined,
+    clientEventTimeMs: number,
+): string {
+    const readable = `${userUuid}:${streamId}:${sampleSeq ?? ""}:${clientEventTimeMs}`;
+    return readable.length <= MAX_EVENT_ID_LENGTH
+        ? readable
+        : crypto.createHash("sha256").update(readable).digest("hex");
 }
 
 /**

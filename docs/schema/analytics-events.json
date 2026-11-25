@@ -4174,7 +4174,7 @@
             "number",
             "null"
           ],
-          "description": "Monotonic counter per stream, used to order and de-duplicate samples."
+          "description": "Counter of the samples one page has sent for a stream since it subscribed to it. It restarts at 0 when the stream is published or bound again and when the page reloads, and two tabs count apart, so it orders the samples of one subscription only. The event id carries the client time of the sample too, which is what keeps it unique."
         }
       },
       "additionalProperties": true,

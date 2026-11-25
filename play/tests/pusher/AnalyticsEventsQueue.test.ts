@@ -6,6 +6,7 @@ import {
     VideoQualityStreamCategory,
     VideoQualityStreamDirection,
     VideoQualityTransportType,
+    MAX_EVENT_ID_LENGTH,
     type AnalyticsEventName,
     type VideoQualitySampleMessage,
 } from "@workadventure/messages";
@@ -362,6 +363,113 @@ describe("AnalyticsEventsQueue", () => {
         });
     });
 
+    it("builds the id of a video quality sample from the user, the stream, the sequence and the client time", async () => {
+        const ids = await videoQualityEventIds([videoQualitySample()]);
+
+        // 1777032005000 is 2026-04-24T12:00:05.000Z, the client time of the fixture.
+        expect(ids).toEqual(["reporter-uuid:stream-id:1:1777032005000"]);
+    });
+
+    it("gives the samples of two publications of one stream different ids", async () => {
+        // A republish keeps the stream id and restarts the count at 0: the new
+        // publication reaches the same sequence number as the old one did.
+        const camera = {
+            streamId: "PA_local:video:outbound",
+            direction: VideoQualityStreamDirection.VIDEO_QUALITY_STREAM_DIRECTION_OUTBOUND,
+            transportType: VideoQualityTransportType.VIDEO_QUALITY_TRANSPORT_TYPE_LIVEKIT,
+            sampleSeq: 0,
+        };
+
+        const [firstPublication, secondPublication] = await videoQualityEventIds([
+            videoQualitySample({ ...camera, clientEventTimeMs: Date.parse("2026-04-24T12:00:05.000Z") }),
+            videoQualitySample({ ...camera, clientEventTimeMs: Date.parse("2026-04-24T12:09:05.000Z") }),
+        ]);
+
+        expect(secondPublication).not.toBe(firstPublication);
+    });
+
+    it("gives the samples of one user's two tabs different ids when they are taken at different times", async () => {
+        // An inbound LiveKit stream is named by the remote sid and its type only, so both
+        // tabs report the same user, stream and sequence from their first sample. The id
+        // has no tab part: the client time is what tells the two tabs apart.
+        const inbound = { streamId: "PA_remote:video", sampleSeq: 0 };
+
+        const [firstTab, secondTab] = await videoQualityEventIds([
+            videoQualitySample({ ...inbound, clientEventTimeMs: Date.parse("2026-04-24T12:00:05.000Z") }),
+            videoQualitySample({ ...inbound, clientEventTimeMs: Date.parse("2026-04-24T12:00:05.700Z") }),
+        ]);
+
+        expect(secondTab).not.toBe(firstTab);
+    });
+
+    it("keeps the id of a sample that is sent again", async () => {
+        const [first] = await videoQualityEventIds([videoQualitySample()]);
+        const [replay] = await videoQualityEventIds([videoQualitySample()]);
+
+        expect(replay).toBe(first);
+    });
+
+    describe("when the readable id does not fit the admin's limit", () => {
+        // A P2P stream id is "<connection id>:<peer's space user id>:<type>:outbound", and
+        // a space user id is "<room URL>_<user id>": the room URL is in the id.
+        const roomUrl = "https://play.test/@/team/world/".padEnd(150, "x");
+        const userUuid = "3f2b8c1e-6d4a-4f0e-9b7a-1c5d8e2a9f40";
+        const screenShare = () =>
+            videoQualitySample({
+                streamId: `0c6f2d9e-5b1a-4e7c-8a3d-91b4f7e2c5a8:${roomUrl}_42:screenSharing:outbound`,
+                streamCategory: VideoQualityStreamCategory.VIDEO_QUALITY_STREAM_CATEGORY_SCREEN_SHARING,
+                direction: VideoQualityStreamDirection.VIDEO_QUALITY_STREAM_DIRECTION_OUTBOUND,
+                sampleSeq: 17,
+            });
+
+        it("sends the SHA-256 of the readable id for a P2P screen share under a 150-character room URL", async () => {
+            // The readable id of this sample is 267 characters, over the 255 of the limit.
+            // The digest is that text through `shasum -a 256`, not through the code under test.
+            const [id] = await videoQualityEventIds([screenShare()], socketData({ userUuid }));
+
+            expect(id).toBe("2da1f8d63b2d01753b261bb69d0dee61f5b5caef5fe1c6a6a016c3f3f0f3fa96");
+        });
+
+        it("keeps that id when the sample is sent again", async () => {
+            const [id] = await videoQualityEventIds([screenShare()], socketData({ userUuid }));
+            const [replay] = await videoQualityEventIds([screenShare()], socketData({ userUuid }));
+
+            expect(replay).toBe(id);
+        });
+
+        it("gives a screen share that starts again a different id", async () => {
+            // Same user and stream id, the count back at 0, a later client time.
+            const [first, second] = await videoQualityEventIds(
+                [
+                    screenShare(),
+                    {
+                        ...screenShare(),
+                        sampleSeq: 0,
+                        clientEventTimeMs: Date.parse("2026-04-24T12:09:05.000Z"),
+                    },
+                ],
+                socketData({ userUuid }),
+            );
+
+            expect(second).toMatch(/^[0-9a-f]{64}$/);
+            expect(second).not.toBe(first);
+        });
+
+        it("leaves an id of exactly 255 characters readable", async () => {
+            // "reporter-uuid" (13), "1" and a 13-digit time, with 3 separators, leave 225 for the stream id.
+            const [id] = await videoQualityEventIds([videoQualitySample({ streamId: "s".repeat(225) })]);
+
+            expect(id).toHaveLength(MAX_EVENT_ID_LENGTH);
+            expect(id).toMatch(/^reporter-uuid:s{225}:1:1777032005000$/);
+        });
+
+        it("hashes an id of 256 characters", async () => {
+            const [id] = await videoQualityEventIds([videoQualitySample({ streamId: "s".repeat(226) })]);
+
+            expect(id).toMatch(/^[0-9a-f]{64}$/);
+        });
+    });
+
     it("names the LiveKit transport by topology, as the catalog does", async () => {
         const post = vi.fn().mockResolvedValue(undefined);
         const queue = new AnalyticsEventsQueue(baseConfig, post);
@@ -647,6 +755,24 @@ function socketData(overrides: Partial<SocketData> & { analyticsEventsEnabled?: 
         analyticsEventsEnabled: true,
         ...overrides,
     } as SocketData;
+}
+
+/**
+ * The ids a pusher sends for these samples, in order. Each call is a queue of its own,
+ * so two calls are two pushers (or one pusher after a restart) sending a sample again.
+ */
+async function videoQualityEventIds(
+    samples: VideoQualitySampleMessage[],
+    socket: SocketData = socketData(),
+): Promise<string[]> {
+    const post = vi.fn().mockResolvedValue(undefined);
+    const queue = new AnalyticsEventsQueue(baseConfig, post);
+    queue.setEnabled(true);
+    queue.enqueueVideoQualityReport({ samples }, socket);
+    await queue.flush();
+
+    const batch = post.mock.calls[0][1] as AnalyticsEventsBatch;
+    return batch.events.map((queuedEvent) => queuedEvent.eventId);
 }
 
 function videoQualitySample(overrides: Partial<VideoQualitySampleMessage> = {}): VideoQualitySampleMessage {

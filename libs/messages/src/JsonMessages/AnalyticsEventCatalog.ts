@@ -208,7 +208,7 @@ const eventIdField = z
   .min(1)
   .max(MAX_EVENT_ID_LENGTH)
   .describe(
-    "Idempotency key. The backend stores events in a ReplacingMergeTree keyed partly on it, so a retried batch collapses instead of double-counting. Deterministic for backend-synthesized events; uuid-suffixed for repeating client events.",
+    "Idempotency key. The backend stores events in a ReplacingMergeTree keyed partly on it, so a retried batch collapses instead of double-counting. Deterministic for backend-synthesized events; uuid-suffixed for repeating client events. A video quality sample's id is <userUuid>:<streamId>:<sampleSeq>:<clientEventTimeMs>, or the SHA-256 of that text when it would pass 255 characters (a peer to peer stream id carries the room URL): a sample sent again keeps its id, and a stream published again does not repeat one. Neither does a second tab of the same user, unless both tabs take a sample of one stream at the same sequence in the same millisecond.",
   );
 
 const clientEventTimeMsField = z
@@ -920,7 +920,7 @@ export const ANALYTICS_EVENTS = {
         .number()
         .nullable()
         .describe(
-          "Monotonic counter per stream, used to order and de-duplicate samples.",
+          "Counter of the samples one page has sent for a stream since it subscribed to it. It restarts at 0 when the stream is published or bound again and when the page reloads, and two tabs count apart, so it orders the samples of one subscription only. The event id carries the client time of the sample too, which is what keeps it unique.",
         ),
     }),
     description:
