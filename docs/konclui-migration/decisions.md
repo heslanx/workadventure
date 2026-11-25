@@ -239,6 +239,15 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 
 **Reverse.** Each commit reverts alone. Reverting commit 1 restores `login.continue`, `woka.selectWoka`; reverting commit 2 restores the `menu.settings.save` button and the text-based locators.
 
+## COPY-UPLINK. The two strings of the uplink cap (2026-11-25)
+
+**Decision.** The owner approved the pt-BR wording of both strings as written (his words, 2026-11-25: "Sim, aprovo"):
+
+1. The toast, `warning.uplinkCapped`: "Conexão fraca: os outros veem sua câmera com menos qualidade. Ela volta sozinha." (en-US: "Weak connection: others see your camera in lower quality. It comes back on its own.")
+2. The note in the Media pane, `konclui.preferences.media.videoQualityCapped`: "Reduzida por enquanto: sua conexão está fraca. Sua escolha foi mantida." (en-US: "Lowered for now: your connection is weak. Your choice is kept.")
+
+**Scope.** The yes was given to the two pt-BR sentences shown to him. The en-US sentences are the source they were written from and say the same; he was not shown them again in that question. The other 15 locales are machine translations that no native reader has read: T-332 in `docs/TODO.md` stays open for that.
+
 ## DOCK. Knock prompt deferred; Focus and OfficeMenu in the domain graph (2026-11-18)
 
 **Decision.**
