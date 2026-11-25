@@ -50,6 +50,22 @@ function run(
     return decisions;
 }
 
+// Feeds `readings` readings of an encoder that is always limited, the first at 0 ms and each of the others
+// `gapMs(reading)` after the one before it, and returns the time of every decision
+function decisionTimes(readings: number, gapMs: (reading: number) => number): number[] {
+    const detector = new CpuLimitationDetector("screenSharing");
+    const state = { screenShareRunning: false, flagRaised: true };
+    const times: number[] = [];
+    let now = 0;
+    for (let reading = 0; reading < readings; reading++) {
+        now += reading === 0 ? 0 : gapMs(reading);
+        if (detector.sample(stats("cpu"), state, now)) {
+            times.push(now);
+        }
+    }
+    return times;
+}
+
 const limited = (count: number) => Array<LocalEncoderStats>(count).fill(stats("cpu"));
 const fine = (count: number) => Array<LocalEncoderStats>(count).fill(stats("none"));
 
@@ -100,12 +116,41 @@ describe("CpuLimitationDetector", () => {
         expect(after(stats("cpu", { encoders: [encoder, encoder, encoder] }))).toHaveLength(2);
     });
 
+    it("does not lose a reading to the jitter of a one second poll", () => {
+        // The poll is a setInterval and an async getStats(): readings 995 and 1005 ms apart, never exactly 1000.
+        // Every one counts. The 40th reading (10 of warm-up, then a window of 30) decides at 38,995 ms: 19 pairs of
+        // gaps and a 995 ms one. The cooldown takes the next 30 readings and the 71st decides, at 70,000 ms: 35 pairs
+        const times = decisionTimes(WARMUP_SAMPLES + 2 * WINDOW_SAMPLES + 1, (reading) =>
+            reading % 2 === 1 ? 995 : 1005,
+        );
+
+        expect(times).toEqual([38_995, 70_000]);
+    });
+
+    it("takes one sample per 900 ms from a burst of readings 100 ms apart", () => {
+        // A sample is taken once the last one is 900 ms old (a second, less the jitter the gate tolerates), so the
+        // 40th sample is the reading at 39 x 900 = 35,100 ms. Counting every reading would decide at 3,900 ms
+        expect(decisionTimes(500, () => 100)).toEqual([35_100]);
+    });
+
+    it("takes one sample a second from a burst of readings 250 ms apart", () => {
+        // Every fourth reading is a second after the last sample, so the 40th sample is at 39 s. 200 readings end
+        // at 49.75 s, before the next decision
+        expect(decisionTimes(200, () => 250)).toEqual([39_000]);
+    });
+
+    it("drops a reading 899 ms after the last sample", () => {
+        // One ms short of the tolerance: every second reading is sampled, so the 40th sample is the reading at
+        // 78 x 899 = 70,122 ms. At 900 ms every reading would count. 100 readings end before the next decision
+        expect(decisionTimes(100, () => 899)).toEqual([70_122]);
+    });
+
     it("takes one sample a second, however many encoders tick", () => {
         const detector = new CpuLimitationDetector("screenSharing");
         const samplesNeeded = WARMUP_SAMPLES + WINDOW_SAMPLES;
         // Three encoders, each reporting at its own time within the second. A sample is taken a second after the
-        // previous one, so a reading every 333 ms is sampled every fourth reading: this is just enough readings
-        // for one decision.
+        // previous one, less the jitter the gate tolerates, so a reading every 333 ms is sampled every third reading
+        // (999 ms): this is enough readings for one decision, and not for two.
         const readings = samplesNeeded * 4;
         const decisionTicks: number[] = [];
         for (let tick = 0; tick <= readings; tick++) {

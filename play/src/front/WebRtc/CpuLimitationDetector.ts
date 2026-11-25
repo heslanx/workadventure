@@ -46,6 +46,9 @@ export const LIMITED_SHARE = 0.7;
 // Keyframes and rate-control ramp-up look like overload
 export const WARMUP_SAMPLES = 10;
 const SAMPLE_INTERVAL_MS = 1000;
+// The poll is a setInterval and an async getStats(): its readings come 1000 ms apart give or take a few, and a gate of
+// exactly one interval would drop every one that comes a millisecond early, about half of them
+const SAMPLE_JITTER_MS = 100;
 
 /**
  * The codec of the whole set, when its encoders agree on one.
@@ -58,6 +61,9 @@ function agreedMimeType(stats: LocalEncoderStats): string | undefined {
     const mimeTypes = new Set(stats.encoders.map((encoder) => encoder.mimeType));
     return mimeTypes.size === 1 ? stats.encoders[0].mimeType : undefined;
 }
+
+// One sample a second whatever the number of readings, and none lost to the jitter of the poll
+const isTooSoon = (now: number, lastSampleTime: number) => now - lastSampleTime < SAMPLE_INTERVAL_MS - SAMPLE_JITTER_MS;
 
 export class CpuLimitationDetector {
     private samples: boolean[] = [];
@@ -91,7 +97,7 @@ export class CpuLimitationDetector {
             this.source = stats?.source;
             this.mimeType = mimeType;
         }
-        if (!stats || now - this.lastSampleTime < SAMPLE_INTERVAL_MS) {
+        if (!stats || isTooSoon(now, this.lastSampleTime)) {
             // Several encoders tick separately: one sample a second whatever their number
             return undefined;
         }
