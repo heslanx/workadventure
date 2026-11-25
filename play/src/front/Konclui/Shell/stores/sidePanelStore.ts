@@ -137,8 +137,9 @@ export function followShell(isWideScreen: () => boolean): () => void {
     });
 
     // A wide screen opens on the people of the room, once per room, as the frame is laid out and not as the chrome is
-    // drawn: the panel is a column of that frame, and opening it a moment after the map took its place would move the map
-    // a second time. The room is known by then, and so is whether it has a people list.
+    // drawn: the panel floats over the map, which does not move for it, but the HUD stands beside it and the camera
+    // glides the avatar clear of it, and doing that a moment after the map took its place would be a second movement
+    // on entry. The room is known by then, and so is whether it has a people list.
     // Between two maps no scene runs and the room falls back to the start room, which is not the room being entered: the
     // frame holds through that gap, and the next scene is what names the room.
     let roomOpenedFor: string | undefined;

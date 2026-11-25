@@ -178,7 +178,8 @@ describe("the people sheet on a phone: Ir ate", () => {
 
         expect(walkTo).toHaveBeenCalledTimes(1);
         expect(sheetOpen()).toBe(false);
-        expect(target.querySelector("aside")?.classList.contains("closed")).toBe(true);
+        // The card is not in the page once it has left: there is no hidden card to come back from `display: none`.
+        expect(target.querySelector("aside")).toBeNull();
     });
 
     it("keeps announcing the walk after the sheet is gone, in a polite live region that was already on the page", () => {

@@ -33,7 +33,8 @@ vi.mock("./ChatSidebarWidthStore", async () => {
 });
 vi.mock("./Stores/SelectRoomStore", () => ({ selectedRoomStore: closeButtonConditions.selectedRoom }));
 // The blocker observes the element for the Woka positioning: jsdom has neither of its observers.
-vi.mock("../Utils/screenBlocker", () => ({ blocker: () => undefined }));
+const attachBlocker = vi.hoisted(() => vi.fn(() => undefined));
+vi.mock("../Utils/screenBlocker", () => ({ blocker: attachBlocker }));
 
 class FakeResizeObserver implements ResizeObserver {
     static readonly active = new Set<FakeResizeObserver>();
@@ -123,6 +124,7 @@ describe("ChatSidebar", () => {
         target = document.createElement("div");
         document.body.appendChild(target);
         chatProps.current = undefined;
+        attachBlocker.mockClear();
         hostWidth = 0;
         chatVisibilityStore.set(true);
         chatSidebarWidthStore.set(STORED_WIDTH);
@@ -200,6 +202,12 @@ describe("ChatSidebar", () => {
             expect(FakeResizeObserver.active.size).toBe(0);
         });
 
+        it("is not the camera's blocker: the host draws the strip it covers, and a blocker here would outlive its exit", () => {
+            mountSidebar({ embedded: true });
+
+            expect(attachBlocker).not.toHaveBeenCalled();
+        });
+
         it("has no standalone resize handle", () => {
             mountSidebar({ embedded: true });
 
@@ -232,6 +240,15 @@ describe("ChatSidebar", () => {
             mountSidebar({ embedded: true });
 
             expect(target.querySelector('[data-testid="closeChatButton"]')).toBeNull();
+        });
+    });
+
+    describe("on its own", () => {
+        it("is the camera's blocker, as upstream has it", () => {
+            mountSidebar({});
+
+            expect(attachBlocker).toHaveBeenCalledTimes(1);
+            expect(attachBlocker.mock.calls[0]).toEqual([requireElement('[data-testid="chat"]')]);
         });
     });
 

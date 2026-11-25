@@ -132,13 +132,17 @@
 
 <svelte:window {onresize} />
 {#if $chatVisibilityStore}
+    <!-- Embedded in a host's card, the host draws the strip it covers as the camera's blocker: a blocker of this section
+         would outlive the card's exit, which the host holds for a moment after it closes. The host draws it from 768 px
+         up, where the card floats over the map; on a phone, where the card is a sheet over the whole map, nothing
+         blocks the camera, so the view stays centred under the sheet. -->
     <section
         bind:this={container}
         id="chat"
         data-testid="chat"
         transition:fly={{ duration: embedded ? 0 : 200, x: embedded ? 0 : isRTL ? sideBarWidth : -sideBarWidth }}
         style={embedded ? undefined : `width: ${sideBarWidth}px; max-width: ${sideBarWidth}px;`}
-        {@attach blocker}
+        {@attach embedded ? undefined : blocker}
         {@attach embedded ? trackEmbeddedWidth : undefined}
         class:embedded
         class="chatWindow p-0 {embedded ? '' : '!min-w-[320px] max-sm:!min-w-[150px] bg-contrast/95 backdrop-blur-md'}"

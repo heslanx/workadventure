@@ -1,5 +1,7 @@
 <script lang="ts">
     import { onMount, type Snippet } from "svelte";
+    import type { Attachment } from "svelte/attachments";
+    import type { TransitionConfig } from "svelte/transition";
     import { LL } from "../../../../i18n/i18n-svelte";
     import { shellActiveStore, shellFramedStore, shellSettlingStore } from "../stores/shellStore";
     import { viewportLandmarkStore } from "../stores/landmarkStore";
@@ -12,8 +14,14 @@
         toggleChat,
         togglePeople,
     } from "../stores/sidePanelStore";
-    import { gameViewportBounds } from "../../../ExternalModule/ClientExtensionPoints";
+    import { gameViewportBounds, gameViewportCoveredStart } from "../../../ExternalModule/ClientExtensionPoints";
     import type { ViewportBounds } from "../../../Stores/CoWebsiteLayout";
+    import { coWebsites } from "../../../Stores/CoWebsiteStore";
+    import { glide } from "../../../Utils/glide";
+    import { fade } from "../../../Utils/reducedMotion";
+    import { blocker } from "../../../Utils/screenBlocker";
+    import { cubicBezier } from "../../../Utils/spring";
+    import { surface } from "../../../Utils/surfaceTransition";
     import { toGameViewport } from "../domain/gameViewport";
     import {
         focusAfterClose,
@@ -22,7 +30,7 @@
         type PanelButton,
         type SidePanelView,
     } from "../domain/sidePanel";
-    import { chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
+    import { chatInputFocusStore, chatVisibilityStore, forceRefreshChatStore } from "../../../Stores/ChatStore";
     import { openPreferences, preferencesStore } from "../../Preferences/stores/preferencesStore";
     import OfficeMenu from "../../OfficeMenu/components/OfficeMenu.svelte";
     import { officeMenuOpenStore, toggleOfficeMenu } from "../../OfficeMenu/stores/officeMenuStore";
@@ -37,6 +45,9 @@
     import { isMac } from "../../../WebRtc/DeviceUtils";
     import { IconUsersGroup, IconSettings, IconMessageCircle2, IconChevronLeft, IconSearch } from "@wa-icons";
 
+    /** What the buttons that open the card point at: the card's id, while the card is there. */
+    const PANEL_ID = "konclui-side-panel";
+
     let { children }: { children: Snippet } = $props();
     let viewport: HTMLDivElement | undefined = $state();
     let panel: HTMLElement | undefined = $state();
@@ -50,6 +61,22 @@
     // The people panel, or the notice that the room has no people list: both are the people view.
     let peopleListShown = $derived(peopleShown && !rosterNoticeOpen);
     let conversationShown = $derived(view === "conversation");
+    // The state, not the card: the card stays in the page for the length of its exit, and what points at it or opens it
+    // follows what the user asked for, as `aria-pressed` does.
+    let panelOpen = $derived(view !== "closed");
+    // What the card holds. It changes while the card stays open (people to chat), and then the content fades in.
+    let contentKey = $derived(conversationShown ? "conversation" : peopleListShown ? "people" : "notice");
+
+    // The fade of the content when the card swaps between its views: `--k-dur-fast` on `--k-ease-out-expo`, and only
+    // opacity, so the card itself does not move (tests/front/Style pins both to the tokens). It is a local `in:`, so it
+    // plays when the key changes and not when the card opens, which is the card's own entrance (and not when the shell
+    // appears with the card already open, at room entry). Where `Element.animate` is missing (jsdom) it is instant.
+    const SWAP_FADE_MS = 150;
+    const swapEasing = cubicBezier(0.16, 1, 0.3, 1);
+    function swap(node: Element): TransitionConfig {
+        if (typeof node.animate !== "function") return { duration: 0 };
+        return fade(node, { duration: SWAP_FADE_MS, easing: swapEasing });
+    }
 
     // The key of the search shortcut as it reads on this keyboard: ⌘K on a Mac, Ctrl K elsewhere.
     const searchKeys = combinationKeys(
@@ -60,28 +87,39 @@
 
     onMount(() => followShell(() => isWideScreen(window.innerWidth)));
 
-    // Whether the focus is inside the panel as it closes. This runs before the update that removes the chat, so
+    // Whether the focus is inside the panel as it closes. This runs before the update that makes the card inert, so
     // it must stay above the template: afterwards the focus is on the page whether it was in the panel or not.
     let focusWasInPanel = false;
     $effect.pre(() => {
         focusWasInPanel = view === "closed" && (panel?.contains(document.activeElement) ?? false);
     });
 
-    // Closing the panel removes the element that had the focus; hand it to the button that reopens that view.
+    // Closing the panel takes the focus from the element that had it; hand it to the button that reopens that view. The
+    // card is not removed as it closes: it leaves through its exit, inert, and Svelte sets that at once, so the browser
+    // takes the focus off whatever the card held. This runs in the same update, where the browser may not have moved the
+    // focus yet: an element of the leaving card that still has it counts as the focus left on the page.
     let lastOpenView: SidePanelView = "closed";
     $effect(() => {
         if (view !== "closed") {
             lastOpenView = view;
             return;
         }
-        const button = focusAfterClose({
-            closedView: lastOpenView,
-            focusWasInPanel,
-            focusIsOnPage: document.activeElement === document.body,
-            wideScreen: isWideScreen(window.innerWidth),
-        });
+        const closedView = lastOpenView;
         // A close is handled once: the rail drawn again after a loader is not another close.
         lastOpenView = "closed";
+        if (closedView === "closed") return;
+        // What lets the game's keys through again belongs to the close and not to the card's removal, which comes after
+        // the exit: the people panel's own cleanup is that removal, and until then a field that lost the focus to
+        // `inert` would go on blocking the keys if the browser sends it no `blur`. Escape and Ctrl+K keep working, as
+        // they are the window's.
+        if (focusWasInPanel) chatInputFocusStore.set(false);
+        const button = focusAfterClose({
+            closedView,
+            focusWasInPanel,
+            focusIsOnPage:
+                document.activeElement === document.body || (panel?.contains(document.activeElement) ?? false),
+            wideScreen: isWideScreen(window.innerWidth),
+        });
         if (button !== undefined) elementOf(button)?.focus();
     });
 
@@ -112,6 +150,19 @@
             gameViewportBounds.set(undefined);
         };
     });
+
+    // Tells the game how wide a strip of its start edge the card covers, as the browser laid it out: the box is not
+    // drawn (so it measures 0) on a phone, where the card is a sheet, and beside a co-website, where it has a column.
+    const reportCoveredStart: Attachment<HTMLElement> = (element) => {
+        const measure = () => gameViewportCoveredStart.set(Math.round(element.getBoundingClientRect().width));
+        const observer = new ResizeObserver(measure);
+        observer.observe(element);
+        measure();
+        return () => {
+            observer.disconnect();
+            gameViewportCoveredStart.set(0);
+        };
+    };
 
     function elementOf(button: PanelButton): HTMLButtonElement | undefined {
         if (button === "mobilePeople") return mobilePeopleButton;
@@ -165,7 +216,7 @@
      the rail, and on a phone, where the rail is hidden, at the start of the top row. -->
 {#snippet logoButton(chrome: boolean)}
     <button
-        class="logo"
+        class="logo k-press"
         class:k-chrome={chrome}
         type="button"
         aria-label={$LL.konclui.officeMenu()}
@@ -191,13 +242,17 @@
     class="office-frame"
     class:konclui={$shellFramedStore}
     class:settling={$shellSettlingStore}
-    class:panel-open={view !== "closed"}
+    class:panel-open={panelOpen}
+    class:shares-map={$coWebsites.length > 0}
     data-testid={$shellActiveStore ? "konclui-shell" : undefined}
 >
     {#if $shellActiveStore}
-        <nav class="rail" aria-label={$LL.konclui.office()}>
+        <!-- One pill follows the pointer, or the keyboard focus, from button to button (Utils/glide.ts); the pressed
+             button keeps its own fill. -->
+        <nav class="rail k-glide" aria-label={$LL.konclui.office()} {@attach glide({ item: "button" })}>
             {@render logoButton(false)}
             <button
+                class="k-press"
                 type="button"
                 aria-label={$LL.konclui.peopleList.searchLabel()}
                 title={$LL.konclui.peopleList.searchShortcut({ keys: searchShortcutLabel })}
@@ -206,25 +261,29 @@
                 <IconSearch font-size="20" />
             </button>
             <button
+                class="k-press"
                 type="button"
                 aria-label={$LL.konclui.people()}
                 aria-pressed={peopleShown}
+                aria-controls={panelOpen ? PANEL_ID : undefined}
                 onclick={togglePeople}
                 bind:this={peopleButton}
             >
                 <IconUsersGroup font-size="20" />
             </button>
             <button
+                class="k-press"
                 type="button"
                 aria-label={$LL.konclui.chat()}
                 aria-pressed={conversationShown}
+                aria-controls={panelOpen ? PANEL_ID : undefined}
                 onclick={toggleChat}
                 bind:this={chatButton}
             >
                 <IconMessageCircle2 font-size="20" />
             </button>
             <button
-                class="settings"
+                class="settings k-press"
                 type="button"
                 aria-label={$LL.konclui.settings()}
                 onclick={(event) => openPreferences(undefined, event.currentTarget)}
@@ -239,37 +298,67 @@
                 <PeoplePill
                     bind:button={mobilePeopleButton}
                     expanded={peopleShown}
-                    controls="konclui-side-panel"
+                    controls={panelOpen ? PANEL_ID : undefined}
                     onclick={togglePeople}
                 />
             </div>
             <PlaceChip />
         </div>
-        <aside
-            id="konclui-side-panel"
-            bind:this={panel}
-            class="side-panel k-enter"
-            data-konclui-panel
-            class:closed={view === "closed"}
-            aria-label={conversationShown ? $LL.konclui.chat() : $LL.konclui.peoplePanel()}
-        >
-            {#if $chatVisibilityStore}
-                {#key $forceRefreshChatStore}
-                    <ChatSidebar embedded />
+        <!-- The card exists while the panel is open and for the length of its exit. The transition is on the element
+             directly under the `{#if}`: only there does Svelte keep the card, and what is in it, in the page until the
+             exit has played (the chat inside has a block of its own that closing would switch, and a blank card would
+             slide away). The `{#if}` is local, so the card plays its entrance when the panel opens and its exit when it
+             closes, and nothing plays when the shell appears with the panel already open, as the room's entry does while
+             the loader fades, or goes with it. -->
+        {#if panelOpen}
+            <aside
+                id={PANEL_ID}
+                bind:this={panel}
+                class="side-panel"
+                data-konclui-panel
+                aria-label={conversationShown ? $LL.konclui.chat() : $LL.konclui.peoplePanel()}
+                transition:surface
+            >
+                {#key contentKey}
+                    <div class="content" in:swap>
+                        {#if $chatVisibilityStore}
+                            {#key $forceRefreshChatStore}
+                                <ChatSidebar embedded />
+                            {/key}
+                        {:else if peopleListShown}
+                            <PeoplePanel onCollapse={togglePeople} onWalk={leaveSheetForWalk} />
+                        {:else if rosterNoticeOpen}
+                            <header>
+                                <strong>{$LL.konclui.people()}</strong><button
+                                    type="button"
+                                    aria-label={$LL.konclui.collapsePanel()}
+                                    onclick={closeRosterNotice}
+                                >
+                                    <IconChevronLeft font-size="18" />
+                                </button>
+                            </header>
+                            <p class="notice" role="status">{$LL.konclui.rosterUnavailable()}</p>
+                        {/if}
+                    </div>
                 {/key}
-            {:else if peopleListShown}
-                <PeoplePanel onCollapse={togglePeople} onWalk={leaveSheetForWalk} />
-            {:else if rosterNoticeOpen}
-                <header>
-                    <strong>{$LL.konclui.people()}</strong><button
-                        type="button"
-                        aria-label={$LL.konclui.collapsePanel()}
-                        onclick={closeRosterNotice}><IconChevronLeft font-size="18" /></button
-                    >
-                </header>
-                <p class="notice" role="status">{$LL.konclui.rosterUnavailable()}</p>
-            {/if}
-        </aside>
+            </aside>
+        {/if}
+        <!-- The strip of the map under the card, as a box of its own. It is the camera's blocker and the width the HUD
+             leaves free, and it is never animated: the card moves while it enters, and a blocker measures its element
+             again only when a CSS transition or animation of that element starts or ends, which a card that enters
+             through a Svelte transition never does. The box follows the state and not the card: it is a block of its own,
+             without a transition, so it is mounted as the card starts to enter and gone as the card starts to leave, and
+             the camera and the HUD move with the card instead of after it. It is not drawn where the card is not over the
+             map. It takes no click: the strip beside the card is map. -->
+        {#if panelOpen}
+            <div
+                class="panel-reserve"
+                aria-hidden="true"
+                data-konclui-panel-reserve
+                {@attach blocker}
+                {@attach reportCoveredStart}
+            ></div>
+        {/if}
         <WalkNotice live />
         <OfficeMenu />
     {/if}
@@ -301,16 +390,26 @@
         --rail-width: 60px;
         --panel-width: 296px;
         --frame-gap: 6px;
+        --panel-shadow: 0 8px 32px #0008;
         display: grid;
         grid-template-columns: var(--rail-width) minmax(0, 1fr);
         gap: 0;
-        padding: var(--frame-gap) var(--frame-gap) var(--frame-gap) 0;
+        /* The gap is on the side the map is: the end. The card and the strip stand at `inset-inline-start: var(--rail-width)`,
+           so a padding on the physical right would put the rail and the map 6 px off from them in a page that reads
+           right to left. */
+        padding-block: var(--frame-gap);
+        padding-inline: 0 var(--frame-gap);
         box-sizing: border-box;
         background: var(--k-page);
         color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
     }
-    .konclui.panel-open {
+    /* The grid is the same two columns with the panel open or closed. From 768 px up the card floats over the map's
+       start edge (see .side-panel), so the map's cell, and the canvas in it, keep their size and their zoom. A third
+       column re-fitted the canvas and, on some windows, took the zoom to another step: measured 2026-11-24, 1.5 to 1.0
+       at 1057 px wide. Only beside a co-website does the card keep a column: the page and the game split the cell, and
+       the split is not made under the card. (A phone's frame is a block, so the columns say nothing there.) */
+    .konclui.panel-open.shares-map {
         grid-template-columns: var(--rail-width) var(--panel-width) minmax(0, 1fr);
     }
     /* The map's column is the last one, named, because the rail and the side panel are drawn after the frame is laid out:
@@ -381,12 +480,30 @@
         border-radius: 10px;
         background: transparent;
     }
-    .rail button:hover,
-    .rail button[aria-pressed="true"] {
+    /* The pill (Utils/glide.ts) is the hover: it follows the pointer, or the keyboard focus, from button to button, so
+       a button paints no fill of its own while the pill exists (`k-glide-on` is on the rail then). The pill is drawn
+       only where there is a pointer to hover, and so is the fill it replaces: a tap leaves neither behind. The pressed
+       button keeps its fill and its colour whatever the pill does. */
+    @media (hover: hover) {
+        .rail:not(:global(.k-glide-on)) button:hover {
+            background: var(--k-elevated);
+        }
+    }
+    .rail :global(.k-glide-pill) {
+        border-radius: 10px;
         background: var(--k-elevated);
     }
     .rail button[aria-pressed="true"] {
+        background: var(--k-elevated);
         color: var(--k-accent);
+    }
+    /* Forced colours drop the fill that marks the pressed button: an outline keeps it readable. The focus ring has the
+       outline when the button has the focus. */
+    @media (forced-colors: active) {
+        .rail button[aria-pressed="true"]:not(:focus-visible) {
+            outline: 2px solid Highlight;
+            outline-offset: -2px;
+        }
     }
     .logo svg {
         width: 24px;
@@ -398,13 +515,13 @@
     .rail .settings {
         margin-top: auto;
     }
-    /* It slides in from the rail. The grid switches at once and only this card moves (opacity and transform): a column
-       that animated re-fitted the map's canvas every frame and blanked it mid-slide, measured 2026-11-20. */
+    /* It comes from the rail, 24 px to its left, through the transition on the card (`transition:surface`, which reads
+       these variables and plays the exit as well). Only this card moves (opacity and transform), and the map under it
+       does not: a column that animated re-fitted the map's canvas every frame and blanked it mid-slide, measured
+       2026-11-20. */
     .side-panel {
         --k-enter-x: -24px;
         --k-enter-y: 0px;
-        --k-enter-dur: var(--k-dur-settle);
-        --k-enter-ease: var(--k-ease-sheet);
         position: relative;
         margin-right: var(--frame-gap);
         min-width: 0;
@@ -413,8 +530,49 @@
         background: var(--k-card);
         overflow: hidden;
     }
-    .side-panel.closed {
+    /* What the card holds, as one box: the chat, the people panel or the notice each fill the card, and this box is what
+       fades in when the card swaps between them. */
+    .content {
+        height: 100%;
+        min-height: 0;
+    }
+    /* The strip of the map under the card: the camera's blocker, and the width the HUD leaves free. Not drawn unless
+       the card floats over the map, so it measures 0 and blocks nothing on a phone and beside a co-website. */
+    .panel-reserve {
         display: none;
+    }
+    /* From 768 px up the card floats over the map, beside the rail, at the size its column gave it: 290 px, and the
+       6 px beside it that the HUD and the camera leave free as well. It stands over the canvas and the name tags
+       (Phaser's DOM layer is a stacking context at level 0) and under the HUD, whose layer is #main-layout (z-index
+       10): what the HUD draws over the whole window (a fullscreen video, a modal with its scrim, a popup centred on the
+       window) covers the card as it covers the rest of the map, and the HUD's own content already stands beside the
+       strip. A click on the card is a click on the card (#main-layout takes none where it draws nothing), and Phaser
+       takes a press whose target is not the canvas as outside the game. Beside a co-website the card keeps its column
+       instead (see the grid above);
+       who gets the space between 768 and 1023 px then is the owner's to decide, and today the panel does. That card
+       floats as well while it leaves: its column is gone as the exit starts (the frame is no longer `panel-open`), and
+       a grid item that is held for the exit would be placed in the next free cell. It floats where its column was, so
+       it does not move. */
+    @media (min-width: 768px) {
+        .konclui:not(.shares-map.panel-open) .side-panel {
+            position: absolute;
+            top: var(--frame-gap);
+            bottom: var(--frame-gap);
+            inset-inline-start: var(--rail-width);
+            width: calc(var(--panel-width) - var(--frame-gap));
+            margin: 0;
+            z-index: 5;
+            box-shadow: var(--panel-shadow);
+        }
+        .konclui:not(.shares-map) .panel-reserve {
+            display: block;
+            position: absolute;
+            top: var(--frame-gap);
+            bottom: var(--frame-gap);
+            inset-inline-start: var(--rail-width);
+            width: var(--panel-width);
+            pointer-events: none;
+        }
     }
     header {
         display: flex;
@@ -431,8 +589,10 @@
         border-radius: var(--k-radius-inner);
         background: transparent;
     }
-    header button:hover {
-        background: var(--k-hover);
+    @media (hover: hover) {
+        header button:hover {
+            background: var(--k-hover);
+        }
     }
     .notice {
         margin: 0 18px 18px;
@@ -468,8 +628,10 @@
         height: 44px;
         border-radius: 22px;
     }
-    .logo-slot .logo:hover {
-        background-color: var(--k-hover);
+    @media (hover: hover) {
+        .logo-slot .logo:hover {
+            background-color: var(--k-hover);
+        }
     }
     @media (max-width: 767px) {
         .konclui,
@@ -506,7 +668,7 @@
             min-height: 144px;
             margin-right: 0;
             z-index: 35;
-            box-shadow: 0 8px 32px #0008;
+            box-shadow: var(--panel-shadow);
         }
         /* The map reaches the window's edge and the dock wraps under the column: it stands above the dock stack. */
         .konclui :global([data-testid="actions-explorer"]) {

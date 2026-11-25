@@ -34,7 +34,10 @@ describe("PeoplePill", () => {
         pillStore.set({ summary: { kind: "unknown" }, nearest: [] });
     });
 
-    function show(state: PeoplePillState, props: { expanded?: boolean; onclick?: () => void } = {}) {
+    function show(
+        state: PeoplePillState,
+        props: { expanded?: boolean; controls?: string | undefined; onclick?: () => void } = {},
+    ) {
         pillStore.set(state);
         document.body.append(target);
         pill = mount(PeoplePill, {
@@ -112,6 +115,12 @@ describe("PeoplePill", () => {
         expect(button().getAttribute("aria-controls")).toBe("konclui-side-panel");
         expect(button().hasAttribute("aria-label")).toBe(false);
         expect(button().textContent).toContain('konclui.pill.online{"count":5}');
+    });
+
+    it("points at no panel while the panel is not in the page, as an id that is not there is no reference", () => {
+        show({ summary: { kind: "alone" }, nearest: [] }, { controls: undefined });
+
+        expect(button().hasAttribute("aria-controls")).toBe(false);
     });
 
     it("reports a closed panel", () => {

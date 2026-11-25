@@ -5,6 +5,9 @@ import { Easing } from "../../types";
 import { HtmlUtils } from "../../WebRtc/HtmlUtils";
 import type { Box } from "../../WebRtc/LayoutManager";
 import { motionDuration } from "../../Utils/reducedMotion";
+import { SPRING_SURFACE, SPRING_SURFACE_MS, cubicBezier, springEasing } from "../../Utils/spring";
+import { SURFACE_EXIT_MS, SURFACE_SHEET_CURVE } from "../../Utils/surfaceTransition";
+import { gameViewportCoveredStart } from "../../ExternalModule/ClientExtensionPoints";
 import type { Character } from "../Entity/Character";
 import { hasMovedEventName, type Player } from "../Player/Player";
 import type { WaScaleManager, WaScaleManagerFocusTarget } from "../Services/WaScaleManager";
@@ -33,6 +36,23 @@ const WALK_FRAMING_MARGIN = 64;
 const WALK_BLEND_MIN_MS = 500;
 const WALK_BLEND_MS_PER_SCREEN_PIXEL = 1;
 const WALK_BLEND_MAX_MS = 1500;
+
+type PhaserEase = string | ((progress: number) => number);
+
+/** The glide of the camera when the free area changes: 500 ms, decelerating. */
+const BLOCKER_GLIDE = { duration: 500, ease: Easing.QuadEaseOut } as const satisfies {
+    duration: number;
+    ease: PhaserEase;
+};
+/** The glides of a card that floats over the start edge: the length and the curve of its entrance and of its exit. */
+const PANEL_ARRIVES_GLIDE = {
+    duration: SPRING_SURFACE_MS,
+    ease: springEasing(SPRING_SURFACE, SPRING_SURFACE_MS),
+} as const satisfies { duration: number; ease: PhaserEase };
+const PANEL_LEAVES_GLIDE = {
+    duration: SURFACE_EXIT_MS,
+    ease: cubicBezier(...SURFACE_SHEET_CURVE),
+} as const satisfies { duration: number; ease: PhaserEase };
 
 export enum CameraManagerEvent {
     CameraUpdate = "CameraUpdate",
@@ -137,6 +157,17 @@ export class CameraManager extends EventEmitter {
     // Target follow offset for the camera, expressed in game pixels.
     private targetFollowOffset: { x: number; y: number } | undefined;
 
+    // The strip along the start edge of the game area that a panel floats over, in screen pixels
+    // (gameViewportCoveredStart): what the port holds now, and what the camera's bounds use. The second follows the
+    // offset tween, so the map and the avatar glide together when the panel goes and the view never jumps by the width
+    // of the strip.
+    private coveredStartTarget = 0;
+    private coveredStart = 0;
+    // The strip the last offset glide was started for. A strip that comes is given to the bounds at once, so by the time
+    // the glide starts `coveredStart` already equals the target: this is what tells that the strip is what changed.
+    private coveredStartGlided = 0;
+    private readonly unsubscribeCoveredStart: () => void;
+
     constructor(
         private scene: GameScene,
         private mapSize: { width: number; height: number },
@@ -180,6 +211,15 @@ export class CameraManager extends EventEmitter {
         });
         this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateGameBounds);
 
+        this.unsubscribeCoveredStart = gameViewportCoveredStart.subscribe((width) => {
+            this.coveredStartTarget = width;
+            // More room never moves the view, so it is given at once; less room waits for the offset tween.
+            if (width > this.coveredStart) {
+                this.coveredStart = width;
+                this.scene.markDirty();
+            }
+        });
+
         this.waScaleManager.mapSize = this.mapSize;
 
         this.scene.game.events.on(WaScaleManagerEvent.ZoomChanged, this.onZoomChanged);
@@ -193,15 +233,25 @@ export class CameraManager extends EventEmitter {
      * In game mode the view stays on the map. On an axis where the map is smaller than the view, the map is centred
      * in the area the follow offset leaves visible: the bounds grow to the view's size around that centre, where
      * Phaser's clamping would otherwise pin the map to the top-left corner.
+     *
+     * Where the map is larger than the view, or than the part of it the strip leaves, the bounds grow along the start
+     * edge by the strip a panel floats over, so the map's edge can scroll out from under the panel and the avatar can
+     * stand beside it at the edge of the map.
      */
     private readonly updateGameBounds = (): void => {
         if (this.mapEditorOpen) return;
         const { displayWidth, displayHeight, followOffset } = this.camera;
         const { width: mapWidth, height: mapHeight } = this.mapSize;
+        const covered = this.coveredStart / (this.scene.scale.zoom * this.camera.zoom);
+        // The strip lies along the start edge, which is the right one in right-to-left: the bounds grow on that side.
+        const mapStart = covered > 0 && document.documentElement.dir !== "rtl" ? -covered : 0;
+        // A map is centred only when it fits beside the strip as well. One that is narrower than the view but wider than
+        // what the strip leaves must scroll, or its edge would stay under the panel with the avatar at that edge.
+        const centredX = displayWidth > mapWidth + covered;
         const bounds = {
-            x: displayWidth > mapWidth ? mapWidth / 2 - followOffset.x - displayWidth / 2 : 0,
+            x: centredX ? mapWidth / 2 - followOffset.x - displayWidth / 2 : mapStart,
             y: displayHeight > mapHeight ? mapHeight / 2 - followOffset.y - displayHeight / 2 : 0,
-            width: Math.max(mapWidth, displayWidth),
+            width: centredX ? displayWidth : mapWidth + covered,
             height: Math.max(mapHeight, displayHeight),
         };
         const last = this.gameBounds;
@@ -234,6 +284,7 @@ export class CameraManager extends EventEmitter {
         this.camera.off("followupdate", this.onFollowUpdate);
         this.off(CameraManagerEvent.CameraUpdate, this.onCameraUpdate);
         this.unsubscribeMapEditorModeStore();
+        this.unsubscribeCoveredStart();
         super.destroy();
     }
 
@@ -476,12 +527,17 @@ export class CameraManager extends EventEmitter {
         const targetFollowOffset = this.updateTargetFollowOffset();
 
         if (this.manuallyDetached) {
+            // A free view has no offset to glide with: the bounds take the strip as it is.
+            this.coveredStart = this.coveredStartTarget;
+            this.coveredStartGlided = this.coveredStartTarget;
             return;
         }
 
         if (instant) {
             if (!this.cameraOffsetCurrentTween) {
                 this.camera.setFollowOffset(targetFollowOffset.x, targetFollowOffset.y);
+                this.coveredStart = this.coveredStartTarget;
+                this.coveredStartGlided = this.coveredStartTarget;
                 this.scene.markDirty();
                 return;
             } else {
@@ -495,12 +551,16 @@ export class CameraManager extends EventEmitter {
 
         const oldFollowOffsetX = this.camera.followOffset.x;
         const oldFollowOffsetY = this.camera.followOffset.y;
+        const oldCoveredStart = this.coveredStart;
+        const newCoveredStart = this.coveredStartTarget;
+        const glide = this.glideFor(newCoveredStart - this.coveredStartGlided);
+        this.coveredStartGlided = newCoveredStart;
 
         this.cameraOffsetCurrentTween = this.scene.tweens.addCounter({
             from: 0,
             to: 1,
-            duration: motionDuration(500),
-            ease: Easing.QuadEaseOut,
+            duration: motionDuration(glide.duration),
+            ease: glide.ease,
             onUpdate: (tween) => {
                 const progress = tween.getValue() ?? 0;
                 if (!this.targetFollowOffset) {
@@ -510,12 +570,26 @@ export class CameraManager extends EventEmitter {
                 const newOffsetX = oldFollowOffsetX + (this.targetFollowOffset.x - oldFollowOffsetX) * progress;
                 const newOffsetY = oldFollowOffsetY + (this.targetFollowOffset.y - oldFollowOffsetY) * progress;
                 this.camera.setFollowOffset(newOffsetX, newOffsetY);
+                this.coveredStart = oldCoveredStart + (newCoveredStart - oldCoveredStart) * progress;
                 this.scene.markDirty();
             },
             onComplete: () => {
+                this.coveredStart = newCoveredStart;
                 this.cameraOffsetCurrentTween = undefined;
             },
         });
+    }
+
+    /**
+     * How the camera glides when the free area changes. The map under a card that floats over the start edge is seen
+     * as the card goes, so when the strip is what changed the glide is the card's own (see `surface`): the length and
+     * the curve of its exit when the strip goes, so no band of void shows for longer than the card does, and of its
+     * entrance when the strip comes. Any other blocker (a video box) keeps the glide that was always here.
+     */
+    private glideFor(stripChange: number): { duration: number; ease: PhaserEase } {
+        if (stripChange < 0) return PANEL_LEAVES_GLIDE;
+        if (stripChange > 0) return PANEL_ARRIVES_GLIDE;
+        return BLOCKER_GLIDE;
     }
 
     public isZoomLocked(): boolean {

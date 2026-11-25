@@ -13,8 +13,8 @@
         button = $bindable(),
     }: {
         expanded: boolean;
-        /** The id of the panel the pill opens. */
-        controls: string;
+        /** The id of the panel the pill opens, while the panel is in the page: an id that is not there is no reference. */
+        controls?: string | undefined;
         onclick: () => void;
         button?: HTMLButtonElement;
     } = $props();

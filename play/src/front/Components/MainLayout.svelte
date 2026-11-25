@@ -45,7 +45,11 @@
     import type { WorkAdventureComponent } from "../../types/component";
     import { LL } from "../../i18n/i18n-svelte";
     import { sidePanelWidthStore } from "../Stores/SidePanelStore";
-    import { activeActionBar, embeddedChatHost } from "../ExternalModule/ClientExtensionPoints";
+    import {
+        activeActionBar,
+        embeddedChatHost,
+        gameViewportCoveredStart,
+    } from "../ExternalModule/ClientExtensionPoints";
     import { mapEditorSideBarWidthStore } from "./MapEditor/MapEditorSideBarWidthStore";
     import { calendarRemindersStore, startCalendarReminders } from "./Calendar/CalendarReminder";
     import ActionBar from "./ActionBar/ActionBar.svelte";
@@ -161,8 +165,11 @@
         stopCalendarReminders?.();
     });
 
-    // An extension that hosts the chat has already taken its width off the game area.
-    let marginLeft = $derived($chatVisibilityStore && !$embeddedChatHost ? $chatSidebarWidthStore : 0);
+    // An extension that hosts the chat has already taken its width off the game area. One that floats a panel over the
+    // game's start edge has not: it reports the strip it covers, and the layout stands beside it.
+    let marginLeft = $derived(
+        ($chatVisibilityStore && !$embeddedChatHost ? $chatSidebarWidthStore : 0) + $gameViewportCoveredStart,
+    );
     let mapEditorPanelVisible = $derived(
         $mapEditorVisibilityStore && $mapEditorSelectedToolStore !== EditorToolName.WAMSettingsEditor,
     );

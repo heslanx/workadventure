@@ -19,9 +19,10 @@ export function isShellActive(gate: ShellGate): boolean {
 /**
  * What decides whether the office frame is laid out: the gate above, plus whether the game scene has been created.
  *
- * The frame (the rail's column, the side panel's column and the gutter around the map) is laid out before the
- * chrome is drawn, so that the map is already where it will stay when the shell is revealed. A scene is created as
- * soon as its map has loaded, while the loading screen still fades and the scene is hidden until the room is joined.
+ * The frame (the rail's column and the gutter around the map; the side panel floats over the map and takes no column)
+ * is laid out before the chrome is drawn, so that the map is already where it will stay when the shell is revealed.
+ * A scene is created as soon as its map has loaded, while the loading screen still fades and the scene is hidden until
+ * the room is joined.
  */
 export interface ShellFrameGate extends ShellGate {
     readonly sceneCreated: boolean;

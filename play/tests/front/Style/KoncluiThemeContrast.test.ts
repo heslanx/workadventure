@@ -788,7 +788,7 @@ describe("the frame's logo and the office menu", () => {
 
     it("keeps the preferences on the gear, and the logo in the rail and in the phone's top row", () => {
         expect(frame).toMatch(
-            /class="settings"[\s\S]*?onclick=\{\(event\) => openPreferences\(undefined, event\.currentTarget\)\}/,
+            /class="settings k-press"[\s\S]*?onclick=\{\(event\) => openPreferences\(undefined, event\.currentTarget\)\}/,
         );
         expect(frame.match(/\{@render logoButton\(/g)).toHaveLength(2);
         expect(frame).toMatch(/\.people-slot,\s*\.logo-slot \{\s*display: none;/);

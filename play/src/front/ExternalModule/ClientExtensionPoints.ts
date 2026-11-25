@@ -21,11 +21,24 @@ import type { ViewportBounds } from "../Stores/CoWebsiteLayout";
  * something smaller than the window.
  *
  * `undefined` means the window: consumers fall back to the window size. When set, the bounds are the area left
- * for the game once the extension has laid out whatever it hosts around it (its chat panel, for one), so
- * consumers measure the game and the co-website divider from these bounds and do not take those panels off
- * again.
+ * for the game once the extension has laid out whatever it hosts beside it (its rail, for one), so consumers
+ * measure the game and the co-website divider from these bounds and do not take those panels off again.
+ *
+ * A panel that floats over the game is not taken off: the game keeps its size and its zoom while the panel opens
+ * and closes, and `gameViewportCoveredStart` says how much of the game's start edge the panel hides. A panel that
+ * shares the area with a co-website is the other case: it keeps a column of its own and the bounds leave it out.
  */
 export const gameViewportBounds = writable<ViewportBounds | undefined>(undefined);
+
+/**
+ * The width, in CSS pixels, of the strip along the start edge of the game area (the left one, and the right one in
+ * right-to-left) that an extension floats a panel over without making the game smaller. 0 when nothing floats there,
+ * which is what upstream assumes.
+ *
+ * The game keeps drawing under the panel, so the HUD that lays out inside the area leaves the strip free
+ * (MainLayout pads by it) and the camera lets the map scroll until its edge clears the strip (CameraManager).
+ */
+export const gameViewportCoveredStart = writable(0);
 
 /**
  * A component that wraps the whole app: it receives the app as `children` and decides what surrounds it.

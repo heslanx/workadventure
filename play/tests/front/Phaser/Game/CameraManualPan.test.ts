@@ -8,6 +8,10 @@ import type { Player } from "../../../../src/front/Phaser/Player/Player";
 import type { WaScaleManager } from "../../../../src/front/Phaser/Services/WaScaleManager";
 import { cameraDetachedStore } from "../../../../src/front/Stores/CameraStore";
 import { mapEditorModeStore } from "../../../../src/front/Stores/MapEditorStore";
+import { gameViewportCoveredStart } from "../../../../src/front/ExternalModule/ClientExtensionPoints";
+import { Easing } from "../../../../src/front/types";
+import { SPRING_SURFACE, SPRING_SURFACE_MS, cubicBezier, springEasing } from "../../../../src/front/Utils/spring";
+import { SURFACE_EXIT_MS, SURFACE_SHEET_CURVE } from "../../../../src/front/Utils/surfaceTransition";
 import type { ActiveEventList } from "../../../../src/front/Phaser/UserInput/UserInputManager";
 import { UserInputEvent } from "../../../../src/front/Phaser/UserInput/UserInputManager";
 
@@ -23,8 +27,11 @@ const managers: CameraManager[] = [];
 afterEach(() => {
     managers.splice(0).forEach((manager) => manager.destroy());
     mapEditorModeStore.set(false);
+    gameViewportCoveredStart.set(0);
+    document.documentElement.removeAttribute("dir");
     document.body.innerHTML = "";
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
 });
 
 function setup(zoom = 1, animate = false, resizeAtEnd = false) {
@@ -506,5 +513,320 @@ describe("manual camera pan", () => {
         expect(camera.worldView.bottom).toBeLessThanOrEqual(3000);
         manager.setExplorationMode();
         expect(get(cameraDetachedStore)).toBe(false);
+    });
+});
+
+// A panel floats over the start edge of the game area (the side panel of the office shell) and the canvas does not shrink
+// for it: the avatar stands in the part that stays visible, and the map must be able to scroll until its own edge clears the
+// panel, or the left strip of a large map could never be reached and the avatar at the edge would stand under the panel.
+describe("a panel floating over the start edge of the game", () => {
+    const STRIP = 296;
+    // The area the panel leaves visible, in the 800x600 game element, which is what the blocker store would report.
+    const visible = { xStart: STRIP, xEnd: 800, yStart: 0, yEnd: 600 };
+    const whole = { xStart: 0, xEnd: 800, yStart: 0, yEnd: 600 };
+    const gameElement = () => {
+        const game = document.createElement("div");
+        game.id = "game";
+        Object.defineProperties(game, { offsetWidth: { value: 800 }, offsetHeight: { value: 600 } });
+        document.body.append(game);
+    };
+    const frame = (scene: GameScene, camera: Phaser.Cameras.Scene2D.Camera) => {
+        scene.events.emit(Phaser.Scenes.Events.POST_UPDATE);
+        camera.preRender();
+    };
+    const screenX = (camera: Phaser.Cameras.Scene2D.Camera, worldX: number) =>
+        (worldX - camera.worldView.x) * camera.zoom;
+
+    it("scrolls the map until its edge clears the panel, so the avatar at the edge stands beside it", () => {
+        gameElement();
+        const { camera, manager, player, scene } = setup();
+        player.x = 100;
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        frame(scene, camera);
+
+        expect(camera.worldView.x).toBeCloseTo(-STRIP);
+        expect(screenX(camera, 0)).toBeCloseTo(STRIP);
+        expect(screenX(camera, player.x)).toBeGreaterThanOrEqual(STRIP);
+    });
+
+    it("leaves the avatar under the panel without the extension: the strip of the map is unreachable", () => {
+        gameElement();
+        const { camera, manager, player, scene } = setup();
+        player.x = 100;
+        manager.updateCameraOffset(visible);
+        frame(scene, camera);
+
+        expect(camera.worldView.x).toBe(0);
+        expect(screenX(camera, player.x)).toBeLessThan(STRIP);
+    });
+
+    it("keeps the bounds of the map exactly when nothing floats over the game", () => {
+        gameElement();
+        const { camera, scene } = setup();
+        frame(scene, camera);
+
+        expect(camera.getBounds().x).toBe(0);
+        expect(camera.getBounds().width).toBe(4000);
+    });
+
+    it("counts the strip in map pixels, at the zoom the camera has", () => {
+        gameElement();
+        const { camera, manager, player, scene } = setup(2);
+        player.x = 50;
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        frame(scene, camera);
+
+        expect(camera.getBounds().x).toBeCloseTo(-STRIP / 2);
+        expect(screenX(camera, 0)).toBeCloseTo(STRIP);
+        expect(screenX(camera, player.x)).toBeGreaterThanOrEqual(STRIP);
+    });
+
+    it("grows the bounds at the right edge in right-to-left, where the panel is", () => {
+        document.documentElement.dir = "rtl";
+        gameElement();
+        const { camera, manager, player, scene } = setup();
+        player.x = 3900;
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset({ xStart: 0, xEnd: 800 - STRIP, yStart: 0, yEnd: 600 });
+        frame(scene, camera);
+
+        expect(camera.getBounds().x).toBe(0);
+        expect(camera.worldView.right).toBeCloseTo(4000 + STRIP);
+        expect(screenX(camera, 4000)).toBeCloseTo(800 - STRIP);
+        expect(screenX(camera, player.x)).toBeLessThanOrEqual(800 - STRIP);
+    });
+
+    it("gives the room at once when the panel opens, before the camera has glided", () => {
+        const { camera, scene } = setup();
+
+        gameViewportCoveredStart.set(STRIP);
+        frame(scene, camera);
+
+        expect(camera.getBounds().x).toBeCloseTo(-STRIP);
+        expect(camera.getBounds().width).toBeCloseTo(4000 + STRIP);
+    });
+
+    it("does not touch a map that is smaller than the view: it stays centred in what the offset leaves visible", () => {
+        const { camera, scene } = setup(0.1);
+        gameViewportCoveredStart.set(STRIP);
+        frame(scene, camera);
+
+        expect(camera.getBounds().width).toBe(8000);
+        expect(camera.midPoint.x).toBeCloseTo(2000);
+    });
+
+    // A map narrower than the window can still be wider than what the panel leaves visible. Centring it is then wrong:
+    // the view could not scroll, the map's edge would stay under the panel and the avatar at that edge with it. Before
+    // the panel floated, it shrank the game's cell and such a map was the larger one, so it scrolled.
+    it("scrolls a map that is narrower than the window but wider than the part the panel leaves", () => {
+        gameElement();
+        // 4000 world px at 0.18 is 720 screen px of the 800: 80 px of window to spare, and the panel covers 296.
+        const { camera, manager, player, scene } = setup(0.18);
+        player.x = 50;
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        frame(scene, camera);
+
+        expect(screenX(camera, 0)).toBeGreaterThanOrEqual(STRIP - 0.001);
+        expect(screenX(camera, player.x)).toBeGreaterThanOrEqual(STRIP - 0.001);
+    });
+
+    it("still centres a map that fits beside the panel, in what the offset leaves visible", () => {
+        gameElement();
+        // 4000 world px at 0.1 is 400 screen px: it fits in the 504 that are left of the 800.
+        const { camera, manager, scene } = setup(0.1);
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        frame(scene, camera);
+
+        expect(camera.getBounds().width).toBe(8000);
+        expect(screenX(camera, 0)).toBeGreaterThanOrEqual(STRIP);
+        expect(screenX(camera, 4000)).toBeLessThanOrEqual(800);
+    });
+
+    it("keeps the map of that width in step with the glide when the panel closes: the view does not jump", () => {
+        gameElement();
+        const { camera, manager, player, scene, advanceTween } = setup(0.18, true);
+        player.x = 50;
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        advanceTween(1);
+        frame(scene, camera);
+
+        gameViewportCoveredStart.set(0);
+        manager.updateCameraOffset(whole);
+        const edges: number[] = [];
+        for (let step = 0; step <= 20; step += 1) {
+            advanceTween(step / 20);
+            frame(scene, camera);
+            edges.push(screenX(camera, 0));
+        }
+        // The map's edge goes from the panel's edge to the window's own, in small steps (296 px over 20 frames).
+        expect(edges[0]).toBeCloseTo(STRIP, 0);
+        for (let step = 1; step < edges.length; step += 1) {
+            expect(Math.abs(edges[step] - edges[step - 1])).toBeLessThan(40);
+        }
+    });
+
+    // The camera glides its follow offset for 500 ms (QuadEaseOut) when the free area changes. The room the map was given
+    // goes the same way: taking it back at once would pull the view by the width of the strip in one frame.
+    it("takes the room back with the glide, so the view does not jump when the panel closes", () => {
+        gameElement();
+        const { camera, manager, player, scene, advanceTween } = setup(1, true);
+        player.x = 100;
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        advanceTween(1);
+        frame(scene, camera);
+        expect(camera.worldView.x).toBeCloseTo(-STRIP);
+
+        gameViewportCoveredStart.set(0);
+        frame(scene, camera);
+        expect(camera.worldView.x).toBeCloseTo(-STRIP);
+
+        manager.updateCameraOffset(whole);
+        const lefts: number[] = [];
+        for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
+            advanceTween(progress);
+            frame(scene, camera);
+            lefts.push(camera.worldView.x);
+        }
+        expect(lefts[0]).toBeCloseTo(-STRIP);
+        expect(lefts[2]).toBeCloseTo(-STRIP / 2);
+        expect(lefts[4]).toBe(0);
+        expect([...lefts].sort((first, second) => second - first)).toEqual(lefts.slice().reverse());
+        expect(camera.getBounds().x).toBe(0);
+    });
+
+    // The card that floats over the strip leaves in 200 ms (`--k-dur-normal`, on `--k-ease-sheet`) and arrives in 290 ms
+    // (the surface spring). The camera is what shows the map under it, so its glide has the card's own length and curve
+    // when the strip is what changes: a 500 ms glide left about 107 px of void for 300 ms with the card already gone.
+    // Any other blocker (a video box) keeps the 500 ms glide that was there.
+    describe("the glide of the camera", () => {
+        const lastTween = (addCounter: ReturnType<typeof setup>["addCounter"]) =>
+            addCounter.mock.calls[addCounter.mock.calls.length - 1][0] as unknown as {
+                duration: number;
+                ease: string | ((progress: number) => number);
+            };
+
+        it("takes the length and the curve of the card's exit when the strip goes", () => {
+            gameElement();
+            const { manager, addCounter } = setup();
+            gameViewportCoveredStart.set(STRIP);
+            manager.updateCameraOffset(visible);
+
+            gameViewportCoveredStart.set(0);
+            manager.updateCameraOffset(whole);
+
+            const { duration, ease } = lastTween(addCounter);
+            expect(duration).toBe(SURFACE_EXIT_MS);
+            expect(typeof ease).toBe("function");
+            const sheet = cubicBezier(...SURFACE_SHEET_CURVE);
+            for (const progress of [0, 0.1, 0.25, 0.5, 0.75, 1]) {
+                expect((ease as (progress: number) => number)(progress)).toBeCloseTo(sheet(progress), 6);
+            }
+        });
+
+        it("takes the length and the spring of the card's entrance when the strip comes, though the room is given at once", () => {
+            gameElement();
+            const { camera, manager, scene, addCounter } = setup();
+            gameViewportCoveredStart.set(STRIP);
+            frame(scene, camera);
+            manager.updateCameraOffset(visible);
+
+            const { duration, ease } = lastTween(addCounter);
+            expect(duration).toBe(SPRING_SURFACE_MS);
+            expect(typeof ease).toBe("function");
+            const spring = springEasing(SPRING_SURFACE, SPRING_SURFACE_MS);
+            for (const progress of [0, 0.1, 0.25, 0.5, 0.75, 1]) {
+                expect((ease as (progress: number) => number)(progress)).toBeCloseTo(spring(progress), 6);
+            }
+        });
+
+        it("keeps 500 ms and the quad curve when the strip does not change", () => {
+            gameElement();
+            const { manager, addCounter } = setup();
+            gameViewportCoveredStart.set(STRIP);
+            manager.updateCameraOffset(visible);
+            manager.updateCameraOffset({ xStart: STRIP, xEnd: 800, yStart: 0, yEnd: 400 });
+
+            expect(lastTween(addCounter).duration).toBe(500);
+            expect(lastTween(addCounter).ease).toBe(Easing.QuadEaseOut);
+        });
+
+        it("takes the card's length once, for the glide the strip started and not for the next one", () => {
+            gameElement();
+            const { manager, addCounter } = setup();
+            gameViewportCoveredStart.set(STRIP);
+            manager.updateCameraOffset(visible);
+            manager.updateCameraOffset(whole);
+
+            expect(lastTween(addCounter).duration).toBe(500);
+        });
+
+        it("does not take the card's length for a glide that comes after the strip was applied at once", () => {
+            gameElement();
+            const { manager, scene, addCounter } = setup();
+            gameViewportCoveredStart.set(STRIP);
+            // A zoom change applies the offset and the strip without a glide.
+            scene.game.events.emit("zoomChanged");
+            manager.updateCameraOffset(visible);
+
+            expect(lastTween(addCounter).duration).toBe(500);
+        });
+
+        it("follows the card when it comes back while it was leaving", () => {
+            gameElement();
+            const { manager, addCounter, advanceTween } = setup(1, true);
+            gameViewportCoveredStart.set(STRIP);
+            manager.updateCameraOffset(visible);
+            advanceTween(1);
+            gameViewportCoveredStart.set(0);
+            manager.updateCameraOffset(whole);
+            advanceTween(0.3);
+            gameViewportCoveredStart.set(STRIP);
+            manager.updateCameraOffset(visible);
+
+            expect(lastTween(addCounter).duration).toBe(SPRING_SURFACE_MS);
+        });
+
+        it("is instant under reduced motion", () => {
+            gameElement();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+            const { manager, addCounter } = setup();
+            gameViewportCoveredStart.set(STRIP);
+            manager.updateCameraOffset(visible);
+            gameViewportCoveredStart.set(0);
+            manager.updateCameraOffset(whole);
+
+            expect(lastTween(addCounter).duration).toBe(0);
+        });
+    });
+
+    it("takes the room back at once when the view is free, which has no glide to follow", () => {
+        gameElement();
+        const { camera, manager, scene } = setup();
+        gameViewportCoveredStart.set(STRIP);
+        manager.updateCameraOffset(visible);
+        manager.startManualPan();
+
+        gameViewportCoveredStart.set(0);
+        manager.updateCameraOffset(whole);
+        frame(scene, camera);
+
+        expect(camera.getBounds().x).toBe(0);
+    });
+
+    it("stops listening to the panel when the scene is gone", () => {
+        const { manager, scene } = setup();
+        const markDirty = vi.fn();
+        scene.markDirty = markDirty;
+        manager.destroy();
+
+        gameViewportCoveredStart.set(STRIP);
+
+        expect(markDirty).not.toHaveBeenCalled();
     });
 });

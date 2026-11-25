@@ -48,6 +48,34 @@ describe("gameViewportBounds", () => {
     });
 });
 
+describe("gameViewportCoveredStart", () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    async function loadPort() {
+        return (await import("./ClientExtensionPoints")).gameViewportCoveredStart;
+    }
+
+    it("is 0 until an extension floats a panel over the game, which is what upstream assumes", async () => {
+        const gameViewportCoveredStart = await loadPort();
+
+        expect(get(gameViewportCoveredStart)).toBe(0);
+    });
+
+    it("holds the width an extension reports and tells its subscribers each time it changes", async () => {
+        const gameViewportCoveredStart = await loadPort();
+        const seen: number[] = [];
+        const unsubscribe = gameViewportCoveredStart.subscribe((width) => seen.push(width));
+
+        gameViewportCoveredStart.set(296);
+        gameViewportCoveredStart.set(0);
+        unsubscribe();
+
+        expect(seen).toEqual([0, 296, 0]);
+    });
+});
+
 describe("app frame", () => {
     beforeEach(() => {
         vi.resetModules();

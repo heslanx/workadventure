@@ -16,6 +16,7 @@ import { closePreferences, preferencesStore } from "../../Preferences/stores/pre
 import { installCameraScene } from "../stores/cameraScene";
 import { installMapTools } from "../stores/mapTools";
 import { closeOfficeMenu, openOfficeMenu, toggleOfficeMenu } from "../stores/officeMenuStore";
+import { stubWebAnimations, type WebAnimationsStub } from "../../../Utils/webAnimationsStub";
 import OfficeMenu from "./OfficeMenu.svelte";
 
 vi.mock("../../../../i18n/i18n-svelte", async () => {
@@ -539,9 +540,10 @@ describe("the office menu", () => {
                 expect(status()?.textContent).toBe("konclui.menu.linkCopied");
                 expect(panel()).not.toBeNull();
 
+                // After 5 s the line shuts; its words stay in it for the length of that (see the motion block).
                 await vi.advanceTimersByTimeAsync(5000);
                 flushSync();
-                expect(status()?.textContent).toBe("");
+                expect(status()?.classList.contains("is-open")).toBe(false);
             } finally {
                 vi.useRealTimers();
             }
@@ -558,6 +560,235 @@ describe("the office menu", () => {
             expect(error).toHaveBeenCalledOnce();
             expect(panel()).not.toBeNull();
             error.mockRestore();
+        });
+    });
+
+    describe("its entrance, its exit and its rows' motion", () => {
+        // jsdom has no Web Animations, and the menu's transition then ends at once. This lends it ones that wait.
+        let animations: WebAnimationsStub;
+
+        beforeEach(() => {
+            animations = stubWebAnimations();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === "(hover: hover)", media: query }));
+        });
+
+        afterEach(() => {
+            animations.restore();
+            vi.unstubAllGlobals();
+        });
+
+        const moving = () => animations.moving();
+        const settle = () => animations.settle();
+        const finishMoving = () => animations.finishMoving();
+        const openAndSettle = async () => {
+            open();
+            await settle();
+            await finishMoving();
+            // What the next step starts is all the test then counts.
+            animations.restore();
+            animations = stubWebAnimations();
+        };
+
+        it("arrives by the surface transition, not by the entrance class, from the logo", async () => {
+            open();
+            await settle();
+
+            expect(panel()?.classList.contains("k-enter")).toBe(false);
+            expect(moving().map((animation) => animation.options.duration)).toEqual([290]);
+        });
+
+        it("stays in the page for the length of its exit, out of reach, with the focus already on the logo", async () => {
+            await openAndSettle();
+
+            press(rows()[2], "Escape");
+            await settle();
+
+            expect(panel()).not.toBeNull();
+            expect(panel()?.inert).toBe(true);
+            expect(document.activeElement).toBe(logo);
+            expect(moving().map((animation) => animation.options.duration)).toEqual([200]);
+            await finishMoving();
+            expect(panel()).toBeNull();
+            expect(document.activeElement).toBe(logo);
+        });
+
+        it("leaves for a press elsewhere without taking the focus from where the press put it", async () => {
+            const elsewhere = document.createElement("button");
+            document.body.append(elsewhere);
+            await openAndSettle();
+            elsewhere.focus();
+
+            elsewhere.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            flushSync();
+            await settle();
+
+            expect(panel()).not.toBeNull();
+            expect(document.activeElement).toBe(elsewhere);
+            await finishMoving();
+            expect(panel()).toBeNull();
+            expect(document.activeElement).toBe(elsewhere);
+        });
+
+        it("keeps its keys while it leaves: a key pressed in the exit does nothing to the closed menu", async () => {
+            await openAndSettle();
+            closeOfficeMenu({ returnFocus: true });
+            flushSync();
+            await settle();
+            const event = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
+
+            rows()[0].dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it("is the same panel when it is opened again during its exit, and takes the focus on its first row", async () => {
+            await openAndSettle();
+            const before = panel();
+            toggleOfficeMenu(logo);
+            flushSync();
+            await settle();
+            expect(document.activeElement).toBe(logo);
+
+            toggleOfficeMenu(logo);
+            flushSync();
+            await settle();
+
+            expect(panel()).toBe(before);
+            expect(document.activeElement).toBe(rows()[0]);
+            expect(rows().map((element) => element.tabIndex)).toEqual([
+                0,
+                ...rows()
+                    .slice(1)
+                    .map(() => -1),
+            ]);
+        });
+
+        it("leaves at once, in the same flush, for a viewer who reduces motion", async () => {
+            await openAndSettle();
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+
+            closeOfficeMenu({ returnFocus: true });
+            flushSync();
+
+            expect(panel()).toBeNull();
+            expect(moving()).toHaveLength(0);
+        });
+
+        it("has one pill under its rows, which carry the press", async () => {
+            open();
+            await settle();
+
+            const list = target.querySelector('[role="menu"]');
+            expect(list?.classList.contains("k-glide")).toBe(true);
+            expect(list?.classList.contains("k-glide-on")).toBe(true);
+            expect(list?.querySelectorAll(".k-glide-pill")).toHaveLength(1);
+            expect(list?.querySelector(".k-glide-pill")?.getAttribute("aria-hidden")).toBe("true");
+            expect(rows().every((element) => element.classList.contains("k-press"))).toBe(true);
+            // The pill is not a menu item: the arrow keys and the roving tab index count rows only.
+            expect(rows()).toHaveLength(10);
+        });
+
+        it("has no pill where there is no hover, and the rows keep their own", async () => {
+            vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+            open();
+            await settle();
+
+            expect(target.querySelector(".k-glide-pill")).toBeNull();
+            expect(target.querySelector('[role="menu"]')?.classList.contains("k-glide-on")).toBe(false);
+        });
+
+        it("grows the notice's line in as a disclosure, and shuts it when the notice goes", async () => {
+            vi.useFakeTimers();
+            try {
+                open();
+                const slot = () => target.querySelector(".feedback-slot");
+                expect(slot()?.classList.contains("k-disclosure")).toBe(true);
+                expect(slot()?.classList.contains("is-open")).toBe(false);
+
+                click(row("shareLink"));
+                await vi.advanceTimersByTimeAsync(0);
+                flushSync();
+                expect(slot()?.classList.contains("is-open")).toBe(true);
+                expect(slot()?.getAttribute("role")).toBe("status");
+                expect(slot()?.querySelector(".k-disclosure-body .feedback")?.textContent).toBe(
+                    "konclui.menu.linkCopied",
+                );
+
+                await vi.advanceTimersByTimeAsync(5000);
+                flushSync();
+                expect(slot()?.classList.contains("is-open")).toBe(false);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it("keeps the notice's words in the line while it shuts, so the line is seen to leave", async () => {
+            vi.useFakeTimers();
+            try {
+                open();
+                click(row("shareLink"));
+                await vi.advanceTimersByTimeAsync(0);
+                flushSync();
+                const slot = () => target.querySelector(".feedback-slot");
+                const words = () => slot()?.querySelector(".feedback")?.textContent;
+                expect(words()).toBe("konclui.menu.linkCopied");
+
+                await vi.advanceTimersByTimeAsync(5000);
+                flushSync();
+
+                expect(slot()?.classList.contains("is-open")).toBe(false);
+                expect(words()).toBe("konclui.menu.linkCopied");
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it("keeps the failure's words, and its colour, in the line while it shuts", async () => {
+            clipboard.writeText.mockRejectedValue(new Error("denied"));
+            const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+            vi.useFakeTimers();
+            try {
+                open();
+                click(row("shareLink"));
+                await vi.advanceTimersByTimeAsync(0);
+                flushSync();
+                const line = () => target.querySelector(".feedback");
+                expect(line()?.classList.contains("failed")).toBe(true);
+
+                await vi.advanceTimersByTimeAsync(5000);
+                flushSync();
+
+                expect(target.querySelector(".feedback-slot")?.classList.contains("is-open")).toBe(false);
+                expect(line()?.textContent).toBe("konclui.menu.linkCopyFailed");
+                expect(line()?.classList.contains("failed")).toBe(true);
+            } finally {
+                vi.useRealTimers();
+                error.mockRestore();
+            }
+        });
+
+        it("keeps the notice's words while the menu leaves, and loses them when it is opened again", async () => {
+            open();
+            click(row("shareLink"));
+            await vi.waitFor(() =>
+                expect(target.querySelector(".feedback")?.textContent).toBe("konclui.menu.linkCopied"),
+            );
+            await settle();
+            await finishMoving();
+
+            closeOfficeMenu({ returnFocus: true });
+            flushSync();
+            await settle();
+
+            // The panel is held for the exit, and what it said stays in it as it leaves.
+            expect(panel()).not.toBeNull();
+            expect(target.querySelector(".feedback")?.textContent).toBe("konclui.menu.linkCopied");
+
+            toggleOfficeMenu(logo);
+            flushSync();
+            await settle();
+
+            expect(target.querySelector(".feedback")?.textContent).toBe("");
         });
     });
 

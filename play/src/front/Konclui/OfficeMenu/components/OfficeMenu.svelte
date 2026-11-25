@@ -1,6 +1,8 @@
 <script lang="ts">
     import type { Component } from "svelte";
     import { LL } from "../../../../i18n/i18n-svelte";
+    import { glide } from "../../../Utils/glide";
+    import { surface } from "../../../Utils/surfaceTransition";
     import MenuGroup from "../../Controls/components/MenuGroup.svelte";
     import MenuRow from "../../Controls/components/MenuRow.svelte";
     import { openCompanionEditor, openNameEditor, openWokaEditor } from "../../Preferences/stores/gameCommands";
@@ -43,6 +45,9 @@
     // The row that is in the tab order; the arrow keys move it (a roving tabindex).
     let active = $state(0);
     let feedback: "copied" | "failed" | undefined = $state();
+    // The last notice shown. The line it is in shuts when `feedback` clears, and the text stays in it for the length of
+    // that, so the notice is seen to leave and not cut to an empty strip; it is forgotten when the menu opens again.
+    let lastFeedback: "copied" | "failed" | undefined = $state();
     let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
 
     let t = $derived($LL.konclui.menu);
@@ -61,8 +66,9 @@
         away: t.away(),
         doNotDisturb: t.doNotDisturb(),
     });
-    let feedbackText = $derived(
-        feedback === "copied" ? t.linkCopied() : feedback === "failed" ? t.linkCopyFailed() : "",
+    let noticeShown = $derived(feedback ?? lastFeedback);
+    let noticeText = $derived(
+        noticeShown === "copied" ? t.linkCopied() : noticeShown === "failed" ? t.linkCopyFailed() : "",
     );
 
     function rows(): HTMLElement[] {
@@ -75,9 +81,11 @@
     }
 
     // The menu opens on its first row, and what it showed (a notice, the row that had the focus) is forgotten as it
-    // closes.
+    // closes. It follows the store as well as the panel: the panel stays in the page for the length of its exit, and a
+    // menu that is opened again in that time is the same panel, which still has to take the focus.
     $effect(() => {
-        if (panel === undefined) return;
+        if (panel === undefined || !$officeMenuOpenStore) return;
+        lastFeedback = undefined;
         focusRow(0);
         return () => {
             clearTimeout(feedbackTimer);
@@ -92,6 +100,7 @@
 
     function showFeedback(result: "copied" | "failed"): void {
         feedback = result;
+        lastFeedback = result;
         clearTimeout(feedbackTimer);
         // The notice stays 5 s, as the preferences dialog's copy button keeps its confirmation.
         feedbackTimer = setTimeout(() => {
@@ -204,9 +213,19 @@
 <svelte:window {onkeydown} {onpointerdown} />
 
 {#if $officeMenuOpenStore}
-    <div class="office-menu k-chrome k-enter block-user-action" bind:this={panel} data-testid="office-menu">
+    <div
+        class="office-menu k-chrome rounded-lg p-1.5 block-user-action"
+        bind:this={panel}
+        data-testid="office-menu"
+        transition:surface
+    >
         <!-- The list scrolls, not the panel: the scroller's edge fade would fade the panel's rim and shadow. -->
-        <div class="list k-scroll-y" role="menu" aria-label={$LL.konclui.officeMenu()}>
+        <div
+            class="list k-scroll-y k-glide"
+            role="menu"
+            aria-label={$LL.konclui.officeMenu()}
+            {@attach glide({ item: ".k-menu-row" })}
+        >
             {#each $menuGroupsStore as group, groupIndex (group.id)}
                 {#if groupIndex > 0}
                     <hr class="k-divider" />
@@ -261,7 +280,14 @@
                 </MenuGroup>
             {/each}
         </div>
-        <p class="feedback" class:failed={feedback === "failed"} role="status">{feedbackText}</p>
+        <!-- The one change of size inside the menu: the line grows in and out. The live region is the slot itself, which
+             stays visible, so the text reaches a screen reader as it appears; the body hides what is inside while shut,
+             and the text is kept in it while it shuts so the line is seen to leave. -->
+        <div class="feedback-slot k-disclosure" class:is-open={feedback !== undefined} role="status">
+            <div class="k-disclosure-body">
+                <p class="feedback" class:failed={noticeShown === "failed"}>{noticeText}</p>
+            </div>
+        </div>
     </div>
 {/if}
 
@@ -278,8 +304,6 @@
         flex-direction: column;
         width: min(264px, calc(100vw - 16px));
         max-height: calc(100dvh - 24px);
-        padding: 6px;
-        border-radius: var(--k-radius-surface);
         color: var(--k-fg);
         font-family: Urbanist, system-ui, sans-serif;
         /* It comes from the rail, on its left. */
@@ -296,16 +320,17 @@
         font-size: 12px;
         line-height: 1.5;
     }
+    /* The slot is never squeezed by the menu's height: the list is what scrolls. */
+    .feedback-slot {
+        flex: none;
+    }
+    /* Its margin and padding are the line's own, inside the body that clips: shut, none of it shows. */
     .feedback {
-        margin: 0;
-        padding: 0 12px;
+        margin: 6px 0 0;
+        padding: 6px 12px;
         color: var(--k-success-text);
         font-size: 12px;
         line-height: 1.5;
-    }
-    .feedback:not(:empty) {
-        margin-top: 6px;
-        padding-block: 6px;
     }
     .feedback.failed {
         color: var(--k-danger-text);

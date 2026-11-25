@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createRawSnippet, flushSync, mount, unmount } from "svelte";
+import { createRawSnippet, flushSync, mount, tick, unmount } from "svelte";
 import { compile } from "svelte/compiler";
-import type { Writable } from "svelte/store";
+import { get, type Writable } from "svelte/store";
 import type { Room } from "../../../Connection/Room";
+import type { CoWebsite } from "../../../WebRtc/CoWebsite/CoWebsite";
 
 // The shell with its real side panel, people panel and stores. What reaches the scene, the chat and the rest of the
 // page is replaced: the game manager and the chat sidebar, the office menu and the two chips over the map.
@@ -52,20 +53,34 @@ import { errorScreenStore } from "../../../Stores/ErrorScreenStore";
 import { mapDeletedPromptStore } from "../../../Stores/MapDeletedPromptStore";
 import { chatVisibilityStore } from "../../../Stores/ChatStore";
 import { menuIconVisiblilityStore, warningBannerStore } from "../../../Stores/MenuStore";
-import { gameViewportBounds } from "../../../ExternalModule/ClientExtensionPoints";
+import { gameViewportBounds, gameViewportCoveredStart } from "../../../ExternalModule/ClientExtensionPoints";
 import type { ViewportBounds } from "../../../Stores/CoWebsiteLayout";
+import { coWebsites } from "../../../Stores/CoWebsiteStore";
+import { biggestAvailableAreaStore } from "../../../Stores/BiggestAvailableAreaStore";
 import { navChat } from "../../../Chat/Stores/ChatStore";
-import { closeSidePanel } from "../stores/sidePanelStore";
+import { closeSidePanel, showPeople } from "../stores/sidePanelStore";
 import Frame from "./Frame.svelte";
 
 const errorScreen = errorScreenStore as unknown as Writable<object | undefined>;
 
-class NoResizeObserver {
-    observe(): void {}
+// jsdom does no layout, so the browser's ResizeObserver is replaced by one that reports only when a test says the layout
+// changed (`fireResize`), the way the browser reports it after a frame.
+class ControlledResizeObserver {
+    static live = new Set<ControlledResizeObserver>();
+    constructor(private readonly callback: ResizeObserverCallback) {}
+    observe(): void {
+        ControlledResizeObserver.live.add(this);
+    }
     unobserve(): void {}
-    disconnect(): void {}
+    disconnect(): void {
+        ControlledResizeObserver.live.delete(this);
+    }
+    report(): void {
+        this.callback([], this);
+    }
 }
-vi.stubGlobal("ResizeObserver", NoResizeObserver);
+vi.stubGlobal("ResizeObserver", ControlledResizeObserver);
+const fireResize = () => [...ControlledResizeObserver.live].forEach((observer) => observer.report());
 
 const OPTED_OUT = { konclui: { shell: false } };
 
@@ -78,12 +93,23 @@ function office(metadata: unknown = undefined): Room {
     } as unknown as Room;
 }
 
-// jsdom does no layout, so the map's cell is modelled on the frame's grid: a 6 px gutter, the rail's 60 px, and the side
-// panel's 296 px (its own gutter is inside that column) when the frame carries `panel-open`.
+// jsdom does no layout, so the map's cell is modelled on the frame's grid as the stylesheet declares it: a 6 px gutter, and
+// the width of every fixed column before the map's own (the rail's 60 px, and the side panel's 296 px where the panel has a
+// column). The frame's compiled style is in the document (see drawFrame), so a column added to the grid moves the cell.
 const WINDOW = { width: 1440, height: 900 };
+function fixedColumnsOf(frame: HTMLElement): number {
+    const style = getComputedStyle(frame);
+    const columns = style.gridTemplateColumns.match(/minmax\([^)]*\)|var\([^)]*\)|\S+/g);
+    if (!columns) throw new Error("the frame's style is not in the document: its grid has no columns");
+    return columns
+        .filter((column) => !column.startsWith("minmax("))
+        .map((column) => /^var\((--[\w-]+)\)$/.exec(column)?.[1])
+        .reduce((sum, property) => sum + parseFloat(property ? style.getPropertyValue(property) : "NaN"), 0);
+}
 function cellOf(viewport: HTMLElement): DOMRect {
-    const panelOpen = viewport.parentElement?.classList.contains("panel-open") === true;
-    const left = 60 + (panelOpen ? 296 : 0);
+    const frame = viewport.parentElement;
+    if (!frame) throw new Error("the viewport has no frame");
+    const left = fixedColumnsOf(frame);
     const top = 6;
     return {
         left,
@@ -99,12 +125,16 @@ function cellOf(viewport: HTMLElement): DOMRect {
 }
 
 const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "Frame.svelte"), "utf8");
+// The frame's style, compiled once for the hash of the mounted component.
+const compiledStyles = new Map<string, string>();
 
 describe("the office frame around the game", () => {
     const target = document.createElement("div");
     let frame: ReturnType<typeof mount> | undefined;
     let published: Array<ViewportBounds | undefined> = [];
     let stopRecording: (() => void) | undefined;
+    // The width the browser would give the box under the card: 296 where the card floats, 0 where it does not.
+    let reserveWidth = 296;
 
     beforeEach(() => {
         currentRoomStore.set(undefined);
@@ -124,8 +154,12 @@ describe("the office frame around the game", () => {
         navChat.switchToChat();
         closeSidePanel();
         Object.defineProperty(window, "innerWidth", { configurable: true, value: WINDOW.width });
+        reserveWidth = 296;
         vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
-            return this.classList.contains("viewport") ? cellOf(this) : new DOMRect();
+            if (this.classList.contains("viewport")) return cellOf(this);
+            // The strip under the card is drawn only where the card floats, which is a media query jsdom does not run.
+            if (this.classList.contains("panel-reserve")) return new DOMRect(60, 6, reserveWidth, 888);
+            return new DOMRect();
         });
         document.body.append(target);
         // The bounds the frame hands to the game, as they are set: the first entry is the store's value at the start.
@@ -139,6 +173,8 @@ describe("the office frame around the game", () => {
         frame = undefined;
         if (mounted) await unmount(mounted);
         target.replaceChildren();
+        coWebsites.removeAll();
+        gameViewportCoveredStart.set(0);
         vi.restoreAllMocks();
     });
 
@@ -152,6 +188,7 @@ describe("the office frame around the game", () => {
         flushSync();
         const element = target.querySelector<HTMLElement>(".office-frame");
         if (!element) throw new Error("no frame");
+        injectFrameStyle(element);
         return element;
     }
 
@@ -163,7 +200,8 @@ describe("the office frame around the game", () => {
         gameSceneIsLoadedStore.set(true);
         flushSync();
     };
-    const finalBounds = { left: 356, top: 6, width: 1078, height: 888 };
+    // The map's whole cell, beside the rail, whether the side panel is open or not: the panel floats over it.
+    const finalBounds = { left: 60, top: 6, width: 1374, height: 888 };
 
     it("is not laid out while the room is known and no scene exists: the entry screens fill the window", () => {
         const element = drawFrame(office());
@@ -172,7 +210,7 @@ describe("the office frame around the game", () => {
         expect(published).toEqual([undefined]);
     });
 
-    it("lays the frame out, with the side panel's column, when the scene is created, before the chrome is drawn", () => {
+    it("lays the frame out, with the side panel open, when the scene is created, before the chrome is drawn", () => {
         const element = drawFrame(office());
 
         createScene();
@@ -211,7 +249,7 @@ describe("the office frame around the game", () => {
 
     // The game element moves from the window into the frame at the flip that lays the frame out. Chrome counts that
     // move unless the element is not visible, so the class that holds it must come in the very update that lays the frame
-    // out, with the panel's column, and go with the chrome. jsdom does no layout: this pins the classes and their order.
+    // out, with the panel open, and go with the chrome. jsdom does no layout: this pins the classes and their order.
     it("holds the game element in the same update that lays the frame out, and releases it with the chrome", () => {
         const element = drawFrame(office());
         expect(element.classList.contains("settling")).toBe(false);
@@ -316,14 +354,19 @@ describe("the office frame around the game", () => {
             /svelte-\w+/.exec(element.className)?.[0] ??
             /svelte-\w+/.exec(element.firstElementChild?.className ?? "")?.[0];
         if (!hash) throw new Error("the frame carries no style hash");
-        const { css } = compile(source, {
-            generate: "client",
-            css: "external",
-            filename: "Frame.svelte",
-            cssHash: () => hash,
-        });
+        let code = compiledStyles.get(hash);
+        if (code === undefined) {
+            const { css } = compile(source, {
+                generate: "client",
+                css: "external",
+                filename: "Frame.svelte",
+                cssHash: () => hash,
+            });
+            code = css?.code ?? "";
+            compiledStyles.set(hash, code);
+        }
         const style = document.createElement("style");
-        style.textContent = css?.code ?? "";
+        style.textContent = code;
         document.head.append(style);
     }
 
@@ -346,7 +389,6 @@ describe("the office frame around the game", () => {
     it("holds the map's box and all it holds, and only the loading screen shows, while the frame settles on a reload", () => {
         // A returning user: no entry screen. The scene loads behind the loading screen, then it is created.
         const element = drawFrame(office(), gameArea);
-        injectFrameStyle(element.querySelector<HTMLElement>(".viewport") ?? element);
         loaderVisibleStore.set(true);
         flushSync();
         expect(element.classList.contains("konclui")).toBe(false);
@@ -375,7 +417,6 @@ describe("the office frame around the game", () => {
 
     it("shows the whole window to an entry screen: nothing is held and the loading screen is not pinned", () => {
         const element = drawFrame(office(), gameArea);
-        injectFrameStyle(element.querySelector<HTMLElement>(".viewport") ?? element);
         loginSceneVisibleStore.set(true);
         createScene();
 
@@ -389,7 +430,6 @@ describe("the office frame around the game", () => {
     // screen, which is up while the map loads, must stand on the window from that same update.
     it("walks the first visit in order: entry screen over the window, then frame held and loader pinned, then chrome", () => {
         const element = drawFrame(office(), gameArea);
-        injectFrameStyle(element.querySelector<HTMLElement>(".viewport") ?? element);
         const state = () => ({
             framed: element.classList.contains("konclui"),
             settling: element.classList.contains("settling"),
@@ -488,5 +528,290 @@ describe("the office frame around the game", () => {
         expect(element.classList.contains("konclui")).toBe(false);
         expect(element.classList.contains("settling")).toBe(false);
         expect(published).toEqual([undefined]);
+    });
+
+    // The side panel floats over the map: the map's cell, and so the canvas and its zoom, are the same with the panel open
+    // and closed. The grid is read from the style the frame declares, so a third column that comes back moves the cell.
+    describe("with the side panel over the map", () => {
+        const gridOf = (element: HTMLElement) => getComputedStyle(element).gridTemplateColumns;
+        const ready = () => {
+            const element = drawFrame(office());
+            createScene();
+            revealShell();
+            return element;
+        };
+
+        it("hands the game the same area with the panel open, closed and open again", () => {
+            const element = ready();
+            expect(element.classList.contains("panel-open")).toBe(true);
+            expect(published).toEqual([undefined, finalBounds]);
+
+            closeSidePanel();
+            flushSync();
+            fireResize();
+            expect(element.classList.contains("panel-open")).toBe(false);
+            expect(published).toEqual([undefined, finalBounds]);
+
+            showPeople();
+            flushSync();
+            fireResize();
+            expect(element.classList.contains("panel-open")).toBe(true);
+            expect(published).toEqual([undefined, finalBounds]);
+        });
+
+        it("lays out the same two grid columns with the panel open and closed", () => {
+            const element = ready();
+            const open = gridOf(element);
+
+            closeSidePanel();
+            flushSync();
+
+            expect(element.classList.contains("panel-open")).toBe(false);
+            expect(gridOf(element)).toBe(open);
+            expect(open).toBe("var(--rail-width) minmax(0, 1fr)");
+        });
+
+        const coWebsite = {
+            getId: () => "page",
+            getUrl: () => new URL("https://page.example"),
+            getWidthPercent: () => 0,
+        };
+
+        it("gives the panel its column back beside a co-website, which splits the area it floats over otherwise", () => {
+            const element = ready();
+            expect(element.classList.contains("shares-map")).toBe(false);
+
+            coWebsites.add(coWebsite as unknown as CoWebsite);
+            flushSync();
+            fireResize();
+
+            expect(element.classList.contains("shares-map")).toBe(true);
+            expect(gridOf(element)).toBe("var(--rail-width) var(--panel-width) minmax(0, 1fr)");
+            expect(published.at(-1)).toEqual({ left: 356, top: 6, width: 1078, height: 888 });
+
+            coWebsites.remove(coWebsite as unknown as CoWebsite);
+            flushSync();
+            fireResize();
+
+            expect(element.classList.contains("shares-map")).toBe(false);
+            expect(published.at(-1)).toEqual(finalBounds);
+        });
+    });
+
+    // The strip of the map under the card is the camera's blocker and the width the HUD leaves free.
+    describe("with the strip under the card", () => {
+        const reserveOf = () => target.querySelector<HTMLElement>("[data-konclui-panel-reserve]");
+        const ready = () => {
+            const element = drawFrame(office());
+            createScene();
+            revealShell();
+            return element;
+        };
+
+        it("draws the strip as a box of its own, outside the card, with nothing that animates it", () => {
+            ready();
+
+            const reserve = reserveOf();
+            expect(reserve).not.toBeNull();
+            expect(reserve?.closest("aside")).toBeNull();
+            expect(reserve?.classList.contains("k-enter")).toBe(false);
+            expect(reserve?.getAttribute("aria-hidden")).toBe("true");
+            const card = target.querySelector("aside.side-panel");
+            // The card arrives through the transition on it, and a blocker hears nothing of that (see the strip's comment).
+            expect(card?.classList.contains("k-enter")).toBe(false);
+            expect(card?.contains(reserve)).toBe(false);
+        });
+
+        it("mounts the strip with the panel's state and takes it away when the panel closes", () => {
+            ready();
+            expect(reserveOf()).not.toBeNull();
+
+            closeSidePanel();
+            flushSync();
+            expect(reserveOf()).toBeNull();
+
+            showPeople();
+            flushSync();
+            expect(reserveOf()).not.toBeNull();
+        });
+
+        it("registers the strip as the camera's blocker, and not the card, and gives it back when the panel closes", () => {
+            const unregister = vi.fn();
+            const register = vi.spyOn(biggestAvailableAreaStore, "registerBlocker").mockReturnValue(unregister);
+            ready();
+
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(register.mock.calls[0][0]).toBe(reserveOf());
+            expect(register.mock.calls[0][0]).not.toBe(target.querySelector("aside"));
+            expect(unregister).not.toHaveBeenCalled();
+
+            closeSidePanel();
+            flushSync();
+            expect(unregister).toHaveBeenCalledTimes(1);
+        });
+
+        it("tells the game how wide the strip is, as the browser laid it out, and 0 when there is none", () => {
+            ready();
+            expect(get(gameViewportCoveredStart)).toBe(296);
+
+            // A phone, or a co-website beside the panel: the box is not drawn, so it measures nothing.
+            reserveWidth = 0;
+            fireResize();
+            expect(get(gameViewportCoveredStart)).toBe(0);
+
+            reserveWidth = 296;
+            fireResize();
+            expect(get(gameViewportCoveredStart)).toBe(296);
+
+            closeSidePanel();
+            flushSync();
+            expect(get(gameViewportCoveredStart)).toBe(0);
+        });
+
+        it("clears the strip when the frame is taken down", async () => {
+            ready();
+            expect(get(gameViewportCoveredStart)).toBe(296);
+
+            const mounted = frame;
+            frame = undefined;
+            if (mounted) await unmount(mounted);
+
+            expect(get(gameViewportCoveredStart)).toBe(0);
+        });
+    });
+
+    // The card leaves through its own transition and is in the page for the length of its exit. What the game is told
+    // follows the panel's state, which changes as the exit starts and not as the card is removed, so that the map and
+    // the card move together. `Element.animate` is jsdom's missing piece: it is lent one whose animations wait.
+    describe("through the card's exit", () => {
+        class FakeAnimation {
+            currentTime = 0;
+            onfinish: (() => void) | null = null;
+            cancelled = false;
+            effect: unknown = {};
+
+            constructor(readonly options: { duration: number }) {}
+
+            cancel(): void {
+                this.cancelled = true;
+            }
+
+            finish(): void {
+                this.onfinish?.();
+            }
+        }
+        let animations: FakeAnimation[];
+
+        beforeEach(() => {
+            animations = [];
+            Object.defineProperty(Element.prototype, "animate", {
+                configurable: true,
+                writable: true,
+                value(_keyframes: unknown, options: { duration: number }) {
+                    const animation = new FakeAnimation(options);
+                    animations.push(animation);
+                    // Svelte starts a run with a dummy animation as long as the delay (0) and waits for it to end.
+                    if (!options.duration) queueMicrotask(() => !animation.cancelled && animation.finish());
+                    return animation;
+                },
+            });
+            Object.defineProperty(window, "matchMedia", {
+                configurable: true,
+                writable: true,
+                value: (query: string) => ({ matches: false, media: query }),
+            });
+        });
+
+        afterEach(() => {
+            Reflect.deleteProperty(Element.prototype, "animate");
+            Reflect.deleteProperty(window, "matchMedia");
+        });
+
+        const moving = () => animations.filter((animation) => animation.options.duration > 0 && !animation.cancelled);
+        // Svelte starts a transition a microtask after the flush, and the dummy animation ends in another.
+        const settle = async () => {
+            await tick();
+            await tick();
+            await tick();
+            await tick();
+        };
+        const finishMoving = async () => {
+            for (const animation of moving()) animation.finish();
+            await settle();
+        };
+        const cardOf = () => target.querySelector<HTMLElement>("aside.side-panel");
+        const ready = async () => {
+            drawFrame(office());
+            createScene();
+            revealShell();
+            await settle();
+            await finishMoving();
+        };
+
+        it("hands the game the same area while the card is open, while it leaves, once it has gone and when it is back", async () => {
+            await ready();
+            expect(cardOf()).not.toBeNull();
+            expect(published).toEqual([undefined, finalBounds]);
+
+            closeSidePanel();
+            flushSync();
+            await settle();
+            fireResize();
+            // The card is still there, leaving: the cell that the map has is the one it had with the card open.
+            expect(cardOf()).not.toBeNull();
+            expect(moving()).toHaveLength(1);
+            expect(published).toEqual([undefined, finalBounds]);
+
+            await finishMoving();
+            fireResize();
+            expect(cardOf()).toBeNull();
+            expect(published).toEqual([undefined, finalBounds]);
+
+            showPeople();
+            flushSync();
+            await settle();
+            fireResize();
+            expect(cardOf()).not.toBeNull();
+            expect(published).toEqual([undefined, finalBounds]);
+        });
+
+        it("keeps the grid's two columns while the card leaves, as it had them with the card open", async () => {
+            const element = drawFrame(office());
+            createScene();
+            revealShell();
+            await settle();
+            await finishMoving();
+            const columns = getComputedStyle(element).gridTemplateColumns;
+
+            closeSidePanel();
+            flushSync();
+
+            expect(cardOf()).not.toBeNull();
+            expect(getComputedStyle(element).gridTemplateColumns).toBe(columns);
+        });
+
+        it("takes the strip from the camera as the exit starts, with the card still in the page, and gives it back as the card opens", async () => {
+            const unregister = vi.fn();
+            const register = vi.spyOn(biggestAvailableAreaStore, "registerBlocker").mockReturnValue(unregister);
+            await ready();
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(get(gameViewportCoveredStart)).toBe(296);
+
+            closeSidePanel();
+            flushSync();
+
+            expect(cardOf()).not.toBeNull();
+            expect(unregister).toHaveBeenCalledTimes(1);
+            expect(get(gameViewportCoveredStart)).toBe(0);
+
+            // Reopened while the card is still leaving: the strip is back in the update that starts the entrance.
+            showPeople();
+            flushSync();
+
+            expect(cardOf()).not.toBeNull();
+            expect(register).toHaveBeenCalledTimes(2);
+            expect(register.mock.calls[1][0]).toBe(target.querySelector("[data-konclui-panel-reserve]"));
+            expect(get(gameViewportCoveredStart)).toBe(296);
+        });
     });
 });
