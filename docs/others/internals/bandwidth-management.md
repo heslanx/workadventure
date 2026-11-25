@@ -421,7 +421,8 @@ times.
 
 ### Publisher side
 
-- Reads `videoQualityStore` and `screenShareQualityStore` at track publication time.
+- Reads `effectiveVideoQualityStore` (the saved camera quality, or "low" while the uplink cap is on, see below) and
+  `screenShareQualityStore` at track publication time.
 - Chooses the codec with `getVideoCodec()` for the capture size of the track (see Codec Selection).
 - Computes the budget with `selectVideoPreset()` for the captured size and that codec.
 - Publishes the camera with `videoEncoding.maxBitrate` / `maxFramerate`, and the screen share with
@@ -462,6 +463,116 @@ times.
 - Calls `publication.setVideoQuality()` when subscribing to remote camera and screen share tracks, which selects the
   simulcast layer the server forwards.
 
+## Uplink Cap: Automatic Camera Downgrade
+
+**Files**: [`play/src/front/WebRtc/UplinkLimitationDetector.ts`](../../../play/src/front/WebRtc/UplinkLimitationDetector.ts)
+(decisions and wiring), [`play/src/front/WebRtc/UplinkCap.ts`](../../../play/src/front/WebRtc/UplinkCap.ts) (the two
+stores)
+
+On LiveKit the browser already switches the largest simulcast layer off when the uplink cannot carry it, but the app
+keeps publishing the whole ladder (720p + 360p + 180p). libwebrtc then pads up to its bandwidth estimate to try to get
+the layer back, so the link stays saturated (the audio shares it), and on a link near the threshold the layer flaps:
+a keyframe and a freeze for every viewer at each switch. The manual "low" setting (captured at 360p, published as
+360p + 180p) is the answer to that; the uplink cap applies it by itself, for the session only, and takes it back when
+the link recovers.
+
+Every threshold below is derived from libwebrtc's allocator rules and is **not yet measured on a shaped link**. The
+`media.camera_cap.changed` analytics event exists to tune them.
+
+### Trigger
+
+The detector reads `localEncoderStatsStore.video` once a second (the poll is a timer and an async `getStats()`, so its
+readings come 1000 ms apart give or take a few: one up to 100 ms early still counts), and decides from
+`stats.encoders[]`: the aggregate the tiles show drops the fields it needs. A sample is limited when
+`bandwidthLimitedRatio` is at least 0.5, that is, when the allocator could not fund the largest layer for most of the
+second (`qualityLimitationReason: "bandwidth"`).
+
+- **Eligible reading**: the source is LiveKit, there is exactly one encoder, it delivers frames (`captureFps` of 1 or
+  more) and has at least two active layers (fewer means no largest layer to lose: a layer already off, or a room nobody
+  watches, since dynacast pauses the layers nobody subscribes to), no screen share is running (it competes for the same
+  uplink), and the saved quality is not "low". An ineligible or missing reading, a change of transport or of codec, and a
+  layer that resumes (`activeLayers` going up, as dynacast does when a viewer joins: the bandwidth estimate was held near
+  what the other layers send, and has to climb to fund it) clear the window and restart the warm-up.
+- **Cap**: after a warm-up of 15 samples (the keyframe and the rate-control ramp-up of a new publication look like a
+  weak link), at least 18 of the last 30 samples are limited. The earliest cap is therefore 45 s after a publication
+  starts. A dip of ten seconds does not count; a link limited two thirds of the time does.
+
+### Action
+
+`uplinkCapStore` goes up, and `effectiveVideoQualityStore` (in `MediaStore.ts`, derived from the saved quality and the
+cap) reads "low". The camera constraints and the LiveKit publication follow it, as for a camera set to "low": the
+camera reopens at 360p, and `LiveKitRoom` unpublishes and publishes again as 360p + 180p. Viewers see the tile go off
+for a moment, which is why caps and lifts are rare.
+
+- The saved setting, `videoQualityStore`, is never written: the cap lives in memory and ends with the page. The code
+  that reads the saved setting keeps reading it: the Settings screens, the selected value of the Media pane, what we
+  ask the other side to send us (`RemotePeer`, `LivekitParticipant`). Screen share is untouched.
+- `effectiveVideoQualityStore` only notifies when its value changes, so a change of the saved setting that leaves the
+  cap on (recommended and high) is no event for the camera. In the app a change made by the user always clears the cap
+  (see "The user wins"), and the camera then follows the quality the user chose.
+- `LiveKitRoom` does not act on a change of the effective quality that crosses "low" (the cap going on or off, a
+  user choosing "low"): the camera reopens, and the publication follows the new track when it arrives. Acting on the
+  change itself would publish the track that the constraint change is about to stop. Between "recommended" and "high"
+  the camera stays open, and the publication is checked against the new setting at once.
+- A cap that is lifted while the camera is off (energy saving, outside a conversation) does not wake the camera:
+  `deviceChanged10SecondsAgoStore` reads what the user chose (device, frame rate, saved quality), not the effective
+  constraints.
+- A toast says that others see the camera in lower quality and that it comes back on its own (raised by the first cap of
+  an episode; a recovery trial that fails and caps again does not raise it again). The Media pane replaces the hint of
+  the camera quality by a note that it is lowered for now and that the choice is kept.
+- `media.camera_cap.changed` (`capped`, `lifted`, `cleared`, with the backoff level and the reason) is declared in
+  `AnalyticsEventCatalog.ts`. Like the CPU events, it has no PostHog counterpart. Read it against
+  `media.video_quality.sample`, whose `bandwidthLimitedRatio`, `activeLayers`, `uploadLossRatio` and
+  `availableOutgoingBitrate` are what the decisions are made on.
+
+### Recovery
+
+While only 360p + 180p are sent, the bandwidth estimate is capped near 1.5 times what is sent, so it cannot prove that
+the full ladder fits: lifting the cap **is** the probe. It is done rarely, after a hold measured on the wall clock
+(the camera can be off meanwhile) and that grows with each trial that fails:
+
+| Backoff level | 0 | 1 | 2 | 3 (and after) |
+|---|---|---|---|---|
+| Hold | 5 min | 10 min | 20 min | 60 min |
+
+Once the hold has elapsed:
+
+1. No live LiveKit camera (nothing published, the room moved to P2P, the camera delivers no frames) for 15 s
+   (`IDLE_CONFIRM_MS`, the time before the hold ended counts): the cap is lifted, reason `idle`. Nobody watches a
+   republish. The 15 s are there because a publication that is replaced (a reconnection, a codec change) is away for
+   one reading: lifting on that one would be a trial with no proof, on a link that just failed its health check. Two
+   encoders sending the camera at once (a publication overlapping its successor) are a camera to protect that cannot
+   be read: the detector waits for one. The stats store stops ticking when nothing is published, so the wiring arms a
+   timer for whichever ends later, the hold or the 15 s, and clears it when a camera is read again or the cap goes.
+2. A screen share is running: wait.
+3. Otherwise the cap is lifted, reason `recovered`, when the last 30 live samples taken while capped (LiveKit, one
+   encoder, frames delivered, at least one active layer) hold at most 3 limited samples, a mean `uploadLossRatio` of at
+   most 0.02 (over the samples that report it), and the latest `availableOutgoingBitrate`, when reported, is at least
+   400 kbps. The last is a veto only: a high estimate never shortens the hold. Samples of a camera nobody watches neither
+   advance nor clear that window.
+
+A cap that comes back within 10 minutes of live time after a lift (the time between consecutive eligible samples, each
+step counted for at most 2 s, so that idle time and a throttled tab do not count) was a failed trial: the level goes up
+by one. A lift that survives 10 minutes of live time resets the level to 0.
+
+### The user wins
+
+A change of the saved camera quality, to any value, clears the cap, the notice, the windows and the level
+(`media.camera_cap.changed` with `cleared` and reason `setting`). Choosing a different quality is the way to take the
+cap off by hand: the Media pane keeps the saved choice selected under the cap, and choosing it again is no change, so it
+does nothing.
+
+### What it does not cover
+
+- **P2P**: `RemotePeer` is unchanged, and a P2P sender is never eligible. There is one encoder per peer, and the
+  relief there is the move to LiveKit (see `CpuLimitationDetector.ts`).
+- **Firefox and Safari** report no `qualityLimitationDurations`: `bandwidthLimitedRatio` is undefined, no sample is
+  ever limited, and the feature is inert by design.
+- **The SVC fallback** (VP9 and AV1 on an older LiveKit server, or in Safari and iOS): one stream carries its layers, so
+  there is a single active layer and no reading is eligible. "low" is also a single stream there.
+- **Screen share**: never capped. Its running keeps the camera from being capped and from being lifted as `recovered`;
+  a camera that is away is still lifted as `idle`.
+
 ## Technical Notes
 
 - **VideoQuality enum**: `LOW` (0), `MEDIUM` (1), `HIGH` (2), maps to LiveKit simulcast layers.
@@ -489,6 +600,8 @@ H.264), which needs each peer to signal what it can encode before the offer.
 | [`play/src/front/Livekit/LivekitParticipant.ts`](../../../play/src/front/Livekit/LivekitParticipant.ts) | LiveKit subscriber quality selection |
 | [`play/src/front/WebRtc/RemotePeer.ts`](../../../play/src/front/WebRtc/RemotePeer.ts) | P2P codec preference, bandwidth limiting, viewer hint |
 | [`play/src/front/WebRtc/CpuLimitationDetector.ts`](../../../play/src/front/WebRtc/CpuLimitationDetector.ts) | Codec demotion when the encoder is CPU-limited |
-| [`play/src/front/Stores/MediaStore.ts`](../../../play/src/front/Stores/MediaStore.ts) | Camera quality store |
+| [`play/src/front/WebRtc/UplinkLimitationDetector.ts`](../../../play/src/front/WebRtc/UplinkLimitationDetector.ts) | Camera cap to "low" when the uplink cannot carry the full ladder, and its recovery |
+| [`play/src/front/WebRtc/UplinkCap.ts`](../../../play/src/front/WebRtc/UplinkCap.ts) | The session-only cap and notice stores, and the effective quality |
+| [`play/src/front/Stores/MediaStore.ts`](../../../play/src/front/Stores/MediaStore.ts) | Camera quality store, and the effective quality (saved, or capped) |
 | [`play/src/front/Stores/ScreenSharingStore.ts`](../../../play/src/front/Stores/ScreenSharingStore.ts) | Screen share quality store |
 | [`play/src/front/Components/Menu/SettingsSubMenu.svelte`](../../../play/src/front/Components/Menu/SettingsSubMenu.svelte) | User settings UI |
