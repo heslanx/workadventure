@@ -19,7 +19,7 @@
     let { lead, label, marked = false, ...rest }: Props = $props();
 </script>
 
-<button type="button" class="k-menu-row" {...rest}>
+<button type="button" class="k-menu-row k-press" {...rest}>
     <span class="k-menu-lead" aria-hidden="true">{@render lead()}</span>
     <span class="k-menu-label">{label}</span>
     {#if marked}

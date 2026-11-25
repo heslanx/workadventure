@@ -122,6 +122,81 @@ html [data-theme="default"] {
     --k-dur-normal: 200ms;
     --k-dur-settle: 280ms;
     --k-dur-moderate: 300ms;
+
+    /* Springs. A surface that opens over the map arrives on the first, a mark that turns (a chevron) on the second.
+       The `linear()` text is generated from the spring's stiffness, damping and mass by `linearCss` in
+       play/src/front/Utils/spring.ts (surface 420/32/0.6 over 290 ms, turn 350/25/1 over 360 ms), and
+       tests/front/Style/KoncluiMotionTokens.test.ts fails when the text and the generator differ: regenerate the
+       value, do not edit it by hand. The exit of a surface is not a spring: it runs on `--k-ease-sheet` over
+       `--k-dur-normal`. */
+    --k-ease-spring: linear(
+      0,
+      0.005 1.4%,
+      0.0201 2.8%,
+      0.0458 4.4%,
+      0.0826 6.2%,
+      0.1615 9.3%,
+      0.3592 16.4%,
+      0.4512 19.9%,
+      0.5403 23.6%,
+      0.6174 27.2%,
+      0.6816 30.7%,
+      0.7383 34.3%,
+      0.7877 38%,
+      0.8305 41.9%,
+      0.8727 46.6%,
+      0.9075 51.8%,
+      0.9355 57.4%,
+      0.9576 63.7%,
+      0.9742 70.6%,
+      0.9863 78.7%,
+      0.9947 88.2%,
+      1
+    );
+    --k-dur-spring: 290ms;
+    --k-ease-spring-turn: linear(
+      0,
+      0.0071 1.8%,
+      0.0286 3.8%,
+      0.0644 5.9%,
+      0.1161 8.2%,
+      0.1667 10.1%,
+      0.2302 12.3%,
+      0.4828 20.4%,
+      0.5896 24%,
+      0.6883 27.7%,
+      0.7711 31.1%,
+      0.836 34.3%,
+      0.8915 37.5%,
+      0.9378 40.7%,
+      0.9758 44%,
+      1.0085 47.9%,
+      1.0319 51.9%,
+      1.0463 56.3%,
+      1.0526 61.2%,
+      1.0475 69.8%,
+      1.0136 89.3%,
+      1
+    );
+    --k-dur-spring-turn: 360ms;
+
+    /* Multiplies the duration of a surface's own transition (`transition:surface`, which runs in JS and reads this
+       from its element). Set it on the root from the console to slow a surface down and look at it frame by frame:
+       `document.documentElement.style.setProperty("--k-motion-scale", "10")`. Reduced motion needs no value here:
+       that transition is instant for it. */
+    --k-motion-scale: 1;
+  }
+
+  /* Chrome and Edge 111-112 and Safari 16.4-17.1 drop the whole `transition` that uses a spring token: the `linear()`
+     text is a valid custom property that fails only where it is used, and a declaration that fails there falls back to
+     its initial value, which is no transition at all. Where `linear()` is missing, the token holds the cubic-bezier
+     that follows the same spring within 0.9 % (surface) and 1.9 % (turn) of the travel. */
+  @supports not (transition-timing-function: linear(0, 1)) {
+    :root,
+    [data-theme="default"] {
+      --k-ease-spring: cubic-bezier(0.207, 0.168, 0.137, 1.064);
+      --k-ease-spring-turn: cubic-bezier(0.31, 0.338, 0.124, 1.288);
+    }
   }
 
   /* The chrome is already opaque, so reduced transparency keeps it as it is. More contrast also strengthens the rim
@@ -141,6 +216,8 @@ html [data-theme="default"] {
       --k-dur-normal: 0.01ms;
       --k-dur-settle: 0.01ms;
       --k-dur-moderate: 0.01ms;
+      --k-dur-spring: 0.01ms;
+      --k-dur-spring-turn: 0.01ms;
     }
   }
 }
@@ -575,11 +652,14 @@ html [data-theme="default"] {
     }
   }
 
-  /* A surface that opens over the map arrives from where it came: a fade and a short glide, in the theme's timing.
-     `--k-enter-x` and `--k-enter-y` set where it comes from (6 px below by default), `--k-enter-dur` and
-     `--k-enter-ease` the timing. Only opacity and transform move, so the map is not re-fitted frame by frame; a
-     grid column that animated blanked the canvas mid-slide (docs/konclui-migration/ui-contracts.md, Motion).
-     Entrance only: a surface that closes leaves at once. Under reduced motion it arrives in place. */
+  /* A surface that opens over the map arrives from where it came: a fade, a short glide and a 2 % settle in size, in the
+     theme's timing. `--k-enter-x` and `--k-enter-y` set where it comes from (6 px below by default), `--k-enter-scale`
+     how small it starts (0.98), `--k-enter-dur` and `--k-enter-ease` the timing. Only opacity, scale and transform
+     move, so the map is not re-fitted frame by frame; a grid column that animated blanked the canvas mid-slide
+     (docs/konclui-migration/ui-contracts.md, Motion). Entrance only. A surface that an `{#if}` removes takes
+     `transition:surface` (play/src/front/Utils/surfaceTransition.ts) instead, which reads these same variables and
+     also plays the exit; never both on one element, or it would arrive twice. Under reduced motion it arrives in
+     place. */
   .k-enter {
     animation: k-enter var(--k-enter-dur, var(--k-dur-fast))
       var(--k-enter-ease, var(--k-ease-out-expo)) backwards;
@@ -588,6 +668,7 @@ html [data-theme="default"] {
   @keyframes k-enter {
     from {
       opacity: 0;
+      scale: var(--k-enter-scale, 0.98);
       transform: translate(var(--k-enter-x, 0px), var(--k-enter-y, 6px));
     }
   }
@@ -595,6 +676,170 @@ html [data-theme="default"] {
   @media (prefers-reduced-motion: reduce) {
     .k-enter {
       animation: none;
+    }
+  }
+
+  /* A control gives under the finger: 0.985 of its size, back on release. `scale` is the individual property, so it
+     never clashes with the `transform` that `.k-enter` and the surface transition write. A control that cannot act
+     does not give. A press is not a hover, so it plays on a touch screen too. */
+  .k-press,
+  .k-lift {
+    transition: scale var(--k-dur-press) var(--k-ease-out-expo);
+  }
+
+  /* A card or tile that the pointer is over rises 2 % (`--k-lift-scale`); only where there is a pointer to hover, or a
+     tap would leave it grown. Pressed, it gives like a control. */
+  @media (hover: hover) {
+    .k-lift:hover:not([aria-disabled="true"]) {
+      scale: var(--k-lift-scale, 1.02);
+    }
+  }
+
+  .k-press:active:not([aria-disabled="true"]),
+  .k-lift:active:not([aria-disabled="true"]) {
+    scale: var(--k-press-scale, 0.985);
+  }
+
+  /* Movement is what reduced motion drops: the fill change of a pressed or hovered control stays, the scale does not. */
+  @media (prefers-reduced-motion: reduce) {
+    .k-press,
+    .k-lift {
+      transition: none;
+    }
+
+    .k-press:active:not([aria-disabled="true"]),
+    .k-lift:active:not([aria-disabled="true"]) {
+      scale: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) and (hover: hover) {
+    .k-lift:hover:not([aria-disabled="true"]) {
+      scale: none;
+    }
+  }
+
+  /* A mark that turns with the state of what it opens (a chevron): closed it points the way `--k-turn-closed` says
+     (-90deg), open it is upright. The state is `.is-open` on the mark or `aria-expanded="true"` on its parent. It is
+     the one place a spring overshoots, by 6 % of the turn. */
+  .k-turn {
+    rotate: var(--k-turn-closed, -90deg);
+    transition: rotate var(--k-dur-spring-turn) var(--k-ease-spring-turn);
+  }
+
+  .k-turn.is-open,
+  [aria-expanded="true"] > .k-turn {
+    rotate: 0deg;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .k-turn {
+      transition: none;
+    }
+  }
+
+  /* A reveal whose height is not known: the row of a one-row grid goes from 0fr to 1fr, so the body grows to what it
+     holds, even while its content grows. `.is-open` is set from state. Closed, the body is `visibility: hidden` once the
+     row has shut, so nothing in it takes the focus or is read out; open, it is visible at once. The body clips, so a
+     focus ring inside it needs room within its own box. Put it inside a surface whose own box may change (a menu over
+     the map, not a grid column). */
+  .k-disclosure {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--k-dur-spring) var(--k-ease-spring);
+  }
+
+  .k-disclosure.is-open {
+    grid-template-rows: 1fr;
+  }
+
+  .k-disclosure-body {
+    min-height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: visibility 0s linear var(--k-dur-spring);
+  }
+
+  .k-disclosure.is-open > .k-disclosure-body {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .k-disclosure,
+    .k-disclosure-body {
+      transition: none;
+    }
+  }
+
+  /* One pill under the rows of a list that follows the pointer or the keyboard focus from row to row
+     (play/src/front/Utils/glide.ts writes where it is). The container carries `.k-glide`, which stacks its content
+     in a context of its own so the pill, at z-index -1, stays under the rows' text and over the surface behind. The
+     attachment adds `.k-glide-on` once the pill exists: from then on the pill paints the hover, and a row's own hover
+     fill goes, or the fill would arrive at once and the pill's travel would not be seen. Without the pill (a touch
+     screen, a failed attach) the rows keep their own hover. The corner is the container's left, not its start:
+     `offsetLeft` is physical. */
+  :where(.k-glide) {
+    position: relative;
+  }
+
+  .k-glide {
+    isolation: isolate;
+  }
+
+  .k-glide-pill {
+    display: none;
+  }
+
+  @media (hover: hover) {
+    .k-glide-pill {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      box-sizing: border-box;
+      width: var(--k-glide-w, 0px);
+      height: var(--k-glide-h, 0px);
+      translate: var(--k-glide-x, 0px) var(--k-glide-y, 0px);
+      border-radius: var(--k-radius-inner);
+      background: var(--k-hover);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        translate var(--k-dur-spring) var(--k-ease-spring),
+        width var(--k-dur-spring) var(--k-ease-spring),
+        height var(--k-dur-spring) var(--k-ease-spring),
+        opacity var(--k-dur-fast) var(--k-ease-out-expo);
+    }
+
+    .k-glide-pill.is-shown {
+      opacity: 1;
+    }
+
+    .k-glide-on
+      :is(.k-menu-row, .k-control):hover:not(
+        [aria-disabled="true"],
+        [aria-pressed="true"]
+      ) {
+      background: transparent;
+    }
+  }
+
+  /* The pill jumps from row to row, as each row's own hover did. */
+  @media (prefers-reduced-motion: reduce) {
+    .k-glide-pill {
+      transition: none;
+    }
+  }
+
+  /* Forced colours drop a background: the pill becomes a 2 px outline in the system's highlight, as a pressed control
+     does, so the row under the pointer stays readable. */
+  @media (forced-colors: active) {
+    .k-glide-pill {
+      background: transparent;
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
     }
   }
 

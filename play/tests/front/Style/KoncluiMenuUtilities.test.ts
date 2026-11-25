@@ -175,12 +175,16 @@ describe("menus and controls over the map", () => {
         );
     });
 
-    it("moves only opacity and transform in the entrance, so the map is not re-fitted frame by frame", () => {
+    it("starts the entrance 2 % small, through the individual scale property", () => {
+        expect(declared(`${utilities} @keyframes k-enter`, "from", "scale")).toBe("var(--k-enter-scale, 0.98)");
+    });
+
+    it("moves only opacity, scale and transform in the entrance, so the map is not re-fitted frame by frame", () => {
         const from = rules.find(
             (rule) => rule.context === `${utilities} @keyframes k-enter` && rule.selector === "from",
         );
 
-        expect([...(from?.declarations.keys() ?? [])].sort()).toEqual(["opacity", "transform"]);
+        expect([...(from?.declarations.keys() ?? [])].sort()).toEqual(["opacity", "scale", "transform"]);
     });
 
     it("lets a viewer who reduces motion have the surface in place", () => {
