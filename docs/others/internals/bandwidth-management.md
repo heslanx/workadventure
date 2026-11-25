@@ -480,10 +480,21 @@ keeps publishing the whole ladder (720p + 360p + 180p). libwebrtc then pads up t
 the layer back, so the link stays saturated (the audio shares it), and on a link near the threshold the layer flaps:
 a keyframe and a freeze for every viewer at each switch. The manual "low" setting (captured at 360p, published as
 360p + 180p) is the answer to that; the uplink cap applies it by itself, for the session only, and takes it back when
-the link recovers.
+the link recovers. It is meant to do so only where "low" helps. The readings of 2026-11-25 (see "Measured on
+2026-11-25") found that on a link that still carries the 360p and 180p layers, the browser's own switch gives the
+viewer a better picture than "low" does. The padding and the flapping above are derived from libwebrtc's rules and were
+not looked at in those readings; what they saw is that the largest layer sent nothing in the periods they read.
 
-Every threshold below is derived from libwebrtc's allocator rules and is **not yet measured on a shaped link**. The
-`media.camera_cap.changed` analytics event exists to tune them.
+Measured, once, in a browser on a shaped link (one run per rate, on a loaded host): what the viewer gets with and
+without the cap, the time to the cap, the pauses at a cap and at a lift, and what the lift does where the shaping stays
+on. The line between "the cap helps" and "the cap hurts" is a choice inside a measured bracket, not a measured
+threshold. Still derived from libwebrtc's allocator rules and not measured: the size of the window (18 of 30), the
+limited ratio of 0.5, the warm-up, the health window of the lift (at most 3 limited samples, 2 % loss, 400 kbps), the
+holds, the backoff, the 15 s of idle and the 10 minutes that a lift must survive. Two batches of those readings were
+made with the first rule. The trigger described below ran in a third batch (see "Measured on 2026-11-25"), once each at
+600 kbps, 800 kbps and 1 Mbps and in one recovery from 600 kbps: it capped at 600 kbps and did not at 800 kbps and 1
+Mbps. 700 and 900 kbps, 1.3 and 2 Mbps, the switching link under this rule and a quiet host are not seen. The
+`media.camera_cap.changed` analytics event exists to tune what is derived.
 
 ### Trigger
 
@@ -491,7 +502,12 @@ The detector reads `localEncoderStatsStore.video` once a second (the poll is a t
 readings come 1000 ms apart give or take a few: one up to 100 ms early still counts), and decides from
 `stats.encoders[]`: the aggregate the tiles show drops the fields it needs. A sample is limited when
 `bandwidthLimitedRatio` is at least 0.5, that is, when the allocator could not fund the largest layer for most of the
-second (`qualityLimitationReason: "bandwidth"`).
+second (`qualityLimitationReason: "bandwidth"`). A limited sample **counts toward the cap** only when
+`availableOutgoingBitrate`, the browser's estimate on the selected candidate pair, is known and below 549 kbps: 90 % of
+the 610 kbps that the 360p and 180p layers ask for together (450 + 160 kbps, `LOWER_LAYERS_BITRATE`). With no estimate
+there is no cap: nothing says that the cap would help. This rule ran once per rate at 600 kbps, 800 kbps and 1 Mbps, and
+in one recovery from 600 kbps (third batch, in "Measured on 2026-11-25"); T-337 in [`docs/TODO.md`](../../TODO.md) lists
+what is left.
 
 - **Eligible reading**: the source is LiveKit, there is exactly one encoder, it delivers frames (`captureFps` of 1 or
   more) and has at least two active layers (fewer means no largest layer to lose: a layer already off, or a room nobody
@@ -500,15 +516,45 @@ second (`qualityLimitationReason: "bandwidth"`).
   layer that resumes (`activeLayers` going up, as dynacast does when a viewer joins: the bandwidth estimate was held near
   what the other layers send, and has to climb to fund it) clear the window and restart the warm-up.
 - **Cap**: after a warm-up of 15 samples (the keyframe and the rate-control ramp-up of a new publication look like a
-  weak link), at least 18 of the last 30 samples are limited. The earliest cap is therefore 45 s after a publication
-  starts. A dip of ten seconds does not count; a link limited two thirds of the time does.
+  weak link), at least 18 of the last 30 samples count toward the cap. The earliest cap is therefore 45 s after a
+  publication starts. A dip of ten seconds does not count; a link where 60 % of the seconds count does.
+- **Why the estimate is part of the rule**: limited alone says only that the largest layer is off. Chrome reports a
+  layer that the allocator switched off as limited: in every shaped run of the first two batches, from 600 kbps to 1.3
+  Mbps, the largest layer was limited in every sample read (in the third batch, 19 of 20 samples at 600 kbps, 298 of 299
+  at 800 kbps and 297 of 298 at 1 Mbps). On a link that still carries 360p and 180p, the browser drops the largest layer
+  alone. There the viewer got 360p at about 450 kbps and 20 fps, and "low" gives about 250 kbps and 15 fps (1 and 1.3
+  Mbps in the first two batches, one run each). The cap helps where the layers under the largest one starve too: at 600
+  kbps the 360p layer's target was 213 kbps before the cap and 205 in its trial, of 450, in the 600 kbps run of the
+  first two batches (213 before the cap and 0 in its trial in the third batch's run; one run each). The estimate is the
+  signal the rule uses to tell the two cases apart. In the readings it did so only roughly.
+- **Where the line sits**: 549 kbps is a choice, not a measured threshold. The bracket it sits in rests on the trial
+  periods of the runs (the 39 to 45 s between a lift and the next cap). The cap helped in the 600 kbps run (one run per
+  rate), where the estimate was 369 to 518 kbps (518 is 85 % of 610). It did not help where the median was 583 kbps (96
+  % of 610) or more: the 800 kbps link in its trial, where the viewer got 360p all the time without the cap (75 % before
+  the cap; a noisy run), and the links above it. The 700 kbps run (noisy) was mixed, with medians of 433 and 520 kbps.
+  No run had a median between 520 and 583 kbps, and 549 kbps (90 % of 610) falls in that gap.
+  - Right after the shaping, with the estimate still coming down, the viewer got 360p less often than in the trial (900
+    kbps: 17 % before the cap, median 589 kbps, against 100 % in the trial; 800 kbps, noisy: 75 % against 100 %). The
+    bracket does not cover those periods.
+  - A line at 610 kbps, with no margin, was rejected. At least half of the 800 kbps trial readings (median 583 kbps)
+    would have counted (derived). The window asks for 60 %, so that link might have been capped. At 549 kbps fewer than
+    half of them count (derived). Another 800 kbps run, in the third batch (median 601 kbps), had 16 % of its samples
+    under the line (next point).
+  - Single seconds fall on both sides of 549 kbps. Seen once at 800 kbps and at 1 Mbps (third batch: 16 % and 6 % of the
+    samples under the line; the estimate 405 to 748 and 379 to 947 kbps). Derived, not seen, at 700 and 900 kbps, which
+    were not run under the new rule. In the 800 kbps run of the first two batches every reading before the cap (358 to
+    539 kbps) was under the line, so a link that has just been shaped might have been capped under the new rule all the
+    same; in the third batch's run it was not (one run). The time to the cap can also be longer than the 18 to 20 s of
+    most runs with the first rule (65 s in one noisy run), since the estimate has to be under 549 kbps as well; at 600
+    kbps the new rule took 21 s and 20 s.
 
 ### Action
 
 `uplinkCapStore` goes up, and `effectiveVideoQualityStore` (in `MediaStore.ts`, derived from the saved quality and the
 cap) reads "low". The camera constraints and the LiveKit publication follow it, as for a camera set to "low": the
 camera reopens at 360p, and `LiveKitRoom` unpublishes and publishes again as 360p + 180p. Viewers see the tile go off
-for a moment, which is why caps and lifts are rare.
+for a moment (0.4 to 5.8 s in the first two batches, 13 of 25 pauses under 1 s; the third batch saw longer ones, up to
+24.9 s, and the cause was not isolated), which is why caps and lifts are rare.
 
 - The saved setting, `videoQualityStore`, is never written: the cap lives in memory and ends with the page. The code
   that reads the saved setting keeps reading it: the Settings screens, the selected value of the Media pane, what we
@@ -528,14 +574,17 @@ for a moment, which is why caps and lifts are rare.
   the camera quality by a note that it is lowered for now and that the choice is kept.
 - `media.camera_cap.changed` (`capped`, `lifted`, `cleared`, with the backoff level and the reason) is declared in
   `AnalyticsEventCatalog.ts`. Like the CPU events, it has no PostHog counterpart. Read it against
-  `media.video_quality.sample`, whose `bandwidthLimitedRatio`, `activeLayers`, `uploadLossRatio` and
-  `availableOutgoingBitrate` are what the decisions are made on.
+  `media.video_quality.sample`, whose `bandwidthLimitedRatio`, `uploadLossRatio` and `availableOutgoingBitrate` are what
+  the decisions read. The number of active layers, which the detector also reads, is not in the sample.
 
 ### Recovery
 
-While only 360p + 180p are sent, the bandwidth estimate is capped near 1.5 times what is sent, so it cannot prove that
-the full ladder fits: lifting the cap **is** the probe. It is done rarely, after a hold measured on the wall clock
-(the camera can be off meanwhile) and that grows with each trial that fails:
+While only 360p + 180p are sent (about 335 kbps, measured), the bandwidth estimate does not prove that the full ladder
+fits: lifting the cap **is** the probe. The estimate was measured while capped. It sat still at 762, 849 and 1065 kbps
+on the links of 1 and 1.3 Mbps, and in one recovery it did not climb when the link came back (see "Measured on
+2026-11-25"). A camera that sends about 335 kbps and asks for no more leaves the estimate where it is once it is well
+above that: that is a reading of the numbers, not a tested cause. The probe is done rarely, after a hold measured on the
+wall clock (the camera can be off meanwhile) and that grows with each trial that fails:
 
 | Backoff level | 0 | 1 | 2 | 3 (and after) |
 |---|---|---|---|---|
@@ -554,12 +603,24 @@ Once the hold has elapsed:
 3. Otherwise the cap is lifted, reason `recovered`, when the last 30 live samples taken while capped (LiveKit, one
    encoder, frames delivered, at least one active layer) hold at most 3 limited samples, a mean `uploadLossRatio` of at
    most 0.02 (over the samples that report it), and the latest `availableOutgoingBitrate`, when reported, is at least
-   400 kbps. The last is a veto only: a high estimate never shortens the hold. Samples of a camera nobody watches neither
-   advance nor clear that window.
+   400 kbps. The last is a veto only: a high estimate never shortens the hold, and in the readings it never stopped a
+   lift. Samples of a camera nobody watches neither advance nor clear that window.
 
 A cap that comes back within 10 minutes of live time after a lift (the time between consecutive eligible samples, each
 step counted for at most 2 s, so that idle time and a throttled tab do not count) was a failed trial: the level goes up
 by one. A lift that survives 10 minutes of live time resets the level to 0.
+
+Measured on 2026-11-25 (one run per rate, with the first trigger; see below): every lift came 300 to 301 s after its
+cap, as `recovered`: the capped camera looked healthy on every link. In the seven runs where the shaping stayed on (600
+kbps to 1.3 Mbps and the switching link), a new cap followed 46 to 58 s after the lift. Each such lift cost the viewer
+two pauses (at the lift and at the next cap) and 46 to 58 s without the cap. Whether those seconds were a worse picture
+depends on the link. At 600 kbps they were (and perhaps at 700 kbps: mixed). At 1 and 1.3 Mbps, where the new rule would
+not cap (the estimate was 717 to 1244 kbps in the first two batches; seen once at 1 Mbps in the third batch, no cap in
+300 s; derived at 1.3 Mbps), the uncapped picture was the better one and only the pauses cost.
+The holds would repeat all this at 5, 10, 20 and then every 60 minutes. Where the shaping was removed (a 1 Mbps and a
+600 kbps link), no new cap came in 150 s, and the 720p layer was back 12.0 s and 4.7 s after the lift. The estimate
+while capped tells a weak link from a recovered one only roughly. The rule is unchanged for now; what to do about it is
+T-338 in [`docs/TODO.md`](../../TODO.md).
 
 ### The user wins
 
@@ -578,6 +639,176 @@ does nothing.
   there is a single active layer and no reading is eligible. "low" is also a single stream there.
 - **Screen share**: never capped. Its running keeps the camera from being capped and from being lifted as `recovered`;
   a camera that is away is still lifted as `idle`.
+- **Cameras the line was not worked out for**: 549 kbps is 90 % of the 610 kbps that the 360p and 180p presets ask for
+  on a 16:9 camera captured at 960 px or more on its long side (the front asks for 1280x720). A 4:3 camera gets presets
+  that ask for 455 kbps (330 + 125), and one captured under 960 px publishes a single layer under the largest, asking
+  for 160 kbps (taken from the presets of `livekit-client`, not measured). The line is too high for both, so the cap
+  errs toward capping there. Only a 16:9 camera at 720p was measured (a fake camera fed from a 720p clip).
+
+### Measured on 2026-11-25
+
+Two batches of readings on one build, one run per rate, on a loaded host, made with the **first version of the rule**: a
+sample counted toward the cap whenever the largest layer was limited, whatever the estimate. That rule capped the 1 and
+1.3 Mbps links, where the cap made the picture worse, and the rule in "Trigger" was written because of the readings. A
+third batch, at the end of this subsection, ran the new rule: once each at 600 kbps, 800 kbps and 1 Mbps, and in one
+recovery from 600 kbps (the first half of T-337 in [`docs/TODO.md`](../../TODO.md); the second half is open). What is
+said about the new rule outside that part is worked out from the first two batches, not seen, unless it says that the
+third batch saw it. Read the tables as where to look, not as thresholds. The raw readings and the rig are on one Mac
+only (`.local/konclui/work/uplink-rig/`, git-ignored); T-339 moves the rig into the repository.
+
+**How it was measured**
+
+- Build: QA candidate `candidate-0d2d32496128` (commit `77eed1271`, the first version of the cap). Two headless Chromium
+  159 (Playwright 1.65.1, Linux arm64) in two containers on the QA docker network, one conversation of two users through
+  LiveKit server 1.13.11 (one node, same network). The back ran with `MAX_USERS_FOR_WEBRTC=1`, so that a pair uses
+  LiveKit.
+- Sender: a fake camera fed from a looping 1280x720 30 fps clip, saved quality "recommended", VP9 simulcast with three
+  layers (720p 700 kbps, 360p 450 kbps, 180p 160 kbps; software libvpx). Viewer: camera off, the sender's tile kept full
+  screen, so that all three layers are asked for.
+- Shaping: a `tc` token bucket on the egress of the sender's container (the rate as stated, a 300 ms queue, plus 25 ms
+  of delay), set from the Colima VM. Everything the sender uploads goes through it, signalling included. Each run: 60 s
+  unshaped after the three layers are up, then the shaping, then the wait for the cap, the lift (5 minute hold) and the
+  next cap.
+- Readings: `RTCPeerConnection.getStats()` once a second on both pages (not through the product), the detector's own
+  console lines for the cap and the lift, and a 100 ms clock on the viewer's decoded frames for the pauses.
+- Rates: 600, 700, 800 and 900 kbps, 1, 1.3 and 2 Mbps, a link switching between 800 and 1400 kbps every 20 s, and two
+  runs where the shaping was removed 100 s after the cap (1 Mbps and 600 kbps).
+- Host: the Mac was loaded by other work (mean load average 10 to 68, up to 216 at its peak, on 10 cores). The rig draws
+  the game at 5 pictures a second to leave CPU to the encoder, and the 720p layer still ran at about 20 frames a second
+  instead of 30. A run is marked "noisy" when it had freezes before any shaping or a stats poll that drifted (95th
+  percentile of its period above 1.1 s): the 700 and 800 kbps runs and the 600 kbps recovery run.
+- Not measured: Firefox, Safari, VP8, the "high" setting, a real camera, a real radio link, more than one viewer, a quiet
+  host, anything between the rates listed (nothing between 700 and 800 kbps).
+
+**What the viewer gets, with the cap and without it**
+
+"Estimate" is `availableOutgoingBitrate` of the selected candidate pair (kbps: min to max, median). Without the cap, two
+periods were read: "before" is the 12 to 14 s between the shaping settling and the cap, "trial" the 39 to 45 s between a
+lift and the next cap (the steadier of the two); where they differ both are given. With the cap is the first hold.
+
+| Link | Estimate, without the cap | 360p layer's target, without the cap (before; trial) | Viewer, without the cap | Viewer, with the cap |
+| --- | --- | --- | --- | --- |
+| 600 kbps | before: 410 to 499, 429; trial: 369 to 518, 420 | 213; 205 | 360p 43 % of the time before, 67 % in the trial, else 180p; 6 freezes in 39 s; video loss up to 23 %; audio 1.2 % concealed before the cap | 360p 93 % at 235 kbps and 15 fps; audio clean; one freeze of 11.7 s, 24 s after the cap, cause unknown |
+| 700 kbps (noisy) | before: 468 to 598, 520; trial: 225 to 602, 433 | 305; 231 | 360p 100 % before (319 kbps); 30 % in the trial, 17 freezes (11 s) | first hold: 360p 51 %, 46 freezes (24 s); second hold: 360p 100 % at 246 kbps |
+| 800 kbps (noisy) | before: 358 to 539, 460; trial: 418 to 713, 583 | 239; 349 | 360p 75 % before; 100 % in the trial (340 kbps, 18 fps) | first hold: 360p 58 to 62 %, 46 freezes (22 s) |
+| 900 kbps | before: 454 to 703, 589; trial: 554 to 812, 695 | 350; 433 | 360p 17 % before (the estimate was still coming down); 100 % in the trial (413 kbps, 20 fps) | 360p 98 % at 243 kbps and 15 fps |
+| 1 Mbps | before: 717 to 947, 783; trial: 733 to 921, 817 | 450; 450 | 360p 100 % (454 kbps, 20 fps), no freeze | 360p 100 % at 254 kbps and 15 fps |
+| 1.3 Mbps | before: 986 to 1211, 1048; trial: 917 to 1244, 1086 | 450; 450 | 360p 100 % (438 kbps, 20 fps) | 360p 100 % at 247 kbps and 15 fps |
+| 800 / 1400 kbps, switching every 20 s | not broken down | not broken down | before: 180p 100 %, 9 freezes; trial: 360p 100 % (411 kbps, 20 fps) | 360p 100 % at 247 kbps and 15 fps |
+| 2 Mbps | 946 to 2319, 2222 | 420 | 720p 82 % of the time | not capped: no cap in 300 s (14 limited samples of 292) |
+
+The 360p layer's target is in kbps, of the 450 kbps that the layer asks for. Without the cap, audio was clean at every
+rate but 600 kbps; with the cap, it is noted only at 600 kbps (clean).
+Unshaped (the first 60 s of every run) the estimate was 2410 to 2966 kbps, and the viewer got 720p at about 700 kbps
+and 20 to 22 frames a second.
+
+In every shaped run of the first two batches, from 600 kbps to 1.3 Mbps, the largest layer's `bandwidthLimitedRatio` was
+at or above 0.5 in every sample read (11 to 13 samples before the cap, 25 to 44 in the trial), starting 1 to 3 s after
+the shaping (the third batch, below, had 19 of 20, 298 of 299 and 297 of 298): Chrome does
+report a simulcast layer that the allocator switched off as bandwidth-limited, and the 720p layer sent nothing in those
+periods. "Limited" alone therefore says nothing about the layers under the largest one.
+
+**Time to the cap, the pauses and the lift**
+
+| Run | Shaping to cap | Pause at the cap / at the lift / at the next cap (ms) | Lift to next cap |
+| --- | --- | --- | --- |
+| 600 kbps | 20 s | 470 / 1199 / 1499 | 47 s |
+| 700 kbps (noisy) | 19 s | 726 / 1798 / 2223 | 58 s |
+| 800 kbps (noisy) | 19 s | 2473 / 1406 / 2023 | 52 s |
+| 900 kbps | 19 s | 3010 / 699 / 3598 | 47 s |
+| 1 Mbps | 20 s | 476 / 424 / 623 | 49 s |
+| 1.3 Mbps | 18 s | 934 / 767 / 500 | 46 s |
+| 800 / 1400 kbps, switching | 26 s | 1849 / 501 / 518 | 46 s |
+| 1 Mbps, shaping removed 100 s after the cap | 19 s | 617 / 517 / no new cap | no cap in 150 s (0 limited samples of 176); 720p back 12.0 s after the lift |
+| 600 kbps, shaping removed 100 s after the cap (noisy) | 65 s (24 samples were CPU-limited) | 5788 / 1815 / no new cap | no cap in 150 s (9 limited of 167); 720p back 4.7 s after the lift |
+
+- In the first two batches the cap came 18 to 20 s after the shaping on a call already running (the window already held
+  30 unlimited samples, and 18 limited ones are needed), 26 s on the switching link, and 65 s in the noisy 600 kbps
+  recovery run, where 24 samples were CPU-limited. After a lift the next cap came 46 to 58 s later (15 warm-up samples,
+  then 30).
+- A pause is the longest time with no new decoded frame on the viewer, from the cap or the lift (the camera is published
+  again). In the first two batches 13 of the 25 pauses were under 1 s, the longest 5.8 s (a noisy run); the third batch,
+  below, saw longer ones.
+- In the first two batches every lift came 300 to 301 s after its cap, as `recovered`. In the seven runs where the link
+  stayed shaped, the next cap followed.
+
+**The estimate while capped**
+
+| Link while capped | Estimate while capped (kbps: min to max, median) |
+| --- | --- |
+| 600 kbps | 367 to 632, 626 (first run); 202 to 628, 477 (recovery run, noisy) |
+| 700 kbps (noisy) | 158 to 703, 602 |
+| 800 kbps (noisy) | 118 to 768, 722 |
+| 900 kbps | 665 to 732, 702 |
+| 1 Mbps | 762, constant for the whole hold; 849, constant, in the recovery run |
+| 1.3 Mbps | 1065, constant |
+| 600 kbps, then unshaped | 621 to 966 after the shaping was removed, median 966 |
+| 1 Mbps, then unshaped | 849, unchanged for the 3 minutes after the shaping was removed |
+
+- The capped camera sends about 335 kbps. On the links of 600 to 900 kbps the medians of the estimate were 477 to 722
+  kbps, so it moved. On the 1 and 1.3 Mbps links it sat still. It did not climb when the 1 Mbps link came back (849 stayed
+  849), and it did at 600 kbps (median 966).
+- So the capped estimate tells a weak link (medians of 477 to 722 kbps) from a recovered one (849 to 966 kbps) only
+  roughly: the ranges overlap (118 to 768 kbps on weak links, 621 to 966 after the shaping was removed). The 400 kbps
+  veto of the lift never stopped a lift.
+
+**What the cap buys**
+
+At 600 kbps the cap helped, in one run: a steady 360p (93 % of the time, 235 kbps) and clean audio, against 360p 43 to
+67 % of the time with freezes, loss and concealed audio, when the 360p layer's target was 213 and 205 kbps of 450. At 1
+and 1.3 Mbps it hurt: the layer's target was 450 kbps, the viewer already got 360p all the time at about 450 kbps and 20
+fps, and the cap gave about 250 kbps and 15 fps, plus the pauses. At 800 and 900 kbps the viewer got 360p all the time
+in the trial periods (340 and 413 kbps) but not right after the shaping (75 % and 17 %); at 700 kbps the two periods
+disagree, and the 700 and 800 kbps runs are noisy. Every cap and every lift of those two batches put a pause of 0.4 to
+5.8 s on the viewer (the third batch, below, saw longer ones), and where the shaping stayed on each lift was followed by
+a new cap: at 1 and 1.3 Mbps that cost only the pauses, at 600 kbps it also cost 46 to 58 s of a worse picture. So the
+cap is worth taking only where the 360p layer itself starves, and the estimate tells the two cases apart only roughly
+(369 to 518 kbps where the cap helped, trial medians of 583 kbps and up where it did not). One run per rate on a loaded
+host says where to look, not where the line is.
+
+**The new rule in a browser (third batch)**
+
+Build: QA candidate `candidate-d116c5893900`, commit `9808a3cae` plus the change of the trigger, committed afterwards as
+`ea3511151` (a limited sample counts toward the cap only when the estimate is under
+`CAP_ESTIMATE_LINE`, 549 000 bits per second). The bundle that was served held the new console text. Same rig, same
+clip, same shaping and same loaded Mac as above, one run per rate. "Under the line" is a sample whose estimate was under
+549 kbps. Estimate and viewer are those of the periods without the cap (kbps: min to max, median). In this part "trial"
+is the time without the cap between the lift and the next cap (86 s in the 600 kbps run, not the 39 to 45 s above); the
+readings give its length only for the layer's target (60 s). The 800 kbps run was not marked noisy when it was read, but
+it had 10 freezes before the shaping, which the definition of "noisy" above counts.
+
+| Run (host load: mean / max) | What the rule did | Samples under the line | Estimate | What the viewer got |
+| --- | --- | --- | --- | --- |
+| 600 kbps (noisy; 34 / 112) | Capped 21 s after the shaping; lifted 302 s after the cap; capped again 86 s after the lift | Before the cap, 19 of 20 samples limited; not broken down by the line | Before: 388 to 559, 427; trial: 265 to 459, 348 | Before: 360p 57 % of the time, else 180p. Trial: 360p 7 %, 180p 93 %, 13 freezes (6.2 s) |
+| 800 kbps (29 / 92) | Not capped in the 300 s that the run waited | 298 of 299 limited; 49 of them under the line (16 %) | 405 to 748, 601 | 360p 98 % of the time at 353 kbps and 19 fps; 13 freezes (3.6 s; 10 freezes, 4.4 s, in the unshaped minute before: the host) |
+| 1 Mbps (14 / 23) | Not capped in 300 s | 297 of 298 limited; 18 of them under the line (6 %) | 379 to 947, 778 | 360p 92 % of the time at 413 kbps and 20 fps; 10 freezes (4.2 s) |
+| 600 kbps, shaping removed 100 s after the cap (noisy: 35 CPU-limited samples, one codec demotion by the CPU detector; 17 / 33) | Capped 20 s after the shaping; lifted 301 s after the cap as `recovered`; no new cap in the 150 s that the run waited (6 limited samples of 146) | Before the cap, 18 of 18 samples limited; not broken down by the line | Before: median 428 | Before: 360p 67 %, else 180p |
+
+- The 360p layer's target (of 450 kbps) was 213 kbps before the cap at 600 kbps and 0 in its trial (the layer sent
+  nothing for 15 of 60 s), 357 at 800 kbps and 450 at 1 Mbps.
+- With the cap at 600 kbps: 360p 68 % of the time in the first hold (37 freezes, 21.3 s; the host was at its busiest,
+  load up to 112) and 100 % at 241 kbps in the second; in the recovery run, 360p 100 % at 246 kbps and 15 fps, 6 freezes
+  (1.7 s). Audio was clean in all of them (0 to 0.1 % concealed). In the recovery run the 720p layer was back 8.3 s
+  after the lift.
+- **Four of the five pauses of this batch (8.0 to 24.9 s) were longer than the longest of the first two batches (5.8 s;
+  those 25 pauses ran from 424 to 5788 ms), and the cause was not isolated.** The fifth, 1.4 s, was inside the old
+  range, and none was under 1 s (13 of 25 were). At the cap: 1400 ms (600 kbps) and 8625 ms (recovery run). At the lift:
+  24,905 ms (600 kbps, with the shaping still on: the lift published the full ladder again on a link that had not
+  recovered) and 8026 ms (recovery run, the shaping removed). At the next cap: 10,909 ms (600 kbps). The host load is
+  the only difference known, and it was not isolated. The 24.9 s pause and the trial after it (180p 93 % of the time, a
+  new cap 86 s after the lift, against 46 to 58 s in the first two batches) are what a lift cost the viewer on a link
+  that was still shaped, once (T-338).
+
+What it shows, once each and on a loaded host: the new rule capped at 600 kbps as fast as the first rule did (21 s and
+20 s, against 20 s), and left the 800 kbps and 1 Mbps links alone, where the first rule had capped after 19 and 20 s. At
+800 kbps the estimate was under the line in 16 % of the samples, well under the 60 % that a cap asks for: what the first
+two batches left open (a link just shaped being capped at 800 kbps all the same) did not happen in this run. The
+recovery at 600 kbps went as in the earlier one (a lift, no new cap in 150 s; 720p back 8.3 s after the lift, against
+4.7 s), with a longer pause at the lift.
+
+What it still does not show: 700 and 900 kbps, where single seconds fall on both sides of the line, 1.3 and 2 Mbps and
+the switching link under the new rule, and anything on a quiet host. One run per rate cannot say how often a link near
+the line would be capped, and the longer pauses are not explained.
 
 ## Technical Notes
 
@@ -607,7 +838,7 @@ H.264), which needs each peer to signal what it can encode before the offer.
 | [`play/src/front/Livekit/LivekitParticipant.ts`](../../../play/src/front/Livekit/LivekitParticipant.ts) | LiveKit subscriber quality selection |
 | [`play/src/front/WebRtc/RemotePeer.ts`](../../../play/src/front/WebRtc/RemotePeer.ts) | P2P codec preference, bandwidth limiting, viewer hint |
 | [`play/src/front/WebRtc/CpuLimitationDetector.ts`](../../../play/src/front/WebRtc/CpuLimitationDetector.ts) | Codec demotion when the encoder is CPU-limited |
-| [`play/src/front/WebRtc/UplinkLimitationDetector.ts`](../../../play/src/front/WebRtc/UplinkLimitationDetector.ts) | Camera cap to "low" when the uplink cannot carry the full ladder, and its recovery |
+| [`play/src/front/WebRtc/UplinkLimitationDetector.ts`](../../../play/src/front/WebRtc/UplinkLimitationDetector.ts) | Camera cap to "low" when the largest layer is limited and the estimate is under 90 % of what the 360p and 180p layers ask for, and its recovery |
 | [`play/src/front/WebRtc/UplinkCap.ts`](../../../play/src/front/WebRtc/UplinkCap.ts) | The session-only cap and notice stores, and the effective quality |
 | [`play/src/front/Stores/MediaStore.ts`](../../../play/src/front/Stores/MediaStore.ts) | Camera quality store, and the effective quality (saved, or capped) |
 | [`play/src/front/Stores/ScreenSharingStore.ts`](../../../play/src/front/Stores/ScreenSharingStore.ts) | Screen share quality store |
