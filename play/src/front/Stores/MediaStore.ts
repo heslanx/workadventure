@@ -11,6 +11,7 @@ import { openTimedEventPerMeeting } from "../Administration/CurrentMeeting";
 import type { EndTimedAnalyticsEvent } from "../Administration/TimedAnalyticsEvent";
 import { createHeldIntervalTracker } from "../Administration/HeldIntervalTracker";
 import { isIOS } from "../WebRtc/DeviceUtils";
+import { effectiveVideoQuality, uplinkCapStore } from "../WebRtc/UplinkCap";
 import { SoundMeter } from "../Phaser/Components/SoundMeter";
 import type { RequestedStatus } from "../Rules/StatusRules/statusRules";
 import { statusChanger } from "../Components/ActionBar/AvailabilityStatus/statusChanger";
@@ -281,7 +282,7 @@ export const devicesNotLoaded = writable(true);
 const deviceChanged10SecondsAgoStore = readable(false, function start(set) {
     let timeout: NodeJS.Timeout | null = null;
 
-    const unsubscribeCamera = videoConstraintStore.subscribe((constraints) => {
+    const unsubscribeCamera = cameraChosenStore.subscribe(() => {
         if (timeout) {
             clearTimeout(timeout);
         }
@@ -347,13 +348,25 @@ export const inOpenWebsite = writable(false);
 export const videoQualityStore = createVideoQualityStore();
 
 /**
+ * The quality the camera is captured and published with: the saved setting, except "low" while the uplink cap is on
+ * (UplinkLimitationDetector). Whoever sends the camera reads this; the settings screens and what we ask of the other
+ * side to send us stay on the saved one, which the cap never touches.
+ *
+ * A derived store only notifies when its value changes: recommended <-> high while capped is no event for anybody.
+ */
+export const effectiveVideoQualityStore = derived(
+    [videoQualityStore, uplinkCapStore],
+    ([$videoQualityStore, $uplinkCapStore]) => effectiveVideoQuality($uplinkCapStore, $videoQualityStore),
+);
+
+/**
  * A store that contains video constraints.
  */
 export const videoConstraintStore = derived(
-    [requestedCameraDeviceIdStore, frameRateStore, videoQualityStore],
-    ([$cameraDeviceIdStore, $frameRateStore, $videoQualityStore]) => {
+    [requestedCameraDeviceIdStore, frameRateStore, effectiveVideoQualityStore],
+    ([$cameraDeviceIdStore, $frameRateStore, $effectiveVideoQualityStore]) => {
         // "low" never sends more than 360p, on LiveKit as in P2P: capturing more would only be thrown away
-        const low = $videoQualityStore === "low";
+        const low = $effectiveVideoQualityStore === "low";
         const constraints = {
             width: { ideal: low ? 640 : 1280 },
             height: { ideal: low ? 360 : 720 },
@@ -379,6 +392,16 @@ export const videoConstraintStore = derived(
 
         return constraints;
     },
+);
+
+/**
+ * What the user chose for the camera: the device, the frame rate and the saved quality. Not the uplink cap, which
+ * changes the constraints of a camera that nobody asked to see: when its hold ends with the camera off, a changed
+ * constraint would wake it for ten seconds (see deviceChanged10SecondsAgoStore).
+ */
+const cameraChosenStore = derived(
+    [requestedCameraDeviceIdStore, frameRateStore, videoQualityStore],
+    (chosen) => chosen,
 );
 
 /**

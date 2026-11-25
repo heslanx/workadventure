@@ -1367,6 +1367,31 @@ export const ANALYTICS_EVENTS = {
       "This client's encoder could not keep up with its codec and left it for a cheaper one. Read against media.video_quality.sample, whose qualityLimitationReason is what this decision is made on: the sample says the machine is struggling, this says what was given up about it. Once per codec per session — nothing goes back up before a reload.",
   }),
 
+  "media.camera_cap.changed": event({
+    properties: z.object({
+      action: z
+        .enum(["capped", "lifted", "cleared"])
+        .describe(
+          "What happened to the cap: it was taken, lifted by the detector, or cleared because the user chose a camera quality.",
+        ),
+      level: z
+        .number()
+        .int()
+        .nonnegative()
+        .describe(
+          "Backoff level of the cap: 0 for the first of an episode, one more for each recovery trial that failed. It sets how long the cap is held before a lift is tried (5, 10, 20 then 60 minutes).",
+        ),
+      reason: z
+        .enum(["recovered", "idle", "setting"])
+        .optional()
+        .describe(
+          "Why the cap went: the link looked healthy for a full window (recovered), the hold was over and no camera had been sent for 15 seconds (idle), or the user chose a camera quality (setting). Absent when the cap was taken.",
+        ),
+    }),
+    description:
+      "This client's camera was taken down to low quality (360p + 180p) for lack of upload, or taken back up. Read against media.video_quality.sample, whose bandwidthLimitedRatio, activeLayers, uploadLossRatio and availableOutgoingBitrate are what the decision is made on: every threshold of the detector is derived from libwebrtc's allocator rules and not yet measured on a shaped link, and this event exists to tune them. For the session only, never persisted: the saved camera quality is not touched.",
+  }),
+
   "media.codec.probed": event({
     properties: z.object({
       browser: z

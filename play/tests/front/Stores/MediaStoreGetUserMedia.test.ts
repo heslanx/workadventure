@@ -284,6 +284,48 @@ describe("MediaStore getUserMedia chain", { timeout: 60_000 }, () => {
         expect(browser.getUserMedia).toHaveBeenCalledTimes(1);
     });
 
+    it("asks for the camera at 360p while the uplink cap is on, and at the saved quality again once it is off, without ever writing the saved quality", async () => {
+        m = await loadMediaStore();
+        const { uplinkCapStore } = await import("../../../src/front/WebRtc/UplinkCap");
+        m.videoQualityStore.setQuality("high");
+        const storage = () => JSON.stringify(Object.entries(localStorage));
+        const savedStorage = storage();
+
+        uplinkCapStore.set(true);
+        await enterRoom(m);
+        expect(browser.getUserMedia.mock.calls[0][0].video).toMatchObject({
+            width: { ideal: 640 },
+            height: { ideal: 360 },
+        });
+
+        uplinkCapStore.set(false);
+        await settle();
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(2);
+        expect(browser.getUserMedia.mock.calls[1][0].video).toMatchObject({
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+        });
+        expect(get(m.videoQualityStore)).toBe("high");
+        expect(storage()).toBe(savedStorage);
+    });
+
+    it("leaves an energy-saved camera closed when the uplink cap changes, nobody having asked to see it", async () => {
+        m = await loadMediaStore();
+        const { uplinkCapStore } = await import("../../../src/front/WebRtc/UplinkCap");
+        await enterRoom(m);
+        await vi.advanceTimersByTimeAsync(10_500);
+        await settle();
+        expect(browser.tracks[0].stop).toHaveBeenCalledTimes(1);
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(1);
+
+        // A cap lifted once its hold is over, with nobody on the camera
+        uplinkCapStore.set(true);
+        uplinkCapStore.set(false);
+        await settle();
+
+        expect(browser.getUserMedia).toHaveBeenCalledTimes(1);
+    });
+
     it("MD-02 (pinned): without the batch, the same two changes open the camera twice, the first time for nothing", async () => {
         m = await loadMediaStore();
         m.myCameraStore.set(true);

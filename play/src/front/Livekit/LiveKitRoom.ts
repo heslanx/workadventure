@@ -17,7 +17,7 @@ import { get } from "svelte/store";
 import type { Subscription } from "rxjs";
 import * as Sentry from "@sentry/svelte";
 import type { LocalStreamStoreValue } from "../Stores/MediaStore";
-import { localStreamStoreForPublishing, speakerSelectedStore, videoQualityStore } from "../Stores/MediaStore";
+import { effectiveVideoQualityStore, localStreamStoreForPublishing, speakerSelectedStore } from "../Stores/MediaStore";
 import { screenShareQualityStore } from "../Stores/ScreenSharingStore";
 import { bandwidthConstrainedPreferenceStore } from "../Stores/BandwidthConstrainedPreferenceStore";
 import type { SpaceInterface, SpaceUserExtended } from "../Space/SpaceInterface";
@@ -313,7 +313,8 @@ export class LiveKitRoom implements LiveKitRoomInterface, E2ELivekitRoom {
     }
 
     private getQualitySetting(isScreenShare: boolean): VideoQualitySetting {
-        return isScreenShare ? get(screenShareQualityStore) : get(videoQualityStore);
+        // The camera follows the uplink cap, the screen share never does
+        return isScreenShare ? get(screenShareQualityStore) : get(effectiveVideoQualityStore);
     }
 
     private getBandwidthConstrainedPreference(): RTCDegradationPreference {
@@ -728,12 +729,18 @@ export class LiveKitRoom implements LiveKitRoomInterface, E2ELivekitRoom {
         }
 
         // Between "recommended" and "high" the camera stays open, with the same track: check its publication against
-        // the new setting (see cameraPublicationKey). To or from "low" it reopens, and its new track is checked then.
-        let initialQuality = true;
+        // the new setting (see cameraPublicationKey). To or from "low" it reopens, and its new track is checked when it
+        // comes: checking now would publish the track about to be stopped, since the constraint change that stops it
+        // is notified after this subscriber (the stores a quality feeds queue their subscribers behind this one).
+        // The effective quality, so that the uplink cap counts as a change to "low", and a change of the saved setting
+        // under the cap (nothing new for the camera) does not.
+        let previousQuality: VideoQualitySetting | undefined;
         this.unsubscribers.push(
-            videoQualityStore.subscribe(() => {
-                if (initialQuality) {
-                    initialQuality = false;
+            effectiveVideoQualityStore.subscribe((quality) => {
+                const previous = previousQuality;
+                previousQuality = quality;
+                // The first value is what the publications above were already chosen with
+                if (previous === undefined || (previous === "low") !== (quality === "low")) {
                     return;
                 }
                 this.queueCameraTrackUpdate(this.cameraStreamStore && get(this.cameraStreamStore));
@@ -1304,7 +1311,7 @@ export class LiveKitRoom implements LiveKitRoomInterface, E2ELivekitRoom {
                 livekitServerUrl: this.serverUrl,
                 getLivekitRegion: () => this.getRegion(),
                 getQualitySetting: () =>
-                    get(streamCategory === "screenSharing" ? screenShareQualityStore : videoQualityStore),
+                    get(streamCategory === "screenSharing" ? screenShareQualityStore : effectiveVideoQualityStore),
             },
             (message) => this.space.emitVideoQualityReport(message),
         );

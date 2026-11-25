@@ -1,6 +1,6 @@
 import { get } from "svelte/store";
 import type { UserInputManager } from "../Phaser/UserInput/UserInputManager";
-import { localStreamStore } from "../Stores/MediaStore";
+import { localStreamStore, videoQualityStore } from "../Stores/MediaStore";
 import { screenSharingLocalStreamStore } from "../Stores/ScreenSharingStore";
 import { showHelpCameraSettings } from "../Stores/HelpSettingsStore";
 import {
@@ -16,6 +16,7 @@ import { notificationPlayingStore } from "../Stores/NotificationStore";
 import { LL } from "../../i18n/i18n-svelte";
 import infoIcon from "../Components/images/info.svg";
 import { startCpuLimitationDetectors } from "./CpuLimitationDetector";
+import { startUplinkLimitationDetector } from "./UplinkLimitationDetector";
 
 export type StartScreenSharingCallback = (media: MediaStream) => void;
 export type StopScreenSharingCallback = (media: MediaStream) => void;
@@ -25,6 +26,8 @@ export class MediaManager {
 
     constructor() {
         startCpuLimitationDetectors();
+        // The saved quality is given here: the detector must not import MediaStore, which reads what it decides
+        startUplinkLimitationDetector(videoQualityStore);
         localeDetector()
             .catch((e) => {
                 console.error("Cannot load locale on media manager", e);

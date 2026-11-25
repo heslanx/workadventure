@@ -1,16 +1,18 @@
 // @vitest-environment jsdom
 import { Subject } from "rxjs";
 import { writable } from "svelte/store";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { ConnectionState, DisconnectReason, Room, Track } from "livekit-client";
 import type * as LivekitClient from "livekit-client";
-import type { Readable } from "svelte/store";
+import type { Readable, Writable } from "svelte/store";
 import type { LocalStreamStoreValue } from "../Stores/MediaStore";
-import { videoQualityStore } from "../Stores/MediaStore";
+import { batchGetUserMediaStore, localStreamStoreForPublishing, videoQualityStore } from "../Stores/MediaStore";
+import { myCameraStore } from "../Stores/MyMediaStore";
 import type { SpaceInterface } from "../Space/SpaceInterface";
 import type { Streamable } from "../Space/Streamable";
 import type { StreamableSubjects } from "../Space/SpacePeerManager/SpacePeerManager";
 import { demotedCodecStore } from "../WebRtc/CodecPerformance";
+import { uplinkCapStore } from "../WebRtc/UplinkCap";
 import { selectVideoPreset } from "../WebRtc/VideoPresets";
 import { analyticsClient } from "../Administration/AnalyticsClient";
 import { LiveKitRoom, LiveKitRoomClosedBeforeConnectError } from "./LiveKitRoom";
@@ -970,13 +972,20 @@ describe("codec demotion", () => {
 });
 
 describe("camera quality setting", () => {
+    // Needed when this describe runs alone
+    beforeAll(async () => {
+        await loadLivekitClient();
+    });
+
     beforeEach(() => {
         window.capabilities = {};
         demotedCodecStore.video.set(undefined);
+        uplinkCapStore.set(false);
         videoQualityStore.setQuality("recommended");
     });
 
     afterEach(() => {
+        uplinkCapStore.set(false);
         videoQualityStore.setQuality("recommended");
     });
 
@@ -1084,6 +1093,221 @@ describe("camera quality setting", () => {
             selectVideoPreset(720, 1280, false, "high", "vp9", 3).bitrate,
         );
     });
+
+    describe("while the uplink cap is on", () => {
+        // The real chain, from the quality stores to the publication: the order in which they notify is what decides
+        // whether LiveKitRoom hears of a change before or after the camera it replaces was stopped
+        describe("through the camera the browser reopens", () => {
+            class FakeCameraTrack {
+                public readonly kind = "video";
+                public readyState: MediaStreamTrackState = "live";
+                public enabled = true;
+                public muted = false;
+                public readonly stop = vi.fn(() => {
+                    this.readyState = "ended";
+                });
+
+                constructor(
+                    public readonly id: string,
+                    private readonly width: number,
+                    private readonly height: number,
+                ) {}
+
+                getSettings(): MediaTrackSettings {
+                    return { width: this.width, height: this.height, deviceId: "cam-1" };
+                }
+
+                getCapabilities(): MediaTrackCapabilities {
+                    return {};
+                }
+            }
+
+            const ideal = (constraint: ConstrainULong | undefined) =>
+                typeof constraint === "object" && !Array.isArray(constraint) ? (constraint.ideal as number) : 0;
+
+            async function settle(room: LiveKitRoom): Promise<void> {
+                await vi.advanceTimersByTimeAsync(50);
+                await vi.advanceTimersByTimeAsync(50);
+                await room["mediaTrackUpdateQueue"];
+            }
+
+            // A room on the real localStreamStoreForPublishing, a browser that opens a camera of the size asked for and
+            // stops the one it replaces, and the readyState each published track had at the moment of publishing
+            function roomOnTheRealCamera() {
+                vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+                localStorage.setItem("noiseSuppressionEnabled", "false");
+                const opened: FakeCameraTrack[] = [];
+                const getUserMedia = vi.fn((constraints: MediaStreamConstraints) => {
+                    const video = typeof constraints.video === "object" ? constraints.video : undefined;
+                    const track = new FakeCameraTrack(
+                        `camera-${opened.length}`,
+                        ideal(video?.width),
+                        ideal(video?.height),
+                    );
+                    opened.push(track);
+                    return Promise.resolve(new MediaStream(video ? [track as unknown as MediaStreamTrack] : []));
+                });
+                Object.defineProperty(navigator, "mediaDevices", {
+                    configurable: true,
+                    value: {
+                        getUserMedia,
+                        enumerateDevices: () => Promise.resolve([]),
+                        getSupportedConstraints: () => ({ deviceId: true }),
+                        addEventListener: () => undefined,
+                        removeEventListener: () => undefined,
+                    },
+                });
+                // A page that is not focused shuts the camera down for privacy
+                vi.spyOn(document, "hasFocus").mockReturnValue(true);
+                window.dispatchEvent(new Event("focus"));
+
+                const room = createLiveKitRoom({
+                    screenSharingLocalStreamStore: writable(undefined),
+                    shouldPublishScreenShareStore: writable(false),
+                    localStreamStore: localStreamStoreForPublishing,
+                });
+                const stateWhenPublished: string[] = [];
+                const publishTrack = vi.fn().mockImplementation((track: { mediaStreamTrack: MediaStreamTrack }) => {
+                    stateWhenPublished.push(`${track.mediaStreamTrack.id} ${track.mediaStreamTrack.readyState}`);
+                    return Promise.resolve();
+                });
+                const unpublishTrack = vi.fn().mockResolvedValue(undefined);
+                room["room"] = { state: ConnectionState.Connected, engine: { serverVersion: "1.13.7" } } as never;
+                room["localParticipant"] = { publishTrack, unpublishTrack } as never;
+                (room["space"].isStreamingVideoStore as Writable<boolean>).set(true);
+                room["synchronizeMediaState"]();
+
+                onTestFinished(async () => {
+                    room["unsubscribers"].forEach((unsubscribe) => unsubscribe());
+                    myCameraStore.set(false);
+                    await vi.advanceTimersByTimeAsync(100);
+                    Reflect.deleteProperty(navigator, "mediaDevices");
+                    vi.restoreAllMocks();
+                    vi.useRealTimers();
+                });
+
+                const turnCameraOn = async () => {
+                    batchGetUserMediaStore.startBatch();
+                    myCameraStore.set(true);
+                    batchGetUserMediaStore.commitChanges();
+                    await settle(room);
+                };
+                return { room, publishTrack, unpublishTrack, stateWhenPublished, turnCameraOn, opened };
+            }
+
+            it.each([
+                ["the cap goes on", false, () => uplinkCapStore.set(true), [640, 360]],
+                ["the user chooses low", false, () => videoQualityStore.setQuality("low"), [640, 360]],
+                ["the cap is lifted", true, () => uplinkCapStore.set(false), [1280, 720]],
+            ])(
+                "unpublishes the camera once and publishes the reopened one, never the one it stopped, when %s",
+                async (_, capped, change, [width, height]) => {
+                    uplinkCapStore.set(capped);
+                    const { room, publishTrack, unpublishTrack, stateWhenPublished, turnCameraOn } =
+                        roomOnTheRealCamera();
+                    await turnCameraOn();
+                    expect(publishTrack).toHaveBeenCalledOnce();
+
+                    change();
+                    await settle(room);
+
+                    expect(unpublishTrack).toHaveBeenCalledOnce();
+                    expect(stateWhenPublished).toEqual(["camera-0 live", "camera-1 live"]);
+                    const republished = publishTrack.mock.calls[1][0].mediaStreamTrack.getSettings();
+                    expect([republished.width, republished.height]).toEqual([width, height]);
+                },
+            );
+
+            it("publishes the camera as 360p + 180p when the cap goes on", async () => {
+                const { room, publishTrack, turnCameraOn } = roomOnTheRealCamera();
+                await turnCameraOn();
+                // Left to livekit-client's own ladder, 720p + 360p + 180p
+                expect(publishTrack.mock.calls[0][1].videoSimulcastLayers).toBeUndefined();
+
+                uplinkCapStore.set(true);
+                await settle(room);
+
+                const options = publishTrack.mock.calls[1][1];
+                expect(options.simulcast).toBe(true);
+                expect(options.videoEncoding.maxBitrate).toBe(selectVideoPreset(360, 640, false, "low", "vp9").bitrate);
+                expect(options.videoSimulcastLayers).toHaveLength(1);
+                const [layer] = options.videoSimulcastLayers;
+                expect([layer.width, layer.height]).toEqual([320, 180]);
+            });
+
+            it("publishes nothing new when the saved setting moves between 'recommended' and 'high' under the cap", async () => {
+                uplinkCapStore.set(true);
+                const { room, publishTrack, unpublishTrack, turnCameraOn, opened } = roomOnTheRealCamera();
+                await turnCameraOn();
+
+                videoQualityStore.setQuality("high");
+                await settle(room);
+                videoQualityStore.setQuality("recommended");
+                await settle(room);
+
+                expect(publishTrack).toHaveBeenCalledOnce();
+                expect(unpublishTrack).not.toHaveBeenCalled();
+                expect(opened).toHaveLength(1);
+            });
+        });
+
+        describe("what the quality subscription queues", () => {
+            function roomWithAQueueToWatch() {
+                const room = createLiveKitRoom({
+                    screenSharingLocalStreamStore: writable(undefined),
+                    shouldPublishScreenShareStore: writable(false),
+                });
+                const queueCameraTrackUpdate = vi.fn();
+                room["queueCameraTrackUpdate"] = queueCameraTrackUpdate;
+                room["synchronizeMediaState"]();
+                onTestFinished(() => room["unsubscribers"].forEach((unsubscribe) => unsubscribe()));
+                queueCameraTrackUpdate.mockClear();
+                return queueCameraTrackUpdate;
+            }
+
+            it("queues a camera update when the saved setting moves between 'recommended' and 'high', the camera staying open", () => {
+                const queueCameraTrackUpdate = roomWithAQueueToWatch();
+
+                videoQualityStore.setQuality("high");
+                videoQualityStore.setQuality("recommended");
+
+                expect(queueCameraTrackUpdate).toHaveBeenCalledTimes(2);
+            });
+
+            it("queues nothing for a change to or from 'low', which reopens the camera and brings its new track", () => {
+                const queueCameraTrackUpdate = roomWithAQueueToWatch();
+
+                uplinkCapStore.set(true);
+                uplinkCapStore.set(false);
+                videoQualityStore.setQuality("low");
+                videoQualityStore.setQuality("high");
+
+                expect(queueCameraTrackUpdate).not.toHaveBeenCalled();
+            });
+
+            it("queues nothing when the saved setting moves between 'recommended' and 'high' under the cap", () => {
+                const queueCameraTrackUpdate = roomWithAQueueToWatch();
+                uplinkCapStore.set(true);
+
+                videoQualityStore.setQuality("high");
+                videoQualityStore.setQuality("recommended");
+
+                expect(queueCameraTrackUpdate).not.toHaveBeenCalled();
+            });
+        });
+
+        it("labels the outbound analytics with the quality the camera is sent at, and the screen share with its own", () => {
+            const room = createLiveKitRoom({
+                screenSharingLocalStreamStore: writable(undefined),
+                shouldPublishScreenShareStore: writable(false),
+            });
+
+            uplinkCapStore.set(true);
+
+            expect(room["getQualitySetting"](false)).toBe("low");
+            expect(room["getQualitySetting"](true)).toBe("recommended");
+        });
+    });
 });
 
 function createScreenShareStreamWithVideo(): LocalStreamStoreValue {
@@ -1104,10 +1328,12 @@ function createLiveKitRoom({
     livekitRoomCounter = { increment: vi.fn(), decrement: vi.fn() },
     emitBackEvent = vi.fn(),
     speakerDeviceIdStore = writable(undefined),
+    localStreamStore = writable({ type: "success", stream: undefined }),
 }: {
     screenSharingLocalStreamStore: Readable<LocalStreamStoreValue | undefined>;
     shouldPublishScreenShareStore: Readable<boolean>;
     speakerDeviceIdStore?: Readable<string | undefined>;
+    localStreamStore?: Readable<LocalStreamStoreValue>;
     livekitRoomCounter?: { increment: () => void; decrement: () => void };
     emitBackEvent?: SpaceInterface["emitBackEvent"];
 }): LiveKitRoom {
@@ -1121,7 +1347,7 @@ function createLiveKitRoom({
         screenSharingLocalStreamStore,
         speakerDeviceIdStore,
         livekitRoomCounter,
-        writable({ type: "success", stream: undefined }),
+        localStreamStore,
     );
 }
 

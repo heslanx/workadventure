@@ -790,6 +790,17 @@
       }
     },
     {
+      "title": "media.camera_cap.changed",
+      "properties": {
+        "eventName": {
+          "const": "media.camera_cap.changed"
+        },
+        "properties": {
+          "$ref": "#/$defs/media.camera_cap.changed"
+        }
+      }
+    },
+    {
       "title": "media.codec.degraded",
       "properties": {
         "eventName": {
@@ -2043,6 +2054,7 @@
               "media.audio_quality.sample",
               "media.background_effect.sample",
               "media.camera.toggled",
+              "media.camera_cap.changed",
               "media.codec.degraded",
               "media.codec.probed",
               "media.connection_retry",
@@ -3185,6 +3197,37 @@
       "additionalProperties": true,
       "description": "The user turned their camera on or off.",
       "title": "media.camera.toggled"
+    },
+    "media.camera_cap.changed": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "capped",
+            "lifted",
+            "cleared"
+          ],
+          "description": "What happened to the cap: it was taken, lifted by the detector, or cleared because the user chose a camera quality."
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Backoff level of the cap: 0 for the first of an episode, one more for each recovery trial that failed. It sets how long the cap is held before a lift is tried (5, 10, 20 then 60 minutes)."
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "recovered",
+            "idle",
+            "setting"
+          ],
+          "description": "Why the cap went: the link looked healthy for a full window (recovered), the hold was over and no camera had been sent for 15 seconds (idle), or the user chose a camera quality (setting). Absent when the cap was taken."
+        }
+      },
+      "additionalProperties": true,
+      "title": "media.camera_cap.changed",
+      "description": "This client's camera was taken down to low quality (360p + 180p) for lack of upload, or taken back up. Read against media.video_quality.sample, whose bandwidthLimitedRatio, activeLayers, uploadLossRatio and availableOutgoingBitrate are what the decision is made on: every threshold of the detector is derived from libwebrtc's allocator rules and not yet measured on a shaped link, and this event exists to tune them. For the session only, never persisted: the saved camera quality is not touched."
     },
     "media.codec.degraded": {
       "type": "object",
