@@ -4,20 +4,22 @@ WorkAdventure lets users control the bandwidth of their camera and screen share 
 document explains how that setting turns into a codec, a bitrate and a frame rate, on both P2P (WebRTC) and LiveKit
 connections.
 
-Everything described here lives in
-[`play/src/front/WebRtc/VideoPresets.ts`](../../../play/src/front/WebRtc/VideoPresets.ts), which is the single
-source of truth for codec preferences and bitrate budgets. The two transports only call it.
+The codec preferences and bitrate budgets described here live in
+[`play/src/front/WebRtc/VideoPresets.ts`](../../../play/src/front/WebRtc/VideoPresets.ts), which is their single
+source of truth. The two transports only call it.
 
 ## Overview
 
 Bandwidth management operates at two levels:
 
 - **Publisher side**: chooses the codec and caps the bitrate and frame rate of the outgoing camera and screen share.
-- **Subscriber side**: asks for a quality level of incoming streams (LiveKit simulcast layer, or a P2P bitrate hint).
+- **Subscriber side**: asks for a quality level of incoming streams (on LiveKit a simulcast layer, only when the viewer
+  chose "low"; on P2P a bitrate hint).
 
 Users choose between three quality levels, separately for the camera and the screen share:
 
-1. **Low**: minimal bandwidth, and the cheapest codecs (suitable for poor connections and weak machines)
+1. **Low**: minimal bandwidth, a 360p camera, and no AV1 for screen shares (suitable for poor connections and weak
+   machines)
 2. **Recommended**: balanced quality and bandwidth
 3. **High**: maximum quality within the budget
 
@@ -36,8 +38,8 @@ Users choose between three quality levels, separately for the camera and the scr
 ```
 
 The same menu holds the *"If network bandwidth is limited"* choice (`degradationPreference`): whether a constrained
-screen share should keep its resolution or its frame rate. It is applied on both transports and is not covered
-further here.
+screen share should keep its resolution, its frame rate, or a balance of both. It is applied on both transports and
+is not covered further here.
 
 ### Storage
 
@@ -66,8 +68,8 @@ LiveKit appends VP8. The last codec of the list is the floor and always stays: H
 "H.264 is not hardware on LiveKit" below). On LiveKit, H.264 above the floor stays only when the browser reports it as
 hardware or says nothing, whatever its history. Then, for every other codec:
 
-- **Desktop**: the codec is kept unless the browser remembers it as *not smooth* at that frame size (see below). With
-  no verdict, it is kept.
+- **Desktop**: the codec is kept unless the browser reports it as unsupported or remembers it as *not smooth* at that
+  frame size (see below). With no verdict, it is kept.
 - **Android and iOS**: the codec is kept only if the browser reports a hardware encoder (or decoder) for it, and it is
   smooth. With no verdict, it is dropped: a phone does not experiment on its battery.
 - A codec dropped for smoothness gets **one retry per week**, so a single bad session cannot demote it forever.
@@ -78,9 +80,10 @@ VP9 at 720p last week gets H.264 in P2P, and on LiveKit gets VP8 unless its H.26
 ### What the browser knows: `CodecPerformance.ts`
 
 At startup, [`CodecPerformance.ts`](../../../play/src/front/WebRtc/CodecPerformance.ts) asks
-`navigator.mediaCapabilities.encodingInfo()` and `decodingInfo()` with `type: "webrtc"` about AV1, VP9 and H.264 at
-three frame sizes, 720p, 1080p and 1440p. That is a few milliseconds of lookups, no encoding. The answers are
-cached and read synchronously afterwards; until they arrive, the lists behave as if there were no verdict.
+`navigator.mediaCapabilities.encodingInfo()` and `decodingInfo()` with `type: "webrtc"` about AV1, VP9 and H.264 (and
+H.265, for an analytics event only) at three frame sizes, 720p, 1080p and 1440p. That is a few milliseconds of
+lookups, no encoding. The answers are cached and read synchronously afterwards; until they arrive, the lists behave as
+if there were no verdict.
 
 In Chromium (verified in the source):
 
@@ -169,7 +172,7 @@ cannot keep up with it *during* a stream is in "When the encoder cannot keep up"
   (`RTCRtpEncodingParameters.codec`, Chrome 119+, Firefox 142+) could pick the send codec per tile size without a
   renegotiation, but it yields the same codec in every common case, so it is not used.
 
-  The end-to-end test `tests/webrtc_codecs.spec.ts` checks what each side of a bubble encodes, with Bob in
+  The end-to-end test `tests/tests/webrtc_codecs.spec.ts` checks what each side of a bubble encodes, with Bob in
   Chromium, Firefox or WebKit (`BOB_BROWSER`), against a deployment when `PLAY_URL` and `CODEC_TEST_MAP_URL` are
   set.
 
@@ -210,8 +213,8 @@ provided the bubble has more than two users (a pair gives one encoder each), and
 flagged user is present, whatever the count, the way an ongoing recording pins it. The two legs are asymmetric so
 that a third member coming and going never bounces the bubble; the flagged user leaving takes the usual delayed
 LiveKit → WebRTC path. The flag stays up for the session and never goes down (lowering it on LiveKit, where the
-load is gone, would bounce the bubble), so the next bubbles start on LiveKit without paying the window again. The
-transport switch resets the detector's window; if the back cannot switch (no LiveKit, or
+load is gone, would bounce the bubble), so a later bubble of more than two users moves to LiveKit without paying the
+window again. The transport switch resets the detector's window; if the back cannot switch (no LiveKit, or
 `LIVEKIT_SWITCH_ON_CPU_LIMITATION=false` for self-hosters who would rather not pay SFU bandwidth for small bubbles),
 the next window falls through to the codec.
 
@@ -225,8 +228,8 @@ subscribe to the store:
 
 - **LiveKit**: the codec of a publication is fixed at `publishTrack()`, so `LiveKitRoom` unpublishes and publishes
   again, the same two updates a share that stops and starts goes through. The camera publication is normally reused
-  for the whole room (turning the camera off pauses it, see `unpublishCameraTrack()`): a demotion is the one time it
-  is really unpublished.
+  for the whole room (turning the camera off pauses it, see `unpublishCameraTrack()`): a demotion, or a publication that
+  no longer matches the quality setting or the captured size (see `cameraPublicationKey()`), really unpublishes it.
 - **P2P**: `RemotePeer` sets the fork's `receiveCodecs` to the new `negotiableVideoCodecs()` and calls
   `negotiate()`. The fork (12.3.0) re-applies the preference before every offer and answer, so both sides end up on
   the remaining codecs whoever initiates the renegotiation, and the bitrate budget follows the new codec on the
@@ -241,7 +244,7 @@ never reacts.
 
 To see it happen: DevTools → Performance → CPU 6× slowdown, share a screen with the quality set to "high" (1440p,
 AV1), enable the video quality stats overlay: the tile reports `Limited by: cpu`, and about 40 s later the codec
-changes. The end-to-end test `tests/webrtc_cpu_limitation.spec.ts` (opt-in, `RUN_CPU_LIMITATION_E2E=1`, a few
+changes. The end-to-end test `tests/tests/webrtc_cpu_limitation.spec.ts` (opt-in, `RUN_CPU_LIMITATION_E2E=1`, a few
 minutes) drives the whole chain on a deployment by making one page report every outbound video stream as
 CPU-limited: three users in a bubble, the flag, the switch to LiveKit, the bubble staying there when a member
 leaves, then the camera republished in VP8 (Chromium on Linux has no hardware H.264 for LiveKit); with
@@ -250,8 +253,8 @@ renegotiation with both peers instead.
 
 ## Bitrate Budget
 
-`selectVideoPreset(displayHeight, displayWidth, isScreenShare, quality, codec)` returns the `maxBitrate` and
-`maxFramerate` to apply to an encoder producing frames of that size.
+`selectVideoPreset(displayHeight, displayWidth, isScreenShare, quality, codec, spatialLayers = 1)` returns the
+`maxBitrate` and `maxFramerate` to apply to an encoder producing frames of that size.
 
 ### The formula
 
@@ -377,8 +380,9 @@ deliver another size (640 × 480 is seen in production), and every budget follow
 ### Capture resolution of screen shares
 
 Independently of the bitrate, `screenShareMaxResolution` caps the **captured** size of a screen share per quality
-setting: 720p for "low", 1080p for "recommended", 1440p for "high". Nothing downstream lowers the resolution of a
-screen share, so this cap is what bounds the encode cost of a 4K display.
+setting: 720p for "low", 1080p for "recommended", 1440p for "high". On LiveKit the app lowers nothing after the
+capture, and on P2P it only scales the share down to the viewer's tile, so this cap is what bounds the encode cost of
+a 4K display.
 
 ### Tuning
 
@@ -432,8 +436,9 @@ times.
   (160 kbps and 450 kbps in 16:9). VP9 and AV1 cameras do it with `scalabilityMode: "L1T3"` on each stream, which
   `livekit-client` only honours on a LiveKit server newer than 1.13.6 and outside Safari and iOS
   (`supportsSvcSimulcast()`).
-- Elsewhere, VP9 and AV1 cameras go out as SVC: one stream, `L3T3_KEY`, that always carries its three layers. A screen
-  share is always one `L1T3` stream. The SVC `maxBitrate`
+- Elsewhere, VP9 and AV1 cameras go out as SVC: one stream, `L3T3_KEY`, that always carries its three layers. `livekit-client`
+  forces `L1T3` on every stream of a VP9 or AV1 screen share, so a share never carries several spatial layers inside one
+  stream. The SVC `maxBitrate`
   covers every spatial layer, so the camera budget is the curve summed over its three layers (`spatialLayers` in
   `selectVideoPreset()`): 1,035 kbps at 720p "recommended" rather than 700. With the one-layer budget, libwebrtc never
   enables the top layer (a 720p VP9 stream needs 891 kbps for its three layers, a 1080p one 1,425 kbps), and the encoder
@@ -456,12 +461,13 @@ times.
 
 **File**: [`play/src/front/Livekit/LivekitParticipant.ts`](../../../play/src/front/Livekit/LivekitParticipant.ts)
 
-- Maps the quality setting to the `VideoQuality` enum via `getVideoQualityFromSetting()`:
-    - `"low"` → `VideoQuality.LOW`
-    - `"recommended"` → `VideoQuality.MEDIUM`
-    - `"high"` → `VideoQuality.HIGH`
-- Calls `publication.setVideoQuality()` when subscribing to remote camera and screen share tracks, which selects the
-  simulcast layer the server forwards.
+- Calls `publication.setVideoQuality(VideoQuality.MEDIUM)` when subscribing to a remote camera or screen share track
+  (`handleTrackSubscribed()`), only when the viewer's own saved quality for that category is `"low"`. It is the highest
+  simulcast layer the viewer accepts. `livekit-client` names the layers by position (`q`, `h`, `f`), so MEDIUM is the
+  360p layer of a camera with three layers (longest side of 960 px or more), but the top layer of a publication with two
+  layers (a screen share, or a camera captured below 960 px, such as one on "low"), where it changes nothing.
+- With `"recommended"` or `"high"` the front sets nothing: the layer follows the adaptive stream of `livekit-client`
+  (the size at which the video is displayed, see `adaptiveStream` in `LiveKitRoom.ts`) and the server.
 
 ## Uplink Cap: Automatic Camera Downgrade
 
@@ -575,7 +581,8 @@ does nothing.
 
 ## Technical Notes
 
-- **VideoQuality enum**: `LOW` (0), `MEDIUM` (1), `HIGH` (2), maps to LiveKit simulcast layers.
+- **VideoQuality enum**: `LOW` (0), `MEDIUM` (1), `HIGH` (2), maps to LiveKit simulcast layers. The front only uses
+  `MEDIUM` (see Subscriber side).
 - **Congestion control** still applies on top of every cap: the browser lowers the actual bitrate when the network
   cannot carry it, and libwebrtc lowers resolution or frame rate when the CPU cannot keep up (reported as
   `qualityLimitationReason` in the encoder stats and in the video quality analytics).
