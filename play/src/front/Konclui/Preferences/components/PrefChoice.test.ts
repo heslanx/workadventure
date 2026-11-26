@@ -14,14 +14,16 @@ describe("PrefChoice", () => {
         target.replaceChildren();
     });
 
-    function show(value: string, onchange = vi.fn()) {
+    function show(value: string, onchange = vi.fn(), onreselect?: () => void, hint?: string) {
         document.body.append(target);
         choice = mount(PrefChoice, {
             target,
             props: {
                 title: "Quality",
+                hint,
                 value,
                 onchange,
+                onreselect,
                 options: [
                     { value: "low", label: "Low" },
                     { value: "high", label: "High", unavailable: "Needs a good connection" },
@@ -63,5 +65,91 @@ describe("PrefChoice", () => {
         expect(radios()[1].title).toBe("Needs a good connection");
         expect(radios()[1].hasAttribute("disabled")).toBe(false);
         expect(onchange).not.toHaveBeenCalled();
+    });
+
+    describe("when the chosen option is chosen again", () => {
+        it("tells whoever asked to hear it, and changes nothing", () => {
+            const onreselect = vi.fn();
+            const onchange = show("auto", vi.fn(), onreselect);
+
+            radios()[2].click();
+
+            expect(onreselect).toHaveBeenCalledOnce();
+            expect(onchange).not.toHaveBeenCalled();
+        });
+
+        it("does nothing when nobody asked to hear it", () => {
+            const onchange = show("auto");
+
+            radios()[2].click();
+
+            expect(onchange).not.toHaveBeenCalled();
+            expect(radios().map((radio) => radio.getAttribute("aria-checked"))).toEqual(["false", "false", "true"]);
+        });
+
+        it("does not tell when another option is chosen: that is a change", () => {
+            const onreselect = vi.fn();
+            const onchange = show("auto", vi.fn(), onreselect);
+
+            radios()[0].click();
+
+            expect(onchange).toHaveBeenCalledExactlyOnceWith("low");
+            expect(onreselect).not.toHaveBeenCalled();
+        });
+
+        it.each(["low", "high"])("does not tell for an unavailable option, with %s chosen", (chosen) => {
+            const onreselect = vi.fn();
+            show(chosen, vi.fn(), onreselect);
+
+            radios()[1].click();
+
+            expect(onreselect).not.toHaveBeenCalled();
+        });
+
+        it("does not tell for the keys that move between options, which choose only other ones", () => {
+            const onreselect = vi.fn();
+            show("low", vi.fn(), onreselect);
+
+            // From the unavailable option back onto the chosen one, and Home on the chosen one itself
+            radios()[1].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+            radios()[0].dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+
+            expect(onreselect).not.toHaveBeenCalled();
+        });
+
+        describe("the note", () => {
+            const describedBy = () => radios().map((radio) => radio.getAttribute("aria-describedby"));
+
+            it("also describes the chosen option, which now acts, and no other one", () => {
+                show("auto", vi.fn(), vi.fn(), "Lowered for now");
+
+                const hint = target.querySelector("small");
+                expect(hint?.id).toBeTruthy();
+                expect(describedBy()).toEqual([null, null, hint?.id]);
+            });
+
+            it("is not repeated on any option while nobody asked to hear the choice again", () => {
+                show("auto", vi.fn(), undefined, "Lowered for now");
+
+                expect(describedBy()).toEqual([null, null, null]);
+            });
+
+            it("is not referred to when there is no note", () => {
+                show("auto", vi.fn(), vi.fn());
+
+                expect(describedBy()).toEqual([null, null, null]);
+            });
+        });
+
+        it.each([" ", "Enter"])("leaves %j to the button, whose click is what tells", (key) => {
+            const onreselect = vi.fn();
+            show("auto", vi.fn(), onreselect);
+
+            const keydown = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+            radios()[2].dispatchEvent(keydown);
+
+            expect(keydown.defaultPrevented).toBe(false);
+            expect(onreselect).not.toHaveBeenCalled();
+        });
     });
 });

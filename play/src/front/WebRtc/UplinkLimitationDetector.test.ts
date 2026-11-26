@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import type { VideoQualitySetting } from "../Connection/LocalUserStore";
 import type { WebRtcSenderStats } from "../Components/Video/WebRtcStats";
 import { registerLocalEncoderStats, type LocalEncoderStats } from "./LocalEncoderStats";
-import { uplinkCapNoticeStore, uplinkCapStore } from "./UplinkCap";
+import { requestUplinkCapClear, uplinkCapNoticeStore, uplinkCapStore } from "./UplinkCap";
 import {
     CAP_ESTIMATE_LINE,
     HEALTHY_MAX_LIMITED,
@@ -1235,6 +1235,7 @@ describe("startUplinkLimitationDetector", () => {
         tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
         videoStats.set(undefined);
         trackAdminEvent.mockClear();
+        vi.mocked(console.info).mockClear();
 
         savedQuality.set("high");
 
@@ -1246,6 +1247,97 @@ describe("startUplinkLimitationDetector", () => {
             level: 0,
             reason: "setting",
         });
+        expect(console.info).toHaveBeenCalledExactlyOnceWith("A camera quality was chosen: clearing the camera cap");
+    });
+
+    it("takes the cap and the notice off when the user asks, and reports it as manual", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+        trackAdminEvent.mockClear();
+        vi.mocked(console.info).mockClear();
+
+        requestUplinkCapClear();
+
+        expect(get(uplinkCapStore)).toBe(false);
+        expect(get(uplinkCapNoticeStore)).toBe(false);
+        expect(trackAdminEvent).toHaveBeenCalledExactlyOnceWith("media.camera_cap.changed", {
+            action: "cleared",
+            level: 0,
+            reason: "manual",
+        });
+        expect(console.info).toHaveBeenCalledExactlyOnceWith("The user took the camera cap off by hand: clearing it");
+    });
+
+    it("reports the level of the cap it is asked to take off, on a recovery trial that failed", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+        videoStats.set(undefined);
+        vi.advanceTimersByTime(HOLD_MS[0]);
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+        expect(trackAdminEvent).toHaveBeenLastCalledWith("media.camera_cap.changed", { action: "capped", level: 1 });
+
+        requestUplinkCapClear();
+
+        expect(trackAdminEvent).toHaveBeenLastCalledWith("media.camera_cap.changed", {
+            action: "cleared",
+            level: 1,
+            reason: "manual",
+        });
+    });
+
+    it("clears the pending timer of the hold when the user takes the cap off", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+        videoStats.set(undefined);
+        expect(vi.getTimerCount()).toBe(1);
+
+        requestUplinkCapClear();
+
+        expect(vi.getTimerCount()).toBe(0);
+        vi.advanceTimersByTime(HOLD_MS[0]);
+        expect(trackAdminEvent).toHaveBeenCalledTimes(2);
+    });
+
+    it("starts over after the cap was taken off: it comes back only after a fresh warm-up and window, at level 0", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+        requestUplinkCapClear();
+        trackAdminEvent.mockClear();
+
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES - 1);
+        expect(get(uplinkCapStore)).toBe(false);
+        expect(trackAdminEvent).not.toHaveBeenCalled();
+
+        tick(weak());
+
+        expect(get(uplinkCapStore)).toBe(true);
+        expect(get(uplinkCapNoticeStore)).toBe(true);
+        expect(trackAdminEvent).toHaveBeenCalledExactlyOnceWith("media.camera_cap.changed", {
+            action: "capped",
+            level: 0,
+        });
+    });
+
+    it("changes nothing and says nothing when the user asks and there is no cap", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES - 1);
+        vi.mocked(console.info).mockClear();
+
+        requestUplinkCapClear();
+
+        expect(get(uplinkCapStore)).toBe(false);
+        expect(trackAdminEvent).not.toHaveBeenCalled();
+        expect(console.info).not.toHaveBeenCalled();
+        // The warm-up and the window were not restarted: the next weak reading still completes them
+        tick(weak());
+        expect(get(uplinkCapStore)).toBe(true);
+    });
+
+    it("does nothing when the user asks after the detector was stopped", () => {
+        tick(weak(), WARMUP_SAMPLES + WINDOW_SAMPLES);
+        trackAdminEvent.mockClear();
+
+        stop();
+        requestUplinkCapClear();
+
+        expect(get(uplinkCapStore)).toBe(true);
+        expect(get(uplinkCapNoticeStore)).toBe(true);
+        expect(trackAdminEvent).not.toHaveBeenCalled();
     });
 
     it("says nothing when the user chooses a quality and there was no cap", () => {

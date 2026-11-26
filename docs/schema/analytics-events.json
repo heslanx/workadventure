@@ -3208,7 +3208,7 @@
             "lifted",
             "cleared"
           ],
-          "description": "What happened to the cap: it was taken, lifted by the detector, or cleared because the user chose a camera quality."
+          "description": "What happened to the cap: it was taken, lifted by the detector, or cleared because the user chose a camera quality or took the cap off by hand."
         },
         "level": {
           "type": "integer",
@@ -3220,9 +3220,10 @@
           "enum": [
             "recovered",
             "idle",
-            "setting"
+            "setting",
+            "manual"
           ],
-          "description": "Why the cap went: the link looked healthy for a full window (recovered), the hold was over and no camera had been sent for 15 seconds (idle), or the user chose a camera quality (setting). Absent when the cap was taken."
+          "description": "Why the cap went: the link looked healthy for a full window (recovered), the hold was over and no camera had been sent for 15 seconds (idle), the user chose a camera quality (setting), or the user took the cap off by hand, choosing the selected quality again under it, and the saved quality stayed as it was (manual). Absent when the cap was taken."
         }
       },
       "additionalProperties": true,

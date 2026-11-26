@@ -29,7 +29,7 @@
         voiceIsolationSupportedStore,
     } from "../../../Stores/NoiseSuppressionStore";
     import { screenShareQualityStore } from "../../../Stores/ScreenSharingStore";
-    import { uplinkCapStore } from "../../../WebRtc/UplinkCap";
+    import { requestUplinkCapClear, uplinkCapStore } from "../../../WebRtc/UplinkCap";
     import {
         isBandwidthPreference,
         isQualityName,
@@ -165,6 +165,7 @@
         onchange={(value) => {
             if (isQualityName(value)) videoQualityStore.setQuality(value);
         }}
+        onreselect={$uplinkCapStore ? requestUplinkCapClear : undefined}
     />
 </PrefSection>
 <PrefSection title={t.screen()}>

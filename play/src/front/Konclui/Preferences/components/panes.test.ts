@@ -5,7 +5,8 @@ import { flushSync, mount, unmount, type Component } from "svelte";
 import { get, type Readable, type Writable } from "svelte/store";
 import { localUserStore } from "../../../Connection/LocalUserStore";
 import { playOnSelectedOutput } from "../../../WebRtc/AudioOutputManager";
-import { uplinkCapStore } from "../../../WebRtc/UplinkCap";
+import type * as UplinkCapModule from "../../../WebRtc/UplinkCap";
+import { requestUplinkCapClear, uplinkCapStore } from "../../../WebRtc/UplinkCap";
 import { bandwidthConstrainedPreferenceStore } from "../../../Stores/BandwidthConstrainedPreferenceStore";
 import {
     cameraListStore,
@@ -129,6 +130,11 @@ vi.mock("../../../Connection/LocalUserStore", () => ({
 vi.mock("../../../Connection/ConnectionManager", () => ({ connectionManager: { currentRoom: undefined } }));
 vi.mock("../../../Connection/Room", () => ({
     Room: { DEFAULT_CAMERA_PRIVACY_SETTINGS: false, DEFAULT_MICROPHONE_PRIVACY_SETTINGS: false },
+}));
+// The stores stay real; the request to take the cap off by hand is a spy, as the detector that answers it is not here.
+vi.mock("../../../WebRtc/UplinkCap", async (importOriginal) => ({
+    ...(await importOriginal<typeof UplinkCapModule>()),
+    requestUplinkCapClear: vi.fn(),
 }));
 vi.mock("../../../Administration/AnalyticsClient", () => ({ analyticsClient: { trackAdminEvent: vi.fn() } }));
 vi.mock("../../../Stores/BrowserNotificationStore", () => ({ browserNotificationStore: { refresh: vi.fn() } }));
@@ -462,6 +468,61 @@ describe("the preference sections", () => {
 
         expect(target.textContent).toContain(`${media}.videoQualityHint`);
         expect(target.textContent).not.toContain(`${media}.videoQualityCapped`);
+    });
+
+    it("takes the uplink cap off when the selected camera quality is chosen again under it, and saves nothing", () => {
+        uplinkCapStore.set(true);
+        show(MediaPane);
+
+        choose(`${media}.videoQuality`, `${media}.qualityRecommended`);
+
+        expect(requestUplinkCapClear).toHaveBeenCalledOnce();
+        expect(videoQualityStore.setQuality).not.toHaveBeenCalled();
+    });
+
+    it("saves another camera quality under the cap as it always did, and leaves the cap to the detector", () => {
+        uplinkCapStore.set(true);
+        show(MediaPane);
+
+        choose(`${media}.videoQuality`, `${media}.qualityHigh`);
+
+        expect(videoQualityStore.setQuality).toHaveBeenCalledExactlyOnceWith("high");
+        expect(requestUplinkCapClear).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when the selected camera quality is chosen again and the camera is not capped", () => {
+        show(MediaPane);
+
+        choose(`${media}.videoQuality`, `${media}.qualityRecommended`);
+
+        expect(requestUplinkCapClear).not.toHaveBeenCalled();
+        expect(videoQualityStore.setQuality).not.toHaveBeenCalled();
+    });
+
+    it("stops asking for the cap off once the cap is gone, and starts when it is back", () => {
+        show(MediaPane);
+        uplinkCapStore.set(true);
+        flushSync();
+        uplinkCapStore.set(false);
+        flushSync();
+
+        choose(`${media}.videoQuality`, `${media}.qualityRecommended`);
+        expect(requestUplinkCapClear).not.toHaveBeenCalled();
+
+        uplinkCapStore.set(true);
+        flushSync();
+        choose(`${media}.videoQuality`, `${media}.qualityRecommended`);
+        expect(requestUplinkCapClear).toHaveBeenCalledOnce();
+    });
+
+    it("leaves the screen quality out of it: the cap is on the camera only", () => {
+        uplinkCapStore.set(true);
+        show(MediaPane);
+
+        choose(`${media}.screenQuality`, `${media}.qualityRecommended`);
+
+        expect(requestUplinkCapClear).not.toHaveBeenCalled();
+        expect(screenShareQualityStore.setQuality).not.toHaveBeenCalled();
     });
 
     it("sends the bandwidth preference to its store", () => {

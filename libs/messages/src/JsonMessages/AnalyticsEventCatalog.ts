@@ -1372,7 +1372,7 @@ export const ANALYTICS_EVENTS = {
       action: z
         .enum(["capped", "lifted", "cleared"])
         .describe(
-          "What happened to the cap: it was taken, lifted by the detector, or cleared because the user chose a camera quality.",
+          "What happened to the cap: it was taken, lifted by the detector, or cleared because the user chose a camera quality or took the cap off by hand.",
         ),
       level: z
         .number()
@@ -1382,10 +1382,10 @@ export const ANALYTICS_EVENTS = {
           "Backoff level of the cap: 0 for the first of an episode, one more for each recovery trial that failed. It sets how long the cap is held before a lift is tried (5, 10, 20 then 60 minutes).",
         ),
       reason: z
-        .enum(["recovered", "idle", "setting"])
+        .enum(["recovered", "idle", "setting", "manual"])
         .optional()
         .describe(
-          "Why the cap went: the link looked healthy for a full window (recovered), the hold was over and no camera had been sent for 15 seconds (idle), or the user chose a camera quality (setting). Absent when the cap was taken.",
+          "Why the cap went: the link looked healthy for a full window (recovered), the hold was over and no camera had been sent for 15 seconds (idle), the user chose a camera quality (setting), or the user took the cap off by hand, choosing the selected quality again under it, and the saved quality stayed as it was (manual). Absent when the cap was taken.",
         ),
     }),
     description:

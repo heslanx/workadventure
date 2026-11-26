@@ -258,7 +258,8 @@ const konclui: DeepPartial<Translation["konclui"]> = {
             video: "Video",
             videoQuality: "Your camera's quality",
             videoQualityHint: "Low saves bandwidth; High needs a good connection",
-            videoQualityCapped: "Tạm thời giảm: kết nối của bạn đang yếu. Lựa chọn của bạn vẫn được giữ.",
+            videoQualityCapped:
+                "Tạm thời giảm: kết nối của bạn đang yếu. Lựa chọn của bạn vẫn được giữ: chọn lại để quay về ngay.",
             qualityLow: "Low",
             qualityRecommended: "Recommended",
             qualityHigh: "High",

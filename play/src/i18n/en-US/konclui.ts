@@ -257,7 +257,8 @@ const konclui: BaseTranslation = {
             video: "Video",
             videoQuality: "Your camera's quality",
             videoQualityHint: "Low saves bandwidth; High needs a good connection",
-            videoQualityCapped: "Lowered for now: your connection is weak. Your choice is kept.",
+            videoQualityCapped:
+                "Lowered for now: your connection is weak. Your choice is kept: select it again to go back now.",
             qualityLow: "Low",
             qualityRecommended: "Recommended",
             qualityHigh: "High",

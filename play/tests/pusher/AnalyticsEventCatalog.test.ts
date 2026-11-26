@@ -442,6 +442,21 @@ describe("AnalyticsEventCatalog", () => {
         expect(parsed.success).toBe(true);
     });
 
+    it("validates a camera cap that the user took off by hand, and refuses a reason it does not know", () => {
+        const clearedFor = (reason: string) =>
+            ANALYTICS_EVENT_CATALOG["media.camera_cap.changed"].safeParse({
+                eventName: "media.camera_cap.changed",
+                source: "front",
+                clientEventTimeMs: Date.parse("2026-11-25T12:00:05.000Z"),
+                eventId: "tab-id:media.camera_cap.changed:1",
+                properties: { action: "cleared", level: 1, reason },
+            });
+
+        expect(clearedFor("manual").success).toBe(true);
+        expect(clearedFor("setting").success).toBe(true);
+        expect(clearedFor("clicked").success).toBe(false);
+    });
+
     it("validates a cowebsite opening reported the way the front now sends it", () => {
         // Origin only, document name on its own field — see AnalyticsClient.
         //

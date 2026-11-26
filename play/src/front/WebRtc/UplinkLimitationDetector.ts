@@ -3,7 +3,7 @@ import { analyticsClient } from "../Administration/AnalyticsClient";
 import type { WebRtcSenderStats } from "../Components/Video/WebRtcStats";
 import type { VideoQualitySetting } from "../Connection/LocalUserStore";
 import { localEncoderStatsStore, type LocalEncoderStats } from "./LocalEncoderStats";
-import { uplinkCapNoticeStore, uplinkCapStore } from "./UplinkCap";
+import { onUplinkCapClearRequest, uplinkCapNoticeStore, uplinkCapStore } from "./UplinkCap";
 
 /**
  * Takes the camera down to "low" when the uplink cannot carry even the layers under the largest one of the full ladder
@@ -54,8 +54,11 @@ import { uplinkCapNoticeStore, uplinkCapStore } from "./UplinkCap";
  *   rule is unchanged; it is tracked as T-338 in docs/TODO.md.
  * - Backoff: a cap that comes back within SURVIVAL_MS of live time after a lift was a failed trial, and the next hold is
  *   longer. A lift that survives that long starts over.
- * - The user always wins: a change of the saved camera quality, to any value, clears everything (reset()), the way to
- *   take the cap off by hand. Choosing the quality that is already selected is no change, and does nothing.
+ * - The user always wins: a change of the saved camera quality, to any value, clears everything (reset()), and so does
+ *   the request to take the cap off by hand (requestUplinkCapClear in UplinkCap.ts: the Media pane makes it when the
+ *   selected quality is chosen again under a cap, and the saved quality stays as it was). Either way the detector starts
+ *   over: on a link that is still weak the cap can come back after the warm-up and the window, and that is the user's
+ *   own call each time.
  *
  * The caps and the lifts are not free: a change to or from "low" reopens the camera and, on LiveKit, unpublishes and
  * publishes again, so the viewers see the tile go off for a moment (25 pauses in the first two batches, one run per rate:
@@ -205,8 +208,8 @@ export class UplinkLimitationDetector {
     }
 
     /**
-     * The user chose a camera quality: whatever was decided, and whatever was learned, is void. Returns the level of
-     * the cap it cleared, or undefined when the camera was not capped.
+     * The user chose a camera quality or took the cap off by hand: whatever was decided, and whatever was learned, is
+     * void. Returns the level of the cap it cleared, or undefined when the camera was not capped.
      */
     public reset(): number | undefined {
         const clearedLevel = this.cappedAt === undefined ? undefined : this.level;
@@ -475,6 +478,28 @@ export function startUplinkLimitationDetector(savedQualityStore: Readable<VideoQ
         armHoldTimer();
     }
 
+    // Whatever the user does to take the cap off wins: a change of the saved quality and the request to take the cap off
+    // by hand both go through here, and are told apart only in the report
+    function clearCap(reason: "setting" | "manual"): void {
+        const clearedLevel = detector.reset();
+        clearHoldTimer();
+        uplinkCapStore.set(false);
+        uplinkCapNoticeStore.set(false);
+        if (clearedLevel === undefined) {
+            return;
+        }
+        console.info(
+            reason === "setting"
+                ? "A camera quality was chosen: clearing the camera cap"
+                : "The user took the camera cap off by hand: clearing it",
+        );
+        analyticsClient.trackAdminEvent("media.camera_cap.changed", {
+            action: "cleared",
+            level: clearedLevel,
+            reason,
+        });
+    }
+
     // Module singletons in the app: only a test stops them
     unsubscribers.push(
         localEncoderStatsStore.screenSharing.subscribe((stats) => {
@@ -490,21 +515,11 @@ export function startUplinkLimitationDetector(savedQualityStore: Readable<VideoQ
                 initialQuality = false;
                 return;
             }
-            // Whatever the user chooses wins: choosing another quality is the way to take the cap off by hand
-            const clearedLevel = detector.reset();
-            clearHoldTimer();
-            uplinkCapStore.set(false);
-            uplinkCapNoticeStore.set(false);
-            if (clearedLevel !== undefined) {
-                console.info("A camera quality was chosen: clearing the camera cap");
-                analyticsClient.trackAdminEvent("media.camera_cap.changed", {
-                    action: "cleared",
-                    level: clearedLevel,
-                    reason: "setting",
-                });
-            }
+            clearCap("setting");
         }),
     );
+
+    unsubscribers.push(onUplinkCapClearRequest(() => clearCap("manual")));
 
     unsubscribers.push(
         localEncoderStatsStore.video.subscribe((stats) => {

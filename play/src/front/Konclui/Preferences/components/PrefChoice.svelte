@@ -14,11 +14,16 @@
         options: readonly Option[];
         value: string | undefined;
         onchange: (value: string) => void;
+        /**
+         * The chosen option was chosen again, by a click, a tap, Space or Enter (never by the arrows, which move to
+         * another option). Without it, choosing the chosen option again does nothing.
+         */
+        onreselect?: () => void;
         /** A problem with the last change, shown in place of the hint until the next one. */
         error?: string;
     }
 
-    let { title, hint, options, value, onchange, error }: Props = $props();
+    let { title, hint, options, value, onchange, onreselect, error }: Props = $props();
     let note = $derived(error ?? hint);
     const id = $props.id();
     let buttons: HTMLButtonElement[] = $state([]);
@@ -31,6 +36,19 @@
         const option = options[index];
         if (option === undefined || option.unavailable !== undefined || option.value === value) return;
         onchange(option.value);
+    }
+
+    // The chosen option, when choosing it again is heard: it acts, so it carries the note that says how.
+    function chosenAgain(index: number): boolean {
+        return onreselect !== undefined && index === checkedIndex && options[index]?.unavailable === undefined;
+    }
+
+    function activate(index: number): void {
+        if (chosenAgain(index)) {
+            onreselect?.();
+            return;
+        }
+        choose(index);
     }
 
     function keydown(event: KeyboardEvent, index: number): void {
@@ -60,11 +78,14 @@
                 role="radio"
                 aria-checked={index === checkedIndex}
                 aria-disabled={option.unavailable === undefined ? undefined : "true"}
+                aria-describedby={chosenAgain(index) && note ? `${id}-hint` : undefined}
                 title={option.unavailable}
                 tabindex={index === tabStop ? 0 : -1}
-                onclick={() => choose(index)}
-                onkeydown={(event) => keydown(event, index)}>{option.label}</button
+                onclick={() => activate(index)}
+                onkeydown={(event) => keydown(event, index)}
             >
+                {option.label}
+            </button>
         {/each}
     </div>
 </div>
