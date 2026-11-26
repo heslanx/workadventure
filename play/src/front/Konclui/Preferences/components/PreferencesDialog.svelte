@@ -642,6 +642,15 @@
         flex-wrap: wrap;
         gap: 6px;
     }
+    /* A button under the note of a choice: on a line of its own, apart from the note, and a finger's size on touch. */
+    .k-prefs :global(.k-pref-text > .k-pref-button) {
+        margin-top: 8px;
+    }
+    @media (pointer: coarse) {
+        .k-prefs :global(.k-pref-text > .k-pref-button) {
+            min-height: 44px;
+        }
+    }
     .k-prefs :global(.k-pref-range) {
         display: flex;
         align-items: center;

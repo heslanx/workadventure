@@ -525,6 +525,124 @@ describe("the preference sections", () => {
         expect(screenShareQualityStore.setQuality).not.toHaveBeenCalled();
     });
 
+    describe("the button that takes the uplink cap off", () => {
+        /** The buttons of the pane that carry the text of `key`: the radios and the switches are never it. */
+        const named = (key: string) =>
+            [...target.querySelectorAll<HTMLButtonElement>("button:not([role])")].filter(
+                (button) => button.textContent?.trim() === key,
+            );
+        const tryNow = () => named(`${media}.videoQualityTryNow`);
+        const selectedCameraQuality = () =>
+            [...labelledBy("[role=radiogroup]", `${media}.videoQuality`).querySelectorAll<HTMLElement>("[role=radio]")]
+                .filter((radio) => radio.getAttribute("aria-checked") === "true")
+                .at(0);
+
+        it("is offered with the camera quality while the cap is on, and goes with it", () => {
+            show(MediaPane);
+            expect(tryNow()).toEqual([]);
+
+            uplinkCapStore.set(true);
+            flushSync();
+            expect(tryNow()).toHaveLength(1);
+
+            uplinkCapStore.set(false);
+            flushSync();
+            expect(tryNow()).toEqual([]);
+        });
+
+        it("is offered when the pane opens under a cap", () => {
+            uplinkCapStore.set(true);
+            show(MediaPane);
+
+            expect(tryNow()).toHaveLength(1);
+        });
+
+        it("is in the row of the camera quality, under its note and before its choices", () => {
+            uplinkCapStore.set(true);
+            show(MediaPane);
+
+            const [button] = tryNow();
+            const group = labelledBy("[role=radiogroup]", `${media}.videoQuality`);
+            const note = [...target.querySelectorAll("small")].find(
+                (small) => small.id === group.getAttribute("aria-describedby"),
+            );
+            expect(button.closest(".k-pref-item")?.contains(group)).toBe(true);
+            expect(note?.textContent).toBe(`${media}.videoQualityCapped`);
+            expect(note?.compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+            expect(button.compareDocumentPosition(group)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        });
+
+        it("takes the cap off by the same request as choosing the selected quality again, and saves nothing", () => {
+            uplinkCapStore.set(true);
+            show(MediaPane);
+
+            press(tryNow()[0]);
+
+            expect(requestUplinkCapClear).toHaveBeenCalledOnce();
+            expect(videoQualityStore.setQuality).not.toHaveBeenCalled();
+        });
+
+        it("keeps choosing the selected quality again as a way out beside it", () => {
+            uplinkCapStore.set(true);
+            show(MediaPane);
+
+            choose(`${media}.videoQuality`, `${media}.qualityRecommended`);
+
+            expect(requestUplinkCapClear).toHaveBeenCalledOnce();
+            expect(tryNow()).toHaveLength(1);
+        });
+
+        it("is not offered with the screen quality, nor with the bandwidth: the cap is on the camera only", () => {
+            uplinkCapStore.set(true);
+            show(MediaPane);
+
+            for (const key of [`${media}.screenQuality`, `${media}.bandwidth`]) {
+                const row = labelledBy("[role=radiogroup]", key).closest(".k-pref-item");
+                expect(row?.querySelector("button:not([role])")).toBeNull();
+            }
+            expect(tryNow()).toHaveLength(1);
+        });
+
+        it("leaves the focus on the selected camera quality when it takes the cap off, and goes", () => {
+            // The detector clears the cap as it hears the request; here the request does it.
+            vi.mocked(requestUplinkCapClear).mockImplementationOnce(() => uplinkCapStore.set(false));
+            uplinkCapStore.set(true);
+            show(MediaPane);
+            tryNow()[0].focus();
+            expect(document.activeElement).toBe(tryNow()[0]);
+
+            press(tryNow()[0]);
+
+            expect(requestUplinkCapClear).toHaveBeenCalledOnce();
+            expect(tryNow()).toEqual([]);
+            expect(document.activeElement).not.toBe(document.body);
+            expect(document.activeElement).toBe(selectedCameraQuality());
+            expect(document.activeElement?.getAttribute("tabindex")).toBe("0");
+        });
+
+        it("keeps the note where it is and announces its new text: the camera quality note is one element", () => {
+            show(MediaPane);
+            const group = labelledBy("[role=radiogroup]", `${media}.videoQuality`);
+            const noteOf = () =>
+                [...target.querySelectorAll("small")].find(
+                    (small) => small.id === group.getAttribute("aria-describedby"),
+                );
+            const note = noteOf();
+            expect(note?.textContent).toBe(`${media}.videoQualityHint`);
+            expect(note?.getAttribute("aria-live")).toBe("polite");
+
+            uplinkCapStore.set(true);
+            flushSync();
+            expect(noteOf()).toBe(note);
+            expect(note?.textContent).toBe(`${media}.videoQualityCapped`);
+
+            uplinkCapStore.set(false);
+            flushSync();
+            expect(noteOf()).toBe(note);
+            expect(note?.textContent).toBe(`${media}.videoQualityHint`);
+        });
+    });
+
     it("sends the bandwidth preference to its store", () => {
         show(MediaPane);
 

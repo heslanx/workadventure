@@ -166,6 +166,8 @@
             if (isQualityName(value)) videoQualityStore.setQuality(value);
         }}
         onreselect={$uplinkCapStore ? requestUplinkCapClear : undefined}
+        actionLabel={$uplinkCapStore ? t.videoQualityTryNow() : undefined}
+        onaction={$uplinkCapStore ? requestUplinkCapClear : undefined}
     />
 </PrefSection>
 <PrefSection title={t.screen()}>

@@ -19,11 +19,21 @@
          * another option). Without it, choosing the chosen option again does nothing.
          */
         onreselect?: () => void;
+        /**
+         * A small button under the note, for a way out that choosing the chosen option again is too easy to miss for.
+         * It shows only with both props: a button with no name, or with no effect, is not offered.
+         */
+        actionLabel?: string;
+        /**
+         * What the button does. It goes away with the state it acts on, so the focus is put on the chosen option (or the
+         * first one, while none is chosen) before this runs, and does not fall to the page.
+         */
+        onaction?: () => void;
         /** A problem with the last change, shown in place of the hint until the next one. */
         error?: string;
     }
 
-    let { title, hint, options, value, onchange, onreselect, error }: Props = $props();
+    let { title, hint, options, value, onchange, onreselect, actionLabel, onaction, error }: Props = $props();
     let note = $derived(error ?? hint);
     const id = $props.id();
     let buttons: HTMLButtonElement[] = $state([]);
@@ -51,6 +61,11 @@
         choose(index);
     }
 
+    function act(): void {
+        buttons[tabStop]?.focus();
+        onaction?.();
+    }
+
     function keydown(event: KeyboardEvent, index: number): void {
         const next = indexAfter(index, event.key, options.length);
         if (next === undefined) return;
@@ -63,7 +78,22 @@
 <div class="k-pref-item k-pref-stack">
     <span class="k-pref-text">
         <b id="{id}-title">{title}</b>
-        {#if note}<small id="{id}-hint" class:k-pref-error={error !== undefined}>{note}</small>{/if}
+        <!-- The note is read when its text changes, as one sentence; the button stays outside it. -->
+        {#if note}
+            <small id="{id}-hint" class:k-pref-error={error !== undefined} aria-live="polite" aria-atomic="true">
+                {note}
+            </small>
+        {/if}
+        {#if actionLabel && onaction}
+            <button
+                type="button"
+                class="k-pref-button"
+                aria-describedby={note ? `${id}-hint` : undefined}
+                onclick={act}
+            >
+                {actionLabel}
+            </button>
+        {/if}
     </span>
     <div
         class="k-pref-seg"
