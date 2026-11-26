@@ -248,6 +248,28 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 
 **Scope.** The yes was given to the two pt-BR sentences shown to him. The en-US sentences are the source they were written from and say the same; he was not shown them again in that question. The other 15 locales are machine translations that no native reader has read: T-332 in `docs/TODO.md` stays open for that.
 
+## CAP-OFF. Taking the uplink cap off by hand (2026-11-25)
+
+**Decision.** The owner chose to add a way for the user to take the uplink cap off by hand (his words, 2026-11-25: "Sim, adicionar"), the question being T-333 in `docs/TODO.md`: under a cap, the only way out was to pick another camera quality, which also changed the saved choice.
+
+**Built.**
+
+1. Under a cap, choosing the selected camera quality again in the Media pane (a click, a tap, Space or Enter) takes the cap off and changes nothing else: the saved quality stays what it was. Outside a cap, choosing the selected option again does nothing, in every choice of the preferences. `PrefChoice` has one optional prop, `onreselect`; the pane passes `requestUplinkCapClear` (from `play/src/front/WebRtc/UplinkCap.ts`) to the camera quality only while the cap is on, and while it does, the chosen option carries the note as its description (`aria-describedby`).
+2. The detector listens for that request and clears the cap as it does for a change of the saved quality: `reset()`, the hold timer, both stores, and `media.camera_cap.changed` with `cleared` and the new reason `manual` (`setting` stays for a change of the saved quality). It starts over, so on a link that is still weak the cap can come back after the warm-up and the window (45 samples), at level 0, with the toast again. There is no quiet period: it is the user's own call each time.
+
+**Draft, waiting for his yes.** The note `konclui.preferences.media.videoQualityCapped` now says how to go back. The two sentences below are a draft; the wording he approved on 2026-11-25 is in COPY-UPLINK above and is replaced by them in the files:
+
+- pt-BR: "Reduzida por enquanto: sua conexão está fraca. Sua escolha foi mantida: selecione-a de novo para voltar agora."
+- en-US: "Lowered for now: your connection is weak. Your choice is kept: select it again to go back now."
+
+The other 15 locales keep their sentence and add the same clause; they are machine translations that no native reader has read (T-332).
+
+The reviewers proposed a wording that says the return is a trial ("... select it again to try it now." / "... selecione-a de novo para tentar agora."); the owner is asked to choose between it and the draft above (T-340).
+
+**Seen in a browser.** Once, on 2026-11-26, in a headless Chromium on the QA stack with the sender's uplink shaped to 600 kbps: under a cap at level 0, a click on the selected "Recommended" took the cap off, the note went back to the plain hint, and the choice and the saved quality stayed "Recommended". The link was still shaped, and the cap came back 49 s later. A tap, the keyboard and a screen reader were not tried (T-340).
+
+**Reverse.** Remove the `onreselect` line of `MediaPane.svelte` and the listener in `startUplinkLimitationDetector`; the note then needs its old text back (COPY-UPLINK).
+
 ## DOCK. Knock prompt deferred; Focus and OfficeMenu in the domain graph (2026-11-18)
 
 **Decision.**
