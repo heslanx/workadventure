@@ -257,16 +257,14 @@ Do not touch `menu.settings.save`; RoomSettings, RecordingSettings and Megaphone
 1. Under a cap, choosing the selected camera quality again in the Media pane (a click, a tap, Space or Enter) takes the cap off and changes nothing else: the saved quality stays what it was. Outside a cap, choosing the selected option again does nothing, in every choice of the preferences. `PrefChoice` has one optional prop, `onreselect`; the pane passes `requestUplinkCapClear` (from `play/src/front/WebRtc/UplinkCap.ts`) to the camera quality only while the cap is on, and while it does, the chosen option carries the note as its description (`aria-describedby`).
 2. The detector listens for that request and clears the cap as it does for a change of the saved quality: `reset()`, the hold timer, both stores, and `media.camera_cap.changed` with `cleared` and the new reason `manual` (`setting` stays for a change of the saved quality). It starts over, so on a link that is still weak the cap can come back after the warm-up and the window (45 samples), at level 0, with the toast again. There is no quiet period: it is the user's own call each time.
 
-**Draft, waiting for his yes.** The note `konclui.preferences.media.videoQualityCapped` now says how to go back. The two sentences below are a draft; the wording he approved on 2026-11-25 is in COPY-UPLINK above and is replaced by them in the files:
+**The wording of the note.** The note `konclui.preferences.media.videoQualityCapped` now says how to go back. The reviewers asked for a clause that says the return is a trial, because on a link that is still weak the cap comes back about 45 s later. The owner chose it on 2026-11-26, asked "Qual final você quer na nota: 'para tentar agora' ou 'para voltar agora'?" (his words: "Tentar agora"). The two approved sentences:
 
-- pt-BR: "Reduzida por enquanto: sua conexão está fraca. Sua escolha foi mantida: selecione-a de novo para voltar agora."
-- en-US: "Lowered for now: your connection is weak. Your choice is kept: select it again to go back now."
+- pt-BR: "Reduzida por enquanto: sua conexão está fraca. Sua escolha foi mantida: selecione-a de novo para tentar agora."
+- en-US: "Lowered for now: your connection is weak. Your choice is kept: select it again to try it now."
 
-The other 15 locales keep their sentence and add the same clause; they are machine translations that no native reader has read (T-332).
+They replace the "go back now" draft that commit `1943cca31` put in the files (pt-BR "... selecione-a de novo para voltar agora.", en-US "... select it again to go back now."). The wording he approved on 2026-11-25 (COPY-UPLINK above) is the same note without this clause. The other 15 locales keep their sentence and say the same clause in their own language; they are machine translations that no native reader has read (T-332).
 
-The reviewers proposed a wording that says the return is a trial ("... select it again to try it now." / "... selecione-a de novo para tentar agora."); the owner is asked to choose between it and the draft above (T-340).
-
-**Seen in a browser.** Once, on 2026-11-26, in a headless Chromium on the QA stack with the sender's uplink shaped to 600 kbps: under a cap at level 0, a click on the selected "Recommended" took the cap off, the note went back to the plain hint, and the choice and the saved quality stayed "Recommended". The link was still shaped, and the cap came back 49 s later. A tap, the keyboard and a screen reader were not tried (T-340).
+**Seen in a browser.** Once, on 2026-11-26, in a headless Chromium on the QA stack with the sender's uplink shaped to 600 kbps: under a cap at level 0, a click on the selected "Recommended" took the cap off, the note went back to the plain hint, and the choice and the saved quality stayed "Recommended". The link was still shaped, and the cap came back 49 s later. The note then had the draft wording ("go back now"), not the one he chose. A tap, the keyboard and a screen reader were not tried (T-340).
 
 **Reverse.** Remove the `onreselect` line of `MediaPane.svelte` and the listener in `startUplinkLimitationDetector`; the note then needs its old text back (COPY-UPLINK).
 

@@ -261,7 +261,7 @@ const konclui: DeepPartial<Translation["konclui"]> = {
             videoQuality: "Your camera's quality",
             videoQualityHint: "Low saves bandwidth; High needs a good connection",
             videoQualityCapped:
-                "Nětko znižena: twój zwisk je słaby. Twój wuběr wostanje wobchowany: wubjer jón znowa, zo by so hnydom wróćiło.",
+                "Nětko znižena: twój zwisk je słaby. Twój wuběr wostanje wobchowany: wubjer jón znowa a spytaj nětko.",
             qualityLow: "Low",
             qualityRecommended: "Recommended",
             qualityHigh: "High",
