@@ -625,7 +625,8 @@ T-338 in [`docs/TODO.md`](../../TODO.md).
 ### The user wins
 
 Two things take the cap off by hand, and each clears the cap, the notice, the pending timer, the windows and the level
-(`media.camera_cap.changed` with `cleared`, and a reason that tells them apart):
+(`media.camera_cap.changed` with `cleared`, and a reason that tells them apart); the second has two gestures, with one
+reason:
 
 - A change of the saved camera quality, to any value: reason `setting`. The camera then follows the quality the user
   chose.
@@ -634,6 +635,10 @@ Two things take the cap off by hand, and each clears the cap, the notice, the pe
   `requestUplinkCapClear` (`UplinkCap.ts`), and the detector, which listens, clears the cap as it does for a change of
   the saved quality. The saved quality stays as it was. Outside a cap, choosing the selected quality again does nothing,
   here and in every other choice of the preferences. The note under the choice says how to go back.
+  The same pane shows a small button, "Try now", under the note, only while the cap is on. It puts the focus on the
+  chosen option and calls `requestUplinkCapClear`, with the same reason `manual`. The note is a polite live region
+  (`aria-live="polite"`, `aria-atomic="true"`), so its new text is announced by design; it has not been heard in a
+  screen reader yet (T-341 in [`docs/TODO.md`](../../TODO.md)).
 
 Either way the detector starts over, as after a change of the quality: on a link that is still weak the cap can come
 back after the warm-up and the window (45 samples), at level 0, with the toast again. There is no quiet period after a

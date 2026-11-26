@@ -268,6 +268,32 @@ They replace the "go back now" draft that commit `1943cca31` put in the files (p
 
 **Reverse.** Remove the `onreselect` line of `MediaPane.svelte` and the listener in `startUplinkLimitationDetector`; the note then needs its old text back (COPY-UPLINK).
 
+## CAP-OFF-BUTTON. An explicit button to take the uplink cap off (2026-11-26)
+
+**Decision.** The owner said yes (his words, 2026-11-26: "Sim, fazer") to the open question of T-340 in `docs/TODO.md`: a small explicit button beside the note under the camera quality that takes the uplink cap off, with choosing the selected quality again (CAP-OFF) staying as a shortcut, and the note announced to screen readers. The reason: activating a checked radio is the one thing the radio pattern says does nothing, so the way out that CAP-OFF built is easy to miss with a mouse and with a screen reader, and nothing said that the note had changed.
+
+**Source of the structure.** The same day he gave a standing instruction: consult the component library at `/Users/erickheslan/Developments/study/reui` (React, shadcn/ui, Tailwind), understand what it does better than we do, copy the structure and adapt it here. ReUI has no component for a description with an inline action, so the pieces were taken one by one and ported as structure and behaviour only, to Svelte 5 and to the `k-pref-*` classes and tokens: no React code was pasted and no dependency was added. Taken: a note that stays in the DOM while its text is swapped, with one id for hint and error; the action as a real button, outside the live region and after the note; the focus handed to a stable control in the same handler that removes the action; a target enlarged on coarse pointers only; a gap of 8 px when the action drops under the text. Not taken: an assertive `role="alert"`, an absolutely placed action slot, a two-line clamp on the description, and a toggle group that deselects on a second press.
+
+**Built.**
+
+1. `PrefChoice` has two optional props, `actionLabel` and `onaction`. With both set it shows a `<button type="button" class="k-pref-button">` under the note and before the choices, described by the note. Using it puts the focus on the chosen option (the tab stop of the group) and then calls `onaction`, because the button goes away with the cap. Without both props the row is as it was.
+2. The note of `PrefChoice` has `aria-live="polite"` and `aria-atomic="true"`: a new text, a problem included, is read as one sentence. The button is outside the note.
+3. `MediaPane` passes `actionLabel` and `onaction` (`requestUplinkCapClear`, the same path and the same reason `manual` as the re-selection) to the camera quality only while the cap is on. `onreselect` stays. No detector, store or catalog change.
+
+**The label.** One new key, `konclui.preferences.media.videoQualityTryNow`: en-US "Try now", pt-BR "Tentar agora", the words he chose for this action on 2026-11-26 (CAP-OFF). It is a draft as a button label until he sees it in place, next to the note. The note `videoQualityCapped` is unchanged. The other 15 locales carry short machine translations that no native reader has read (T-332).
+
+**Seen in a browser.** Once, on 2026-11-26, in a headless Chromium at 1280x720 on the QA stack (candidate `candidate-6c4c0e178eda`) with the sender's uplink shaped to 600 kbps: under a cap at level 0 the button "Try now" was shown under the note; focused and pressed with Enter, it took the cap off, the keyboard focus landed on the chosen option ("Recommended"), the button and the note went away, and the saved quality stayed `recommended`. The link was still shaped, and the cap came back 46 s later. Not tried: a tap, a narrow screen, a screen reader.
+
+**Not decided.** The questions are listed as T-341 in `docs/TODO.md`, with the rest of the browser walk (a narrow screen, touch and a screen reader: the run above used a keyboard on a wide window).
+
+1. The label, in place: "Try now" (pt-BR "Tentar agora") is a draft as a button label until he sees it next to the note.
+2. The place: he said "beside the note", and the button is under the note, on its own line, because the text column is about 190 to 350 px wide (arithmetic from the CSS, not measured). He may want it beside.
+3. The note keeps its approved text, "... select it again to try it now.", above a button that says "Try now". A reviewer proposed to shorten the note to "Lowered for now: your connection is weak. Your choice is kept." (pt-BR "Reduzida por enquanto: sua conexão está fraca. Sua escolha foi mantida."), so that the button carries the way out and the re-selection stays as a shortcut that is not taught, and to drop the note as the description of the chosen option while the button is offered, because a Tab path now reads the note up to three times (the group, the button and the chosen option). His call; nothing was changed.
+4. What a screen reader reads when the cap goes: the note's new text is the plain hint, which does not say that the cap came off. A sentence for that is a new string and needs his yes. The reviewers' candidates: en-US "Trying your choice now.", pt-BR "Tentando sua escolha agora." If he says yes, it goes into one always-mounted `sr-only` element with `role="status"`, empty until the button is used, as the only live region for that event.
+5. Where the live attribute is heard. It is on every note of `PrefChoice`. A pane mounts with `{#if}`, so its notes appear together with their text, and the note of the preset choice of the Performance pane changes when an effect switch is toggled, so it is read after the switch. This follows the brief (the note announced when its text changes), and nobody has heard it. If it is noisy, the live attribute goes on only the rows that need it (a prop that `MediaPane` sets for the camera quality), or the announcement moves into one always-mounted status.
+
+**Reverse.** Remove the two lines of `MediaPane.svelte` that pass `actionLabel` and `onaction`; `PrefChoice` then shows no button. The live attributes of the note can stay.
+
 ## DOCK. Knock prompt deferred; Focus and OfficeMenu in the domain graph (2026-11-18)
 
 **Decision.**
